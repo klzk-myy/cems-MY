@@ -36,3 +36,4 @@ vite.config.js
 *.log
 .DS_Store
 Thumbs.db
+opencode.json
