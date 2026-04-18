@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\StockTransferStatus;
 use App\Enums\UserRole;
 use App\Models\StockTransfer;
 use App\Models\User;
@@ -70,7 +71,7 @@ class StockTransferService
             $transfer = StockTransfer::create([
                 'transfer_number' => StockTransfer::generateTransferNumber(),
                 'type' => $data['type'] ?? StockTransfer::TYPE_STANDARD,
-                'status' => StockTransfer::STATUS_REQUESTED,
+                'status' => StockTransferStatus::Requested->value,
                 'source_branch_name' => $data['source_branch_name'],
                 'destination_branch_name' => $data['destination_branch_name'],
                 'requested_by' => $this->requester->id,
@@ -111,7 +112,7 @@ class StockTransferService
             throw new \RuntimeException('Only HQ (Admin) can approve transfers');
         }
 
-        if ($transfer->status !== StockTransfer::STATUS_BM_APPROVED) {
+        if ($transfer->status !== StockTransferStatus::BranchManagerApproved->value) {
             throw new \RuntimeException('Transfer must be BM-approved before HQ approval');
         }
 
@@ -124,7 +125,7 @@ class StockTransferService
             throw new \RuntimeException('Only admin can dispatch transfers');
         }
 
-        if ($transfer->status !== StockTransfer::STATUS_HQ_APPROVED) {
+        if ($transfer->status !== StockTransferStatus::HqApproved->value) {
             throw new \RuntimeException('Transfer must be HQ-approved before dispatch');
         }
 
@@ -137,7 +138,7 @@ class StockTransferService
             throw new \RuntimeException('Only admin can receive items');
         }
 
-        if ($transfer->status !== StockTransfer::STATUS_IN_TRANSIT) {
+        if ($transfer->status !== StockTransferStatus::InTransit->value) {
             throw new \RuntimeException('Transfer must be in transit to receive items');
         }
 
@@ -180,7 +181,7 @@ class StockTransferService
 
             $allFullyReceived = $transfer->items->every(fn ($item) => $item->isFullyReceived());
             if (! $allFullyReceived) {
-                $transfer->update(['status' => StockTransfer::STATUS_PARTIALLY_RECEIVED]);
+                $transfer->update(['status' => StockTransferStatus::PartiallyReceived->value]);
             }
         });
     }
@@ -191,7 +192,7 @@ class StockTransferService
             throw new \RuntimeException('Only admin can complete transfers');
         }
 
-        if (! in_array($transfer->status, [StockTransfer::STATUS_IN_TRANSIT, StockTransfer::STATUS_PARTIALLY_RECEIVED])) {
+        if (! in_array($transfer->status, [StockTransferStatus::InTransit->value, StockTransferStatus::PartiallyReceived->value])) {
             throw new \RuntimeException('Transfer must be in transit or partially received to complete');
         }
 
@@ -208,7 +209,7 @@ class StockTransferService
             throw new \RuntimeException('Cannot cancel a completed transfer');
         }
 
-        if ($transfer->status === StockTransfer::STATUS_CANCELLED) {
+        if ($transfer->status === StockTransferStatus::Cancelled->value) {
             throw new \RuntimeException('Transfer is already cancelled');
         }
 
