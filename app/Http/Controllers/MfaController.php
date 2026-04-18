@@ -251,21 +251,6 @@ class MfaController extends Controller
     }
 
     /**
-     * Download recovery codes as text file.
-     */
-    public function downloadRecoveryCodes()
-    {
-        // Recovery codes should be stored/sent securely
-        // This is a placeholder - actual implementation would retrieve from secure storage
-        return response()->streamDownload(function () {
-            echo "Recovery codes are no longer available after initial display.\n";
-            echo 'Please disable and re-enable MFA to generate new recovery codes.';
-        }, 'recovery-codes.txt', [
-            'Content-Type' => 'text/plain',
-        ]);
-    }
-
-    /**
      * Show recovery code entry page.
      */
     public function recovery()

@@ -509,6 +509,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::put('/{user}', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
         Route::post('/{user}/toggle', [UserController::class, 'toggleActive'])->name('toggle');
+        Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
     });
 
     // Branch Management (Admin only)
@@ -541,6 +542,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     Route::middleware(['role:admin'])->prefix('test-results')->name('test-results.')->group(function () {
         Route::get('/', [TestResultsController::class, 'index'])->name('index');
         Route::get('/statistics', [TestResultsController::class, 'statistics'])->name('statistics');
+        Route::get('/status', [TestResultsController::class, 'latestStatus'])->name('status');
         Route::post('/run', [TestResultsController::class, 'run'])->name('run');
         Route::get('/{testResult}', [TestResultsController::class, 'show'])->name('show');
         Route::post('/cleanup', [TestResultsController::class, 'cleanup'])->name('cleanup');

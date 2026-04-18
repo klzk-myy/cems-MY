@@ -46,6 +46,35 @@
                 <a href="{{ route('users.index') }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
+
+        {{-- Reset Password Section --}}
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <h4 class="text-lg font-semibold text-[--color-ink] mb-4">Security</h4>
+            <form method="POST" action="{{ route('users.reset-password', $user->id) }}" x-data="{ confirm: '', password: '' }">
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">New Password</label>
+                        <input type="password" name="password" class="form-input" x-model="password" required minlength="12">
+                        <p class="text-xs text-[--color-ink-muted] mt-1">Min 12 chars, mixed case, number, special char</p>
+                    </div>
+                    <div>
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" name="password_confirmation" class="form-input" x-model="confirm" required minlength="12">
+                    </div>
+                </div>
+                @if ($errors->has('password'))
+                    <p class="text-sm text-red-600 mt-2">{{ $errors->first('password') }}</p>
+                @endif
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-danger"
+                        onclick="return confirm('Reset password for {{ $user->username }}? This cannot be undone.')"
+                        :disabled="password !== confirm || password.length < 12">
+                        Reset Password
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 @endsection
