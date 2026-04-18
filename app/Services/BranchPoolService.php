@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Models\SystemLog;
 
 class BranchPoolService
 {
@@ -107,6 +110,14 @@ class BranchPoolService
 
             $pool->available_balance = $this->mathService->add($pool->available_balance, $amount);
             $pool->save();
+
+            Log::info('Branch pool replenished', [
+                'branch_id' => $branch->id,
+                'currency_code' => $currencyCode,
+                'amount' => $amount,
+                'approved_by' => $approvedBy,
+                'pool_id' => $pool->id,
+            ]);
 
             return $pool;
         });

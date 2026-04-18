@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\StockTransferStatus;
 use App\Enums\UserRole;
 use App\Models\StockTransfer;
 use App\Models\User;
@@ -58,11 +59,11 @@ class StockTransferService
         // Calculate and validate total value
         $calculatedTotal = '0';
         foreach ($data['items'] as $item) {
-            $itemValue = bcmul($item['quantity'], $item['rate'], 4);
-            $calculatedTotal = bcadd($calculatedTotal, $itemValue, 4);
+            $itemValue = $this->mathService->multiply($item['quantity'], $item['rate']);
+            $calculatedTotal = $this->mathService->add($calculatedTotal, $itemValue);
         }
 
-        if (isset($data['total_value_myr']) && bccomp($data['total_value_myr'], $calculatedTotal, 4) !== 0) {
+        if (isset($data['total_value_myr']) && $this->mathService->compare($data['total_value_myr'], $calculatedTotal) !== 0) {
             throw new \InvalidArgumentException('Total value does not match sum of item values');
         }
 
@@ -70,7 +71,7 @@ class StockTransferService
             $transfer = StockTransfer::create([
                 'transfer_number' => StockTransfer::generateTransferNumber(),
                 'type' => $data['type'] ?? StockTransfer::TYPE_STANDARD,
-                'status' => StockTransfer::STATUS_REQUESTED,
+                'status' => StockTransferStatus::Requested->value,
                 'source_branch_name' => $data['source_branch_name'],
                 'destination_branch_name' => $data['destination_branch_name'],
                 'requested_by' => $this->requester->id,
@@ -84,7 +85,7 @@ class StockTransferService
                     'currency_code' => $item['currency_code'],
                     'quantity' => $item['quantity'],
                     'rate' => $item['rate'],
-                    'value_myr' => bcmul($item['quantity'], $item['rate'], 4),
+                    'value_myr' => $this->mathService->multiply($item['quantity'], $item['rate']),
                 ]);
             }
 
@@ -111,7 +112,7 @@ class StockTransferService
             throw new \RuntimeException('Only HQ (Admin) can approve transfers');
         }
 
-        if ($transfer->status !== StockTransfer::STATUS_BM_APPROVED) {
+        if ($transfer->status !== StockTransferStatus::BranchManagerApproved->value) {
             throw new \RuntimeException('Transfer must be BM-approved before HQ approval');
         }
 
@@ -124,7 +125,7 @@ class StockTransferService
             throw new \RuntimeException('Only admin can dispatch transfers');
         }
 
-        if ($transfer->status !== StockTransfer::STATUS_HQ_APPROVED) {
+        if ($transfer->status !== StockTransferStatus::HqApproved->value) {
             throw new \RuntimeException('Transfer must be HQ-approved before dispatch');
         }
 
@@ -137,7 +138,7 @@ class StockTransferService
             throw new \RuntimeException('Only admin can receive items');
         }
 
-        if ($transfer->status !== StockTransfer::STATUS_IN_TRANSIT) {
+        if ($transfer->status !== StockTransferStatus::InTransit->value) {
             throw new \RuntimeException('Transfer must be in transit to receive items');
         }
 
@@ -147,18 +148,18 @@ class StockTransferService
                 if ($item) {
                     $item->update([
                         'quantity_received' => $itemData['quantity_received'],
-                        'quantity_in_transit' => bcsub($item->quantity, $itemData['quantity_received'], 4),
+                        'quantity_in_transit' => $this->mathService->subtract($item->quantity, $itemData['quantity_received']),
                     ]);
 
                     if ($item->hasVariance()) {
                         $item->update(['variance_notes' => "Variance: {$item->variance}"]);
 
-                        if (bccomp($item->quantity, '0', 4) > 0) {
+                        if ($this->mathService->compare($item->quantity, '0') > 0) {
                             $variancePercent = $this->mathService->multiply(
-                                $this->mathService->divide(abs($item->variance), $item->quantity, 4),
+                                $this->mathService->divide(abs($item->variance), $item->quantity),
                                 '100'
                             );
-                            if (bccomp($variancePercent, '5', 4) > 0) {
+                            if ($this->mathService->compare($variancePercent, '5') > 0) {
                                 $this->auditService->logWithSeverity(
                                     'stock_transfer_variance_exceeded',
                                     [
@@ -180,7 +181,7 @@ class StockTransferService
 
             $allFullyReceived = $transfer->items->every(fn ($item) => $item->isFullyReceived());
             if (! $allFullyReceived) {
-                $transfer->update(['status' => StockTransfer::STATUS_PARTIALLY_RECEIVED]);
+                $transfer->update(['status' => StockTransferStatus::PartiallyReceived->value]);
             }
         });
     }
@@ -191,7 +192,7 @@ class StockTransferService
             throw new \RuntimeException('Only admin can complete transfers');
         }
 
-        if (! in_array($transfer->status, [StockTransfer::STATUS_IN_TRANSIT, StockTransfer::STATUS_PARTIALLY_RECEIVED])) {
+        if (! in_array($transfer->status, [StockTransferStatus::InTransit->value, StockTransferStatus::PartiallyReceived->value])) {
             throw new \RuntimeException('Transfer must be in transit or partially received to complete');
         }
 
@@ -208,7 +209,7 @@ class StockTransferService
             throw new \RuntimeException('Cannot cancel a completed transfer');
         }
 
-        if ($transfer->status === StockTransfer::STATUS_CANCELLED) {
+        if ($transfer->status === StockTransferStatus::Cancelled->value) {
             throw new \RuntimeException('Transfer is already cancelled');
         }
 

@@ -12,8 +12,11 @@ enum StockTransferStatus: string
     case Requested = 'Requested';
     case BranchManagerApproved = 'BranchManagerApproved';
     case HqApproved = 'HqApproved';
-    case Rejected = 'Rejected';
+    case InTransit = 'InTransit';
+    case PartiallyReceived = 'PartiallyReceived';
+    case Completed = 'Completed';
     case Cancelled = 'Cancelled';
+    case Rejected = 'Rejected';
 
     /**
      * Get a human-readable label for the status.
@@ -24,6 +27,9 @@ enum StockTransferStatus: string
             self::Requested => 'Requested',
             self::BranchManagerApproved => 'Branch Manager Approved',
             self::HqApproved => 'HQ Approved',
+            self::InTransit => 'In Transit',
+            self::PartiallyReceived => 'Partially Received',
+            self::Completed => 'Completed',
             self::Rejected => 'Rejected',
             self::Cancelled => 'Cancelled',
         };
@@ -38,6 +44,9 @@ enum StockTransferStatus: string
             self::Requested => 'badge-warning',
             self::BranchManagerApproved => 'badge-info',
             self::HqApproved => 'badge-success',
+            self::InTransit => 'badge-primary',
+            self::PartiallyReceived => 'badge-info',
+            self::Completed => 'badge-success',
             self::Rejected => 'badge-danger',
             self::Cancelled => 'badge-secondary',
         };
