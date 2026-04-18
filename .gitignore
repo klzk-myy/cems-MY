@@ -22,3 +22,6 @@ yarn-error.log
 /docker/nginx/ssl/*.pem
 /docker/nginx/ssl/*.key
 .worktrees
+.phpunit.cache
+.playwright-mcp
+.superpowers
