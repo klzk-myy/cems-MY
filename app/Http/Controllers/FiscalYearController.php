@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FiscalYear;
 use App\Services\FiscalYearService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class FiscalYearController extends Controller
 {
@@ -62,7 +63,8 @@ class FiscalYearController extends Controller
 
             return redirect()->back()->with('success', "Fiscal year {$year->year_code} created successfully.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            Log::error('FiscalYear create failed', ['exception' => $e, 'year_code' => $request->year_code]);
+            return redirect()->back()->with('error', "Failed to create fiscal year: {$e->getMessage()}");
         }
     }
 
@@ -83,7 +85,11 @@ class FiscalYearController extends Controller
 
             return redirect()->back()->with('success', "Fiscal year {$year->year_code} closed successfully. Net income: {$result['net_income']}");
         } catch (\InvalidArgumentException $e) {
+            Log::error('FiscalYear close failed', ['exception' => $e, 'year_code' => $year->year_code]);
             return redirect()->back()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('FiscalYear close failed', ['exception' => $e, 'year_code' => $year->year_code]);
+            return redirect()->back()->with('error', "Failed to close fiscal year: {$e->getMessage()}");
         }
     }
 
@@ -100,7 +106,8 @@ class FiscalYearController extends Controller
 
             return view('accounting.fiscal-years', compact('fiscalYears', 'yearReport'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            Log::error('FiscalYear report failed', ['exception' => $e, 'year_code' => $yearCode]);
+            return redirect()->back()->with('error', "Failed to generate report: {$e->getMessage()}");
         }
     }
 }

@@ -8,6 +8,7 @@ use App\Models\FlaggedTransaction;
 use App\Services\EddService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class EnhancedDiligenceController extends Controller
 {
@@ -139,6 +140,7 @@ class EnhancedDiligenceController extends Controller
 
             return redirect()->back()->with('success', 'EDD record submitted for review.');
         } catch (\InvalidArgumentException $e) {
+            Log::warning('EDD submitReview failed', ['exception' => $e, 'record_id' => $record->id]);
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

@@ -6,6 +6,7 @@ use App\Models\JournalEntry;
 use App\Services\AuditService;
 use App\Services\JournalEntryWorkflowService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class JournalEntryWorkflowController extends Controller
 {
@@ -61,6 +62,7 @@ class JournalEntryWorkflowController extends Controller
 
             return redirect()->back()->with('success', 'Entry submitted for approval.');
         } catch (\InvalidArgumentException $e) {
+            Log::warning('JournalEntry submit failed', ['exception' => $e, 'entry_id' => $entry->id]);
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
@@ -95,6 +97,7 @@ class JournalEntryWorkflowController extends Controller
                 return redirect()->back()->with('success', 'Entry approved and posted to ledger.');
             }
         } catch (\InvalidArgumentException $e) {
+            Log::warning('JournalEntry approve failed', ['exception' => $e, 'entry_id' => $entry->id, 'action' => $action]);
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

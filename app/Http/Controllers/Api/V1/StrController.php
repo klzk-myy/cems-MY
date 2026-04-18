@@ -104,7 +104,7 @@ class StrController extends Controller
         return response()->json([
             'success' => true,
             'data' => $str,
-            'transactions' => $str->transactions(),
+            'transactions' => $str->transactions()->get(),
         ]);
     }
 

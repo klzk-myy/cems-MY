@@ -275,6 +275,10 @@ class SanctionsImportService
                 return date_format($parsed, 'Y-m-d');
             }
         } catch (\Exception $e) {
+            Log::debug('Date parsing failed, trying fallback', [
+                'date' => $date,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return null;

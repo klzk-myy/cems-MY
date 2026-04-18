@@ -158,7 +158,7 @@ class TransactionWizardController extends Controller
                 'status' => 'success',
                 'transaction_id' => $transaction->id,
                 'transaction_number' => $transaction->transaction_number,
-                'status' => $transaction->status->value,
+                'transaction_status' => $transaction->status->value,
                 'message' => $sessionData['hold_required']
                     ? 'Transaction created and pending approval'
                     : 'Transaction completed successfully',

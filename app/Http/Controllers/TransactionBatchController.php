@@ -10,6 +10,7 @@ use App\Services\MathService;
 use App\Services\TransactionImportService;
 use App\Services\TransactionMonitoringService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class TransactionBatchController extends Controller
@@ -94,6 +95,7 @@ class TransactionBatchController extends Controller
             return redirect()->route('transactions.batch-upload.show', $import)
                 ->with('success', "Import completed. {$import->success_count} transactions imported, {$import->error_count} errors.");
         } catch (\Exception $e) {
+            Log::error('Transaction import failed', ['exception' => $e, 'import_id' => $import->id]);
             $import->update([
                 'status' => 'failed',
                 'completed_at' => now(),

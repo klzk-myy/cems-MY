@@ -11,6 +11,7 @@ use App\Services\AuditService;
 use App\Services\CounterService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CounterController extends Controller
 {
@@ -96,7 +97,8 @@ class CounterController extends Controller
             return redirect()->route('counters.index')
                 ->with('success', "Counter {$counter->code} opened successfully");
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            Log::error('Counter open failed', ['exception' => $e, 'counter_id' => $counter->id]);
+            return back()->with('error', "Failed to open counter: {$e->getMessage()}");
         }
     }
 
@@ -168,7 +170,8 @@ class CounterController extends Controller
             return redirect()->route('counters.index')
                 ->with('success', "Counter {$counter->code} closed successfully");
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            Log::error('Counter close failed', ['exception' => $e, 'counter_id' => $counter->id]);
+            return back()->with('error', "Failed to close counter: {$e->getMessage()}");
         }
     }
 
@@ -304,7 +307,8 @@ class CounterController extends Controller
             return redirect()->route('counters.index')
                 ->with('success', "Counter {$counter->code} handed over to {$toUser->name}");
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            Log::error('Counter handover failed', ['exception' => $e, 'counter_id' => $counter->id]);
+            return back()->with('error', "Failed to handover counter: {$e->getMessage()}");
         }
     }
 }

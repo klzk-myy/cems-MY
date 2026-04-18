@@ -12,6 +12,7 @@ use App\Services\MathService;
 use App\Services\PeriodCloseService;
 use App\Services\ReconciliationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AccountingController extends Controller
 {
@@ -85,6 +86,7 @@ class AccountingController extends Controller
                 ->with('success', 'Journal entry created successfully.');
 
         } catch (\InvalidArgumentException $e) {
+            Log::warning('JournalEntry create failed', ['exception' => $e, 'description' => $request->input('description')]);
             return back()->withInput()->withErrors(['lines' => $e->getMessage()]);
         }
     }
