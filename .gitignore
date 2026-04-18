@@ -37,3 +37,4 @@ vite.config.js
 .DS_Store
 Thumbs.db
 opencode.json
+.codex
