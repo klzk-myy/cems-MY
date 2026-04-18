@@ -19,13 +19,6 @@ class JournalEntryWorkflowController extends Controller
         $this->workflowService = $workflowService;
     }
 
-    protected function requireManagerOrAdmin(): void
-    {
-        if (! auth()->user()->isManager()) {
-            abort(403, 'Unauthorized. Manager or Admin access required.');
-        }
-    }
-
     /**
      * Display workflow dashboard with pending entries.
      */

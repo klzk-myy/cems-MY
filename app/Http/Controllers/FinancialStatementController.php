@@ -25,13 +25,6 @@ class FinancialStatementController extends Controller
         $this->ratioService = $ratioService;
     }
 
-    protected function requireManagerOrAdmin(): void
-    {
-        if (! auth()->user()->isManager()) {
-            abort(403, 'Unauthorized. Manager or Admin access required.');
-        }
-    }
-
     public function trialBalance(Request $request)
     {
         $this->requireManagerOrAdmin();

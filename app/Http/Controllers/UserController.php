@@ -18,21 +18,6 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     /**
-     * Check if current user has admin privileges.
-     *
-     * Throws 403 if user is not an admin.
-     *
-     *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     */
-    protected function requireAdmin(): void
-    {
-        if (! auth()->user()->isAdmin()) {
-            abort(403, 'Unauthorized. Admin access required.');
-        }
-    }
-
-    /**
      * Display a paginated listing of all users.
      *
      * @return \Illuminate\View\View

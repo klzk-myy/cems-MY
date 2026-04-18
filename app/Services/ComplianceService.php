@@ -38,6 +38,11 @@ class ComplianceService
     protected MathService $mathService;
 
     /**
+     * Sanction screening service for fuzzy matching.
+     */
+    protected ?UnifiedSanctionScreeningService $screeningService;
+
+    /**
      * BNM STR filing deadline in working days.
      */
     public const STR_FILING_DEADLINE_DAYS = 3;
@@ -62,13 +67,16 @@ class ComplianceService
      *
      * @param  EncryptionService  $encryptionService  Service for data encryption
      * @param  MathService  $mathService  Service for high-precision calculations
+     * @param  UnifiedSanctionScreeningService|null  $screeningService  Service for sanctions screening
      */
     public function __construct(
         EncryptionService $encryptionService,
-        MathService $mathService
+        MathService $mathService,
+        ?UnifiedSanctionScreeningService $screeningService = null
     ) {
         $this->encryptionService = $encryptionService;
         $this->mathService = $mathService;
+        $this->screeningService = $screeningService;
     }
 
     /**
@@ -113,14 +121,21 @@ class ComplianceService
     /**
      * Check if customer matches any sanctions list entries.
      *
-     * Performs a case-insensitive fuzzy search on entity_name and aliases
-     * fields in the sanction_entries database table.
+     * Uses UnifiedSanctionScreeningService for fuzzy matching when available,
+     * with fallback to direct database query for backward compatibility.
      *
      * @param  Customer  $customer  The customer to screen against sanctions lists
      * @return bool True if customer matches any sanctions entry, false otherwise
      */
     public function checkSanctionMatch(Customer $customer): bool
     {
+        // Use the comprehensive screening service if available
+        if ($this->screeningService !== null) {
+            $result = $this->screeningService->screenCustomer($customer);
+            return $result->action !== 'clear';
+        }
+
+        // Fallback to direct query (legacy behavior)
         $customerName = $customer->full_name;
         if (! is_string($customerName) || trim($customerName) === '') {
             return false;

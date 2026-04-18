@@ -16,13 +16,6 @@ class FiscalYearController extends Controller
         $this->fiscalYearService = $fiscalYearService;
     }
 
-    protected function requireManagerOrAdmin(): void
-    {
-        if (! auth()->user()->isManager()) {
-            abort(403, 'Unauthorized. Manager or Admin access required.');
-        }
-    }
-
     /**
      * Display list of fiscal years.
      */

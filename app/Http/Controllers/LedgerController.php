@@ -14,13 +14,6 @@ class LedgerController extends Controller
         $this->ledgerService = $ledgerService;
     }
 
-    protected function requireManagerOrAdmin(): void
-    {
-        if (! auth()->user()->isManager()) {
-            abort(403, 'Unauthorized. Manager or Admin access required.');
-        }
-    }
-
     public function index()
     {
         $this->requireManagerOrAdmin();

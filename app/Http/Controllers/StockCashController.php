@@ -199,21 +199,6 @@ class StockCashController extends Controller
     }
 
     /**
-     * Format a monetary amount for display with 2 decimal places.
-     *
-     * @param  string|null  $amount  The amount to format
-     * @return string|null The formatted amount
-     */
-    protected function formatMonetaryAmount(?string $amount): ?string
-    {
-        if ($amount === null) {
-            return null;
-        }
-
-        return number_format((float) $amount, 2);
-    }
-
-    /**
      * Calculate sum of transaction amounts using MathService for precision.
      *
      * @param  \Illuminate\Support\Collection  $transactions
