@@ -1,0 +1,94 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.cems-my.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2.16'
+          extensions: bcmath, mysql, redis
+
+      - name: Install dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
+
+      - name: Add host to known hosts
+        run: ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to staging
+        run: |
+          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} << 'DEPLOY'
+            cd /var/www/cems-my-staging
+            
+            # Maintenance mode
+            php artisan down --message="Deploying updates..." --retry=60
+            
+            # Pull latest code
+            git pull origin develop
+            
+            # Install dependencies
+            composer install --no-dev --prefer-dist --no-interaction
+            
+            # Run migrations
+            php artisan migrate --force
+            
+            # Clear caches
+            php artisan cache:clear
+            php artisan config:clear
+            php artisan route:clear
+            php artisan view:clear
+            
+            # Optimize
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan optimize
+            
+            # Seed test data
+            php artisan db:seed --class=TestTransactionWizardSeeder --force
+            
+            # Storage permissions
+            chmod -R 775 storage bootstrap/cache
+            chown -R www-data:www-data storage
+            
+            # Restart queue workers
+            php artisan queue:restart
+            
+            # Bring back up
+            php artisan up
+          DEPLOY
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          curl -f https://staging.cems-my.com/health || exit 1
+          curl -f https://staging.cems-my.com/api/wizard/transactions/health || exit 1
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '✅' || '❌' }} Staging deployment ${{ job.status }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

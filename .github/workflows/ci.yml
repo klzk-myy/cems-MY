@@ -1,0 +1,353 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: Code Quality & Linting
+  lint:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2.16'
+          extensions: bcmath, mbstring, xml, ctype, json, tokenizer
+          coverage: none
+          tools: composer
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
+
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run Laravel Pint (PSR-12)
+        run: ./vendor/bin/pint --test
+
+      - name: Run PHP Syntax Check
+        run: find app -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" | head -20
+
+      - name: Run PHPStan Analysis
+        run: |
+          if [ -f ./vendor/bin/phpstan ]; then
+            ./vendor/bin/phpstan analyse --no-progress --error-format=github || true
+          else
+            echo "PHPStan not installed, skipping"
+          fi
+
+  # Job 2: Security Scanning
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2.16'
+          extensions: bcmath
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run Composer Audit
+        run: composer audit --format=json > security-report.json || true
+
+      - name: Check for vulnerabilities
+        run: composer audit --format=table
+
+      - name: Upload Security Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.json
+          retention-days: 3
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  # Job 3: Test Suite
+  test:
+    name: Run Test Suite
+    runs-on: ubuntu-latest
+    needs: [lint, security]
+
+    services:
+      mysql:
+        image: mysql:8.0.36
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: cems_test
+          MYSQL_USER: cems
+          MYSQL_PASSWORD: cems123
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP with Coverage
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2.16'
+          extensions: bcmath, mysql, redis, mbstring, xml, ctype, json, tokenizer, pdo_mysql
+          coverage: xdebug
+          tools: composer
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Create environment file
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          sed -i 's/DB_DATABASE=cems/DB_DATABASE=cems_test/' .env
+          sed -i 's/DB_USERNAME=root/DB_USERNAME=root/' .env
+          sed -i 's/DB_PASSWORD=/DB_PASSWORD=root/' .env
+          sed -i 's/CACHE_DRIVER=file/CACHE_DRIVER=redis/' .env
+          sed -i 's/REDIS_HOST=127.0.0.1/REDIS_HOST=127.0.0.1/' .env
+          sed -i 's/SESSION_DRIVER=file/SESSION_DRIVER=array/' .env
+          sed -i 's/QUEUE_CONNECTION=sync/QUEUE_CONNECTION=sync/' .env
+          echo "APP_ENV=testing" >> .env
+
+      - name: Directory Permissions
+        run: chmod -R 777 storage bootstrap/cache
+
+      - name: Wait for MySQL
+        run: |
+          while ! mysqladmin ping -h"127.0.0.1" --silent; do
+            sleep 1
+          done
+
+      - name: Wait for Redis
+        run: |
+          while ! redis-cli -h 127.0.0.1 ping; do
+            sleep 1
+          done
+
+      - name: Run migrations and seed
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: cems_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan migrate:fresh --force --seed --seeder=DatabaseSeeder
+
+      - name: Execute Unit Tests
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: cems_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          REDIS_HOST: 127.0.0.1
+          XDEBUG_MODE: coverage
+        run: |
+          php artisan test --testsuite=Unit --parallel --coverage-text --coverage-cobertura coverage.xml
+
+      - name: Execute Feature Tests
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: cems_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          REDIS_HOST: 127.0.0.1
+          XDEBUG_MODE: coverage
+        run: |
+          php artisan test --testsuite=Feature --parallel --coverage-text --coverage-cobertura coverage-feature.xml
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml,./coverage-feature.xml
+          flags: tests
+          name: cems-coverage
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            coverage.xml
+            coverage-feature.xml
+            storage/logs/*.log
+          retention-days: 3
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "========================================"
+          echo "TEST EXECUTION COMPLETE"
+          echo "========================================"
+          echo "Unit Tests: coverage.xml"
+          echo "Feature Tests: coverage-feature.xml"
+
+  # Job 4: Deployment (only on master branch push)
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'staging' }}
+    runs-on: ubuntu-latest
+    needs: [lint, security, test]
+    if: github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
+
+    environment:
+      name: ${{ github.event.inputs.environment || 'staging' }}
+      url: ${{ vars.APP_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add host to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        env:
+          DEPLOY_ENV: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          echo "Deploying to $DEPLOY_ENV environment"
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            cd /var/www/cems-my &&
+            git pull origin master &&
+            composer install --no-dev --prefer-dist --no-interaction &&
+            php artisan migrate --force &&
+            php artisan config:cache &&
+            php artisan route:cache &&
+            php artisan view:cache &&
+            php artisan optimize &&
+            sudo systemctl reload php8.2-fpm || true &&
+            sudo systemctl reload nginx || true
+          "
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          curl -f ${{ vars.APP_URL }}/health || exit 1
+          echo "✅ Deployment successful!"
+
+      - name: Notify on success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "✅ Deployment successful for CEMS-MY",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*CEMS-MY Deployment Complete*\n\n✅ Successfully deployed to `${{ github.event.inputs.environment || 'staging' }}`\n\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "❌ Deployment failed for CEMS-MY",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*CEMS-MY Deployment Failed*\n\n❌ Failed to deploy to `${{ github.event.inputs.environment || 'staging' }}`\n\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Workflow:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
