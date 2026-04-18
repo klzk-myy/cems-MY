@@ -13,19 +13,32 @@
 {{-- Filters --}}
 <div class="card mb-6">
     <div class="card-body">
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div class="form-group mb-0">
-                <label class="form-label">Search</label>
-                <input type="text" name="search" class="form-input" placeholder="Event or user..." value="{{ request('search') }}">
+                <label class="form-label">Action</label>
+                <select name="action" class="form-select">
+                    <option value="">All Actions</option>
+                    @foreach($actions ?? [] as $action)
+                        <option value="{{ $action }}" {{ request('action') === $action ? 'selected' : '' }}>{{ $action }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="form-group mb-0">
-                <label class="form-label">Event Type</label>
-                <select name="event_type" class="form-select">
-                    <option value="">All Events</option>
-                    <option value="transaction" {{ request('event_type') === 'transaction' ? 'selected' : '' }}>Transaction</option>
-                    <option value="user" {{ request('event_type') === 'user' ? 'selected' : '' }}>User</option>
-                    <option value="compliance" {{ request('event_type') === 'compliance' ? 'selected' : '' }}>Compliance</option>
-                    <option value="system" {{ request('event_type') === 'system' ? 'selected' : '' }}>System</option>
+                <label class="form-label">Severity</label>
+                <select name="severity" class="form-select">
+                    <option value="">All Severities</option>
+                    @foreach($severities ?? [] as $sev)
+                        <option value="{{ $sev }}" {{ request('severity') === $sev ? 'selected' : '' }}>{{ $sev }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group mb-0">
+                <label class="form-label">User</label>
+                <select name="user_id" class="form-select">
+                    <option value="">All Users</option>
+                    @foreach($users ?? [] as $user)
+                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->username }}</option>
+                    @endforeach
                 </select>
             </div>
             <div class="form-group mb-0">
@@ -36,8 +49,9 @@
                 <label class="form-label">Date To</label>
                 <input type="date" name="date_to" class="form-input" value="{{ request('date_to') }}">
             </div>
-            <div class="md:col-span-4 flex justify-end">
-                <button type="submit" class="btn btn-secondary">Apply Filters</button>
+            <div class="md:col-span-5 flex justify-end gap-2">
+                <a href="{{ route('audit.index') }}" class="btn btn-secondary">Clear</a>
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
             </div>
         </form>
     </div>
@@ -50,7 +64,8 @@
             <thead>
                 <tr>
                     <th>Timestamp</th>
-                    <th>Event</th>
+                    <th>Severity</th>
+                    <th>Action</th>
                     <th>User</th>
                     <th>IP Address</th>
                     <th>Description</th>
@@ -59,11 +74,15 @@
             <tbody>
                 @forelse($logs ?? [] as $log)
                 <tr>
-                    <td class="font-mono text-xs text-[--color-ink-muted]">
+                    <td class="font-mono text-xs text-[--color-ink-muted] whitespace-nowrap">
                         {{ $log->created_at->format('d M Y, H:i:s') }}
                     </td>
                     <td>
-                        <span class="badge badge-default">{{ $log->event_type ?? 'System' }}</span>
+                        @php $severityClass = match($log->severity) { 'CRITICAL' => 'danger', 'ERROR' => 'danger', 'WARNING' => 'warning', default => 'info' }; @endphp
+                        <span class="badge badge-{{ $severityClass }}">{{ $log->severity ?? 'INFO' }}</span>
+                    </td>
+                    <td>
+                        <span class="text-sm font-medium">{{ $log->action ?? 'N/A' }}</span>
                     </td>
                     <td>
                         <div class="flex items-center gap-2">
@@ -74,11 +93,11 @@
                         </div>
                     </td>
                     <td class="font-mono text-xs">{{ $log->ip_address ?? 'N/A' }}</td>
-                    <td class="text-sm">{{ $log->description ?? 'No description' }}</td>
+                    <td class="text-sm max-w-xs truncate" title="{{ $log->description ?? '' }}">{{ $log->description ?? 'No description' }}</td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="text-center py-8 text-[--color-ink-muted]">No audit logs found</td>
+                    <td colspan="6" class="text-center py-8 text-[--color-ink-muted]">No audit logs found</td>
                 </tr>
                 @endforelse
             </tbody>
