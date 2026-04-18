@@ -513,24 +513,6 @@ class CustomerController extends Controller
     }
 
     /**
-     * Calculate initial risk score based on customer attributes.
-     */
-    protected function calculateInitialRiskScore(array $data): int
-    {
-        $score = 0;
-
-        // PEP status
-        if (! empty($data['pep_status'])) {
-            $score += 40;
-        }
-
-        // High-risk nationality check would go here
-        // For now, we'll use the RiskRatingService
-
-        return min($score, 100);
-    }
-
-    /**
      * Validate MyKad ID format (12 digits in format XXXXXX-XX-XXXX).
      * Validates birthdate encoded in first 6 digits (YYMMDD).
      */

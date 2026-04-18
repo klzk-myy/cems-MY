@@ -79,11 +79,11 @@ class AlertTriageService
                 $score += 10;
             }
 
-            if ($customer->is_pep) {
+            if ($customer->isPep()) {
                 $score += 10;
             }
 
-            if ($customer->is_sanctioned) {
+            if ($customer->isSanctioned()) {
                 $score += 30;
             }
         }
@@ -220,12 +220,32 @@ class AlertTriageService
 
     /**
      * Get count of overdue alerts.
+     * Uses database-level filtering for efficiency.
      */
     protected function getOverdueCount(): int
     {
-        return Alert::whereNull('case_id')
-            ->get()
-            ->filter(fn ($alert) => $alert->isOverdue())
+        // Compute overdue in database based on SLA hours per priority
+        return DB::table('alerts')
+            ->whereNull('case_id')
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    // Critical: 4 hours
+                    $q->where('priority', AlertPriority::Critical->value)
+                      ->where('created_at', '<', now()->subHours(4));
+                })->orWhere(function ($q) {
+                    // High: 8 hours
+                    $q->where('priority', AlertPriority::High->value)
+                      ->where('created_at', '<', now()->subHours(8));
+                })->orWhere(function ($q) {
+                    // Medium: 24 hours
+                    $q->where('priority', AlertPriority::Medium->value)
+                      ->where('created_at', '<', now()->subHours(24));
+                })->orWhere(function ($q) {
+                    // Low: 72 hours
+                    $q->where('priority', AlertPriority::Low->value)
+                      ->where('created_at', '<', now()->subHours(72));
+                });
+            })
             ->count();
     }
 

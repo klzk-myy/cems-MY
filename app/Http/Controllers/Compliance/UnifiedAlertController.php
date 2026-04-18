@@ -99,7 +99,7 @@ class UnifiedAlertController extends Controller
             'customer' => $alert->customer ? [
                 'id' => $alert->customer->id,
                 'name' => $alert->customer->full_name,
-                'ic' => $alert->customer->ic_number,
+                'ic' => $alert->customer->id_number ?? null,
             ] : null,
             'assigned_to' => $alert->assignedTo ? $alert->assignedTo->username : null,
             'description' => Str::limit($alert->reason, 100),

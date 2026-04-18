@@ -8,8 +8,10 @@ use App\Enums\ComplianceCasePriority;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
+use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
+use App\Models\StrDraft;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -270,5 +272,67 @@ class ComplianceCase extends Model
     {
         return $query->where('sla_deadline', '<', now())
             ->where('status', '!=', ComplianceCaseStatus::Closed->value);
+    }
+
+    /**
+     * Get STR drafts linked to this case.
+     */
+    public function strDrafts(): HasMany
+    {
+        return $this->hasMany(StrDraft::class, 'case_id');
+    }
+
+    /**
+     * Get alerts linked to this case.
+     */
+    public function alerts(): HasMany
+    {
+        return $this->hasMany(Alert::class, 'case_id');
+    }
+
+    /**
+     * Check if the case can be resolved.
+     * All linked alerts must be resolved before the case can be resolved.
+     */
+    public function canBeResolved(): bool
+    {
+        // Case must not be already closed
+        if ($this->status === ComplianceCaseStatus::Closed) {
+            return false;
+        }
+
+        // All linked alerts must be resolved
+        $unresolvedAlerts = $this->alerts()
+            ->whereNotIn('status', [\App\Enums\FlagStatus::Resolved, \App\Enums\FlagStatus::Dismissed])
+            ->count();
+
+        return $unresolvedAlerts === 0;
+    }
+
+    /**
+     * Derive case priority from linked alerts.
+     * Returns the highest priority among all linked alerts.
+     */
+    public function derivePriorityFromAlerts(): ComplianceCasePriority
+    {
+        $alertPriorities = $this->alerts()
+            ->get()
+            ->map(fn ($alert) => $alert->priority)
+            ->filter();
+
+        if ($alertPriorities->isEmpty()) {
+            return ComplianceCasePriority::Medium;
+        }
+
+        $priorityOrder = [
+            ComplianceCasePriority::Critical => 1,
+            ComplianceCasePriority::High => 2,
+            ComplianceCasePriority::Medium => 3,
+            ComplianceCasePriority::Low => 4,
+        ];
+
+        return $alertPriorities->sort(fn ($a, $b) =>
+            ($priorityOrder[$a] ?? 99) <=> ($priorityOrder[$b] ?? 99)
+        )->first();
     }
 }

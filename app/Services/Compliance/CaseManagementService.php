@@ -5,7 +5,6 @@ namespace App\Services\Compliance;
 use App\Enums\AlertPriority;
 use App\Enums\CaseNoteType;
 use App\Enums\CaseResolution;
-use App\Enums\CaseStatus;
 use App\Enums\ComplianceCasePriority;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\ComplianceCaseType;
@@ -206,7 +205,7 @@ class CaseManagementService
             $case = ComplianceCase::create([
                 'case_number' => ComplianceCase::generateCaseNumber(),
                 'customer_id' => $customerId,
-                'status' => CaseStatus::Open,
+                'status' => ComplianceCaseStatus::Open,
                 'priority' => $priority,
                 'assigned_to' => null,
                 'opened_by' => $openedBy,
@@ -251,7 +250,7 @@ class CaseManagementService
 
             $sourceCase->strDrafts()->update(['case_id' => $targetCase->id]);
 
-            $sourceCase->update(['status' => CaseStatus::Closed]);
+            $sourceCase->update(['status' => ComplianceCaseStatus::Closed]);
 
             $this->recalculateCasePriority($targetCase);
             $this->recalculateCaseSla($targetCase);
@@ -263,11 +262,11 @@ class CaseManagementService
     /**
      * Update case status.
      */
-    public function updateStatus(ComplianceCase $case, CaseStatus $status): ComplianceCase
+    public function updateStatus(ComplianceCase $case, ComplianceCaseStatus $status): ComplianceCase
     {
         $case->update(['status' => $status]);
 
-        if ($status === CaseStatus::Resolved || $status === CaseStatus::Closed) {
+        if ($status === ComplianceCaseStatus::Closed) {
             $case->update(['resolved_at' => now()]);
         }
 
@@ -281,8 +280,8 @@ class CaseManagementService
     {
         $case->update(['assigned_to' => $userId]);
 
-        if ($case->status === CaseStatus::Open) {
-            $case->update(['status' => CaseStatus::InProgress]);
+        if ($case->status === ComplianceCaseStatus::Open) {
+            $case->update(['status' => ComplianceCaseStatus::UnderReview]);
         }
 
         return $case->fresh();
@@ -298,9 +297,8 @@ class CaseManagementService
         }
 
         $case->update([
-            'status' => CaseStatus::Resolved,
+            'status' => ComplianceCaseStatus::Closed,
             'resolved_at' => now(),
-            'notes' => $notes,
         ]);
 
         return $case->fresh();
@@ -368,7 +366,7 @@ class CaseManagementService
                 ->where('priority', AlertPriority::Low)->count(),
             'overdue' => ComplianceCase::open()
                 ->where('sla_deadline', '<', now())->count(),
-            'pending_review' => ComplianceCase::where('status', CaseStatus::PendingReview)->count(),
+            'pending_review' => ComplianceCase::where('status', ComplianceCaseStatus::PendingApproval)->count(),
         ];
     }
 
