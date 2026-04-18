@@ -16,7 +16,7 @@ use App\Services\MathService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class AnalyticsController extends \App\Http\Controllers\Report\ReportController
+class AnalyticsController extends \App\Http\Controllers\Controller
 {
     protected MathService $mathService;
 

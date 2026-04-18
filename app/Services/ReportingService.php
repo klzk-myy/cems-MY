@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\TransactionStatus;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
@@ -160,7 +159,7 @@ class ReportingService
         $transactions = Transaction::with(['customer', 'user'])
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('amount_local', '>=', self::CTR_THRESHOLD)
-            ->where('status', TransactionStatus::Completed->value)
+            ->where('status', 'Completed')
             ->orderBy('created_at')
             ->get();
 
@@ -204,7 +203,7 @@ class ReportingService
     public function generateMSB2Data(string $date): array
     {
         $transactions = Transaction::whereDate('created_at', $date)
-            ->where('status', TransactionStatus::Completed->value)
+            ->where('status', 'Completed')
             ->get();
 
         $currencies = Currency::where('is_active', true)->get();
@@ -313,13 +312,13 @@ class ReportingService
             $buyTxns = Transaction::whereBetween('created_at', [$startDate, $endDate])
                 ->where('currency_code', $currency->code)
                 ->where('type', 'Buy')
-                ->where('status', TransactionStatus::Completed->value)
+                ->where('status', 'Completed')
                 ->get();
 
             $sellTxns = Transaction::whereBetween('created_at', [$startDate, $endDate])
                 ->where('currency_code', $currency->code)
                 ->where('type', 'Sell')
-                ->where('status', TransactionStatus::Completed->value)
+                ->where('status', 'Completed')
                 ->get();
 
             $openingPosition = CurrencyPosition::where('currency_code', $currency->code)
@@ -341,7 +340,7 @@ class ReportingService
         }
 
         $customerCount = Transaction::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', TransactionStatus::Completed->value)
+            ->where('status', 'Completed')
             ->distinct('customer_id')
             ->count('customer_id');
 
@@ -426,7 +425,7 @@ class ReportingService
         $transactions = Transaction::with(['customer', 'user'])
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('amount_local', '>=', self::CTR_THRESHOLD)
-            ->where('status', TransactionStatus::Completed->value)
+            ->where('status', 'Completed')
             ->orderBy('created_at')
             ->get();
 

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\StockTransferStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,7 +32,6 @@ class StockTransfer extends Model
     ];
 
     protected $casts = [
-        'status' => StockTransferStatus::class,
         'requested_at' => 'datetime',
         'branch_manager_approved_at' => 'datetime',
         'hq_approved_at' => 'datetime',
@@ -41,6 +39,22 @@ class StockTransfer extends Model
         'completed_at' => 'datetime',
         'total_value_myr' => 'decimal:2',
     ];
+
+    public const STATUS_REQUESTED = 'Requested';
+
+    public const STATUS_BM_APPROVED = 'BranchManagerApproved';
+
+    public const STATUS_HQ_APPROVED = 'HQApproved';
+
+    public const STATUS_IN_TRANSIT = 'InTransit';
+
+    public const STATUS_PARTIALLY_RECEIVED = 'PartiallyReceived';
+
+    public const STATUS_COMPLETED = 'Completed';
+
+    public const STATUS_CANCELLED = 'Cancelled';
+
+    public const STATUS_REJECTED = 'Rejected';
 
     public const TYPE_STANDARD = 'Standard';
 
@@ -72,38 +86,38 @@ class StockTransfer extends Model
 
     public function scopePending($query)
     {
-        return $query->where('status', StockTransferStatus::Requested);
+        return $query->where('status', self::STATUS_REQUESTED);
     }
 
     public function scopeInTransit($query)
     {
-        return $query->where('status', StockTransferStatus::InTransit);
+        return $query->where('status', self::STATUS_IN_TRANSIT);
     }
 
     public function scopeCompleted($query)
     {
-        return $query->where('status', StockTransferStatus::Completed);
+        return $query->where('status', self::STATUS_COMPLETED);
     }
 
     public function isPending(): bool
     {
-        return $this->status === StockTransferStatus::Requested;
+        return $this->status === self::STATUS_REQUESTED;
     }
 
     public function isInTransit(): bool
     {
-        return $this->status === StockTransferStatus::InTransit;
+        return $this->status === self::STATUS_IN_TRANSIT;
     }
 
     public function isCompleted(): bool
     {
-        return $this->status === StockTransferStatus::Completed;
+        return $this->status === self::STATUS_COMPLETED;
     }
 
     public function approveByBranchManager(User $user): void
     {
         $this->update([
-            'status' => StockTransferStatus::BranchManagerApproved,
+            'status' => self::STATUS_BM_APPROVED,
             'branch_manager_approved_by' => $user->id,
             'branch_manager_approved_at' => now(),
         ]);
@@ -112,7 +126,7 @@ class StockTransfer extends Model
     public function approveByHQ(User $user): void
     {
         $this->update([
-            'status' => StockTransferStatus::HqApproved,
+            'status' => self::STATUS_HQ_APPROVED,
             'hq_approved_by' => $user->id,
             'hq_approved_at' => now(),
         ]);
@@ -121,7 +135,7 @@ class StockTransfer extends Model
     public function dispatch(): void
     {
         $this->update([
-            'status' => StockTransferStatus::InTransit,
+            'status' => self::STATUS_IN_TRANSIT,
             'dispatched_at' => now(),
         ]);
     }
@@ -129,7 +143,7 @@ class StockTransfer extends Model
     public function complete(): void
     {
         $this->update([
-            'status' => StockTransferStatus::Completed,
+            'status' => self::STATUS_COMPLETED,
             'completed_at' => now(),
         ]);
     }
@@ -137,7 +151,7 @@ class StockTransfer extends Model
     public function cancel(string $reason): void
     {
         $this->update([
-            'status' => StockTransferStatus::Cancelled,
+            'status' => self::STATUS_CANCELLED,
             'cancellation_reason' => $reason,
         ]);
     }

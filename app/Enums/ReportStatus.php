@@ -8,9 +8,6 @@ enum ReportStatus: string
     case Running = 'running';
     case Completed = 'completed';
     case Failed = 'failed';
-    case Pending = 'Pending';
-    case Generated = 'Generated';
-    case Submitted = 'Submitted';
 
     public function label(): string
     {

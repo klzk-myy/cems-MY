@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\CddLevel;
 use App\Enums\EddStatus;
-use App\Enums\TransactionStatus;
 use App\Events\RiskScoreCalculated;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
@@ -318,7 +317,7 @@ class UnifiedRiskScoringService
         if ($baseline) {
             $recentAvg = Transaction::where('customer_id', $customer->id)
                 ->where('created_at', '>=', now()->subDays(30))
-                ->where('status', '!=', TransactionStatus::Cancelled->value)
+                ->where('status', '!=', 'Cancelled')
                 ->avg('amount_local');
 
             if ($recentAvg && $baseline->avg_transaction_size_myr > 0) {
@@ -346,7 +345,7 @@ class UnifiedRiskScoringService
     {
         return Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subDays($days))
-            ->where('status', TransactionStatus::Completed->value)
+            ->where('status', 'Completed')
             ->get();
     }
 

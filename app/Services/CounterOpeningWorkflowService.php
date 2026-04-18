@@ -9,7 +9,6 @@ use App\Models\CounterSession;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use Exception;
-use Illuminate\Support\Facades\DB;
 
 class CounterOpeningWorkflowService
 {
@@ -52,44 +51,42 @@ class CounterOpeningWorkflowService
 
     public function approveAndOpen(User $manager, Counter $counter, User $teller, array $approvedAmounts, array $dailyLimits = []): CounterSession
     {
-        return DB::transaction(function () use ($manager, $counter, $teller, $approvedAmounts, $dailyLimits) {
-            $today = now()->toDateString();
+        $today = now()->toDateString();
 
-            $tellerAllocations = [];
-            foreach ($approvedAmounts as $currency => $amount) {
-                $allocation = TellerAllocation::where('user_id', $teller->id)
-                    ->where('currency_code', $currency)
-                    ->whereDate('session_date', $today)
-                    ->where('status', TellerAllocationStatus::PENDING->value)
-                    ->first();
+        $tellerAllocations = [];
+        foreach ($approvedAmounts as $currency => $amount) {
+            $allocation = TellerAllocation::where('user_id', $teller->id)
+                ->where('currency_code', $currency)
+                ->whereDate('session_date', $today)
+                ->where('status', TellerAllocationStatus::PENDING->value)
+                ->first();
 
-                if (! $allocation) {
-                    throw new Exception("No pending allocation found for {$currency}");
-                }
-
-                $dailyLimit = $dailyLimits[$currency] ?? null;
-                $this->tellerAllocationService->approveAllocation($allocation, $manager, $amount, $dailyLimit);
-                $this->tellerAllocationService->activateAllocation($allocation);
-
-                $tellerAllocations[] = $allocation;
+            if (! $allocation) {
+                throw new Exception("No pending allocation found for {$currency}");
             }
 
-            $openingFloats = [];
-            foreach ($tellerAllocations as $allocation) {
-                $openingFloats[] = [
-                    'currency_id' => $allocation->currency_code,
-                    'amount' => $allocation->current_balance,
-                ];
-            }
+            $dailyLimit = $dailyLimits[$currency] ?? null;
+            $this->tellerAllocationService->approveAllocation($allocation, $manager, $amount, $dailyLimit);
+            $this->tellerAllocationService->activateAllocation($allocation);
 
-            $session = $this->counterService->openSession($counter, $teller, $openingFloats);
+            $tellerAllocations[] = $allocation;
+        }
 
-            foreach ($tellerAllocations as $allocation) {
-                $allocation->update(['counter_id' => $counter->id]);
-            }
+        $openingFloats = [];
+        foreach ($tellerAllocations as $allocation) {
+            $openingFloats[] = [
+                'currency_id' => $allocation->currency_code,
+                'amount' => $allocation->current_balance,
+            ];
+        }
 
-            return $session;
-        });
+        $session = $this->counterService->openSession($counter, $teller, $openingFloats);
+
+        foreach ($tellerAllocations as $allocation) {
+            $allocation->update(['counter_id' => $counter->id]);
+        }
+
+        return $session;
     }
 
     public function getPendingRequestsForBranch(Branch $branch): array

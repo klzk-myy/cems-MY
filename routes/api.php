@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\V1\ScreeningController;
 use App\Http\Controllers\Api\V1\TransactionController as V1TransactionController;
 use App\Http\Controllers\Report\RegulatoryReportController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\SanctionController;
+use App\Http\Controllers\Api\V1\SanctionController;
 use App\Http\Controllers\StrController;
 use App\Http\Controllers\Transaction\TransactionApprovalController;
 use App\Http\Controllers\Transaction\TransactionCancellationController;

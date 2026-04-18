@@ -104,7 +104,7 @@ class RevaluationService
 
         return DB::transaction(function () use ($position, $oldRate, $newRate, $gainLoss, $date, $postedBy) {
             // Prevent double-counting: check if position was already revalued at this rate
-            if ($position->last_valuation_rate !== null && $this->mathService->compare($position->last_valuation_rate, $newRate) === 0) {
+            if ($position->last_valuation_rate !== null && bccomp($position->last_valuation_rate, $newRate, 10) === 0) {
                 return null;
             }
 
@@ -538,7 +538,7 @@ class RevaluationService
         $limits = config('cems.position_limits', []);
 
         // Check if this currency has a configured limit
-        if (isset($limits[$currencyCode]) && $this->mathService->compare($gainLossAmount, (string) $limits[$currencyCode]) > 0) {
+        if (isset($limits[$currencyCode]) && bccomp($gainLossAmount, (string) $limits[$currencyCode], 2) > 0) {
             $positionLimit = $limits[$currencyCode];
             $this->auditService->logPositionEvent('position_limit_breach', [
                 'new' => [

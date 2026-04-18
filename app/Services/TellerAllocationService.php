@@ -9,7 +9,6 @@ use App\Models\TellerAllocation;
 use App\Models\User;
 use Exception;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class TellerAllocationService
 {
@@ -80,35 +79,29 @@ class TellerAllocationService
 
     public function modifyAllocation(TellerAllocation $allocation, User $modifier, string $newAmount, bool $isIncrease): TellerAllocation
     {
-        return DB::transaction(function () use ($allocation, $modifier, $newAmount, $isIncrease) {
-            $locked = TellerAllocation::where('id', $allocation->id)
-                ->lockForUpdate()
-                ->first();
+        $branch = $allocation->branch;
 
-            $branch = $locked->branch;
+        if ($isIncrease) {
+            if (! $this->branchPoolService->allocateToTeller($branch, $allocation->currency_code, $newAmount)) {
+                throw new Exception('Failed to allocate additional amount from branch pool');
+            }
+            $allocation->current_balance = bcadd($allocation->current_balance, $newAmount, 4);
+            $allocation->allocated_amount = bcadd($allocation->allocated_amount, $newAmount, 4);
+        } else {
+            $availableToReturn = bcsub($allocation->allocated_amount, $allocation->current_balance, 4);
+            $returnAmount = $this->mathService->compare($newAmount, $availableToReturn) < 0 ? $newAmount : $availableToReturn;
 
-            if ($isIncrease) {
-                if (! $this->branchPoolService->allocateToTeller($branch, $locked->currency_code, $newAmount)) {
-                    throw new Exception('Failed to allocate additional amount from branch pool');
-                }
-                $locked->current_balance = $this->mathService->add($locked->current_balance, $newAmount);
-                $locked->allocated_amount = $this->mathService->add($locked->allocated_amount, $newAmount);
-            } else {
-                $availableToReturn = $this->mathService->subtract($locked->allocated_amount, $locked->current_balance);
-                $returnAmount = $this->mathService->compare($newAmount, $availableToReturn) < 0 ? $newAmount : $availableToReturn;
-
-                if ($this->mathService->compare($returnAmount, '0') > 0) {
-                    $this->branchPoolService->deallocateFromTeller($branch, $locked->currency_code, $returnAmount);
-                }
-
-                $locked->allocated_amount = $this->mathService->subtract($locked->allocated_amount, $newAmount);
-                $locked->current_balance = $this->mathService->subtract($locked->current_balance, $this->mathService->subtract($newAmount, $returnAmount));
+            if ($returnAmount > 0) {
+                $this->branchPoolService->deallocateFromTeller($branch, $allocation->currency_code, $returnAmount);
             }
 
-            $locked->save();
+            $allocation->allocated_amount = bcsub($allocation->allocated_amount, $newAmount, 4);
+            $allocation->current_balance = bcsub($allocation->current_balance, bcsub($newAmount, $returnAmount, 4), 4);
+        }
 
-            return $locked;
-        });
+        $allocation->save();
+
+        return $allocation;
     }
 
     public function returnToPool(TellerAllocation $allocation): TellerAllocation

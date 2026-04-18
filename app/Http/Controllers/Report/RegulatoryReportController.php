@@ -12,7 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class RegulatoryReportController extends \App\Http\Controllers\Report\ReportController
+class RegulatoryReportController extends \App\Http\Controllers\Controller
 {
     protected ReportingService $reportingService;
 

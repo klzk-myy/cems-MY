@@ -8,7 +8,7 @@ use App\Services\ReportingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class ReportController extends Report\ReportController
+class ReportController extends Controller
 {
     protected ReportingService $reportingService;
 
