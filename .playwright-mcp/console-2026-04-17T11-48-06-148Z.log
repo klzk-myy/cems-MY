@@ -1,5 +1,0 @@
-[      74ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
-[      74ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
-[      75ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://local.host/compliance/sanctions:0
-[     159ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://local.host/compliance/sanctions:183
-[     176ms] [LOG] {report: Object, shareableReport: Object, config: Object, solutions: Array(0), updateConfigEndpoint: /_ignition/update-config} {frames: Array(64), context_items: Object, custom_context_items: Array(0), type: web, entry_point: http://local.host/compliance/sanctions} @ http://local.host/compliance/sanctions:188

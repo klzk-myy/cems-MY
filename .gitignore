@@ -26,4 +26,5 @@ yarn-error.log
 /.playwright-mcp
 /.superpowers
 /.worktrees
+/.worktree
 /docker

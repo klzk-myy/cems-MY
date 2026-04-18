@@ -1,4 +1,0 @@
-[      37ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
-[      37ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
-[      40ms] [INFO] Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Instrument+Serif&family=Geist+Mono:wght@400;500&display=swap' violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The policy is report-only, so the violation has been logged but no further action has been taken. @ http://local.host/login:8
-[      43ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://local.host/login:0
