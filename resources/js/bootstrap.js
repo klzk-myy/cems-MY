@@ -1,1 +1,0 @@
-// Bootstrap JS - minimal implementation
