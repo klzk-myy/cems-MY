@@ -90,31 +90,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // POS Module - Point of Sale Interface
-    Route::prefix('pos')->name('pos.')->group(function () {
-        // Dashboard
-        Route::get('/', [PosController::class, 'index'])->name('index');
-
-        // Rates
-        Route::get('/rates', [PosRateController::class, 'index'])->name('rates.index');
-        Route::get('/rates/today', [PosRateController::class, 'getTodayRates'])->name('rates.today');
-        Route::post('/rates/set', [PosRateController::class, 'setDailyRates'])->name('rates.set');
-        Route::post('/rates/copy-yesterday', [PosRateController::class, 'copyYesterdayRates'])->name('rates.copy-yesterday');
-        Route::get('/rates/history', [PosRateController::class, 'getRateHistory'])->name('rates.history');
-
-        // Transactions
-        Route::get('/transactions', [PosTransactionController::class, 'index'])->name('transactions.index');
-        Route::get('/transactions/create', [PosTransactionController::class, 'create'])->name('transactions.create');
-        Route::post('/transactions/quote', [PosTransactionController::class, 'quote'])->name('transactions.quote');
-        Route::get('/transactions/{transaction}', [PosTransactionController::class, 'show'])->name('transactions.show');
-
-        // Inventory
-        Route::get('/inventory', [PosInventoryController::class, 'index'])->name('inventory.index');
-        Route::get('/inventory/aggregate', [PosInventoryController::class, 'aggregate'])->name('inventory.aggregate');
-        Route::get('/inventory/low-stock', [PosInventoryController::class, 'lowStock'])->name('inventory.low-stock');
-        Route::post('/inventory/eod', [PosInventoryController::class, 'eod'])->name('inventory.eod');
-    });
-
     // MFA Setup & Verification
     Route::prefix('mfa')->name('mfa.')->group(function () {
         Route::get('/setup', [MfaController::class, 'setup'])->name('setup');
