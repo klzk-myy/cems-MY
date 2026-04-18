@@ -59,11 +59,11 @@ class StockTransferService
         // Calculate and validate total value
         $calculatedTotal = '0';
         foreach ($data['items'] as $item) {
-            $itemValue = bcmul($item['quantity'], $item['rate'], 4);
-            $calculatedTotal = bcadd($calculatedTotal, $itemValue, 4);
+            $itemValue = $this->mathService->multiply($item['quantity'], $item['rate']);
+            $calculatedTotal = $this->mathService->add($calculatedTotal, $itemValue);
         }
 
-        if (isset($data['total_value_myr']) && bccomp($data['total_value_myr'], $calculatedTotal, 4) !== 0) {
+        if (isset($data['total_value_myr']) && $this->mathService->compare($data['total_value_myr'], $calculatedTotal) !== 0) {
             throw new \InvalidArgumentException('Total value does not match sum of item values');
         }
 
@@ -85,7 +85,7 @@ class StockTransferService
                     'currency_code' => $item['currency_code'],
                     'quantity' => $item['quantity'],
                     'rate' => $item['rate'],
-                    'value_myr' => bcmul($item['quantity'], $item['rate'], 4),
+                    'value_myr' => $this->mathService->multiply($item['quantity'], $item['rate']),
                 ]);
             }
 
@@ -148,18 +148,18 @@ class StockTransferService
                 if ($item) {
                     $item->update([
                         'quantity_received' => $itemData['quantity_received'],
-                        'quantity_in_transit' => bcsub($item->quantity, $itemData['quantity_received'], 4),
+                        'quantity_in_transit' => $this->mathService->subtract($item->quantity, $itemData['quantity_received']),
                     ]);
 
                     if ($item->hasVariance()) {
                         $item->update(['variance_notes' => "Variance: {$item->variance}"]);
 
-                        if (bccomp($item->quantity, '0', 4) > 0) {
+                        if ($this->mathService->compare($item->quantity, '0') > 0) {
                             $variancePercent = $this->mathService->multiply(
-                                $this->mathService->divide(abs($item->variance), $item->quantity, 4),
+                                $this->mathService->divide(abs($item->variance), $item->quantity),
                                 '100'
                             );
-                            if (bccomp($variancePercent, '5', 4) > 0) {
+                            if ($this->mathService->compare($variancePercent, '5') > 0) {
                                 $this->auditService->logWithSeverity(
                                     'stock_transfer_variance_exceeded',
                                     [
