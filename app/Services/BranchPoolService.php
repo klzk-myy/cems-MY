@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class BranchPoolService
 {
