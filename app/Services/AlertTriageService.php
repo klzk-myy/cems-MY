@@ -11,6 +11,8 @@ use App\Models\Compliance\ComplianceCase;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AlertTriageService
@@ -18,6 +20,7 @@ class AlertTriageService
     public function __construct(
         protected ComplianceService $complianceService,
         protected TransactionMonitoringService $monitoringService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     /**
@@ -62,11 +65,15 @@ class AlertTriageService
 
         if ($transaction) {
             $amount = (string) $transaction->amount_local;
-            if (bccomp($amount, '50000', 4) >= 0) {
+            $criticalThreshold = $this->thresholdService->getAlertCriticalThreshold();
+            $highThreshold = $this->thresholdService->getAlertHighThreshold();
+            $mediumThreshold = $this->thresholdService->getAlertMediumThreshold();
+
+            if ($criticalThreshold !== null && bccomp($amount, $criticalThreshold, 4) >= 0) {
                 $score += 30;
-            } elseif (bccomp($amount, '30000', 4) >= 0) {
+            } elseif ($highThreshold !== null && bccomp($amount, $highThreshold, 4) >= 0) {
                 $score += 20;
-            } elseif (bccomp($amount, '10000', 4) >= 0) {
+            } elseif ($mediumThreshold !== null && bccomp($amount, $mediumThreshold, 4) >= 0) {
                 $score += 10;
             }
         }
@@ -115,7 +122,7 @@ class AlertTriageService
     /**
      * Get unassigned alerts ordered by priority.
      */
-    public function getUnassignedAlerts(): \Illuminate\Database\Eloquent\Collection
+    public function getUnassignedAlerts(): Collection
     {
         return Alert::with(['customer', 'flaggedTransaction'])
             ->whereNull('case_id')
@@ -167,13 +174,13 @@ class AlertTriageService
     {
         return DB::transaction(function () use ($alert, $resolvedBy, $notes) {
             $alert->update([
-                'status' => \App\Enums\FlagStatus::Resolved,
+                'status' => FlagStatus::Resolved,
                 'case_id' => null,
             ]);
 
             if ($alert->flaggedTransaction) {
                 $alert->flaggedTransaction->update([
-                    'status' => \App\Enums\FlagStatus::Resolved,
+                    'status' => FlagStatus::Resolved,
                     'reviewed_by' => $resolvedBy,
                     'resolved_at' => now(),
                     'notes' => $notes,
@@ -187,9 +194,9 @@ class AlertTriageService
     /**
      * Get available compliance officers.
      */
-    protected function getAvailableOfficers(): \Illuminate\Database\Eloquent\Collection
+    protected function getAvailableOfficers(): Collection
     {
-        return \App\Models\User::whereHas('roles', function ($query) {
+        return User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['compliance', 'manager']);
         })
             ->where('is_active', true)
@@ -231,19 +238,19 @@ class AlertTriageService
                 $query->where(function ($q) {
                     // Critical: 4 hours
                     $q->where('priority', AlertPriority::Critical->value)
-                      ->where('created_at', '<', now()->subHours(4));
+                        ->where('created_at', '<', now()->subHours(4));
                 })->orWhere(function ($q) {
                     // High: 8 hours
                     $q->where('priority', AlertPriority::High->value)
-                      ->where('created_at', '<', now()->subHours(8));
+                        ->where('created_at', '<', now()->subHours(8));
                 })->orWhere(function ($q) {
                     // Medium: 24 hours
                     $q->where('priority', AlertPriority::Medium->value)
-                      ->where('created_at', '<', now()->subHours(24));
+                        ->where('created_at', '<', now()->subHours(24));
                 })->orWhere(function ($q) {
                     // Low: 72 hours
                     $q->where('priority', AlertPriority::Low->value)
-                      ->where('created_at', '<', now()->subHours(72));
+                        ->where('created_at', '<', now()->subHours(72));
                 });
             })
             ->count();
@@ -311,7 +318,7 @@ class AlertTriageService
                         continue;
                     }
 
-                    if ($alert->status === \App\Enums\FlagStatus::Resolved) {
+                    if ($alert->status === FlagStatus::Resolved) {
                         $results['failed']++;
                         $results['errors'][] = "Alert {$alertId} is already resolved";
 
@@ -367,7 +374,7 @@ class AlertTriageService
     /**
      * Get alerts by IDs for bulk operations.
      */
-    public function getByIds(array $alertIds): \Illuminate\Database\Eloquent\Collection
+    public function getByIds(array $alertIds): Collection
     {
         return Alert::with(['customer', 'flaggedTransaction', 'assignedTo'])
             ->whereIn('id', $alertIds)
