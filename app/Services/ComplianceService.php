@@ -43,6 +43,11 @@ class ComplianceService
     protected ?UnifiedSanctionScreeningService $screeningService;
 
     /**
+     * Threshold service for dynamic threshold values.
+     */
+    protected ?ThresholdService $thresholdService;
+
+    /**
      * BNM STR filing deadline in working days.
      */
     public const STR_FILING_DEADLINE_DAYS = 3;
@@ -68,15 +73,18 @@ class ComplianceService
      * @param  EncryptionService  $encryptionService  Service for data encryption
      * @param  MathService  $mathService  Service for high-precision calculations
      * @param  UnifiedSanctionScreeningService|null  $screeningService  Service for sanctions screening
+     * @param  ThresholdService|null  $thresholdService  Service for dynamic thresholds
      */
     public function __construct(
         EncryptionService $encryptionService,
         MathService $mathService,
-        ?UnifiedSanctionScreeningService $screeningService = null
+        ?UnifiedSanctionScreeningService $screeningService = null,
+        ?ThresholdService $thresholdService = null
     ) {
         $this->encryptionService = $encryptionService;
         $this->mathService = $mathService;
         $this->screeningService = $screeningService;
+        $this->thresholdService = $thresholdService ?? new ThresholdService;
     }
 
     /**
@@ -107,11 +115,11 @@ class ComplianceService
             return CddLevel::Enhanced;
         }
 
-        if ($this->mathService->compare($amount, self::LARGE_TRANSACTION_THRESHOLD) >= 0 || $customer->risk_rating === 'High') {
+        if ($this->mathService->compare($amount, $this->thresholdService->getLargeTransactionThreshold()) >= 0 || $customer->risk_rating === 'High') {
             return CddLevel::Enhanced;
         }
 
-        if ($this->mathService->compare($amount, self::STANDARD_CDD_THRESHOLD) >= 0) {
+        if ($this->mathService->compare($amount, $this->thresholdService->getStandardCddThreshold()) >= 0) {
             return CddLevel::Standard;
         }
 
@@ -132,6 +140,7 @@ class ComplianceService
         // Use the comprehensive screening service if available
         if ($this->screeningService !== null) {
             $result = $this->screeningService->screenCustomer($customer);
+
             return $result->action !== 'clear';
         }
 
@@ -186,8 +195,8 @@ class ComplianceService
         return [
             'amount_24h' => (string) $velocity,
             'with_new_transaction' => $total,
-            'threshold_exceeded' => $this->mathService->compare($total, self::LARGE_TRANSACTION_THRESHOLD) >= 0,
-            'threshold_amount' => self::LARGE_TRANSACTION_THRESHOLD,
+            'threshold_exceeded' => $this->mathService->compare($total, $this->thresholdService->getLargeTransactionThreshold()) >= 0,
+            'threshold_amount' => $this->thresholdService->getLargeTransactionThreshold(),
         ];
     }
 
@@ -206,7 +215,7 @@ class ComplianceService
         $oneHourAgo = now()->subHour();
         $smallTransactions = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $oneHourAgo)
-            ->where('amount_local', '<', self::STANDARD_CDD_THRESHOLD)
+            ->where('amount_local', '<', $this->thresholdService->getStructuringSubThreshold())
             ->count();
 
         return $smallTransactions >= 3;
@@ -235,7 +244,7 @@ class ComplianceService
     {
         $reasons = [];
 
-        if ($this->mathService->compare($amount, self::LARGE_TRANSACTION_THRESHOLD) >= 0) {
+        if ($this->mathService->compare($amount, $this->thresholdService->getLargeTransactionThreshold()) >= 0) {
             $reasons[] = ComplianceFlagType::EddRequired->value;
         }
 
@@ -294,14 +303,14 @@ class ComplianceService
 
         $thresholdExceeded = $this->mathService->compare(
             $totalAggregate,
-            self::LARGE_TRANSACTION_THRESHOLD
+            $this->thresholdService->getLargeTransactionThreshold()
         ) > 0;
 
         return [
             'has_aggregate_concern' => $thresholdExceeded && count($relatedIds) > 0,
             'total_aggregate' => $totalAggregate,
             'transaction_count' => count($relatedIds) + 1,
-            'threshold_amount' => self::LARGE_TRANSACTION_THRESHOLD,
+            'threshold_amount' => $this->thresholdService->getLargeTransactionThreshold(),
             'related_transactions' => $relatedIds,
         ];
     }
@@ -400,7 +409,7 @@ class ComplianceService
         }
 
         // Large transaction threshold
-        if ($this->mathService->compare((string) $transaction->amount_local, self::LARGE_TRANSACTION_THRESHOLD) < 0) {
+        if ($this->mathService->compare((string) $transaction->amount_local, $this->thresholdService->getLargeTransactionThreshold()) < 0) {
             return [
                 'has_duration_concern' => false,
                 'hours_on_hold' => 0,
@@ -415,11 +424,12 @@ class ComplianceService
 
         $hoursOnHold = $createdAt->diffInHours(now());
 
-        // Warning at 24 hours, critical at 48 hours for large transactions
-        $thresholdHours = 24;
+        // Warning at configured hours, critical at double for large transactions
+        $thresholdHours = $this->thresholdService->getDurationWarningHours();
+        $criticalHours = $this->thresholdService->getDurationCriticalHours();
         $severity = 'warning';
 
-        if ($hoursOnHold >= 48) {
+        if ($hoursOnHold >= $criticalHours) {
             $severity = 'critical';
         }
 
@@ -447,7 +457,7 @@ class ComplianceService
             return false;
         }
 
-        return $this->mathService->compare($amount, self::CTOS_THRESHOLD) >= 0;
+        return $this->mathService->compare($amount, $this->thresholdService->getCtosThreshold()) >= 0;
     }
 
     /**
