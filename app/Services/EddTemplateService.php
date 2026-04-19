@@ -12,6 +12,10 @@ use Illuminate\Support\Collection;
 
 class EddTemplateService
 {
+    public function __construct(
+        protected ThresholdService $thresholdService
+    ) {}
+
     /**
      * Create an EDD record from a template.
      */
@@ -118,7 +122,7 @@ class EddTemplateService
             return EddRiskLevel::Critical;
         }
 
-        if ($context['transaction_amount'] ?? 0 >= 50000) {
+        if (bccomp((string) ($context['transaction_amount'] ?? 0), $this->thresholdService->getEddThreshold(), 4) >= 0) {
             return EddRiskLevel::High;
         }
 
@@ -276,7 +280,7 @@ class EddTemplateService
             return EddTemplate::active()->byType(EddTemplateType::HighRiskCountry)->first();
         }
 
-        if ($context['transaction_amount'] ?? 0 >= 50000) {
+        if (bccomp((string) ($context['transaction_amount'] ?? 0), $this->thresholdService->getEddThreshold(), 4) >= 0) {
             return EddTemplate::active()->byType(EddTemplateType::LargeTransaction)->first();
         }
 

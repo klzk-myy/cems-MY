@@ -17,6 +17,10 @@ class RiskRatingService
         'unusual_pattern' => 10,
     ];
 
+    public function __construct(
+        protected ThresholdService $thresholdService
+    ) {}
+
     public function calculateRiskScore(Customer $customer): int
     {
         $score = 0;
@@ -93,10 +97,11 @@ class RiskRatingService
     protected function isCashIntensive(int $customerId): bool
     {
         $thirtyDaysAgo = now()->subDays(30);
+        $largeCashThreshold = $this->thresholdService->getRiskMediumThreshold();
         $largeCashCount = DB::table('transactions')
             ->where('customer_id', $customerId)
             ->where('created_at', '>=', $thirtyDaysAgo)
-            ->where('amount_local', '>', 10000)
+            ->where('amount_local', '>', $largeCashThreshold)
             ->count();
 
         return $largeCashCount > 3;

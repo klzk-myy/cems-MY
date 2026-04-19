@@ -12,7 +12,8 @@ class HistoricalRiskAnalysisService
 {
     public function __construct(
         protected MathService $mathService,
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected ThresholdService $thresholdService
     ) {}
 
     /**
@@ -72,13 +73,13 @@ class HistoricalRiskAnalysisService
      */
     private function checkStructuringRisk(Customer $customer, RiskAnalysisResult $result): void
     {
-        $structuringThreshold = '3000';
+        $structuringThreshold = $this->thresholdService->getStructuringSubThreshold();
         $structuringWindow = Carbon::now()->subHours(1);
 
         $structuringCount = Transaction::where('customer_id', $customer->id)
             ->where('created_at', '>=', $structuringWindow)
             ->where('amount_local', '<', $structuringThreshold)
-            ->where('amount_local', '>=', '2500')
+            ->where('amount_local', '>=', $this->thresholdService->getStandardCddThreshold())
             ->where('status', '!=', 'cancelled')
             ->count();
 
@@ -176,7 +177,7 @@ class HistoricalRiskAnalysisService
         string $currentAmount,
         RiskAnalysisResult $result
     ): void {
-        $cumulativeThreshold = '50000';
+        $cumulativeThreshold = $this->thresholdService->getVelocityAlertThreshold();
         $window = Carbon::now()->subDays(7);
 
         $weekTotal = Transaction::where('customer_id', $customer->id)

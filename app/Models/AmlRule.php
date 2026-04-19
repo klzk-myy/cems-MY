@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 /**
  * AML Rule Model
@@ -136,7 +137,7 @@ class AmlRule extends Model
                 default => false,
             };
         } catch (\Exception $e) {
-            \Log::error('AML Rule evaluation error', [
+            Log::error('AML Rule evaluation error', [
                 'rule_id' => $this->id,
                 'rule_code' => $this->rule_code,
                 'error' => $e->getMessage(),
@@ -197,7 +198,7 @@ class AmlRule extends Model
     {
         $windowDays = $conditions['window_days'] ?? 1;
         $minTransactionCount = $conditions['min_transaction_count'] ?? 3;
-        $aggregateThreshold = $conditions['aggregate_threshold'] ?? 50000;
+        $aggregateThreshold = $conditions['aggregate_threshold'] ?? config('thresholds.structuring.aggregate_threshold', '50000');
 
         $windowStart = now()->subDays($windowDays);
 
@@ -225,7 +226,7 @@ class AmlRule extends Model
      */
     protected function evaluateAmountThreshold(Transaction $transaction, array $conditions): bool
     {
-        $minAmount = $conditions['min_amount'] ?? 50000;
+        $minAmount = $conditions['min_amount'] ?? config('thresholds.aml.amount_threshold', '50000');
         $currency = $conditions['currency'] ?? 'MYR';
 
         // Check if transaction currency matches (or defaults to MYR)
