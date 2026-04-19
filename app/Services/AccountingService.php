@@ -7,6 +7,12 @@ use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
+use App\Exceptions\Domain\UnbalancedJournalException;
+use App\Exceptions\Domain\ClosedPeriodException;
+use App\Exceptions\Domain\EntryAlreadyReversedException;
+use App\Exceptions\Domain\EntryNotPostedException;
+use App\Exceptions\Domain\InvalidJournalStatusException;
+use App\Exceptions\Domain\AccountNotFoundException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -75,18 +81,19 @@ class AccountingService
 
         return DB::transaction(function () use ($lines, $referenceType, $referenceId, $description, $entryDate, $createdBy) {
             if (! $this->validateBalanced($lines)) {
-                throw new \InvalidArgumentException('Journal entry is not balanced: debits do not equal credits');
+                throw new UnbalancedJournalException(
+                    $this->calculateTotalDebits($lines),
+                    $this->calculateTotalCredits($lines)
+                );
             }
 
             // Find the accounting period for this entry date
             $period = AccountingPeriod::forDate($entryDate)->first();
 
-            // Validate that the period is open (if period exists)
-            if ($period && ! $period->isOpen()) {
-                throw new \InvalidArgumentException(
-                    "Cannot create entry in closed period {$period->period_code}. Please use an open period or contact administrator."
-                );
-            }
+        // Validate that the period is open (if period exists)
+        if ($period && ! $period->isOpen()) {
+            throw new ClosedPeriodException($period->period_code);
+        }
 
             // Create entry in Draft status - does NOT post to ledger yet
             $entry = JournalEntry::create([
@@ -146,7 +153,7 @@ class AccountingService
         // Perform the status update inside transaction, then refresh AFTER commit
         $entry = DB::transaction(function () use ($entry) {
             if (! $entry->isDraft()) {
-                throw new \InvalidArgumentException('Only draft entries can be submitted for approval');
+                throw new InvalidJournalStatusException('Draft', $entry->status ?? 'unknown');
             }
 
             $entry->update([
@@ -191,16 +198,14 @@ class AccountingService
 
         // The model's status should already be 'Pending' after submitForApproval
         if (! $entry->isPending()) {
-            throw new \InvalidArgumentException('Only pending entries can be approved');
+            throw new InvalidJournalStatusException('Pending', $entry->status ?? 'unknown');
         }
 
         // Re-validate period is still open before posting (could have been closed since submission)
         if ($entry->period_id) {
             $period = AccountingPeriod::find($entry->period_id);
             if ($period && ! $period->isOpen()) {
-                throw new \InvalidArgumentException(
-                    "Cannot approve entry - period {$period->period_code} is closed"
-                );
+                throw new ClosedPeriodException($period->period_code);
             }
         }
 
@@ -257,7 +262,7 @@ class AccountingService
             $entry = JournalEntry::find($entry->id);
 
             if (! $entry->isPending()) {
-                throw new \InvalidArgumentException('Only pending entries can be rejected');
+                throw new InvalidJournalStatusException('Pending', $entry->status ?? 'unknown');
             }
 
             $entry->update([
@@ -329,12 +334,12 @@ class AccountingService
 
             // Validation 1: Check if entry is already reversed
             if ($originalEntry->isReversed()) {
-                throw new \InvalidArgumentException('Entry has already been reversed');
+                throw new EntryAlreadyReversedException($originalEntry->id);
             }
 
             // Validation 2: Check if entry is posted (can only reverse posted entries)
             if (! $originalEntry->isPosted()) {
-                throw new \InvalidArgumentException('Entry must be Posted to be reversed');
+                throw new EntryNotPostedException($originalEntry->id);
             }
 
             // Load lines if not already loaded
@@ -422,7 +427,7 @@ class AccountingService
     {
         $account = ChartOfAccount::find($accountCode);
         if (! $account) {
-            throw new \InvalidArgumentException("Account not found: {$accountCode}");
+            throw new AccountNotFoundException($accountCode);
         }
 
         return in_array($account->account_type, ['Asset', 'Expense']);

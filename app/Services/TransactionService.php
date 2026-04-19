@@ -10,9 +10,16 @@ use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionApproved;
 use App\Events\TransactionCreated;
+use App\Exceptions\Domain\AllocationValidationException;
+use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
+use App\Exceptions\Domain\InvalidCurrencyException;
+use App\Exceptions\Domain\InvalidDeferralException;
+use App\Exceptions\Domain\InvalidIpAddressException;
+use App\Exceptions\Domain\InvalidTransactionStateException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
+use App\Exceptions\Domain\TillClosedException;
 use App\Models\ApprovalTask;
 use App\Models\Currency;
 use App\Models\Customer;
@@ -58,7 +65,7 @@ class TransactionService
             ->first();
 
         if (! $currency) {
-            throw new \InvalidArgumentException("Invalid or inactive currency code: {$currencyCode}");
+            throw new InvalidCurrencyException($currencyCode);
         }
     }
 
@@ -80,7 +87,7 @@ class TransactionService
 
         // Validate IP address format
         if ($ipAddress && ! filter_var($ipAddress, FILTER_VALIDATE_IP)) {
-            throw new \InvalidArgumentException('Invalid IP address format.');
+            throw new InvalidIpAddressException($ipAddress);
         }
 
         // Verify till is open for this currency
@@ -91,7 +98,7 @@ class TransactionService
             ->first();
 
         if (! $tillBalance) {
-            throw new \InvalidArgumentException('Till is not open for this currency. Please open the till first.');
+            throw new TillBalanceMissingException($data['currency_code'], $data['till_id']);
         }
 
         // Get customer and calculate amounts
@@ -115,9 +122,9 @@ class TransactionService
                     $isBuy
                 );
 
-                if (! $validationResult['valid']) {
-                    throw new \InvalidArgumentException('Allocation validation failed: '.$validationResult['reason']);
-                }
+            if (! $validationResult['valid']) {
+                throw new AllocationValidationException($validationResult['reason']);
+            }
 
                 $allocationForUpdate = $validationResult['allocation'];
             } else {
@@ -245,7 +252,7 @@ class TransactionService
                     'WARNING'
                 );
 
-                throw new \InvalidArgumentException('Potential duplicate transaction detected. Please wait 30 seconds before submitting again or check your recent transactions.');
+                throw new DuplicateTransactionException();
             }
 
             $transaction = Transaction::create([

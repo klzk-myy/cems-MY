@@ -143,8 +143,8 @@ class MathService
      *
      * Formula: Foreign Amount × Exchange Rate
      *
-     * @param  string  $foreignAmount  Amount in foreign currency
-     * @param  string  $rate  Exchange rate
+     * @param string $foreignAmount Amount in foreign currency
+     * @param string $rate Exchange rate
      * @return string Amount in local currency (MYR)
      */
     public function calculateTransactionAmount(
@@ -152,5 +152,34 @@ class MathService
         string $rate
     ): string {
         return $this->multiply($foreignAmount, $rate);
+    }
+
+    /**
+     * Get the absolute value of a number.
+     *
+     * @param string $number The number
+     * @return string Absolute value
+     */
+    public function abs(string $number): string
+    {
+        if (bccomp($number, '0', $this->scale) < 0) {
+            return bcsub('0', $number, $this->scale);
+        }
+        return $number;
+    }
+
+    /**
+     * Round a number to specified decimal places.
+     *
+     * @param string $number The number to round
+     * @param int $precision Number of decimal places
+     * @return string Rounded number
+     */
+    public function round(string $number, int $precision = 0): string
+    {
+        $multiplier = bcpow('10', (string) $precision, $this->scale);
+        $multiplied = bcmul($number, $multiplier, $this->scale);
+        $rounded = round((float) $multiplied);
+        return bcdiv((string) $rounded, $multiplier, $precision);
     }
 }

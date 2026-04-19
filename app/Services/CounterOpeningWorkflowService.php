@@ -8,7 +8,9 @@ use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\TellerAllocation;
 use App\Models\User;
-use Exception;
+use App\Exceptions\Domain\TellerBranchRequiredException;
+use App\Exceptions\Domain\InsufficientPoolBalanceException;
+use App\Exceptions\Domain\PendingAllocationNotFoundException;
 
 class CounterOpeningWorkflowService
 {
@@ -23,7 +25,7 @@ class CounterOpeningWorkflowService
         $branch = $teller->branch;
 
         if (! $branch) {
-            throw new Exception('Teller must be assigned to a branch');
+            throw new TellerBranchRequiredException();
         }
 
         $requests = [];
@@ -31,7 +33,7 @@ class CounterOpeningWorkflowService
             $pool = $this->branchPoolService->getOrCreateForBranch($branch, $currency);
 
             if (! $pool->hasAvailable($amount)) {
-                throw new Exception("Insufficient {$currency} balance in branch pool. Available: {$pool->available_balance}");
+                throw new InsufficientPoolBalanceException($currency, $pool->available_balance, $amount);
             }
 
             $allocation = $this->tellerAllocationService->requestAllocation(
@@ -62,7 +64,7 @@ class CounterOpeningWorkflowService
                 ->first();
 
             if (! $allocation) {
-                throw new Exception("No pending allocation found for {$currency}");
+                throw new PendingAllocationNotFoundException($currency);
             }
 
             $dailyLimit = $dailyLimits[$currency] ?? null;

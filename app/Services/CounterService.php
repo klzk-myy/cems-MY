@@ -4,8 +4,12 @@ namespace App\Services;
 
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
+use App\Exceptions\Domain\SessionClosedException;
+use App\Exceptions\Domain\SessionOwnershipException;
+use App\Exceptions\Domain\SupervisorRequiredException;
 use App\Exceptions\Domain\TillAlreadyOpenException;
 use App\Exceptions\Domain\UserAlreadyAtCounterException;
+use App\Exceptions\Domain\VarianceThresholdException;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\Currency;
@@ -14,7 +18,6 @@ use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\User;
 use App\Support\BcmathHelper;
-use Exception;
 use Illuminate\Support\Facades\DB;
 
 class CounterService
@@ -99,7 +102,7 @@ class CounterService
     public function closeSession(CounterSession $session, User $user, array $closingFloats, ?string $notes = null, ?User $supervisor = null): CounterSession
     {
         if (! $session->isOpen()) {
-            throw new Exception('Session is not open');
+            throw new SessionClosedException();
         }
 
         $now = now();
@@ -152,11 +155,11 @@ class CounterService
                 // Validate variance thresholds
                 if (BcmathHelper::gt(BcmathHelper::abs($variance), (string) self::VARIANCE_THRESHOLD_RED)) {
                     if (! $supervisor || ! $supervisor->isManager()) {
-                        throw new Exception('Variance exceeds red threshold, requires supervisor approval');
+                        throw new VarianceThresholdException('red', true);
                     }
                 } elseif (BcmathHelper::gt(BcmathHelper::abs($variance), (string) self::VARIANCE_THRESHOLD_YELLOW)) {
                     if (empty($notes)) {
-                        throw new Exception('Variance exceeds yellow threshold, requires explanation notes');
+                        throw new VarianceThresholdException('yellow', false);
                     }
                 }
 
@@ -275,17 +278,17 @@ class CounterService
     ): array {
         // Validate supervisor role
         if (! $supervisor->isManager()) {
-            throw new Exception('Supervisor must be a manager or admin');
+            throw new SupervisorRequiredException();
         }
 
         // Validate session is open
         if (! $session->isOpen()) {
-            throw new Exception('Session is not open');
+            throw new SessionClosedException();
         }
 
         // Validate fromUser is the session user
         if ($session->user_id !== $fromUser->id) {
-            throw new Exception('Session does not belong to the specified user');
+            throw new SessionOwnershipException();
         }
 
         // Validate toUser is not already at another counter (with lock to prevent race condition)
@@ -295,7 +298,7 @@ class CounterService
             ->first();
 
         if ($existingSession && $existingSession->id !== $session->id) {
-            throw new Exception('User is already at another counter');
+            throw new UserAlreadyAtCounterException();
         }
 
         $now = now();
@@ -382,7 +385,7 @@ class CounterService
                 $absVar = BcmathHelper::abs($variance);
                 if (BcmathHelper::gt($absVar, (string) self::VARIANCE_THRESHOLD_RED)) {
                     if (! $supervisor || ! $supervisor->isManager()) {
-                        throw new Exception('Variance exceeds red threshold, requires supervisor approval');
+                        throw new VarianceThresholdException('red', true);
                     }
                 }
                 // Yellow threshold does not block handover; it's for information

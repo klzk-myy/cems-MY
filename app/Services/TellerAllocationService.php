@@ -7,7 +7,10 @@ use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\TellerAllocation;
 use App\Models\User;
-use Exception;
+use App\Exceptions\Domain\TellerBranchRequiredException;
+use App\Exceptions\Domain\InsufficientPoolBalanceException;
+use App\Exceptions\Domain\PoolAllocationException;
+use App\Exceptions\Domain\InvalidAllocationStateException;
 use Illuminate\Support\Collection;
 
 class TellerAllocationService
@@ -22,13 +25,13 @@ class TellerAllocationService
         $branch = $teller->branch;
 
         if (! $branch) {
-            throw new Exception('Teller must be assigned to a branch');
+            throw new TellerBranchRequiredException();
         }
 
         $pool = $this->branchPoolService->getOrCreateForBranch($branch, $currencyCode);
 
         if (! $pool->hasAvailable($requestedAmount)) {
-            throw new Exception('Insufficient available balance in branch pool');
+            throw new InsufficientPoolBalanceException('branch_pool', '0', 'requested');
         }
 
         $allocationData = [
@@ -58,7 +61,7 @@ class TellerAllocationService
         $branch = $allocation->branch;
 
         if (! $this->branchPoolService->allocateToTeller($branch, $allocation->currency_code, $approvedAmount)) {
-            throw new Exception('Failed to allocate from branch pool');
+            throw new PoolAllocationException();
         }
 
         $allocation->approve($approver, $approvedAmount, $dailyLimitMyr);
@@ -69,7 +72,7 @@ class TellerAllocationService
     public function activateAllocation(TellerAllocation $allocation): TellerAllocation
     {
         if (! $allocation->isApproved()) {
-            throw new Exception('Can only activate approved allocation');
+            throw new InvalidAllocationStateException();
         }
 
         $allocation->activate();
@@ -83,7 +86,7 @@ class TellerAllocationService
 
         if ($isIncrease) {
             if (! $this->branchPoolService->allocateToTeller($branch, $allocation->currency_code, $newAmount)) {
-                throw new Exception('Failed to allocate additional amount from branch pool');
+                throw new PoolAllocationException('Failed to allocate additional amount from branch pool');
             }
             $allocation->current_balance = bcadd($allocation->current_balance, $newAmount, 4);
             $allocation->allocated_amount = bcadd($allocation->allocated_amount, $newAmount, 4);

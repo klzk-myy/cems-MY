@@ -797,4 +797,61 @@ class AuditService
     {
         return SystemLog::whereNull('entry_hash')->count();
     }
+
+    /**
+     * Batch insert multiple audit log entries.
+     *
+     * More efficient than individual inserts for bulk operations.
+     * Creates entries with null hashes - SealAuditHashJob will seal them async.
+     *
+     * @param array $logs Array of log data arrays
+     * @return bool True if insert succeeded
+     */
+    public function logBatch(array $logs): bool
+    {
+        if (empty($logs)) {
+            return true;
+        }
+
+        $now = now();
+        $ipAddress = Request::ip();
+        $userAgent = Request::userAgent();
+        $sessionId = session()->getId();
+
+        $batchData = array_map(function ($log) use ($now, $ipAddress, $userAgent, $sessionId) {
+            return [
+                'user_id' => $log['user_id'] ?? auth()->id(),
+                'action' => $log['action'],
+                'severity' => $log['severity'] ?? 'INFO',
+                'entity_type' => $log['entity_type'] ?? null,
+                'entity_id' => $log['entity_id'] ?? null,
+                'old_values' => ! empty($log['old_values'] ?? []) ? $log['old_values'] : null,
+                'new_values' => ! empty($log['new_values'] ?? []) ? $log['new_values'] : null,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'session_id' => $sessionId,
+                'previous_hash' => null,
+                'entry_hash' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }, $logs);
+
+        // Insert batch
+        $inserted = SystemLog::insert($batchData);
+
+        if ($inserted) {
+            // Dispatch async jobs to seal hashes
+            // Get the IDs of the inserted records
+            $lastId = SystemLog::max('id');
+            $count = count($logs);
+            $firstId = $lastId - $count + 1;
+
+            for ($i = 0; $i < $count; $i++) {
+                \App\Jobs\Audit\SealAuditHashJob::dispatch($firstId + $i);
+            }
+        }
+
+        return $inserted;
+    }
 }

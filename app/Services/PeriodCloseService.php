@@ -6,7 +6,8 @@ use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\SystemLog;
-use Exception;
+use App\Exceptions\Domain\ClosedPeriodException;
+use App\Exceptions\Domain\UnbalancedJournalEntriesException;
 use Illuminate\Support\Facades\DB;
 
 class PeriodCloseService
@@ -48,7 +49,7 @@ class PeriodCloseService
     public function closePeriod(AccountingPeriod $period, int $closedBy): array
     {
         if ($period->isClosed()) {
-            throw new Exception('Period is already closed');
+            throw new ClosedPeriodException($period->period_code);
         }
 
         return DB::transaction(function () use ($period, $closedBy) {
@@ -103,7 +104,7 @@ class PeriodCloseService
 
         if ($unbalanced->isNotEmpty()) {
             $ids = $unbalanced->pluck('id')->join(', ');
-            throw new Exception("Unbalanced journal entries found: {$ids}");
+            throw new UnbalancedJournalEntriesException($ids);
         }
     }
 

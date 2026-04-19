@@ -11,6 +11,11 @@ use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\SystemLog;
 use App\Models\User;
+use App\Exceptions\Domain\FiscalYearClosedException;
+use App\Exceptions\Domain\InvalidFiscalYearStateException;
+use App\Exceptions\Domain\OpenPeriodsException;
+use App\Exceptions\Domain\PermissionDeniedException;
+use App\Exceptions\Domain\AccountNotFoundException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -71,12 +76,12 @@ class FiscalYearService
 
         // Validate user permissions
         if (! $this->canCloseYear($user)) {
-            throw new \InvalidArgumentException('User does not have permission to close fiscal years');
+            throw new PermissionDeniedException('close fiscal years');
         }
 
         // Check if year is already closed
         if ($year->isClosed()) {
-            throw new \InvalidArgumentException('Fiscal year is already closed');
+            throw new FiscalYearClosedException();
         }
 
         // Validate all periods in the year are closed
@@ -172,7 +177,7 @@ class FiscalYearService
     public function openNewFiscalYear(FiscalYear $year, ?int $userId = null): FiscalYear
     {
         if (! $year->isClosed()) {
-            throw new \InvalidArgumentException('Only closed fiscal years can be opened');
+            throw new InvalidFiscalYearStateException('Only closed fiscal years can be opened');
         }
 
         // Create opening entries to transfer retained earnings
@@ -247,9 +252,7 @@ class FiscalYearService
         $openPeriods = $year->periods()->where('status', 'open')->count();
 
         if ($openPeriods > 0) {
-            throw new \InvalidArgumentException(
-                "Cannot close fiscal year: {$openPeriods} period(s) are still open. Close all periods first."
-            );
+            throw new OpenPeriodsException($openPeriods);
         }
     }
 
@@ -518,7 +521,7 @@ class FiscalYearService
     {
         $account = ChartOfAccount::find($accountCode);
         if (! $account) {
-            throw new \InvalidArgumentException("Account not found: {$accountCode}");
+            throw new AccountNotFoundException($accountCode);
         }
 
         return in_array($account->account_type, ['Asset', 'Expense']);

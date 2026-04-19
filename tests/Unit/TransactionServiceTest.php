@@ -233,8 +233,8 @@ class TransactionServiceTest extends TestCase
             'source_of_funds' => 'Salary',
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Till is not open for this currency');
+        $this->expectException(\App\Exceptions\Domain\TillBalanceMissingException::class);
+        $this->expectExceptionMessage('Till balance not found');
 
         $this->transactionService->createTransaction($data, $this->teller->id);
     }
@@ -252,7 +252,7 @@ class TransactionServiceTest extends TestCase
             'source_of_funds' => 'Salary',
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\App\Exceptions\Domain\InvalidIpAddressException::class);
         $this->expectExceptionMessage('Invalid IP address format');
 
         $this->transactionService->createTransaction($data, $this->teller->id, 'invalid-ip');
