@@ -136,26 +136,26 @@ class TransactionService
         $cddLevel = $this->complianceService->determineCDDLevel($amountLocal, $customer);
         $holdCheck = $this->complianceService->requiresHold($amountLocal, $customer);
 
-        // Sanction screening via UnifiedSanctionScreeningService
-        $complianceFlags = [];
-        $screeningResult = $this->screeningService->screenCustomer($customer);
-        if ($screeningResult->isFlagged()) {
-            $holdCheck['requires_compliance_review'] = true;
-            $complianceFlags[] = 'sanction_match';
-        }
-
-        // Log CDD decision
+        // Build CDD triggers from the CDD level determination (already done by ComplianceService)
+        // Note: ComplianceService::determineCDDLevel() already checked sanctions, PEP status, and amounts
         $cddTriggers = [];
-        if ($customer->pep_status) {
-            $cddTriggers[] = 'PEP customer';
-        }
-        if ($this->mathService->compare($amountLocal, ComplianceService::LARGE_TRANSACTION_THRESHOLD) >= 0) {
-            $cddTriggers[] = 'Large amount >= RM '.number_format((float) ComplianceService::LARGE_TRANSACTION_THRESHOLD);
-        } elseif ($this->mathService->compare($amountLocal, ComplianceService::STANDARD_CDD_THRESHOLD) >= 0) {
-            $cddTriggers[] = 'Standard amount >= RM '.number_format((float) ComplianceService::STANDARD_CDD_THRESHOLD);
-        }
-        if ($customer->risk_rating === 'High') {
-            $cddTriggers[] = 'High risk customer';
+        if ($cddLevel === CddLevel::Enhanced) {
+            $triggers = [];
+            if ($customer->pep_status) {
+                $triggers[] = 'PEP customer';
+            }
+            if ($customer->isSanctioned()) {
+                $triggers[] = 'Sanctions match';
+            }
+            if ($this->mathService->compare($amountLocal, config('thresholds.cdd.large_transaction', '50000')) >= 0) {
+                $triggers[] = 'Large amount >= RM '.config('thresholds.cdd.large_transaction', '50000');
+            }
+            if ($customer->risk_rating === 'High') {
+                $triggers[] = 'High risk customer';
+            }
+            $cddTriggers = $triggers;
+        } elseif ($cddLevel === CddLevel::Standard) {
+            $cddTriggers[] = 'Standard amount >= RM '.config('thresholds.cdd.standard', '3000');
         }
 
         $this->auditService->logWithSeverity(
@@ -179,7 +179,7 @@ class TransactionService
         $holdReason = null;
         $approvedBy = null;
 
-        if ($holdCheck['requires_hold'] || $this->mathService->compare($amountLocal, ApprovalWorkflowService::AUTO_APPROVE_THRESHOLD) >= 0) {
+        if ($holdCheck['requires_hold'] || $this->mathService->compare($amountLocal, config('thresholds.approval.auto_approve', '3000')) >= 0) {
             // All transactions requiring approval (compliance hold OR amount >= RM 3,000)
             // now go to PendingApproval with manager approval required
             $status = TransactionStatus::PendingApproval;

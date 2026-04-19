@@ -62,7 +62,7 @@ class RegulatoryReportController extends Controller
         $startDate = now()->parse($month)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        $transactions = Transaction::where('amount_local', '>=', ReportingService::CTR_THRESHOLD)
+        $transactions = Transaction::where('amount_local', '>=', config('thresholds.reporting.ctr', '50000'))
             ->where('status', TransactionStatus::Completed)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->with(['customer', 'user'])
@@ -70,7 +70,7 @@ class RegulatoryReportController extends Controller
             ->get();
 
         // Count pending approval transactions that would qualify
-        $pendingTransactions = Transaction::where('amount_local', '>=', ReportingService::CTR_THRESHOLD)
+        $pendingTransactions = Transaction::where('amount_local', '>=', config('thresholds.reporting.ctr', '50000'))
             ->where('status', TransactionStatus::PendingApproval)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
