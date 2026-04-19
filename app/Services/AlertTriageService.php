@@ -86,11 +86,11 @@ class AlertTriageService
                 $score += 10;
             }
 
-            if ($customer->isPep()) {
+            if ($customer->pep_status) {
                 $score += 10;
             }
 
-            if ($customer->isSanctioned()) {
+            if ($customer->sanction_hit) {
                 $score += 30;
             }
         }

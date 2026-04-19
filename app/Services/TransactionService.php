@@ -144,7 +144,7 @@ class TransactionService
             if ($customer->pep_status) {
                 $triggers[] = 'PEP customer';
             }
-            if ($customer->isSanctioned()) {
+            if ($customer->sanction_hit) {
                 $triggers[] = 'Sanctions match';
             }
             if ($this->mathService->compare($amountLocal, config('thresholds.cdd.large_transaction', '50000')) >= 0) {
