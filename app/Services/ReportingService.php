@@ -18,12 +18,16 @@ class ReportingService
 
     protected MathService $mathService;
 
+    protected ThresholdService $thresholdService;
+
     public function __construct(
         EncryptionService $encryptionService,
-        MathService $mathService
+        MathService $mathService,
+        ThresholdService $thresholdService
     ) {
         $this->encryptionService = $encryptionService;
         $this->mathService = $mathService;
+        $this->thresholdService = $thresholdService;
     }
 
     public function generateLCTR(string $month): string
@@ -31,7 +35,7 @@ class ReportingService
         $startDate = now()->parse($month)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        $transactions = Transaction::where('amount_local', '>=', self::CTR_THRESHOLD)
+        $transactions = Transaction::where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
             ->whereBetween('created_at', [$startDate, $endDate])
             ->with(['customer', 'user'])
             ->get();
@@ -158,7 +162,7 @@ class ReportingService
 
         $transactions = Transaction::with(['customer', 'user'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('amount_local', '>=', self::CTR_THRESHOLD)
+            ->where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
             ->where('status', 'Completed')
             ->orderBy('created_at')
             ->get();
@@ -424,7 +428,7 @@ class ReportingService
 
         $transactions = Transaction::with(['customer', 'user'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('amount_local', '>=', self::CTR_THRESHOLD)
+            ->where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
             ->where('status', 'Completed')
             ->orderBy('created_at')
             ->get();
