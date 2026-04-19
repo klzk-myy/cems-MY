@@ -24,6 +24,7 @@ class CounterService
 {
     public function __construct(
         protected TellerAllocationService $tellerAllocationService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     private const VARIANCE_THRESHOLD_YELLOW = 100.00;
@@ -102,7 +103,7 @@ class CounterService
     public function closeSession(CounterSession $session, User $user, array $closingFloats, ?string $notes = null, ?User $supervisor = null): CounterSession
     {
         if (! $session->isOpen()) {
-            throw new SessionClosedException();
+            throw new SessionClosedException;
         }
 
         $now = now();
@@ -153,11 +154,11 @@ class CounterService
                 $variance = BcmathHelper::subtract($closingBalance, $expectedBalance);
 
                 // Validate variance thresholds
-                if (BcmathHelper::gt(BcmathHelper::abs($variance), (string) self::VARIANCE_THRESHOLD_RED)) {
+                if (BcmathHelper::gt(BcmathHelper::abs($variance), $this->thresholdService->getVarianceRedThreshold())) {
                     if (! $supervisor || ! $supervisor->isManager()) {
                         throw new VarianceThresholdException('red', true);
                     }
-                } elseif (BcmathHelper::gt(BcmathHelper::abs($variance), (string) self::VARIANCE_THRESHOLD_YELLOW)) {
+                } elseif (BcmathHelper::gt(BcmathHelper::abs($variance), $this->thresholdService->getVarianceYellowThreshold())) {
                     if (empty($notes)) {
                         throw new VarianceThresholdException('yellow', false);
                     }
@@ -278,17 +279,17 @@ class CounterService
     ): array {
         // Validate supervisor role
         if (! $supervisor->isManager()) {
-            throw new SupervisorRequiredException();
+            throw new SupervisorRequiredException;
         }
 
         // Validate session is open
         if (! $session->isOpen()) {
-            throw new SessionClosedException();
+            throw new SessionClosedException;
         }
 
         // Validate fromUser is the session user
         if ($session->user_id !== $fromUser->id) {
-            throw new SessionOwnershipException();
+            throw new SessionOwnershipException;
         }
 
         // Validate toUser is not already at another counter (with lock to prevent race condition)
@@ -298,7 +299,7 @@ class CounterService
             ->first();
 
         if ($existingSession && $existingSession->id !== $session->id) {
-            throw new UserAlreadyAtCounterException();
+            throw new UserAlreadyAtCounterException($toUser->id);
         }
 
         $now = now();
@@ -383,7 +384,7 @@ class CounterService
             // Validate variance thresholds (only red threshold requires supervisor)
             foreach ($perCurrencyVariances as $code => $variance) {
                 $absVar = BcmathHelper::abs($variance);
-                if (BcmathHelper::gt($absVar, (string) self::VARIANCE_THRESHOLD_RED)) {
+                if (BcmathHelper::gt($absVar, $this->thresholdService->getVarianceRedThreshold())) {
                     if (! $supervisor || ! $supervisor->isManager()) {
                         throw new VarianceThresholdException('red', true);
                     }
