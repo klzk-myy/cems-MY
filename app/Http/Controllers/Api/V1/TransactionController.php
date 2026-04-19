@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
+use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class TransactionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->get('per_page', 20);
-        $query = \App\Models\Transaction::with(['customer', 'user']);
+        $query = Transaction::with(['customer', 'user']);
 
         // Branch segregation: non-admin users can only see their branch's transactions
         $user = auth()->user();
@@ -94,7 +95,7 @@ class TransactionController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $transaction = \App\Models\Transaction::with(['customer', 'user', 'approver', 'flags'])
+        $transaction = Transaction::with(['customer', 'user', 'approver', 'flags'])
             ->findOrFail($id);
 
         return response()->json([

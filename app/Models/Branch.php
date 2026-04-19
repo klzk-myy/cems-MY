@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * Branch Model
@@ -29,8 +31,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property bool $is_active
  * @property bool $is_main
  * @property int|null $parent_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class Branch extends Model
 {
@@ -151,8 +153,8 @@ class Branch extends Model
     /**
      * Scope a query to only include active branches.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeActive($query)
     {
@@ -162,8 +164,8 @@ class Branch extends Model
     /**
      * Scope a query to only include main branch (head office).
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeMain($query)
     {
@@ -173,8 +175,8 @@ class Branch extends Model
     /**
      * Scope a query to only include branches (not head offices).
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeBranches($query)
     {
@@ -184,8 +186,8 @@ class Branch extends Model
     /**
      * Scope a query to only include head offices.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeHeadOffices($query)
     {

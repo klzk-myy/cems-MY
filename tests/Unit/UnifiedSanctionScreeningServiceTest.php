@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Models\ScreeningResult;
+use App\Models\Transaction;
 use App\Services\MathService;
 use App\Services\UnifiedSanctionScreeningService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -146,7 +147,7 @@ class UnifiedSanctionScreeningServiceTest extends TestCase
             'nationality' => 'MY',
         ]);
 
-        $transaction = \App\Models\Transaction::factory()->create([
+        $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
         ]);
 

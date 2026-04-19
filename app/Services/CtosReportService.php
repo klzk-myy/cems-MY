@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CtosStatus;
 use App\Models\CtosReport;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
@@ -71,7 +72,7 @@ class CtosReportService
                 'currency_code' => $transaction->currency_code,
                 'transaction_type' => $transaction->type->value,
                 'report_date' => $transaction->created_at->toDateString(),
-                'status' => \App\Enums\CtosStatus::Draft,
+                'status' => CtosStatus::Draft,
                 'created_by' => $createdBy,
             ]);
 

@@ -3,6 +3,11 @@
 namespace App\Services;
 
 use App\Enums\UserRole;
+use App\Exceptions\Domain\AccountNotFoundException;
+use App\Exceptions\Domain\FiscalYearClosedException;
+use App\Exceptions\Domain\InvalidFiscalYearStateException;
+use App\Exceptions\Domain\OpenPeriodsException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
@@ -11,11 +16,6 @@ use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\SystemLog;
 use App\Models\User;
-use App\Exceptions\Domain\FiscalYearClosedException;
-use App\Exceptions\Domain\InvalidFiscalYearStateException;
-use App\Exceptions\Domain\OpenPeriodsException;
-use App\Exceptions\Domain\PermissionDeniedException;
-use App\Exceptions\Domain\AccountNotFoundException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -81,7 +81,7 @@ class FiscalYearService
 
         // Check if year is already closed
         if ($year->isClosed()) {
-            throw new FiscalYearClosedException();
+            throw new FiscalYearClosedException;
         }
 
         // Validate all periods in the year are closed

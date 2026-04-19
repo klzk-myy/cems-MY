@@ -6,6 +6,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Send daily notification digest to users.
@@ -108,7 +110,7 @@ class SendNotificationDigest extends Command
     /**
      * Get target users for digest.
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     protected function getTargetUsers(?int $userId = null)
     {
@@ -164,7 +166,7 @@ class SendNotificationDigest extends Command
             // Send digest notification via Laravel's notification system
             // In a real implementation, you would create a DigestNotification class
             // For now, we log the digest
-            \Illuminate\Support\Facades\Log::info('Notification digest sent', [
+            Log::info('Notification digest sent', [
                 'user_id' => $user->id,
                 'total_notifications' => $notifications->count(),
                 'by_type' => $digestData['notifications_by_type'],

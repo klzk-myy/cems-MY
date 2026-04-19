@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,15 +19,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property int $id
  * @property string $period_code Unique identifier code for the period (e.g., "2024-01")
- * @property \Carbon\Carbon $start_date Start date of the accounting period
- * @property \Carbon\Carbon $end_date End date of the accounting period
+ * @property Carbon $start_date Start date of the accounting period
+ * @property Carbon $end_date End date of the accounting period
  * @property string $period_type Type of period (e.g., monthly, quarterly, yearly)
  * @property string $status Current status: 'open' or 'closed'
- * @property \Carbon\Carbon|null $closed_at Timestamp when the period was closed
+ * @property Carbon|null $closed_at Timestamp when the period was closed
  * @property int|null $closed_by ID of the user who closed the period
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection|JournalEntry[] $journalEntries Journal entries posted in this period
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection|JournalEntry[] $journalEntries Journal entries posted in this period
  * @property-read User|null $closedBy User who closed this period
  */
 class AccountingPeriod extends Model
@@ -87,8 +90,8 @@ class AccountingPeriod extends Model
     /**
      * Scope a query to only include open periods.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeOpen($query)
     {
@@ -98,8 +101,8 @@ class AccountingPeriod extends Model
     /**
      * Scope a query to only include the current period (where today falls within the period dates).
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeCurrent($query)
     {
@@ -110,9 +113,9 @@ class AccountingPeriod extends Model
     /**
      * Scope a query to find periods containing a specific date.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder  $query
      * @param  string  $date  Date string to search for (YYYY-MM-DD format)
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return Builder
      */
     public function scopeForDate($query, string $date)
     {

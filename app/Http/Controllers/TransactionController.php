@@ -18,6 +18,8 @@ use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Picqer\Barcode\BarcodeGeneratorPNG;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TransactionController extends Controller
 {
@@ -171,7 +173,7 @@ class TransactionController extends Controller
         $barcodeImage = null;
         $barcodeText = str_pad($transaction->id, 10, '0', STR_PAD_LEFT);
         try {
-            $barcodeGenerator = new \Picqer\Barcode\BarcodeGeneratorPNG;
+            $barcodeGenerator = new BarcodeGeneratorPNG;
             $barcodeData = $barcodeGenerator->getBarcode($barcodeText, $barcodeGenerator::TYPE_CODE_128);
             $barcodeImage = 'data:image/png;base64,'.base64_encode($barcodeData);
         } catch (\Exception $e) {
@@ -182,7 +184,7 @@ class TransactionController extends Controller
         // Generate QR code with transaction verification data
         $qrCodeImage = null;
         try {
-            $qrCodeData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
+            $qrCodeData = QrCode::format('png')
                 ->size(150)
                 ->generate(json_encode([
                     'id' => $transaction->id,

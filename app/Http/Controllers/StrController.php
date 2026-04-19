@@ -10,6 +10,7 @@ use App\Services\ComplianceService;
 use App\Services\StrReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class StrController extends Controller
 {
@@ -127,7 +128,7 @@ class StrController extends Controller
 
     public function generateFromAlert(FlaggedTransaction $flaggedTransaction)
     {
-        \Illuminate\Support\Facades\Log::info('StrController generateFromAlert', [
+        Log::info('StrController generateFromAlert', [
             'flaggedTransaction_id' => $flaggedTransaction->getKey(),
             'flaggedTransaction_exists' => $flaggedTransaction->exists,
             'alert_attributes' => $flaggedTransaction->getAttributes(),

@@ -1,19 +1,19 @@
 <?php
 
+use App\Http\Controllers\Api\SanctionsWebhookController;
 use App\Http\Controllers\Api\V1\Compliance\AlertController as V1AlertController;
 use App\Http\Controllers\Api\V1\Compliance\CaseController as V1CaseController;
 use App\Http\Controllers\Api\V1\Compliance\DashboardController as V1DashboardController;
 use App\Http\Controllers\Api\V1\Compliance\EddController as V1EddController;
 use App\Http\Controllers\Api\V1\Compliance\FindingController as V1FindingController;
 use App\Http\Controllers\Api\V1\Compliance\RiskController as V1RiskController;
-use App\Http\Controllers\Api\SanctionsWebhookController;
 use App\Http\Controllers\Api\V1\CustomerController as V1CustomerController;
+use App\Http\Controllers\Api\V1\SanctionController;
 use App\Http\Controllers\Api\V1\SanctionListController;
 use App\Http\Controllers\Api\V1\ScreeningController;
 use App\Http\Controllers\Api\V1\TransactionController as V1TransactionController;
 use App\Http\Controllers\Report\RegulatoryReportController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\Api\V1\SanctionController;
 use App\Http\Controllers\StrController;
 use App\Http\Controllers\Transaction\TransactionApprovalController;
 use App\Http\Controllers\Transaction\TransactionCancellationController;

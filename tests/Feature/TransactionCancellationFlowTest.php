@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
+use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
@@ -21,7 +22,7 @@ class TransactionCancellationFlowTest extends TestCase
         parent::setUp();
 
         // Disable CSRF for tests
-        $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
+        $this->withoutMiddleware(VerifyCsrfToken::class);
 
         // Ensure core currencies exist
         Currency::firstOrCreate(['code' => 'USD'], ['name' => 'US Dollar', 'symbol' => '$', 'decimal_places' => 2, 'is_active' => true]);

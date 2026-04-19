@@ -8,9 +8,11 @@ use App\Services\AuditService;
 use App\Services\EncryptionService;
 use App\Services\RiskRatingService;
 use App\Services\UnifiedSanctionScreeningService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 /**
  * CustomerController
@@ -30,7 +32,7 @@ class CustomerController extends Controller
     /**
      * Display a paginated listing of all customers.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function index(Request $request)
     {
@@ -98,7 +100,7 @@ class CustomerController extends Controller
     /**
      * Show the form for creating a new customer.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function create()
     {
@@ -135,7 +137,7 @@ class CustomerController extends Controller
     /**
      * Store a newly created customer in the database.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function store(Request $request)
     {
@@ -272,7 +274,7 @@ class CustomerController extends Controller
     /**
      * Display the specified customer's profile with transaction history.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function show(Customer $customer)
     {
@@ -306,7 +308,7 @@ class CustomerController extends Controller
     /**
      * Show the form for editing the specified customer.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function edit(Customer $customer)
     {
@@ -347,7 +349,7 @@ class CustomerController extends Controller
     /**
      * Update the specified customer in the database.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function update(Request $request, Customer $customer)
     {
@@ -475,7 +477,7 @@ class CustomerController extends Controller
     /**
      * Remove the specified customer from the database.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function destroy(Request $request, Customer $customer)
     {

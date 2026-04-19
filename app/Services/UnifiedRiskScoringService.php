@@ -29,6 +29,7 @@ class UnifiedRiskScoringService
 
     public function __construct(
         protected MathService $mathService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     public function calculateRiskScore(Customer $customer): array
@@ -145,12 +146,15 @@ class UnifiedRiskScoringService
             ->map(fn ($day) => $day->sum('amount_local'));
 
         $score = 0;
+        $highThreshold = $this->thresholdService->getRiskHighThreshold();
+        $mediumThreshold = $this->thresholdService->getRiskMediumThreshold();
+        $lowThreshold = $this->thresholdService->getRiskLowThreshold();
         foreach ($dailyAmounts as $date => $amount) {
-            if ($this->mathService->compare((string) $amount, '50000') >= 0) {
+            if ($this->mathService->compare((string) $amount, $highThreshold) >= 0) {
                 $score += 30;
-            } elseif ($this->mathService->compare((string) $amount, '30000') >= 0) {
+            } elseif ($this->mathService->compare((string) $amount, $mediumThreshold) >= 0) {
                 $score += 20;
-            } elseif ($this->mathService->compare((string) $amount, '10000') >= 0) {
+            } elseif ($this->mathService->compare((string) $amount, $lowThreshold) >= 0) {
                 $score += 10;
             }
         }
@@ -165,8 +169,9 @@ class UnifiedRiskScoringService
             return 0;
         }
 
+        $highThreshold = $this->thresholdService->getRiskHighThreshold();
         $subThreshold = $transactions->filter(
-            fn ($t) => $this->mathService->compare((string) $t->amount_local, '50000') < 0
+            fn ($t) => $this->mathService->compare((string) $t->amount_local, $highThreshold) < 0
         );
 
         $hourlyGroups = $subThreshold->groupBy(fn ($t) => $t->created_at->format('Y-m-d H'));
@@ -205,12 +210,15 @@ class UnifiedRiskScoringService
 
         $score = 0;
         $maxTransaction = (string) ($transactions->max('amount_local') ?? '0');
+        $highThreshold = $this->thresholdService->getRiskHighThreshold();
+        $mediumThreshold = $this->thresholdService->getRiskMediumThreshold();
+        $lowThreshold = $this->thresholdService->getRiskLowThreshold();
 
-        if ($this->mathService->compare($maxTransaction, '50000') >= 0) {
+        if ($this->mathService->compare($maxTransaction, $highThreshold) >= 0) {
             $score += 30;
-        } elseif ($this->mathService->compare($maxTransaction, '30000') >= 0) {
+        } elseif ($this->mathService->compare($maxTransaction, $mediumThreshold) >= 0) {
             $score += 20;
-        } elseif ($this->mathService->compare($maxTransaction, '10000') >= 0) {
+        } elseif ($this->mathService->compare($maxTransaction, $lowThreshold) >= 0) {
             $score += 10;
         }
 

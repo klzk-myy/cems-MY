@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use PDF;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * EOD Reconciliation Controller
@@ -114,7 +115,7 @@ class EodReconciliationController extends Controller
      * Generate and download PDF reconciliation report.
      *
      * @param  string  $date  Date in YYYY-MM-DD format
-     * @return JsonResponse|\Symfony\Component\HttpFoundation\StreamedResponse
+     * @return JsonResponse|StreamedResponse
      */
     public function report(Request $request, string $date)
     {

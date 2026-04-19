@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ComplianceFlagType;
+use App\Enums\FlagStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,8 +24,8 @@ class FlaggedTransaction extends Model
     ];
 
     protected $casts = [
-        'flag_type' => \App\Enums\ComplianceFlagType::class,
-        'status' => \App\Enums\FlagStatus::class,
+        'flag_type' => ComplianceFlagType::class,
+        'status' => FlagStatus::class,
         'resolved_at' => 'datetime',
     ];
 

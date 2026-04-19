@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\SystemLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,7 +36,7 @@ class LoginController extends Controller
             $user->update(['last_login_at' => now()]);
 
             // Log successful login
-            \App\Models\SystemLog::create([
+            SystemLog::create([
                 'user_id' => $user->id,
                 'action' => 'login',
                 'description' => 'User logged in successfully',
@@ -47,7 +48,7 @@ class LoginController extends Controller
 
         // Log failed login attempt
         if ($user) {
-            \App\Models\SystemLog::create([
+            SystemLog::create([
                 'user_id' => $user->id,
                 'action' => 'login_failed',
                 'description' => 'Failed login attempt',

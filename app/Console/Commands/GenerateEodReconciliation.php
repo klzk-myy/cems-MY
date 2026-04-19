@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\EodReconciliationService;
 use App\Services\ExportService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 /**
@@ -40,7 +41,7 @@ class GenerateEodReconciliation extends Command
         }
 
         try {
-            $carbonDate = \Carbon\Carbon::parse($date);
+            $carbonDate = Carbon::parse($date);
             $report = $eodService->generateReconciliationReport($carbonDate, $branchId, $counterId);
 
             $filename = "EOD-Reconciliation-{$date}";

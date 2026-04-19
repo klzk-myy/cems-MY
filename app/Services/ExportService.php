@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ExportService
 {
@@ -58,7 +60,7 @@ class ExportService
             mkdir($this->basePath, 0755, true);
         }
 
-        $export = new class($data) implements \Maatwebsite\Excel\Concerns\FromArray
+        $export = new class($data) implements FromArray
         {
             protected $data;
 
@@ -74,7 +76,7 @@ class ExportService
         };
 
         // Store directly to the reports subdirectory using the full path
-        \Maatwebsite\Excel\Facades\Excel::store($export, 'reports/'.$filename, 'local');
+        Excel::store($export, 'reports/'.$filename, 'local');
 
         return $path;
     }

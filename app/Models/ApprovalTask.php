@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -20,10 +21,10 @@ use Illuminate\Support\Collection;
  * @property string $threshold_amount
  * @property string $required_role supervisor, manager, admin
  * @property string|null $notes
- * @property \Illuminate\Support\Carbon|null $expires_at
- * @property \Illuminate\Support\Carbon|null $decided_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon|null $expires_at
+ * @property Carbon|null $decided_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class ApprovalTask extends Model
 {

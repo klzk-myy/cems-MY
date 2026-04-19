@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Sanctions;
 
+use App\Jobs\Compliance\SanctionsRescreeningJob;
 use App\Models\Alert;
 use App\Models\SanctionList;
 use App\Services\AuditService;
@@ -187,7 +188,7 @@ abstract class BaseSanctionsDownloadJob implements ShouldQueue
     protected function dispatchRescreeningJob(int $newEntriesCount): void
     {
         // Dispatch rescreening job
-        \App\Jobs\Compliance\SanctionsRescreeningJob::dispatch();
+        SanctionsRescreeningJob::dispatch();
 
         Log::info("Triggered customer rescreening due to {$newEntriesCount} new sanctions entries");
     }

@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Enums\JournalEntryStatus;
 use App\Services\MathService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Journal Entry Model
@@ -19,29 +21,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property string|null $entry_number Unique entry number (JE-YYYYMM-XXXX)
  * @property int $period_id
- * @property \Illuminate\Support\Carbon $entry_date
+ * @property Carbon $entry_date
  * @property string|null $reference_type
  * @property int|null $reference_id
  * @property string|null $description
  * @property string $status Draft, Pending, Posted, Reversed, Rejected
  * @property int|null $posted_by
- * @property \Illuminate\Support\Carbon|null $posted_at
+ * @property Carbon|null $posted_at
  * @property int|null $reversed_by
- * @property \Illuminate\Support\Carbon|null $reversed_at
+ * @property Carbon|null $reversed_at
  * @property int|null $created_by
  * @property int|null $approved_by
- * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property Carbon|null $approved_at
  * @property string|null $approval_notes
  * @property int|null $cost_center_id
  * @property int|null $department_id
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, JournalLine> $lines
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Collection<int, JournalLine> $lines
  * @property-read User|null $postedBy
  * @property-read User|null $reversedBy
  * @property-read User|null $creator
  * @property-read User|null $approver
- * @property-read \Illuminate\Database\Eloquent\Collection<int, AccountLedger> $ledgerEntries
+ * @property-read Collection<int, AccountLedger> $ledgerEntries
  * @property-read AccountingPeriod $period
  * @property-read CostCenter|null $costCenter
  * @property-read Department|null $department

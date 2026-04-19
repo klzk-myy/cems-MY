@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Customer Risk Profile Model
@@ -20,14 +21,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $risk_tier
  * @property array|null $risk_factors
  * @property int|null $previous_score
- * @property \Illuminate\Support\Carbon|null $score_changed_at
- * @property \Illuminate\Support\Carbon|null $next_scheduled_recalculation
+ * @property Carbon|null $score_changed_at
+ * @property Carbon|null $next_scheduled_recalculation
  * @property RecalculationTrigger|null $recalculation_trigger
- * @property \Illuminate\Support\Carbon|null $locked_until
+ * @property Carbon|null $locked_until
  * @property int|null $locked_by
  * @property string|null $lock_reason
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class CustomerRiskProfile extends Model
 {

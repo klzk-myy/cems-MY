@@ -5,6 +5,7 @@ namespace App\Notifications\Compliance;
 use App\Models\StrReport;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Queue\SerializesModels;
 
@@ -43,13 +44,13 @@ class StrEscalationNotification extends Notification implements ShouldQueue
         ];
     }
 
-    public function toMail(object $notifiable): \Illuminate\Notifications\Messages\MailMessage
+    public function toMail(object $notifiable): MailMessage
     {
         $daysOverdue = $this->strReport->isOverdue()
             ? abs($this->strReport->daysUntilDeadline())
             : 0;
 
-        return (new \Illuminate\Notifications\Messages\MailMessage)
+        return (new MailMessage)
             ->subject("URGENT: STR Submission Escalated - {$this->strReport->str_no}")
             ->greeting("Hello {$notifiable->username},")
             ->line('An STR report has been escalated due to repeated submission failures.')

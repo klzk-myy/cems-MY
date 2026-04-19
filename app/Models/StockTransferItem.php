@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Stock Transfer Item Model
@@ -20,8 +21,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $quantity_received
  * @property string $quantity_in_transit
  * @property string|null $variance_notes
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class StockTransferItem extends Model
 {

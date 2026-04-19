@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StrStatus;
+use App\Models\Compliance\ComplianceCase;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,7 +36,7 @@ class StrDraft extends Model
 
     public function case(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Compliance\ComplianceCase::class, 'case_id');
+        return $this->belongsTo(ComplianceCase::class, 'case_id');
     }
 
     public function customer(): BelongsTo

@@ -57,6 +57,7 @@ class FiscalYearController extends Controller
             return redirect()->back()->with('success', "Fiscal year {$year->year_code} created successfully.");
         } catch (\Exception $e) {
             Log::error('FiscalYear create failed', ['exception' => $e, 'year_code' => $request->year_code]);
+
             return redirect()->back()->with('error', "Failed to create fiscal year: {$e->getMessage()}");
         }
     }
@@ -79,9 +80,11 @@ class FiscalYearController extends Controller
             return redirect()->back()->with('success', "Fiscal year {$year->year_code} closed successfully. Net income: {$result['net_income']}");
         } catch (\InvalidArgumentException $e) {
             Log::error('FiscalYear close failed', ['exception' => $e, 'year_code' => $year->year_code]);
+
             return redirect()->back()->with('error', $e->getMessage());
         } catch (\Exception $e) {
             Log::error('FiscalYear close failed', ['exception' => $e, 'year_code' => $year->year_code]);
+
             return redirect()->back()->with('error', "Failed to close fiscal year: {$e->getMessage()}");
         }
     }
@@ -100,6 +103,7 @@ class FiscalYearController extends Controller
             return view('accounting.fiscal-years', compact('fiscalYears', 'yearReport'));
         } catch (\Exception $e) {
             Log::error('FiscalYear report failed', ['exception' => $e, 'year_code' => $yearCode]);
+
             return redirect()->back()->with('error', "Failed to generate report: {$e->getMessage()}");
         }
     }

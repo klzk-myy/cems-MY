@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Enums\StrStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\StrDraft;
+use App\Models\Transaction;
 use App\Services\StrAutomationService;
 use Illuminate\Http\Request;
 
@@ -46,7 +48,7 @@ class StrStudioController extends Controller
             'case_id' => $request->case_id,
             'narrative' => $request->narrative,
             'suspected_activity' => $request->suspected_activity,
-            'status' => \App\Enums\StrStatus::Draft,
+            'status' => StrStatus::Draft,
             'created_by' => auth()->id(),
         ]);
 
@@ -76,7 +78,7 @@ class StrStudioController extends Controller
                 }
             }
             if (! empty($transactionIds)) {
-                $transactions = \App\Models\Transaction::whereIn('id', $transactionIds)->get();
+                $transactions = Transaction::whereIn('id', $transactionIds)->get();
                 $transactionPatterns = [
                     'total_amount' => $transactions->sum('amount_local'),
                     'max_amount' => $transactions->max('amount_local'),
@@ -94,7 +96,7 @@ class StrStudioController extends Controller
 
     public function submit(StrDraft $draft)
     {
-        $draft->update(['status' => \App\Enums\StrStatus::PendingReview]);
+        $draft->update(['status' => StrStatus::PendingReview]);
 
         return redirect()->back()->with('success', 'STR draft submitted for review');
     }

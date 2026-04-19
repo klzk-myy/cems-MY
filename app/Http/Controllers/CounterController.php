@@ -6,6 +6,7 @@ use App\Enums\CounterSessionStatus;
 use App\Enums\UserRole;
 use App\Models\Counter;
 use App\Models\CounterSession;
+use App\Models\Currency;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\CounterService;
@@ -43,7 +44,7 @@ class CounterController extends Controller
         ];
 
         $availableCounters = $this->counterService->getAvailableCounters();
-        $currencies = \App\Models\Currency::where('is_active', true)->get();
+        $currencies = Currency::where('is_active', true)->get();
 
         return view('counters.index', compact('counters', 'stats', 'availableCounters', 'currencies'));
     }
@@ -54,7 +55,7 @@ class CounterController extends Controller
     public function showOpen(Counter $counter)
     {
         $availableCounters = $this->counterService->getAvailableCounters();
-        $currencies = \App\Models\Currency::where('is_active', true)->get();
+        $currencies = Currency::where('is_active', true)->get();
 
         return view('counters.open', compact('counter', 'availableCounters', 'currencies'));
     }
@@ -98,6 +99,7 @@ class CounterController extends Controller
                 ->with('success', "Counter {$counter->code} opened successfully");
         } catch (\Exception $e) {
             Log::error('Counter open failed', ['exception' => $e, 'counter_id' => $counter->id]);
+
             return back()->with('error', "Failed to open counter: {$e->getMessage()}");
         }
     }
@@ -113,7 +115,7 @@ class CounterController extends Controller
             ->where('status', CounterSessionStatus::Open->value)
             ->firstOrFail();
 
-        $currencies = \App\Models\Currency::where('is_active', true)->get();
+        $currencies = Currency::where('is_active', true)->get();
 
         return view('counters.close', compact('counter', 'session', 'currencies'));
     }
@@ -171,6 +173,7 @@ class CounterController extends Controller
                 ->with('success', "Counter {$counter->code} closed successfully");
         } catch (\Exception $e) {
             Log::error('Counter close failed', ['exception' => $e, 'counter_id' => $counter->id]);
+
             return back()->with('error', "Failed to close counter: {$e->getMessage()}");
         }
     }
@@ -236,7 +239,7 @@ class CounterController extends Controller
             ->whereIn('role', [UserRole::Manager, UserRole::Admin])
             ->get();
 
-        $currencies = \App\Models\Currency::where('is_active', true)->get();
+        $currencies = Currency::where('is_active', true)->get();
 
         return view('counters.handover', compact('counter', 'session', 'availableUsers', 'supervisors', 'currencies'));
     }
@@ -308,6 +311,7 @@ class CounterController extends Controller
                 ->with('success', "Counter {$counter->code} handed over to {$toUser->name}");
         } catch (\Exception $e) {
             Log::error('Counter handover failed', ['exception' => $e, 'counter_id' => $counter->id]);
+
             return back()->with('error', "Failed to handover counter: {$e->getMessage()}");
         }
     }

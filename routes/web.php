@@ -15,6 +15,7 @@ use App\Http\Controllers\Compliance\RiskDashboardController;
 use App\Http\Controllers\Compliance\SanctionListController;
 use App\Http\Controllers\Compliance\ScreeningController;
 use App\Http\Controllers\Compliance\StrStudioController;
+use App\Http\Controllers\Compliance\UnifiedAlertController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\Customer\CustomerKycController;
 use App\Http\Controllers\CustomerController;
@@ -42,10 +43,6 @@ use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionReportController;
 use App\Http\Controllers\UserController;
-use App\Modules\Pos\Controllers\PosController;
-use App\Modules\Pos\Controllers\PosInventoryController;
-use App\Modules\Pos\Controllers\PosRateController;
-use App\Modules\Pos\Controllers\PosTransactionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -248,7 +245,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         });
 
         // Unified Alerts
-        Route::get('/compliance/unified', [App\Http\Controllers\Compliance\UnifiedAlertController::class, 'index'])
+        Route::get('/compliance/unified', [UnifiedAlertController::class, 'index'])
             ->name('compliance.unified.index');
 
         // Case Management

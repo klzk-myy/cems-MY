@@ -3,6 +3,13 @@
 namespace App\Services\Compliance;
 
 use App\Services\Compliance\Monitors\BaseMonitor;
+use App\Services\Compliance\Monitors\CounterfeitAlertMonitor;
+use App\Services\Compliance\Monitors\CurrencyFlowMonitor;
+use App\Services\Compliance\Monitors\CustomerLocationAnomalyMonitor;
+use App\Services\Compliance\Monitors\SanctionsRescreeningMonitor;
+use App\Services\Compliance\Monitors\StrDeadlineMonitor;
+use App\Services\Compliance\Monitors\StructuringMonitor;
+use App\Services\Compliance\Monitors\VelocityMonitor;
 use App\Services\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -19,13 +26,13 @@ class MonitoringEngine
 
     /** @var array<string> */
     protected array $defaultMonitors = [
-        \App\Services\Compliance\Monitors\VelocityMonitor::class,
-        \App\Services\Compliance\Monitors\StructuringMonitor::class,
-        \App\Services\Compliance\Monitors\StrDeadlineMonitor::class,
-        \App\Services\Compliance\Monitors\SanctionsRescreeningMonitor::class,
-        \App\Services\Compliance\Monitors\CustomerLocationAnomalyMonitor::class,
-        \App\Services\Compliance\Monitors\CurrencyFlowMonitor::class,
-        \App\Services\Compliance\Monitors\CounterfeitAlertMonitor::class,
+        VelocityMonitor::class,
+        StructuringMonitor::class,
+        StrDeadlineMonitor::class,
+        SanctionsRescreeningMonitor::class,
+        CustomerLocationAnomalyMonitor::class,
+        CurrencyFlowMonitor::class,
+        CounterfeitAlertMonitor::class,
     ];
 
     protected MathService $mathService;

@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -60,7 +61,7 @@ class SendNotificationJob implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param  \Illuminate\Notifications\Notifiable|\Illuminate\Notifications\AnonymousNotifiable|iterable  $notifiable
+     * @param  Notifiable|AnonymousNotifiable|iterable  $notifiable
      * @param  array|null  $channels  Optional channel override
      * @param  string|null  $queueName  Optional queue name override
      */

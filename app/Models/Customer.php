@@ -5,7 +5,10 @@ namespace App\Models;
 use App\Enums\CddLevel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * Customer Model
@@ -18,7 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $id_type 'MyKad', 'Passport', 'Others'
  * @property string $id_number_encrypted Encrypted ID/passport number
  * @property string $nationality
- * @property \Illuminate\Support\Carbon $date_of_birth
+ * @property Carbon $date_of_birth
  * @property string|null $address
  * @property string $phone
  * @property string|null $email
@@ -32,10 +35,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $employer_name
  * @property string|null $employer_address
  * @property float|null $annual_volume_estimate
- * @property \Illuminate\Support\Carbon|null $risk_assessed_at
- * @property \Illuminate\Support\Carbon|null $last_transaction_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon|null $risk_assessed_at
+ * @property Carbon|null $last_transaction_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class Customer extends Model
 {
@@ -91,7 +94,7 @@ class Customer extends Model
     /**
      * Get all transactions for this customer.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function transactions()
     {
@@ -101,7 +104,7 @@ class Customer extends Model
     /**
      * Get all documents associated with this customer.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function documents()
     {
@@ -111,7 +114,7 @@ class Customer extends Model
     /**
      * Get risk assessment history for this customer.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function riskHistory()
     {
@@ -121,7 +124,7 @@ class Customer extends Model
     /**
      * Get risk score snapshots for this customer.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function riskScoreSnapshots()
     {
@@ -131,7 +134,7 @@ class Customer extends Model
     /**
      * Get the latest risk score snapshot for this customer.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return HasOne
      */
     public function latestRiskSnapshot()
     {
@@ -150,7 +153,7 @@ class Customer extends Model
     /**
      * Get PEP relations for this customer.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function pepRelations()
     {
@@ -160,7 +163,7 @@ class Customer extends Model
     /**
      * Get associate relations where this customer is the related party.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function associateRelations()
     {
@@ -228,6 +231,7 @@ class Customer extends Model
     public static function computeBlindIndex(string $plaintext): string
     {
         $key = config('app.key');
+
         return hash_hmac('sha256', $plaintext, $key);
     }
 
@@ -237,6 +241,7 @@ class Customer extends Model
     public static function findByIdNumber(string $idNumber): ?self
     {
         $hash = self::computeBlindIndex($idNumber);
+
         return static::where('id_number_hash', $hash)->first();
     }
 }

@@ -6,6 +6,7 @@ use App\Models\BankReconciliation;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
+use App\Models\User;
 use App\Services\ReconciliationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -16,13 +17,13 @@ class ReconciliationServiceTest extends TestCase
 
     protected ReconciliationService $reconciliationService;
 
-    protected \App\Models\User $user;
+    protected User $user;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->reconciliationService = new ReconciliationService;
-        $this->user = \App\Models\User::create([
+        $this->user = User::create([
             'username' => 'test_user',
             'email' => 'test@example.com',
             'password' => 'password',

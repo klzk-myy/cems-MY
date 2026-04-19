@@ -2,11 +2,15 @@
 
 namespace App\Services;
 
+use App\Enums\FlagStatus;
 use App\Enums\StrStatus;
 use App\Events\StrDraftGenerated;
 use App\Jobs\SendNotificationJob;
+use App\Jobs\SubmitStrToGoAmlJob;
+use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\StrReport;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\Compliance\StrEscalationNotification;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +65,7 @@ class StrReportService
             // Try transaction first
             if ($alert->getAttribute('transaction_id')) {
                 $txnId = $alert->getAttribute('transaction_id');
-                $transaction = \App\Models\Transaction::with('customer')->find($txnId);
+                $transaction = Transaction::with('customer')->find($txnId);
                 $customer = $transaction?->customer;
             } else {
                 $customer = null;
@@ -71,7 +75,7 @@ class StrReportService
             // Fall back to customer_id on alert
             if (! $customer && $alert->getAttribute('customer_id')) {
                 $custId = $alert->getAttribute('customer_id');
-                $customer = \App\Models\Customer::find($custId);
+                $customer = Customer::find($custId);
             }
 
             if (! $customer) {
@@ -103,7 +107,7 @@ class StrReportService
             $strReport->save();
 
             // Update the flag status to UnderReview
-            $alert->update(['status' => \App\Enums\FlagStatus::UnderReview]);
+            $alert->update(['status' => FlagStatus::UnderReview]);
 
             Log::info('STR Report generated from alert', [
                 'str_id' => $strReport->id,
@@ -333,7 +337,7 @@ class StrReportService
         // Dispatch retry job with exponential backoff
         if ($newRetryCount < $maxRetries) {
             $delay = $this->calculateRetryDelay($newRetryCount);
-            \App\Jobs\SubmitStrToGoAmlJob::dispatch($report)
+            SubmitStrToGoAmlJob::dispatch($report)
                 ->delay(now()->addSeconds($delay));
 
             Log::info('STR retry scheduled', [

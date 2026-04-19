@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Report;
 
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Http\Controllers\Controller;
 use App\Models\ReportGenerated;
 use App\Models\Transaction;
 use App\Services\MathService;
@@ -12,7 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class RegulatoryReportController extends \App\Http\Controllers\Controller
+class RegulatoryReportController extends Controller
 {
     protected ReportingService $reportingService;
 

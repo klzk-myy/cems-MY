@@ -8,6 +8,8 @@ use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
+use App\Exceptions\Domain\InvalidIpAddressException;
+use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Currency;
@@ -233,7 +235,7 @@ class TransactionServiceTest extends TestCase
             'source_of_funds' => 'Salary',
         ];
 
-        $this->expectException(\App\Exceptions\Domain\TillBalanceMissingException::class);
+        $this->expectException(TillBalanceMissingException::class);
         $this->expectExceptionMessage('Till balance not found');
 
         $this->transactionService->createTransaction($data, $this->teller->id);
@@ -252,7 +254,7 @@ class TransactionServiceTest extends TestCase
             'source_of_funds' => 'Salary',
         ];
 
-        $this->expectException(\App\Exceptions\Domain\InvalidIpAddressException::class);
+        $this->expectException(InvalidIpAddressException::class);
         $this->expectExceptionMessage('Invalid IP address format');
 
         $this->transactionService->createTransaction($data, $this->teller->id, 'invalid-ip');

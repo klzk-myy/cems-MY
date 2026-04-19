@@ -15,7 +15,7 @@ class SessionTimeout
      * Enforces session timeout based on configuration in config/cems.php.
      * Default idle timeout is 15 minutes per BNM security compliance.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {

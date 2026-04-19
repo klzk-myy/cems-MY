@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Cost Center Model
@@ -17,8 +18,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $description Cost center description
  * @property bool $is_active Whether the cost center is active
  * @property int|null $department_id Associated department
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read Department|null $department
  */
 class CostCenter extends Model

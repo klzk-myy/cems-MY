@@ -5,7 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * Transaction Model
@@ -27,9 +30,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property TransactionStatus $status
  * @property string|null $hold_reason Reason for hold status
  * @property int|null $approved_by User ID who approved
- * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property Carbon|null $approved_at
  * @property CddLevel $cdd_level
- * @property \Illuminate\Support\Carbon|null $cancelled_at
+ * @property Carbon|null $cancelled_at
  * @property int|null $cancelled_by
  * @property string|null $cancellation_reason
  * @property int|null $original_transaction_id For refunds
@@ -117,7 +120,7 @@ class Transaction extends Model
     /**
      * Get the customer associated with this transaction.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function customer()
     {
@@ -127,7 +130,7 @@ class Transaction extends Model
     /**
      * Get the user who created this transaction.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function user()
     {
@@ -145,7 +148,7 @@ class Transaction extends Model
     /**
      * Get the user who approved this transaction.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function approver()
     {
@@ -155,7 +158,7 @@ class Transaction extends Model
     /**
      * Get the currency associated with this transaction.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function currency()
     {
@@ -165,7 +168,7 @@ class Transaction extends Model
     /**
      * Get all flagged transactions related to this transaction.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function flags()
     {
@@ -175,7 +178,7 @@ class Transaction extends Model
     /**
      * Get stock reservations for this transaction.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function stockReservations()
     {
@@ -234,7 +237,7 @@ class Transaction extends Model
     /**
      * Get the refund transaction if this transaction was refunded.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return HasOne
      */
     public function refundTransaction()
     {
@@ -244,7 +247,7 @@ class Transaction extends Model
     /**
      * Get the original transaction if this is a refund.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function originalTransaction()
     {
@@ -254,7 +257,7 @@ class Transaction extends Model
     /**
      * Get the user who cancelled this transaction.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function canceller()
     {
@@ -264,7 +267,7 @@ class Transaction extends Model
     /**
      * Get all transaction errors for this transaction.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function transactionErrors()
     {

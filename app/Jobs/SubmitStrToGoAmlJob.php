@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\StrStatus;
 use App\Models\StrReport;
 use App\Services\StrReportService;
 use Illuminate\Bus\Queueable;
@@ -99,7 +100,7 @@ class SubmitStrToGoAmlJob implements ShouldQueue
         // Mark STR as failed
         $this->strReport->refresh();
         $this->strReport->update([
-            'status' => \App\Enums\StrStatus::Failed,
+            'status' => StrStatus::Failed,
             'last_error' => 'Job failed: '.$exception->getMessage(),
         ]);
 

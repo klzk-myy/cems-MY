@@ -7,6 +7,7 @@ use App\Enums\FindingType;
 use App\Models\Customer;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -75,7 +76,7 @@ class SanctionsRescreeningMonitor extends BaseMonitor
     /**
      * Get active customers who haven't been screened since the latest sanction update.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     protected function getCustomersNeedingRescreening(string $latestUpdate)
     {

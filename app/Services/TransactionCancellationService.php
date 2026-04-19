@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Enums\UserRole;
 use App\Events\TransactionCancelled;
 use App\Models\Customer;
 use App\Models\JournalEntry;
@@ -698,9 +699,9 @@ class TransactionCancellationService
     protected function notifyPendingCancellation(Transaction $transaction, User $requester, string $reason): void
     {
         // Get all compliance officers and admins
-        $notifiableUsers = \App\Models\User::whereIn('role', [
-            \App\Enums\UserRole::ComplianceOfficer->value,
-            \App\Enums\UserRole::Admin->value,
+        $notifiableUsers = User::whereIn('role', [
+            UserRole::ComplianceOfficer->value,
+            UserRole::Admin->value,
         ])->get();
 
         if ($notifiableUsers->isEmpty()) {

@@ -31,8 +31,9 @@ final class Money
     /**
      * Create a new Money instance.
      *
-     * @param string|int|float $amount The amount (will be converted to string)
-     * @param string $currency The currency code
+     * @param  string|int|float  $amount  The amount (will be converted to string)
+     * @param  string  $currency  The currency code
+     *
      * @throws InvalidArgumentException If amount is negative
      */
     public function __construct(string|int|float $amount, string $currency)
@@ -53,6 +54,7 @@ final class Money
         if (self::$mathService === null) {
             self::$mathService = app(MathService::class);
         }
+
         return self::$mathService;
     }
 
@@ -73,6 +75,7 @@ final class Money
         $formatted = number_format($amount, 10, '.', '');
         // Trim trailing zeros
         $trimmed = rtrim(rtrim($formatted, '0'), '.');
+
         return new self($trimmed, $currency);
     }
 
@@ -82,6 +85,7 @@ final class Money
     public static function fromCents(int $cents, string $currency, int $decimalPlaces = 2): self
     {
         $amount = bcdiv((string) $cents, bcpow('10', (string) $decimalPlaces, 10), 10);
+
         return new self($amount, $currency);
     }
 
@@ -96,20 +100,23 @@ final class Money
     /**
      * Add another Money amount.
      *
-     * @param Money $other Must be same currency
+     * @param  Money  $other  Must be same currency
+     *
      * @throws InvalidArgumentException If currencies don't match
      */
     public function add(Money $other): self
     {
         $this->assertSameCurrency($other);
         $sum = self::getMathService()->add($this->amount, $other->amount);
+
         return new self($sum, $this->currency);
     }
 
     /**
      * Subtract another Money amount.
      *
-     * @param Money $other Must be same currency
+     * @param  Money  $other  Must be same currency
+     *
      * @throws InvalidArgumentException If result would be negative
      */
     public function subtract(Money $other): self
@@ -121,6 +128,7 @@ final class Money
             );
         }
         $difference = self::getMathService()->subtract($this->amount, $other->amount);
+
         return new self($difference, $this->currency);
     }
 
@@ -130,6 +138,7 @@ final class Money
     public function multiply(string $factor): self
     {
         $product = self::getMathService()->multiply($this->amount, $factor);
+
         return new self($product, $this->currency);
     }
 
@@ -139,6 +148,7 @@ final class Money
     public function convertTo(string $targetCurrency, string $rate): self
     {
         $converted = self::getMathService()->multiply($this->amount, $rate);
+
         return new self($converted, $targetCurrency);
     }
 
@@ -151,6 +161,7 @@ final class Money
             throw new InvalidArgumentException('Cannot divide by zero');
         }
         $quotient = self::getMathService()->divide($this->amount, $divisor);
+
         return new self($quotient, $this->currency);
     }
 
@@ -162,6 +173,7 @@ final class Money
     public function compare(Money $other): int
     {
         $this->assertSameCurrency($other);
+
         return self::getMathService()->compare($this->amount, $other->amount);
     }
 
@@ -224,12 +236,13 @@ final class Money
     /**
      * Format for display.
      *
-     * @param int $decimalPlaces Number of decimal places
-     * @param bool $symbol Whether to include currency symbol
+     * @param  int  $decimalPlaces  Number of decimal places
+     * @param  bool  $symbol  Whether to include currency symbol
      */
     public function format(int $decimalPlaces = 2, bool $symbol = true): string
     {
         $formatted = number_format((float) $this->amount, $decimalPlaces);
+
         return $symbol ? "{$this->currency} {$formatted}" : $formatted;
     }
 
@@ -239,6 +252,7 @@ final class Money
     public function abs(): self
     {
         $abs = self::getMathService()->abs($this->amount);
+
         return new self($abs, $this->currency);
     }
 
@@ -248,6 +262,7 @@ final class Money
     public function round(int $precision = 2): self
     {
         $rounded = self::getMathService()->round($this->amount, $precision);
+
         return new self($rounded, $this->currency);
     }
 

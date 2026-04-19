@@ -12,7 +12,7 @@ class LogRequests
     /**
      * Handle an incoming request and log details with timing.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\UserRole;
+use App\Models\Currency;
 use App\Models\StockTransfer;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -50,7 +51,7 @@ class StockTransferService
             }
 
             // Verify currency exists
-            if (! \App\Models\Currency::where('code', $item['currency_code'])->exists()) {
+            if (! Currency::where('code', $item['currency_code'])->exists()) {
                 throw new \InvalidArgumentException("Currency {$item['currency_code']} does not exist");
             }
         }

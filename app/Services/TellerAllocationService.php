@@ -3,14 +3,14 @@
 namespace App\Services;
 
 use App\Enums\TellerAllocationStatus;
+use App\Exceptions\Domain\InsufficientPoolBalanceException;
+use App\Exceptions\Domain\InvalidAllocationStateException;
+use App\Exceptions\Domain\PoolAllocationException;
+use App\Exceptions\Domain\TellerBranchRequiredException;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\TellerAllocation;
 use App\Models\User;
-use App\Exceptions\Domain\TellerBranchRequiredException;
-use App\Exceptions\Domain\InsufficientPoolBalanceException;
-use App\Exceptions\Domain\PoolAllocationException;
-use App\Exceptions\Domain\InvalidAllocationStateException;
 use Illuminate\Support\Collection;
 
 class TellerAllocationService
@@ -25,7 +25,7 @@ class TellerAllocationService
         $branch = $teller->branch;
 
         if (! $branch) {
-            throw new TellerBranchRequiredException();
+            throw new TellerBranchRequiredException;
         }
 
         $pool = $this->branchPoolService->getOrCreateForBranch($branch, $currencyCode);
@@ -61,7 +61,7 @@ class TellerAllocationService
         $branch = $allocation->branch;
 
         if (! $this->branchPoolService->allocateToTeller($branch, $allocation->currency_code, $approvedAmount)) {
-            throw new PoolAllocationException();
+            throw new PoolAllocationException;
         }
 
         $allocation->approve($approver, $approvedAmount, $dailyLimitMyr);
@@ -72,7 +72,7 @@ class TellerAllocationService
     public function activateAllocation(TellerAllocation $allocation): TellerAllocation
     {
         if (! $allocation->isApproved()) {
-            throw new InvalidAllocationStateException();
+            throw new InvalidAllocationStateException;
         }
 
         $allocation->activate();

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class SanctionListSeeder extends Seeder
@@ -11,7 +12,7 @@ class SanctionListSeeder extends Seeder
     public function run(): void
     {
         $sources = config('sanctions.sources');
-        $adminUser = \App\Models\User::where('role', 'admin')->first();
+        $adminUser = User::where('role', 'admin')->first();
         $uploadedBy = $adminUser?->id;
 
         foreach ($sources as $key => $source) {

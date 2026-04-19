@@ -2,6 +2,7 @@
 
 namespace App\Models\Compliance;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,7 +40,7 @@ class ComplianceCaseDocument extends Model
      */
     public function uploader(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'uploaded_by');
+        return $this->belongsTo(User::class, 'uploaded_by');
     }
 
     /**
@@ -47,6 +48,6 @@ class ComplianceCaseDocument extends Model
      */
     public function verifier(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'verified_by');
+        return $this->belongsTo(User::class, 'verified_by');
     }
 }

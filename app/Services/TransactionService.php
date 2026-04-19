@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\AccountCode;
 use App\Enums\CddLevel;
-use App\Enums\ComplianceFlagType;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
@@ -14,12 +13,9 @@ use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\InvalidCurrencyException;
-use App\Exceptions\Domain\InvalidDeferralException;
 use App\Exceptions\Domain\InvalidIpAddressException;
-use App\Exceptions\Domain\InvalidTransactionStateException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
-use App\Exceptions\Domain\TillClosedException;
 use App\Models\ApprovalTask;
 use App\Models\Currency;
 use App\Models\Customer;
@@ -122,9 +118,9 @@ class TransactionService
                     $isBuy
                 );
 
-            if (! $validationResult['valid']) {
-                throw new AllocationValidationException($validationResult['reason']);
-            }
+                if (! $validationResult['valid']) {
+                    throw new AllocationValidationException($validationResult['reason']);
+                }
 
                 $allocationForUpdate = $validationResult['allocation'];
             } else {
@@ -252,7 +248,7 @@ class TransactionService
                     'WARNING'
                 );
 
-                throw new DuplicateTransactionException();
+                throw new DuplicateTransactionException;
             }
 
             $transaction = Transaction::create([

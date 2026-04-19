@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccountingPeriod;
 use App\Models\BankReconciliation;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
@@ -87,6 +88,7 @@ class AccountingController extends Controller
 
         } catch (\InvalidArgumentException $e) {
             Log::warning('JournalEntry create failed', ['exception' => $e, 'description' => $request->input('description')]);
+
             return back()->withInput()->withErrors(['lines' => $e->getMessage()]);
         }
     }
@@ -127,7 +129,7 @@ class AccountingController extends Controller
      */
     public function periods(Request $request)
     {
-        $periods = \App\Models\AccountingPeriod::orderBy('start_date', 'desc')->paginate(12);
+        $periods = AccountingPeriod::orderBy('start_date', 'desc')->paginate(12);
 
         return view('accounting.periods', compact('periods'));
     }
@@ -135,7 +137,7 @@ class AccountingController extends Controller
     /**
      * Close a period
      */
-    public function closePeriod(Request $request, \App\Models\AccountingPeriod $period)
+    public function closePeriod(Request $request, AccountingPeriod $period)
     {
         try {
             $result = $this->periodCloseService->closePeriod($period, auth()->id());
@@ -164,7 +166,7 @@ class AccountingController extends Controller
      */
     public function reconciliation(Request $request)
     {
-        $cashAccounts = \App\Models\ChartOfAccount::where('account_type', 'Asset')
+        $cashAccounts = ChartOfAccount::where('account_type', 'Asset')
             ->where('account_name', 'like', '%Cash%')
             ->where('is_active', true)
             ->get();

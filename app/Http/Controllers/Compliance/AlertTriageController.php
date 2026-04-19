@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Enums\FlagStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Alert;
 use App\Services\AlertTriageService;
@@ -70,7 +71,7 @@ class AlertTriageController extends Controller
 
     public function dismiss(Request $request, Alert $alert)
     {
-        if ($alert->status === \App\Enums\FlagStatus::Resolved || $alert->status === \App\Enums\FlagStatus::Rejected) {
+        if ($alert->status === FlagStatus::Resolved || $alert->status === FlagStatus::Rejected) {
             abort(403, 'Cannot dismiss an already resolved or rejected alert.');
         }
 
@@ -79,7 +80,7 @@ class AlertTriageController extends Controller
         ]);
 
         $alert->update([
-            'status' => \App\Enums\FlagStatus::Rejected,
+            'status' => FlagStatus::Rejected,
         ]);
 
         return redirect()->route('compliance.alerts.index')->with('success', 'Alert dismissed');

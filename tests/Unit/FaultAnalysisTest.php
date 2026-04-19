@@ -16,6 +16,7 @@ use App\Services\ComplianceService;
 use App\Services\EddService;
 use App\Services\EncryptionService;
 use App\Services\MathService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -154,8 +155,8 @@ class FaultAnalysisTest extends TestCase
     {
         $service = new ComplianceService(new EncryptionService, new MathService);
 
-        $from = new \Carbon\Carbon('2026-04-13'); // Monday
-        $to = new \Carbon\Carbon('2026-04-14');   // Tuesday
+        $from = new Carbon('2026-04-13'); // Monday
+        $to = new Carbon('2026-04-14');   // Tuesday
 
         $ref = new \ReflectionClass($service);
         $method = $ref->getMethod('countWorkingDays');

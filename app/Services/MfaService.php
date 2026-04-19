@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\DeviceComputations;
 use App\Models\MfaRecoveryCode;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -327,7 +329,7 @@ class MfaService
     /**
      * Get all trusted devices for a user.
      */
-    public function getTrustedDevices(User $user): \Illuminate\Database\Eloquent\Collection
+    public function getTrustedDevices(User $user): Collection
     {
         return DeviceComputations::where('user_id', $user->id)
             ->where(function ($query) {
@@ -350,10 +352,10 @@ class MfaService
         }
 
         $roleName = match ($user->role) {
-            \App\Enums\UserRole::Admin => 'admin',
-            \App\Enums\UserRole::Manager => 'manager',
-            \App\Enums\UserRole::ComplianceOfficer => 'compliance',
-            \App\Enums\UserRole::Teller => 'teller',
+            UserRole::Admin => 'admin',
+            UserRole::Manager => 'manager',
+            UserRole::ComplianceOfficer => 'compliance',
+            UserRole::Teller => 'teller',
         };
 
         return in_array($roleName, $requireForRoles);

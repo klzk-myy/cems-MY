@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
 
 class AuditService
@@ -70,7 +70,7 @@ class AuditService
         ]);
 
         // Dispatch async job to seal the hash chain
-        \App\Jobs\Audit\SealAuditHashJob::dispatch($log->id);
+        SealAuditHashJob::dispatch($log->id);
 
         return $log;
     }
@@ -804,7 +804,7 @@ class AuditService
      * More efficient than individual inserts for bulk operations.
      * Creates entries with null hashes - SealAuditHashJob will seal them async.
      *
-     * @param array $logs Array of log data arrays
+     * @param  array  $logs  Array of log data arrays
      * @return bool True if insert succeeded
      */
     public function logBatch(array $logs): bool
@@ -848,7 +848,7 @@ class AuditService
             $firstId = $lastId - $count + 1;
 
             for ($i = 0; $i < $count; $i++) {
-                \App\Jobs\Audit\SealAuditHashJob::dispatch($firstId + $i);
+                SealAuditHashJob::dispatch($firstId + $i);
             }
         }
 

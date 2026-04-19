@@ -3,14 +3,14 @@
 namespace App\Services;
 
 use App\Enums\TellerAllocationStatus;
+use App\Exceptions\Domain\InsufficientPoolBalanceException;
+use App\Exceptions\Domain\PendingAllocationNotFoundException;
+use App\Exceptions\Domain\TellerBranchRequiredException;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\TellerAllocation;
 use App\Models\User;
-use App\Exceptions\Domain\TellerBranchRequiredException;
-use App\Exceptions\Domain\InsufficientPoolBalanceException;
-use App\Exceptions\Domain\PendingAllocationNotFoundException;
 
 class CounterOpeningWorkflowService
 {
@@ -25,7 +25,7 @@ class CounterOpeningWorkflowService
         $branch = $teller->branch;
 
         if (! $branch) {
-            throw new TellerBranchRequiredException();
+            throw new TellerBranchRequiredException;
         }
 
         $requests = [];

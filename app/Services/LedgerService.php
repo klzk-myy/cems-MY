@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Ledger Service
@@ -163,7 +164,7 @@ class LedgerService
      * @param  int|null  $branchId  Optional branch ID to filter by. Null means all branches.
      * @return array{
      * account: ChartOfAccount,
-     * entries: \Illuminate\Database\Eloquent\Collection<int, AccountLedger>,
+     * entries: Collection<int, AccountLedger>,
      * opening_balance: string,
      * closing_balance: string,
      * total_debits: float,

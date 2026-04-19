@@ -7,9 +7,11 @@ use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\SystemLog;
 use App\Models\TillBalance;
+use App\Models\Transaction;
 use App\Services\CurrencyPositionService;
 use App\Services\MathService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class StockCashController extends Controller
 {
@@ -156,7 +158,7 @@ class StockCashController extends Controller
         }
 
         // Calculate expected closing balance based on transactions
-        $netFlow = \App\Models\Transaction::where('till_id', $validated['till_id'])
+        $netFlow = Transaction::where('till_id', $validated['till_id'])
             ->where('currency_code', $validated['currency_code'])
             ->whereDate('created_at', today())
             ->selectRaw("SUM(CASE WHEN type='Buy' THEN amount_local ELSE -amount_local END) as net")
@@ -201,7 +203,7 @@ class StockCashController extends Controller
     /**
      * Calculate sum of transaction amounts using MathService for precision.
      *
-     * @param  \Illuminate\Support\Collection  $transactions
+     * @param  Collection  $transactions
      */
     protected function calculateTransactionSum($transactions, TransactionType $type): string
     {
@@ -222,8 +224,8 @@ class StockCashController extends Controller
         $position->load('currency');
 
         // Load recent transactions for this currency position
-        $transactions = \App\Models\Transaction::where('currency_code', $position->currency_code)
-            ->where('type', \App\Enums\TransactionType::Buy)
+        $transactions = Transaction::where('currency_code', $position->currency_code)
+            ->where('type', TransactionType::Buy)
             ->orderBy('created_at', 'desc')
             ->limit(50)
             ->get();
@@ -282,7 +284,7 @@ class StockCashController extends Controller
         }
 
         // Get all transactions for this till on this date
-        $transactions = \App\Models\Transaction::with(['customer', 'currency'])
+        $transactions = Transaction::with(['customer', 'currency'])
             ->where('till_id', $tillId)
             ->whereDate('created_at', $date)
             ->orderBy('created_at', 'asc')

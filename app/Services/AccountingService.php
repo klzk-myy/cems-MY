@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
+use App\Exceptions\Domain\AccountNotFoundException;
+use App\Exceptions\Domain\ClosedPeriodException;
+use App\Exceptions\Domain\EntryAlreadyReversedException;
+use App\Exceptions\Domain\EntryNotPostedException;
+use App\Exceptions\Domain\InvalidJournalStatusException;
+use App\Exceptions\Domain\UnbalancedJournalException;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
-use App\Exceptions\Domain\UnbalancedJournalException;
-use App\Exceptions\Domain\ClosedPeriodException;
-use App\Exceptions\Domain\EntryAlreadyReversedException;
-use App\Exceptions\Domain\EntryNotPostedException;
-use App\Exceptions\Domain\InvalidJournalStatusException;
-use App\Exceptions\Domain\AccountNotFoundException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -90,10 +90,10 @@ class AccountingService
             // Find the accounting period for this entry date
             $period = AccountingPeriod::forDate($entryDate)->first();
 
-        // Validate that the period is open (if period exists)
-        if ($period && ! $period->isOpen()) {
-            throw new ClosedPeriodException($period->period_code);
-        }
+            // Validate that the period is open (if period exists)
+            if ($period && ! $period->isOpen()) {
+                throw new ClosedPeriodException($period->period_code);
+            }
 
             // Create entry in Draft status - does NOT post to ledger yet
             $entry = JournalEntry::create([

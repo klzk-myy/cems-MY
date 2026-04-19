@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\SystemLog;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 /**
  * BranchController
@@ -18,7 +20,7 @@ class BranchController extends Controller
     /**
      * Display a paginated listing of all branches.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function index()
     {
@@ -30,7 +32,7 @@ class BranchController extends Controller
     /**
      * Show the form for creating a new branch.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function create()
     {
@@ -50,7 +52,7 @@ class BranchController extends Controller
     /**
      * Store a newly created branch in the database.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function store(Request $request)
     {
@@ -112,7 +114,7 @@ class BranchController extends Controller
     /**
      * Display the specified branch with summary statistics.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function show(Branch $branch)
     {
@@ -138,7 +140,7 @@ class BranchController extends Controller
     /**
      * Show the form for editing the specified branch.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function edit(Branch $branch)
     {
@@ -159,7 +161,7 @@ class BranchController extends Controller
     /**
      * Update the specified branch in the database.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function update(Request $request, Branch $branch)
     {
@@ -232,7 +234,7 @@ class BranchController extends Controller
     /**
      * Deactivate the specified branch.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function destroy(Request $request, Branch $branch)
     {

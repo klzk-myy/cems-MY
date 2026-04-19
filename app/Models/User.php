@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Services\MfaService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -24,11 +27,11 @@ use Illuminate\Support\Facades\Hash;
  * @property UserRole $role
  * @property bool $mfa_enabled
  * @property string|null $mfa_secret
- * @property \Illuminate\Support\Carbon|null $mfa_verified_at
+ * @property Carbon|null $mfa_verified_at
  * @property bool $is_active
- * @property \Illuminate\Support\Carbon|null $last_login_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon|null $last_login_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class User extends Authenticatable
 {
@@ -69,7 +72,7 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'role' => \App\Enums\UserRole::class,
+        'role' => UserRole::class,
         'mfa_enabled' => 'boolean',
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
@@ -107,7 +110,7 @@ class User extends Authenticatable
     /**
      * Get all transactions created by this user.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function transactions()
     {
@@ -117,7 +120,7 @@ class User extends Authenticatable
     /**
      * Get the branch this user belongs to.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function branch()
     {
@@ -192,7 +195,7 @@ class User extends Authenticatable
         }
 
         // Check if role requires MFA
-        $mfaService = app(\App\Services\MfaService::class);
+        $mfaService = app(MfaService::class);
         if (! $mfaService->isMfaRequiredForRole($this)) {
             return false;
         }
@@ -224,7 +227,7 @@ class User extends Authenticatable
     /**
      * Get notification preferences for this user.
      */
-    public function notificationPreferences(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function notificationPreferences(): HasMany
     {
         return $this->hasMany(UserNotificationPreference::class);
     }

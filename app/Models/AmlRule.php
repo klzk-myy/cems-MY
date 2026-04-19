@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Enums\AmlRuleType;
 use App\Enums\TransactionStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * AML Rule Model
@@ -25,8 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $risk_score Risk score contribution (0-100)
  * @property bool $is_active Whether rule is active
  * @property int|null $created_by User who created the rule
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class AmlRule extends Model
 {
@@ -73,8 +75,8 @@ class AmlRule extends Model
     /**
      * Scope to get only active rules.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeActive($query)
     {
@@ -84,9 +86,9 @@ class AmlRule extends Model
     /**
      * Scope to filter rules by type.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder  $query
      * @param  AmlRuleType|string  $type
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return Builder
      */
     public function scopeByType($query, $type)
     {

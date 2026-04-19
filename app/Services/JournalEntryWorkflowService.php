@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\JournalEntryStatus;
 use App\Enums\UserRole;
+use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
@@ -410,7 +411,7 @@ class JournalEntryWorkflowService
      */
     protected function getPeriodId(string $date): ?int
     {
-        $period = \App\Models\AccountingPeriod::forDate($date)->first();
+        $period = AccountingPeriod::forDate($date)->first();
 
         return $period?->id;
     }

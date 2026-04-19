@@ -6,6 +6,7 @@ use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Customer Behavioral Baseline Model
@@ -19,10 +20,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float $avg_transaction_frequency
  * @property array|null $preferred_counter_ids
  * @property string|null $registered_location
- * @property \Illuminate\Support\Carbon|null $last_calculated_at
+ * @property Carbon|null $last_calculated_at
  * @property int $baseline_version
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class CustomerBehavioralBaseline extends Model
 {

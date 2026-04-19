@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SystemLog;
+use App\Models\User;
 use App\Services\AuditService;
 use App\Services\LogRotationService;
 use Illuminate\Http\Request;
@@ -135,7 +136,7 @@ class AuditController extends Controller
             ->pluck('action');
 
         // Get users for filter dropdown
-        $users = \App\Models\User::select('id', 'username')
+        $users = User::select('id', 'username')
             ->orderBy('username')
             ->get();
 

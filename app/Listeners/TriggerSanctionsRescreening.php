@@ -14,6 +14,7 @@ use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\UnifiedSanctionScreeningService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 class TriggerSanctionsRescreening
@@ -104,7 +105,7 @@ class TriggerSanctionsRescreening
     /**
      * Get customers that need rescreening based on activity and risk profile.
      */
-    protected function getCustomersToRescreen(): \Illuminate\Database\Eloquent\Collection
+    protected function getCustomersToRescreen(): Collection
     {
         return Customer::where(function ($query) {
             // Customers with pending transactions

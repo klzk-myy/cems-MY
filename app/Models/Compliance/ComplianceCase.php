@@ -8,11 +8,13 @@ use App\Enums\ComplianceCasePriority;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
+use App\Enums\FlagStatus;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\StrDraft;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -101,7 +103,7 @@ class ComplianceCase extends Model
     /**
      * Calculate SLA deadline based on severity.
      */
-    public static function calculateSlaDeadline(FindingSeverity $severity): \Carbon\Carbon
+    public static function calculateSlaDeadline(FindingSeverity $severity): Carbon
     {
         $hours = match ($severity) {
             FindingSeverity::Critical => 24,
@@ -303,7 +305,7 @@ class ComplianceCase extends Model
 
         // All linked alerts must be resolved
         $unresolvedAlerts = $this->alerts()
-            ->whereNotIn('status', [\App\Enums\FlagStatus::Resolved, \App\Enums\FlagStatus::Dismissed])
+            ->whereNotIn('status', [FlagStatus::Resolved, FlagStatus::Dismissed])
             ->count();
 
         return $unresolvedAlerts === 0;
@@ -331,8 +333,7 @@ class ComplianceCase extends Model
             ComplianceCasePriority::Low => 4,
         ];
 
-        return $alertPriorities->sort(fn ($a, $b) =>
-            ($priorityOrder[$a] ?? 99) <=> ($priorityOrder[$b] ?? 99)
+        return $alertPriorities->sort(fn ($a, $b) => ($priorityOrder[$a] ?? 99) <=> ($priorityOrder[$b] ?? 99)
         )->first();
     }
 }

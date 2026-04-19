@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\BranchPoolService;
 use App\Services\CounterOpeningWorkflowService;
 use App\Services\CounterService;
+use App\Services\MathService;
 use App\Services\TellerAllocationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -100,14 +101,14 @@ class BranchAllocationWorkflowTest extends TestCase
             'is_active' => true,
         ]);
 
-        $mathService = new \App\Services\MathService;
-        $branchPoolService = new \App\Services\BranchPoolService;
-        $tellerAllocationService = new \App\Services\TellerAllocationService($branchPoolService, $mathService);
+        $mathService = new MathService;
+        $branchPoolService = new BranchPoolService;
+        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService);
         $this->branchPoolService = $branchPoolService;
         $this->tellerAllocationService = $tellerAllocationService;
-        $counterService = new \App\Services\CounterService($tellerAllocationService);
+        $counterService = new CounterService($tellerAllocationService);
         $this->counterService = $counterService;
-        $this->workflowService = new \App\Services\CounterOpeningWorkflowService(
+        $this->workflowService = new CounterOpeningWorkflowService(
             $branchPoolService,
             $tellerAllocationService,
             $counterService

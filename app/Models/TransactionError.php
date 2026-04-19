@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Transaction Error Model
@@ -18,12 +19,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array|null $error_context
  * @property int $retry_count
  * @property int $max_retries
- * @property \Illuminate\Support\Carbon|null $next_retry_at
- * @property \Illuminate\Support\Carbon|null $resolved_at
+ * @property Carbon|null $next_retry_at
+ * @property Carbon|null $resolved_at
  * @property int|null $resolved_by
  * @property string|null $resolution_notes
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class TransactionError extends Model
 {

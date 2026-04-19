@@ -141,6 +141,7 @@ class EnhancedDiligenceController extends Controller
             return redirect()->back()->with('success', 'EDD record submitted for review.');
         } catch (\InvalidArgumentException $e) {
             Log::warning('EDD submitReview failed', ['exception' => $e, 'record_id' => $record->id]);
+
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

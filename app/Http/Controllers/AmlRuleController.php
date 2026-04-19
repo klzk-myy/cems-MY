@@ -6,7 +6,9 @@ use App\Enums\AmlRuleType;
 use App\Models\AmlRule;
 use App\Models\SystemLog;
 use App\Services\AmlRuleService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 /**
  * AML Rule Controller
@@ -31,7 +33,7 @@ class AmlRuleController extends Controller
     /**
      * Display a listing of AML rules.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function index()
     {
@@ -48,7 +50,7 @@ class AmlRuleController extends Controller
     /**
      * Show the form for creating a new AML rule.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function create()
     {
@@ -68,7 +70,7 @@ class AmlRuleController extends Controller
     /**
      * Store a newly created AML rule.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function store(Request $request)
     {
@@ -122,7 +124,7 @@ class AmlRuleController extends Controller
     /**
      * Display the specified AML rule.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function show(AmlRule $rule)
     {
@@ -147,7 +149,7 @@ class AmlRuleController extends Controller
     /**
      * Show the form for editing the specified AML rule.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function edit(AmlRule $rule)
     {
@@ -167,7 +169,7 @@ class AmlRuleController extends Controller
     /**
      * Update the specified AML rule.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function update(Request $request, AmlRule $rule)
     {
@@ -223,7 +225,7 @@ class AmlRuleController extends Controller
     /**
      * Toggle the active status of an AML rule.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function toggle(AmlRule $rule)
     {
@@ -251,7 +253,7 @@ class AmlRuleController extends Controller
     /**
      * Remove the specified AML rule (soft delete).
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function destroy(AmlRule $rule)
     {

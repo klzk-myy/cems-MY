@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+use App\Models\Branch;
+use App\Models\User;
+
 /**
  * User Role Enum
  *
@@ -237,7 +240,7 @@ enum UserRole: string
      * Check if the user can access a specific branch.
      * Admin can access any branch; others can only access their own branch.
      */
-    public function canAccessBranch(\App\Models\Branch $branch, \App\Models\User $user): bool
+    public function canAccessBranch(Branch $branch, User $user): bool
     {
         if ($this->canManageAllBranches()) {
             return true;

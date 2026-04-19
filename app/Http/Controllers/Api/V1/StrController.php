@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\StrReport;
 use App\Services\AuditService;
+use App\Services\ComplianceService;
 use App\Services\StrReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,7 +65,7 @@ class StrController extends Controller
                 'suspicion_date' => now(),
             ]);
 
-            $complianceService = app(\App\Services\ComplianceService::class);
+            $complianceService = app(ComplianceService::class);
             $deadlineInfo = $complianceService->calculateStrDeadline(now());
             $strReport->filing_deadline = $deadlineInfo['deadline'];
             $strReport->save();

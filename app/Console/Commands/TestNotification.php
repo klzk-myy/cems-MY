@@ -2,8 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\ComplianceFlagType;
+use App\Enums\FlagStatus;
+use App\Enums\StrStatus;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\DataBreachAlert;
+use App\Models\FlaggedTransaction;
 use App\Models\SanctionEntry;
 use App\Models\StrReport;
 use App\Models\SystemAlert;
@@ -143,11 +147,11 @@ class TestNotification extends Command
     protected function createTransactionFlaggedNotification(): TransactionFlaggedNotification
     {
         return new TransactionFlaggedNotification(
-            \App\Models\FlaggedTransaction::factory()->make([
+            FlaggedTransaction::factory()->make([
                 'id' => 999999,
-                'flag_type' => \App\Enums\ComplianceFlagType::Velocity,
+                'flag_type' => ComplianceFlagType::Velocity,
                 'flag_reason' => 'Test: Multiple transactions detected',
-                'status' => \App\Enums\FlagStatus::Open,
+                'status' => FlagStatus::Open,
             ])
         );
     }
@@ -157,7 +161,7 @@ class TestNotification extends Command
         return new StrDeadlineApproachingNotification(
             StrReport::factory()->make([
                 'id' => 999999,
-                'status' => \App\Enums\StrStatus::Draft,
+                'status' => StrStatus::Draft,
                 'filing_deadline' => now()->addDay(),
             ]),
             1
@@ -169,7 +173,7 @@ class TestNotification extends Command
         return new StrSubmissionFailedNotification(
             StrReport::factory()->make([
                 'id' => 999999,
-                'status' => \App\Enums\StrStatus::Failed,
+                'status' => StrStatus::Failed,
             ]),
             'Connection timeout',
             2

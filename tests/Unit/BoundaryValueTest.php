@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\CddLevel;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -130,16 +131,16 @@ class BoundaryValueTest extends TestCase
     /**
      * Helper method to determine CDD level
      */
-    private function determineCddLevel(string $amount, bool $isPep, bool $isSanctionMatch): \App\Enums\CddLevel
+    private function determineCddLevel(string $amount, bool $isPep, bool $isSanctionMatch): CddLevel
     {
         if (bccomp($amount, '50000', 2) >= 0 || $isPep || $isSanctionMatch) {
-            return \App\Enums\CddLevel::Enhanced;
+            return CddLevel::Enhanced;
         }
 
         if (bccomp($amount, '3000', 2) >= 0) {
-            return \App\Enums\CddLevel::Standard;
+            return CddLevel::Standard;
         }
 
-        return \App\Enums\CddLevel::Simplified;
+        return CddLevel::Simplified;
     }
 }

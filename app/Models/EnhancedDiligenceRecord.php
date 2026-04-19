@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EddStatus;
+use App\Models\Compliance\EddQuestionnaireTemplate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -64,7 +65,7 @@ class EnhancedDiligenceRecord extends Model
 
     public function template(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Compliance\EddQuestionnaireTemplate::class, 'edd_template_id');
+        return $this->belongsTo(EddQuestionnaireTemplate::class, 'edd_template_id');
     }
 
     public function isComplete(): bool

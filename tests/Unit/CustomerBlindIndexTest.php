@@ -10,6 +10,7 @@ use Tests\TestCase;
 class CustomerBlindIndexTest extends TestCase
 {
     use RefreshDatabase;
+
     public function test_blind_index_hash_is_deterministic(): void
     {
         $hash1 = Customer::computeBlindIndex('A123456');

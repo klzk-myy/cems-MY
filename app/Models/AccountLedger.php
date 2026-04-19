@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\MathService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,15 +17,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id The unique identifier for the ledger entry
  * @property string $account_code The account code associated with this ledger entry
- * @property \Carbon\Carbon $entry_date The date of the ledger entry
+ * @property Carbon $entry_date The date of the ledger entry
  * @property int $journal_entry_id The associated journal entry ID
  * @property string|null $debit The debit amount for this entry
  * @property string|null $credit The credit amount for this entry
  * @property string|null $running_balance The running balance after this entry
- * @property \Carbon\Carbon|null $created_at Timestamp when the record was created
- * @property \Carbon\Carbon|null $updated_at Timestamp when the record was last updated
- * @property-read \App\Models\ChartOfAccount $account The chart of account associated with this ledger entry
- * @property-read \App\Models\JournalEntry $journalEntry The journal entry associated with this ledger entry
+ * @property Carbon|null $created_at Timestamp when the record was created
+ * @property Carbon|null $updated_at Timestamp when the record was last updated
+ * @property-read ChartOfAccount $account The chart of account associated with this ledger entry
+ * @property-read JournalEntry $journalEntry The journal entry associated with this ledger entry
  */
 class AccountLedger extends Model
 {

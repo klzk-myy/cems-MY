@@ -7,9 +7,11 @@ use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Models\SystemLog;
 use App\Services\EncryptionService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 /**
  * CustomerKycController
@@ -26,7 +28,7 @@ class CustomerKycController extends Controller
     /**
      * Show the KYC document management form.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function kyc(Customer $customer)
     {
@@ -48,7 +50,7 @@ class CustomerKycController extends Controller
     /**
      * Handle KYC document upload.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function uploadDocument(Request $request, Customer $customer)
     {
@@ -100,7 +102,7 @@ class CustomerKycController extends Controller
     /**
      * Verify a KYC document.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function verifyDocument(Request $request, Customer $customer, CustomerDocument $document)
     {
@@ -140,7 +142,7 @@ class CustomerKycController extends Controller
     /**
      * Delete a KYC document.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function deleteDocument(Request $request, Customer $customer, CustomerDocument $document)
     {

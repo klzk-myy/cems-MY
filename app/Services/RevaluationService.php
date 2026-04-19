@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\CurrencyPosition;
 use App\Models\RevaluationEntry;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -416,8 +418,8 @@ class RevaluationService
      */
     public function getRevaluationStatus(string $month): array
     {
-        $startDate = \Carbon\Carbon::parse($month)->startOfMonth();
-        $endDate = \Carbon\Carbon::parse($month)->endOfMonth();
+        $startDate = Carbon::parse($month)->startOfMonth();
+        $endDate = Carbon::parse($month)->endOfMonth();
 
         $entries = RevaluationEntry::whereBetween('revaluation_date', [$startDate, $endDate])
             ->get();
@@ -479,9 +481,9 @@ class RevaluationService
         // Only managers, accountants, and compliance officers should receive P&L data
         return User::where('is_active', true)
             ->whereIn('role', [
-                \App\Enums\UserRole::Manager->value,
-                \App\Enums\UserRole::ComplianceOfficer->value,
-                \App\Enums\UserRole::Admin->value,
+                UserRole::Manager->value,
+                UserRole::ComplianceOfficer->value,
+                UserRole::Admin->value,
             ])
             ->get()
             ->toArray();
@@ -501,9 +503,9 @@ class RevaluationService
      */
     protected function getValidatedAccountCode(string $configKey, string $defaultCode): string
     {
-        $code = \Illuminate\Support\Facades\Config::get($configKey, $defaultCode);
+        $code = Config::get($configKey, $defaultCode);
 
-        if (\Illuminate\Support\Facades\Config::get('accounting.validate_accounts', true)) {
+        if (Config::get('accounting.validate_accounts', true)) {
             $account = ChartOfAccount::where('account_code', $code)->first();
 
             if (! $account) {

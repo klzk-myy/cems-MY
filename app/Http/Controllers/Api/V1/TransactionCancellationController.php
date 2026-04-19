@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\AccountCode;
 use App\Enums\TransactionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
@@ -421,13 +422,13 @@ class TransactionCancellationController extends Controller
         if ($transaction->type->isBuy()) {
             $entries = [
                 [
-                    'account_code' => \App\Enums\AccountCode::CASH_MYR->value,
+                    'account_code' => AccountCode::CASH_MYR->value,
                     'debit' => $transaction->amount_local,
                     'credit' => '0',
                     'description' => "Refund for cancelled transaction #{$transaction->id}",
                 ],
                 [
-                    'account_code' => \App\Enums\AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
                     'debit' => '0',
                     'credit' => $transaction->amount_local,
                     'description' => "Reversal: {$transaction->currency_code} refund",
@@ -445,13 +446,13 @@ class TransactionCancellationController extends Controller
 
             $entries = [
                 [
-                    'account_code' => \App\Enums\AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
                     'debit' => $costBasis,  // Restore inventory at cost basis, not sale price
                     'credit' => '0',
                     'description' => "Refund for cancelled transaction #{$transaction->id}",
                 ],
                 [
-                    'account_code' => \App\Enums\AccountCode::CASH_MYR->value,
+                    'account_code' => AccountCode::CASH_MYR->value,
                     'debit' => '0',
                     'credit' => $transaction->amount_local,
                     'description' => "Reversal: {$transaction->currency_code} refund",
@@ -465,7 +466,7 @@ class TransactionCancellationController extends Controller
                     // Gain - we sold higher than cost, refund net of gain
                     $entries[1]['credit'] = $costBasis;
                     $entries[] = [
-                        'account_code' => \App\Enums\AccountCode::FOREX_TRADING_REVENUE->value,
+                        'account_code' => AccountCode::FOREX_TRADING_REVENUE->value,
                         'debit' => $gainLoss,
                         'credit' => '0',
                         'description' => "Loss recovery on {$transaction->currency_code} cancellation",

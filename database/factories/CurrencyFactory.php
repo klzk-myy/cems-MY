@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Currency;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 class CurrencyFactory extends Factory
 {
@@ -54,9 +55,9 @@ class CurrencyFactory extends Factory
      * Create a model and persist it to the database.
      *
      * @param  array  $attributes
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return Model
      */
-    public function create($attributes = [], ?\Illuminate\Database\Eloquent\Model $parent = null)
+    public function create($attributes = [], ?Model $parent = null)
     {
         // If code is explicitly set, check if it already exists
         if (isset($attributes['code'])) {

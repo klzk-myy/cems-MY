@@ -6,6 +6,7 @@ use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Http\Controllers\Controller;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
@@ -16,7 +17,7 @@ use App\Services\MathService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class AnalyticsController extends \App\Http\Controllers\Controller
+class AnalyticsController extends Controller
 {
     protected MathService $mathService;
 

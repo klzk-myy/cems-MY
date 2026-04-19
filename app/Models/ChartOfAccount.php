@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Chart of Account model for managing the accounting chart of accounts hierarchy.
@@ -22,12 +24,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $allow_journal Whether journal entries can be posted directly
  * @property int|null $cost_center_id Associated cost center
  * @property int|null $department_id Associated department
- * @property \Illuminate\Support\Carbon|null $created_at Timestamp when record was created
- * @property \Illuminate\Support\Carbon|null $updated_at Timestamp when record was last updated
+ * @property Carbon|null $created_at Timestamp when record was created
+ * @property Carbon|null $updated_at Timestamp when record was last updated
  * @property-read ChartOfAccount|null $parent The parent account in the hierarchy
- * @property-read \Illuminate\Database\Eloquent\Collection<int, ChartOfAccount> $children Child accounts in the hierarchy
- * @property-read \Illuminate\Database\Eloquent\Collection<int, JournalLine> $journalLines Journal lines associated with this account
- * @property-read \Illuminate\Database\Eloquent\Collection<int, AccountLedger> $ledgerEntries Ledger entries associated with this account
+ * @property-read Collection<int, ChartOfAccount> $children Child accounts in the hierarchy
+ * @property-read Collection<int, JournalLine> $journalLines Journal lines associated with this account
+ * @property-read Collection<int, AccountLedger> $ledgerEntries Ledger entries associated with this account
  * @property-read CostCenter|null $costCenter
  * @property-read Department|null $department
  */

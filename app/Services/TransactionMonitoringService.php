@@ -19,7 +19,8 @@ class TransactionMonitoringService
     public function __construct(
         ComplianceService $complianceService,
         MathService $mathService,
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected ThresholdService $thresholdService
     ) {
         $this->complianceService = $complianceService;
         $this->mathService = $mathService;
@@ -51,7 +52,7 @@ class TransactionMonitoringService
 
             // Structuring detection - multiple small transactions
             if ($this->complianceService->checkStructuring($transaction->customer_id)) {
-                $flags[] = $this->createFlag($transaction, ComplianceFlagType::Structuring, 'Potential structuring: 3+ transactions under RM '.number_format((float) $this->complianceService::STANDARD_CDD_THRESHOLD).' within 1 hour');
+                $flags[] = $this->createFlag($transaction, ComplianceFlagType::Structuring, 'Potential structuring: 3+ transactions under RM '.number_format((float) $this->thresholdService->getStandardCddThreshold()).' within 1 hour');
                 $this->auditService->logAmlMonitorEvent('aml_structuring_detected', $transaction->id, [
                     'entity_type' => 'Transaction',
                     'new' => [
@@ -151,7 +152,7 @@ class TransactionMonitoringService
             return false;
         }
 
-        if ($this->mathService->compare($transaction->amount_local, $this->complianceService::STANDARD_CDD_THRESHOLD) < 0) {
+        if ($this->mathService->compare($transaction->amount_local, $this->thresholdService->getStandardCddThreshold()) < 0) {
             return false;
         }
 
@@ -164,11 +165,11 @@ class TransactionMonitoringService
 
     protected function isRoundAmount(Transaction $transaction): bool
     {
-        if ($this->mathService->compare($transaction->amount_local, $this->complianceService::CTOS_THRESHOLD) < 0) {
+        if ($this->mathService->compare($transaction->amount_local, $this->thresholdService->getCtosThreshold()) < 0) {
             return false;
         }
 
-        $remainder = bcmod((string) $transaction->amount_local, $this->complianceService::CTOS_THRESHOLD);
+        $remainder = bcmod((string) $transaction->amount_local, $this->thresholdService->getCtosThreshold());
 
         return $this->mathService->compare($remainder, '0') === 0;
     }

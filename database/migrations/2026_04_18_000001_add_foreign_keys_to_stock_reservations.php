@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -49,9 +48,9 @@ return new class extends Migration
             } else {
                 $fk->restrictOnDelete();
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // FK already exists or other error - log and continue
-            \Log::debug('FK addition skipped: ' . $e->getMessage());
+            Log::debug('FK addition skipped: '.$e->getMessage());
         }
     }
 
@@ -69,15 +68,15 @@ return new class extends Migration
         Schema::table('stock_reservations', function (Blueprint $table) {
             try {
                 $table->dropForeign(['transaction_id']);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
             }
             try {
                 $table->dropForeign(['created_by']);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
             }
             try {
                 $table->dropForeign(['currency_code']);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
             }
         });
     }

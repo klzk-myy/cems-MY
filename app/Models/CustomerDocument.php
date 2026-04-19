@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * CustomerDocument Model
@@ -20,11 +22,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $file_size
  * @property bool $encrypted
  * @property int $uploaded_by
- * @property \Illuminate\Support\Carbon|null $verified_by
- * @property \Illuminate\Support\Carbon|null $verified_at
- * @property \Illuminate\Support\Carbon|null $expiry_date
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon|null $verified_by
+ * @property Carbon|null $verified_at
+ * @property Carbon|null $expiry_date
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class CustomerDocument extends Model
 {
@@ -126,8 +128,8 @@ class CustomerDocument extends Model
     /**
      * Scope a query to only include verified documents.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeVerified($query)
     {
@@ -137,7 +139,7 @@ class CustomerDocument extends Model
     /**
      * Scope a query to only include unverified documents.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder  $query
      * @return \Illuminate\Database\Eloquent\Eloquent\Builder
      */
     public function scopeUnverified($query)
@@ -148,7 +150,7 @@ class CustomerDocument extends Model
     /**
      * Scope a query to only include expired documents.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder  $query
      * @return \Illuminate\Database\Eloquent\Eloquent\Builder
      */
     public function scopeExpired($query)
@@ -159,7 +161,7 @@ class CustomerDocument extends Model
     /**
      * Scope a query to only include documents expiring soon.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder  $query
      * @return \Illuminate\Database\Eloquent\Eloquent\Builder
      */
     public function scopeExpiringSoon($query)

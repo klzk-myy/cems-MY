@@ -56,6 +56,7 @@ class JournalEntryWorkflowController extends Controller
             return redirect()->back()->with('success', 'Entry submitted for approval.');
         } catch (\InvalidArgumentException $e) {
             Log::warning('JournalEntry submit failed', ['exception' => $e, 'entry_id' => $entry->id]);
+
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
@@ -91,6 +92,7 @@ class JournalEntryWorkflowController extends Controller
             }
         } catch (\InvalidArgumentException $e) {
             Log::warning('JournalEntry approve failed', ['exception' => $e, 'entry_id' => $entry->id, 'action' => $action]);
+
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

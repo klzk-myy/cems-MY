@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Services\RateLimitService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Command to manage IP blocking for security purposes.
@@ -145,7 +146,7 @@ class IpBlockerCommand extends Command
         $this->info("Reason: {$reason}");
 
         // Log the action
-        \Illuminate\Support\Facades\Log::info('IP manually blocked via CLI', [
+        Log::info('IP manually blocked via CLI', [
             'ip' => $ip,
             'duration' => $duration,
             'reason' => $reason,
@@ -182,7 +183,7 @@ class IpBlockerCommand extends Command
             $this->info("IP {$ip} has been unblocked.");
 
             // Log the action
-            \Illuminate\Support\Facades\Log::info('IP manually unblocked via CLI', [
+            Log::info('IP manually unblocked via CLI', [
                 'ip' => $ip,
                 'unblocked_by' => 'console',
             ]);
@@ -285,7 +286,7 @@ class IpBlockerCommand extends Command
         $this->info("{$count} IP(s) have been unblocked.");
 
         // Log the action
-        \Illuminate\Support\Facades\Log::info('All IPs unblocked via CLI', [
+        Log::info('All IPs unblocked via CLI', [
             'count' => $count,
             'unblocked_by' => 'console',
         ]);

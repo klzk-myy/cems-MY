@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Models\FlaggedTransaction;
+use App\Models\ReportGenerated;
+use App\Models\StrReport;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\CurrencyPositionService;
@@ -34,7 +37,7 @@ class DashboardController extends Controller
             'buy_volume' => Transaction::whereDate('created_at', today())->where('type', 'Buy')->sum('amount_local'),
             'sell_volume' => Transaction::whereDate('created_at', today())->where('type', 'Sell')->sum('amount_local'),
             'flagged' => FlaggedTransaction::where('status', 'Open')->count(),
-            'active_customers' => \App\Models\Customer::count(),
+            'active_customers' => Customer::count(),
         ];
 
         $recent_transactions = Transaction::with('customer')
@@ -71,15 +74,15 @@ class DashboardController extends Controller
 
         // Calculate STR stats including overdue tracking
         $strStats = [
-            'draft' => \App\Models\StrReport::where('status', 'draft')->count(),
-            'pending_review' => \App\Models\StrReport::where('status', 'pending_review')->count(),
-            'pending_approval' => \App\Models\StrReport::where('status', 'pending_approval')->count(),
-            'submitted' => \App\Models\StrReport::where('status', 'submitted')->count(),
-            'overdue' => \App\Models\StrReport::whereNotNull('filing_deadline')
+            'draft' => StrReport::where('status', 'draft')->count(),
+            'pending_review' => StrReport::where('status', 'pending_review')->count(),
+            'pending_approval' => StrReport::where('status', 'pending_approval')->count(),
+            'submitted' => StrReport::where('status', 'submitted')->count(),
+            'overdue' => StrReport::whereNotNull('filing_deadline')
                 ->where('filing_deadline', '<', now())
                 ->whereIn('status', ['draft', 'pending_review', 'pending_approval'])
                 ->count(),
-            'near_deadline' => \App\Models\StrReport::whereNotNull('filing_deadline')
+            'near_deadline' => StrReport::whereNotNull('filing_deadline')
                 ->whereBetween('filing_deadline', [now(), now()->addDays(2)])
                 ->whereIn('status', ['draft', 'pending_review', 'pending_approval'])
                 ->count(),
@@ -194,7 +197,7 @@ class DashboardController extends Controller
             abort(403, 'Unauthorized. Manager or Compliance Officer access required.');
         }
 
-        $recentReports = \App\Models\ReportGenerated::with('generatedBy')
+        $recentReports = ReportGenerated::with('generatedBy')
             ->orderBy('generated_at', 'desc')
             ->limit(10)
             ->get();

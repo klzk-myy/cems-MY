@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 
 class TaskService
 {
@@ -132,7 +133,7 @@ class TaskService
     /**
      * Apply role-based filtering based on user role.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder  $query
      */
     protected function applyRoleBasedFilter($query, User $user): void
     {
@@ -149,7 +150,7 @@ class TaskService
     /**
      * Apply filters to the query.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder  $query
      */
     protected function applyFilters($query, array $filters): void
     {

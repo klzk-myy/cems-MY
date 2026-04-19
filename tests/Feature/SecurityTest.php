@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -99,7 +100,7 @@ class SecurityTest extends TestCase
     public function test_teller_cannot_access_admin_routes(): void
     {
         $teller = User::factory()->create([
-            'role' => \App\Enums\UserRole::Teller,
+            'role' => UserRole::Teller,
         ]);
 
         $response = $this->actingAs($teller)->get('/users');
@@ -113,7 +114,7 @@ class SecurityTest extends TestCase
     public function test_teller_cannot_access_accounting(): void
     {
         $teller = User::factory()->create([
-            'role' => \App\Enums\UserRole::Teller,
+            'role' => UserRole::Teller,
         ]);
 
         $response = $this->actingAs($teller)->get('/accounting');
@@ -127,7 +128,7 @@ class SecurityTest extends TestCase
     public function test_teller_cannot_access_compliance_routes(): void
     {
         $teller = User::factory()->create([
-            'role' => \App\Enums\UserRole::Teller,
+            'role' => UserRole::Teller,
         ]);
 
         $response = $this->actingAs($teller)->get('/compliance/alerts');

@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Services\RateLimitService;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -35,7 +36,7 @@ class IpBlocker
             $blockInfo = $this->rateLimitService->getIpBlockInfo($ip);
 
             // Log blocked attempt
-            \Illuminate\Support\Facades\Log::warning('Blocked IP attempted access', [
+            Log::warning('Blocked IP attempted access', [
                 'ip' => $ip,
                 'url' => $request->url(),
                 'user_agent' => $request->userAgent(),

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\MfaService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,7 +27,7 @@ class EnsureMfaEnabled
         }
 
         // If MFA is not globally enabled, skip
-        $mfaService = app(\App\Services\MfaService::class);
+        $mfaService = app(MfaService::class);
         if (! $mfaService->isGloballyEnabled()) {
             return $next($request);
         }

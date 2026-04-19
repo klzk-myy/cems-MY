@@ -6,7 +6,7 @@ use App\Models\Counter;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Counter>
+ * @extends Factory<Counter>
  */
 class CounterFactory extends Factory
 {

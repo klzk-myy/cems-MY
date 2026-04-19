@@ -4,8 +4,13 @@ namespace App\Services;
 
 use App\Enums\ReportStatus;
 use App\Events\ReportGenerated;
+use App\Models\EnhancedDiligenceRecord;
+use App\Models\FlaggedTransaction;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
+use App\Models\StrDraft;
+use App\Models\StrReport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -70,7 +75,7 @@ class ReportSchedulingService
     /**
      * Get report history with filters.
      */
-    public function getReportHistory(array $filters = []): \Illuminate\Database\Eloquent\Builder
+    public function getReportHistory(array $filters = []): Builder
     {
         $query = ReportRun::with(['generatedBy', 'schedule'])
             ->orderByDesc('created_at');
@@ -216,7 +221,7 @@ class ReportSchedulingService
         $today = now();
         $deadlines = [];
 
-        $strDeadlines = \App\Models\StrDraft::pending()
+        $strDeadlines = StrDraft::pending()
             ->whereNotNull('filing_deadline')
             ->get()
             ->map(fn ($draft) => [
@@ -297,7 +302,7 @@ class ReportSchedulingService
 
     protected function calculateAvgFlagResolutionTime(): float
     {
-        $resolvedFlags = \App\Models\FlaggedTransaction::whereNotNull('resolved_at')
+        $resolvedFlags = FlaggedTransaction::whereNotNull('resolved_at')
             ->where('resolved_at', '>=', now()->subDays(30))
             ->get();
 
@@ -315,13 +320,13 @@ class ReportSchedulingService
 
     protected function calculateStrTimeliness(): float
     {
-        $totalStrs = \App\Models\StrReport::where('created_at', '>=', now()->subDays(30))->count();
+        $totalStrs = StrReport::where('created_at', '>=', now()->subDays(30))->count();
 
         if ($totalStrs === 0) {
             return 100;
         }
 
-        $onTimeStrs = \App\Models\StrReport::where('created_at', '>=', now()->subDays(30))
+        $onTimeStrs = StrReport::where('created_at', '>=', now()->subDays(30))
             ->get()
             ->filter(fn ($str) => $str->filing_deadline && $str->created_at->lte($str->filing_deadline))
             ->count();
@@ -331,13 +336,13 @@ class ReportSchedulingService
 
     protected function calculateEddCompletionRate(): float
     {
-        $totalEdds = \App\Models\EnhancedDiligenceRecord::where('created_at', '>=', now()->subDays(30))->count();
+        $totalEdds = EnhancedDiligenceRecord::where('created_at', '>=', now()->subDays(30))->count();
 
         if ($totalEdds === 0) {
             return 100;
         }
 
-        $completedEdds = \App\Models\EnhancedDiligenceRecord::where('created_at', '>=', now()->subDays(30))
+        $completedEdds = EnhancedDiligenceRecord::where('created_at', '>=', now()->subDays(30))
             ->whereIn('status', ['approved', 'rejected'])
             ->count();
 

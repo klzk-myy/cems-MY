@@ -6,6 +6,7 @@ use App\Services\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Journal Line model representing individual line items within a journal entry.
@@ -20,10 +21,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $debit Debit amount (nullable, 4 decimal places)
  * @property string|null $credit Credit amount (nullable, 4 decimal places)
  * @property string|null $description Optional description for this line
- * @property \Illuminate\Support\Carbon $created_at Timestamp when created
- * @property \Illuminate\Support\Carbon $updated_at Timestamp when last updated
- * @property-read \App\Models\JournalEntry $journalEntry The parent journal entry
- * @property-read \App\Models\ChartOfAccount $account The chart of account for this line
+ * @property Carbon $created_at Timestamp when created
+ * @property Carbon $updated_at Timestamp when last updated
+ * @property-read JournalEntry $journalEntry The parent journal entry
+ * @property-read ChartOfAccount $account The chart of account for this line
  */
 class JournalLine extends Model
 {

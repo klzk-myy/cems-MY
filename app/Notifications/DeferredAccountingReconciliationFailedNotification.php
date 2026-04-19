@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Queue\SerializesModels;
 
@@ -53,9 +54,9 @@ class DeferredAccountingReconciliationFailedNotification extends Notification im
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail(object $notifiable): \Illuminate\Notifications\Messages\MailMessage
+    public function toMail(object $notifiable): MailMessage
     {
-        $mail = (new \Illuminate\Notifications\Messages\MailMessage)
+        $mail = (new MailMessage)
             ->subject($this->subject())
             ->error()
             ->line('## Deferred Accounting Reconciliation Failed')

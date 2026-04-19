@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Models\SystemLog;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 /**
  * UserController
@@ -20,7 +22,7 @@ class UserController extends Controller
     /**
      * Display a paginated listing of all users.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function index()
     {
@@ -35,7 +37,7 @@ class UserController extends Controller
      *
      * Displays role options and form for user creation.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function create()
     {
@@ -55,7 +57,7 @@ class UserController extends Controller
      *
      * Validates input, creates user with hashed password, and logs the action.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function store(Request $request)
     {
@@ -109,7 +111,7 @@ class UserController extends Controller
     /**
      * Display the specified user's details.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function show(User $user)
     {
@@ -121,7 +123,7 @@ class UserController extends Controller
     /**
      * Show the form for editing a user.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function edit(User $user)
     {
@@ -139,7 +141,7 @@ class UserController extends Controller
     /**
      * Update the specified user in the database.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function update(Request $request, User $user)
     {

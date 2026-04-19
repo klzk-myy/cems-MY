@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\TransactionStatus;
 use App\Jobs\ProcessTransactionRetry;
 use App\Models\Transaction;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -198,7 +199,7 @@ class TransactionRecoveryService
      *
      * @param  Transaction  $transaction  The transaction
      */
-    protected function getNextRetryTime(Transaction $transaction): ?\Illuminate\Support\Carbon
+    protected function getNextRetryTime(Transaction $transaction): ?Carbon
     {
         $latestError = $transaction->transactionErrors()
             ->whereNull('resolved_at')

@@ -16,8 +16,8 @@ use App\Models\Compliance\ComplianceCaseDocument;
 use App\Models\Compliance\ComplianceCaseLink;
 use App\Models\Compliance\ComplianceCaseNote;
 use App\Models\Compliance\ComplianceFinding;
-use App\Services\AlertTriageService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -340,7 +340,7 @@ class CaseManagementService
     /**
      * Get open cases ordered by priority.
      */
-    public function getOpenCases(): \Illuminate\Database\Eloquent\Collection
+    public function getOpenCases(): Collection
     {
         return ComplianceCase::with(['customer', 'assignedTo', 'alerts'])
             ->open()
@@ -373,7 +373,7 @@ class CaseManagementService
     /**
      * Find potential duplicate cases for a customer.
      */
-    public function findPotentialDuplicates(int $customerId, ?int $excludeCaseId = null): \Illuminate\Database\Eloquent\Collection
+    public function findPotentialDuplicates(int $customerId, ?int $excludeCaseId = null): Collection
     {
         $query = ComplianceCase::where('customer_id', $customerId)
             ->open()
@@ -444,7 +444,7 @@ class CaseManagementService
     /**
      * Get all documents for a case.
      */
-    public function getCaseDocuments(int $caseId): \Illuminate\Database\Eloquent\Collection
+    public function getCaseDocuments(int $caseId): Collection
     {
         return ComplianceCase::findOrFail($caseId)->documents()->get();
     }
@@ -452,7 +452,7 @@ class CaseManagementService
     /**
      * Get all links for a case.
      */
-    public function getCaseLinks(int $caseId): \Illuminate\Database\Eloquent\Collection
+    public function getCaseLinks(int $caseId): Collection
     {
         return ComplianceCase::findOrFail($caseId)->links()->get();
     }

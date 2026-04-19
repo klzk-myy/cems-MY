@@ -12,6 +12,7 @@ use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class TransactionApprovalController extends Controller
 {
@@ -34,7 +35,7 @@ class TransactionApprovalController extends Controller
      * - AML/Compliance monitoring before approval
      * - Audit logging
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException
+     * @throws AccessDeniedHttpException
      */
     public function approve(Request $request, int $transactionId): JsonResponse
     {

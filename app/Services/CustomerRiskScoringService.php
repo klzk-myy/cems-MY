@@ -18,6 +18,7 @@ class CustomerRiskScoringService
         protected ComplianceService $complianceService,
         protected AuditService $auditService,
         protected MathService $mathService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     /**
@@ -218,11 +219,11 @@ class CustomerRiskScoringService
 
         foreach ($dailyAmounts as $date => $amount) {
             $amountStr = (string) $amount;
-            if ($this->mathService->compare($amountStr, '50000') >= 0) {
+            if ($this->mathService->compare($amountStr, $this->thresholdService->getRiskHighThreshold()) >= 0) {
                 $score += 30;
-            } elseif ($this->mathService->compare($amountStr, '30000') >= 0) {
+            } elseif ($this->mathService->compare($amountStr, $this->thresholdService->getRiskMediumThreshold()) >= 0) {
                 $score += 20;
-            } elseif ($this->mathService->compare($amountStr, '10000') >= 0) {
+            } elseif ($this->mathService->compare($amountStr, $this->thresholdService->getRiskLowThreshold()) >= 0) {
                 $score += 10;
             }
         }
@@ -235,7 +236,7 @@ class CustomerRiskScoringService
         $score = 0;
 
         $subThreshold = $transactions->filter(
-            fn ($t) => $this->mathService->compare((string) $t->amount_local, '50000') < 0
+            fn ($t) => $this->mathService->compare((string) $t->amount_local, $this->thresholdService->getRiskHighThreshold()) < 0
         );
         $hourlyGroups = $subThreshold->groupBy(fn ($t) => $t->created_at->format('Y-m-d H'));
 
@@ -281,11 +282,11 @@ class CustomerRiskScoringService
 
         $maxTransaction = (string) ($transactions->max('amount_local') ?? '0');
 
-        if ($this->mathService->compare($maxTransaction, '50000') >= 0) {
+        if ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskHighThreshold()) >= 0) {
             $score += 30;
-        } elseif ($this->mathService->compare($maxTransaction, '30000') >= 0) {
+        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskMediumThreshold()) >= 0) {
             $score += 20;
-        } elseif ($this->mathService->compare($maxTransaction, '10000') >= 0) {
+        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskLowThreshold()) >= 0) {
             $score += 10;
         }
 

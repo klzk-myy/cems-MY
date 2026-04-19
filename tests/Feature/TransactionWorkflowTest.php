@@ -11,8 +11,8 @@ use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
-use App\Models\Transaction;
 use App\Models\TillBalance;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -229,7 +229,7 @@ class TransactionWorkflowTest extends TestCase
         ];
 
         // This should throw InsufficientStockException
-        $this->expectException(\App\Exceptions\Domain\InsufficientStockException::class);
+        $this->expectException(InsufficientStockException::class);
         $this->transactionService->createTransaction($data2, $this->teller->id);
     }
 }

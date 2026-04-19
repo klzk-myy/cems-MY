@@ -2,13 +2,16 @@
 
 namespace Tests\Unit;
 
+use App\Enums\UserRole;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
 use App\Models\User;
 use App\Services\AccountingService;
 use App\Services\BudgetService;
 use App\Services\MathService;
+use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Tests\TestCase;
 
 class BudgetServiceTest extends TestCase
@@ -22,7 +25,7 @@ class BudgetServiceTest extends TestCase
         parent::setUp();
 
         // Create admin user (required for Budget.created_by FK)
-        $this->adminUser = User::factory()->create(['role' => \App\Enums\UserRole::Admin]);
+        $this->adminUser = User::factory()->create(['role' => UserRole::Admin]);
 
         $this->budgetService = new BudgetService(
             app(AccountingService::class),
@@ -30,7 +33,7 @@ class BudgetServiceTest extends TestCase
         );
 
         // Seed chart of accounts
-        $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
+        $this->seed(ChartOfAccountsSeeder::class);
     }
 
     public function test_get_budget_report_returns_correct_structure(): void
@@ -151,7 +154,7 @@ class BudgetServiceTest extends TestCase
 
         $accountsWithoutBudget = $this->budgetService->getAccountsWithoutBudget($periodCode);
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $accountsWithoutBudget);
+        $this->assertInstanceOf(Collection::class, $accountsWithoutBudget);
     }
 
     public function test_budget_report_empty_for_no_budgets(): void

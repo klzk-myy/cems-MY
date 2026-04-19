@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
+use App\Exceptions\Domain\ClosedPeriodException;
+use App\Exceptions\Domain\UnbalancedJournalEntriesException;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\SystemLog;
-use App\Exceptions\Domain\ClosedPeriodException;
-use App\Exceptions\Domain\UnbalancedJournalEntriesException;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class PeriodCloseService
@@ -201,9 +202,9 @@ class PeriodCloseService
      */
     protected function getValidatedAccountCode(string $configKey, string $defaultCode): string
     {
-        $code = \Illuminate\Support\Facades\Config::get($configKey, $defaultCode);
+        $code = Config::get($configKey, $defaultCode);
 
-        if (\Illuminate\Support\Facades\Config::get('accounting.validate_accounts', true)) {
+        if (Config::get('accounting.validate_accounts', true)) {
             $account = ChartOfAccount::where('account_code', $code)->first();
 
             if (! $account) {

@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TransactionType;
 use App\Models\Customer;
 use App\Models\SystemLog;
 use App\Services\ExportService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TransactionReportController extends Controller
@@ -17,7 +22,7 @@ class TransactionReportController extends Controller
     /**
      * Display customer transaction history with filtering and pagination.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function customerHistory(Request $request, Customer $customer)
     {
@@ -87,7 +92,7 @@ class TransactionReportController extends Controller
     /**
      * Export customer transaction history to CSV or PDF.
      *
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\Response
+     * @return BinaryFileResponse|Response
      */
     public function exportCustomerHistory(Request $request, Customer $customer)
     {
@@ -186,8 +191,8 @@ class TransactionReportController extends Controller
 
         $transactions = $query->get();
 
-        $buyTransactions = $transactions->where('type', \App\Enums\TransactionType::Buy);
-        $sellTransactions = $transactions->where('type', \App\Enums\TransactionType::Sell);
+        $buyTransactions = $transactions->where('type', TransactionType::Buy);
+        $sellTransactions = $transactions->where('type', TransactionType::Sell);
 
         $buyVolume = $buyTransactions->sum('amount_local');
         $sellVolume = $sellTransactions->sum('amount_local');
@@ -239,8 +244,8 @@ class TransactionReportController extends Controller
                 return $t->created_at->year === $date->year && $t->created_at->month === $date->month;
             });
 
-            $buyTotal = $monthTransactions->where('type', \App\Enums\TransactionType::Buy)->sum('amount_local');
-            $sellTotal = $monthTransactions->where('type', \App\Enums\TransactionType::Sell)->sum('amount_local');
+            $buyTotal = $monthTransactions->where('type', TransactionType::Buy)->sum('amount_local');
+            $sellTotal = $monthTransactions->where('type', TransactionType::Sell)->sum('amount_local');
 
             $chartBuyData[] = $buyTotal ?: 0;
             $chartSellData[] = $sellTotal ?: 0;
@@ -266,7 +271,7 @@ class TransactionReportController extends Controller
     /**
      * Prepare transaction data for export.
      *
-     * @param  \Illuminate\Database\Eloquent\Collection  $transactions
+     * @param  Collection  $transactions
      */
     protected function prepareExportData($transactions, Customer $customer): array
     {
@@ -327,7 +332,7 @@ class TransactionReportController extends Controller
     /**
      * Export data to PDF format.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     protected function exportToPdf(array $data, string $filename, Customer $customer, array $filters)
     {
