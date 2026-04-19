@@ -151,7 +151,31 @@ Routes use these middleware:
 - `CheckBranchAccess` - Branch-based access control
 - `LogRequests` / `QueryPerformanceMonitor` - Request logging and monitoring
 
-### Key Services
+**12. Centralized Threshold Configuration**
+
+All threshold amounts are centralized in `config/thresholds.php` and accessed via `ThresholdService`:
+
+```php
+// config/thresholds.php structure
+return [
+    'approval' => ['auto_approve' => '3000', 'manager' => '50000'],
+    'cdd' => ['standard' => '3000', 'large_transaction' => '50000'],
+    'risk_scoring' => ['high' => '50000', 'medium' => '30000', 'low' => '10000'],
+    'alert_triage' => ['critical' => '50000', 'high' => '30000', 'medium' => '10000'],
+    'reporting' => ['ctos' => '10000', 'ctr' => '50000', 'str' => '50000', 'edd' => '50000'],
+    'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3],
+    'duration' => ['warning_hours' => 24, 'critical_hours' => 48],
+    'variance' => ['yellow' => '100.00', 'red' => '500.00'],
+    'velocity' => ['alert_threshold' => '50000'],
+];
+```
+
+- All thresholds can be overridden via environment variables (e.g., `THRESHOLD_CTOS=15000`)
+- `ThresholdService` provides type-safe getters with backward-compatible fallbacks
+- `ThresholdAudit` model tracks all threshold changes (category, key, old/new value, changed_by, reason)
+- Enums use `config()` helper directly since they cannot use dependency injection
+
+**Key Services**
 
 | Service | Purpose |
 |---------|---------|
@@ -169,7 +193,7 @@ Routes use these middleware:
 | `CaseManagementService` | Compliance case management |
 | `MathService` | BCMath precision calculations |
 | `AuditService` | Audit log with async hash sealing |
-| `AuditService` | Audit log with hash chaining verification |
+| `ThresholdService` | Centralized threshold access with audit logging |
 
 ### Counter Management
 
