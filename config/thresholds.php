@@ -104,6 +104,17 @@ return [
     */
     'velocity' => [
         'alert_threshold' => env('THRESHOLD_VELOCITY_ALERT', '50000'),
+        'warning_threshold' => env('THRESHOLD_VELOCITY_WARNING', '45000'),
         'window_days' => env('THRESHOLD_VELOCITY_WINDOW_DAYS', 90),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AML Rules
+    |--------------------------------------------------------------------------
+    */
+    'aml' => [
+        'amount_threshold' => env('THRESHOLD_AML_AMOUNT', '50000'),
+        'aggregate_threshold' => env('THRESHOLD_AML_AGGREGATE', '50000'),
     ],
 ];

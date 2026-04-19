@@ -70,7 +70,14 @@ class ThresholdConfigTest extends TestCase
     public function test_velocity_thresholds_exist(): void
     {
         $this->assertEquals('50000', config('thresholds.velocity.alert_threshold'));
+        $this->assertEquals('45000', config('thresholds.velocity.warning_threshold'));
         $this->assertEquals(90, config('thresholds.velocity.window_days'));
+    }
+
+    public function test_aml_thresholds_exist(): void
+    {
+        $this->assertEquals('50000', config('thresholds.aml.amount_threshold'));
+        $this->assertEquals('50000', config('thresholds.aml.aggregate_threshold'));
     }
 
     public function test_all_threshold_values_are_string_or_int(): void

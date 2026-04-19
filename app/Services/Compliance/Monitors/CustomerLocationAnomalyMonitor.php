@@ -21,7 +21,7 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
     public function __construct()
     {
         parent::__construct();
-        $this->highValueThreshold = config('thresholds.cdd.large_transaction', '10000');
+        $this->highValueThreshold = config('thresholds.cdd.large_transaction', '50000');
     }
 
     protected function getFindingType(): FindingType
