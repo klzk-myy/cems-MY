@@ -14,15 +14,13 @@ use Illuminate\Support\Facades\Log;
 /**
  * Approval Workflow Service
  *
- * Handles tiered approval thresholds for currency exchange transactions per BNM compliance.
+ * Handles simplified approval thresholds for currency exchange transactions per BNM compliance.
  *
  * Thresholds:
- * - < RM 3,000: Auto-approve (no approval needed)
- * - >= RM 3,000: Manager approval required
- * - >= RM 50,000: Admin approval required
+ * - < auto_approve_threshold: Auto-approve (no approval needed)
+ * - >= manager_threshold: Manager approval required
  *
- * Note: This system does not have a separate "Supervisor" role - Manager role handles
- * all approval tiers below RM 50,000.
+ * All approvals above the auto-approve threshold require Manager role.
  */
 class ApprovalWorkflowService
 {
@@ -73,26 +71,20 @@ class ApprovalWorkflowService
         $amount = $transaction->amount_local;
 
         $autoApproveThreshold = $this->thresholdService?->getAutoApproveThreshold() ?? self::AUTO_APPROVE_THRESHOLD;
-        $managerThreshold = $this->thresholdService?->getManagerApprovalThreshold() ?? self::MANAGER_THRESHOLD;
 
-        // Auto-approve: < RM auto_approve_threshold
+        // Auto-approve: < auto_approve_threshold (no approval needed)
         if ($this->mathService->compare($amount, $autoApproveThreshold) < 0) {
             return null;
         }
 
-        // Manager: >= auto_approve_threshold and < manager_threshold
-        if ($this->mathService->compare($amount, $managerThreshold) < 0) {
-            return UserRole::Manager;
-        }
-
-        // Admin: >= manager_threshold
-        return UserRole::Admin;
+        // Manager approval required for all amounts >= auto_approve_threshold
+        return UserRole::Manager;
     }
 
     /**
      * Get the threshold amount that triggered approval requirement.
      *
-     * Returns the lower bound of the tier the transaction falls into.
+     * Returns the auto-approve threshold since all approvals go to Manager.
      *
      * @return string The threshold amount
      */
@@ -101,20 +93,14 @@ class ApprovalWorkflowService
         $amount = $transaction->amount_local;
 
         $autoApproveThreshold = $this->thresholdService?->getAutoApproveThreshold() ?? self::AUTO_APPROVE_THRESHOLD;
-        $managerThreshold = $this->thresholdService?->getManagerApprovalThreshold() ?? self::MANAGER_THRESHOLD;
 
         // Auto-approve: < auto_approve_threshold (no threshold)
         if ($this->mathService->compare($amount, $autoApproveThreshold) < 0) {
             return '0.0000';
         }
 
-        // Manager: >= auto_approve_threshold and < manager_threshold
-        if ($this->mathService->compare($amount, $managerThreshold) < 0) {
-            return $autoApproveThreshold;
-        }
-
-        // Admin: >= manager_threshold
-        return $managerThreshold;
+        // Manager approval required
+        return $autoApproveThreshold;
     }
 
     /**
