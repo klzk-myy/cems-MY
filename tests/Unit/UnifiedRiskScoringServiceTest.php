@@ -6,6 +6,7 @@ use App\Enums\CddLevel;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\MathService;
+use App\Services\ThresholdService;
 use App\Services\UnifiedRiskScoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,7 +21,8 @@ class UnifiedRiskScoringServiceTest extends TestCase
     {
         parent::setUp();
         $mathService = new MathService;
-        $this->service = new UnifiedRiskScoringService($mathService);
+        $thresholdService = new ThresholdService;
+        $this->service = new UnifiedRiskScoringService($mathService, $thresholdService);
     }
 
     public function test_calculate_risk_score_returns_expected_structure(): void
