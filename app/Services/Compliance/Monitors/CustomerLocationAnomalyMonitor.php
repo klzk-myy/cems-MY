@@ -14,9 +14,15 @@ use App\Models\Transaction;
  */
 class CustomerLocationAnomalyMonitor extends BaseMonitor
 {
-    public const HIGH_VALUE_THRESHOLD = '10000';
+    protected string $highValueThreshold;
 
     public const LOOKBACK_DAYS = 7;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->highValueThreshold = config('thresholds.cdd.large_transaction', '10000');
+    }
 
     protected function getFindingType(): FindingType
     {
@@ -53,7 +59,7 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
         $recentTransactions = Transaction::where('customer_id', $customer->id)
             ->where('created_at', '>=', $cutoffTime)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->where('amount_local', '>=', self::HIGH_VALUE_THRESHOLD)
+            ->where('amount_local', '>=', $this->highValueThreshold)
             ->get();
 
         if ($recentTransactions->isEmpty()) {

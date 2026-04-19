@@ -14,9 +14,16 @@ use App\Models\Transaction;
  */
 class VelocityMonitor extends BaseMonitor
 {
-    public const THRESHOLD = '50000';
+    protected string $threshold;
 
-    public const WARNING_THRESHOLD = '45000';
+    protected string $warningThreshold;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->threshold = config('thresholds.velocity.alert_threshold', '50000');
+        $this->warningThreshold = config('thresholds.velocity.warning_threshold', '45000');
+    }
 
     public const LOOKBACK_HOURS = 24;
 
@@ -59,7 +66,7 @@ class VelocityMonitor extends BaseMonitor
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->count();
 
-        if ($this->math->compare((string) $totalAmount, self::THRESHOLD) >= 0) {
+        if ($this->math->compare((string) $totalAmount, $this->threshold) >= 0) {
             $customer = Customer::find($customerId);
 
             return $this->createFinding(
@@ -71,13 +78,13 @@ class VelocityMonitor extends BaseMonitor
                     'customer_name' => $customer?->full_name ?? 'Unknown',
                     'transactions_24h' => $transactionCount,
                     'total_amount_24h' => (string) $totalAmount,
-                    'threshold' => self::THRESHOLD,
+                    'threshold' => $this->threshold,
                     'recommendation' => 'STR recommended if suspicious',
                 ]
             );
         }
 
-        if ($this->math->compare((string) $totalAmount, self::WARNING_THRESHOLD) >= 0) {
+        if ($this->math->compare((string) $totalAmount, $this->warningThreshold) >= 0) {
             $customer = Customer::find($customerId);
 
             return $this->createFinding(
@@ -89,7 +96,7 @@ class VelocityMonitor extends BaseMonitor
                     'customer_name' => $customer?->full_name ?? 'Unknown',
                     'transactions_24h' => $transactionCount,
                     'total_amount_24h' => (string) $totalAmount,
-                    'threshold' => self::WARNING_THRESHOLD,
+                    'threshold' => $this->warningThreshold,
                     'approaching_threshold' => true,
                 ]
             );

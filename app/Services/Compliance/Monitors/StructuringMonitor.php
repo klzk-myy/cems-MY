@@ -14,11 +14,17 @@ use App\Models\Transaction;
  */
 class StructuringMonitor extends BaseMonitor
 {
-    public const SUB_THRESHOLD = '3000';
+    protected string $subThreshold;
 
     public const STRUCTURING_COUNT = 3;
 
     public const LOOKBACK_MINUTES = 60;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->subThreshold = config('thresholds.structuring.sub_threshold', '3000');
+    }
 
     protected function getFindingType(): FindingType
     {
@@ -31,7 +37,7 @@ class StructuringMonitor extends BaseMonitor
         $cutoffTime = now()->subMinutes(self::LOOKBACK_MINUTES);
 
         $customerIds = Transaction::where('created_at', '>=', $cutoffTime)
-            ->where('amount_local', '<', self::SUB_THRESHOLD)
+            ->where('amount_local', '<', $this->subThreshold)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->distinct('customer_id')
             ->pluck('customer_id');
@@ -52,7 +58,7 @@ class StructuringMonitor extends BaseMonitor
 
         $smallTransactions = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $cutoffTime)
-            ->where('amount_local', '<', self::SUB_THRESHOLD)
+            ->where('amount_local', '<', $this->subThreshold)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -70,7 +76,7 @@ class StructuringMonitor extends BaseMonitor
                     'customer_name' => $customer?->full_name ?? 'Unknown',
                     'transaction_count' => $smallTransactions->count(),
                     'total_amount' => (string) $totalAmount,
-                    'threshold' => self::SUB_THRESHOLD,
+                    'threshold' => $this->subThreshold,
                     'transaction_ids' => $smallTransactions->pluck('id')->toArray(),
                     'recommendation' => 'STR strongly recommended',
                 ]
