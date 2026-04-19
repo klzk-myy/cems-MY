@@ -169,9 +169,8 @@ class UnifiedRiskScoringService
             return 0;
         }
 
-        $highThreshold = $this->thresholdService->getRiskHighThreshold();
         $subThreshold = $transactions->filter(
-            fn ($t) => $this->mathService->compare((string) $t->amount_local, $highThreshold) < 0
+            fn ($t) => $this->mathService->compare((string) $t->amount_local, $this->thresholdService->getStructuringSubThreshold()) < 0
         );
 
         $hourlyGroups = $subThreshold->groupBy(fn ($t) => $t->created_at->format('Y-m-d H'));

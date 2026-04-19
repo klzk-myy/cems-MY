@@ -98,10 +98,13 @@ enum CddLevel: string
      */
     public function thresholdAmount(): string
     {
+        $standard = config('thresholds.cdd.standard', '3000');
+        $large = config('thresholds.cdd.large_transaction', '50000');
+
         return match ($this) {
-            self::Simplified => '< RM 3,000',
-            self::Standard => 'RM 3,000 - RM 49,999',
-            self::Enhanced => '≥ RM 50,000',
+            self::Simplified => "< RM {$standard}",
+            self::Standard => "≥ RM {$standard}",
+            self::Enhanced => "≥ RM {$large}",
         };
     }
 
