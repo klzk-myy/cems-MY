@@ -34,11 +34,11 @@ enum CddLevel: string
         }
 
         // Amount thresholds (using string comparison for precision)
-        if (bccomp($amount, '50000') >= 0 || $riskRating === 'High') {
+        if (bccomp($amount, config('thresholds.cdd.large_transaction', '50000')) >= 0 || $riskRating === 'High') {
             return self::Enhanced;
         }
 
-        if (bccomp($amount, '3000') >= 0) {
+        if (bccomp($amount, config('thresholds.cdd.standard', '3000')) >= 0) {
             return self::Standard;
         }
 
