@@ -18,8 +18,7 @@ use Illuminate\Support\Facades\Log;
  *
  * Thresholds:
  * - < RM 3,000: Auto-approve (no approval needed)
- * - RM 3,000 - 9,999.99: Manager approval required
- * - RM 10,000 - 49,999.99: Manager approval required
+ * - >= RM 3,000: Manager approval required
  * - >= RM 50,000: Admin approval required
  *
  * Note: This system does not have a separate "Supervisor" role - Manager role handles
@@ -29,16 +28,15 @@ class ApprovalWorkflowService
 {
     /**
      * Auto-approve threshold upper bound (exclusive).
+     *
+     * @deprecated Use ThresholdService::getAutoApproveThreshold() instead
      */
     public const AUTO_APPROVE_THRESHOLD = '3000';
 
     /**
-     * Supervisor threshold upper bound (exclusive).
-     */
-    public const SUPERVISOR_THRESHOLD = '10000';
-
-    /**
      * Manager threshold upper bound (exclusive).
+     *
+     * @deprecated Use ThresholdService::getManagerApprovalThreshold() instead
      */
     public const MANAGER_THRESHOLD = '50000';
 
@@ -51,7 +49,8 @@ class ApprovalWorkflowService
      * Create a new ApprovalWorkflowService instance.
      */
     public function __construct(
-        protected MathService $mathService
+        protected MathService $mathService,
+        protected ?ThresholdService $thresholdService = null
     ) {}
 
     /**
@@ -73,22 +72,20 @@ class ApprovalWorkflowService
     {
         $amount = $transaction->amount_local;
 
-        // Auto-approve: < RM 3,000
-        if ($this->mathService->compare($amount, self::AUTO_APPROVE_THRESHOLD) < 0) {
+        $autoApproveThreshold = $this->thresholdService?->getAutoApproveThreshold() ?? self::AUTO_APPROVE_THRESHOLD;
+        $managerThreshold = $this->thresholdService?->getManagerApprovalThreshold() ?? self::MANAGER_THRESHOLD;
+
+        // Auto-approve: < RM auto_approve_threshold
+        if ($this->mathService->compare($amount, $autoApproveThreshold) < 0) {
             return null;
         }
 
-        // Supervisor: RM 3,000 - 9,999.99
-        if ($this->mathService->compare($amount, self::SUPERVISOR_THRESHOLD) < 0) {
-            return UserRole::Manager; // Supervisors are managers in this system
-        }
-
-        // Manager: RM 10,000 - 49,999.99
-        if ($this->mathService->compare($amount, self::MANAGER_THRESHOLD) < 0) {
+        // Manager: >= auto_approve_threshold and < manager_threshold
+        if ($this->mathService->compare($amount, $managerThreshold) < 0) {
             return UserRole::Manager;
         }
 
-        // Admin: >= RM 50,000
+        // Admin: >= manager_threshold
         return UserRole::Admin;
     }
 
@@ -103,23 +100,21 @@ class ApprovalWorkflowService
     {
         $amount = $transaction->amount_local;
 
-        // Auto-approve: < RM 3,000 (no threshold)
-        if ($this->mathService->compare($amount, self::AUTO_APPROVE_THRESHOLD) < 0) {
+        $autoApproveThreshold = $this->thresholdService?->getAutoApproveThreshold() ?? self::AUTO_APPROVE_THRESHOLD;
+        $managerThreshold = $this->thresholdService?->getManagerApprovalThreshold() ?? self::MANAGER_THRESHOLD;
+
+        // Auto-approve: < auto_approve_threshold (no threshold)
+        if ($this->mathService->compare($amount, $autoApproveThreshold) < 0) {
             return '0.0000';
         }
 
-        // Supervisor: RM 3,000+
-        if ($this->mathService->compare($amount, self::SUPERVISOR_THRESHOLD) < 0) {
-            return self::AUTO_APPROVE_THRESHOLD;
+        // Manager: >= auto_approve_threshold and < manager_threshold
+        if ($this->mathService->compare($amount, $managerThreshold) < 0) {
+            return $autoApproveThreshold;
         }
 
-        // Manager: RM 10,000+
-        if ($this->mathService->compare($amount, self::MANAGER_THRESHOLD) < 0) {
-            return self::SUPERVISOR_THRESHOLD;
-        }
-
-        // Admin: RM 50,000+
-        return self::MANAGER_THRESHOLD;
+        // Admin: >= manager_threshold
+        return $managerThreshold;
     }
 
     /**
