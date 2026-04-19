@@ -82,7 +82,7 @@ class StrStudioController extends Controller
                 $transactionPatterns = [
                     'total_amount' => $transactions->sum('amount_local'),
                     'max_amount' => $transactions->max('amount_local'),
-                    'sub_threshold_count' => $transactions->where('amount_local', '<', 50000)->count(),
+                    'sub_threshold_count' => $transactions->where('amount_local', '<', config('thresholds.reporting.str'))->count(),
                 ];
             }
         }

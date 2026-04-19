@@ -248,7 +248,7 @@ class TransactionApprovalController extends Controller
      */
     protected function requiresConfirmation(Transaction $transaction): bool
     {
-        $threshold = config('cems.thresholds.str', '50000');
+        $threshold = config('thresholds.reporting.str');
 
         return $this->mathService->compare($transaction->amount_local, $threshold) >= 0;
     }

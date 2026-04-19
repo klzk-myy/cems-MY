@@ -274,7 +274,7 @@ class AnalyticsController extends Controller
             ->get();
 
         // Large transactions (≥RM 50,000)
-        $largeTransactions = Transaction::where('amount_local', '>=', 50000)
+        $largeTransactions = Transaction::where('amount_local', '>=', config('thresholds.reporting.lctr'))
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
 
