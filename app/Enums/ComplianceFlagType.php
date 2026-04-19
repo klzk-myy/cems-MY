@@ -85,9 +85,9 @@ enum ComplianceFlagType: string
     public function thresholdAmount(): ?string
     {
         return match ($this) {
-            self::LargeAmount => '50000',
-            self::EddRequired => '50000',
-            self::Velocity => '50000',
+            self::LargeAmount => config('thresholds.cdd.large_transaction', '50000'),
+            self::EddRequired => config('thresholds.cdd.large_transaction', '50000'),
+            self::Velocity => config('thresholds.cdd.large_transaction', '50000'),
             default => null,
         };
     }
