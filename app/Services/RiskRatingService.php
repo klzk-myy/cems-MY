@@ -7,6 +7,12 @@ use App\Models\Customer;
 use App\Models\CustomerRiskHistory;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @deprecated Use \App\Services\Compliance\RiskScoringEngine instead.
+ * This service will be removed after migration.
+ * RiskRatingService uses simple weighted factors; RiskScoringEngine provides
+ * comprehensive scoring with behavioral baseline, EDD history, document verification, and sanctions.
+ */
 class RiskRatingService
 {
     protected array $riskFactors = [

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Services\AuditService;
 use App\Services\EncryptionService;
-use App\Services\RiskRatingService;
+use App\Services\Compliance\RiskScoringEngine;
 use App\Services\CustomerScreeningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +18,7 @@ class CustomerController extends Controller
         protected AuditService $auditService,
         protected EncryptionService $encryptionService,
         protected CustomerScreeningService $sanctionService,
-        protected RiskRatingService $riskRatingService
+        protected RiskScoringEngine $riskScoringEngine
     ) {}
 
     /**
@@ -120,7 +120,7 @@ class CustomerController extends Controller
             }
 
             // Initial risk assessment
-            $this->riskRatingService->assessCustomer($customer, auth()->id());
+            $this->riskScoringEngine->recalculateForCustomer($customer->id);
 
             DB::commit();
 
@@ -215,7 +215,7 @@ class CustomerController extends Controller
             ]);
 
             // Re-assess risk
-            $this->riskRatingService->assessCustomer($customer, auth()->id());
+            $this->riskScoringEngine->recalculateForCustomer($customer->id);
 
             DB::commit();
 

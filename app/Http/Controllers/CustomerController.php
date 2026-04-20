@@ -6,7 +6,7 @@ use App\Models\Customer;
 use App\Models\SystemLog;
 use App\Services\AuditService;
 use App\Services\EncryptionService;
-use App\Services\RiskRatingService;
+use App\Services\Compliance\RiskScoringEngine;
 use App\Services\CustomerScreeningService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +26,7 @@ class CustomerController extends Controller
         protected AuditService $auditService,
         protected EncryptionService $encryptionService,
         protected CustomerScreeningService $sanctionService,
-        protected RiskRatingService $riskRatingService
+        protected RiskScoringEngine $riskScoringEngine
     ) {}
 
     /**
@@ -224,8 +224,8 @@ class CustomerController extends Controller
                 ]);
             }
 
-            // Initial risk assessment using RiskRatingService
-            $riskAssessment = $this->riskRatingService->assessCustomer($customer, auth()->id());
+            // Initial risk assessment using RiskScoringEngine
+            $this->riskScoringEngine->recalculateForCustomer($customer->id);
 
             // Log customer creation with AuditService (hash-chained)
             $this->auditService->logCustomer('customer_created', $customer->id, [
@@ -429,7 +429,7 @@ class CustomerController extends Controller
             }
 
             // Re-assess risk
-            $this->riskRatingService->assessCustomer($customer, auth()->id());
+            $this->riskScoringEngine->recalculateForCustomer($customer->id);
 
             // Log customer update with AuditService (hash-chained)
             $this->auditService->logCustomer('customer_updated', $customer->id, [
