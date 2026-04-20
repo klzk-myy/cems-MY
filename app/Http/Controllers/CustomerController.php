@@ -3,15 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Models\SystemLog;
 use App\Services\AuditService;
-use App\Services\Compliance\RiskScoringEngine;
-use App\Services\CustomerScreeningService;
-use App\Services\EncryptionService;
+use App\Services\CustomerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 /**
@@ -23,10 +18,8 @@ use Illuminate\View\View;
 class CustomerController extends Controller
 {
     public function __construct(
-        protected AuditService $auditService,
-        protected EncryptionService $encryptionService,
-        protected CustomerScreeningService $sanctionService,
-        protected RiskScoringEngine $riskScoringEngine
+        protected CustomerService $customerService,
+        protected AuditService $auditService
     ) {}
 
     /**
@@ -166,83 +159,11 @@ class CustomerController extends Controller
             'employer_address' => 'nullable|string|max:500',
         ]);
 
-        DB::beginTransaction();
         try {
-            // Encrypt sensitive fields
-            $encryptedIdNumber = $this->encryptionService->encrypt($validated['id_number']);
-            $encryptedAddress = ! empty($validated['address'])
-                ? $this->encryptionService->encrypt($validated['address'])
-                : null;
-            $encryptedPhone = ! empty($validated['phone'])
-                ? $this->encryptionService->encrypt($validated['phone'])
-                : null;
-            $encryptedEmployerAddress = ! empty($validated['employer_address'])
-                ? $this->encryptionService->encrypt($validated['employer_address'])
-                : null;
-
-            // Create customer
-            $customer = Customer::create([
-                'full_name' => $validated['full_name'],
-                'id_type' => $validated['id_type'],
-                'id_number_encrypted' => $encryptedIdNumber,
-                'date_of_birth' => $validated['date_of_birth'],
-                'nationality' => $validated['nationality'],
-                'address' => $encryptedAddress,
-                'phone' => $encryptedPhone,
-                'email' => $validated['email'] ?? null,
-                'pep_status' => $validated['pep_status'] ?? false,
-                'risk_rating' => $validated['risk_rating'],
-                'occupation' => $validated['occupation'] ?? null,
-                'employer_name' => $validated['employer_name'] ?? null,
-                'employer_address' => $encryptedEmployerAddress,
-                'is_active' => true,
-            ]);
-
-            // Screen against sanctions list
-            $sanctionMatches = $this->sanctionService->screenName($validated['full_name']);
-            $hasSanctionHit = ! empty($sanctionMatches);
-
-            // Update sanction status, risk rating, AND deactivate if hit found
-            if ($hasSanctionHit) {
-                $customer->update([
-                    'risk_rating' => 'High',
-                    'sanction_hit' => true,
-                    'is_active' => false, // Require Manager/Compliance approval to activate
-                ]);
-                // Log sanction hit
-                SystemLog::create([
-                    'user_id' => auth()->id(),
-                    'action' => 'customer_sanction_hit',
-                    'severity' => 'WARNING',
-                    'entity_type' => 'Customer',
-                    'entity_id' => $customer->id,
-                    'new_values' => [
-                        'customer_name' => $customer->full_name,
-                        'sanction_matches' => $sanctionMatches,
-                    ],
-                    'ip_address' => $request->ip(),
-                ]);
-            }
-
-            // Initial risk assessment using RiskScoringEngine
-            $this->riskScoringEngine->recalculateForCustomer($customer->id);
-
-            // Log customer creation with AuditService (hash-chained)
-            $this->auditService->logCustomer('customer_created', $customer->id, [
-                'new' => [
-                    'full_name' => $customer->full_name,
-                    'id_type' => $customer->id_type,
-                    'nationality' => $customer->nationality,
-                    'risk_rating' => $customer->risk_rating,
-                    'pep_status' => $customer->pep_status,
-                    'sanction_hit' => $hasSanctionHit,
-                ],
-            ]);
-
-            DB::commit();
+            $customer = $this->customerService->createCustomer($validated, auth()->id());
 
             $message = "Customer {$customer->full_name} created successfully.";
-            if ($hasSanctionHit) {
+            if ($customer->sanction_hit) {
                 $message .= ' WARNING: Sanction match(es) found - customer flagged as High Risk.';
             }
 
@@ -250,22 +171,6 @@ class CustomerController extends Controller
                 ->with('success', $message);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Customer creation failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'user_id' => auth()->id(),
-            ]);
-
-            SystemLog::create([
-                'user_id' => auth()->id(),
-                'action' => 'customer_creation_failed',
-                'severity' => 'ERROR',
-                'new_values' => ['error' => $e->getMessage()],
-                'ip_address' => $request->ip(),
-            ]);
-
             return back()->with('error', 'Failed to create customer: '.$e->getMessage())
                 ->withInput();
         }
@@ -379,96 +284,13 @@ class CustomerController extends Controller
             'is_active' => 'sometimes|boolean',
         ]);
 
-        $oldValues = [
-            'full_name' => $customer->full_name,
-            'id_type' => $customer->id_type,
-            'nationality' => $customer->nationality,
-            'risk_rating' => $customer->risk_rating,
-            'pep_status' => $customer->pep_status,
-            'is_active' => $customer->is_active,
-        ];
-
-        DB::beginTransaction();
         try {
-            // Encrypt sensitive fields
-            $encryptedIdNumber = $this->encryptionService->encrypt($validated['id_number']);
-            $encryptedAddress = ! empty($validated['address'])
-                ? $this->encryptionService->encrypt($validated['address'])
-                : null;
-            $encryptedPhone = ! empty($validated['phone'])
-                ? $this->encryptionService->encrypt($validated['phone'])
-                : null;
-            $encryptedEmployerAddress = ! empty($validated['employer_address'])
-                ? $this->encryptionService->encrypt($validated['employer_address'])
-                : null;
-
-            // Update customer
-            $customer->update([
-                'full_name' => $validated['full_name'],
-                'id_type' => $validated['id_type'],
-                'id_number_encrypted' => $encryptedIdNumber,
-                'date_of_birth' => $validated['date_of_birth'],
-                'nationality' => $validated['nationality'],
-                'address' => $encryptedAddress,
-                'phone' => $encryptedPhone,
-                'email' => $validated['email'] ?? null,
-                'pep_status' => $validated['pep_status'] ?? false,
-                'risk_rating' => $validated['risk_rating'],
-                'occupation' => $validated['occupation'] ?? null,
-                'employer_name' => $validated['employer_name'] ?? null,
-                'employer_address' => $encryptedEmployerAddress,
-                'is_active' => $validated['is_active'] ?? true,
-            ]);
-
-            // Re-screen sanctions if name changed
-            if ($oldValues['full_name'] !== $validated['full_name']) {
-                $sanctionMatches = $this->sanctionService->screenName($validated['full_name']);
-                if (! empty($sanctionMatches)) {
-                    $customer->update(['risk_rating' => 'High']);
-                }
-            }
-
-            // Re-assess risk
-            $this->riskScoringEngine->recalculateForCustomer($customer->id);
-
-            // Log customer update with AuditService (hash-chained)
-            $this->auditService->logCustomer('customer_updated', $customer->id, [
-                'old' => $oldValues,
-                'new' => [
-                    'full_name' => $customer->full_name,
-                    'id_type' => $customer->id_type,
-                    'nationality' => $customer->nationality,
-                    'risk_rating' => $customer->risk_rating,
-                    'pep_status' => $customer->pep_status,
-                    'is_active' => $customer->is_active,
-                ],
-            ]);
-
-            DB::commit();
+            $customer = $this->customerService->updateCustomer($customer, $validated, auth()->id());
 
             return redirect()->route('customers.show', $customer)
                 ->with('success', "Customer {$customer->full_name} updated successfully.");
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Customer update failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'customer_id' => $customer->id,
-                'user_id' => auth()->id(),
-            ]);
-
-            SystemLog::create([
-                'user_id' => auth()->id(),
-                'action' => 'customer_update_failed',
-                'severity' => 'ERROR',
-                'entity_type' => 'Customer',
-                'entity_id' => $customer->id,
-                'new_values' => ['error' => $e->getMessage()],
-                'ip_address' => $request->ip(),
-            ]);
-
             return back()->with('error', 'Failed to update customer: '.$e->getMessage())
                 ->withInput();
         }

@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\Customer;
+use App\Services\CustomerService;
 use App\Services\EncryptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -13,16 +14,16 @@ class CustomerBlindIndexTest extends TestCase
 
     public function test_blind_index_hash_is_deterministic(): void
     {
-        $hash1 = Customer::computeBlindIndex('A123456');
-        $hash2 = Customer::computeBlindIndex('A123456');
+        $hash1 = CustomerService::computeBlindIndex('A123456');
+        $hash2 = CustomerService::computeBlindIndex('A123456');
 
         $this->assertEquals($hash1, $hash2);
     }
 
     public function test_blind_index_different_inputs_produce_different_hashes(): void
     {
-        $hash1 = Customer::computeBlindIndex('A123456');
-        $hash2 = Customer::computeBlindIndex('B123456');
+        $hash1 = CustomerService::computeBlindIndex('A123456');
+        $hash2 = CustomerService::computeBlindIndex('B123456');
 
         $this->assertNotEquals($hash1, $hash2);
     }
@@ -47,10 +48,11 @@ class CustomerBlindIndexTest extends TestCase
         ]);
 
         // Compute blind index manually since we can't rely on boot hook without save
-        $customer->id_number_hash = Customer::computeBlindIndex($plaintextId);
+        $customer->id_number_hash = CustomerService::computeBlindIndex($plaintextId);
         $customer->save();
 
-        $found = Customer::findByIdNumber($plaintextId);
+        $customerService = app(CustomerService::class);
+        $found = $customerService->findByIdNumber($plaintextId);
 
         $this->assertNotNull($found);
         $this->assertEquals($customer->id, $found->id);
@@ -58,7 +60,8 @@ class CustomerBlindIndexTest extends TestCase
 
     public function test_find_by_id_number_returns_null_for_non_existent(): void
     {
-        $found = Customer::findByIdNumber('NONEXISTENT123');
+        $customerService = app(CustomerService::class);
+        $found = $customerService->findByIdNumber('NONEXISTENT123');
         $this->assertNull($found);
     }
 }

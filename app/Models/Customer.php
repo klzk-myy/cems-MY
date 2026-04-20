@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CddLevel;
+use App\Services\CustomerService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -171,28 +172,6 @@ class Customer extends Model
     }
 
     /**
-     * Determine if this customer is a PEP associate.
-     * Returns true if any PEP relation exists.
-     */
-    public function isPepAssociate(): bool
-    {
-        return $this->pepRelations()->where('is_pep', true)->exists();
-    }
-
-    /**
-     * Determine if customer is high risk.
-     *
-     * A customer is high risk if their risk rating is 'High', they are a PEP,
-     * or they have a sanctions match.
-     *
-     * @return bool True if the customer is high risk
-     */
-    public function isHighRisk(): bool
-    {
-        return $this->risk_rating === 'High' || $this->pep_status || $this->sanction_hit;
-    }
-
-    /**
      * Get CDD level display label.
      */
     public function getCddLevelLabelAttribute(): string
@@ -220,28 +199,8 @@ class Customer extends Model
         // When id_number (plaintext) is set, compute the blind index hash
         static::saving(function ($customer) {
             if ($customer->isDirty('id_number') && $customer->id_number) {
-                $customer->id_number_hash = self::computeBlindIndex($customer->id_number);
+                $customer->id_number_hash = CustomerService::computeBlindIndex($customer->id_number);
             }
         });
-    }
-
-    /**
-     * Compute a deterministic HMAC hash of the ID number for blind indexing.
-     */
-    public static function computeBlindIndex(string $plaintext): string
-    {
-        $key = config('app.key');
-
-        return hash_hmac('sha256', $plaintext, $key);
-    }
-
-    /**
-     * Find a customer by their ID number using the blind index.
-     */
-    public static function findByIdNumber(string $idNumber): ?self
-    {
-        $hash = self::computeBlindIndex($idNumber);
-
-        return static::where('id_number_hash', $hash)->first();
     }
 }
