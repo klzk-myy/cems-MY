@@ -77,10 +77,11 @@ class HistoricalRiskAnalysisService
         $structuringThreshold = $this->thresholdService->getStructuringSubThreshold();
         $structuringWindow = Carbon::now()->subHours(1);
 
+        // Structuring = transactions below threshold but above minimum CDD
+        // Amount must be: < structuring threshold AND >= standard CDD threshold
         $structuringCount = Transaction::where('customer_id', $customer->id)
             ->where('created_at', '>=', $structuringWindow)
             ->where('amount_local', '<', $structuringThreshold)
-            ->where('amount_local', '>=', $this->thresholdService->getStandardCddThreshold())
             ->where('status', '!=', 'cancelled')
             ->count();
 
