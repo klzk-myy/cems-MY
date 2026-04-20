@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
-use App\Models\SystemLog;
 use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -16,9 +15,15 @@ use Illuminate\View\View;
  *
  * Handles user management operations including creation, updates, and deletion.
  * All methods require admin authentication.
+ *
+ * All business logic is delegated to UserService to maintain proper MVC separation.
  */
 class UserController extends Controller
 {
+    public function __construct(
+        protected UserService $userService
+    ) {}
+
     /**
      * Display a paginated listing of all users.
      *
@@ -55,8 +60,6 @@ class UserController extends Controller
     /**
      * Store a newly created user in the database.
      *
-     * Validates input, creates user with hashed password, and logs the action.
-     *
      * @return RedirectResponse
      */
     public function store(Request $request)
@@ -81,28 +84,7 @@ class UserController extends Controller
             ])],
         ]);
 
-        $user = User::create([
-            'username' => $validated['username'],
-            'email' => $validated['email'],
-            'password_hash' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-            'mfa_enabled' => false,
-            'is_active' => true,
-        ]);
-
-        // Log user creation
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'user_created',
-            'entity_type' => 'User',
-            'entity_id' => $user->id,
-            'new_values' => [
-                'username' => $user->username,
-                'email' => $user->email,
-                'role' => $user->role,
-            ],
-            'ip_address' => $request->ip(),
-        ]);
+        $user = $this->userService->createUser($validated, auth()->id());
 
         return redirect()->route('users.index')
             ->with('success', "User {$user->username} created successfully!");
@@ -158,35 +140,7 @@ class UserController extends Controller
             'is_active' => 'required|boolean',
         ]);
 
-        $oldValues = [
-            'username' => $user->username,
-            'email' => $user->email,
-            'role' => $user->role->value,
-            'is_active' => $user->is_active,
-        ];
-
-        $user->update([
-            'username' => $validated['username'],
-            'email' => $validated['email'],
-            'role' => $validated['role'],
-            'is_active' => $validated['is_active'],
-        ]);
-
-        // Log user update
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'user_updated',
-            'entity_type' => 'User',
-            'entity_id' => $user->id,
-            'old_values' => $oldValues,
-            'new_values' => [
-                'username' => $validated['username'],
-                'email' => $validated['email'],
-                'role' => $validated['role'],
-                'is_active' => $validated['is_active'],
-            ],
-            'ip_address' => $request->ip(),
-        ]);
+        $user = $this->userService->updateUser($user, $validated, auth()->id());
 
         return redirect()->route('users.index')
             ->with('success', "User {$user->username} updated successfully!");
@@ -194,55 +148,28 @@ class UserController extends Controller
 
     /**
      * Remove the specified user
+     *
+     * @return RedirectResponse
      */
     public function destroy(Request $request, User $user)
     {
         $this->requireAdmin();
 
-        // Debug logging
-        \Log::debug('UserController@destroy', [
-            'user_id' => $user->id,
-            'user_is_admin' => $user->isAdmin(),
-            'auth_id' => auth()->id(),
-        ]);
+        try {
+            $this->userService->deleteUser($user, auth()->id());
 
-        // Prevent deleting the last admin
-        if ($user->isAdmin() && User::where('role', UserRole::Admin)->count() <= 1) {
             return redirect()->route('users.index')
-                ->with('error', 'Cannot delete the last admin user!');
-        }
-
-        // Prevent self-deletion
-        if ($user->id === auth()->id()) {
+                ->with('success', "User {$user->username} deleted successfully!");
+        } catch (\InvalidArgumentException $e) {
             return redirect()->route('users.index')
-                ->with('error', 'Cannot delete your own account!');
+                ->with('error', $e->getMessage());
         }
-
-        $username = $user->username;
-        $userId = $user->id;
-
-        \Log::debug('UserController@destroy proceeding to delete', ['userId' => $userId]);
-
-        $user->delete();
-
-        \Log::debug('UserController@destroy deleted', ['userId' => $userId]);
-
-        // Log user deletion
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'user_deleted',
-            'entity_type' => 'User',
-            'entity_id' => $userId,
-            'old_values' => ['username' => $username],
-            'ip_address' => $request->ip(),
-        ]);
-
-        return redirect()->route('users.index')
-            ->with('success', "User {$username} deleted successfully!");
     }
 
     /**
      * Reset user password
+     *
+     * @return RedirectResponse
      */
     public function resetPassword(Request $request, User $user)
     {
@@ -257,18 +184,7 @@ class UserController extends Controller
             ],
         ]);
 
-        $user->update([
-            'password_hash' => Hash::make($validated['password']),
-        ]);
-
-        // Log password reset
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'password_reset',
-            'entity_type' => 'User',
-            'entity_id' => $user->id,
-            'ip_address' => $request->ip(),
-        ]);
+        $this->userService->resetPassword($user, $validated['password'], auth()->id());
 
         return redirect()->route('users.index')
             ->with('success', "Password for {$user->username} has been reset!");
@@ -276,40 +192,23 @@ class UserController extends Controller
 
     /**
      * Toggle user active status
+     *
+     * @return RedirectResponse
      */
     public function toggleActive(Request $request, User $user)
     {
         $this->requireAdmin();
 
-        // Prevent deactivating self
-        if ($user->id === auth()->id()) {
+        try {
+            $user = $this->userService->toggleActive($user, auth()->id());
+
+            $status = $user->is_active ? 'activated' : 'deactivated';
+
             return redirect()->route('users.index')
-                ->with('error', 'Cannot deactivate your own account!');
-        }
-
-        // Prevent deactivating last admin
-        if ($user->isAdmin() && $user->is_active && User::where('role', UserRole::Admin)->where('is_active', true)->count() <= 1) {
+                ->with('success', "User {$user->username} has been {$status}!");
+        } catch (\InvalidArgumentException $e) {
             return redirect()->route('users.index')
-                ->with('error', 'Cannot deactivate the last active admin!');
+                ->with('error', $e->getMessage());
         }
-
-        $oldStatus = $user->is_active;
-        $user->update(['is_active' => ! $user->is_active]);
-
-        // Log status toggle
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'user_status_toggled',
-            'entity_type' => 'User',
-            'entity_id' => $user->id,
-            'old_values' => ['is_active' => $oldStatus],
-            'new_values' => ['is_active' => $user->is_active],
-            'ip_address' => $request->ip(),
-        ]);
-
-        $status = $user->is_active ? 'activated' : 'deactivated';
-
-        return redirect()->route('users.index')
-            ->with('success', "User {$user->username} has been {$status}!");
     }
 }
