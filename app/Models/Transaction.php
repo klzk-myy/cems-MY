@@ -186,55 +186,6 @@ class Transaction extends Model
     }
 
     /**
-     * Determine if this transaction can be refunded.
-     *
-     * A transaction is refundable if:
-     * - Status is 'Completed'
-     * - Not already cancelled
-     * - Within 24 hours of creation
-     * - Not a refund transaction itself
-     *
-     * @return bool True if the transaction can be refunded
-     */
-    public function isRefundable(): bool
-    {
-        // Must be completed
-        if (! $this->status->isCompleted()) {
-            return false;
-        }
-
-        // Cannot be already cancelled
-        if ($this->cancelled_at !== null) {
-            return false;
-        }
-
-        // Must be within configured cancellation window
-        $cancellationWindowHours = config('cems.transaction_cancellation_window_hours', 24);
-        if ($this->created_at->diffInHours(now()) >= $cancellationWindowHours) {
-            return false;
-        }
-
-        // Cannot be a refund
-        if ($this->is_refund) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Determine if the transaction has been cancelled.
-     *
-     * Checks if the cancelled_at timestamp is set.
-     *
-     * @return bool True if the transaction has been cancelled
-     */
-    public function isCancelled(): bool
-    {
-        return $this->cancelled_at !== null;
-    }
-
-    /**
      * Get the refund transaction if this transaction was refunded.
      *
      * @return HasOne
