@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Services\AuditService;
 use App\Services\ComplianceService;
+use App\Services\NarrativeGenerator;
 use App\Services\StrReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,7 +20,8 @@ class StrReportServiceTest extends TestCase
         parent::setUp();
         $this->strReportService = new StrReportService(
             app(ComplianceService::class),
-            app(AuditService::class)
+            app(AuditService::class),
+            app(NarrativeGenerator::class)
         );
     }
 

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Transaction;
 
 use App\Enums\TransactionStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Transaction\Concerns\TransactionAccounting;
 use App\Models\SystemLog;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
@@ -21,8 +20,6 @@ use Illuminate\Support\Facades\DB;
 
 class TransactionApprovalController extends Controller
 {
-    use TransactionAccounting;
-
     public function __construct(
         protected TransactionService $transactionService,
         protected CurrencyPositionService $positionService,

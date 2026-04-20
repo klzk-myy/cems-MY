@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
-use App\Http\Controllers\Transaction\Concerns\TransactionAccounting;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\TillBalance;
@@ -23,8 +22,6 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TransactionController extends Controller
 {
-    use TransactionAccounting;
-
     public function __construct(
         protected CurrencyPositionService $positionService,
         protected ComplianceService $complianceService,

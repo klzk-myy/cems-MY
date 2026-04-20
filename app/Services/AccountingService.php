@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\AccountCode;
+use App\Enums\TransactionType;
 use App\Exceptions\Domain\AccountNotFoundException;
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\EntryAlreadyReversedException;
@@ -11,8 +13,11 @@ use App\Exceptions\Domain\UnbalancedJournalException;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
+use App\Models\CurrencyPosition;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
+use App\Models\TillBalance;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -489,5 +494,117 @@ class AccountingService
         // For expense accounts, activity is typically the net amount (debits - credits)
         // This gives us the actual spending in the period
         return $this->mathService->subtract($totalDebits, $totalCredits);
+    }
+
+    /**
+     * Update till balance after transaction.
+     *
+     * @param  string  $tillId  Till identifier
+     * @param  string  $currencyCode  Currency code
+     * @param  string  $type  Transaction type (Buy/Sell)
+     * @param  string  $amountLocal  Local amount in MYR
+     * @param  string  $amountForeign  Foreign currency amount
+     */
+    public function updateTillBalance(string $tillId, string $currencyCode, string $type, string $amountLocal, string $amountForeign): void
+    {
+        $tillBalance = TillBalance::where('till_id', $tillId)
+            ->where('currency_code', $currencyCode)
+            ->where('date', today())
+            ->whereNull('closed_at')
+            ->first();
+
+        if (! $tillBalance) {
+            return;
+        }
+
+        $currentTotal = $tillBalance->transaction_total ?? '0';
+        $foreignTotal = $tillBalance->foreign_total ?? '0';
+
+        if ($type === TransactionType::Buy->value) {
+            $tillBalance->update([
+                'transaction_total' => $this->mathService->add($currentTotal, $amountLocal),
+                'foreign_total' => $this->mathService->add($foreignTotal, $amountForeign),
+            ]);
+        } else {
+            $tillBalance->update([
+                'transaction_total' => $this->mathService->add($currentTotal, $amountLocal),
+                'foreign_total' => $this->mathService->subtract($foreignTotal, $amountForeign),
+            ]);
+        }
+    }
+
+    /**
+     * Create accounting journal entries for a transaction.
+     *
+     * @param  Transaction  $transaction  Transaction to create entries for
+     * @return JournalEntry Created journal entry
+     */
+    public function createTransactionAccountingEntries(Transaction $transaction): JournalEntry
+    {
+        $entries = [];
+
+        if ($transaction->type->isBuy()) {
+            $entries = [
+                [
+                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                    'debit' => $transaction->amount_local,
+                    'credit' => '0',
+                    'description' => "Buy {$transaction->amount_foreign} {$transaction->currency_code} @ {$transaction->rate}",
+                ],
+                [
+                    'account_code' => AccountCode::CASH_MYR->value,
+                    'debit' => '0',
+                    'credit' => $transaction->amount_local,
+                    'description' => "Payment for {$transaction->currency_code} purchase",
+                ],
+            ];
+        } else {
+            $position = CurrencyPosition::where('currency_code', $transaction->currency_code)
+                ->where('till_id', $transaction->till_id)
+                ->first();
+
+            $avgCost = $position ? $position->avg_cost_rate : $transaction->rate;
+            $costBasis = $this->mathService->multiply((string) $transaction->amount_foreign, $avgCost);
+            $revenue = $this->mathService->subtract((string) $transaction->amount_local, $costBasis);
+            $isGain = $this->mathService->compare($revenue, '0') >= 0;
+
+            $entries = [
+                [
+                    'account_code' => AccountCode::CASH_MYR->value,
+                    'debit' => $transaction->amount_local,
+                    'credit' => '0',
+                    'description' => "Sale of {$transaction->amount_foreign} {$transaction->currency_code}",
+                ],
+                [
+                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                    'debit' => '0',
+                    'credit' => $costBasis,
+                    'description' => "Cost of {$transaction->currency_code} sold",
+                ],
+            ];
+
+            if ($isGain) {
+                $entries[] = [
+                    'account_code' => AccountCode::FOREX_TRADING_REVENUE->value,
+                    'debit' => '0',
+                    'credit' => $revenue,
+                    'description' => "Gain on {$transaction->currency_code} sale",
+                ];
+            } else {
+                $entries[] = [
+                    'account_code' => AccountCode::FOREX_LOSS->value,
+                    'debit' => $this->mathService->multiply($revenue, '-1'),
+                    'credit' => '0',
+                    'description' => "Loss on {$transaction->currency_code} sale",
+                ];
+            }
+        }
+
+        return $this->createJournalEntry(
+            $entries,
+            'Transaction',
+            $transaction->id,
+            "Transaction #{$transaction->id} - {$transaction->type->value} {$transaction->currency_code}"
+        );
     }
 }

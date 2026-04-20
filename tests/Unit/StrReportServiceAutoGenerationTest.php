@@ -8,22 +8,27 @@ use App\Enums\StrStatus;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\StrReport;
+use App\Services\AuditService;
+use App\Services\ComplianceService;
 use App\Services\NarrativeGenerator;
-use App\Services\StrAutomationService;
+use App\Services\StrReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class StrAutomationServiceTest extends TestCase
+class StrReportServiceAutoGenerationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected StrAutomationService $service;
+    protected StrReportService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $narrativeGenerator = new NarrativeGenerator;
-        $this->service = new StrAutomationService($narrativeGenerator);
+        $this->service = new StrReportService(
+            app(ComplianceService::class),
+            app(AuditService::class),
+            app(NarrativeGenerator::class)
+        );
     }
 
     public function test_evaluate_returns_null_for_non_triggering_alert(): void
