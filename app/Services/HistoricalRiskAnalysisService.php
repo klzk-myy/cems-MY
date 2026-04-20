@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\TransactionType;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\ValueObjects\RiskAnalysisResult;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 

@@ -6,6 +6,8 @@ use App\Models\Customer;
 use App\Models\SanctionEntry;
 use App\Models\ScreeningResult;
 use App\Models\Transaction;
+use App\ValueObjects\ScreeningMatch;
+use App\ValueObjects\ScreeningResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 

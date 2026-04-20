@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\CddLevel;
 use App\Models\Customer;
+use App\ValueObjects\PreValidationResult;
+use App\ValueObjects\SanctionCheckResult;
 
 class TransactionPreValidationService
 {
