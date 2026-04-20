@@ -40,19 +40,20 @@ php artisan report:msb2 --date=2026-04-06
 
 ```
 app/
-├── Console/Commands/  # Artisan CLI commands (scheduled reports, compliance tasks)
-├── Enums/  # PHP 8.1 enums replacing magic strings (29 enums)
-├── Events/  # Event classes (TransactionCreated, CounterSessionOpened, etc.)
-├── Exceptions/Domain/  # Typed domain exceptions (InsufficientStockException, etc.)
+├── Console/Commands/  # 35 Artisan commands (29 main + 6 Backup)
+├── Enums/  # 34 PHP 8.1 enums replacing magic strings
+├── Events/  # 14 Event classes (TransactionCreated, CounterSessionOpened, etc.)
+├── Exceptions/Domain/  # 35 typed domain exceptions (InsufficientStockException, etc.)
 ├── Http/
-│   ├── Controllers/  # Thin controllers, delegate to services
-│   ├── Middleware/  # CheckRole, EnsureMfaEnabled, DataBreachDetection, StrictRateLimit, etc.
+│   ├── Controllers/  # 28 controllers (16 main + 12 in sub-dirs)
+│   ├── Middleware/  # 21 middleware classes
 │   ├── Requests/  # Form request validation classes
 │   └── Resources/  # API resource transformers
+├── Jobs/  # 19 background jobs (7 main + 7 Compliance + 5 Sanctions)
 ├── Jobs/Audit/  # Async jobs (SealAuditHashJob)
-├── Models/  # Eloquent models (57 models)
+├── Models/  # 64 Eloquent models
 ├── Observers/  # Model observers for event-driven hooks
-└── Services/  # Business logic (55 services)
+└── Services/  # 73 services (71 top-level + 2 in Compliance sub-dirs)
 ```
 
 ### Key Architectural Patterns

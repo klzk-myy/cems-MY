@@ -2,8 +2,6 @@
 
 Currency Exchange Management System for Malaysian Money Services Businesses (MSB), compliant with Bank Negara Malaysia (BNM) AML/CFT requirements. Handles foreign currency trading, till management, compliance reporting, and double-entry accounting.
 
-## Under Development
-
 ## Table of Contents
 
 - [Features](#features)
@@ -12,11 +10,11 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Commands](#commands)
-- [Architecture](#architecture)
+- [Architecture](docs/ARCHITECTURE.md)
 - [User Roles](#user-roles)
 - [Security](#security)
 - [Compliance](#compliance)
-- [API Endpoints](#api-endpoints)
+- [API Documentation](docs/API.md)
 - [Development](#development)
 
 ## Features
@@ -26,26 +24,27 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 - **Foreign Currency Trading**
   - Buy/sell transactions with real-time position tracking
   - Multi-currency support with instant rate calculation
-  - Stock reservation system for pending approvals
+  - Stock reservation system for concurrency control (24h expiry)
+  - PendingApproval workflow for transactions ≥ RM 3,000
 
 - **Till/Counter Management**
   - Full lifecycle: open, close, handover
   - Float management and reconciliation
   - Real-time till status monitoring
-  - End-of-day (EOD) reconciliation
+  - End-of-day (EOD) reconciliation per counter and per date
 
 - **Double-Entry Accounting**
-  - Complete ledger system with trial balance
-  - Profit & Loss statements
-  - Balance sheet generation
-  - Monthly revaluation
-  - Fiscal year management
+  - Complete ledger system with trial balance, P&L, balance sheet
+  - Monthly currency revaluation (RevaluationService)
+  - Fiscal year management with period closing
+  - Journal entry workflow (Draft → Pending → Posted)
+  - Cash flow statements and financial ratio analysis
 
 - **Customer Management**
-  - Customer registration with KYC
-  - ID number blind indexing for PII protection
-  - Risk scoring and monitoring
-  - Customer lock/unlock capability
+  - Customer registration with KYC document upload
+  - ID number HMAC-SHA256 blind indexing for PII protection
+  - Risk scoring with lock/unlock capability
+  - Customer location anomaly detection
 
 ### AML/CFT Compliance
 
@@ -55,28 +54,34 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
   - Enhanced: ≥ RM 50,000 OR PEP OR Sanction match
 
 - **CTOS Reporting**
-  - Cash transactions (Buy/Sell) ≥ RM 10,000
-  - Compliance officer sign-off workflow
+  - All cash transactions (Buy and Sell) ≥ RM 10,000
+  - Compliance officer sign-off workflow via `POST /api/v1/compliance/ctos/{id}/submit`
 
-- **STR Generation**
-  - Suspicious Transaction Report creation
-  - Submission tracking and deadline monitoring
+- **STR Generation & Automation**
+  - Suspicious Transaction Report creation and submission
+  - STR deadline tracking via `StrDeadlineMonitor`
+  - Narrative generation and GoAML XML output
 
-- **Automated Monitoring**
-  - Velocity monitoring (structuring detection)
-  - Sanctions rescreening (monthly)
-  - Currency flow analysis
-  - Customer location anomaly detection
-  - Counterfeit currency alerts
+- **Automated Monitoring (background jobs)**
+  | Monitor | Purpose |
+  |---------|---------|
+  | `VelocityMonitor` | Detects velocity/structuring patterns (7-day lookback) |
+  | `StructuringMonitor` | Transaction aggregation detection |
+  | `SanctionsRescreeningMonitor` | Monthly rescreening of all customers |
+  | `StrDeadlineMonitor` | STR submission deadline tracking |
+  | `CustomerLocationAnomalyMonitor` | Geographic anomaly detection |
+  | `CurrencyFlowMonitor` | Currency flow pattern analysis |
+  | `CounterfeitAlertMonitor` | Counterfeit currency detection |
 
 ### BNM Reporting
 
-| Report | Frequency | Description |
-|--------|-----------|-------------|
-| MSB2 | Daily | Transaction summary |
-| LCTR | Monthly | Large Cash Transaction Report (≥ RM 50,000) |
-| LMCA | Monthly | Monthly Large Cash Aggregate |
-| LVR | Quarterly | Large Value Transactions |
+| Report | Frequency | Command | Description |
+|--------|-----------|---------|-------------|
+| MSB2 | Daily | `report:msb2` | Transaction summary |
+| LCTR | Monthly | `report:lctr` | Large Cash Transaction Report (≥ RM 50,000) |
+| LMCA | Monthly | `report:lmca` | Monthly Large Cash Aggregate |
+| LVR | Quarterly | `report:qlvr` | Large Value Transactions |
+| EOD | Daily | `report:eod` | End-of-Day reconciliation |
 
 ## Tech Stack
 
@@ -87,7 +92,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 | Database | MySQL 8.0 |
 | Cache/Queue | Redis |
 | Queue UI | Laravel Horizon |
-| Auth | Laravel Sanctum |
+| Auth | Laravel Sanctum (token) / Session (web) |
 | PDF Generation | DomPDF |
 | Excel Export | Maatwebsite Excel |
 | QR/Barcode | simple-qrcode, php-barcode-generator |
@@ -98,38 +103,21 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 - MySQL 8.0+
 - Redis 6+
 - Composer 2.x
-- Node.js 18+ (for frontend assets)
+- Node.js 18+
 - NPM 9+
 
 ## Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/klzk-myy/cems-my.git
 cd cems-my
-
-# Install PHP dependencies
 composer install
-
-# Install Node dependencies
 npm install
-
-# Copy environment file
 cp .env.example .env
-
-# Generate application key
 php artisan key:generate
-
-# Generate JWT secret (if using Sanctum)
-php artisan sanctum:secret
-
-# Run database migrations
+php artisan sanctum:secret  # for API auth
 php artisan migrate
-
-# Seed initial data (optional)
-php artisan db:seed
-
-# Start the development server
+php artisan db:seed  # optional
 php artisan serve
 ```
 
@@ -140,13 +128,11 @@ php artisan serve
 Copy `.env.example` to `.env` and configure:
 
 ```env
-# Application
 APP_NAME=CEMS-MY
 APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost
 
-# Database
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -154,207 +140,129 @@ DB_DATABASE=cems_my
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 
-# Redis
 REDIS_HOST=127.0.0.1
 REDIS_PASSWORD=null
 REDIS_PORT=6379
 
-# Queue (Redis)
 QUEUE_CONNECTION=redis
-
-# Session
 SESSION_DRIVER=file
 SESSION_LIFETIME=480
-
-# Mail (configure for your provider)
-MAIL_MAILER=smtp
-MAIL_HOST=mailpit
-MAIL_PORT=1025
 ```
 
-### Environment Variables
+### Threshold Overrides
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `APP_KEY` | Laravel application key | Yes |
-| `DB_*` | Database connection | Yes |
-| `REDIS_*` | Redis connection | Yes |
-| `ENCRYPTION_KEY` | 32-char encryption key | Yes |
-| `EXCHANGE_RATE_API_KEY` | Exchange rate API | Optional |
+All thresholds support environment variable overrides via `ThresholdService`:
+
+```env
+THRESHOLD_AUTO_APPROVE=3000
+THRESHOLD_MANAGER=50000
+THRESHOLD_CDD_STANDARD=3000
+THRESHOLD_CDD_LARGE=50000
+THRESHOLD_CTOS=10000
+```
 
 ## Commands
 
 ### Testing
 
 ```bash
-# Run all tests
-php artisan test
-
-# Run specific test suite
-php artisan test --filter=TransactionWorkflowTest
-
-# Run specific test class
-php artisan test --filter=MathServiceTest
-
-# Run with coverage
-php artisan test --coverage
-
-# Run via test runner (with category filtering)
-php test-runner.php
+php artisan test                          # Run all tests
+php artisan test --filter=TransactionWorkflowTest  # Run specific suite
+php artisan test --filter=MathServiceTest  # Run specific test class
+php test-runner.php                       # Run with category filtering
 ```
 
 ### BNM Reports
 
 ```bash
-# Generate MSB2 daily report
-php artisan report:msb2 --date=2026-04-18
-
-# Generate LCTR monthly report
-php artisan report:lctr --month=2026-03
-
-# Generate LMCA monthly report
-php artisan report:lmca --month=2026-03
-
-# Generate LVR quarterly report
-php artisan report:qlvr --quarter=2026-Q1
-
-# Generate EOD reconciliation
-php artisan report:eod --date=2026-04-18
-
-# Generate trial balance
-php artisan report:trial-balance --date=2026-03-31
+php artisan report:msb2 --date=2026-04-18      # Daily transaction summary
+php artisan report:lctr --month=2026-03        # Monthly large cash transactions
+php artisan report:lmca --month=2026-03       # Monthly LMCA
+php artisan report:qlvr --quarter=2026-Q1     # Quarterly large value
+php artisan report:eod --date=2026-04-18     # End-of-day reconciliation
+php artisan report:trial-balance --date=2026-03-31  # Accounting trial balance
+php artisan report:position-limit             # Daily position limits
 ```
 
 ### Compliance
 
 ```bash
-# Rescreen customers against sanctions (monthly)
-php artisan compliance:rescreen
-
-# Generate position limit report
-php artisan report:position-limits
-
-# Monitor check
-php artisan monitor:check
-
-# Monitor status
-php artisan monitor:status
+php artisan compliance:rescreen              # Monthly sanctions rescreening
+php artisan reservation:expire               # Release stale stock reservations (24h)
+php artisan monitor:check                    # Run compliance monitors
+php artisan monitor:status                   # Show monitor status
 ```
 
 ### Cache & Maintenance
 
 ```bash
-# Clear all caches
-php artisan config:clear && php artisan route:clear && php artisan view:clear
-
-# Clear cache only
-php artisan cache:clear
-
-# Clear expired stock reservations
-php artisan reservation:expire
-
-# IP blocker
-php artisan ip:blocker
-
-# Queue health check
-php artisan queue:health
-
-# Clear stuck queues
-php artisan queue:clear-stuck
+php artisan config:clear && php artisan route:clear && php artisan view:clear  # Clear all caches
+php artisan cache:clear                     # Clear cache only
+php artisan ip:blocker                     # IP blocker management
+php artisan queue:health                    # Queue health check
+php artisan queue:clear-stuck               # Clear stuck queues
+php artisan backup:verify                   # Verify backups
+php artisan reports:archive --days=90        # Archive old reports
+php artisan audit:rotate                    # Rotate audit logs
 ```
 
-### Other
+### User Management
 
 ```bash
-# List all routes
-php artisan route:list
-
-# Create user
-php artisan create:user --role=teller --name="John Doe" --email=john@example.com
-
-# Backup verify
-php artisan backup:verify
-
-# Archive reports
-php artisan reports:archive --days=90
+php artisan user:create --role=teller --name="John Doe" --email=john@example.com
 ```
+
+### All Artisan Commands
+
+| Command | Description |
+|---------|-------------|
+| `compliance:rescreen` | Rescreen all customers against sanctions lists |
+| `report:msb2` | Generate daily MSB(2) report |
+| `report:lctr` | Generate monthly Cash Transaction Report (≥ RM50,000) |
+| `report:lmca` | Generate monthly BNM Form LMCA report |
+| `report:qlvr` | Generate quarterly large value transaction report |
+| `report:eod` | Generate End-of-Day reconciliation report |
+| `report:trial-balance` | Generate trial balance for accounting period |
+| `report:position-limit` | Generate daily position limit utilization report |
+| `reservation:expire` | Release expired stock reservations |
+| `user:create` | Create a new user with specified role |
+| `alert:daily-summary` | Send daily alert summary |
+| `alert:send` | Send pending alerts |
+| `archive:reports` | Archive old reports |
+| `cleanup:old-reports` | Clean up old report files |
+| `queue:clear-stuck` | Clear stuck queue jobs |
+| `queue:health` | Check queue health |
+| `sanctions:import` | Import sanctions list updates |
+| `sanctions:status` | Show sanctions list status |
+| `sanctions:update` | Update sanctions lists |
+| `rotate:audit-logs` | Rotate audit logs |
+| `revaluation:run` | Run monthly currency revaluation |
+| `retry:failed-jobs` | Retry failed queue jobs |
+| `test:notification` | Send test notification |
+| `tests:run` | Run test suite |
+| `ip:blocker` | Manage IP blocks |
+| `monitor:check` | Run compliance monitors |
+| `monitor:status` | Show monitor status |
 
 ## Architecture
 
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full system architecture documentation.
+
 ```
 app/
-├── Console/Commands/     # Artisan CLI commands (scheduled reports, compliance)
-├── Enums/                # PHP 8.1 enums (29 enums, status/type organization)
-├── Events/               # Event classes (TransactionCreated, CounterSessionOpened)
-├── Exceptions/Domain/     # Typed domain exceptions
-│   ├── InsufficientStockException.php
-│   ├── StockReservationExpiredException.php
-│   ├── TillAlreadyOpenException.php
-│   └── UserAlreadyAtCounterException.php
+├── Console/Commands/        # 35 Artisan CLI commands (29 main + 6 Backup)
+├── Enums/                  # 34 PHP 8.1 enums (UserRole, TransactionStatus, CddLevel, etc.)
+├── Events/                 # Event classes (TransactionCreated, CounterSessionOpened, etc.)
+├── Exceptions/Domain/       # 35 typed domain exceptions
 ├── Http/
-│   ├── Controllers/      # Thin controllers, delegate to services
-│   ├── Middleware/       # Auth, RBAC, MFA, rate limiting, security headers
-│   ├── Requests/         # Form request validation classes
-│   └── Resources/        # API resource transformers
-├── Jobs/                 # Background jobs (async audit hashing)
-├── Models/               # Eloquent models (57 models)
-├── Observers/            # Model observers for event-driven hooks
-└── Services/             # Business logic (55 services)
-    ├── AccountingService.php      # Journal entries, ledger
-    ├── ComplianceService.php      # CDD, CTOS, STR
-    ├── CounterService.php         # Till lifecycle
-    ├── CurrencyPositionService.php # Stock/position management
-    ├── CustomerRiskScoringService.php # Risk scoring
-    ├── LedgerService.php         # Trial balance, P&L, BS
-    ├── MathService.php           # BCMath precision calculations
-    ├── RevaluationService.php    # Monthly currency revaluation
-    ├── StrReportService.php      # STR generation
-    ├── TransactionMonitoringService.php # Automated monitors
-    └── TransactionService.php    # Core transaction operations
-```
-
-### Key Design Patterns
-
-**1. Enum-Based RBAC**
-```php
-UserRole::Teller->canApproveLargeTransactions(); // false
-UserRole::Manager->canApproveLargeTransactions(); // true
-UserRole::ComplianceOfficer->canViewReports(); // true
-```
-
-**2. BCMath Precision**
-```php
-MathService::add('100.50', '50.25'); // '150.75'
-MathService::multiply('100.00', '0.15', 4); // '15.0000'
-// Never use float for currency
-```
-
-**3. Stock Reservations (Concurrency Control)**
-```php
-// When transaction goes PendingApproval
-$reservation = CurrencyPositionService::reserveStock($currency, $amount);
-
-// At approval - consumes reservation
-CurrencyPositionService::consumeStockReservation($reservationId);
-
-// On cancel/expire - releases reservation
-CurrencyPositionService::releaseStockReservation($reservationId);
-```
-
-**4. Domain Exceptions**
-```php
-throw new InsufficientStockException($currency, $requested, $available);
-throw new StockReservationExpiredException($reservationId);
-throw new TillAlreadyOpenException($counterId, $currentUserId);
-```
-
-**5. Event-Driven Architecture**
-```php
-// Events fire for critical operations
-event(new TransactionCreated($transaction));
-event(new CounterSessionOpened($session));
-
-// Listeners handle audit logging, notifications, compliance
+│   ├── Controllers/        # 28 controllers (16 main + 12 in sub-dirs)
+│   ├── Middleware/          # 21 middleware classes
+│   ├── Requests/            # Form request validation classes
+│   └── Resources/           # API resource transformers
+├── Jobs/                   # 19 background jobs (7 main + 7 Compliance + 5 Sanctions)
+├── Models/                 # 64 Eloquent models
+├── Observers/              # Model observers for event-driven hooks
+└── Services/               # 73 services (71 top-level + 2 in Compliance sub-dirs)
 ```
 
 ## User Roles
@@ -363,7 +271,7 @@ event(new CounterSessionOpened($session));
 |------|-------------|
 | **Teller** | Create transactions, view customers, operate assigned counter |
 | **Manager** | Approve large transactions, manage counters, view reports, handle cancellations |
-| **Compliance Officer** | CDD review, CTOS/STR submission, sanctions management, risk monitoring |
+| **Compliance Officer** | CDD review, CTOS/STR submission, sanctions management, risk monitoring, alerts triage |
 | **Admin** | System configuration, user management, branch settings |
 
 **Permission Hierarchy:** Admin > ComplianceOfficer > Manager > Teller
@@ -373,7 +281,7 @@ event(new CounterSessionOpened($session));
 ### Authentication & Authorization
 
 - MFA required for all roles (BNM mandatory)
-- Role-based access control via `CheckRole` middleware
+- Role-based access control via `CheckRole` middleware and enum permission methods
 - Session timeout (configurable, default 8 hours)
 
 ### Rate Limiting
@@ -381,7 +289,7 @@ event(new CounterSessionOpened($session));
 | Endpoint | Limit |
 |----------|-------|
 | Login | 5/min |
-| API | 30/min |
+| API (general) | 30/min |
 | Transactions | 10/min |
 | STR Submit | 3/min |
 | Bulk Export | 1/5min |
@@ -409,8 +317,7 @@ event(new CounterSessionOpened($session));
 ### Security Headers
 
 - HSTS (configurable max-age, includeSubDomains, preload)
-- Content Security Policy
-- X-Frame-Options, X-Content-Type-Options
+- Content Security Policy, X-Frame-Options, X-Content-Type-Options
 
 ## Compliance
 
@@ -419,153 +326,82 @@ event(new CounterSessionOpened($session));
 | Level | Trigger | Action |
 |-------|---------|--------|
 | **Simplified** | < RM 3,000 | Auto-approve |
-| **Standard** | RM 3,000 - 49,999 | Manager approval if hold |
+| **Standard** | RM 3,000 - 49,999 | Manager approval if flagged |
 | **Enhanced** | ≥ RM 50,000 OR PEP OR Sanction | Compliance review |
 
-### Transaction Holds
+### Transaction Status Workflow
+
+```
+PendingApproval ──(manager approve)──> Completed
+     │
+     └──(request cancel)──> PendingCancellation ──(approve)──> Cancelled
+```
 
 | Condition | Status |
 |-----------|--------|
 | Amount ≥ RM 3,000, no compliance flag | `PendingApproval` (Manager approval) |
 | Amount ≥ RM 50,000 | `PendingApproval` (Manager) |
-| High-risk customer | `Pending` (Compliance hold) |
+| High-risk customer or compliance flag | `Pending` (Compliance hold) |
 | CDD required | `PendingCdd` |
-
-### CTOS Reporting
-
-- **Threshold:** Cash transactions (Buy/Sell) ≥ RM 10,000
-- **Submission:** `POST /api/v1/compliance/ctos/{id}/submit`
-- **Sign-off:** Requires compliance officer approval
+| Cancellation requested | `PendingCancellation` (segregation of duties) |
 
 ### Structuring Detection
 
-- 7-day lookback period for aggregation
+- 7-day lookback period for aggregate transactions
 - Configurable threshold and pattern matching
-- Automatic flagging and alert generation
+- Automatic flagging via `StructuringMonitor`
 
-### STR Workflow
+### Centralized Thresholds
 
-1. Alert generated by monitoring service
-2. Compliance officer triages via `AlertTriageService`
-3. Investigation and documentation
-4. STR generation via `StrReportService`
-5. Submission to BNM with approval chain
+All thresholds are centralized in `config/thresholds.php` and accessed via `ThresholdService`:
 
-## API Endpoints
+```php
+// config/thresholds.php
+return [
+    'approval' => ['auto_approve' => '3000', 'manager' => '50000'],
+    'cdd' => ['standard' => '3000', 'large_transaction' => '50000'],
+    'reporting' => ['ctos' => '10000', 'ctr' => '50000', 'str' => '50000'],
+    'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3],
+    // ...
+];
+```
 
-### Authentication
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/auth/login` | User login |
-| POST | `/api/v1/auth/logout` | User logout |
-| POST | `/api/v1/auth/mfa/verify` | Verify MFA code |
-
-### Transactions
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/transactions` | List transactions |
-| POST | `/api/v1/transactions` | Create transaction |
-| GET | `/api/v1/transactions/{id}` | Get transaction |
-| POST | `/api/v1/transactions/{id}/approve` | Approve transaction |
-| POST | `/api/v1/transactions/{id}/cancel` | Cancel transaction |
-
-### Counter/Till
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/counters/{counter}/open` | Open counter |
-| POST | `/api/v1/counters/{counter}/close` | Close counter |
-| POST | `/api/v1/counters/{counter}/handover` | Handover custody |
-| GET | `/api/v1/counters/{counter}/status` | Get counter status |
-
-### Compliance
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/compliance/ctos/{id}/submit` | Submit CTOS |
-| POST | `/api/v1/compliance/str` | Create STR |
-| GET | `/api/v1/compliance/alerts` | List alerts |
-| POST | `/api/v1/compliance/alerts/{id}/triage` | Triage alert |
-
-### Reports
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/reports/msb2` | MSB2 daily report |
-| GET | `/api/v1/reports/trial-balance` | Trial balance |
-| GET | `/api/v1/eod/reconciliation/{date}` | EOD reconciliation |
-
-### Accounting
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/accounting/journal-entries` | List journal entries |
-| POST | `/api/v1/accounting/journal-entries` | Create journal entry |
-| GET | `/api/v1/accounting/ledger/{accountCode}` | Get ledger |
-| GET | `/api/v1/accounting/trial-balance` | Trial balance |
-| GET | `/api/v1/accounting/balance-sheet` | Balance sheet |
-| GET | `/api/v1/accounting/profit-loss` | P&L statement |
+All values overridable via environment variables. `ThresholdAudit` model tracks all changes.
 
 ## Development
 
 ### Running Tests
 
 ```bash
-# All tests
-php artisan test
-
-# With coverage report
-php artisan test --coverage=coverage
-
-# Watch mode (requires tailwindcss)
-npm run test:watch
-
-# Dusk browser tests
-php artisan dusk
+php artisan test                  # All tests
+php artisan test --coverage=coverage  # With coverage
+npm run test:watch               # Watch mode
+php artisan dusk                 # Browser tests
 ```
 
 ### Code Style
 
 ```bash
-# Lint with Laravel Pint (PSR-12)
-./vendor/bin/pint
-
-# Check for issues
-./vendor/bin/pint --test
+./vendor/bin/pint        # Lint with Laravel Pint (PSR-12)
+./vendor/bin/pint --test  # Check without modifying
 ```
 
 ### Database
 
 ```bash
-# Rollback and re-migrate
-php artisan migrate:fresh
-
-# Seed with test data
-php artisan db:seed
-
-# Fresh migrate + seed
-php artisan migrate:fresh --seed
+php artisan migrate:fresh          # Rollback and re-migrate
+php artisan db:seed                # Seed with test data
+php artisan migrate:fresh --seed   # Fresh migrate + seed
 ```
 
 ### Queue Workers
 
 ```bash
-# Start Horizon (recommended)
-php artisan horizon
-
-# Start traditional queue worker
-php artisan queue:work redis --sleep=3 --tries=3
-
-# Monitor queue health
-php artisan queue:health
+php artisan horizon                 # Start Horizon (recommended)
+php artisan queue:work redis --sleep=3 --tries=3  # Traditional worker
+php artisan queue:health            # Monitor queue health
 ```
 
 ## License
 
 MIT License
-
-## Support
-
-For issues and feature requests, please create an issue on GitHub.
