@@ -13,6 +13,12 @@ use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @deprecated Use \App\Services\Compliance\RiskScoringEngine instead.
+ * This service will be removed after migration.
+ * UnifiedRiskScoringService provides 9-factor scoring with BCMath; RiskScoringEngine
+ * provides comprehensive scoring with behavioral baseline, EDD history, document verification.
+ */
 class UnifiedRiskScoringService
 {
     protected array $factorWeights = [

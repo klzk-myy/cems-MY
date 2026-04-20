@@ -3,8 +3,8 @@
 namespace App\Listeners;
 
 use App\Events\TransactionCreated;
+use App\Services\Compliance\RiskScoringEngine;
 use App\Services\TransactionMonitoringService;
-use App\Services\UnifiedRiskScoringService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class TransactionCreatedListener implements ShouldQueue
@@ -14,11 +14,11 @@ class TransactionCreatedListener implements ShouldQueue
 
     protected TransactionMonitoringService $monitoringService;
 
-    protected UnifiedRiskScoringService $riskScoringService;
+    protected RiskScoringEngine $riskScoringService;
 
     public function __construct(
         TransactionMonitoringService $monitoringService,
-        UnifiedRiskScoringService $riskScoringService
+        RiskScoringEngine $riskScoringService
     ) {
         $this->monitoringService = $monitoringService;
         $this->riskScoringService = $riskScoringService;
@@ -27,6 +27,6 @@ class TransactionCreatedListener implements ShouldQueue
     public function handle(TransactionCreated $event)
     {
         $this->monitoringService->monitorTransaction($event->transaction);
-        $this->riskScoringService->calculateRiskScore($event->transaction->customer);
+        $this->riskScoringService->calculateScore($event->transaction->customer_id);
     }
 }
