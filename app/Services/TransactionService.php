@@ -18,6 +18,7 @@ use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Models\ApprovalTask;
 use App\Models\Currency;
+use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
@@ -180,8 +181,23 @@ class TransactionService
         $approvedBy = null;
 
         if ($holdCheck['requires_hold'] || $this->mathService->compare($amountLocal, config('thresholds.approval.auto_approve', '3000')) >= 0) {
-            // All transactions requiring approval (compliance hold OR amount >= RM 3,000)
-            // now go to PendingApproval with manager approval required
+            // BNM AML/CFT COMPLIANCE REQUIREMENT:
+            // All transactions >= RM 3,000 require manager approval, regardless of compliance hold status.
+            // This is a BNM regulatory requirement to ensure proper oversight of all transactions
+            // above the standard CDD threshold (RM 3,000).
+            //
+            // RATIONALE:
+            // - Transactions < RM 3,000: Simplified CDD, can be auto-approved (Completed status)
+            // - Transactions >= RM 3,000: Standard CDD, require manager approval (PendingApproval status)
+            // - Transactions >= RM 50,000 OR high-risk: Enhanced CDD, require compliance hold (PendingApproval status)
+            //
+            // This dual-layer approval ensures:
+            // 1. Manager oversight for all transactions above standard CDD threshold
+            // 2. Compliance officer review for high-risk or large transactions
+            // 3. Segregation of duties between tellers, managers, and compliance officers
+            //
+            // NOTE: Even if a transaction >= RM 3,000 has no compliance hold reasons,
+            // it still requires manager approval per BNM regulations.
             $status = TransactionStatus::PendingApproval;
             if ($holdCheck['requires_hold']) {
                 $holdReason = implode(', ', $holdCheck['reasons']);
@@ -648,6 +664,43 @@ class TransactionService
                     throw new \RuntimeException(
                         'Transaction was already processed or modified by another user.'
                     );
+                }
+
+                // EDGE CASE VALIDATION: Verify customer still exists
+                // Customer could have been deleted between transaction creation and approval
+                $customer = Customer::find($lockedTransaction->customer_id);
+                if (! $customer) {
+                    throw new \RuntimeException(
+                        'Customer has been deleted. Cannot approve transaction for non-existent customer.'
+                    );
+                }
+
+                // EDGE CASE VALIDATION: Verify till is still open
+                // Till could have been closed between transaction creation and approval
+                $tillBalance = TillBalance::where('till_id', $lockedTransaction->till_id)
+                    ->where('currency_code', $lockedTransaction->currency_code)
+                    ->whereDate('date', today())
+                    ->whereNull('closed_at')
+                    ->first();
+
+                if (! $tillBalance) {
+                    throw new \RuntimeException(
+                        'Till has been closed. Cannot approve transaction for closed till.'
+                    );
+                }
+
+                // EDGE CASE VALIDATION: Verify position still exists (for Sell transactions)
+                // Position could have been deleted between transaction creation and approval
+                if ($lockedTransaction->type->isSell()) {
+                    $position = CurrencyPosition::where('currency_code', $lockedTransaction->currency_code)
+                        ->where('till_id', $lockedTransaction->till_id)
+                        ->first();
+
+                    if (! $position) {
+                        throw new \RuntimeException(
+                            'Currency position has been deleted. Cannot approve Sell transaction without position.'
+                        );
+                    }
                 }
 
                 // Build proper transition history: record both Approval and Completion as separate steps

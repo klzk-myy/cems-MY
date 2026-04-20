@@ -203,9 +203,35 @@ class ComplianceService
     /**
      * Detect potential structuring behavior for a customer.
      *
-     * Structuring (or smurfing) is the practice of breaking up large transactions
-     * into smaller amounts to avoid reporting thresholds. This method checks
-     * for 3 or more transactions under RM 3,000 within the last hour.
+     * STRUCTURING (SMURFING) EXPLANATION:
+     * Structuring is the practice of deliberately breaking up large transactions
+     * into smaller amounts to avoid reporting thresholds and regulatory scrutiny.
+     * This is a serious AML/CFT violation that BNM requires MSBs to detect and report.
+     *
+     * DETECTION LOGIC:
+     * This method checks for 3 or more transactions under the structuring sub-threshold
+     * (default: RM 3,000) within a 1-hour window. The logic is:
+     *
+     * 1. Look back 1 hour from current time
+     * 2. Count all transactions with amount_local < structuring_sub_threshold
+     * 3. If count >= 3, flag as potential structuring
+     *
+     * WHY CHECK BELOW THRESHOLD?
+     * - Structuring specifically involves transactions BELOW reporting thresholds
+     * - If transactions were >= RM 3,000, they would already trigger Standard CDD
+     * - The pattern of multiple small transactions is the red flag, not the amounts
+     * - Example: 3 transactions of RM 2,900 each = RM 8,700 total (above RM 3,000 threshold)
+     *            but each individually avoids Standard CDD requirements
+     *
+     * BNM REQUIREMENTS:
+     * - MSBs must monitor for structuring patterns
+     * - Aggregation of related transactions must be considered
+     * - Suspicious structuring must be reported via STR
+     *
+     * CONFIGURATION:
+     * - Threshold: config('thresholds.structuring.sub_threshold', '3000')
+     * - Minimum transactions: 3 (hardcoded per BNM guidance)
+     * - Time window: 1 hour (hardcoded per BNM guidance)
      *
      * @param  int  $customerId  The ID of the customer to check
      * @return bool True if structuring behavior is detected (3+ small transactions in 1 hour)
