@@ -262,7 +262,7 @@ app/
 ├── Jobs/                   # 19 background jobs (7 main + 7 Compliance + 5 Sanctions)
 ├── Models/                 # 64 Eloquent models
 ├── Observers/              # Model observers for event-driven hooks
-└── Services/               # 73 services (71 top-level + 2 in Compliance sub-dirs)
+└── Services/               # 83 services (71 top-level + 12 in Compliance sub-dirs)
 ```
 
 ## User Roles
