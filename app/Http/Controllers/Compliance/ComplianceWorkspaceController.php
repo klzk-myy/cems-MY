@@ -8,7 +8,7 @@ use App\Services\Compliance\CaseManagementService;
 use App\Services\CustomerRiskScoringService;
 use App\Services\EddTemplateService;
 use App\Services\ReportSchedulingService;
-use App\Services\StrAutomationService;
+use App\Services\StrReportService;
 
 class ComplianceWorkspaceController extends Controller
 {
@@ -17,7 +17,7 @@ class ComplianceWorkspaceController extends Controller
         protected CaseManagementService $caseManagementService,
         protected CustomerRiskScoringService $riskScoringService,
         protected ReportSchedulingService $reportingService,
-        protected StrAutomationService $strAutomationService,
+        protected StrReportService $strReportService,
         protected EddTemplateService $eddTemplateService,
     ) {}
 
@@ -27,7 +27,7 @@ class ComplianceWorkspaceController extends Controller
         $caseSummary = $this->caseManagementService->getCaseSummary();
         $riskSummary = $this->riskScoringService->getDashboardSummary();
         $reportSummary = $this->reportingService->getDashboardSummary();
-        $strDeadlineSummary = $this->strAutomationService->getFilingDeadlineSummary();
+        $strDeadlineSummary = $this->strReportService->getFilingDeadlineSummary();
         $kpis = $this->reportingService->getKpiMetrics();
         $deadlines = $this->reportingService->getDeadlineCalendar();
 

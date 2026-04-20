@@ -98,34 +98,6 @@ class CustomerDocument extends Model
     }
 
     /**
-     * Check if the document is verified.
-     */
-    public function isVerified(): bool
-    {
-        return $this->verified_by !== null && $this->verified_at !== null;
-    }
-
-    /**
-     * Check if the document is expired.
-     */
-    public function isExpired(): bool
-    {
-        return $this->expiry_date !== null && $this->expiry_date->isPast();
-    }
-
-    /**
-     * Check if the document is expiring soon (within 30 days).
-     */
-    public function isExpiringSoon(): bool
-    {
-        if ($this->expiry_date === null) {
-            return false;
-        }
-
-        return $this->expiry_date->isFuture() && $this->expiry_date->diffInDays(now()) <= 30;
-    }
-
-    /**
      * Scope a query to only include verified documents.
      *
      * @param  Builder  $query

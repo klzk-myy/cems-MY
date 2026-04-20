@@ -7,13 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\StrDraft;
 use App\Models\Transaction;
-use App\Services\StrAutomationService;
+use App\Services\StrReportService;
 use Illuminate\Http\Request;
 
 class StrStudioController extends Controller
 {
     public function __construct(
-        protected StrAutomationService $strAutomationService
+        protected StrReportService $strReportService
     ) {}
 
     public function index()
@@ -22,7 +22,7 @@ class StrStudioController extends Controller
             ->orderByDesc('created_at')
             ->paginate(25);
 
-        $summary = $this->strAutomationService->getFilingDeadlineSummary();
+        $summary = $this->strReportService->getFilingDeadlineSummary();
 
         return view('compliance.str-studio.index', compact('drafts', 'summary'));
     }
@@ -87,7 +87,7 @@ class StrStudioController extends Controller
             }
         }
 
-        $narrative = $this->strAutomationService->suggestNarrative($alertTypes, $transactionPatterns);
+        $narrative = $this->strReportService->suggestNarrative($alertTypes, $transactionPatterns);
 
         $draft->update(['narrative' => $narrative]);
 
@@ -107,7 +107,7 @@ class StrStudioController extends Controller
             return redirect()->back()->with('error', 'STR draft cannot be converted');
         }
 
-        $strReport = $this->strAutomationService->convertToStrReport($draft);
+        $strReport = $this->strReportService->convertToStrReport($draft);
 
         return redirect()->route('str.show', $strReport->id)
             ->with('success', 'STR draft converted to formal report');
@@ -115,7 +115,7 @@ class StrStudioController extends Controller
 
     public function deadlines()
     {
-        $deadlines = $this->strAutomationService->getFilingDeadlineSummary();
+        $deadlines = $this->strReportService->getFilingDeadlineSummary();
         $drafts = StrDraft::pending()
             ->whereNotNull('filing_deadline')
             ->orderBy('filing_deadline')

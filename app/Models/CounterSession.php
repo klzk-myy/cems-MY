@@ -74,19 +74,4 @@ class CounterSession extends Model
     {
         return $query->where('session_date', $date);
     }
-
-    public function isOpen(): bool
-    {
-        return $this->status->isOpen();
-    }
-
-    public function isClosed(): bool
-    {
-        return $this->status->isClosed();
-    }
-
-    public function isHandedOver(): bool
-    {
-        return $this->status->isHandedOver();
-    }
 }

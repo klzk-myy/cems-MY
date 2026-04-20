@@ -73,23 +73,4 @@ class Alert extends Model
     {
         return $query->where('status', FlagStatus::Resolved);
     }
-
-    public function calculateSlaDeadline(): \DateTime
-    {
-        return now()->addHours($this->priority->slaHours());
-    }
-
-    public function isOverdue(): bool
-    {
-        if ($this->case_id) {
-            return false;
-        }
-
-        return now()->isAfter($this->calculateSlaDeadline());
-    }
-
-    public function isResolved(): bool
-    {
-        return $this->status === FlagStatus::Resolved;
-    }
 }

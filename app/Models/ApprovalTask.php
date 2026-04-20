@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 
 /**
  * Approval Task Model
@@ -87,89 +86,5 @@ class ApprovalTask extends Model
     public function approverUser(): BelongsTo
     {
         return $this->approver();
-    }
-
-    /**
-     * Check if the task is pending.
-     */
-    public function isPending(): bool
-    {
-        return $this->status === self::STATUS_PENDING;
-    }
-
-    /**
-     * Check if the task has been approved.
-     */
-    public function isApproved(): bool
-    {
-        return $this->status === self::STATUS_APPROVED;
-    }
-
-    /**
-     * Check if the task has been rejected.
-     */
-    public function isRejected(): bool
-    {
-        return $this->status === self::STATUS_REJECTED;
-    }
-
-    /**
-     * Check if the task has expired.
-     */
-    public function isExpired(): bool
-    {
-        return $this->status === self::STATUS_EXPIRED;
-    }
-
-    /**
-     * Check if the task is still actionable (pending and not expired).
-     */
-    public function isActionable(): bool
-    {
-        if (! $this->isPending()) {
-            return false;
-        }
-
-        if ($this->expires_at && $this->expires_at->isPast()) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Get pending tasks for a specific user based on their role.
-     *
-     * Only returns tasks that the user CAN actually approve based on role hierarchy.
-     * - Admins can see supervisor, manager, and admin tasks
-     * - Managers can see supervisor and manager tasks
-     * - Tellers and Compliance Officers cannot approve anything (empty result)
-     */
-    public static function getPendingForUser(User $user): Collection
-    {
-        $query = self::where('status', self::STATUS_PENDING)
-            ->where(function ($q) {
-                $q->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            });
-
-        // Determine which required roles the user can approve based on their role
-        // Admin can approve admin and manager tasks
-        // Manager can approve manager tasks only
-        // Tellers and Compliance Officers cannot approve anything
-        $requiredRoles = match (true) {
-            $user->role->isAdmin() => ['admin', 'manager'],
-            $user->role->isManager() => ['manager'],
-            default => [],
-        };
-
-        if (empty($requiredRoles)) {
-            return new Collection;
-        }
-
-        return $query->whereIn('required_role', $requiredRoles)
-            ->with(['transaction', 'approver'])
-            ->orderBy('created_at', 'asc')
-            ->get();
     }
 }
