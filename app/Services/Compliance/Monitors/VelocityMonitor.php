@@ -7,6 +7,8 @@ use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\ComplianceService;
+use App\Services\MathService;
 
 /**
  * Monitor for detecting customers exceeding transaction velocity thresholds.
@@ -18,11 +20,14 @@ class VelocityMonitor extends BaseMonitor
 
     protected string $warningThreshold;
 
-    public function __construct()
+    protected ComplianceService $complianceService;
+
+    public function __construct(MathService $math, ComplianceService $complianceService)
     {
-        parent::__construct();
+        parent::__construct($math);
         $this->threshold = config('thresholds.velocity.alert_threshold', '50000');
         $this->warningThreshold = config('thresholds.velocity.warning_threshold', '45000');
+        $this->complianceService = $complianceService;
     }
 
     public const LOOKBACK_HOURS = 24;
@@ -66,7 +71,11 @@ class VelocityMonitor extends BaseMonitor
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->count();
 
-        if ($this->math->compare((string) $totalAmount, $this->threshold) >= 0) {
+        // Delegate velocity check to ComplianceService
+        $velocityResult = $this->complianceService->checkVelocity($customerId, '0');
+        $amount24h = $velocityResult['amount_24h'];
+
+        if ($this->math->compare($amount24h, $this->threshold) >= 0) {
             $customer = Customer::find($customerId);
 
             return $this->createFinding(
@@ -77,14 +86,14 @@ class VelocityMonitor extends BaseMonitor
                 details: [
                     'customer_name' => $customer?->full_name ?? 'Unknown',
                     'transactions_24h' => $transactionCount,
-                    'total_amount_24h' => (string) $totalAmount,
+                    'total_amount_24h' => $amount24h,
                     'threshold' => $this->threshold,
                     'recommendation' => 'STR recommended if suspicious',
                 ]
             );
         }
 
-        if ($this->math->compare((string) $totalAmount, $this->warningThreshold) >= 0) {
+        if ($this->math->compare($amount24h, $this->warningThreshold) >= 0) {
             $customer = Customer::find($customerId);
 
             return $this->createFinding(
@@ -95,7 +104,7 @@ class VelocityMonitor extends BaseMonitor
                 details: [
                     'customer_name' => $customer?->full_name ?? 'Unknown',
                     'transactions_24h' => $transactionCount,
-                    'total_amount_24h' => (string) $totalAmount,
+                    'total_amount_24h' => $amount24h,
                     'threshold' => $this->warningThreshold,
                     'approaching_threshold' => true,
                 ]

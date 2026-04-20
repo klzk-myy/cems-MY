@@ -37,9 +37,12 @@ class MonitoringEngine
 
     protected MathService $mathService;
 
-    public function __construct(MathService $mathService)
+    protected ComplianceService $complianceService;
+
+    public function __construct(MathService $mathService, ComplianceService $complianceService)
     {
         $this->mathService = $mathService;
+        $this->complianceService = $complianceService;
         $this->registerDefaultMonitors();
     }
 
@@ -78,7 +81,7 @@ class MonitoringEngine
      */
     public function getMonitor(string $monitorClass): BaseMonitor
     {
-        return new $monitorClass($this->mathService);
+        return new $monitorClass($this->mathService, $this->complianceService);
     }
 
     /**

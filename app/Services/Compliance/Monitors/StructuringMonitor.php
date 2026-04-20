@@ -7,6 +7,8 @@ use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\ComplianceService;
+use App\Services\MathService;
 
 /**
  * Monitor for detecting structuring patterns.
@@ -16,14 +18,17 @@ class StructuringMonitor extends BaseMonitor
 {
     protected string $subThreshold;
 
+    protected ComplianceService $complianceService;
+
     public const STRUCTURING_COUNT = 3;
 
     public const LOOKBACK_MINUTES = 60;
 
-    public function __construct()
+    public function __construct(MathService $math, ComplianceService $complianceService)
     {
-        parent::__construct();
+        parent::__construct($math);
         $this->subThreshold = config('thresholds.structuring.sub_threshold', '3000');
+        $this->complianceService = $complianceService;
     }
 
     protected function getFindingType(): FindingType
@@ -63,7 +68,12 @@ class StructuringMonitor extends BaseMonitor
             ->orderBy('created_at', 'desc')
             ->get();
 
-        if ($smallTransactions->count() >= self::STRUCTURING_COUNT) {
+        $transactionCount = $smallTransactions->count();
+
+        // Delegate structuring check to ComplianceService
+        $isStructuring = $this->complianceService->checkStructuring($customerId);
+
+        if ($isStructuring) {
             $customer = Customer::find($customerId);
             $totalAmount = $smallTransactions->sum('amount_local');
 
@@ -74,7 +84,7 @@ class StructuringMonitor extends BaseMonitor
                 subjectId: $customerId,
                 details: [
                     'customer_name' => $customer?->full_name ?? 'Unknown',
-                    'transaction_count' => $smallTransactions->count(),
+                    'transaction_count' => $transactionCount,
                     'total_amount' => (string) $totalAmount,
                     'threshold' => $this->subThreshold,
                     'transaction_ids' => $smallTransactions->pluck('id')->toArray(),
