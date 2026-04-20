@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\SystemAlert;
 use App\Models\SystemHealthCheck;
-use App\Services\MonitorService;
+use App\Services\SystemHealthService;
 use Illuminate\Console\Command;
 
 class MonitorStatusCommand extends Command
@@ -16,9 +16,9 @@ class MonitorStatusCommand extends Command
 
     protected $description = 'Show current system monitoring status';
 
-    protected MonitorService $monitorService;
+    protected SystemHealthService $monitorService;
 
-    public function __construct(MonitorService $monitorService)
+    public function __construct(SystemHealthService $monitorService)
     {
         parent::__construct();
         $this->monitorService = $monitorService;

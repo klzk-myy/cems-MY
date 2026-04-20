@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\AlertService;
-use App\Services\MonitorService;
+use App\Services\SystemHealthService;
 use Illuminate\Console\Command;
 
 class MonitorCheckCommand extends Command
@@ -14,12 +14,12 @@ class MonitorCheckCommand extends Command
 
     protected $description = 'Run all system health checks';
 
-    protected MonitorService $monitorService;
+    protected SystemHealthService $monitorService;
 
     protected AlertService $alertService;
 
     public function __construct(
-        MonitorService $monitorService,
+        SystemHealthService $monitorService,
         AlertService $alertService
     ) {
         parent::__construct();

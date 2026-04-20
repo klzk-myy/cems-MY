@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Mail;
 class AlertService
 {
     public function __construct(
-        protected MonitorService $monitorService,
+        protected SystemHealthService $monitorService,
     ) {}
 
     /**
