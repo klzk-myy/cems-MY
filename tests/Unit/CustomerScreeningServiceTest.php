@@ -7,8 +7,8 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Models\ScreeningResult;
 use App\Models\Transaction;
-use App\Services\MathService;
 use App\Services\CustomerScreeningService;
+use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

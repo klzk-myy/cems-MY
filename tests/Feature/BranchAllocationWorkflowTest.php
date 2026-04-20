@@ -16,6 +16,7 @@ use App\Services\CounterOpeningWorkflowService;
 use App\Services\CounterService;
 use App\Services\MathService;
 use App\Services\TellerAllocationService;
+use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -106,7 +107,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService);
         $this->branchPoolService = $branchPoolService;
         $this->tellerAllocationService = $tellerAllocationService;
-        $counterService = new CounterService($tellerAllocationService, new \App\Services\ThresholdService);
+        $counterService = new CounterService($tellerAllocationService, new ThresholdService);
         $this->counterService = $counterService;
         $this->workflowService = new CounterOpeningWorkflowService(
             $branchPoolService,
