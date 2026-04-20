@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Customer;
-use App\Services\UnifiedSanctionScreeningService;
+use App\Services\CustomerScreeningService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -21,7 +21,7 @@ class RescreenHighRiskCustomersJob implements ShouldQueue
 
     public array $backoff = [30, 60, 120];
 
-    public function handle(UnifiedSanctionScreeningService $service): void
+    public function handle(CustomerScreeningService $service): void
     {
         $customers = Customer::where('risk_score', '>=', 70)
             ->orWhere('sanction_hit', true)

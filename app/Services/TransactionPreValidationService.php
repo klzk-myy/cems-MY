@@ -10,7 +10,7 @@ use App\ValueObjects\SanctionCheckResult;
 class TransactionPreValidationService
 {
     public function __construct(
-        protected UnifiedSanctionScreeningService $screeningService,
+        protected CustomerScreeningService $screeningService,
         protected ComplianceService $complianceService,
         protected HistoricalRiskAnalysisService $historicalRiskAnalysisService,
         protected AuditService $auditService

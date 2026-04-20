@@ -11,7 +11,7 @@ use App\ValueObjects\ScreeningResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
-class UnifiedSanctionScreeningService
+class CustomerScreeningService
 {
     protected float $thresholdFlag;
 

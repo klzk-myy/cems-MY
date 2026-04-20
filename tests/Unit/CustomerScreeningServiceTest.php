@@ -8,20 +8,20 @@ use App\Models\SanctionList;
 use App\Models\ScreeningResult;
 use App\Models\Transaction;
 use App\Services\MathService;
-use App\Services\UnifiedSanctionScreeningService;
+use App\Services\CustomerScreeningService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class UnifiedSanctionScreeningServiceTest extends TestCase
+class CustomerScreeningServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected UnifiedSanctionScreeningService $service;
+    protected CustomerScreeningService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new UnifiedSanctionScreeningService(new MathService);
+        $this->service = new CustomerScreeningService(new MathService);
     }
 
     public function test_screen_name_returns_clear_for_no_match(): void
@@ -132,7 +132,7 @@ class UnifiedSanctionScreeningServiceTest extends TestCase
 
     public function test_levenshtein_similarity_calculation(): void
     {
-        $service = new UnifiedSanctionScreeningService(new MathService);
+        $service = new CustomerScreeningService(new MathService);
 
         $this->assertEquals(1.0, $service->levenshteinSimilarity('john', 'john'));
         $this->assertLessThan(1.0, $service->levenshteinSimilarity('john', 'jon'));

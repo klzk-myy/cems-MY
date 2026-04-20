@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
-use App\Services\UnifiedSanctionScreeningService;
+use App\Services\CustomerScreeningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ScreeningController extends Controller
 {
     public function __construct(
-        protected UnifiedSanctionScreeningService $screeningService,
+        protected CustomerScreeningService $screeningService,
     ) {}
 
     public function screen(Request $request, int $customerId): JsonResponse

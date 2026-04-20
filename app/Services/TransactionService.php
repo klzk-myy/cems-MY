@@ -44,7 +44,7 @@ class TransactionService
         protected CtosReportService $ctosReportService,
         protected TellerAllocationService $tellerAllocationService,
         protected ApprovalWorkflowService $approvalWorkflowService,
-        protected UnifiedSanctionScreeningService $screeningService,
+        protected CustomerScreeningService $screeningService,
     ) {}
 
     /**

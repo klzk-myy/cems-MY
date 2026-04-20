@@ -13,14 +13,14 @@ use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
-use App\Services\UnifiedSanctionScreeningService;
+use App\Services\CustomerScreeningService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 class TriggerSanctionsRescreening
 {
     public function __construct(
-        protected UnifiedSanctionScreeningService $sanctionScreeningService,
+        protected CustomerScreeningService $sanctionScreeningService,
         protected AuditService $auditService
     ) {}
 

@@ -40,7 +40,7 @@ class ComplianceService
     /**
      * Sanction screening service for fuzzy matching.
      */
-    protected ?UnifiedSanctionScreeningService $screeningService;
+    protected ?CustomerScreeningService $screeningService;
 
     /**
      * Threshold service for dynamic threshold values.
@@ -72,13 +72,13 @@ class ComplianceService
      *
      * @param  EncryptionService  $encryptionService  Service for data encryption
      * @param  MathService  $mathService  Service for high-precision calculations
-     * @param  UnifiedSanctionScreeningService|null  $screeningService  Service for sanctions screening
+     * @param  CustomerScreeningService|null  $screeningService  Service for sanctions screening
      * @param  ThresholdService|null  $thresholdService  Service for dynamic thresholds
      */
     public function __construct(
         EncryptionService $encryptionService,
         MathService $mathService,
-        ?UnifiedSanctionScreeningService $screeningService = null,
+        ?CustomerScreeningService $screeningService = null,
         ?ThresholdService $thresholdService = null
     ) {
         $this->encryptionService = $encryptionService;
@@ -129,7 +129,7 @@ class ComplianceService
     /**
      * Check if customer matches any sanctions list entries.
      *
-     * Uses UnifiedSanctionScreeningService for fuzzy matching when available,
+     * Uses CustomerScreeningService for fuzzy matching when available,
      * with fallback to direct database query for backward compatibility.
      *
      * @param  Customer  $customer  The customer to screen against sanctions lists

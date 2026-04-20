@@ -14,7 +14,7 @@ use Illuminate\Support\Collection;
 class CustomerRiskScoringService
 {
     public function __construct(
-        protected UnifiedSanctionScreeningService $screeningService,
+        protected CustomerScreeningService $screeningService,
         protected ComplianceService $complianceService,
         protected AuditService $auditService,
         protected MathService $mathService,

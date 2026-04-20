@@ -7,7 +7,7 @@ use App\Enums\FindingType;
 use App\Models\Customer;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
-use App\Services\UnifiedSanctionScreeningService;
+use App\Services\CustomerScreeningService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -16,9 +16,9 @@ use Illuminate\Support\Facades\Log;
  */
 class SanctionsRescreeningMonitor extends BaseMonitor
 {
-    protected UnifiedSanctionScreeningService $screeningService;
+    protected CustomerScreeningService $screeningService;
 
-    public function __construct(UnifiedSanctionScreeningService $screeningService)
+    public function __construct(CustomerScreeningService $screeningService)
     {
         $this->screeningService = $screeningService;
     }
