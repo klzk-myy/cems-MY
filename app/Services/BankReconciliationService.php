@@ -6,7 +6,7 @@ use App\Models\BankReconciliation;
 use App\Models\JournalEntry;
 use Illuminate\Support\Facades\DB;
 
-class ReconciliationService
+class BankReconciliationService
 {
     /**
      * Import bank statement lines

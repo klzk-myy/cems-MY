@@ -11,7 +11,7 @@ use App\Services\AccountingService;
 use App\Services\BudgetService;
 use App\Services\MathService;
 use App\Services\PeriodCloseService;
-use App\Services\ReconciliationService;
+use App\Services\BankReconciliationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -25,20 +25,20 @@ class AccountingController extends Controller
 
     protected PeriodCloseService $periodCloseService;
 
-    protected ReconciliationService $reconciliationService;
+    protected BankReconciliationService $bankReconciliationService;
 
     public function __construct(
         AccountingService $accountingService,
         BudgetService $budgetService,
         MathService $mathService,
         PeriodCloseService $periodCloseService,
-        ReconciliationService $reconciliationService
+        BankReconciliationService $bankReconciliationService
     ) {
         $this->accountingService = $accountingService;
         $this->budgetService = $budgetService;
         $this->mathService = $mathService;
         $this->periodCloseService = $periodCloseService;
-        $this->reconciliationService = $reconciliationService;
+        $this->bankReconciliationService = $bankReconciliationService;
     }
 
     // Note: Authorization is handled by role:manager middleware at route level
@@ -173,7 +173,7 @@ class AccountingController extends Controller
         $accountCode = $request->get('account_code', $request->get('account', $cashAccounts->first()?->account_code));
         $fromDate = $request->get('from', now()->startOfMonth()->toDateString());
         $toDate = $request->get('to', now()->endOfMonth()->toDateString());
-        $report = $this->reconciliationService->getReconciliationViewData(
+        $report = $this->bankReconciliationService->getReconciliationViewData(
             $accountCode,
             $fromDate,
             $toDate
@@ -197,7 +197,7 @@ class AccountingController extends Controller
             'lines.*.credit' => 'nullable|numeric|min=0',
         ]);
 
-        $result = $this->reconciliationService->importStatement(
+        $result = $this->bankReconciliationService->importStatement(
             $validated['account_code'],
             $validated['lines'],
             auth()->id()
@@ -216,7 +216,7 @@ class AccountingController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
-        $this->reconciliationService->markAsException($reconciliation->id, $validated['reason'], auth()->id());
+        $this->bankReconciliationService->markAsException($reconciliation->id, $validated['reason'], auth()->id());
 
         return redirect()->route('accounting.reconciliation')
             ->with('success', 'Item marked as exception.');
@@ -233,7 +233,7 @@ class AccountingController extends Controller
             'to' => 'required|date',
         ]);
 
-        $report = $this->reconciliationService->getReconciliationReport(
+        $report = $this->bankReconciliationService->getReconciliationReport(
             $validated['account_code'],
             $validated['from'],
             $validated['to']
@@ -253,7 +253,7 @@ class AccountingController extends Controller
             'to' => 'required|date',
         ]);
 
-        $report = $this->reconciliationService->getReconciliationReport(
+        $report = $this->bankReconciliationService->getReconciliationReport(
             $validated['account_code'],
             $validated['from'],
             $validated['to']

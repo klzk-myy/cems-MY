@@ -7,22 +7,22 @@ use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\User;
-use App\Services\ReconciliationService;
+use App\Services\BankReconciliationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ReconciliationServiceTest extends TestCase
+class BankReconciliationServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected ReconciliationService $reconciliationService;
+    protected BankReconciliationService $bankReconciliationService;
 
     protected User $user;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->reconciliationService = new ReconciliationService;
+        $this->bankReconciliationService = new BankReconciliationService;
         $this->user = User::create([
             'username' => 'test_user',
             'email' => 'test@example.com',
@@ -70,7 +70,7 @@ class ReconciliationServiceTest extends TestCase
             'created_by' => $this->user->id,
         ]);
 
-        $this->reconciliationService->autoMatch($accountCode);
+        $this->bankReconciliationService->autoMatch($accountCode);
 
         $reconciliation->refresh();
 
@@ -118,7 +118,7 @@ class ReconciliationServiceTest extends TestCase
             'created_by' => $this->user->id,
         ]);
 
-        $this->reconciliationService->autoMatch($accountCode);
+        $this->bankReconciliationService->autoMatch($accountCode);
 
         $reconciliation->refresh();
 
@@ -167,7 +167,7 @@ class ReconciliationServiceTest extends TestCase
             'check_number' => '12345',
         ]);
 
-        $this->reconciliationService->autoMatch($accountCode);
+        $this->bankReconciliationService->autoMatch($accountCode);
 
         $reconciliation->refresh();
 
@@ -213,7 +213,7 @@ class ReconciliationServiceTest extends TestCase
             'created_by' => $this->user->id,
         ]);
 
-        $this->reconciliationService->autoMatch($accountCode);
+        $this->bankReconciliationService->autoMatch($accountCode);
 
         $reconciliation->refresh();
 
@@ -259,7 +259,7 @@ class ReconciliationServiceTest extends TestCase
             'created_by' => $this->user->id,
         ]);
 
-        $this->reconciliationService->autoMatch($accountCode);
+        $this->bankReconciliationService->autoMatch($accountCode);
 
         $reconciliation->refresh();
 
