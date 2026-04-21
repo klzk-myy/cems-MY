@@ -417,35 +417,6 @@ class AuditService
     }
 
     /**
-     * Log data breach events.
-     *
-     * @param  string  $action  Breach action (data_breach_detected,
-     *                          data_breach_acknowledged, data_breach_investigation_started,
-     *                          data_breach_resolved, data_breach_false_positive)
-     * @param  int  $breachId  Data breach alert ID
-     * @param  array  $data  Breach data
-     */
-    public function logDataBreachEvent(string $action, int $breachId, array $data = []): SystemLog
-    {
-        $severity = match ($action) {
-            'data_breach_detected', 'data_breach_acknowledged' => 'CRITICAL',
-            'data_breach_investigation_started' => 'WARNING',
-            default => 'INFO',
-        };
-
-        return $this->logWithSeverity(
-            $action,
-            [
-                'entity_type' => 'DataBreachAlert',
-                'entity_id' => $breachId,
-                'old_values' => $data['old'] ?? [],
-                'new_values' => $data['new'] ?? [],
-            ],
-            $severity
-        );
-    }
-
-    /**
      * Log session events.
      *
      * @param  string  $action  Session action (session_timeout,

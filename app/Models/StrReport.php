@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StrStatus;
+use App\Models\Compliance\ComplianceCase;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,17 +30,26 @@ class StrReport extends Model
         'retry_count',
         'last_error',
         'last_retry_at',
+        'case_id',
+        'alert_ids',
+        'narrative',
+        'suspected_activity',
+        'confidence_score',
+        'ai_metadata',
     ];
 
     protected $casts = [
         'transaction_ids' => 'array',
         'supporting_documents' => 'array',
+        'alert_ids' => 'array',
+        'ai_metadata' => 'array',
         'status' => StrStatus::class,
         'submitted_at' => 'datetime',
         'suspicion_date' => 'datetime',
         'filing_deadline' => 'datetime',
         'last_retry_at' => 'datetime',
         'retry_count' => 'integer',
+        'confidence_score' => 'decimal:2',
     ];
 
     public function customer()
@@ -70,6 +80,16 @@ class StrReport extends Model
     public function transactions()
     {
         return Transaction::whereIn('id', $this->transaction_ids ?? [])->get();
+    }
+
+    public function complianceCase()
+    {
+        return $this->belongsTo(ComplianceCase::class, 'case_id');
+    }
+
+    public function alerts()
+    {
+        return FlaggedTransaction::whereIn('id', $this->alert_ids ?? [])->get();
     }
 
     public function isDraft(): bool

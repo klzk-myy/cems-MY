@@ -12,7 +12,7 @@ use App\Enums\FlagStatus;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
-use App\Models\StrDraft;
+use App\Models\StrReport;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -277,11 +277,11 @@ class ComplianceCase extends Model
     }
 
     /**
-     * Get STR drafts linked to this case.
+     * Get STR reports linked to this case.
      */
-    public function strDrafts(): HasMany
+    public function strReports(): HasMany
     {
-        return $this->hasMany(StrDraft::class, 'case_id');
+        return $this->hasMany(StrReport::class, 'case_id');
     }
 
     /**

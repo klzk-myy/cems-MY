@@ -8,7 +8,6 @@ use App\Models\SystemLog;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Services\AccountingService;
-use App\Services\ApprovalWorkflowService;
 use App\Services\AuditService;
 use App\Services\ComplianceService;
 use App\Services\CurrencyPositionService;
@@ -29,7 +28,6 @@ class TransactionApprovalController extends Controller
         protected MathService $mathService,
         protected AccountingService $accountingService,
         protected AuditService $auditService,
-        protected ApprovalWorkflowService $approvalWorkflowService,
         protected ThresholdService $thresholdService
     ) {}
 
@@ -184,9 +182,6 @@ class TransactionApprovalController extends Controller
 
                 $transaction->refresh();
 
-                // Create an approval task - for >= RM 50,000 this will require Admin role
-                $approvalTask = $this->approvalWorkflowService->createApprovalTask($transaction);
-
                 SystemLog::create([
                     'user_id' => auth()->id(),
                     'action' => 'transaction_confirmed',
@@ -195,7 +190,6 @@ class TransactionApprovalController extends Controller
                     'new_values' => [
                         'confirmation_id' => $confirmation->id,
                         'confirmed_by' => auth()->id(),
-                        'approval_task_id' => $approvalTask?->id,
                     ],
                     'ip_address' => $request->ip(),
                 ]);

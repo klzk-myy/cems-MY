@@ -14,13 +14,11 @@ use App\Http\Controllers\Compliance\FindingController;
 use App\Http\Controllers\Compliance\RiskDashboardController;
 use App\Http\Controllers\Compliance\SanctionListController;
 use App\Http\Controllers\Compliance\ScreeningController;
-use App\Http\Controllers\Compliance\StrStudioController;
 use App\Http\Controllers\Compliance\UnifiedAlertController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\Customer\CustomerKycController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DataBreachAlertController;
 use App\Http\Controllers\EnhancedDiligenceController;
 use App\Http\Controllers\FinancialStatementController;
 use App\Http\Controllers\FiscalYearController;
@@ -35,7 +33,6 @@ use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\StockCashController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\StrController;
-use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TestResultsController;
 use App\Http\Controllers\Transaction\TransactionApprovalController;
 use App\Http\Controllers\Transaction\TransactionCancellationController;
@@ -139,11 +136,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Customer Transaction History (API)
     Route::get('/customers/{customer}/history', [TransactionReportController::class, 'customerHistory'])
-        ->name('customers.history')
-        ->middleware('data.breach');
+        ->name('customers.history');
     Route::get('/customers/{customer}/history/export', [TransactionReportController::class, 'exportCustomerHistory'])
-        ->name('customers.export')
-        ->middleware('data.breach');
+        ->name('customers.export');
 
     // Customers
     Route::prefix('customers')->name('customers.')->group(function () {
@@ -151,8 +146,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/create', [CustomerController::class, 'create'])->name('create');
         Route::post('/', [CustomerController::class, 'store'])->name('store')
             ->middleware('throttle:30,1');
-        Route::get('/{customer}', [CustomerController::class, 'show'])->name('show')
-            ->middleware('data.breach');
+        Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
         Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
         Route::put('/{customer}', [CustomerController::class, 'update'])->name('update')
             ->middleware('throttle:30,1');
@@ -261,18 +255,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             Route::post('/{case}/documents/{document}/verify', [CaseManagementController::class, 'verifyDocument'])->name('documents.verify');
             Route::post('/{case}/links', [CaseManagementController::class, 'addLink'])->name('links.add');
             Route::delete('/{case}/links/{link}', [CaseManagementController::class, 'removeLink'])->name('links.remove');
-        });
-
-        // STR Studio
-        Route::prefix('compliance/str-studio')->name('compliance.str-studio.')->group(function () {
-            Route::get('/', [StrStudioController::class, 'index'])->name('index');
-            Route::get('/create/{caseId}', [StrStudioController::class, 'create'])->name('create');
-            Route::post('/draft', [StrStudioController::class, 'store'])->name('store');
-            Route::get('/{draft}', [StrStudioController::class, 'show'])->name('show');
-            Route::post('/{draft}/generate-narrative', [StrStudioController::class, 'generateNarrative'])->name('generate-narrative');
-            Route::post('/{draft}/submit', [StrStudioController::class, 'submit'])->name('submit');
-            Route::post('/{draft}/convert', [StrStudioController::class, 'convert'])->name('convert');
-            Route::get('/deadlines', [StrStudioController::class, 'deadlines'])->name('deadlines');
         });
 
         // Risk Dashboard
@@ -467,28 +449,11 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     });
 
     // -------------------------------------------------------------------------
-    // SYSTEM - Administrative tasks
+    // SYSTEM - Administrative
     // -------------------------------------------------------------------------
 
-    // Tasks (All authenticated users)
-    Route::prefix('tasks')->name('tasks.')->group(function () {
-        Route::get('/', [TaskController::class, 'index'])->name('index');
-        Route::get('/my', [TaskController::class, 'myTasks'])->name('my');
-        Route::get('/overdue', [TaskController::class, 'overdue'])->name('overdue');
-        Route::get('/create', [TaskController::class, 'create'])->name('create');
-        Route::post('/', [TaskController::class, 'store'])->name('store');
-        Route::get('/{task}', [TaskController::class, 'show'])->name('show');
-        Route::post('/{task}/acknowledge', [TaskController::class, 'acknowledge'])->name('acknowledge');
-        Route::post('/{task}/complete', [TaskController::class, 'complete'])->name('complete');
-        Route::post('/{task}/cancel', [TaskController::class, 'cancel'])->name('cancel');
-        Route::post('/{task}/escalate', [TaskController::class, 'escalate'])->name('escalate');
-    });
-
-    // Task Stats API
-    Route::get('/api/tasks/stats', [TaskController::class, 'stats'])->name('api.tasks.stats');
-
     // Audit Log (Managers only)
-    Route::middleware(['role:manager', 'data.breach'])->prefix('audit')->name('audit.')->group(function () {
+    Route::middleware(['role:manager'])->prefix('audit')->name('audit.')->group(function () {
         Route::get('/', [AuditController::class, 'index'])->name('index');
         Route::get('/dashboard', [AuditController::class, 'dashboard'])->name('dashboard');
         Route::get('/rotate', [AuditController::class, 'rotate'])->name('rotate');
@@ -518,13 +483,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/{branch}/edit', [BranchController::class, 'edit'])->name('edit');
         Route::put('/{branch}', [BranchController::class, 'update'])->name('update');
         Route::delete('/{branch}', [BranchController::class, 'destroy'])->name('destroy');
-    });
-
-    // Data Breach Alerts (Admin only)
-    Route::middleware(['auth', 'role:admin'])->prefix('data-breach-alerts')->name('data-breach-alerts.')->group(function () {
-        Route::get('/', [DataBreachAlertController::class, 'index'])->name('index');
-        Route::get('/{dataBreachAlert}', [DataBreachAlertController::class, 'show'])->name('show');
-        Route::post('/{dataBreachAlert}/resolve', [DataBreachAlertController::class, 'resolve'])->name('resolve');
     });
 
     // -------------------------------------------------------------------------

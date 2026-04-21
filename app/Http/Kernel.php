@@ -6,7 +6,6 @@ use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CheckBranchAccess;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\CheckRoleAny;
-use App\Http\Middleware\DataBreachDetection;
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\EnsureMfaEnabled;
 use App\Http\Middleware\EnsureMfaVerified;
@@ -81,7 +80,6 @@ class Kernel extends HttpKernel
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             ThrottleRequests::class.':api',
             SubstituteBindings::class,
-            DataBreachDetection::class,
         ],
     ];
 
@@ -110,7 +108,6 @@ class Kernel extends HttpKernel
         'mfa.enabled' => EnsureMfaEnabled::class,
         'mfa.verified' => EnsureMfaVerified::class,
         'session.timeout' => SessionTimeout::class,
-        'data.breach' => DataBreachDetection::class,
         'query.monitor' => QueryPerformanceMonitor::class,
         'security.headers' => SecurityHeaders::class,
         'ip.blocker' => IpBlocker::class,

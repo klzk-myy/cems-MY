@@ -16,7 +16,6 @@ use App\Exceptions\Domain\InvalidCurrencyException;
 use App\Exceptions\Domain\InvalidIpAddressException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
-use App\Models\ApprovalTask;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
@@ -46,7 +45,6 @@ class TransactionService
         protected TransactionMonitoringService $monitoringService,
         protected CtosReportService $ctosReportService,
         protected TellerAllocationService $tellerAllocationService,
-        protected ApprovalWorkflowService $approvalWorkflowService,
         protected CustomerScreeningService $screeningService,
         protected HistoricalRiskAnalysisService $historicalRiskAnalysisService,
         protected ThresholdService $thresholdService,
@@ -408,23 +406,9 @@ class TransactionService
             ]);
 
             // If transaction requires approval (>= RM 3,000 and no compliance hold),
-            // create the approval task atomically within the same transaction.
-            // This ensures transaction and task are always linked; if task creation fails,
-            // the entire transaction rolls back.
+            // reserve stock immediately so it cannot be oversold
             if ($status === TransactionStatus::PendingApproval) {
-                // Reserve the stock immediately so it cannot be oversold
                 $this->positionService->reserveStock($transaction);
-
-                try {
-                    $this->approvalWorkflowService->createApprovalTask($transaction);
-                } catch (\Exception $e) {
-                    Log::error('Approval task creation failed', [
-                        'transaction_id' => $transaction->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    // Re-throw to rollback the transaction
-                    throw $e;
-                }
             }
 
             // If completed, update positions, till balance, and create accounting entries
@@ -933,17 +917,6 @@ class TransactionService
                     ],
                 ]);
 
-                // Sync ApprovalTask after completion (all PendingApproval transactions have tasks)
-                try {
-                    $this->syncApprovalTaskOnCompletion($lockedTransaction, $approverId);
-                } catch (\Exception $e) {
-                    // Log but don't fail the transaction - sync failures are non-blocking
-                    Log::error('ApprovalTask sync error (non-blocking)', [
-                        'transaction_id' => $lockedTransaction->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-
                 // Dispatch event for async compliance processing
                 Event::dispatch(new TransactionApproved($lockedTransaction));
 
@@ -959,92 +932,6 @@ class TransactionService
                 'message' => 'Insufficient stock: '.$e->getMessage(),
             ];
         }
-    }
-
-    /**
-     * Sync the ApprovalTask when a PendingApproval transaction is completed.
-     *
-     * This ensures the approval workflow audit trail is complete by marking
-     * the associated ApprovalTask as approved.
-     */
-    protected function syncApprovalTaskOnCompletion(Transaction $transaction, int $approverId): void
-    {
-        $maxRetries = 3;
-        $attempt = 0;
-        $lastError = null;
-
-        while ($attempt < $maxRetries) {
-            try {
-                // Find the pending ApprovalTask for this transaction
-                $task = ApprovalTask::where('transaction_id', $transaction->id)
-                    ->where('status', ApprovalTask::STATUS_PENDING)
-                    ->first();
-
-                if (! $task) {
-                    Log::warning('ApprovalTask not found for PendingApproval transaction', [
-                        'transaction_id' => $transaction->id,
-                        'attempt' => $attempt + 1,
-                    ]);
-
-                    return;
-                }
-
-                // Get the approver user
-                $approver = User::findOrFail($approverId);
-
-                // Approve the task via ApprovalWorkflowService
-                $this->approvalWorkflowService->approve($task, $approver, 'Transaction completed via approveTransaction');
-
-                Log::info('ApprovalTask synced on transaction completion', [
-                    'transaction_id' => $transaction->id,
-                    'approval_task_id' => $task->id,
-                    'approver_id' => $approverId,
-                    'attempt' => $attempt + 1,
-                ]);
-
-                return; // Success, exit retry loop
-            } catch (\Exception $e) {
-                $attempt++;
-                $lastError = $e->getMessage();
-
-                if ($attempt < $maxRetries) {
-                    // Exponential backoff: 200ms, 400ms
-                    $delay = pow(2, $attempt) * 100;
-                    usleep($delay * 1000);
-                }
-            }
-        }
-
-        // All retries failed - mark transaction and log error
-        Log::error('ApprovalTask sync failed after retries', [
-            'transaction_id' => $transaction->id,
-            'approver_id' => $approverId,
-            'attempts' => $maxRetries,
-            'error' => $lastError,
-        ]);
-
-        // Mark transaction as failed sync
-        $transaction->update([
-            'approval_sync_failed' => true,
-            'approval_sync_failed_at' => now(),
-            'approval_sync_error' => $lastError,
-        ]);
-
-        // Create audit log entry
-        $this->auditService->logWithSeverity(
-            'approval_task_sync_failed',
-            [
-                'user_id' => $approverId,
-                'entity_type' => 'Transaction',
-                'entity_id' => $transaction->id,
-                'new_values' => [
-                    'error' => $lastError,
-                    'attempts' => $maxRetries,
-                    'requires_manual_review' => true,
-                ],
-            ],
-            'ERROR'
-        );
     }
 
     /**

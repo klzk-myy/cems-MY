@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\ApprovalTask;
 use App\Models\StockReservation;
 use App\Models\Transaction;
 
@@ -74,64 +73,6 @@ class MetricsService
             'avg_hours_to_expiry' => $avgHoursToExpiry,
             'threshold_warning' => $expiryRate > 10, // Warn if > 10% expiry rate
             'threshold_critical' => $expiryRate > 25, // Critical if > 25% expiry rate
-        ];
-    }
-
-    /**
-     * Get ApprovalTask sync failure metrics.
-     *
-     * Tracks failures in syncing ApprovalTask status with transaction completion.
-     * High failure rates may indicate:
-     * - Database connectivity issues
-     * - Race conditions
-     * - ApprovalWorkflowService issues
-     *
-     * @param  int  $days  Number of days to look back (default: 7)
-     * @return array<string, mixed> Metrics containing:
-     *                              - total_transactions_completed: int Total completed transactions
-     *                              - sync_failures: int Transactions with sync failures
-     *                              - sync_failure_rate: float Percentage of sync failures
-     *                              - recent_failures: array Recent failure details
-     */
-    public function getApprovalTaskSyncFailureMetrics(int $days = 7): array
-    {
-        $startDate = now()->subDays($days);
-
-        $totalCompleted = Transaction::where('status', 'Completed')
-            ->where('updated_at', '>=', $startDate)
-            ->count();
-
-        $syncFailures = Transaction::where('approval_sync_failed', true)
-            ->where('approval_sync_failed_at', '>=', $startDate)
-            ->count();
-
-        $syncFailureRate = $totalCompleted > 0
-            ? round(($syncFailures / $totalCompleted) * 100, 2)
-            : 0.0;
-
-        // Get recent failures with details
-        $recentFailures = Transaction::where('approval_sync_failed', true)
-            ->where('approval_sync_failed_at', '>=', now()->subHours(24))
-            ->orderBy('approval_sync_failed_at', 'desc')
-            ->limit(10)
-            ->get()
-            ->map(function ($transaction) {
-                return [
-                    'transaction_id' => $transaction->id,
-                    'failed_at' => $transaction->approval_sync_failed_at?->toIso8601String(),
-                    'error' => $transaction->approval_sync_error,
-                ];
-            })
-            ->toArray();
-
-        return [
-            'period_days' => $days,
-            'total_transactions_completed' => $totalCompleted,
-            'sync_failures' => $syncFailures,
-            'sync_failure_rate' => $syncFailureRate,
-            'recent_failures' => $recentFailures,
-            'threshold_warning' => $syncFailureRate > 1, // Warn if > 1% failure rate
-            'threshold_critical' => $syncFailureRate > 5, // Critical if > 5% failure rate
         ];
     }
 
@@ -235,7 +176,6 @@ class MetricsService
     {
         return [
             'stock_reservation_expiry' => $this->getStockReservationExpiryMetrics($days),
-            'approval_task_sync_failures' => $this->getApprovalTaskSyncFailureMetrics($days),
             'cancellation_requests' => $this->getCancellationRequestMetrics($days),
             'generated_at' => now()->toIso8601String(),
         ];
@@ -273,23 +213,6 @@ class MetricsService
                 'message' => 'Stock reservation expiry rate is elevated ('.$metrics['stock_reservation_expiry']['expiry_rate'].'%)',
             ];
             $recommendations[] = 'Monitor approval delays and investigate bottlenecks';
-        }
-
-        // Check approval task sync failures
-        if ($metrics['approval_task_sync_failures']['threshold_critical']) {
-            $issues[] = [
-                'type' => 'critical',
-                'metric' => 'approval_task_sync_failures',
-                'message' => 'ApprovalTask sync failure rate is critically high ('.$metrics['approval_task_sync_failures']['sync_failure_rate'].'%)',
-            ];
-            $recommendations[] = 'Investigate database connectivity and ApprovalWorkflowService issues immediately';
-        } elseif ($metrics['approval_task_sync_failures']['threshold_warning']) {
-            $issues[] = [
-                'type' => 'warning',
-                'metric' => 'approval_task_sync_failures',
-                'message' => 'ApprovalTask sync failure rate is elevated ('.$metrics['approval_task_sync_failures']['sync_failure_rate'].'%)',
-            ];
-            $recommendations[] = 'Review recent sync failures and check for race conditions';
         }
 
         // Check cancellation rate

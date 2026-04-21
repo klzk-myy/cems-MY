@@ -8,7 +8,6 @@ use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
-use App\Models\StrDraft;
 use App\Models\StrReport;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
@@ -221,15 +220,15 @@ class ReportSchedulingService
         $today = now();
         $deadlines = [];
 
-        $strDeadlines = StrDraft::pending()
+        $strDeadlines = StrReport::whereIn('status', ['draft', 'pending_review', 'pending_approval'])
             ->whereNotNull('filing_deadline')
             ->get()
-            ->map(fn ($draft) => [
+            ->map(fn ($str) => [
                 'type' => 'str',
-                'reference' => $draft->id,
-                'deadline' => $draft->filing_deadline->toDateString(),
-                'urgency' => $this->calculateUrgency($draft->filing_deadline),
-                'status' => $draft->status->value,
+                'reference' => $str->id,
+                'deadline' => $str->filing_deadline->toDateString(),
+                'urgency' => $this->calculateUrgency($str->filing_deadline),
+                'status' => $str->status->value,
             ]);
 
         $scheduledReports = ReportSchedule::active()
