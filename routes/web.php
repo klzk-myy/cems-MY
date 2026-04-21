@@ -30,6 +30,7 @@ use App\Http\Controllers\Report\AnalyticsController;
 use App\Http\Controllers\Report\RegulatoryReportController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RevaluationController;
+use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StockCashController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\StrController;
@@ -40,6 +41,10 @@ use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionReportController;
 use App\Http\Controllers\UserController;
+use App\Models\Branch;
+use App\Models\Currency;
+use App\Models\ExchangeRate;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -61,6 +66,16 @@ use Illuminate\Support\Facades\Route;
 // =============================================================================
 
 Route::get('/', function () {
+    // Check if system is set up
+    $isSetupComplete = User::exists() &&
+                       Currency::exists() &&
+                       ExchangeRate::exists() &&
+                       Branch::exists();
+
+    if (! $isSetupComplete) {
+        return redirect('/setup');
+    }
+
     if (auth()->check()) {
         return redirect('/dashboard');
     }
@@ -70,6 +85,24 @@ Route::get('/', function () {
 
 // Health check endpoint (public, no auth required)
 Route::get('/health', [HealthCheckController::class, 'index'])->name('health');
+
+// =============================================================================
+// SETUP ROUTES (Public - No auth required)
+// =============================================================================
+
+Route::prefix('setup')->name('setup.')->group(function () {
+    Route::get('/', [SetupController::class, 'index'])->name('index');
+    Route::get('/wizard', [SetupController::class, 'wizard'])->name('wizard');
+    Route::post('/quick', [SetupController::class, 'quickSetup'])->name('quick');
+    Route::post('/step/1', [SetupController::class, 'step1CompanyInfo'])->name('step1');
+    Route::post('/step/2', [SetupController::class, 'step2AdminUser'])->name('step2');
+    Route::post('/step/3', [SetupController::class, 'step3Currencies'])->name('step3');
+    Route::post('/step/4', [SetupController::class, 'step4ExchangeRates'])->name('step4');
+    Route::post('/step/5', [SetupController::class, 'step5InitialStock'])->name('step5');
+    Route::post('/complete', [SetupController::class, 'completeSetup'])->name('complete');
+    Route::get('/status', [SetupController::class, 'checkStatus'])->name('status');
+    Route::post('/reset', [SetupController::class, 'resetSetup'])->name('reset');
+});
 
 // =============================================================================
 // AUTHENTICATED ROUTES

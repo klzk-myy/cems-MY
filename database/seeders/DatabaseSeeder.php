@@ -12,16 +12,21 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CurrencySeeder::class,
             ChartOfAccountsSeeder::class,
+            EnhancedChartOfAccountsSeeder::class,
             AccountingPeriodSeeder::class,
+            FiscalYearSeeder::class,
             BudgetSeeder::class,
             HighRiskCountrySeeder::class,
             SanctionListSeeder::class,
             AmlRuleSeeder::class,
             DepartmentSeeder::class,
             CostCenterSeeder::class,
-            EnhancedChartOfAccountsSeeder::class,
             BranchSeeder::class,
             CounterSeeder::class,
+            ExchangeRateSeeder::class,
+            BranchPoolSeeder::class,
+            TellerAllocationSeeder::class,
+            OpeningBalanceSeeder::class,
         ]);
     }
 }
