@@ -27,9 +27,9 @@ return new class extends Migration
             $table->timestamp('closed_at')->nullable();
             $table->timestamps();
 
-            $table->index(['user_id', 'currency_code', 'session_date', 'status']);
-            $table->index(['counter_id', 'session_date']);
-            $table->index(['branch_id', 'session_date']);
+            $table->index(['user_id', 'currency_code', 'session_date', 'status'], 'teller_alloc_user_currency_date_status_idx');
+            $table->index(['counter_id', 'session_date'], 'teller_alloc_counter_date_idx');
+            $table->index(['branch_id', 'session_date'], 'teller_alloc_branch_date_idx');
         });
     }
 

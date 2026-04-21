@@ -10,7 +10,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class SetupController extends Controller
 {
@@ -134,9 +133,20 @@ class SetupController extends Controller
             'initial_myr_cash' => 'required|numeric|min:0',
             'initial_stock' => 'nullable|array',
             'initial_stock.*' => 'nullable|numeric|min:0',
+            'initial_foreign_cash' => 'nullable|array',
+            'initial_foreign_cash.*' => 'nullable|numeric|min:0',
         ]);
 
-        session(['setup.stock' => $validated]);
+        // Merge initial_stock and initial_foreign_cash into a single stock array
+        $stock = $validated['initial_stock'] ?? [];
+        if (isset($validated['initial_foreign_cash'])) {
+            $stock = array_merge($stock, $validated['initial_foreign_cash']);
+        }
+
+        // Add MYR cash as part of initial stock
+        $stock['MYR'] = $validated['initial_myr_cash'];
+
+        session(['setup.stock' => ['initial_stock' => $stock, 'initial_myr_cash' => $validated['initial_myr_cash']]]);
 
         return redirect()->route('setup.wizard', ['step' => 6]);
     }
@@ -278,7 +288,7 @@ class SetupController extends Controller
         $admin = User::create([
             'username' => 'admin',
             'email' => $config['admin_email'],
-            'password' => Hash::make($config['admin_password']),
+            'password' => $config['admin_password'],
             'role' => 'admin',
             'mfa_enabled' => false,
             'is_active' => true,
@@ -328,7 +338,7 @@ class SetupController extends Controller
             User::create([
                 'username' => $setupData['admin']['admin_name'],
                 'email' => $setupData['admin']['admin_email'],
-                'password' => Hash::make($setupData['admin']['admin_password']),
+                'password' => $setupData['admin']['admin_password'],
                 'role' => 'admin',
                 'mfa_enabled' => false,
                 'is_active' => true,
@@ -354,8 +364,8 @@ class SetupController extends Controller
         }
 
         if (isset($setupData['currencies'])) {
-            $baseCurrency = $setupData['currencies']['base_currency'];
-            Currency::where('code', $baseCurrency)->update(['is_base' => true]);
+            // Base currency is set via session/config - no is_base column needed
+            // The base currency code is stored in $setupData['currencies']['base_currency']
         }
 
         if (isset($setupData['rates']) && ($setupData['rates']['use_default_rates'] ?? false)) {

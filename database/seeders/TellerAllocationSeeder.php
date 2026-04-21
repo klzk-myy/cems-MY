@@ -14,6 +14,14 @@ class TellerAllocationSeeder extends Seeder
     public function run(): void
     {
         $tellers = User::where('role', 'teller')->get();
+
+        // Skip if no tellers exist (e.g., during initial setup)
+        if ($tellers->isEmpty()) {
+            $this->command->info('No tellers found. Skipping teller allocation.');
+
+            return;
+        }
+
         $branches = Branch::all();
         $currencies = Currency::where('code', '!=', 'MYR')->where('is_active', true)->get();
 

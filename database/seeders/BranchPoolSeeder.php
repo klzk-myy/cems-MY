@@ -39,7 +39,6 @@ class BranchPoolSeeder extends Seeder
                     [
                         'available_balance' => (string) $initialAmount,
                         'allocated_balance' => '0.00',
-                        'last_replenished_at' => now(),
                     ]
                 );
 
