@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\CddLevel;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Services\AuditService;
 use App\Services\Compliance\RiskScoringEngine;
 use App\Services\CustomerScreeningService;
+use App\Services\CustomerService;
 use App\Services\EncryptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -55,6 +57,7 @@ class CustomerController extends Controller
 
     /**
      * Create a new customer.
+     * Initial risk_rating is always 'Low' - automated risk scoring module determines actual risk.
      */
     public function store(Request $request): JsonResponse
     {
@@ -68,7 +71,6 @@ class CustomerController extends Controller
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'pep_status' => 'sometimes|boolean',
-            'risk_rating' => 'required|in:Low,Medium,High',
             'occupation' => 'nullable|string|max:255',
             'employer_name' => 'nullable|string|max:255',
             'employer_address' => 'nullable|string|max:500',
@@ -84,6 +86,7 @@ class CustomerController extends Controller
                 ? $this->encryptionService->encrypt($validated['phone'])
                 : null;
 
+            // Initial risk is always 'Low' - risk scoring module determines actual risk
             $customer = Customer::create([
                 'full_name' => $validated['full_name'],
                 'id_type' => $validated['id_type'],
@@ -94,14 +97,14 @@ class CustomerController extends Controller
                 'phone' => $encryptedPhone,
                 'email' => $validated['email'] ?? null,
                 'pep_status' => $validated['pep_status'] ?? false,
-                'risk_rating' => $validated['risk_rating'],
+                'risk_rating' => 'Low', // Always Low initially - risk scoring module auto-determines
                 'occupation' => $validated['occupation'] ?? null,
                 'employer_name' => $validated['employer_name'] ?? null,
                 'employer_address' => $encryptedAddress ?? null,
                 'is_active' => true,
             ]);
 
-            // Screen against sanctions
+            // Screen against sanctions - may upgrade to High if hit found
             $sanctionResponse = $this->sanctionService->screenName($validated['full_name']);
             if ($sanctionResponse->matches->isNotEmpty()) {
                 $customer->update([
@@ -165,6 +168,7 @@ class CustomerController extends Controller
 
     /**
      * Update a customer.
+     * Note: risk_rating is auto-determined by risk scoring engine, not manually settable.
      */
     public function update(Request $request, int $id): JsonResponse
     {
@@ -180,7 +184,7 @@ class CustomerController extends Controller
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'pep_status' => 'sometimes|boolean',
-            'risk_rating' => 'required|in:Low,Medium,High',
+            // risk_rating is auto-determined, not manually settable
             'occupation' => 'nullable|string|max:255',
             'employer_name' => 'nullable|string|max:255',
             'employer_address' => 'nullable|string|max:500',
@@ -207,7 +211,7 @@ class CustomerController extends Controller
                 'phone' => $encryptedPhone,
                 'email' => $validated['email'] ?? null,
                 'pep_status' => $validated['pep_status'] ?? false,
-                'risk_rating' => $validated['risk_rating'],
+                // Note: risk_rating is NOT updated here - risk scoring engine manages it
                 'occupation' => $validated['occupation'] ?? null,
                 'employer_name' => $validated['employer_name'] ?? null,
                 'employer_address' => $encryptedAddress ?? null,
@@ -306,5 +310,67 @@ class CustomerController extends Controller
             'success' => true,
             'message' => 'Document uploaded successfully.',
         ], 201);
+    }
+
+    /**
+     * Search customers with sanctions screening for transaction form.
+     * Teller enters customer name or ID, system searches and screens against sanctions.
+     */
+    public function searchForTransaction(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'query' => 'required|string|min:2',
+        ]);
+
+        $query = trim($validated['query']);
+
+        // Search by name (LIKE search)
+        $customers = Customer::where('full_name', 'like', "%{$query}%")
+            ->orWhere('ic_number', 'like', "%{$query}%")
+            ->where('is_active', true)
+            ->limit(10)
+            ->get();
+
+        // If no results by name, try ID number hash lookup
+        if ($customers->isEmpty()) {
+            $idHash = CustomerService::computeBlindIndex($query);
+            $byHash = Customer::where('id_number_hash', $idHash)
+                ->where('is_active', true)
+                ->first();
+            if ($byHash) {
+                $customers = collect([$byHash]);
+            }
+        }
+
+        // Screen each customer against sanctions
+        $results = $customers->map(function ($customer) {
+            $sanctionCheck = $this->sanctionService->screenName($customer->full_name);
+
+            return [
+                'id' => $customer->id,
+                'full_name' => $customer->full_name,
+                'ic_number' => $customer->ic_number,
+                'ic_number_masked' => $customer->ic_number ? substr($customer->ic_number, 0, 4).'****'.substr($customer->ic_number, -4) : null,
+                'nationality' => $customer->nationality,
+                'risk_rating' => $customer->risk_rating,
+                'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
+                'is_pep' => $customer->pep_status,
+                'is_sanctioned' => $customer->sanction_hit,
+                'sanction_warning' => $sanctionCheck->matches->isNotEmpty(),
+                'sanction_matches' => $sanctionCheck->matches->map(fn ($m) => [
+                    'entity_name' => $m->entityName,
+                    'score' => round($m->score, 1),
+                    'list' => $m->listName,
+                ])->toArray(),
+                'sanction_action' => $sanctionCheck->action,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'query' => $query,
+            'results' => $results,
+            'count' => $results->count(),
+        ]);
     }
 }

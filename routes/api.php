@@ -72,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Customers API (V1 JSON endpoints)
+    Route::get('/customers/search', [V1CustomerController::class, 'searchForTransaction']);
     Route::get('/customers', [V1CustomerController::class, 'index']);
     Route::post('/customers', [V1CustomerController::class, 'store'])
         ->middleware('throttle:30,1'); // 30 requests per minute

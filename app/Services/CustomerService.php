@@ -32,6 +32,7 @@ class CustomerService
 
     /**
      * Create a new customer with encryption, screening, and risk assessment.
+     * Initial risk_rating is always 'Low' - automated risk scoring module determines actual risk.
      *
      * @param  array  $data  Customer data
      * @param  int  $userId  User ID creating the customer
@@ -43,13 +44,16 @@ class CustomerService
             // Encrypt sensitive fields
             $encryptedData = $this->encryptCustomerData($data);
 
+            // Initial risk always 'Low' - risk scoring module determines actual risk
+            $encryptedData['risk_rating'] = 'Low';
+
             // Create customer
             $customer = Customer::create($encryptedData);
 
-            // Screen against sanctions list
+            // Screen against sanctions list (may upgrade to High if hit)
             $this->screenCustomer($customer, $data['full_name']);
 
-            // Calculate risk score
+            // Calculate risk score using automated risk scoring engine
             $this->calculateRiskScore($customer);
 
             // Log customer creation

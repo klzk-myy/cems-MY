@@ -175,6 +175,10 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Customers
     Route::prefix('customers')->name('customers.')->group(function () {
+        Route::get('/search', [CustomerController::class, 'search'])->name('search');
+        Route::post('/quick-create', [CustomerController::class, 'quickCreate'])->name('quickCreate')
+            ->middleware('throttle:10,1');
+        Route::get('/exchange-rates', [CustomerController::class, 'getExchangeRates'])->name('exchangeRates');
         Route::get('/', [CustomerController::class, 'index'])->name('index');
         Route::get('/create', [CustomerController::class, 'create'])->name('create');
         Route::post('/', [CustomerController::class, 'store'])->name('store')

@@ -51,11 +51,8 @@
                 </div>
                 <div>
                     <label class="form-label">Risk Rating</label>
-                    <select name="risk_rating" class="form-input" required>
-                        @foreach($riskRatings ?? ['Low', 'Medium', 'High'] as $rating)
-                            <option value="{{ $rating }}" {{ old('risk_rating') === $rating ? 'selected' : '' }}>{{ $rating }}</option>
-                        @endforeach
-                    </select>
+                    <p class="text-sm text-[--color-ink-muted]">Risk rating is automatically determined by the risk scoring system</p>
+                    <span class="badge badge-info mt-1">Auto-determined</span>
                 </div>
             </div>
             <div class="mt-6 flex gap-3">

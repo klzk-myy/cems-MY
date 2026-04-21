@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Models\Branch;
+use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\TillBalance;
@@ -55,8 +57,13 @@ class TransactionController extends Controller
      */
     public function create()
     {
-        $currencies = Currency::where('is_active', true)->get();
+        $currencies = Currency::where('is_active', true)->get()->pluck('name', 'code');
         $customers = Customer::all();
+        $branches = Branch::all();
+        $counters = Counter::where('status', 'active')->get();
+
+        // Get suggested rate for default currency
+        $suggested_rate = null;
 
         // Branch segregation: non-admin users can only see tills at their branch
         $tillQuery = TillBalance::where('date', today())
@@ -69,7 +76,7 @@ class TransactionController extends Controller
         }
         $tillBalances = $tillQuery->get();
 
-        return view('transactions.create', compact('currencies', 'customers', 'tillBalances'));
+        return view('transactions.create', compact('currencies', 'customers', 'tillBalances', 'branches', 'counters', 'suggested_rate'));
     }
 
     /**
@@ -85,9 +92,13 @@ class TransactionController extends Controller
             'rate' => 'required|numeric|min:0.0001|max:999999',
             'purpose' => 'required|string|max:255',
             'source_of_funds' => 'required|string|max:255',
-            'till_id' => 'required|string',
+            'branch_id' => 'required|exists:branches,id',
+            'counter_id' => 'required|exists:counters,id',
             'idempotency_key' => 'required|string|max:100|unique:transactions,idempotency_key',
         ]);
+
+        // Derive till_id from counter and branch
+        $validated['till_id'] = 'TILL-'.$validated['counter_id'].'-'.$validated['branch_id'];
 
         // Note: XSS protection is handled by Blade's automatic escaping on output
 

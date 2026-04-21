@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CddLevel;
 use App\Models\Customer;
+use App\Models\ExchangeRate;
 use App\Services\AuditService;
+use App\Services\CustomerScreeningService;
 use App\Services\CustomerService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,8 +23,136 @@ class CustomerController extends Controller
 {
     public function __construct(
         protected CustomerService $customerService,
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected CustomerScreeningService $sanctionService
     ) {}
+
+    /**
+     * Search customers for transaction form autocomplete.
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'query' => 'required|string|min:2',
+        ]);
+
+        $query = trim($validated['query']);
+
+        // Search by name (LIKE search)
+        $customers = Customer::where('full_name', 'like', "%{$query}%")
+            ->orWhere('id_number_encrypted', 'like', "%{$query}%")
+            ->where('is_active', true)
+            ->limit(10)
+            ->get();
+
+        // If no results by name, try ID number hash lookup
+        if ($customers->isEmpty()) {
+            $idHash = CustomerService::computeBlindIndex($query);
+            $byHash = Customer::where('id_number_hash', $idHash)
+                ->where('is_active', true)
+                ->first();
+            if ($byHash) {
+                $customers = collect([$byHash]);
+            }
+        }
+
+        // Screen each customer against sanctions
+        $results = $customers->map(function ($customer) {
+            $sanctionCheck = $this->sanctionService->screenName($customer->full_name);
+
+            return [
+                'id' => $customer->id,
+                'full_name' => $customer->full_name,
+                'ic_number' => $customer->ic_number,
+                'ic_number_masked' => $customer->ic_number ? substr($customer->ic_number, 0, 4).'****'.substr($customer->ic_number, -4) : null,
+                'nationality' => $customer->nationality,
+                'risk_rating' => $customer->risk_rating,
+                'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
+                'is_pep' => $customer->pep_status,
+                'is_sanctioned' => $customer->sanction_hit,
+                'sanction_warning' => $sanctionCheck->matches->isNotEmpty(),
+                'sanction_matches' => $sanctionCheck->matches->map(fn ($m) => [
+                    'entity_name' => $m->entityName,
+                    'score' => round($m->score, 1),
+                    'list' => $m->listName,
+                ])->toArray(),
+                'sanction_action' => $sanctionCheck->action,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'query' => $query,
+            'results' => $results,
+            'count' => $results->count(),
+        ]);
+    }
+
+    /**
+     * Quick create customer from transaction form.
+     * Used when customer not found in database.
+     */
+    public function quickCreate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'full_name' => 'required|string|max:255',
+            'id_type' => 'required|in:MyKad,Passport,Others',
+            'id_number' => 'required|string|max:50',
+            'date_of_birth' => 'required|date|before:today',
+            'nationality' => 'required|string|max:100',
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        try {
+            $customer = $this->customerService->createCustomer($validated, auth()->id());
+
+            // Get exchange rate for this customer's potential transactions
+            $exchangeRates = ExchangeRate::all()
+                ->mapWithKeys(fn ($r) => [$r->currency_code => [
+                    'buy' => $r->rate_buy,
+                    'sell' => $r->rate_sell,
+                ]])
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer created successfully',
+                'customer' => [
+                    'id' => $customer->id,
+                    'full_name' => $customer->full_name,
+                    'ic_number_masked' => $customer->ic_number,
+                    'nationality' => $customer->nationality,
+                    'risk_rating' => $customer->risk_rating,
+                    'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
+                    'is_pep' => $customer->pep_status,
+                    'is_sanctioned' => $customer->sanction_hit,
+                ],
+                'exchange_rates' => $exchangeRates,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create customer: '.$e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Get exchange rates for transaction form.
+     */
+    public function getExchangeRates(): JsonResponse
+    {
+        $rates = ExchangeRate::all()
+            ->mapWithKeys(fn ($r) => [$r->currency_code => [
+                'buy' => (float) $r->rate_buy,
+                'sell' => (float) $r->rate_sell,
+            ]]);
+
+        return response()->json([
+            'success' => true,
+            'rates' => $rates,
+        ]);
+    }
 
     /**
      * Display a paginated listing of all customers.
@@ -103,8 +235,6 @@ class CustomerController extends Controller
             'Others' => 'Other ID',
         ];
 
-        $riskRatings = ['Low', 'Medium', 'High'];
-
         // Common nationalities
         $nationalities = [
             'Malaysian',
@@ -122,7 +252,6 @@ class CustomerController extends Controller
 
         return view('customers.create', compact(
             'idTypes',
-            'riskRatings',
             'nationalities'
         ));
     }
@@ -153,7 +282,7 @@ class CustomerController extends Controller
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^(\+?6?01)[0-9]{8,9}$/'],
             'email' => ['nullable', 'email', 'max:255'],
             'pep_status' => 'sometimes|boolean',
-            'risk_rating' => ['required', 'in:Low,Medium,High'],
+            // Risk rating always 'Low' initially - automated risk scoring module determines actual risk
             'occupation' => 'nullable|string|max:255',
             'employer_name' => 'nullable|string|max:255',
             'employer_address' => 'nullable|string|max:500',

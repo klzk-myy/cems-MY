@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CddLevel;
 use App\Services\CustomerService;
+use App\Services\EncryptionService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -187,6 +188,27 @@ class Customer extends Model
     public function getIsSanctionedAttribute(): bool
     {
         return (bool) $this->sanction_hit;
+    }
+
+    /**
+     * Get masked IC number for display (first 4 and last 4 digits).
+     */
+    public function getIcNumberAttribute(): ?string
+    {
+        if (! $this->id_number_encrypted) {
+            return null;
+        }
+
+        try {
+            $decrypted = app(EncryptionService::class)->decrypt($this->id_number_encrypted);
+            if (strlen($decrypted) >= 8) {
+                return substr($decrypted, 0, 4).'****'.substr($decrypted, -4);
+            }
+
+            return '****';
+        } catch (\Exception $e) {
+            return '****';
+        }
     }
 
     /**
