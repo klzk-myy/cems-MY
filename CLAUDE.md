@@ -53,7 +53,7 @@ app/
 ├── Jobs/Audit/  # Async jobs (SealAuditHashJob)
 ├── Models/  # 64 Eloquent models
 ├── Observers/  # Model observers for event-driven hooks
-└── Services/  # 83 services (71 top-level + 12 in Compliance sub-dirs)
+└── Services/  # 82 services (70 top-level + 4 Compliance/ + 8 Monitors/)
 ```
 
 ### Key Architectural Patterns
