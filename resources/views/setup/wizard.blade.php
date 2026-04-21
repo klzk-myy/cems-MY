@@ -204,6 +204,36 @@
                 </div>
             </div>
 
+            @if($errors->any())
+                <div style="background: #f8d7da; color: #721c24; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong>Please fix the following errors:</strong>
+                    <ul style="margin: 8px 0 0 20px;">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @php
+                $existingUsers = \App\Models\User::exists();
+                $existingUserEmails = $existingUsers ? \App\Models\User::pluck('email')->toArray() : [];
+            @endphp
+
+            @if($step == 2 && $existingUsers)
+                <div style="background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong>ℹ️ Users already exist in the system</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 14px;">
+                        Setup appears to be complete. You can login with existing credentials or create a new admin with a unique email.
+                    </p>
+                    @if(count($existingUserEmails) > 0)
+                        <p style="margin: 8px 0 0 0; font-size: 13px;">
+                            <strong>Existing emails:</strong> {{ implode(', ', array_slice($existingUserEmails, 0, 3)) }}{{ count($existingUserEmails) > 3 ? '...' : '' }}
+                        </p>
+                    @endif
+                </div>
+            @endif
+
             @if($step == 1)
                 <form action="/setup/step/1" method="POST">
                     @csrf
@@ -242,17 +272,23 @@
                     
                     <div class="form-group">
                         <label>Admin Name *</label>
-                        <input type="text" name="admin_name" required placeholder="e.g., John Doe">
+                        <input type="text" name="admin_name" value="{{ old('admin_name') }}" required placeholder="e.g., John Doe" style="{{ $errors->has('admin_name') ? 'border-color: #dc3545;' : '' }}">
                     </div>
 
                     <div class="form-group">
                         <label>Admin Email *</label>
-                        <input type="email" name="admin_email" required placeholder="e.g., admin@yourbusiness.com">
+                        <input type="email" name="admin_email" value="{{ old('admin_email') }}" required placeholder="e.g., admin@yourbusiness.com" style="{{ $errors->has('admin_email') ? 'border-color: #dc3545;' : '' }}">
+                        @if($errors->has('admin_email'))
+                            <p style="color: #dc3545; font-size: 14px; margin-top: 4px;">{{ $errors->first('admin_email') }}</p>
+                        @endif
                     </div>
 
                     <div class="form-group">
                         <label>Password *</label>
-                        <input type="password" name="admin_password" required minlength="8" placeholder="Min 8 characters">
+                        <input type="password" name="admin_password" required minlength="8" placeholder="Min 8 characters" style="{{ $errors->has('admin_password') ? 'border-color: #dc3545;' : '' }}">
+                        @if($errors->has('admin_password'))
+                            <p style="color: #dc3545; font-size: 14px; margin-top: 4px;">{{ $errors->first('admin_password') }}</p>
+                        @endif
                     </div>
 
                     <div class="form-group">

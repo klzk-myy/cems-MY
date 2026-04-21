@@ -1,0 +1,41 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - heading "Setup Wizard" [level=1] [ref=e5]
+    - paragraph [ref=e6]: Step 2 of 6
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]: "1"
+      - generic [ref=e10]: Company
+    - generic [ref=e11]:
+      - generic [ref=e12]: "2"
+      - generic [ref=e13]: Admin
+    - generic [ref=e14]:
+      - generic [ref=e15]: "3"
+      - generic [ref=e16]: Currencies
+    - generic [ref=e17]:
+      - generic [ref=e18]: "4"
+      - generic [ref=e19]: Rates
+    - generic [ref=e20]:
+      - generic [ref=e21]: "5"
+      - generic [ref=e22]: Stock
+    - generic [ref=e23]:
+      - generic [ref=e24]: "6"
+      - generic [ref=e25]: Complete
+  - generic [ref=e26]:
+    - heading "Create Admin User" [level=2] [ref=e27]
+    - generic [ref=e28]:
+      - generic [ref=e29]: Admin Name *
+      - textbox "e.g., John Doe" [ref=e30]
+    - generic [ref=e31]:
+      - generic [ref=e32]: Admin Email *
+      - textbox "e.g., admin@yourbusiness.com" [ref=e33]
+    - generic [ref=e34]:
+      - generic [ref=e35]: Password *
+      - textbox "Min 8 characters" [ref=e36]
+    - generic [ref=e37]:
+      - generic [ref=e38]: Confirm Password *
+      - textbox "Re-enter password" [ref=e39]
+    - generic [ref=e40]:
+      - link "← Back" [ref=e41] [cursor=pointer]:
+        - /url: /setup/wizard?step=1
+      - button "Next Step →" [ref=e42] [cursor=pointer]
