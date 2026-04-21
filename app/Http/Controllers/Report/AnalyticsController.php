@@ -14,6 +14,7 @@ use App\Models\ExchangeRate;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\MathService;
+use App\Services\ThresholdService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,9 +22,12 @@ class AnalyticsController extends Controller
 {
     protected MathService $mathService;
 
-    public function __construct(MathService $mathService)
+    protected ThresholdService $thresholdService;
+
+    public function __construct(MathService $mathService, ThresholdService $thresholdService)
     {
         $this->mathService = $mathService;
+        $this->thresholdService = $thresholdService;
     }
 
     /**
@@ -274,7 +278,7 @@ class AnalyticsController extends Controller
             ->get();
 
         // Large transactions (≥RM 50,000)
-        $largeTransactions = Transaction::where('amount_local', '>=', config('thresholds.reporting.lctr'))
+        $largeTransactions = Transaction::where('amount_local', '>=', $this->thresholdService->getLctrThreshold())
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
 

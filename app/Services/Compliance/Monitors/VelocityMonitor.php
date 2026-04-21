@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\ComplianceService;
 use App\Services\MathService;
+use App\Services\ThresholdService;
 
 /**
  * Monitor for detecting customers exceeding transaction velocity thresholds.
@@ -22,11 +23,11 @@ class VelocityMonitor extends BaseMonitor
 
     protected ComplianceService $complianceService;
 
-    public function __construct(MathService $math, ComplianceService $complianceService)
+    public function __construct(MathService $math, ComplianceService $complianceService, ThresholdService $thresholdService)
     {
         parent::__construct($math);
-        $this->threshold = config('thresholds.velocity.alert_threshold', '50000');
-        $this->warningThreshold = config('thresholds.velocity.warning_threshold', '45000');
+        $this->threshold = $thresholdService->getVelocityAlertThreshold();
+        $this->warningThreshold = $thresholdService->getVelocityWarningThreshold();
         $this->complianceService = $complianceService;
     }
 

@@ -9,6 +9,7 @@ use App\Models\ReportGenerated;
 use App\Models\Transaction;
 use App\Services\MathService;
 use App\Services\ReportingService;
+use App\Services\ThresholdService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,12 +20,16 @@ class RegulatoryReportController extends Controller
 
     protected MathService $mathService;
 
+    protected ThresholdService $thresholdService;
+
     public function __construct(
         ReportingService $reportingService,
-        MathService $mathService
+        MathService $mathService,
+        ThresholdService $thresholdService
     ) {
         $this->reportingService = $reportingService;
         $this->mathService = $mathService;
+        $this->thresholdService = $thresholdService;
     }
 
     protected function getQuarterStart(string $quarter): Carbon
@@ -62,7 +67,7 @@ class RegulatoryReportController extends Controller
         $startDate = now()->parse($month)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        $transactions = Transaction::where('amount_local', '>=', config('thresholds.reporting.ctr', '50000'))
+        $transactions = Transaction::where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
             ->where('status', TransactionStatus::Completed)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->with(['customer', 'user'])
@@ -70,7 +75,7 @@ class RegulatoryReportController extends Controller
             ->get();
 
         // Count pending approval transactions that would qualify
-        $pendingTransactions = Transaction::where('amount_local', '>=', config('thresholds.reporting.ctr', '50000'))
+        $pendingTransactions = Transaction::where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
             ->where('status', TransactionStatus::PendingApproval)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();

@@ -13,6 +13,7 @@ use App\Services\AuditService;
 use App\Services\ComplianceService;
 use App\Services\CurrencyPositionService;
 use App\Services\MathService;
+use App\Services\ThresholdService;
 use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
@@ -28,7 +29,8 @@ class TransactionApprovalController extends Controller
         protected MathService $mathService,
         protected AccountingService $accountingService,
         protected AuditService $auditService,
-        protected ApprovalWorkflowService $approvalWorkflowService
+        protected ApprovalWorkflowService $approvalWorkflowService,
+        protected ThresholdService $thresholdService
     ) {}
 
     /**
@@ -245,7 +247,7 @@ class TransactionApprovalController extends Controller
      */
     protected function requiresConfirmation(Transaction $transaction): bool
     {
-        $threshold = config('thresholds.reporting.str');
+        $threshold = $this->thresholdService->getStrThreshold();
 
         return $this->mathService->compare($transaction->amount_local, $threshold) >= 0;
     }

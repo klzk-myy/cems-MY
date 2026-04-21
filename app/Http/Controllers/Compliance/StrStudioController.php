@@ -8,12 +8,14 @@ use App\Models\Compliance\ComplianceCase;
 use App\Models\StrDraft;
 use App\Models\Transaction;
 use App\Services\StrReportService;
+use App\Services\ThresholdService;
 use Illuminate\Http\Request;
 
 class StrStudioController extends Controller
 {
     public function __construct(
-        protected StrReportService $strReportService
+        protected StrReportService $strReportService,
+        protected ThresholdService $thresholdService
     ) {}
 
     public function index()
@@ -82,7 +84,7 @@ class StrStudioController extends Controller
                 $transactionPatterns = [
                     'total_amount' => $transactions->sum('amount_local'),
                     'max_amount' => $transactions->max('amount_local'),
-                    'sub_threshold_count' => $transactions->where('amount_local', '<', config('thresholds.reporting.str'))->count(),
+                    'sub_threshold_count' => $transactions->where('amount_local', '<', $this->thresholdService->getStrThreshold())->count(),
                 ];
             }
         }

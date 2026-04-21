@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\ComplianceService;
 use App\Services\MathService;
+use App\Services\ThresholdService;
 
 /**
  * Monitor for detecting structuring patterns.
@@ -24,10 +25,10 @@ class StructuringMonitor extends BaseMonitor
 
     public const LOOKBACK_MINUTES = 60;
 
-    public function __construct(MathService $math, ComplianceService $complianceService)
+    public function __construct(MathService $math, ComplianceService $complianceService, ThresholdService $thresholdService)
     {
         parent::__construct($math);
-        $this->subThreshold = config('thresholds.structuring.sub_threshold', '3000');
+        $this->subThreshold = $thresholdService->getStructuringSubThreshold();
         $this->complianceService = $complianceService;
     }
 

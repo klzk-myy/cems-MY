@@ -7,6 +7,7 @@ use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\ThresholdService;
 
 /**
  * Monitor for detecting transactions in locations far from customer's registered address.
@@ -18,10 +19,10 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
 
     public const LOOKBACK_DAYS = 7;
 
-    public function __construct()
+    public function __construct(ThresholdService $thresholdService)
     {
         parent::__construct();
-        $this->highValueThreshold = config('thresholds.cdd.large_transaction', '50000');
+        $this->highValueThreshold = $thresholdService->getLargeTransactionThreshold();
     }
 
     protected function getFindingType(): FindingType

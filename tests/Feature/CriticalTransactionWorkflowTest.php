@@ -56,7 +56,9 @@ class CriticalTransactionWorkflowTest extends TestCase
         $this->admin = User::factory()->create(['role' => UserRole::Admin]);
 
         // Create test data
-        $this->customer = Customer::factory()->create();
+        $this->customer = Customer::factory()->create([
+            'sanction_hit' => false,
+        ]);
         $this->counter = Counter::factory()->create();
         $this->currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
 
@@ -360,7 +362,7 @@ class CriticalTransactionWorkflowTest extends TestCase
                 'currency_code' => 'USD',
                 'amount_foreign' => $amount,
                 'rate' => '4.50',
-                'till_id' => $this->counter->id,
+                'till_id' => (string) $this->counter->id,
                 'purpose' => 'Test transaction',
                 'source_of_funds' => 'Salary',
             ]);
@@ -397,6 +399,6 @@ class CriticalTransactionWorkflowTest extends TestCase
         $customer = $customer ?? $this->customer;
         $amountLocal = bcmul($amount, '4.50', 4);
 
-        return CddLevel::determine($amountLocal, $customer->pep_status, $customer->sanction_hit, $customer->risk_rating);
+        return CddLevel::determine($amountLocal, $customer->pep_status, $customer->sanction_hit ?? false, $customer->risk_rating);
     }
 }
