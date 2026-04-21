@@ -2,11 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\TransactionType;
 use App\Models\Customer;
-use App\Models\Transaction;
 use App\ValueObjects\RiskAnalysisResult;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class HistoricalRiskAnalysisService
@@ -14,7 +11,8 @@ class HistoricalRiskAnalysisService
     public function __construct(
         protected MathService $mathService,
         protected AuditService $auditService,
-        protected ThresholdService $thresholdService
+        protected ThresholdService $thresholdService,
+        protected RiskCalculationService $riskCalculationService
     ) {}
 
     /**
@@ -53,18 +51,15 @@ class HistoricalRiskAnalysisService
      */
     private function checkVelocityRisk(Customer $customer, RiskAnalysisResult $result): void
     {
-        $recentCount = Transaction::where('customer_id', $customer->id)
-            ->where('created_at', '>=', Carbon::now()->subHours(24))
-            ->where('status', '!=', 'cancelled')
-            ->count();
+        $check = $this->riskCalculationService->checkVelocityThreshold($customer->id, 24, 3);
 
-        if ($recentCount >= 3) {
+        if ($check['triggered']) {
             $result->addFlag([
                 'type' => 'velocity',
                 'severity' => 'warning',
-                'description' => "{$recentCount} transactions in last 24 hours",
-                'metric' => $recentCount,
-                'threshold' => 3,
+                'description' => "{$check['count']} transactions in last 24 hours",
+                'metric' => $check['count'],
+                'threshold' => $check['threshold'],
             ]);
         }
     }
@@ -74,24 +69,15 @@ class HistoricalRiskAnalysisService
      */
     private function checkStructuringRisk(Customer $customer, RiskAnalysisResult $result): void
     {
-        $structuringThreshold = $this->thresholdService->getStructuringSubThreshold();
-        $structuringWindow = Carbon::now()->subHours(1);
+        $check = $this->riskCalculationService->checkStructuringThreshold($customer->id, 1, 2);
 
-        // Structuring = transactions below threshold but above minimum CDD
-        // Amount must be: < structuring threshold AND >= standard CDD threshold
-        $structuringCount = Transaction::where('customer_id', $customer->id)
-            ->where('created_at', '>=', $structuringWindow)
-            ->where('amount_local', '<', $structuringThreshold)
-            ->where('status', '!=', 'cancelled')
-            ->count();
-
-        if ($structuringCount >= 2) {
+        if ($check['triggered']) {
             $result->addFlag([
                 'type' => 'structuring',
                 'severity' => 'critical',
-                'description' => "Potential structuring: {$structuringCount} transactions just below RM 3,000 threshold",
-                'metric' => $structuringCount,
-                'threshold' => 2,
+                'description' => "Potential structuring: {$check['count']} transactions just below RM 3,000 threshold",
+                'metric' => $check['count'],
+                'threshold' => $check['threshold'],
             ]);
         }
     }
@@ -104,23 +90,17 @@ class HistoricalRiskAnalysisService
         string $currentAmount,
         RiskAnalysisResult $result
     ): void {
-        $avgAmount = Transaction::where('customer_id', $customer->id)
-            ->where('created_at', '>=', Carbon::now()->subDays(90))
-            ->where('status', '!=', 'cancelled')
-            ->avg('amount_local');
+        $riskScore = $this->riskCalculationService->getOverallRiskScore($customer->id, $currentAmount);
 
-        if ($avgAmount > 0) {
-            $escalation = $this->mathService->divide($currentAmount, (string) $avgAmount);
-
-            if ($this->mathService->compare($escalation, '2.0') >= 0) {
-                $result->addFlag([
-                    'type' => 'amount_escalation',
-                    'severity' => 'warning',
-                    'description' => "Transaction amount is {$escalation}x above 90-day average",
-                    'metric' => $escalation,
-                    'threshold' => 2.0,
-                ]);
-            }
+        // If amount score added a significant risk, flag it
+        if ($riskScore['amount'] >= 20) {
+            $result->addFlag([
+                'type' => 'amount_escalation',
+                'severity' => 'warning',
+                'description' => 'Transaction amount significantly above 90-day average',
+                'metric' => $riskScore['amount'],
+                'threshold' => 20,
+            ]);
         }
     }
 
@@ -129,44 +109,23 @@ class HistoricalRiskAnalysisService
      */
     private function checkPatternChange(Customer $customer, RiskAnalysisResult $result): void
     {
-        // Get last 10 transactions
-        $recentTransactions = Transaction::where('customer_id', $customer->id)
-            ->where('status', '!=', 'cancelled')
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+        $patternRisk = $this->riskCalculationService->calculatePatternRisk($customer->id);
 
-        if ($recentTransactions->count() < 5) {
-            return;
+        if ($patternRisk['pattern_reversal']) {
+            $result->addFlag([
+                'type' => 'pattern_reversal',
+                'severity' => 'warning',
+                'description' => 'Pattern change: Previously buying, now selling',
+                'metric' => 'buy_sell_reversal',
+            ]);
         }
 
-        // Check for reversal (always buying, suddenly selling)
-        $buyCount = $recentTransactions->where('type', TransactionType::Buy)->count();
-        $sellCount = $recentTransactions->where('type', TransactionType::Sell)->count();
-
-        if ($buyCount >= 7 && $sellCount >= 2) {
-            // Previously mostly buying, now selling
-            $lastType = $recentTransactions->first()->type;
-            $prevType = $recentTransactions->skip(1)->first()->type;
-
-            if ($lastType === TransactionType::Sell && $prevType === TransactionType::Buy) {
-                $result->addFlag([
-                    'type' => 'pattern_reversal',
-                    'severity' => 'warning',
-                    'description' => 'Pattern change: Previously buying, now selling',
-                    'metric' => 'buy_sell_reversal',
-                ]);
-            }
-        }
-
-        // Check for currency switch (frequent currency changes)
-        $currencies = $recentTransactions->pluck('currency_code')->unique();
-        if ($currencies->count() >= 3) {
+        if ($patternRisk['currency_switch']) {
             $result->addFlag([
                 'type' => 'currency_switch',
                 'severity' => 'info',
                 'description' => 'Multiple currency types in recent transactions',
-                'metric' => $currencies->count(),
+                'metric' => count($patternRisk['details']),
             ]);
         }
     }
@@ -179,23 +138,15 @@ class HistoricalRiskAnalysisService
         string $currentAmount,
         RiskAnalysisResult $result
     ): void {
-        $cumulativeThreshold = $this->thresholdService->getVelocityAlertThreshold();
-        $window = Carbon::now()->subDays(7);
+        $cumulative = $this->riskCalculationService->calculateCumulativeRisk($customer->id, $currentAmount);
 
-        $weekTotal = Transaction::where('customer_id', $customer->id)
-            ->where('created_at', '>=', $window)
-            ->where('status', '!=', 'cancelled')
-            ->sum('amount_local');
-
-        $total = $this->mathService->add((string) $weekTotal, $currentAmount);
-
-        if ($this->mathService->compare($total, $cumulativeThreshold) >= 0) {
+        if ($cumulative['triggered']) {
             $result->addFlag([
                 'type' => 'cumulative_amount',
                 'severity' => 'warning',
-                'description' => "7-day cumulative amount reaches RM {$total}",
-                'metric' => $total,
-                'threshold' => $cumulativeThreshold,
+                'description' => "7-day cumulative amount reaches RM {$cumulative['total']}",
+                'metric' => $cumulative['total'],
+                'threshold' => $cumulative['threshold'],
             ]);
         }
     }

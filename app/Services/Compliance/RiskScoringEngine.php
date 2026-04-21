@@ -13,6 +13,7 @@ use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\MathService;
+use App\Services\RiskCalculationService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -32,6 +33,8 @@ class RiskScoringEngine
 {
     protected MathService $math;
 
+    protected RiskCalculationService $riskCalculation;
+
     /**
      * Base score for all customers.
      */
@@ -47,9 +50,10 @@ class RiskScoringEngine
      */
     protected const GEO_REGIONAL = 10;
 
-    public function __construct(MathService $math)
+    public function __construct(MathService $math, RiskCalculationService $riskCalculation)
     {
         $this->math = $math;
+        $this->riskCalculation = $riskCalculation;
     }
 
     /**
@@ -267,6 +271,14 @@ class RiskScoringEngine
      */
     protected function calculateVelocityScore(int $customerId): int
     {
+        // Delegate to RiskCalculationService for pattern detection
+        $check = $this->riskCalculation->checkVelocityThreshold($customerId, 24, 3);
+
+        if (! $check['triggered']) {
+            return 0;
+        }
+
+        // Still use flagged transactions for scoring consistency
         $ninetyDaysAgo = now()->subDays(90);
         $flagCount = FlaggedTransaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $ninetyDaysAgo)
@@ -288,6 +300,14 @@ class RiskScoringEngine
      */
     protected function calculateStructuringScore(int $customerId): int
     {
+        // Delegate to RiskCalculationService for pattern detection
+        $check = $this->riskCalculation->checkStructuringThreshold($customerId, 1, 2);
+
+        if (! $check['triggered']) {
+            return 0;
+        }
+
+        // Still use flagged transactions for scoring consistency
         $ninetyDaysAgo = now()->subDays(90);
         $structuringCount = FlaggedTransaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $ninetyDaysAgo)

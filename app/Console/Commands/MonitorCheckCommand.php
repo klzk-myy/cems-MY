@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\AlertService;
+use App\Services\SystemAlertService;
 use App\Services\SystemHealthService;
 use Illuminate\Console\Command;
 
@@ -16,11 +16,11 @@ class MonitorCheckCommand extends Command
 
     protected SystemHealthService $monitorService;
 
-    protected AlertService $alertService;
+    protected SystemAlertService $alertService;
 
     public function __construct(
         SystemHealthService $monitorService,
-        AlertService $alertService
+        SystemAlertService $alertService
     ) {
         parent::__construct();
         $this->monitorService = $monitorService;

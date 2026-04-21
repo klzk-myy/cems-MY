@@ -6,7 +6,7 @@ use App\Models\SystemAlert;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class AlertService
+class SystemAlertService
 {
     public function __construct(
         protected SystemHealthService $monitorService,

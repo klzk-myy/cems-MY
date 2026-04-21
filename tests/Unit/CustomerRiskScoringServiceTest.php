@@ -10,6 +10,7 @@ use App\Services\CustomerRiskScoringService;
 use App\Services\CustomerScreeningService;
 use App\Services\EncryptionService;
 use App\Services\MathService;
+use App\Services\RiskCalculationService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
@@ -34,6 +35,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         $encryptionService = new EncryptionService;
         $complianceService = new ComplianceService($encryptionService, $this->mathService);
         $auditService = new AuditService;
+        $riskCalculationService = new RiskCalculationService($this->mathService, $this->thresholdService);
 
         $screeningService = $this->createMock(CustomerScreeningService::class);
 
@@ -42,145 +44,151 @@ class CustomerRiskScoringServiceTest extends TestCase
             $complianceService,
             $auditService,
             $this->mathService,
-            $this->thresholdService
+            $this->thresholdService,
+            $riskCalculationService
         );
     }
 
     public function test_calculate_velocity_score_with_no_transactions(): void
     {
+        $customer = Customer::factory()->create();
+
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateVelocityScore');
         $method->setAccessible(true);
 
-        $result = $method->invoke($this->service, new Collection);
+        $result = $method->invoke($this->service, $customer->id);
 
         $this->assertEquals(0, $result);
     }
 
     public function test_calculate_velocity_score_with_small_transactions(): void
     {
+        $customer = Customer::factory()->create();
+        Transaction::factory()
+            ->for($customer)
+            ->create(['amount_local' => '1000', 'created_at' => now()]);
+
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateVelocityScore');
         $method->setAccessible(true);
 
-        $transaction = new Transaction;
-        $transaction->amount_local = '1000';
-        $transaction->created_at = now();
-
-        $result = $method->invoke($this->service, new Collection([$transaction]));
+        $result = $method->invoke($this->service, $customer->id);
 
         $this->assertEquals(0, $result);
     }
 
     public function test_calculate_velocity_score_with_medium_transactions(): void
     {
+        $customer = Customer::factory()->create();
+        Transaction::factory()
+            ->for($customer)
+            ->create(['amount_local' => '15000', 'created_at' => now()]);
+
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateVelocityScore');
         $method->setAccessible(true);
 
-        $transaction = new Transaction;
-        $transaction->amount_local = '15000';
-        $transaction->created_at = now();
-
-        $result = $method->invoke($this->service, new Collection([$transaction]));
+        $result = $method->invoke($this->service, $customer->id);
 
         $this->assertGreaterThanOrEqual(10, $result);
     }
 
     public function test_calculate_velocity_score_with_high_transactions(): void
     {
+        $customer = Customer::factory()->create();
+        Transaction::factory()
+            ->for($customer)
+            ->create(['amount_local' => '60000', 'created_at' => now()]);
+
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateVelocityScore');
         $method->setAccessible(true);
 
-        $transaction = new Transaction;
-        $transaction->amount_local = '60000';
-        $transaction->created_at = now();
-
-        $result = $method->invoke($this->service, new Collection([$transaction]));
+        $result = $method->invoke($this->service, $customer->id);
 
         $this->assertGreaterThanOrEqual(30, $result);
     }
 
     public function test_calculate_velocity_score_max_is_40(): void
     {
+        $customer = Customer::factory()->create();
+        for ($i = 0; $i < 10; $i++) {
+            Transaction::factory()
+                ->for($customer)
+                ->create(['amount_local' => '60000', 'created_at' => now()->addMinutes($i)]);
+        }
+
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateVelocityScore');
         $method->setAccessible(true);
 
-        $transactions = [];
-        for ($i = 0; $i < 10; $i++) {
-            $transaction = new Transaction;
-            $transaction->amount_local = '60000';
-            $transaction->created_at = now()->addMinutes($i);
-            $transactions[] = $transaction;
-        }
-
-        $result = $method->invoke($this->service, new Collection($transactions));
+        $result = $method->invoke($this->service, $customer->id);
 
         $this->assertLessThanOrEqual(40, $result);
     }
 
     public function test_calculate_structuring_score_with_no_transactions(): void
     {
+        $customer = Customer::factory()->create();
+
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateStructuringScore');
         $method->setAccessible(true);
 
-        $result = $method->invoke($this->service, new Collection);
+        $result = $method->invoke($this->service, $customer->id);
 
         $this->assertEquals(0, $result);
     }
 
     public function test_calculate_structuring_score_with_single_transaction(): void
     {
+        $customer = Customer::factory()->create();
+        Transaction::factory()
+            ->for($customer)
+            ->create(['amount_local' => '2000', 'created_at' => now()]);
+
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateStructuringScore');
         $method->setAccessible(true);
 
-        $transaction = new Transaction;
-        $transaction->amount_local = '2000';
-        $transaction->created_at = now();
-
-        $result = $method->invoke($this->service, new Collection([$transaction]));
+        $result = $method->invoke($this->service, $customer->id);
 
         $this->assertEquals(0, $result);
     }
 
     public function test_calculate_structuring_score_with_three_transactions_same_hour(): void
     {
+        $customer = Customer::factory()->create();
+        for ($i = 0; $i < 3; $i++) {
+            Transaction::factory()
+                ->for($customer)
+                ->create(['amount_local' => '2000', 'created_at' => now()->addMinutes($i)]);
+        }
+
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateStructuringScore');
         $method->setAccessible(true);
 
-        $transactions = [];
-        for ($i = 0; $i < 3; $i++) {
-            $transaction = new Transaction;
-            $transaction->amount_local = '2000';
-            $transaction->created_at = now()->addMinutes($i);
-            $transactions[] = $transaction;
-        }
-
-        $result = $method->invoke($this->service, new Collection($transactions));
+        $result = $method->invoke($this->service, $customer->id);
 
         $this->assertGreaterThanOrEqual(25, $result);
     }
 
     public function test_calculate_structuring_score_max_is_30(): void
     {
+        $customer = Customer::factory()->create();
+        for ($i = 0; $i < 10; $i++) {
+            Transaction::factory()
+                ->for($customer)
+                ->create(['amount_local' => '2000', 'created_at' => now()->addMinutes($i)]);
+        }
+
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateStructuringScore');
         $method->setAccessible(true);
 
-        $transactions = [];
-        for ($i = 0; $i < 10; $i++) {
-            $transaction = new Transaction;
-            $transaction->amount_local = '2000';
-            $transaction->created_at = now()->addMinutes($i);
-            $transactions[] = $transaction;
-        }
-
-        $result = $method->invoke($this->service, new Collection($transactions));
+        $result = $method->invoke($this->service, $customer->id);
 
         $this->assertLessThanOrEqual(30, $result);
     }

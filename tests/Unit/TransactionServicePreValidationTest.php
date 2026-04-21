@@ -5,27 +5,27 @@ namespace Tests\Unit;
 use App\Enums\CddLevel;
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Services\TransactionPreValidationService;
+use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class TransactionPreValidationServiceTest extends TestCase
+class TransactionServicePreValidationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected TransactionPreValidationService $service;
+    protected TransactionService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = app(TransactionPreValidationService::class);
+        $this->service = app(TransactionService::class);
     }
 
     public function test_sanctions_block_stops_validation(): void
     {
         $customer = Customer::factory()->create(['sanction_hit' => true]);
 
-        $result = $this->service->validate($customer, '1000.00', 'USD');
+        $result = $this->service->preValidate($customer, '1000.00', 'USD');
 
         $this->assertTrue($result->isBlocked());
         $this->assertFalse($result->isHoldRequired());
@@ -38,7 +38,7 @@ class TransactionPreValidationServiceTest extends TestCase
             'sanction_hit' => false,
         ]);
 
-        $result = $this->service->validate($customer, '60000.00', 'USD');
+        $result = $this->service->preValidate($customer, '60000.00', 'USD');
 
         $this->assertFalse($result->isBlocked());
         $this->assertTrue($result->isHoldRequired());
@@ -52,7 +52,7 @@ class TransactionPreValidationServiceTest extends TestCase
             'risk_rating' => 'Low',
         ]);
 
-        $result = $this->service->validate($customer, '5000.00', 'USD');
+        $result = $this->service->preValidate($customer, '5000.00', 'USD');
 
         $this->assertFalse($result->isBlocked());
         $this->assertFalse($result->isHoldRequired());
@@ -66,7 +66,7 @@ class TransactionPreValidationServiceTest extends TestCase
             'risk_rating' => 'Low',
         ]);
 
-        $result = $this->service->validate($customer, '1000.00', 'USD');
+        $result = $this->service->preValidate($customer, '1000.00', 'USD');
 
         $this->assertFalse($result->isBlocked());
         $this->assertFalse($result->isHoldRequired());
@@ -83,7 +83,7 @@ class TransactionPreValidationServiceTest extends TestCase
             'created_at' => now()->subHours(2),
         ]);
 
-        $result = $this->service->validate($customer, '1000.00', 'USD');
+        $result = $this->service->preValidate($customer, '1000.00', 'USD');
 
         $this->assertNotEmpty($result->getRiskFlags());
         $this->assertTrue(in_array('velocity', array_column($result->getRiskFlags(), 'type')));

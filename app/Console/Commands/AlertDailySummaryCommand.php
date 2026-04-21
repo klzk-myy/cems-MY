@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\AlertService;
+use App\Services\SystemAlertService;
 use Illuminate\Console\Command;
 
 class AlertDailySummaryCommand extends Command
@@ -11,9 +11,9 @@ class AlertDailySummaryCommand extends Command
 
     protected $description = 'Send daily system health summary';
 
-    protected AlertService $alertService;
+    protected SystemAlertService $alertService;
 
-    public function __construct(AlertService $alertService)
+    public function __construct(SystemAlertService $alertService)
     {
         parent::__construct();
         $this->alertService = $alertService;

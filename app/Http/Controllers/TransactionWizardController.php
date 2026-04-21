@@ -8,7 +8,6 @@ use App\Http\Requests\TransactionWizardStep1Request;
 use App\Http\Requests\TransactionWizardStep2Request;
 use App\Http\Requests\TransactionWizardStep3Request;
 use App\Models\Customer;
-use App\Services\TransactionPreValidationService;
 use App\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -18,7 +17,6 @@ use Illuminate\Support\Str;
 class TransactionWizardController extends Controller
 {
     public function __construct(
-        protected TransactionPreValidationService $preValidationService,
         protected TransactionService $transactionService
     ) {}
 
@@ -33,8 +31,8 @@ class TransactionWizardController extends Controller
         // Calculate local amount
         $amountLocal = bcmul($validated['amount_foreign'], $validated['rate'], 4);
 
-        // Run pre-validation (sanctions, CDD, risk)
-        $validationResult = $this->preValidationService->validate(
+        // Run pre-validation (sanctions, CDD, risk) - consolidated into TransactionService
+        $validationResult = $this->transactionService->preValidate(
             $customer,
             $amountLocal,
             $validated['currency_code']

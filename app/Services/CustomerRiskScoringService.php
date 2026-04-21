@@ -19,6 +19,7 @@ class CustomerRiskScoringService
         protected AuditService $auditService,
         protected MathService $mathService,
         protected ThresholdService $thresholdService,
+        protected RiskCalculationService $riskCalculationService,
     ) {}
 
     /**
@@ -59,8 +60,8 @@ class CustomerRiskScoringService
         $transactions = $this->getRecentTransactions($customer->id);
 
         return [
-            'velocity' => $this->calculateVelocityScore($transactions),
-            'structuring' => $this->calculateStructuringScore($transactions),
+            'velocity' => $this->calculateVelocityScore($customer->id),
+            'structuring' => $this->calculateStructuringScore($customer->id),
             'geographic' => $this->calculateGeographicScore($customer),
             'amount' => $this->calculateAmountScore($transactions, $customer),
             'overall' => 0,
@@ -210,45 +211,14 @@ class CustomerRiskScoringService
             ->get();
     }
 
-    protected function calculateVelocityScore(Collection $transactions): int
+    protected function calculateVelocityScore(int $customerId): int
     {
-        $score = 0;
-
-        $dailyAmounts = $transactions->groupBy(fn ($t) => $t->created_at->format('Y-m-d'))
-            ->map(fn ($day) => $day->sum('amount_local'));
-
-        foreach ($dailyAmounts as $date => $amount) {
-            $amountStr = (string) $amount;
-            if ($this->mathService->compare($amountStr, $this->thresholdService->getRiskHighThreshold()) >= 0) {
-                $score += 30;
-            } elseif ($this->mathService->compare($amountStr, $this->thresholdService->getRiskMediumThreshold()) >= 0) {
-                $score += 20;
-            } elseif ($this->mathService->compare($amountStr, $this->thresholdService->getRiskLowThreshold()) >= 0) {
-                $score += 10;
-            }
-        }
-
-        return min($score, 40);
+        return $this->riskCalculationService->calculateVelocityRisk($customerId);
     }
 
-    protected function calculateStructuringScore(Collection $transactions): int
+    protected function calculateStructuringScore(int $customerId): int
     {
-        $score = 0;
-
-        $subThreshold = $transactions->filter(
-            fn ($t) => $this->mathService->compare((string) $t->amount_local, $this->thresholdService->getStructuringSubThreshold()) < 0
-        );
-        $hourlyGroups = $subThreshold->groupBy(fn ($t) => $t->created_at->format('Y-m-d H'));
-
-        foreach ($hourlyGroups as $hour => $txns) {
-            if ($txns->count() >= 3) {
-                $score += 25;
-            } elseif ($txns->count() >= 2) {
-                $score += 10;
-            }
-        }
-
-        return min($score, 30);
+        return $this->riskCalculationService->calculateStructuringRisk($customerId);
     }
 
     protected function calculateGeographicScore(Customer $customer): int
