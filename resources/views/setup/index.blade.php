@@ -216,6 +216,8 @@
     </div>
 
     <script>
+        const csrfToken = '{{ csrf_token() }}';
+        
         function showQuickSetup() {
             document.getElementById('quickSetupForm').style.display = 'block';
         }
@@ -240,7 +242,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     body: JSON.stringify(data)
                 });
