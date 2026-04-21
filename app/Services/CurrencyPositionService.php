@@ -300,16 +300,23 @@ class CurrencyPositionService
      */
     public function getAvailableBalance(string $currencyCode, string $tillId): string
     {
-        $position = $this->getPosition($currencyCode, $tillId);
-        $balance = $position ? $position->balance : '0';
+        return DB::transaction(function () use ($currencyCode, $tillId) {
+            // Lock the position to prevent race conditions
+            $position = CurrencyPosition::where('currency_code', $currencyCode)
+                ->where('till_id', $tillId)
+                ->lockForUpdate()
+                ->first();
+            $balance = $position ? $position->balance : '0';
 
-        $reserved = StockReservation::where('currency_code', $currencyCode)
-            ->where('till_id', $tillId)
-            ->where('status', StockReservationStatus::Pending)
-            ->where('expires_at', '>', now())
-            ->sum('amount_foreign');
+            // Query reservations within same transaction
+            $reserved = StockReservation::where('currency_code', $currencyCode)
+                ->where('till_id', $tillId)
+                ->where('status', StockReservationStatus::Pending)
+                ->where('expires_at', '>', now())
+                ->sum('amount_foreign');
 
-        return $this->mathService->subtract($balance, (string) $reserved);
+            return $this->mathService->subtract($balance, (string) $reserved);
+        });
     }
 
     /**

@@ -24,6 +24,10 @@ use Carbon\Carbon;
  */
 class EodReconciliationService
 {
+    public function __construct(
+        protected ThresholdService $thresholdService
+    ) {}
+
     /**
      * Generate daily reconciliation summary for all counters.
      *
@@ -387,10 +391,13 @@ class EodReconciliationService
         $status = 'ok';
         $severity = 'none';
 
-        if (BcmathHelper::gt($absVariance, '500.00')) {
+        $redThreshold = $this->thresholdService->get('variance', 'red', '500.00');
+        $yellowThreshold = $this->thresholdService->get('variance', 'yellow', '100.00');
+
+        if (BcmathHelper::gt($absVariance, $redThreshold)) {
             $status = 'critical';
             $severity = 'red';
-        } elseif (BcmathHelper::gt($absVariance, '100.00')) {
+        } elseif (BcmathHelper::gt($absVariance, $yellowThreshold)) {
             $status = 'warning';
             $severity = 'yellow';
         } elseif (BcmathHelper::gt($absVariance, '0')) {
@@ -403,8 +410,8 @@ class EodReconciliationService
             'severity' => $severity,
             'variance_amount' => $variance,
             'absolute_variance' => $absVariance,
-            'threshold_red' => '500.00',
-            'threshold_yellow' => '100.00',
+            'threshold_red' => $redThreshold,
+            'threshold_yellow' => $yellowThreshold,
         ];
     }
 

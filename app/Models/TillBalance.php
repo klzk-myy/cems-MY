@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MathService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -59,33 +60,42 @@ class TillBalance extends Model
     /**
      * Calculate the expected balance (opening + transaction activity)
      */
-    public function getExpectedBalance(): float
+    public function getExpectedBalance(): string
     {
-        $opening = (float) $this->opening_balance;
-        $foreignTotal = $this->foreign_total !== null ? (float) $this->foreign_total : 0.0;
+        $mathService = app(MathService::class);
+        $opening = (string) $this->opening_balance;
+        $foreignTotal = $this->foreign_total !== null ? (string) $this->foreign_total : '0';
 
-        return $opening + $foreignTotal;
+        return $mathService->add($opening, $foreignTotal);
     }
 
     /**
      * Calculate variance between closing balance and expected balance
      * Expected = opening_balance + foreign_total (transaction activity)
      */
-    public function calculateVariance(): float
+    public function calculateVariance(): string
     {
         if ($this->closing_balance === null) {
-            return 0.0;
+            return '0';
         }
 
-        return (float) $this->closing_balance - $this->getExpectedBalance();
+        $mathService = app(MathService::class);
+        $closing = (string) $this->closing_balance;
+        $expected = $this->getExpectedBalance();
+
+        return $mathService->subtract($closing, $expected);
     }
 
     /**
      * Check if variance exceeds threshold
      */
-    public function hasSignificantVariance(float $threshold = 100.00): bool
+    public function hasSignificantVariance(string $threshold = '100.00'): bool
     {
-        return abs($this->calculateVariance()) > $threshold;
+        $mathService = app(MathService::class);
+        $variance = $this->calculateVariance();
+        $absVariance = $mathService->abs($variance);
+
+        return $mathService->compare($absVariance, $threshold) > 0;
     }
 
     /**

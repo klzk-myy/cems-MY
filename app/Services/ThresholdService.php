@@ -53,6 +53,8 @@ class ThresholdService
 
     public const FALLBACK_VELOCITY_ALERT = '50000';
 
+    public const FALLBACK_VELOCITY_WARNING = '45000';
+
     /**
      * Get a threshold value from config, with fallback to constant.
      */
@@ -252,6 +254,11 @@ class ThresholdService
     public function getVelocityAlertThreshold(): string
     {
         return (string) $this->get('velocity', 'alert_threshold', 'FALLBACK_VELOCITY_ALERT');
+    }
+
+    public function getVelocityWarningThreshold(): string
+    {
+        return (string) $this->get('velocity', 'warning_threshold', 'FALLBACK_VELOCITY_WARNING');
     }
 
     public function getVelocityWindowDays(): int
