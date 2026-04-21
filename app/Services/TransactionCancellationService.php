@@ -179,6 +179,13 @@ class TransactionCancellationService
             ]);
 
             if ($result) {
+                // Release stock reservation if transaction was in PendingApproval status
+                if ($previousStatus === TransactionStatus::PendingApproval) {
+                    $this->positionService->releaseStockReservation($transaction->id);
+                    Log::info('Stock reservation released for cancelled transaction', [
+                        'transaction_id' => $transaction->id,
+                    ]);
+                }
                 Log::info('Transaction cancellation approved', [
                     'transaction_id' => $transaction->id,
                     'approved_by' => $approver->id,

@@ -50,7 +50,7 @@ class TransactionApprovalController extends Controller
         }
 
         // Prevent self-approval (segregation of duties - AML/CFT compliance)
-        if ($transaction->created_by === auth()->id()) {
+        if ($transaction->user_id === auth()->id()) {
             return back()->with('error', 'You cannot approve your own transaction. Segregation of duties requires a different approver.');
         }
 
@@ -144,7 +144,7 @@ class TransactionApprovalController extends Controller
         }
 
         // Prevent self-confirmation (segregation of duties - AML/CFT compliance)
-        if ($transaction->created_by === auth()->id()) {
+        if ($transaction->user_id === auth()->id()) {
             return redirect()->route('transactions.show', $transaction)
                 ->with('error', 'You cannot confirm your own transaction. Segregation of duties requires a different approver.');
         }

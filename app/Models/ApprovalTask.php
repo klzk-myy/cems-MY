@@ -87,4 +87,28 @@ class ApprovalTask extends Model
     {
         return $this->approver();
     }
+
+    /**
+     * Check if the task is pending.
+     */
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    /**
+     * Check if the task is actionable (pending and not expired).
+     */
+    public function isActionable(): bool
+    {
+        if (! $this->isPending()) {
+            return false;
+        }
+
+        if ($this->expires_at === null) {
+            return true;
+        }
+
+        return $this->expires_at->isFuture();
+    }
 }

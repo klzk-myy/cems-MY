@@ -371,13 +371,22 @@ class MfaService
 
     /**
      * Generate a device fingerprint based on request data.
+     *
+     * SECURITY NOTE: This uses multiple factors to make spoofing more difficult.
+     * The fingerprint includes session-specific data that cannot be easily forged.
      */
     public function generateDeviceFingerprint(): string
     {
+        $sessionId = request()->session()->getId();
+        $userAgent = request()->userAgent() ?? 'unknown';
+        $ip = request()->ip() ?? '0.0.0.0';
+
+        // Include session ID to bind fingerprint to specific session
+        // This prevents replay attacks using the same User-Agent/IP combination
         $data = implode('|', [
-            request()->userAgent() ?? 'unknown',
-            request()->ip() ?? '0.0.0.0',
-            request()->header('Accept-Language') ?? 'en',
+            $sessionId,
+            hash('sha256', $userAgent),
+            hash('sha256', $ip),
         ]);
 
         return hash('sha256', $data);

@@ -60,6 +60,14 @@ class CounterSession extends Model
         return $this->hasMany(CounterHandover::class);
     }
 
+    /**
+     * Check if the session is open.
+     */
+    public function isOpen(): bool
+    {
+        return $this->status === CounterSessionStatus::Open;
+    }
+
     public function scopeOpen($query)
     {
         return $query->where('status', CounterSessionStatus::Open->value);

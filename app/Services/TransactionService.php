@@ -49,6 +49,7 @@ class TransactionService
         protected ApprovalWorkflowService $approvalWorkflowService,
         protected CustomerScreeningService $screeningService,
         protected HistoricalRiskAnalysisService $historicalRiskAnalysisService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     /**
@@ -267,15 +268,15 @@ class TransactionService
             if ($customer->sanction_hit) {
                 $triggers[] = 'Sanctions match';
             }
-            if ($this->mathService->compare($amountLocal, config('thresholds.cdd.large_transaction', '50000')) >= 0) {
-                $triggers[] = 'Large amount >= RM '.config('thresholds.cdd.large_transaction', '50000');
+            if ($this->mathService->compare($amountLocal, $this->thresholdService->get('cdd', 'large_transaction', '50000')) >= 0) {
+                $triggers[] = 'Large amount >= RM '.$this->thresholdService->get('cdd', 'large_transaction', '50000');
             }
             if ($customer->risk_rating === 'High') {
                 $triggers[] = 'High risk customer';
             }
             $cddTriggers = $triggers;
         } elseif ($cddLevel === CddLevel::Standard) {
-            $cddTriggers[] = 'Standard amount >= RM '.config('thresholds.cdd.standard', '3000');
+            $cddTriggers[] = 'Standard amount >= RM '.$this->thresholdService->get('cdd', 'standard', '3000');
         }
 
         $this->auditService->logWithSeverity(
@@ -299,7 +300,7 @@ class TransactionService
         $holdReason = null;
         $approvedBy = null;
 
-        if ($holdCheck['requires_hold'] || $this->mathService->compare($amountLocal, config('thresholds.approval.auto_approve', '3000')) >= 0) {
+        if ($holdCheck['requires_hold'] || $this->mathService->compare($amountLocal, $this->thresholdService->get('approval', 'auto_approve', '3000')) >= 0) {
             // BNM AML/CFT COMPLIANCE REQUIREMENT:
             // All transactions >= RM 3,000 require manager approval, regardless of compliance hold status.
             // This is a BNM regulatory requirement to ensure proper oversight of all transactions
@@ -864,6 +865,7 @@ class TransactionService
                     ->where('currency_code', $lockedTransaction->currency_code)
                     ->whereDate('date', today())
                     ->whereNull('closed_at')
+                    ->lockForUpdate()
                     ->first();
 
                 if (! $tillBalance) {

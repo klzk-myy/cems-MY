@@ -50,6 +50,14 @@ class TransactionApprovalController extends Controller
             ], 400);
         }
 
+        // Prevent self-approval (segregation of duties - AML/CFT compliance)
+        if ($transaction->user_id === auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot approve your own transaction. Segregation of duties requires a different approver.',
+            ], 403);
+        }
+
         try {
             $result = $this->transactionService->approveTransaction(
                 $transaction,
