@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\StockReservationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionCancelled;
 use App\Models\Customer;
 use App\Models\JournalEntry;
+use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\TransactionCancellationPendingNotification;
@@ -172,6 +174,13 @@ class TransactionCancellationService
 
             $previousStatus = $transaction->status;
 
+            // Check if this transaction has an active stock reservation
+            // When a transaction is created with PendingApproval status, a stock reservation
+            // is created to prevent overselling. We need to release it on cancellation.
+            $hasReservation = StockReservation::where('transaction_id', $transaction->id)
+                ->where('status', StockReservationStatus::Pending)
+                ->exists();
+
             $result = $stateMachine->transitionTo(TransactionStatus::Cancelled, [
                 'reason' => $reason ?? 'Cancellation approved',
                 'user_id' => $approver->id,
@@ -179,8 +188,8 @@ class TransactionCancellationService
             ]);
 
             if ($result) {
-                // Release stock reservation if transaction was in PendingApproval status
-                if ($previousStatus === TransactionStatus::PendingApproval) {
+                // Release stock reservation if one exists
+                if ($hasReservation) {
                     $this->positionService->releaseStockReservation($transaction->id);
                     Log::info('Stock reservation released for cancelled transaction', [
                         'transaction_id' => $transaction->id,

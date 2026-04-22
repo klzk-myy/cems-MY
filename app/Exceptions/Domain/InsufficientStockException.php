@@ -2,9 +2,9 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
+use InvalidArgumentException;
 
-class InsufficientStockException extends RuntimeException
+class InsufficientStockException extends InvalidArgumentException
 {
     public function __construct(
         public readonly string $currency,
