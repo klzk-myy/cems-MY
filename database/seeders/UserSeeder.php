@@ -42,7 +42,7 @@ class UserSeeder extends Seeder
                 ['email' => $userData['email']],
                 [
                     'username' => $userData['username'],
-                    'password' => $userData['password'], // Uses model's auto-hash mutator
+                    'password_hash' => Hash::make($userData['password']), // Directly set hashed password
                     'role' => $userData['role'],
                     'mfa_enabled' => false,
                     'is_active' => true,

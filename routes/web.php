@@ -99,6 +99,7 @@ Route::prefix('setup')->name('setup.')->group(function () {
     Route::post('/step/3', [SetupController::class, 'step3Currencies'])->name('step3');
     Route::post('/step/4', [SetupController::class, 'step4ExchangeRates'])->name('step4');
     Route::post('/step/5', [SetupController::class, 'step5InitialStock'])->name('step5');
+    Route::post('/step/6', [SetupController::class, 'step6OpeningBalance'])->name('step6');
     Route::post('/complete', [SetupController::class, 'completeSetup'])->name('complete');
     Route::get('/status', [SetupController::class, 'checkStatus'])->name('status');
     Route::post('/reset', [SetupController::class, 'resetSetup'])->name('reset');

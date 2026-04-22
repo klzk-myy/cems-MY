@@ -174,7 +174,7 @@
         <div class="setup-card">
             <div style="text-align: center; margin-bottom: 30px;">
                 <h1 style="color: #667eea;">Setup Wizard</h1>
-                <p style="color: #666;">Step {{ $step }} of 6</p>
+                <p style="color: #666;">Step {{ $step }} of 7</p>
             </div>
 
             <div class="step-indicator">
@@ -194,14 +194,18 @@
                     <div class="step-number">4</div>
                     <div class="step-label">Rates</div>
                 </div>
-                <div class="step {{ $step >= 5 ? 'active' : '' }} {{ $step > 5 ? 'completed' : '' }}">
-                    <div class="step-number">5</div>
-                    <div class="step-label">Stock</div>
-                </div>
-                <div class="step {{ $step >= 6 ? 'active' : '' }}">
-                    <div class="step-number">6</div>
-                    <div class="step-label">Complete</div>
-                </div>
+<div class="step {{ $step >= 5 ? 'active' : '' }} {{ $step > 5 ? 'completed' : '' }}">
+                <div class="step-number">5</div>
+                <div class="step-label">Stock</div>
+            </div>
+            <div class="step {{ $step >= 6 ? 'active' : '' }} {{ $step > 6 ? 'completed' : '' }}">
+                <div class="step-number">6</div>
+                <div class="step-label">Opening Balance</div>
+            </div>
+            <div class="step {{ $step >= 7 ? 'active' : '' }}">
+                <div class="step-number">7</div>
+                <div class="step-label">Complete</div>
+            </div>
             </div>
 
             @if($errors->any())
@@ -393,40 +397,80 @@
                         </p>
                     </div>
 
-                    <div class="navigation">
-                        <a href="/setup/wizard?step=4" class="btn btn-secondary">← Back</a>
-                        <button type="submit" class="btn btn-primary">Review & Complete →</button>
+<div class="navigation">
+            <a href="/setup/wizard?step=4" class="btn btn-secondary">← Back</a>
+            <button type="submit" class="btn btn-primary">Next Step →</button>
+        </div>
+    </form>
+
+    @elseif($step == 6)
+    <form action="/setup/step/6" method="POST">
+        @csrf
+        <h2 style="margin-bottom: 20px;">Opening Balance (Accounting)</h2>
+
+        <div style="background: #fff3cd; padding: 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+            <strong>ℹ️ What is this?</strong>
+            <p style="margin: 8px 0 0 0;">Opening balance represents the initial cash position in your accounting books. This creates the starting journal entry for your business.</p>
+        </div>
+
+        <div class="form-group">
+            <label>Opening Balance - MYR Cash *</label>
+            <input type="number" name="opening_balance_myr" required min="0" step="0.01" value="100000" placeholder="e.g., 100000">
+            <p style="font-size: 12px; color: #666; margin-top: 4px;">Your starting cash balance in Malaysian Ringgit (MYR)</p>
+        </div>
+
+        <div class="form-group">
+            <label>Opening Balance - Foreign Currency Cash</label>
+            <div class="stock-inputs">
+                @foreach($currencies as $currency)
+                    @if($currency->code != 'MYR')
+                    <div>
+                        <label style="font-size: 14px;">{{ $currency->code }}</label>
+                        <input type="number" name="opening_balance_foreign[{{ $currency->code }}]" min="0" step="0.01" value="0" placeholder="0">
                     </div>
-                </form>
+                    @endif
+                @endforeach
+            </div>
+            <p style="font-size: 12px; color: #666; margin-top: 8px;">
+                Enter the opening balance for each foreign currency in your books.
+            </p>
+        </div>
 
-            @elseif($step == 6)
-                <div class="success-message">
-                    <div class="success-icon">✓</div>
-                    <h2 style="margin-bottom: 16px;">Ready to Complete!</h2>
-                    <p style="color: #666; margin-bottom: 30px;">
-                        We'll set up your business with the information you provided.
-                    </p>
+        <div class="navigation">
+            <a href="/setup/wizard?step=5" class="btn btn-secondary">← Back</a>
+            <button type="submit" class="btn btn-primary">Review & Complete →</button>
+        </div>
+    </form>
 
-                    <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; text-align: left; margin-bottom: 30px;">
-                        <h3 style="margin-bottom: 12px;">What will be created:</h3>
-                        <ul style="list-style: none; padding: 0;">
-                            <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Company profile and head office branch</li>
-                            <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Admin user account</li>
-                            <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Chart of accounts (80+ GL accounts)</li>
-                            <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Selected currencies</li>
-                            <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Exchange rates</li>
-                            <li style="padding: 8px 0;">✓ Initial stock positions</li>
-                        </ul>
-                    </div>
+    @elseif($step == 7)
+    <div class="success-message">
+        <div class="success-icon">✓</div>
+        <h2 style="margin-bottom: 16px;">Ready to Complete!</h2>
+        <p style="color: #666; margin-bottom: 30px;">
+            We'll set up your business with the information you provided.
+        </p>
 
-                    <button onclick="completeSetup()" class="btn btn-primary" style="width: 100%;">
-                        Complete Setup
-                    </button>
-                    <a href="/setup/wizard?step=5" class="btn btn-secondary" style="width: 100%; margin-top: 10px; display: inline-block; text-decoration: none; text-align: center;">
-                        Go Back
-                    </a>
-                </div>
-            @endif
+        <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; text-align: left; margin-bottom: 30px;">
+            <h3 style="margin-bottom: 12px;">What will be created:</h3>
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Company profile and head office branch</li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Admin user account</li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Chart of accounts (80+ GL accounts)</li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Selected currencies</li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Exchange rates</li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✓ Initial stock positions</li>
+                <li style="padding: 8px 0;">✓ Opening balance journal entry</li>
+            </ul>
+        </div>
+
+        <button onclick="completeSetup()" class="btn btn-primary" style="width: 100%;">
+            Complete Setup
+        </button>
+        <a href="/setup/wizard?step=6" class="btn btn-secondary" style="width: 100%; margin-top: 10px; display: inline-block; text-decoration: none; text-align: center;">
+            Go Back
+        </a>
+    </div>
+    @endif
         </div>
     </div>
 

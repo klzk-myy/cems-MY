@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\JournalEntryStatus;
+use App\Models\AccountingPeriod;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
+use App\Models\FiscalYear;
+use App\Models\JournalEntry;
+use App\Models\JournalLine;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class SetupController extends Controller
 {
@@ -151,6 +157,19 @@ class SetupController extends Controller
         return redirect()->route('setup.wizard', ['step' => 6]);
     }
 
+    public function step6OpeningBalance(Request $request)
+    {
+        $validated = $request->validate([
+            'opening_balance_myr' => 'required|numeric|min:0',
+            'opening_balance_foreign' => 'nullable|array',
+            'opening_balance_foreign.*' => 'nullable|numeric|min:0',
+        ]);
+
+        session(['setup.opening_balance' => $validated]);
+
+        return redirect()->route('setup.wizard', ['step' => 7]);
+    }
+
     public function completeSetup(Request $request)
     {
         $setupData = session('setup', []);
@@ -288,7 +307,7 @@ class SetupController extends Controller
         $admin = User::create([
             'username' => 'admin',
             'email' => $config['admin_email'],
-            'password' => $config['admin_password'],
+            'password_hash' => Hash::make($config['admin_password']),
             'role' => 'admin',
             'mfa_enabled' => false,
             'is_active' => true,
@@ -338,7 +357,7 @@ class SetupController extends Controller
             User::create([
                 'username' => $setupData['admin']['admin_name'],
                 'email' => $setupData['admin']['admin_email'],
-                'password' => $setupData['admin']['admin_password'],
+                'password_hash' => Hash::make($setupData['admin']['admin_password']),
                 'role' => 'admin',
                 'mfa_enabled' => false,
                 'is_active' => true,
@@ -375,6 +394,100 @@ class SetupController extends Controller
         if (isset($setupData['stock'])) {
             $this->createInitialStock($setupData['stock']);
         }
+
+        if (isset($setupData['opening_balance'])) {
+            $this->createOpeningBalance($setupData['opening_balance']);
+        }
+    }
+
+    private function createOpeningBalance(array $balanceData): void
+    {
+        $fiscalYear = FiscalYear::where('status', 'open')->first();
+        $period = AccountingPeriod::where('status', 'open')->first();
+        $adminUser = User::where('role', 'admin')->first();
+
+        if (! $fiscalYear || ! $period || ! $adminUser) {
+            return;
+        }
+
+        $openingDate = $fiscalYear->start_date;
+        $entryNumber = 'OB-'.$fiscalYear->year_code.'-0001';
+
+        // Calculate total opening balance
+        $totalMyr = $balanceData['opening_balance_myr'] ?? 0;
+        $totalForeign = 0;
+        foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $amount) {
+            $totalForeign += (float) $amount;
+        }
+        $totalBalance = $totalMyr + $totalForeign;
+
+        if ($totalBalance <= 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($fiscalYear, $period, $adminUser, $openingDate, $entryNumber, $totalBalance, $balanceData) {
+            $journalEntry = JournalEntry::create([
+                'entry_number' => $entryNumber,
+                'fiscal_year_id' => $fiscalYear->id,
+                'period_id' => $period->id,
+                'entry_date' => $openingDate,
+                'reference_type' => 'Opening Balance',
+                'reference_id' => null,
+                'description' => 'Initial opening balances - Business commencement',
+                'total_amount' => (string) $totalBalance,
+                'status' => JournalEntryStatus::Posted,
+                'created_by' => $adminUser->id,
+                'posted_by' => $adminUser->id,
+                'posted_at' => now(),
+            ]);
+
+            // Cash in MYR
+            if ($balanceData['opening_balance_myr'] > 0) {
+                $cashMyrAccount = ChartOfAccount::where('account_code', '1010')->first();
+                if ($cashMyrAccount) {
+                    JournalLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'account_code' => $cashMyrAccount->account_code,
+                        'debit' => (string) $balanceData['opening_balance_myr'],
+                        'credit' => '0.00',
+                        'description' => 'Opening balance - MYR Cash',
+                    ]);
+                }
+            }
+
+            // Cash in Foreign Currencies (grouped)
+            $totalForeignBalance = 0;
+            foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $amount) {
+                if ($amount > 0) {
+                    $totalForeignBalance += $amount;
+                }
+            }
+
+            if ($totalForeignBalance > 0) {
+                $cashForeignAccount = ChartOfAccount::where('account_code', '1011')->first();
+                if ($cashForeignAccount) {
+                    JournalLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'account_code' => $cashForeignAccount->account_code,
+                        'debit' => (string) $totalForeignBalance,
+                        'credit' => '0.00',
+                        'description' => 'Opening balance - Foreign Cash',
+                    ]);
+                }
+            }
+
+            // Credit side - Equity
+            $equityAccount = ChartOfAccount::where('account_code', '3000')->first();
+            if ($equityAccount) {
+                JournalLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'account_code' => $equityAccount->account_code,
+                    'debit' => '0.00',
+                    'credit' => (string) $totalBalance,
+                    'description' => 'Opening balance - Owner Equity',
+                ]);
+            }
+        });
     }
 
     private function createInitialStock(array $stockData): void
