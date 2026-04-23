@@ -11,7 +11,7 @@ class ThresholdService
      * Fallback constants for backward compatibility.
      * These match the values in the original service constants.
      */
-    public const FALLBACK_AUTO_APPROVE = '3000';
+    public const FALLBACK_AUTO_APPROVE = '10000';
 
     public const FALLBACK_MANAGER = '50000';
 

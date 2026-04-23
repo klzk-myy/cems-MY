@@ -11,7 +11,7 @@ return [
     |
     */
     'approval' => [
-        'auto_approve' => env('THRESHOLD_AUTO_APPROVE', '3000'),
+        'auto_approve' => env('THRESHOLD_AUTO_APPROVE', '10000'),
         'manager' => env('THRESHOLD_MANAGER', '50000'),
     ],
 
