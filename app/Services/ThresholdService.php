@@ -55,6 +55,10 @@ class ThresholdService
 
     public const FALLBACK_VELOCITY_WARNING = '45000';
 
+    public const FALLBACK_ROUND_TRIP = '5000';
+
+    public const FALLBACK_CURRENCY_FLOW_LOOKBACK_DAYS = 7;
+
     /**
      * Get a threshold value from config, with fallback to constant.
      */
@@ -264,5 +268,17 @@ class ThresholdService
     public function getVelocityWindowDays(): int
     {
         return (int) $this->get('velocity', 'window_days', 90);
+    }
+
+    // Currency Flow thresholds
+
+    public function getRoundTripThreshold(): string
+    {
+        return (string) $this->get('currency_flow', 'round_trip_threshold', 'FALLBACK_ROUND_TRIP');
+    }
+
+    public function getCurrencyFlowLookbackDays(): int
+    {
+        return (int) $this->get('currency_flow', 'lookback_days', 'FALLBACK_CURRENCY_FLOW_LOOKBACK_DAYS');
     }
 }

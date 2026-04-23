@@ -117,4 +117,14 @@ return [
         'amount_threshold' => env('THRESHOLD_AML_AMOUNT', '50000'),
         'aggregate_threshold' => env('THRESHOLD_AML_AGGREGATE', '50000'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Currency Flow Monitoring
+    |--------------------------------------------------------------------------
+    */
+    'currency_flow' => [
+        'round_trip_threshold' => env('THRESHOLD_ROUND_TRIP', '5000'),
+        'lookback_days' => env('THRESHOLD_CURRENCY_FLOW_LOOKBACK_DAYS', 7),
+    ],
 ];

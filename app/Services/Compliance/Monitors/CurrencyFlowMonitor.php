@@ -7,6 +7,8 @@ use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\MathService;
+use App\Services\ThresholdService;
 
 /**
  * Monitor for detecting unusual currency round-tripping patterns.
@@ -14,11 +16,15 @@ use App\Models\Transaction;
  */
 class CurrencyFlowMonitor extends BaseMonitor
 {
-    public const LOOKBACK_DAYS = 7;
-
-    public const ROUND_TRIP_THRESHOLD = '5000';
+    protected ThresholdService $thresholdService;
 
     public const TIME_WINDOW_HOURS = 72;
+
+    public function __construct(MathService $math, ThresholdService $thresholdService)
+    {
+        parent::__construct($math);
+        $this->thresholdService = $thresholdService;
+    }
 
     protected function getFindingType(): FindingType
     {
@@ -28,7 +34,7 @@ class CurrencyFlowMonitor extends BaseMonitor
     public function run(): array
     {
         $findings = [];
-        $cutoffTime = now()->subDays(self::LOOKBACK_DAYS);
+        $cutoffTime = now()->subDays($this->thresholdService->getCurrencyFlowLookbackDays());
 
         // Get all customers with transactions in the lookback period
         $customerIds = Transaction::where('created_at', '>=', $cutoffTime)
@@ -130,7 +136,7 @@ class CurrencyFlowMonitor extends BaseMonitor
                         : $buyForeign;
 
                     // Only flag if above threshold
-                    if ($this->math->compare((string) $roundTripAmount, self::ROUND_TRIP_THRESHOLD) < 0) {
+                    if ($this->math->compare((string) $roundTripAmount, $this->thresholdService->getRoundTripThreshold()) < 0) {
                         continue;
                     }
 
