@@ -18,7 +18,7 @@ class CtosReportService
     public function __construct(
         protected AuditService $auditService,
         protected MathService $mathService,
-        protected ComplianceService $complianceService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     /**
@@ -107,7 +107,7 @@ class CtosReportService
             return false;
         }
 
-        // Must be >= RM 10,000
-        return $this->mathService->compare($transaction->amount_local, $this->complianceService::CTOS_THRESHOLD) >= 0;
+        // Must be >= RM 10,000 (BNM CTOS threshold)
+        return $this->mathService->compare($transaction->amount_local, $this->thresholdService->getCtosThreshold()) >= 0;
     }
 }
