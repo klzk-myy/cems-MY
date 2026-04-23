@@ -8,7 +8,6 @@ use App\Exceptions\Domain\AccountNotFoundException;
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\EntryAlreadyReversedException;
 use App\Exceptions\Domain\EntryNotPostedException;
-use App\Exceptions\Domain\InvalidJournalStatusException;
 use App\Exceptions\Domain\UnbalancedJournalException;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
@@ -144,154 +143,6 @@ class AccountingService
     }
 
     /**
-     * Submit a journal entry for approval.
-     *
-     * Changes status from 'Draft' to 'Pending'. Only draft entries
-     * can be submitted for approval.
-     *
-     * @param  JournalEntry  $entry  The entry to submit
-     * @param  int|null  $submittedBy  User ID submitting (default: authenticated user)
-     * @return JournalEntry Updated entry
-     *
-     * @throws \InvalidArgumentException If entry is not in Draft status
-     */
-    public function submitForApproval(JournalEntry $entry, ?int $submittedBy = null): JournalEntry
-    {
-        $submittedBy = $submittedBy ?? auth()->id();
-
-        // Perform the status update inside transaction, then refresh AFTER commit
-        $entry = DB::transaction(function () use ($entry) {
-            if (! $entry->isDraft()) {
-                throw new InvalidJournalStatusException('Draft', $entry->status ?? 'unknown');
-            }
-
-            $entry->update([
-                'status' => 'Pending',
-            ]);
-
-            $this->auditService->logJournalWorkflowEvent('journal_entry_submitted', $entry->id, [
-                'old' => ['status' => 'Draft'],
-                'new' => ['status' => 'Pending'],
-            ]);
-
-            // Return the entry from inside the transaction - the model's attributes are updated
-            // but we need to refresh AFTER the transaction commits to sync with database
-            return $entry;
-        });
-
-        // Refresh AFTER the transaction has committed to get the database state
-        $entry->refresh();
-
-        return $entry;
-    }
-
-    /**
-     * Approve a journal entry and post it to the ledger.
-     *
-     * Changes status from 'Pending' to 'Posted', records approval metadata,
-     * and posts the entry to the general ledger.
-     *
-     * @param  JournalEntry  $entry  The entry to approve
-     * @param  int|null  $approvedBy  User ID approving (default: authenticated user)
-     * @param  string|null  $approvalNotes  Optional approval notes
-     * @return JournalEntry Updated entry
-     *
-     * @throws \InvalidArgumentException If entry is not in Pending status
-     */
-    public function approveEntry(
-        JournalEntry $entry,
-        ?int $approvedBy = null,
-        ?string $approvalNotes = null
-    ): JournalEntry {
-        $approvedBy = $approvedBy ?? auth()->id();
-
-        // The model's status should already be 'Pending' after submitForApproval
-        if (! $entry->isPending()) {
-            throw new InvalidJournalStatusException('Pending', $entry->status ?? 'unknown');
-        }
-
-        // Re-validate period is still open before posting (could have been closed since submission)
-        if ($entry->period_id) {
-            $period = AccountingPeriod::find($entry->period_id);
-            if ($period && ! $period->isOpen()) {
-                throw new ClosedPeriodException($period->period_code);
-            }
-        }
-
-        // Wrap in transaction to ensure atomicity - if updateLedger fails,
-        // the entry status won't be changed to Posted
-        return DB::transaction(function () use ($entry, $approvedBy, $approvalNotes) {
-            $entry->update([
-                'status' => 'Posted',
-                'approved_by' => $approvedBy,
-                'approved_at' => now(),
-                'approval_notes' => $approvalNotes,
-                'posted_by' => $approvedBy,
-                'posted_at' => now(),
-            ]);
-
-            // Post to the ledger
-            $this->updateLedger($entry);
-
-            $this->auditService->logJournalWorkflowEvent('journal_entry_approved', $entry->id, [
-                'old' => ['status' => 'Pending'],
-                'new' => [
-                    'status' => 'Posted',
-                    'approved_by' => $approvedBy,
-                    'approval_notes' => $approvalNotes,
-                ],
-            ]);
-
-            return $entry->fresh();
-        });
-    }
-
-    /**
-     * Reject a journal entry.
-     *
-     * Changes status from 'Pending' to 'Rejected'. The entry can be
-     * edited and resubmitted, or deleted.
-     *
-     * @param  JournalEntry  $entry  The entry to reject
-     * @param  int|null  $rejectedBy  User ID rejecting (default: authenticated user)
-     * @param  string|null  $rejectionNotes  Reason for rejection
-     * @return JournalEntry Updated entry
-     *
-     * @throws \InvalidArgumentException If entry is not in Pending status
-     */
-    public function rejectEntry(
-        JournalEntry $entry,
-        ?int $rejectedBy = null,
-        ?string $rejectionNotes = null
-    ): JournalEntry {
-        $rejectedBy = $rejectedBy ?? auth()->id();
-
-        return DB::transaction(function () use ($entry, $rejectionNotes) {
-            // Re-fetch to ensure we see the latest committed state
-            $entry = JournalEntry::find($entry->id);
-
-            if (! $entry->isPending()) {
-                throw new InvalidJournalStatusException('Pending', $entry->status ?? 'unknown');
-            }
-
-            $entry->update([
-                'status' => 'Rejected',
-                'approval_notes' => $rejectionNotes,
-            ]);
-
-            $this->auditService->logJournalWorkflowEvent('journal_entry_rejected', $entry->id, [
-                'old' => ['status' => 'Pending'],
-                'new' => [
-                    'status' => 'Rejected',
-                    'rejection_notes' => $rejectionNotes,
-                ],
-            ]);
-
-            return $entry->fresh();
-        });
-    }
-
-    /**
      * Validate that journal entry lines are balanced.
      *
      * Calculates total debits and credits using high-precision arithmetic
@@ -376,9 +227,7 @@ class AccountingService
                 $reversedBy
             );
 
-            // Submit for approval first (Draft -> Pending), then approve (Pending -> Posted)
-            $this->submitForApproval($entry, $reversedBy);
-            $this->approveEntry($entry, $reversedBy, "Reversal of entry {$originalEntry->id}");
+            // Note: Entry is already posted via createJournalEntry() - no approval needed for reversals
 
             // Update original entry status and create explicit link via reversal_id
             $originalEntry->update([
