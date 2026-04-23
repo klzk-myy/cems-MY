@@ -17,7 +17,7 @@ class StructuringMonitor extends BaseMonitor
 
     protected StructuringRiskService $structuringRiskService;
 
-    public const STRUCTURING_COUNT = 3;
+    protected int $minTransactions;
 
     public const LOOKBACK_MINUTES = 60;
 
@@ -25,6 +25,7 @@ class StructuringMonitor extends BaseMonitor
     {
         parent::__construct($math);
         $this->subThreshold = $thresholdService->getStructuringSubThreshold();
+        $this->minTransactions = $thresholdService->getStructuringMinTransactions();
         $this->structuringRiskService = $structuringRiskService;
     }
 
@@ -43,7 +44,7 @@ class StructuringMonitor extends BaseMonitor
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->selectRaw('customer_id, COUNT(*) as transaction_count, CAST(SUM(amount_local) AS CHAR) as total_amount')
             ->groupBy('customer_id')
-            ->havingRaw('COUNT(*) >= ?', [self::STRUCTURING_COUNT])
+            ->havingRaw('COUNT(*) >= ?', [$this->minTransactions])
             ->get();
 
         foreach ($customerData as $data) {
@@ -62,7 +63,7 @@ class StructuringMonitor extends BaseMonitor
         $transactionCount = $data->transaction_count;
         $totalAmount = (string) $data->total_amount;
 
-        if ($transactionCount >= self::STRUCTURING_COUNT) {
+        if ($transactionCount >= $this->minTransactions) {
             $customer = Customer::find($customerId);
 
             return $this->createFinding(
