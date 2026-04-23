@@ -9,7 +9,8 @@ use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
-use Carbon\Carbon;
+use App\Services\Risk\StructuringRiskService;
+use App\Services\Risk\VelocityRiskService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -79,12 +80,16 @@ class ComplianceService
         EncryptionService $encryptionService,
         MathService $mathService,
         ?CustomerScreeningService $screeningService = null,
-        ?ThresholdService $thresholdService = null
+        ?ThresholdService $thresholdService = null,
+        ?VelocityRiskService $velocityRiskService = null,
+        ?StructuringRiskService $structuringRiskService = null
     ) {
         $this->encryptionService = $encryptionService;
         $this->mathService = $mathService;
         $this->screeningService = $screeningService;
         $this->thresholdService = $thresholdService ?? new ThresholdService;
+        $this->velocityRiskService = $velocityRiskService;
+        $this->structuringRiskService = $structuringRiskService;
     }
 
     /**
@@ -183,8 +188,11 @@ class ComplianceService
      */
     public function checkVelocity(int $customerId, string $newAmount): array
     {
+        if ($this->velocityRiskService) {
+            return $this->velocityRiskService->checkAmountThreshold($customerId, $newAmount);
+        }
+
         $startTime = now()->subHours(24);
-        // Use DB::raw to cast to decimal for BCMath precision
         $velocity = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $startTime)
             ->selectRaw('CAST(SUM(amount_local) AS CHAR) as total')
@@ -238,6 +246,10 @@ class ComplianceService
      */
     public function checkStructuring(int $customerId): bool
     {
+        if ($this->structuringRiskService) {
+            return $this->structuringRiskService->isStructuring($customerId);
+        }
+
         $oneHourAgo = now()->subHour();
         $smallTransactions = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $oneHourAgo)

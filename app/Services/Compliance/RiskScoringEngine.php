@@ -2,7 +2,6 @@
 
 namespace App\Services\Compliance;
 
-use App\Enums\ComplianceFlagType;
 use App\Enums\EddStatus;
 use App\Enums\RecalculationTrigger;
 use App\Enums\TransactionStatus;
@@ -10,7 +9,6 @@ use App\Models\Compliance\CustomerBehavioralBaseline;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\EnhancedDiligenceRecord;
-use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\MathService;
 use App\Services\RiskCalculationService;
@@ -271,24 +269,18 @@ class RiskScoringEngine
      */
     protected function calculateVelocityScore(int $customerId): int
     {
-        // Delegate to RiskCalculationService for pattern detection
         $check = $this->riskCalculation->checkVelocityThreshold($customerId, 24, 3);
 
         if (! $check['triggered']) {
             return 0;
         }
 
-        // Still use flagged transactions for scoring consistency
-        $ninetyDaysAgo = now()->subDays(90);
-        $flagCount = FlaggedTransaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', $ninetyDaysAgo)
-            ->whereIn('flag_type', [ComplianceFlagType::Velocity->value])
-            ->count();
+        $velocityScore = $this->riskCalculation->calculateVelocityRisk($customerId);
 
-        if ($flagCount >= 3) {
+        if ($velocityScore >= 30) {
             return 20;
         }
-        if ($flagCount >= 1) {
+        if ($velocityScore >= 10) {
             return 10;
         }
 
@@ -300,24 +292,18 @@ class RiskScoringEngine
      */
     protected function calculateStructuringScore(int $customerId): int
     {
-        // Delegate to RiskCalculationService for pattern detection
-        $check = $this->riskCalculation->checkStructuringThreshold($customerId, 1, 2);
+        $check = $this->riskCalculation->checkStructuringThreshold($customerId, 1, 3);
 
         if (! $check['triggered']) {
             return 0;
         }
 
-        // Still use flagged transactions for scoring consistency
-        $ninetyDaysAgo = now()->subDays(90);
-        $structuringCount = FlaggedTransaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', $ninetyDaysAgo)
-            ->where('flag_type', ComplianceFlagType::Structuring->value)
-            ->count();
+        $structuringScore = $this->riskCalculation->calculateStructuringRisk($customerId);
 
-        if ($structuringCount >= 2) {
+        if ($structuringScore >= 25) {
             return 40;
         }
-        if ($structuringCount >= 1) {
+        if ($structuringScore >= 10) {
             return 25;
         }
 

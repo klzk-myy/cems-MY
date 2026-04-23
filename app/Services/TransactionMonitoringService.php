@@ -157,7 +157,7 @@ class TransactionMonitoringService
         }
 
         $highRiskCountries = DB::table('high_risk_countries')
-            ->pluck('country_name')
+            ->pluck('country_code')
             ->toArray();
 
         return in_array($transaction->customer->nationality, $highRiskCountries, true);

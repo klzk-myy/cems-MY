@@ -7,28 +7,24 @@ use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Services\ComplianceService;
 use App\Services\MathService;
+use App\Services\Risk\VelocityRiskService;
 use App\Services\ThresholdService;
 
-/**
- * Monitor for detecting customers exceeding transaction velocity thresholds.
- * Scans for customers exceeding RM 50,000 in 24-hour window.
- */
 class VelocityMonitor extends BaseMonitor
 {
     protected string $threshold;
 
     protected string $warningThreshold;
 
-    protected ComplianceService $complianceService;
+    protected VelocityRiskService $velocityRiskService;
 
-    public function __construct(MathService $math, ComplianceService $complianceService, ThresholdService $thresholdService)
+    public function __construct(MathService $math, VelocityRiskService $velocityRiskService, ThresholdService $thresholdService)
     {
         parent::__construct($math);
         $this->threshold = $thresholdService->getVelocityAlertThreshold();
         $this->warningThreshold = $thresholdService->getVelocityWarningThreshold();
-        $this->complianceService = $complianceService;
+        $this->velocityRiskService = $velocityRiskService;
     }
 
     public const LOOKBACK_HOURS = 24;
@@ -43,13 +39,15 @@ class VelocityMonitor extends BaseMonitor
         $findings = [];
         $cutoffTime = now()->subHours(self::LOOKBACK_HOURS);
 
-        $customerIds = Transaction::where('created_at', '>=', $cutoffTime)
+        $customerData = Transaction::where('created_at', '>=', $cutoffTime)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->distinct('customer_id')
-            ->pluck('customer_id');
+            ->selectRaw('customer_id, COUNT(*) as transaction_count, CAST(SUM(amount_local) AS CHAR) as total_amount')
+            ->groupBy('customer_id')
+            ->havingRaw('SUM(amount_local) >= ?', [$this->warningThreshold])
+            ->get();
 
-        foreach ($customerIds as $customerId) {
-            $finding = $this->checkCustomerVelocity($customerId);
+        foreach ($customerData as $data) {
+            $finding = $this->createFindingFromData($data);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -58,23 +56,11 @@ class VelocityMonitor extends BaseMonitor
         return $findings;
     }
 
-    protected function checkCustomerVelocity(int $customerId): ?array
+    protected function createFindingFromData($data): ?array
     {
-        $cutoffTime = now()->subHours(self::LOOKBACK_HOURS);
-
-        $totalAmount = Transaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', $cutoffTime)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->sum('amount_local');
-
-        $transactionCount = Transaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', $cutoffTime)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->count();
-
-        // Delegate velocity check to ComplianceService
-        $velocityResult = $this->complianceService->checkVelocity($customerId, '0');
-        $amount24h = $velocityResult['amount_24h'];
+        $customerId = $data->customer_id;
+        $amount24h = (string) $data->total_amount;
+        $transactionCount = $data->transaction_count;
 
         if ($this->math->compare($amount24h, $this->threshold) >= 0) {
             $customer = Customer::find($customerId);

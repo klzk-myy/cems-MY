@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string $till_id
  * @property TransactionType $type
  * @property string $currency_code
+ * @property string|null $counterparty_country ISO 3-letter country code
  * @property string $amount_local MYR amount
  * @property string $amount_foreign Foreign currency amount
  * @property string $rate Exchange rate applied
@@ -64,6 +65,7 @@ class Transaction extends Model
         'till_id',
         'type',
         'currency_code',
+        'counterparty_country',
         'amount_local',
         'amount_foreign',
         'rate',

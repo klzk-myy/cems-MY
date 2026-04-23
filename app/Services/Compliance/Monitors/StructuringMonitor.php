@@ -7,29 +7,25 @@ use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Services\ComplianceService;
 use App\Services\MathService;
+use App\Services\Risk\StructuringRiskService;
 use App\Services\ThresholdService;
 
-/**
- * Monitor for detecting structuring patterns.
- * Detects 3+ transactions under RM 3,000 within 1 hour.
- */
 class StructuringMonitor extends BaseMonitor
 {
     protected string $subThreshold;
 
-    protected ComplianceService $complianceService;
+    protected StructuringRiskService $structuringRiskService;
 
     public const STRUCTURING_COUNT = 3;
 
     public const LOOKBACK_MINUTES = 60;
 
-    public function __construct(MathService $math, ComplianceService $complianceService, ThresholdService $thresholdService)
+    public function __construct(MathService $math, StructuringRiskService $structuringRiskService, ThresholdService $thresholdService)
     {
         parent::__construct($math);
         $this->subThreshold = $thresholdService->getStructuringSubThreshold();
-        $this->complianceService = $complianceService;
+        $this->structuringRiskService = $structuringRiskService;
     }
 
     protected function getFindingType(): FindingType
@@ -42,14 +38,16 @@ class StructuringMonitor extends BaseMonitor
         $findings = [];
         $cutoffTime = now()->subMinutes(self::LOOKBACK_MINUTES);
 
-        $customerIds = Transaction::where('created_at', '>=', $cutoffTime)
+        $customerData = Transaction::where('created_at', '>=', $cutoffTime)
             ->where('amount_local', '<', $this->subThreshold)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->distinct('customer_id')
-            ->pluck('customer_id');
+            ->selectRaw('customer_id, COUNT(*) as transaction_count, CAST(SUM(amount_local) AS CHAR) as total_amount')
+            ->groupBy('customer_id')
+            ->havingRaw('COUNT(*) >= ?', [self::STRUCTURING_COUNT])
+            ->get();
 
-        foreach ($customerIds as $customerId) {
-            $finding = $this->checkCustomerStructuring($customerId);
+        foreach ($customerData as $data) {
+            $finding = $this->createFindingFromData($data);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -58,25 +56,14 @@ class StructuringMonitor extends BaseMonitor
         return $findings;
     }
 
-    protected function checkCustomerStructuring(int $customerId): ?array
+    protected function createFindingFromData($data): ?array
     {
-        $cutoffTime = now()->subMinutes(self::LOOKBACK_MINUTES);
+        $customerId = $data->customer_id;
+        $transactionCount = $data->transaction_count;
+        $totalAmount = (string) $data->total_amount;
 
-        $smallTransactions = Transaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', $cutoffTime)
-            ->where('amount_local', '<', $this->subThreshold)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $transactionCount = $smallTransactions->count();
-
-        // Delegate structuring check to ComplianceService
-        $isStructuring = $this->complianceService->checkStructuring($customerId);
-
-        if ($isStructuring) {
+        if ($transactionCount >= self::STRUCTURING_COUNT) {
             $customer = Customer::find($customerId);
-            $totalAmount = $smallTransactions->sum('amount_local');
 
             return $this->createFinding(
                 type: FindingType::StructuringPattern,
@@ -86,9 +73,8 @@ class StructuringMonitor extends BaseMonitor
                 details: [
                     'customer_name' => $customer?->full_name ?? 'Unknown',
                     'transaction_count' => $transactionCount,
-                    'total_amount' => (string) $totalAmount,
+                    'total_amount' => $totalAmount,
                     'threshold' => $this->subThreshold,
-                    'transaction_ids' => $smallTransactions->pluck('id')->toArray(),
                     'recommendation' => 'STR strongly recommended',
                 ]
             );

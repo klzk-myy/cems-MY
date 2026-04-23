@@ -6,36 +6,34 @@ use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Customer;
 use App\Models\Transaction;
-use Illuminate\Support\Collection;
+use App\Services\Risk\AmountRiskService;
+use App\Services\Risk\GeographicRiskService;
+use App\Services\Risk\PatternRiskService;
+use App\Services\Risk\StructuringRiskService;
+use App\Services\Risk\VelocityRiskService;
 
-/**
- * Unified Risk Calculation Service
- *
- * Consolidates overlapping risk calculation logic across:
- * - CustomerRiskScoringService
- * - RiskScoringEngine
- * - HistoricalRiskAnalysisService
- * - AmlRuleService
- *
- * All monetary calculations use BCMath via MathService.
- */
 class RiskCalculationService
 {
     public function __construct(
         protected MathService $mathService,
-        protected ThresholdService $thresholdService
+        protected ThresholdService $thresholdService,
+        protected ?VelocityRiskService $velocityRiskService = null,
+        protected ?StructuringRiskService $structuringRiskService = null,
+        protected ?GeographicRiskService $geographicRiskService = null,
+        protected ?AmountRiskService $amountRiskService = null,
+        protected ?PatternRiskService $patternRiskService = null
     ) {}
 
-    /**
-     * Calculate velocity risk score.
-     *
-     * Checks transaction velocity (multiple transactions in time window).
-     *
-     * @param  Collection|array  $transactions  Transaction collection or customer ID
-     * @param  int  $windowHours  Time window in hours (default 24)
-     * @return int Risk score (0-40)
-     */
     public function calculateVelocityRisk(int $customerId, int $windowHours = 24): int
+    {
+        if ($this->velocityRiskService) {
+            return $this->velocityRiskService->calculateScore($customerId, $windowHours);
+        }
+
+        return $this->legacyCalculateVelocityRisk($customerId, $windowHours);
+    }
+
+    protected function legacyCalculateVelocityRisk(int $customerId, int $windowHours = 24): int
     {
         $score = 0;
 
@@ -48,7 +46,6 @@ class RiskCalculationService
             return 0;
         }
 
-        // Group by day and sum amounts
         $dailyAmounts = $transactions->groupBy(fn ($t) => $t->created_at->format('Y-m-d'))
             ->map(fn ($day) => $day->sum('amount_local'));
 
@@ -66,30 +63,28 @@ class RiskCalculationService
         return min($score, 40);
     }
 
-    /**
-     * Calculate structuring risk score.
-     *
-     * Detects potential structuring patterns (transactions just below threshold).
-     *
-     * @param  int  $customerId  Customer ID
-     * @param  int  $windowHours  Time window in hours (default 1)
-     * @return int Risk score (0-30)
-     */
     public function calculateStructuringRisk(int $customerId, int $windowHours = 1): int
+    {
+        if ($this->structuringRiskService) {
+            return $this->structuringRiskService->calculateScore($customerId, $windowHours);
+        }
+
+        return $this->legacyCalculateStructuringRisk($customerId, $windowHours);
+    }
+
+    protected function legacyCalculateStructuringRisk(int $customerId, int $windowHours = 1): int
     {
         $score = 0;
 
         $subThreshold = $this->thresholdService->getStructuringSubThreshold();
         $window = now()->subHours($windowHours);
 
-        // Structuring = transactions below threshold but above minimum CDD
         $structuringTransactions = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $window)
             ->where('amount_local', '<', $subThreshold)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->get();
 
-        // Group by hour
         $hourlyGroups = $structuringTransactions->groupBy(fn ($t) => $t->created_at->format('Y-m-d H'));
 
         foreach ($hourlyGroups as $hour => $txns) {
@@ -103,15 +98,11 @@ class RiskCalculationService
         return min($score, 30);
     }
 
-    /**
-     * Calculate amount risk score.
-     *
-     * Checks amount escalation vs 90-day average and maximum transaction.
-     *
-     * @param  int  $customerId  Customer ID
-     * @param  string|null  $currentAmount  Current transaction amount (optional)
-     * @return int Risk score (0-30)
-     */
+    public function calculateGeographicRisk(Customer $customer): int
+    {
+        return $this->geographicRiskService->calculateScore($customer);
+    }
+
     public function calculateAmountRisk(int $customerId, ?string $currentAmount = null): int
     {
         $score = 0;
@@ -125,18 +116,11 @@ class RiskCalculationService
             return 0;
         }
 
-        // Check max transaction against thresholds
-        $maxTransaction = (string) ($transactions->max('amount_local') ?? '0');
+        $customer = Customer::find($customerId);
+        $score = $this->amountRiskService
+            ? $this->amountRiskService->calculateScore($transactions, $customer)
+            : $this->legacyCalculateAmountScore($transactions, $customer);
 
-        if ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskHighThreshold()) >= 0) {
-            $score += 30;
-        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskMediumThreshold()) >= 0) {
-            $score += 20;
-        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskLowThreshold()) >= 0) {
-            $score += 10;
-        }
-
-        // Check if current amount is significantly above average
         if ($currentAmount !== null) {
             $avgAmount = $transactions->avg('amount_local');
             if ($avgAmount > 0) {
@@ -151,15 +135,23 @@ class RiskCalculationService
         return min($score, 30);
     }
 
-    /**
-     * Calculate cumulative risk.
-     *
-     * Checks 7-day cumulative threshold.
-     *
-     * @param  int  $customerId  Customer ID
-     * @param  string|null  $currentAmount  Current transaction amount to add (optional)
-     * @return array{triggered: bool, total: string, threshold: string}
-     */
+    protected function legacyCalculateAmountScore($transactions, Customer $customer): int
+    {
+        $score = 0;
+
+        $maxTransaction = (string) ($transactions->max('amount_local') ?? '0');
+
+        if ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskHighThreshold()) >= 0) {
+            $score += 30;
+        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskMediumThreshold()) >= 0) {
+            $score += 20;
+        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskLowThreshold()) >= 0) {
+            $score += 10;
+        }
+
+        return $score;
+    }
+
     public function calculateCumulativeRisk(int $customerId, ?string $currentAmount = null): array
     {
         $cumulativeThreshold = $this->thresholdService->getVelocityAlertThreshold();
@@ -181,15 +173,16 @@ class RiskCalculationService
         ];
     }
 
-    /**
-     * Calculate pattern risk.
-     *
-     * Checks buy/sell reversal patterns and currency switches.
-     *
-     * @param  int  $customerId  Customer ID
-     * @return array{pattern_reversal: bool, currency_switch: bool, details: array}
-     */
     public function calculatePatternRisk(int $customerId): array
+    {
+        if ($this->patternRiskService) {
+            return $this->patternRiskService->calculatePatternRisk($customerId);
+        }
+
+        return $this->legacyCalculatePatternRisk($customerId);
+    }
+
+    protected function legacyCalculatePatternRisk(int $customerId): array
     {
         $details = [];
 
@@ -207,7 +200,6 @@ class RiskCalculationService
             ];
         }
 
-        // Check for reversal (always buying, suddenly selling)
         $buyCount = $recentTransactions->where('type', TransactionType::Buy)->count();
         $sellCount = $recentTransactions->where('type', TransactionType::Sell)->count();
         $patternReversal = false;
@@ -222,7 +214,6 @@ class RiskCalculationService
             }
         }
 
-        // Check for currency switch
         $currencies = $recentTransactions->pluck('currency_code')->unique();
         $currencySwitch = $currencies->count() >= 3;
 
@@ -237,13 +228,6 @@ class RiskCalculationService
         ];
     }
 
-    /**
-     * Get overall risk score combining all factors.
-     *
-     * @param  int  $customerId  Customer ID
-     * @param  string|null  $currentAmount  Current transaction amount (optional)
-     * @return array{velocity: int, structuring: int, amount: int, cumulative: array, pattern: array, overall: int}
-     */
     public function getOverallRiskScore(int $customerId, ?string $currentAmount = null): array
     {
         $velocity = $this->calculateVelocityRisk($customerId);
@@ -252,10 +236,8 @@ class RiskCalculationService
         $cumulative = $this->calculateCumulativeRisk($customerId, $currentAmount);
         $pattern = $this->calculatePatternRisk($customerId);
 
-        // Calculate overall score (weighted)
         $overall = $velocity + $structuring + $amount;
 
-        // Add pattern risk if detected
         if ($pattern['pattern_reversal']) {
             $overall += 10;
         }
@@ -273,16 +255,12 @@ class RiskCalculationService
         ];
     }
 
-    /**
-     * Check if customer has high velocity (transaction count in window).
-     *
-     * @param  int  $customerId  Customer ID
-     * @param  int  $windowHours  Time window in hours
-     * @param  int  $threshold  Transaction count threshold
-     * @return array{triggered: bool, count: int, threshold: int}
-     */
     public function checkVelocityThreshold(int $customerId, int $windowHours = 24, int $threshold = 3): array
     {
+        if ($this->velocityRiskService) {
+            return $this->velocityRiskService->checkThreshold($customerId, $windowHours, $threshold);
+        }
+
         $count = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subHours($windowHours))
             ->where('status', '!=', TransactionStatus::Cancelled->value)
@@ -295,16 +273,12 @@ class RiskCalculationService
         ];
     }
 
-    /**
-     * Check structuring threshold.
-     *
-     * @param  int  $customerId  Customer ID
-     * @param  int  $windowHours  Time window in hours
-     * @param  int  $threshold  Transaction count threshold
-     * @return array{triggered: bool, count: int, threshold: int}
-     */
-    public function checkStructuringThreshold(int $customerId, int $windowHours = 1, int $threshold = 2): array
+    public function checkStructuringThreshold(int $customerId, int $windowHours = 1, int $threshold = 3): array
     {
+        if ($this->structuringRiskService) {
+            return $this->structuringRiskService->checkThreshold($customerId, $windowHours, $threshold);
+        }
+
         $subThreshold = $this->thresholdService->getStructuringSubThreshold();
 
         $count = Transaction::where('customer_id', $customerId)
@@ -318,5 +292,42 @@ class RiskCalculationService
             'count' => $count,
             'threshold' => $threshold,
         ];
+    }
+
+    public function checkVelocityAmountThreshold(int $customerId, string $newAmount): array
+    {
+        if ($this->velocityRiskService) {
+            return $this->velocityRiskService->checkAmountThreshold($customerId, $newAmount);
+        }
+
+        $startTime = now()->subHours(24);
+        $velocity = Transaction::where('customer_id', $customerId)
+            ->where('created_at', '>=', $startTime)
+            ->selectRaw('CAST(SUM(amount_local) AS CHAR) as total')
+            ->value('total') ?? '0';
+
+        $total = $this->mathService->add((string) $velocity, $newAmount);
+
+        return [
+            'amount_24h' => (string) $velocity,
+            'with_new_transaction' => $total,
+            'threshold_exceeded' => $this->mathService->compare($total, $this->thresholdService->getLargeTransactionThreshold()) >= 0,
+            'threshold_amount' => $this->thresholdService->getLargeTransactionThreshold(),
+        ];
+    }
+
+    public function isStructuring(int $customerId): bool
+    {
+        if ($this->structuringRiskService) {
+            return $this->structuringRiskService->isStructuring($customerId);
+        }
+
+        $oneHourAgo = now()->subHour();
+        $smallTransactions = Transaction::where('customer_id', $customerId)
+            ->where('created_at', '>=', $oneHourAgo)
+            ->where('amount_local', '<', $this->thresholdService->getStructuringSubThreshold())
+            ->count();
+
+        return $smallTransactions >= 3;
     }
 }

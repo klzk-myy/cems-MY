@@ -6,9 +6,9 @@ use App\Enums\RiskTrend;
 use App\Events\RiskScoreUpdated;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
-use App\Models\HighRiskCountry;
 use App\Models\RiskScoreSnapshot;
 use App\Models\Transaction;
+use App\Services\Risk\GeographicRiskService;
 use Illuminate\Support\Collection;
 
 class CustomerRiskScoringService
@@ -20,6 +20,7 @@ class CustomerRiskScoringService
         protected MathService $mathService,
         protected ThresholdService $thresholdService,
         protected RiskCalculationService $riskCalculationService,
+        protected ?GeographicRiskService $geographicRiskService = null,
     ) {}
 
     /**
@@ -223,27 +224,7 @@ class CustomerRiskScoringService
 
     protected function calculateGeographicScore(Customer $customer): int
     {
-        $score = 0;
-
-        $highRiskCountries = HighRiskCountry::pluck('country_code')->toArray();
-
-        if (in_array($customer->nationality, $highRiskCountries)) {
-            $score += 30;
-        }
-
-        $recentCountries = $customer->transactions()
-            ->where('created_at', '>=', now()->subDays(90))
-            ->pluck('counterparty_country')
-            ->filter()
-            ->unique();
-
-        foreach ($recentCountries as $country) {
-            if (in_array($country, $highRiskCountries)) {
-                $score += 15;
-            }
-        }
-
-        return min($score, 40);
+        return $this->geographicRiskService->calculateScore($customer);
     }
 
     protected function calculateAmountScore(Collection $transactions, Customer $customer): int
