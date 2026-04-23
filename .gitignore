@@ -39,4 +39,10 @@ Thumbs.db
 opencode.json
 .codex
 fau.md
+AUDIT_REPORT.md
+MVC_COMPLIANCE_GAP_ANALYSIS.md
+FINAL_SUMMARY.md
+DEPLOYMENT_READINESS.md
+FIXES_SUMMARY.md
+setup-step2-snapshot.md
 **/docs/
