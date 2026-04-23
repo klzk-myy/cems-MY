@@ -407,7 +407,8 @@ class TransactionService
 
             // If transaction requires approval (>= RM 3,000 and no compliance hold),
             // reserve stock immediately so it cannot be oversold
-            if ($status === TransactionStatus::PendingApproval) {
+            // Only reserve stock for Sell transactions (Buy transactions add stock, not consume it)
+            if ($status === TransactionStatus::PendingApproval && $data['type'] === TransactionType::Sell->value) {
                 $this->positionService->reserveStock($transaction);
             }
 

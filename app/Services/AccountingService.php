@@ -53,11 +53,10 @@ class AccountingService
     }
 
     /**
-     * Create a new journal entry with validation.
+     * Create a new journal entry with validation and post directly to ledger.
      *
      * Validates that the entry is balanced (debits equal credits) and creates
-     * in Draft status. Entries must be submitted for approval and then approved
-     * before being posted to the ledger.
+     * in Posted status, immediately posting to the general ledger.
      *
      * @param  array  $lines  Array of journal line items with keys:
      *                        - account_code: string Account code
@@ -100,15 +99,17 @@ class AccountingService
                 throw new ClosedPeriodException($period->period_code);
             }
 
-            // Create entry in Draft status - does NOT post to ledger yet
+            // Create entry in Posted status and immediately post to ledger
             $entry = JournalEntry::create([
                 'entry_date' => $entryDate,
                 'period_id' => $period?->id,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'description' => $description,
-                'status' => 'Draft',
+                'status' => 'Posted',
                 'created_by' => $createdBy,
+                'posted_by' => $createdBy,
+                'posted_at' => now(),
             ]);
 
             foreach ($lines as $line) {
@@ -121,6 +122,9 @@ class AccountingService
                 ]);
             }
 
+            // Post directly to ledger - no approval workflow needed
+            $this->updateLedger($entry);
+
             $this->auditService->log(
                 'journal_entry_created',
                 $createdBy,
@@ -131,7 +135,7 @@ class AccountingService
                     'reference_type' => $referenceType,
                     'reference_id' => $referenceId,
                     'description' => $description,
-                    'status' => 'Draft',
+                    'status' => 'Posted',
                 ]
             );
 

@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\AmlRuleController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\BranchOpeningController;
 use App\Http\Controllers\Compliance\AlertTriageController;
 use App\Http\Controllers\Compliance\CaseManagementController;
 use App\Http\Controllers\Compliance\ComplianceReportingController;
@@ -23,7 +24,6 @@ use App\Http\Controllers\EnhancedDiligenceController;
 use App\Http\Controllers\FinancialStatementController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
-use App\Http\Controllers\JournalEntryWorkflowController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\Report\AnalyticsController;
@@ -424,9 +424,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/journal', [AccountingController::class, 'store'])->name('journal.store');
         Route::get('/journal/{entry}', [AccountingController::class, 'show'])->name('journal.show');
         Route::post('/journal/{entry}/reverse', [AccountingController::class, 'reverse'])->name('journal.reverse');
-        Route::get('/journal/workflow', [JournalEntryWorkflowController::class, 'workflow'])->name('journal.workflow');
-        Route::post('/journal/{entry}/approve', [JournalEntryWorkflowController::class, 'approve'])->name('journal.approve');
-        Route::post('/journal/{entry}/submit', [JournalEntryWorkflowController::class, 'submit'])->name('journal.submit');
+
         Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger');
         Route::get('/ledger/{accountCode}', [LedgerController::class, 'account'])->name('ledger.account');
         Route::get('/trial-balance', [FinancialStatementController::class, 'trialBalance'])->name('trial-balance');
@@ -521,6 +519,18 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/{branch}/edit', [BranchController::class, 'edit'])->name('edit');
         Route::put('/{branch}', [BranchController::class, 'update'])->name('update');
         Route::delete('/{branch}', [BranchController::class, 'destroy'])->name('destroy');
+    });
+
+    // Branch Opening Wizard (Admin only)
+    Route::middleware(['auth', 'role:admin'])->prefix('branches/open')->name('branches.open.')->group(function () {
+        Route::get('/', [BranchOpeningController::class, 'index'])->name('index');
+        Route::get('/step1', [BranchOpeningController::class, 'step1'])->name('step1');
+        Route::post('/step1', [BranchOpeningController::class, 'processStep1'])->name('step1.process');
+        Route::get('/step2/{branch}', [BranchOpeningController::class, 'step2'])->name('step2');
+        Route::post('/step2/{branch}', [BranchOpeningController::class, 'processStep2'])->name('step2.process');
+        Route::get('/step3/{branch}', [BranchOpeningController::class, 'step3'])->name('step3');
+        Route::post('/step3/{branch}', [BranchOpeningController::class, 'processStep3'])->name('step3.process');
+        Route::get('/complete/{branch}', [BranchOpeningController::class, 'complete'])->name('complete');
     });
 
     // -------------------------------------------------------------------------

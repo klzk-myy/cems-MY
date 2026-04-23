@@ -34,28 +34,34 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($entries ?? [] as $entry)
-                <tr>
-                    <td>{{ $entry->date->format('d M Y') }}</td>
-                    <td class="font-mono text-xs">JE-{{ str_pad($entry->id, 6, '0', STR_PAD_LEFT) }}</td>
-                    <td>{{ $entry->description }}</td>
-                    <td class="text-[--color-ink-muted]">{{ $entry->lines->count() }} accounts</td>
-                    <td class="font-mono">{{ number_format($entry->total_debit, 2) }} MYR</td>
-                    <td>
-                        @php
-                            $statusClass = match($entry->status->value ?? '') {
-                                'Posted' => 'badge-success',
-                                'Pending' => 'badge-warning',
-                                'Draft' => 'badge-default',
-                                default => 'badge-default'
-                            };
-                        @endphp
-                        <span class="badge {{ $statusClass }}">{{ $entry->status->label() ?? 'Draft' }}</span>
-                    </td>
-                    <td>
-                        <a href="/accounting/journal/{{ $entry->id }}" class="btn btn-ghost btn-sm">View</a>
-                    </td>
-                </tr>
+                 @forelse($entries ?? [] as $entry)
+                 <tr>
+                     <td>{{ $entry->entry_date?->format('d M Y') ?? 'N/A' }}</td>
+                     <td class="font-mono text-xs">JE-{{ str_pad($entry->id, 6, '0', STR_PAD_LEFT) }}</td>
+                     <td>{{ $entry->description }}</td>
+                     <td class="text-[--color-ink-muted]">{{ $entry->lines->count() }} accounts</td>
+                     <td class="font-mono">{{ number_format($entry->getTotalDebits(), 2) }} MYR</td>
+                     <td>
+                         @php
+                             $statusValue = $entry->status instanceof \App\Enums\JournalEntryStatus
+                                 ? $entry->status->value
+                                 : (string)$entry->status;
+                             $statusLabel = $entry->status instanceof \App\Enums\JournalEntryStatus
+                                 ? $entry->status->label()
+                                 : (string)$entry->status;
+                             $statusClass = match($statusValue) {
+                                 'Posted' => 'badge-success',
+                                 'Pending' => 'badge-warning',
+                                 'Draft' => 'badge-default',
+                                 default => 'badge-default'
+                             };
+                         @endphp
+                         <span class="badge {{ $statusClass }}">{{ $statusLabel }}</span>
+                     </td>
+                     <td>
+                         <a href="/accounting/journal/{{ $entry->id }}" class="btn btn-ghost btn-sm">View</a>
+                     </td>
+                 </tr>
                 @empty
                 <tr>
                     <td colspan="7" class="text-center py-12 text-[--color-ink-muted]">No journal entries found</td>

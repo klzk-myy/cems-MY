@@ -95,6 +95,13 @@ class TransactionCancellationController extends Controller
             $transaction->version = ($transaction->version ?? 0) + 1;
             $transaction->save();
 
+            // Release stock reservation for PendingApproval transactions
+            // When a transaction is created with PendingApproval status, a stock reservation
+            // is created to prevent overselling. We need to release it on cancellation.
+            if ($originalStatus->isPendingApproval()) {
+                $this->positionService->releaseStockReservation($transaction->id);
+            }
+
             // Reverse stock position only for completed transactions (they have positions to reverse)
             if ($isCompleted) {
                 $this->reverseStockPosition($transaction, $originalTillId);

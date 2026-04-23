@@ -33,14 +33,20 @@
         <div class="card-header">
             <h3 class="card-title">{{ $counter->name }}</h3>
             @php
-                $statusClass = match($counter->status->value ?? '') {
+                $statusValue = $counter->status instanceof \App\Enums\CounterSessionStatus
+                    ? $counter->status->value
+                    : (string)$counter->status;
+                $statusLabel = $counter->status instanceof \App\Enums\CounterSessionStatus
+                    ? $counter->status->label()
+                    : (string)$counter->status;
+                $statusClass = match($statusValue) {
                     'Open' => 'badge-success',
                     'Closed' => 'badge-default',
                     'Paused' => 'badge-warning',
                     default => 'badge-default'
                 };
             @endphp
-            <span class="badge {{ $statusClass }}">{{ $counter->status->label() ?? 'Unknown' }}</span>
+            <span class="badge {{ $statusClass }}">{{ $statusLabel }}</span>
         </div>
         <div class="card-body">
             <div class="space-y-3">
@@ -60,7 +66,7 @@
         </div>
         <div class="card-footer flex gap-2">
             <a href="/counters/{{ $counter->id }}" class="btn btn-ghost btn-sm flex-1">View</a>
-            @if($counter->status->value === 'Open' && auth()->user()->role->isTeller())
+            @if($statusValue === 'Open' && auth()->user()->role->isTeller())
                 <a href="/counters/{{ $counter->id }}/handover" class="btn btn-secondary btn-sm flex-1">Handover</a>
             @endif
         </div>

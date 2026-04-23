@@ -40,7 +40,13 @@
             @csrf
             <div class="mb-4">
                 <label class="form-label">Reason for Cancellation</label>
-                <textarea name="reason" class="form-input" rows="3" required></textarea>
+                <textarea name="cancellation_reason" class="form-input" rows="3" required></textarea>
+            </div>
+            <div class="mb-4">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="confirm_understanding" required>
+                    <span class="text-sm">I understand that this cancellation request requires manager approval and cannot be undone.</span>
+                </label>
             </div>
             <div class="flex gap-3">
                 <button type="submit" class="btn btn-danger">Request Cancellation</button>
