@@ -18,9 +18,6 @@ php artisan test --filter=TransactionWorkflowTest
 # Run a single test class
 php artisan test --filter=MathServiceTest
 
-# Run via test runner script (includes category filtering)
-php test-runner.php
-
 # Lint (PSR-12 via Laravel Pint)
 ./vendor/bin/pint
 
@@ -163,11 +160,13 @@ return [
     'cdd' => ['standard' => '3000', 'large_transaction' => '50000'],
     'risk_scoring' => ['high' => '50000', 'medium' => '30000', 'low' => '10000'],
     'alert_triage' => ['critical' => '50000', 'high' => '30000', 'medium' => '10000'],
-    'reporting' => ['ctos' => '10000', 'ctr' => '50000', 'str' => '50000', 'edd' => '50000'],
-    'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3],
+    'reporting' => ['ctos' => '10000', 'ctr' => '50000', 'str' => '50000', 'edd' => '50000', 'lctr' => '50000'],
+    'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3, 'hourly_window' => 1, 'lookup_days' => 7],
     'duration' => ['warning_hours' => 24, 'critical_hours' => 48],
     'variance' => ['yellow' => '100.00', 'red' => '500.00'],
-    'velocity' => ['alert_threshold' => '50000'],
+    'velocity' => ['alert_threshold' => '50000', 'warning_threshold' => '45000', 'window_days' => 90],
+    'aml' => ['amount_threshold' => '50000', 'aggregate_threshold' => '50000'],
+    'currency_flow' => ['round_trip_threshold' => '5000', 'lookback_days' => 7],
 ];
 ```
 
@@ -270,3 +269,4 @@ Tests use `RefreshDatabase` trait and are in `tests/Feature/` and `tests/Unit/`.
 - **Cancellation**: ALL transaction cancellations require manager approval via `PendingCancellation` workflow.
 - **Concurrency**: Use `lockForUpdate()` for position updates to prevent race conditions.
 - **Database Transactions**: Wrap multi-step financial operations in `DB::transaction()` for atomicity (especially transactions ≥ RM 50,000).
+- **Thresholds**: All threshold values must be accessed via `ThresholdService` (read from `config/thresholds.php`). No hardcoded threshold constants in services.
