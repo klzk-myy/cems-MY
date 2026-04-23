@@ -52,22 +52,7 @@ class ComplianceService
     /**
      * BNM STR filing deadline in working days.
      */
-    public const STR_FILING_DEADLINE_DAYS = 3;
-
-    /**
-     * Large transaction threshold (RM 50,000).
-     */
-    public const LARGE_TRANSACTION_THRESHOLD = '50000';
-
-    /**
-     * Standard CDD threshold (RM 3,000).
-     */
-    public const STANDARD_CDD_THRESHOLD = '3000';
-
-    /**
-     * Cash Transaction Report threshold (RM 10,000) - BNM requirement.
-     */
-    public const CTOS_THRESHOLD = '10000';
+    private const STR_FILING_DEADLINE_DAYS = 3;
 
     /**
      * Create a new ComplianceService instance.
