@@ -14,6 +14,7 @@
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "maatwebsite/excel": "^3.1",
+        "maennchen/zipstream-php": "^3.1",
         "picqer/php-barcode-generator": "^3.2",
         "predis/predis": "^3.4",
         "simplesoftwareio/simple-qrcode": "^4.2",
@@ -69,6 +70,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.2.0"
         }
     },
     "minimum-stability": "stable",
