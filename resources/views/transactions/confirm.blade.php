@@ -81,7 +81,7 @@
                     <p class="font-semibold text-lg">{{ $transaction->customer->full_name ?? 'N/A' }}</p>
                     <p class="text-sm text-[--color-ink-muted]">{{ $transaction->customer->ic_number ?? 'N/A' }}</p>
                     <div class="flex gap-4 mt-2">
-                        <span class="badge badge-default">{{ $transaction->customer->cdd_level->label() ?? 'N/A' }}</span>
+                        <span class="badge badge-default">{{ $transaction->cdd_level->label() ?? 'N/A' }}</span>
                         @if($transaction->customer->is_pep ?? false)
                             <span class="badge badge-warning">PEP</span>
                         @endif
