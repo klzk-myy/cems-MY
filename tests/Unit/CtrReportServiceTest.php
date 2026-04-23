@@ -5,7 +5,9 @@ namespace Tests\Unit;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\CtrReportService;
+use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
 use Tests\TestCase;
 
 class CtrReportServiceTest extends TestCase
@@ -17,7 +19,9 @@ class CtrReportServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new CtrReportService;
+        $mockThreshold = Mockery::mock(ThresholdService::class);
+        $mockThreshold->shouldReceive('getCtrThreshold')->andReturn('25000');
+        $this->service = new CtrReportService($mockThreshold);
     }
 
     public function test_check_threshold_returns_not_exceeded_for_small_amount(): void

@@ -12,9 +12,10 @@ class CtrReportService
 
     protected float $ctrWarningThreshold;
 
-    public function __construct()
-    {
-        $this->ctrThreshold = (float) config('compliance.ctr_threshold', 25000);
+    public function __construct(
+        protected ThresholdService $thresholdService,
+    ) {
+        $this->ctrThreshold = (float) $this->thresholdService->getCtrThreshold();
         $this->ctrWarningThreshold = (float) config('compliance.ctr_warning_threshold', 20000);
     }
 

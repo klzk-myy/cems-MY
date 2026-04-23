@@ -19,7 +19,7 @@ class ThresholdService
 
     public const FALLBACK_CDD_LARGE = '50000';
 
-    public const FALLBACK_CTOS = '10000';
+    public const FALLBACK_CTOS = '25000';
 
     public const FALLBACK_CTR = '25000';
 
