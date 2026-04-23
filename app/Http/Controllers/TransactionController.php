@@ -97,8 +97,8 @@ class TransactionController extends Controller
             'idempotency_key' => 'required|string|max:100|unique:transactions,idempotency_key',
         ]);
 
-        // Derive till_id from counter and branch
-        $validated['till_id'] = 'TILL-'.$validated['counter_id'].'-'.$validated['branch_id'];
+        // Derive till_id from counter (backward compatibility)
+        $validated['till_id'] = (string) $validated['counter_id'];
 
         // Note: XSS protection is handled by Blade's automatic escaping on output
 
