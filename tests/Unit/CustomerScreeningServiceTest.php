@@ -53,6 +53,9 @@ class CustomerScreeningServiceTest extends TestCase
             'list_id' => $sanctionList->id,
             'entity_name' => 'John Smith',
             'normalized_name' => 'john smith',
+            'soundex_code' => soundex('John Smith'),
+            'metaphone_code' => metaphone('John Smith'),
+            'aliases' => [],
         ]);
 
         $response = $this->service->screenName('John Smith');
@@ -123,6 +126,9 @@ class CustomerScreeningServiceTest extends TestCase
             'list_id' => $sanctionList->id,
             'entity_name' => 'Mohammad Abu Hassan',
             'normalized_name' => 'mohammad abu hassan',
+            'soundex_code' => soundex('Mohammad Abu Hassan'),
+            'metaphone_code' => metaphone('Mohammad Abu Hassan'),
+            'aliases' => [],
         ]);
 
         $exactResponse = $this->service->screenName('Mohammad Abu Hassan');
