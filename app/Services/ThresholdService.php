@@ -21,7 +21,9 @@ class ThresholdService
 
     public const FALLBACK_CTOS = '10000';
 
-    public const FALLBACK_CTR = '50000';
+    public const FALLBACK_CTR = '25000';
+
+    public const FALLBACK_LCTR = '25000';
 
     public const FALLBACK_STR = '50000';
 
@@ -170,7 +172,7 @@ class ThresholdService
 
     public function getLctrThreshold(): string
     {
-        return (string) $this->get('reporting', 'lctr', 'FALLBACK_CTR');
+        return (string) $this->get('reporting', 'lctr', 'FALLBACK_LCTR');
     }
 
     // Risk scoring thresholds

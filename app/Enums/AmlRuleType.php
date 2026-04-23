@@ -57,7 +57,7 @@ enum AmlRuleType: string
             self::Structuring => [
                 'window_days' => 1,
                 'min_transaction_count' => 3,
-                'aggregate_threshold' => config('thresholds.structuring.aggregate_threshold', '50000'),
+                'aggregate_threshold' => config('thresholds.aml.aggregate_threshold', '50000'),
             ],
             self::AmountThreshold => [
                 'min_amount' => config('thresholds.cdd.large_transaction', '50000'),

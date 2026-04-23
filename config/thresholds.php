@@ -59,10 +59,10 @@ return [
     */
     'reporting' => [
         'ctos' => env('THRESHOLD_CTOS', '10000'),
-        'ctr' => env('THRESHOLD_CTR', '50000'),
+        'ctr' => env('THRESHOLD_CTR', '25000'),
         'str' => env('THRESHOLD_STR', '50000'),
         'edd' => env('THRESHOLD_EDD', '50000'),
-        'lctr' => env('THRESHOLD_LCTR', '50000'),
+        'lctr' => env('THRESHOLD_LCTR', '25000'),
     ],
 
     /*

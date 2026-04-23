@@ -10,7 +10,7 @@ class GenerateMonthlyLCTR extends Command
 {
     protected $signature = 'report:lctr {--month= : Specific month (Y-m), defaults to previous month}';
 
-    protected $description = 'Generate monthly Cash Transaction Report (CTR) for transactions >= RM50,000';
+    protected $description = 'Generate monthly Cash Transaction Report (LCTR) for transactions >= RM25,000';
 
     public function handle(ReportingService $reportingService): int
     {
