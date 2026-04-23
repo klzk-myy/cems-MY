@@ -27,10 +27,6 @@ class CounterService
         protected ThresholdService $thresholdService,
     ) {}
 
-    private const VARIANCE_THRESHOLD_YELLOW = 100.00;
-
-    private const VARIANCE_THRESHOLD_RED = 500.00;
-
     /**
      * Open a counter session
      *

@@ -11,9 +11,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportingService
 {
-    // BNM CTR Threshold: Transactions >= RM50,000 require CTR filing
-    public const CTR_THRESHOLD = 50000;
-
     protected EncryptionService $encryptionService;
 
     protected MathService $mathService;
