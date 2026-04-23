@@ -37,13 +37,13 @@ class ReportingServiceTest extends TestCase
     public function test_threshold_service_integration_for_lctr(): void
     {
         $ctrThreshold = $this->thresholdService->getCtrThreshold();
-        $this->assertEquals('50000', $ctrThreshold);
+        $this->assertEquals('25000', $ctrThreshold);
     }
 
     public function test_threshold_service_integration_for_ctos(): void
     {
         $ctosThreshold = $this->thresholdService->getCtosThreshold();
-        $this->assertEquals('10000', $ctosThreshold);
+        $this->assertEquals('25000', $ctosThreshold);
     }
 
     public function test_threshold_service_integration_for_str(): void
@@ -61,14 +61,14 @@ class ReportingServiceTest extends TestCase
     public function test_ctr_threshold_is_used_for_large_transaction_reporting(): void
     {
         $threshold = $this->thresholdService->getCtrThreshold();
-        $this->assertEquals('50000', $threshold);
+        $this->assertEquals('25000', $threshold);
         $this->assertIsString($threshold);
     }
 
     public function test_ctos_threshold_for_reporting(): void
     {
         $threshold = $this->thresholdService->getCtosThreshold();
-        $this->assertEquals('10000', $threshold);
+        $this->assertEquals('25000', $threshold);
         $this->assertIsString($threshold);
     }
 

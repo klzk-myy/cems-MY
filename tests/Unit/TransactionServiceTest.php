@@ -213,9 +213,10 @@ class TransactionServiceTest extends TestCase
         $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
 
         $this->assertInstanceOf(Transaction::class, $transaction);
-        // Transactions >= 50,000 or with hold requirements get PendingApproval status
+        // Transactions >= RM 10,000 (auto_approve threshold) get PendingApproval status
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
-        $this->assertEquals(CddLevel::Enhanced, $transaction->cdd_level);
+        // Amount 12000 * 4.5 = 54000 MYR >= 10000 = Standard CDD
+        $this->assertEquals(CddLevel::Standard, $transaction->cdd_level);
         $this->assertNotNull($transaction->hold_reason);
     }
 
@@ -385,12 +386,19 @@ class TransactionServiceTest extends TestCase
         $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
         $this->assertEquals(CddLevel::Simplified, $transaction->cdd_level);
 
-        // Test Standard CDD (RM 3,000 - 49,999)
+        // Test Specific CDD (RM 3,000 - 10,000) per pd-00.md 14C.12.1
         $data['amount_foreign'] = '1000.00'; // 1000 * 4.5 = 4500 MYR
         $data['idempotency_key'] = uniqid('test_', true);
 
         $transaction2 = $this->transactionService->createTransaction($data, $this->teller->id);
-        $this->assertEquals(CddLevel::Standard, $transaction2->cdd_level);
+        $this->assertEquals(CddLevel::Specific, $transaction2->cdd_level);
+
+        // Test Standard CDD (>= RM 10,000) per pd-00.md 14C.12.2
+        $data['amount_foreign'] = '3000.00'; // 3000 * 4.5 = 13500 MYR
+        $data['idempotency_key'] = uniqid('test_', true);
+
+        $transaction3 = $this->transactionService->createTransaction($data, $this->teller->id);
+        $this->assertEquals(CddLevel::Standard, $transaction3->cdd_level);
     }
 
     public function test_transaction_with_pep_customer_gets_enhanced_cdd(): void
@@ -469,18 +477,18 @@ class TransactionServiceTest extends TestCase
         CurrencyPosition::create([
             'currency_code' => 'USD',
             'till_id' => (string) $counter->id,
-            'balance' => '1000.00',
+            'balance' => '3000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
         ]);
 
         // Create transaction that will go to PendingApproval
-        // 700 USD * 4.50 = 3150 MYR >= RM 3,000 threshold for manager approval
+        // 2500 USD * 4.50 = 11250 MYR >= RM 10,000 auto_approve threshold
         $data = [
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '700.00',
+            'amount_foreign' => '2500.00',
             'rate' => '4.50',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
@@ -511,11 +519,11 @@ class TransactionServiceTest extends TestCase
     {
         $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
 
-        // Position has 500 USD
+        // Position has 2000 USD
         $position = CurrencyPosition::create([
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
-            'balance' => '500.00',
+            'balance' => '2000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
         ]);
@@ -537,13 +545,13 @@ class TransactionServiceTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        // Create a PendingApproval transaction for 300 USD (reservation created)
-        // 300 USD * 10.5 = 3150 MYR >= RM 3,000 threshold for manager approval
+        // Create a PendingApproval transaction for 1200 USD (reservation created)
+        // 1200 USD * 10.5 = 12600 MYR >= RM 10,000 auto_approve threshold
         $data = [
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '300.00',
+            'amount_foreign' => '1200.00',
             'rate' => '10.5',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',

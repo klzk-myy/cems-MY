@@ -24,7 +24,7 @@ return new class extends Migration
             }
 
             if (! Schema::hasColumn('customers', 'cdd_level')) {
-                $table->enum('cdd_level', ['Simplified', 'Standard', 'Enhanced'])->default('Simplified')->after('risk_rating');
+                $table->enum('cdd_level', ['Simplified', 'Specific', 'Standard', 'Enhanced'])->default('Simplified')->after('risk_rating');
             }
 
             if (! Schema::hasColumn('customers', 'occupation')) {

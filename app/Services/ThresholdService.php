@@ -15,7 +15,9 @@ class ThresholdService
 
     public const FALLBACK_MANAGER = '50000';
 
-    public const FALLBACK_CDD_STANDARD = '3000';
+    public const FALLBACK_CDD_SPECIFIC = '3000';
+
+    public const FALLBACK_CDD_STANDARD = '10000';
 
     public const FALLBACK_CDD_LARGE = '50000';
 
@@ -137,6 +139,11 @@ class ThresholdService
     }
 
     // CDD thresholds
+
+    public function getSpecificCddThreshold(): string
+    {
+        return (string) $this->get('cdd', 'specific', 'FALLBACK_CDD_SPECIFIC');
+    }
 
     public function getStandardCddThreshold(): string
     {

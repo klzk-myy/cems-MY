@@ -79,13 +79,11 @@ class ComplianceService
     }
 
     /**
-     * Determine the Customer Due Diligence (CDD) level for a transaction.
-     *
-     * Evaluates transaction amount and customer risk profile to assign
-     * appropriate due diligence level:
-     * - Enhanced: Amount ≥ RM 50,000, PEP status, sanctions match, or high risk rating
-     * - Standard: Amount ≥ RM 3,000
-     * - Simplified: Amount < RM 3,000 with no risk factors
+     * Determine CDD level per pd-00.md 14C.12 for MSB:
+     * - Simplified: < RM 3,000
+     * - Specific: RM 3,000 - 10,000
+     * - Standard: >= RM 10,000
+     * - Enhanced: PEP, Sanction match, or High risk (risk-based, not amount-based)
      *
      * SECURITY NOTE: This method always uses the customer's actual record values
      * for PEP status and sanctions screening. No override parameters are allowed
@@ -93,7 +91,7 @@ class ComplianceService
      *
      * @param  string  $amount  Transaction amount in MYR (as string for precision)
      * @param  Customer  $customer  The customer initiating the transaction
-     * @return CddLevel The determined CDD level (Simplified, Standard, or Enhanced)
+     * @return CddLevel The determined CDD level (Simplified, Specific, Standard, or Enhanced)
      */
     public function determineCDDLevel(string $amount, Customer $customer): CddLevel
     {
@@ -101,17 +99,19 @@ class ComplianceService
         $pepStatus = $customer->pep_status ?? false;
         $sanctionStatus = $this->checkSanctionMatch($customer);
 
-        // Enhanced Due Diligence triggers
-        if ($pepStatus || $sanctionStatus) {
+        // Enhanced Due Diligence triggers (risk-based per pd-00.md 14C.13)
+        if ($pepStatus || $sanctionStatus || $customer->risk_rating === 'High') {
             return CddLevel::Enhanced;
         }
 
-        if ($this->mathService->compare($amount, $this->thresholdService->getLargeTransactionThreshold()) >= 0 || $customer->risk_rating === 'High') {
-            return CddLevel::Enhanced;
-        }
-
+        // Standard CDD: >= RM 10,000 per pd-00.md 14C.12.2
         if ($this->mathService->compare($amount, $this->thresholdService->getStandardCddThreshold()) >= 0) {
             return CddLevel::Standard;
+        }
+
+        // Specific CDD: >= RM 3,000 per pd-00.md 14C.12.1
+        if ($this->mathService->compare($amount, $this->thresholdService->getSpecificCddThreshold()) >= 0) {
+            return CddLevel::Specific;
         }
 
         return CddLevel::Simplified;

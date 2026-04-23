@@ -17,7 +17,7 @@ class ThresholdServiceTest extends TestCase
 
     public function test_get_auto_approve_threshold(): void
     {
-        $this->assertEquals('3000', $this->service->getAutoApproveThreshold());
+        $this->assertEquals('10000', $this->service->getAutoApproveThreshold());
     }
 
     public function test_get_manager_approval_threshold(): void
@@ -27,7 +27,7 @@ class ThresholdServiceTest extends TestCase
 
     public function test_get_standard_cdd_threshold(): void
     {
-        $this->assertEquals('3000', $this->service->getStandardCddThreshold());
+        $this->assertEquals('10000', $this->service->getStandardCddThreshold());
     }
 
     public function test_get_large_transaction_threshold(): void
@@ -37,12 +37,12 @@ class ThresholdServiceTest extends TestCase
 
     public function test_get_ctos_threshold(): void
     {
-        $this->assertEquals('10000', $this->service->getCtosThreshold());
+        $this->assertEquals('25000', $this->service->getCtosThreshold());
     }
 
     public function test_get_ctr_threshold(): void
     {
-        $this->assertEquals('50000', $this->service->getCtrThreshold());
+        $this->assertEquals('25000', $this->service->getCtrThreshold());
     }
 
     public function test_get_str_threshold(): void

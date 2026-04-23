@@ -174,11 +174,11 @@ class TransactionWorkflowTest extends TestCase
 
         $tillId = (string) $counter->id;
 
-        // Create USD position with exactly 500 USD
+        // Create USD position with exactly 1500 USD
         $position = CurrencyPosition::create([
             'currency_code' => 'USD',
             'till_id' => $tillId,
-            'balance' => '500.00',
+            'balance' => '1500.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
         ]);
@@ -199,13 +199,13 @@ class TransactionWorkflowTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        // Transaction 1: Sell 300 USD at rate 10.5 = RM 3150 (PendingApproval, reserves 300)
+        // Transaction 1: Sell 1000 USD at rate 10.5 = RM 10500 (PendingApproval, reserves 1000)
         $data1 = [
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '300.00',
-            'rate' => '10.50', // 300 * 10.5 = 3150 >= 3000 = PendingApproval
+            'amount_foreign' => '1000.00',
+            'rate' => '10.50', // 1000 * 10.5 = 10500 >= 10000 = PendingApproval
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
             'till_id' => $tillId,
@@ -215,12 +215,12 @@ class TransactionWorkflowTest extends TestCase
         $t1 = $this->transactionService->createTransaction($data1, $this->teller->id);
         $this->assertEquals(TransactionStatus::PendingApproval, $t1->status);
 
-        // Transaction 2: Try to sell 250 USD - should fail because only 200 available (300 reserved)
+        // Transaction 2: Try to sell 800 USD - should fail because only 500 available (1000 reserved)
         $data2 = [
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '250.00',
+            'amount_foreign' => '800.00',
             'rate' => '10.50',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',

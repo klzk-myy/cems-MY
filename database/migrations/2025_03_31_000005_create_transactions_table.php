@@ -38,7 +38,7 @@ return new class extends Migration
             $table->text('hold_reason')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users');
             $table->timestamp('approved_at')->nullable();
-            $table->enum('cdd_level', ['Simplified', 'Standard', 'Enhanced']);
+            $table->enum('cdd_level', ['Simplified', 'Specific', 'Standard', 'Enhanced']);
             $table->timestamps();
             $table->index(['customer_id', 'created_at']);
             $table->index('status');

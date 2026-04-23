@@ -20,13 +20,16 @@ return [
     | CDD (Customer Due Diligence) Thresholds
     |--------------------------------------------------------------------------
     |
-    | Simplified: < standard
-    | Standard: >= standard AND < large_transaction
-    | Enhanced: >= large_transaction OR PEP/sanctions/high risk
+    | Per pd-00.md 14C.12 for MSB:
+    | Simplified: < specific (typically < RM 3,000)
+    | Specific: >= specific AND < standard (RM 3,000 - 10,000)
+    | Standard: >= standard (>= RM 10,000)
+    | Enhanced: risk-based (PEP, Sanction, High risk) - not amount-based
     |
     */
     'cdd' => [
-        'standard' => env('THRESHOLD_CDD_STANDARD', '3000'),
+        'specific' => env('THRESHOLD_CDD_SPECIFIC', '3000'),
+        'standard' => env('THRESHOLD_CDD_STANDARD', '10000'),
         'large_transaction' => env('THRESHOLD_CDD_LARGE', '50000'),
     ],
 

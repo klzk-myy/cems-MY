@@ -52,7 +52,8 @@ class TransactionServicePreValidationTest extends TestCase
             'risk_rating' => 'Low',
         ]);
 
-        $result = $this->service->preValidate($customer, '5000.00', 'USD');
+        // Amount >= 10000 MYR = Standard CDD per pd-00.md 14C.12.2
+        $result = $this->service->preValidate($customer, '12000.00', 'USD');
 
         $this->assertFalse($result->isBlocked());
         $this->assertFalse($result->isHoldRequired());

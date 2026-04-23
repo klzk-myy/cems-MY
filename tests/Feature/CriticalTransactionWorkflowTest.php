@@ -201,29 +201,29 @@ class CriticalTransactionWorkflowTest extends TestCase
     public function test_concurrent_transactions_respect_stock_reservations(): void
     {
         // Create initial position with limited stock
-        $this->createPosition('1000.00');
+        $this->createPosition('3000.00');
 
-        // Create first pending transaction (700 USD * 4.50 = 3150 MYR >= 3000, requires approval)
-        $transaction1 = $this->createPendingTransaction($this->teller, '700.00');
+        // Create first pending transaction (2500 USD * 4.50 = 11250 MYR >= 10000, requires approval)
+        $transaction1 = $this->createPendingTransaction($this->teller, '2500.00');
 
-        // Verify reservation exists (700 USD)
+        // Verify reservation exists (2500 USD)
         $this->assertDatabaseHas('stock_reservations', [
             'transaction_id' => $transaction1->id,
-            'amount_foreign' => '700.00',
+            'amount_foreign' => '2500.00',
             'status' => StockReservationStatus::Pending->value,
         ]);
 
-        // Available balance should be 300 (1000 - 700 reserved)
+        // Available balance should be 500 (3000 - 2500 reserved)
         $available = $this->getAvailableBalance();
-        $this->assertEquals('300.00', $available);
+        $this->assertEquals('500.00', $available);
 
-        // Attempt to create second transaction for 500 (should fail - insufficient available)
+        // Attempt to create second transaction for 800 (should fail - insufficient available)
         $response = $this->actingAs($this->teller)
             ->postJson('/api/v1/transactions', [
                 'customer_id' => $this->customer->id,
                 'type' => TransactionType::Sell->value,
                 'currency_code' => 'USD',
-                'amount_foreign' => '500.00',
+                'amount_foreign' => '800.00',
                 'rate' => '4.50',
                 'till_id' => (string) $this->counter->id,
                 'purpose' => 'Test transaction',
@@ -232,7 +232,7 @@ class CriticalTransactionWorkflowTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonFragment([
-                'message' => 'Insufficient stock for USD. Requested: 500.00, Available: 300.000000',
+                'message' => 'Insufficient stock for USD. Requested: 800.00, Available: 500.000000',
             ]);
     }
 
@@ -251,30 +251,34 @@ class CriticalTransactionWorkflowTest extends TestCase
         $smallTransaction->refresh();
         $this->assertEquals(TransactionStatus::Completed, $smallTransaction->status, '665 USD (2992.5 MYR) should be Completed');
 
-        // Transaction >= RM 3,000 should require approval (1000 USD * 4.50 = 4500 MYR >= 3000)
-        $largeTransaction = $this->createTransaction($this->teller, '1000.00');
+        // Transaction >= RM 10,000 (auto_approve threshold) should require approval (2500 USD * 4.50 = 11250 MYR >= 10000)
+        $largeTransaction = $this->createTransaction($this->teller, '2500.00');
         $largeTransaction->refresh();
-        $this->assertEquals(TransactionStatus::PendingApproval, $largeTransaction->status, '1000 USD (4500 MYR) should be PendingApproval');
+        $this->assertEquals(TransactionStatus::PendingApproval, $largeTransaction->status, '2500 USD (11250 MYR) should be PendingApproval');
     }
 
     /**
      * Test: CDD level determination uses correct thresholds
+     * Note: Amount is in USD, converted to MYR at rate 4.50
      */
     public function test_cdd_level_determination_thresholds(): void
     {
-        // < RM 3,000 = Simplified (500 USD * 4.50 = 2250 MYR < 3000)
+        // Per pd-00.md 14C.12 for MSB (amounts converted to MYR at 4.50):
+        // < RM 3,000 = Simplified (e.g., 500 USD = 2250 MYR < 3000)
         $this->assertEquals(CddLevel::Simplified, $this->getCddLevel('500.00'));
+        $this->assertEquals(CddLevel::Simplified, $this->getCddLevel('666.66')); // ~2999.97 MYR
 
-        // >= RM 3,000 = Standard (3000 USD * 4.50 = 13500 MYR >= 3000)
+        // RM 3,000 - 10,000 = Specific (e.g., 1000 USD = 4500 MYR, 2000 USD = 9000 MYR)
+        $this->assertEquals(CddLevel::Specific, $this->getCddLevel('1000.00'));
+        $this->assertEquals(CddLevel::Specific, $this->getCddLevel('2000.00'));
+
+        // >= RM 10,000 = Standard (e.g., 3000 USD = 13500 MYR >= 10000)
         $this->assertEquals(CddLevel::Standard, $this->getCddLevel('3000.00'));
-        $this->assertEquals(CddLevel::Standard, $this->getCddLevel('4999.99'));
-
-        // >= RM 50,000 = Enhanced (50000 USD * 4.50 = 225000 MYR >= 50000)
-        $this->assertEquals(CddLevel::Enhanced, $this->getCddLevel('50000.00'));
+        $this->assertEquals(CddLevel::Standard, $this->getCddLevel('50000.00'));
 
         // PEP customer = Enhanced regardless of amount
         $pepCustomer = Customer::factory()->create(['pep_status' => true]);
-        $this->assertEquals(CddLevel::Enhanced, $this->getCddLevel('1000.00', $pepCustomer));
+        $this->assertEquals(CddLevel::Enhanced, $this->getCddLevel('100.00', $pepCustomer));
     }
 
     /**

@@ -14,13 +14,14 @@ class ThresholdConfigTest extends TestCase
 
     public function test_approval_thresholds_exist(): void
     {
-        $this->assertEquals('3000', config('thresholds.approval.auto_approve'));
+        $this->assertEquals('10000', config('thresholds.approval.auto_approve'));
         $this->assertEquals('50000', config('thresholds.approval.manager'));
     }
 
     public function test_cdd_thresholds_exist(): void
     {
-        $this->assertEquals('3000', config('thresholds.cdd.standard'));
+        $this->assertEquals('3000', config('thresholds.cdd.specific'));
+        $this->assertEquals('10000', config('thresholds.cdd.standard'));
         $this->assertEquals('50000', config('thresholds.cdd.large_transaction'));
     }
 
@@ -40,11 +41,11 @@ class ThresholdConfigTest extends TestCase
 
     public function test_reporting_thresholds_exist(): void
     {
-        $this->assertEquals('10000', config('thresholds.reporting.ctos'));
-        $this->assertEquals('50000', config('thresholds.reporting.ctr'));
+        $this->assertEquals('25000', config('thresholds.reporting.ctos'));
+        $this->assertEquals('25000', config('thresholds.reporting.ctr'));
         $this->assertEquals('50000', config('thresholds.reporting.str'));
         $this->assertEquals('50000', config('thresholds.reporting.edd'));
-        $this->assertEquals('50000', config('thresholds.reporting.lctr'));
+        $this->assertEquals('25000', config('thresholds.reporting.lctr'));
     }
 
     public function test_structuring_thresholds_exist(): void
