@@ -81,7 +81,8 @@ public function __construct(
 All monetary calculations use `App\Services\MathService` (BCMath), not floats. Never cast money values to `float`.
 
 **5. Compliance Workflow**
-- Transactions ≥ RM 3,000 (no compliance hold) require manager approval via `PendingApproval` status
+
+- Transactions ≥ RM 10,000 (auto_approve threshold) require manager approval via `PendingApproval` status
 - Transactions ≥ RM 50,000 OR high-risk customers go to `Pending` status (compliance hold)
 - `ComplianceService` runs CDD determination and CTOS reporting (both Buy and Sell)
 - `TransactionMonitoringService` runs automated compliance monitors via background jobs:
@@ -156,11 +157,11 @@ All threshold amounts are centralized in `config/thresholds.php` and accessed vi
 ```php
 // config/thresholds.php structure
 return [
-    'approval' => ['auto_approve' => '3000', 'manager' => '50000'],
-    'cdd' => ['standard' => '3000', 'large_transaction' => '50000'],
+    'approval' => ['auto_approve' => '10000', 'manager' => '50000'],
+    'cdd' => ['specific' => '3000', 'standard' => '10000', 'large_transaction' => '50000'],
     'risk_scoring' => ['high' => '50000', 'medium' => '30000', 'low' => '10000'],
     'alert_triage' => ['critical' => '50000', 'high' => '30000', 'medium' => '10000'],
-    'reporting' => ['ctos' => '10000', 'ctr' => '50000', 'str' => '50000', 'edd' => '50000', 'lctr' => '50000'],
+    'reporting' => ['ctos' => '25000', 'ctr' => '25000', 'str' => '50000', 'edd' => '50000', 'lctr' => '25000'],
     'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3, 'hourly_window' => 1, 'lookup_days' => 7],
     'duration' => ['warning_hours' => 24, 'critical_hours' => 48],
     'variance' => ['yellow' => '100.00', 'red' => '500.00'],
@@ -210,12 +211,14 @@ Counters (tills) with full lifecycle:
 
 ### Compliance & AML
 
-**CDD Levels** (`CddLevel` enum):
-- `Simplified` - Transaction < RM 3,000
-- `Standard` - RM 3,000 to RM 49,999
-- `Enhanced` - ≥ RM 50,000 OR PEP OR Sanction match
+**CDD Levels** (`CddLevel` enum, per pd-00.md 14C.12):
 
-**CTOS Reporting**: Applies to ALL cash transactions (Buy and Sell) ≥ RM 10,000
+- `Simplified` - Transaction < RM 3,000
+- `Specific` - RM 3,000 to RM 10,000 (reduced documentation per 14C.12.1)
+- `Standard` - ≥ RM 10,000 (full documentation per 14C.12.2)
+- `Enhanced` - Risk-based: PEP, Sanction match, or High risk (per 14C.13)
+
+**CTOS Reporting**: Applies to ALL cash transactions (Buy and Sell) ≥ RM 25,000
 
 **Structuring Detection**: 7-day lookback for aggregate transactions (configurable)
 
@@ -223,7 +226,7 @@ Counters (tills) with full lifecycle:
 
 BNM compliance reports via Artisan commands:
 - `report:msb2` - Daily transaction summary
-- `report:lctr` - Large Cash Transaction Report (≥ RM 50k) - **Monthly**
+- `report:lctr` - Large Cash Transaction Report (≥ RM 25,000) - **Monthly**
 - `report:lmca` - Monthly LMCA
 - `report:qlvr` - Quarterly Large Value
 - `compliance:rescreen` - Monthly sanctions rescreening
@@ -268,5 +271,5 @@ Tests use `RefreshDatabase` trait and are in `tests/Feature/` and `tests/Unit/`.
 - **Query Parameters**: Use parameterized queries for user-supplied values in LIKE clauses.
 - **Cancellation**: ALL transaction cancellations require manager approval via `PendingCancellation` workflow.
 - **Concurrency**: Use `lockForUpdate()` for position updates to prevent race conditions.
-- **Database Transactions**: Wrap multi-step financial operations in `DB::transaction()` for atomicity (especially transactions ≥ RM 50,000).
+- **Database Transactions**: Wrap multi-step financial operations in `DB::transaction()` for atomicity (especially transactions ≥ RM 25,000).
 - **Thresholds**: All threshold values must be accessed via `ThresholdService` (read from `config/thresholds.php`). No hardcoded threshold constants in services.
