@@ -247,30 +247,32 @@ class AccountingService
      */
     protected function updateLedger(JournalEntry $entry): void
     {
-        foreach ($entry->lines as $line) {
-            $currentBalance = $this->getAccountBalance($line->account_code);
+        DB::transaction(function () use ($entry) {
+            foreach ($entry->lines as $line) {
+                $currentBalance = $this->getAccountBalance($line->account_code);
 
-            if ($this->isDebitAccount($line->account_code)) {
-                $newBalance = $this->mathService->add(
-                    $this->mathService->add($currentBalance, (string) $line->debit),
-                    $this->mathService->multiply((string) $line->credit, '-1')
-                );
-            } else {
-                $newBalance = $this->mathService->add(
-                    $this->mathService->add($currentBalance, (string) $line->credit),
-                    $this->mathService->multiply((string) $line->debit, '-1')
-                );
+                if ($this->isDebitAccount($line->account_code)) {
+                    $newBalance = $this->mathService->add(
+                        $this->mathService->add($currentBalance, (string) $line->debit),
+                        $this->mathService->multiply((string) $line->credit, '-1')
+                    );
+                } else {
+                    $newBalance = $this->mathService->add(
+                        $this->mathService->add($currentBalance, (string) $line->credit),
+                        $this->mathService->multiply((string) $line->debit, '-1')
+                    );
+                }
+
+                AccountLedger::create([
+                    'account_code' => $line->account_code,
+                    'entry_date' => $entry->entry_date,
+                    'journal_entry_id' => $entry->id,
+                    'debit' => $line->debit,
+                    'credit' => $line->credit,
+                    'running_balance' => $newBalance,
+                ]);
             }
-
-            AccountLedger::create([
-                'account_code' => $line->account_code,
-                'entry_date' => $entry->entry_date,
-                'journal_entry_id' => $entry->id,
-                'debit' => $line->debit,
-                'credit' => $line->credit,
-                'running_balance' => $newBalance,
-            ]);
-        }
+        });
     }
 
     /**
@@ -299,9 +301,10 @@ class AccountingService
      *
      * @param  string  $accountCode  The account code to query
      * @param  string|null  $asOfDate  Date in YYYY-MM-DD format (default: current date)
+     * @param  int|null  $branchId  Optional branch ID to filter by
      * @return string Account balance as a string for precision
      */
-    public function getAccountBalance(string $accountCode, ?string $asOfDate = null): string
+    public function getAccountBalance(string $accountCode, ?string $asOfDate = null, ?int $branchId = null): string
     {
         $query = AccountLedger::where('account_code', $accountCode);
 
@@ -309,6 +312,12 @@ class AccountingService
             // Use date function for cross-database compatibility
             // This ensures proper comparison regardless of datetime vs date storage
             $query->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);
+        }
+
+        if ($branchId !== null) {
+            $query->whereHas('journalEntry', function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
         }
 
         $lastEntry = $query->orderBy('entry_date', 'desc')

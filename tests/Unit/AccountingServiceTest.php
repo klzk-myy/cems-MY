@@ -2,6 +2,10 @@
 
 namespace Tests\Unit;
 
+use App\Models\AccountLedger;
+use App\Models\ChartOfAccount;
+use App\Services\AccountingService;
+use App\Services\AuditService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -182,5 +186,64 @@ class AccountingServiceTest extends TestCase
 
         $this->assertEquals(0, $totalDebits);
         $this->assertEquals(0, $totalCredits);
+    }
+
+    public function test_update_ledger_is_atomic(): void
+    {
+        // Create test accounts
+        $cashAccount = ChartOfAccount::create([
+            'account_code' => '9999',
+            'account_name' => 'Test Cash',
+            'account_type' => 'Asset',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+
+        $revenueAccount = ChartOfAccount::create([
+            'account_code' => '5999',
+            'account_name' => 'Test Revenue',
+            'account_type' => 'Revenue',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+
+        // Create the accounting service
+        $auditService = new AuditService;
+        $accountingService = new AccountingService($this->mathService, $auditService);
+
+        // Count ledger entries before
+        $initialCount = AccountLedger::count();
+
+        // Create a journal entry via the service
+        $entry = $accountingService->createJournalEntry(
+            [
+                ['account_code' => '9999', 'debit' => '1000.00', 'credit' => '0'],
+                ['account_code' => '5999', 'debit' => '0', 'credit' => '1000.00'],
+            ],
+            'Test',
+            null,
+            'Atomic test entry'
+        );
+
+        // All ledger entries should be created or none
+        $newCount = AccountLedger::count();
+        $expectedNewEntries = 2;
+
+        $this->assertEquals($initialCount + $expectedNewEntries, $newCount);
+
+        // Verify the ledger entries exist with correct data
+        $cashLedger = AccountLedger::where('account_code', '9999')
+            ->where('journal_entry_id', $entry->id)
+            ->first();
+        $this->assertNotNull($cashLedger);
+        $this->assertEquals('1000.0000', $cashLedger->debit);
+        $this->assertEquals('0.0000', $cashLedger->credit);
+
+        $revenueLedger = AccountLedger::where('account_code', '5999')
+            ->where('journal_entry_id', $entry->id)
+            ->first();
+        $this->assertNotNull($revenueLedger);
+        $this->assertEquals('0.0000', $revenueLedger->debit);
+        $this->assertEquals('1000.0000', $revenueLedger->credit);
     }
 }
