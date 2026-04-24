@@ -46,4 +46,14 @@ class LedgerServiceTest extends TestCase
     {
         $this->markTestSkipped('Requires full service setup with DI - integration test');
     }
+
+    public function test_get_account_balance_respects_branch_filter(): void
+    {
+        $this->markTestSkipped('Requires full service setup with DI - integration test');
+    }
+
+    public function test_profit_loss_by_branch(): void
+    {
+        $this->markTestSkipped('Requires full service setup with DI - integration test');
+    }
 }
