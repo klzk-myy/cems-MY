@@ -16,7 +16,7 @@
         <span class="badge {{ $statusClass }}">{{ $entry->status->label() ?? 'Draft' }}</span>
     </div>
     <div class="card-body">
-        <p><strong>Date:</strong> {{ $entry->date->format('d M Y') }}</p>
+        <p><strong>Date:</strong> {{ $entry->entry_date->format('d M Y') }}</p>
         <p><strong>Description:</strong> {{ $entry->description }}</p>
     </div>
     <div class="table-container">
@@ -29,13 +29,16 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($entry->lines ?? [] as $line)
+                @foreach($entry->lines ?? [] as $line)
                 <tr>
                     <td>{{ $line->account->name ?? 'N/A' }} ({{ $line->account_code }})</td>
                     <td class="font-mono">{{ $line->debit > 0 ? number_format($line->debit, 2) : '-' }}</td>
                     <td class="font-mono">{{ $line->credit > 0 ? number_format($line->credit, 2) : '-' }}</td>
                 </tr>
-                @endforelse
+                @endforeach
+                @if(empty($entry->lines ?? []))
+                <tr><td colspan="3" class="text-muted">No journal lines.</td></tr>
+                @endif
             </tbody>
         </table>
     </div>
