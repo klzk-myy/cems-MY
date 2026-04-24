@@ -7,6 +7,7 @@ use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionCancelled;
+use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\JournalEntry;
 use App\Models\StockReservation;
@@ -542,11 +543,11 @@ class TransactionCancellationService
     {
         $positionService = $this->positionService;
 
-        // Get the position first to check balance
-        $position = $positionService->getPosition(
-            $transaction->currency_code,
-            $transaction->till_id
-        );
+        // Acquire lock before getting position to prevent race conditions
+        $position = CurrencyPosition::where('currency_code', $transaction->currency_code)
+            ->where('till_id', $transaction->till_id)
+            ->lockForUpdate()
+            ->first();
 
         if (! $position) {
             Log::warning('No position found for reversal', [

@@ -72,9 +72,12 @@ class TransactionStateMachine
      * Create a new TransactionStateMachine instance.
      *
      * @param  Transaction  $transaction  The transaction to manage
+     * @param  AuditService|null  $auditService  Optional audit service for compliance logging
      */
-    public function __construct(protected Transaction $transaction)
-    {
+    public function __construct(
+        protected Transaction $transaction,
+        protected ?AuditService $auditService = null
+    ) {
         $this->loadHistory();
     }
 
@@ -398,6 +401,21 @@ class TransactionStateMachine
             $this->transaction->cancellation_reason = $reason;
         }
 
-        return $this->transaction->save();
+        $saved = $this->transaction->save();
+
+        // Log forced transition to audit trail for BNM compliance
+        if ($this->auditService) {
+            $this->auditService->logTransaction('force_status_override', $this->transaction->id, [
+                'new' => [
+                    'from' => $from->value,
+                    'to' => $status->value,
+                    'reason' => $reason,
+                    'user_id' => auth()->id(),
+                    'forced' => true,
+                ],
+            ]);
+        }
+
+        return $saved;
     }
 }
