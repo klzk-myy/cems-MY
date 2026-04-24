@@ -54,7 +54,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
   - Enhanced: ≥ RM 50,000 OR PEP OR Sanction match
 
 - **CTOS Reporting**
-  - All cash transactions (Buy and Sell) ≥ RM 10,000
+  - All cash transactions (Buy and Sell) ≥ RM 25,000
   - Compliance officer sign-off workflow via `POST /api/v1/compliance/ctos/{id}/submit`
 
 - **STR Generation & Automation**

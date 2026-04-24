@@ -117,7 +117,7 @@ All monetary calculations use `App\Services\MathService` (BCMath), not floats. N
 Events fire for critical operations (`TransactionCreated`, `CounterSessionOpened`, etc.) with listeners for audit logging, notifications, and compliance triggers.
 
 **9. Background Processing**
-Laravel queues handle async compliance screening, STR report submission, and sanctions rescreening via `App\Jobs\`.
+Laravel queues handle async compliance screening, STR report submission, and sanctions rescreening via `App\Jobs\`. Laravel Horizon provides a dashboard to monitor queue jobs, failures, and throughput (`php artisan horizon`).
 
 **10. Role Hierarchy**
 Permissions inherit upward: `Admin` > `ComplianceOfficer` > `Manager` > `Teller`.
@@ -126,6 +126,9 @@ Permissions inherit upward: `Admin` > `ComplianceOfficer` > `Manager` > `Teller`
 
 **11. Security Features**
 - MFA required for ALL roles including Tellers (BNM compliance)
+  - `EnsureMfaEnabled` forces MFA setup on first login for all roles
+  - `EnsureMfaVerified` requires re-verification for sensitive operations (15-min session expiry, trusted device bypass)
+  - Scope: MFA is enforced on write/approval operations (transaction creation, approvals, admin functions). Non-sensitive read operations (viewing transactions, customers, counters) do not require MFA.
 - IP-based blocking after 10 failed login attempts (5-minute window, 1-hour block duration)
 - Strict rate limiting on sensitive endpoints (login: 5/min, API: 30/min, transactions: 10/min, STR: 3/min, bulk: 1/5min, export: 5/min, sensitive: 3/min)
 - Session timeout (configurable, default 8 hours)
@@ -133,8 +136,6 @@ Permissions inherit upward: `Admin` > `ComplianceOfficer` > `Manager` > `Teller`
 - Password complexity requirements (min 12 chars, mixed case, number, special char, max 5 attempts, 15-min lockout)
 - HSTS support (configurable max-age, includeSubDomains, preload)
 - IP whitelist support (exact IPs and CIDR notation)
-
-**Note on MFA scope**: MFA is enforced on sensitive operations (transaction creation, approvals, admin functions). Non-sensitive read operations (viewing transactions, customers, counters) do not require MFA.
 
 ### Middleware Stack
 
@@ -152,7 +153,15 @@ Routes use these middleware:
 
 **12. Centralized Threshold Configuration**
 
-All threshold amounts are centralized in `config/thresholds.php` and accessed via `ThresholdService`:
+All threshold amounts are centralized in `config/thresholds.php` and accessed **only** via `ThresholdService`. Direct calls to `config('thresholds.*')` in services are prohibited — this prevents hardcoded constants from diverging from the centralized source:
+
+```php
+// ✅ Correct: use ThresholdService
+$threshold = thresholdService()->getAutoApprove();
+
+// ❌ Wrong: hardcoded constant
+$threshold = 10000;
+```
 
 ```php
 // config/thresholds.php structure
@@ -262,6 +271,7 @@ Tests use `RefreshDatabase` trait and are in `tests/Feature/` and `tests/Unit/`.
 - **Enums**: All magic strings (statuses, types, roles) should be converted to PHP enums.
 - **Audit**: Critical operations must create `SystemLog` entries with hash chaining.
 - **Hash Verification**: `AuditService::verifyChainIntegrity()` verifies the tamper-evident chain by recomputing each entry's SHA-256 hash and checking the `previous_hash` chain link. Returns `{valid: bool, broken_at: int|null, message: string}`. Call this method to detect any tampering with audit log entries.
+- **Async Hash Sealing**: `AuditService::logWithSeverity()` creates entries with `hash` and `previous_hash` set to null; `SealAuditHashJob` seals the chain asynchronously via Laravel queue. This avoids global DB lock contention when high-throughput operations (e.g., bulk transactions) all try to update the chain simultaneously. Unsealed entries can be monitored via `getUnsealedCount()`.
 - **RBAC**: Check permissions via enum methods, not string comparison.
 - **Services over Controllers**: Business logic belongs in services, not controllers.
 - **Encryption**: Use `EncryptionService` with random IV per encryption (IV prepended to ciphertext).
