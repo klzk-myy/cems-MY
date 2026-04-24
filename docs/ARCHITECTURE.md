@@ -318,6 +318,14 @@ The system enforces this by checking that `$approver->id !== $cancellationReques
 - Parent: `1000` (Cash-MYR), enabling hierarchical balance sheet reporting
 - Each branch MYR cash account tracks branch-specific floating cash
 
+### Chart of Accounts (Key Codes)
+- `1000` — Cash-MYR (main house account)
+- `1021/1022/1023` — Branch MYR cash (per branch)
+- `2000` — Foreign Currency Inventory
+- `3000` — Accounts Payable / `3100` — Accruals
+- `4000` — Capital (paid-in), `4100` — Retained Earnings
+- `5000` — Forex Trading Revenue, `6000` — Forex Loss
+
 ## Security Controls
 
 1. **MFA Enforcement**: All sensitive operations require MFA verification

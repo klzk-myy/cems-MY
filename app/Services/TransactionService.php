@@ -859,14 +859,18 @@ class TransactionService
                     );
                 }
 
-                // Consume the stock reservation (all PendingApproval transactions have reservations)
-                $reservation = $this->positionService->consumeStockReservation($lockedTransaction->id);
+                // Consume the stock reservation for Sell transactions only
+                // Buy transactions do not consume stock - they add foreign currency to the position
+                $reservation = null;
+                if ($lockedTransaction->type === TransactionType::Sell) {
+                    $reservation = $this->positionService->consumeStockReservation($lockedTransaction->id);
 
-                if (! $reservation) {
-                    throw new StockReservationExpiredException($lockedTransaction->id);
+                    if (! $reservation) {
+                        throw new StockReservationExpiredException($lockedTransaction->id);
+                    }
                 }
 
-                // Verify stock is still available (reservation protects this, but double-check)
+                // Verify stock is still available for Sell transactions (reservation protects this, but double-check)
                 $available = $this->positionService->getAvailableBalance(
                     $lockedTransaction->currency_code,
                     (string) $lockedTransaction->till_id

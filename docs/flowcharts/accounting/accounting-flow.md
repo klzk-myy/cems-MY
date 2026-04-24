@@ -255,26 +255,26 @@ flowchart TD
     Start([Account codes]) --> AssetAccounts[Asset accounts]
     AssetAccounts --> CashMYR[CASH_MYR - Cash in MYR<br/>1000 - Main house account]
     AssetAccounts --> BranchCashMYR[Branch MYR Cash<br/>1021 - BR001 | 1022 - BR002 | 1023 - BR003]
-    AssetAccounts --> ForeignInventory[FOREIGN_CURRENCY_INVENTORY - Foreign currency inventory]
-    AssetAccounts --> AccountsReceivable[ACCOUNTS_RECEIVABLE - Accounts receivable]
+    AssetAccounts --> ForeignInventory[FOREIGN_CURRENCY_INVENTORY<br/>2000 - Foreign currency on hand]
+    AssetAccounts --> Receivables[RECEIVABLES<br/>2100 - Accounts receivable]
 
     Start --> LiabilityAccounts[Liability accounts]
-    LiabilityAccounts --> AccountsPayable[ACCOUNTS_PAYABLE - Accounts payable]
-    LiabilityAccounts --> AccruedExpenses[ACCRUED_EXPENSES - Accrued expenses]
+    LiabilityAccounts --> Payables[PAYABLES<br/>3000 - Accounts payable]
+    LiabilityAccounts --> Accruals[ACCRUALS<br/>3100 - Accrued expenses]
 
     Start --> EquityAccounts[Equity accounts]
-    EquityAccounts --> OwnerEquity[OWNER_EQUITY - Owner's equity]
-    EquityAccounts --> PaidInCapital[PAID-IN CAPITAL - Paid-in capital<br/>3000]
-    EquityAccounts --> RetainedEarnings[RETAINED_EARNINGS - Retained earnings]
+    EquityAccounts --> Capital[CAPITAL<br/>4000 - Paid-in capital]
+    EquityAccounts --> RetainedEarnings[RETAINED_EARNINGS<br/>4100 - Retained earnings]
+    EquityAccounts --> CurrentYear[CURRENT_YEAR_EARNINGS<br/>4200 - Current year P&L]
 
     Start --> RevenueAccounts[Revenue accounts]
-    RevenueAccounts --> ForexRevenue[FOREX_TRADING_REVENUE - Forex trading revenue]
-    RevenueAccounts --> OtherRevenue[OTHER_REVENUE - Other revenue]
+    RevenueAccounts --> ForexRevenue[FOREX_TRADING_REVENUE<br/>5000 - Forex trading revenue]
+    RevenueAccounts --> RevaluationGains[REVALUATION_GAINS<br/>5100 - Revaluation gains]
 
     Start --> ExpenseAccounts[Expense accounts]
-    ExpenseAccounts --> ForexLoss[FOREX_LOSS - Forex loss]
-    ExpenseAccounts --> OperatingExpenses[OPERATING_EXPENSES - Operating expenses]
-    ExpenseAccounts --> OtherExpenses[OTHER_EXPENSES - Other expenses]
+    ExpenseAccounts --> ForexLoss[FOREX_LOSS<br/>6000 - Forex loss]
+    ExpenseAccounts --> RevaluationLoss[REVALUATION_LOSS<br/>6100 - Revaluation loss]
+    ExpenseAccounts --> OperatingExpenses[OPERATING_EXPENSES<br/>6200 - Operating expenses]
 ```
 
 ## Double-Entry Bookkeeping
@@ -352,27 +352,28 @@ flowchart TD
 
 ```php
 enum AccountCode {
-    // Asset accounts
+    // Asset accounts (1000-2200)
     case CASH_MYR = '1000';                    // Main house MYR cash
-    case BR001_CASH_MYR = '1021';              // BR001 branch MYR cash
-    case BR002_CASH_MYR = '1022';              // BR002 branch MYR cash
-    case BR003_CASH_MYR = '1023';              // BR003 branch MYR cash
-    case FOREIGN_CURRENCY_INVENTORY = '1100';
-    case ACCOUNTS_RECEIVABLE = '1200';
-    // Liability accounts
-    case ACCOUNTS_PAYABLE = '2000';
-    case ACCRUED_EXPENSES = '2100';
-    // Equity accounts
-    case OWNER_EQUITY = '3000';
-    case PAID_IN_CAPITAL = '3001';             // Paid-in capital
-    case RETAINED_EARNINGS = '3100';
-    // Revenue accounts
-    case FOREX_TRADING_REVENUE = '4000';
-    case OTHER_REVENUE = '4100';
-    // Expense accounts
-    case FOREX_LOSS = '5000';
-    case OPERATING_EXPENSES = '5100';
-    case OTHER_EXPENSES = '5200';
+    case FOREIGN_CURRENCY_INVENTORY = '2000'; // Foreign currency on hand
+    case RECEIVABLES = '2100';                // Accounts receivable
+    case OTHER_CURRENT_ASSETS = '2200';       // Other current assets
+    case BR001_CASH_MYR = '1021';            // BR001 branch MYR cash
+    case BR002_CASH_MYR = '1022';            // BR002 branch MYR cash
+    case BR003_CASH_MYR = '1023';            // BR003 branch MYR cash
+    // Liability accounts (3000-3100)
+    case PAYABLES = '3000';                   // Accounts payable
+    case ACCRUALS = '3100';                  // Accrued expenses
+    // Equity accounts (4000-4200)
+    case CAPITAL = '4000';                    // Paid-in capital
+    case RETAINED_EARNINGS = '4100';         // Retained earnings
+    case CURRENT_YEAR_EARNINGS = '4200';    // Current year P&L
+    // Revenue accounts (5000-5100)
+    case FOREX_TRADING_REVENUE = '5000';    // Forex trading revenue
+    case REVALUATION_GAINS = '5100';        // Revaluation gains
+    // Expense accounts (6000-6200)
+    case FOREX_LOSS = '6000';               // Forex loss
+    case REVALUATION_LOSS = '6100';         // Revaluation loss
+    case OPERATING_EXPENSES = '6200';       // Operating expenses
 }
 ```
 
@@ -380,36 +381,36 @@ enum AccountCode {
 
 ### Buy Transaction
 ```
-Debit:  FOREIGN_CURRENCY_INVENTORY  RM 10,000
-Credit: CASH_MYR                     RM 10,000
+Debit:  2000 FOREIGN_CURRENCY_INVENTORY  RM 10,000
+Credit: 1000 CASH_MYR                     RM 10,000
 ```
 
 ### Sell Transaction (Gain)
 ```
-Debit:  CASH_MYR                     RM 12,000
-Credit: FOREIGN_CURRENCY_INVENTORY  RM 10,000 (cost basis)
-Credit: FOREX_TRADING_REVENUE       RM 2,000 (gain)
+Debit:  1000 CASH_MYR                     RM 12,000
+Credit: 2000 FOREIGN_CURRENCY_INVENTORY   RM 10,000 (cost basis)
+Credit: 5000 FOREX_TRADING_REVENUE        RM 2,000 (gain)
 ```
 
 ### Sell Transaction (Loss)
 ```
-Debit:  CASH_MYR                     RM 9,000
-Debit:  FOREX_LOSS                   RM 1,000
-Credit: FOREIGN_CURRENCY_INVENTORY  RM 10,000 (cost basis)
+Debit:  1000 CASH_MYR                     RM 9,000
+Debit:  6000 FOREX_LOSS                    RM 1,000
+Credit: 2000 FOREIGN_CURRENCY_INVENTORY    RM 10,000 (cost basis)
 ```
 
-### Capital Injection (Paid-in Capital)
+### Capital Injection
 ```
-Debit:  CASH_MYR            RM 1,000,000
-Credit: PAID-IN CAPITAL      RM 1,000,000
+Debit:  1000 CASH_MYR            RM 1,000,000
+Credit: 4000 CAPITAL              RM 1,000,000
 ```
 
 ### Branch Fund Allocation
 ```
-Debit:  BR001 Cash MYR (1021)  RM 300,000
-Debit:  BR002 Cash MYR (1022)  RM 300,000
-Debit:  BR003 Cash MYR (1023)  RM 300,000
-Credit: CASH_MYR               RM 900,000
+Debit:  1021 BR001 Cash MYR       RM 300,000
+Debit:  1022 BR002 Cash MYR       RM 300,000
+Debit:  1023 BR003 Cash MYR       RM 300,000
+Credit: 1000 CASH_MYR             RM 900,000
 ```
 
 ## Period Management
