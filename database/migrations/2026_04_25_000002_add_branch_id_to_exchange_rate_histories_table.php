@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('exchange_rate_histories', function (Blueprint $table) {
             $table->foreignId('branch_id')->nullable()->after('currency_code')->constrained()->nullOnDelete();
-            $table->index(['branch_id', 'currency_code', 'effective_date']);
+            $table->index(['branch_id', 'currency_code', 'effective_date'], 'erh_branch_idx');
         });
     }
 
