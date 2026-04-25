@@ -32,7 +32,6 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Currency Positions</h3>
-        <a href="/stock-cash/position" class="btn btn-ghost btn-sm">Detailed View</a>
     </div>
     <div class="table-container">
         <table class="table">
@@ -73,7 +72,7 @@
                         </span>
                     </td>
                     <td>
-                        <a href="/stock-cash/position?currency={{ $position->currency_code }}" class="btn btn-ghost btn-sm">Details</a>
+                        <a href="/stock-cash/position/{{ $position->id }}" class="btn btn-ghost btn-sm">Details</a>
                     </td>
                 </tr>
                 @empty
