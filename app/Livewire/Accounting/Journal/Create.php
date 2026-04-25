@@ -239,7 +239,7 @@ class Create extends BaseComponent
 
             $this->success('Journal entry created successfully!');
 
-            return redirect()->route('accounting.journal');
+            return $this->redirect(route('accounting.journal'));
         } catch (\Exception $e) {
             $this->error('Failed to create journal entry: '.$e->getMessage());
 

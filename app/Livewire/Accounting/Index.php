@@ -4,7 +4,6 @@ namespace App\Livewire\Accounting;
 
 use App\Livewire\BaseComponent;
 use App\Models\JournalEntry;
-use App\Services\LedgerService;
 use Illuminate\View\View;
 
 class Index extends BaseComponent
@@ -21,8 +20,6 @@ class Index extends BaseComponent
 
     protected function loadSummary(): void
     {
-        $ledgerService = app(LedgerService::class);
-
         // Get balance sheet summary
         $asOfDate = now()->toDateString();
 
@@ -35,11 +32,11 @@ class Index extends BaseComponent
         // Total Equity (credit-normal accounts)
         $totalEquity = $this->getTotalByType('Equity', $asOfDate);
 
-        // Revenue (YTD)
-        $revenue = $this->getTotalByType('Revenue', $asOfDate, true);
+        // Revenue
+        $revenue = $this->getTotalByType('Revenue', $asOfDate);
 
-        // Expenses (YTD)
-        $expenses = $this->getTotalByType('Expense', $asOfDate, true);
+        // Expenses
+        $expenses = $this->getTotalByType('Expense', $asOfDate);
 
         $this->summary = [
             'total_assets' => $totalAssets,
@@ -50,7 +47,7 @@ class Index extends BaseComponent
         ];
     }
 
-    protected function getTotalByType(string $accountType, string $asOfDate, bool $ytd = false): string
+    protected function getTotalByType(string $accountType, string $asOfDate): string
     {
         $ledgerService = app(LedgerService::class);
         $trialBalance = $ledgerService->getTrialBalance($asOfDate);
