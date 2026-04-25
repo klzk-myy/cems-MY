@@ -421,8 +421,10 @@ class LedgerService
      */
     protected function getOpeningBalance(string $accountCode, string $fromDate, ?int $branchId = null): string
     {
+        // Use <= to include entries ON the fromDate in opening balance.
+        // This is intentional: entries recorded on the as-of date contribute to the opening balance.
         $query = AccountLedger::where('account_code', $accountCode)
-            ->where('entry_date', '<', $fromDate);
+            ->where('entry_date', '<=', $fromDate);
 
         if ($branchId !== null) {
             $query->where('branch_id', $branchId);
