@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Stock\Transfer;
 
-use App\Enums\UserRole;
 use App\Livewire\BaseComponent;
 use App\Models\StockTransfer;
 use App\Services\AuditService;
@@ -126,31 +125,31 @@ class Show extends BaseComponent
 
         // Can approve by BM if status is REQUESTED and user is Manager or Admin
         $this->canApproveBm = $this->stockTransfer->status === StockTransfer::STATUS_REQUESTED
-            && ($role === UserRole::Manager || $role === UserRole::Admin);
+            && $role->isManager();
 
         // Can approve by HQ if status is BM_APPROVED and user is Admin
         $this->canApproveHq = $this->stockTransfer->status === StockTransfer::STATUS_BM_APPROVED
-            && $role === UserRole::Admin;
+            && $role->isAdmin();
 
         // Can dispatch if status is HQ_APPROVED and user is Admin
         $this->canDispatch = $this->stockTransfer->status === StockTransfer::STATUS_HQ_APPROVED
-            && $role === UserRole::Admin;
+            && $role->isAdmin();
 
         // Can receive if status is IN_TRANSIT and user is Admin
         $this->canReceive = $this->stockTransfer->status === StockTransfer::STATUS_IN_TRANSIT
-            && $role === UserRole::Admin;
+            && $role->isAdmin();
 
         // Can complete if status is IN_TRANSIT or PARTIALLY_RECEIVED and user is Admin
         $this->canComplete = in_array($this->stockTransfer->status, [
             StockTransfer::STATUS_IN_TRANSIT,
             StockTransfer::STATUS_PARTIALLY_RECEIVED,
-        ]) && $role === UserRole::Admin;
+        ]) && $role->isAdmin();
 
         // Can cancel if not completed/cancelled and user is Manager or Admin
         $this->canCancel = ! in_array($this->stockTransfer->status, [
             StockTransfer::STATUS_COMPLETED,
             StockTransfer::STATUS_CANCELLED,
-        ]) && ($role === UserRole::Manager || $role === UserRole::Admin);
+        ]) && $role->isManager();
     }
 
     public function approveByBranchManager(): void

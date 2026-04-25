@@ -55,15 +55,21 @@ class Index extends BaseComponent
         $this->transfers = $paginatedTransfers->items();
         $this->totalCount = $paginatedTransfers->total();
 
-        // Calculate status counts
+        // Calculate status counts with single query
+        $counts = StockTransfer::query()
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
         $this->statusCounts = [
             'all' => StockTransfer::count(),
-            'requested' => StockTransfer::where('status', StockTransfer::STATUS_REQUESTED)->count(),
-            'bm_approved' => StockTransfer::where('status', StockTransfer::STATUS_BM_APPROVED)->count(),
-            'hq_approved' => StockTransfer::where('status', StockTransfer::STATUS_HQ_APPROVED)->count(),
-            'in_transit' => StockTransfer::where('status', StockTransfer::STATUS_IN_TRANSIT)->count(),
-            'completed' => StockTransfer::where('status', StockTransfer::STATUS_COMPLETED)->count(),
-            'cancelled' => StockTransfer::where('status', StockTransfer::STATUS_CANCELLED)->count(),
+            'requested' => $counts[StockTransfer::STATUS_REQUESTED] ?? 0,
+            'bm_approved' => $counts[StockTransfer::STATUS_BM_APPROVED] ?? 0,
+            'hq_approved' => $counts[StockTransfer::STATUS_HQ_APPROVED] ?? 0,
+            'in_transit' => $counts[StockTransfer::STATUS_IN_TRANSIT] ?? 0,
+            'completed' => $counts[StockTransfer::STATUS_COMPLETED] ?? 0,
+            'cancelled' => $counts[StockTransfer::STATUS_CANCELLED] ?? 0,
         ];
     }
 

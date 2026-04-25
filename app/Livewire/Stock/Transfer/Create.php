@@ -2,10 +2,10 @@
 
 namespace App\Livewire\Stock\Transfer;
 
-use App\Enums\UserRole;
 use App\Livewire\BaseComponent;
 use App\Models\Branch;
 use App\Models\Currency;
+use App\Services\AuditService;
 use App\Services\MathService;
 use App\Services\StockTransferService;
 use Illuminate\Support\Facades\Auth;
@@ -35,9 +35,12 @@ class Create extends BaseComponent
 
     protected MathService $mathService;
 
+    protected AuditService $auditService;
+
     public function mount(): void
     {
         $this->mathService = new MathService;
+        $this->auditService = new AuditService;
         $this->transferDate = now()->toDateString();
         $this->loadBranches();
         $this->loadCurrencies();
@@ -175,7 +178,7 @@ class Create extends BaseComponent
         $user = Auth::user();
 
         // Check role permission
-        if ($user->role !== UserRole::Manager && $user->role !== UserRole::Admin) {
+        if (! $user->role->isManager()) {
             $this->error('Only managers can create stock transfers');
 
             return;
