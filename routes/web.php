@@ -21,7 +21,6 @@ use App\Http\Controllers\Customer\CustomerKycController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnhancedDiligenceController;
-use App\Http\Controllers\FinancialStatementController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\MfaController;
@@ -41,12 +40,17 @@ use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionReportController;
 use App\Http\Controllers\UserController;
+use App\Livewire\Accounting\BalanceSheet;
+use App\Livewire\Accounting\CashFlow;
 use App\Livewire\Accounting\Index as AccountingIndex;
 use App\Livewire\Accounting\Journal\Create as JournalCreate;
 use App\Livewire\Accounting\Journal\Index as JournalIndex;
 use App\Livewire\Accounting\Journal\Show as JournalShow;
 use App\Livewire\Accounting\Ledger\Account as LedgerAccount;
 use App\Livewire\Accounting\Ledger\Index as LedgerIndex;
+use App\Livewire\Accounting\ProfitLoss;
+use App\Livewire\Accounting\Ratios;
+use App\Livewire\Accounting\TrialBalance;
 use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
 use App\Livewire\Counters\Index;
@@ -458,11 +462,14 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         Route::get('/ledger', LedgerIndex::class)->name('ledger');
         Route::get('/ledger/{accountCode}', LedgerAccount::class)->name('ledger.account');
-        Route::get('/trial-balance', [FinancialStatementController::class, 'trialBalance'])->name('trial-balance');
-        Route::get('/profit-loss', [FinancialStatementController::class, 'profitLoss'])->name('profit-loss');
-        Route::get('/balance-sheet', [FinancialStatementController::class, 'balanceSheet'])->name('balance-sheet');
-        Route::get('/cash-flow', [FinancialStatementController::class, 'cashFlow'])->name('cash-flow');
-        Route::get('/ratios', [FinancialStatementController::class, 'ratios'])->name('ratios');
+
+        // Financial Reports - Livewire components
+        Route::get('/trial-balance', TrialBalance::class)->name('trial-balance');
+        Route::get('/profit-loss', ProfitLoss::class)->name('profit-loss');
+        Route::get('/balance-sheet', BalanceSheet::class)->name('balance-sheet');
+        Route::get('/cash-flow', CashFlow::class)->name('cash-flow');
+        Route::get('/ratios', Ratios::class)->name('ratios');
+
         Route::get('/periods', [AccountingController::class, 'periods'])->name('periods');
         Route::post('/periods/{period}/close', [AccountingController::class, 'closePeriod'])->name('period.close');
         Route::get('/fiscal-years', [FiscalYearController::class, 'index'])->name('fiscal-years');
