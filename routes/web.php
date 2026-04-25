@@ -41,13 +41,16 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionReportController;
 use App\Http\Controllers\UserController;
 use App\Livewire\Accounting\BalanceSheet;
+use App\Livewire\Accounting\BudgetReport;
 use App\Livewire\Accounting\CashFlow;
+use App\Livewire\Accounting\FiscalYears;
 use App\Livewire\Accounting\Index as AccountingIndex;
 use App\Livewire\Accounting\Journal\Create as JournalCreate;
 use App\Livewire\Accounting\Journal\Index as JournalIndex;
 use App\Livewire\Accounting\Journal\Show as JournalShow;
 use App\Livewire\Accounting\Ledger\Account as LedgerAccount;
 use App\Livewire\Accounting\Ledger\Index as LedgerIndex;
+use App\Livewire\Accounting\Periods;
 use App\Livewire\Accounting\ProfitLoss;
 use App\Livewire\Accounting\Ratios;
 use App\Livewire\Accounting\Reconciliation\Report;
@@ -472,9 +475,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/cash-flow', CashFlow::class)->name('cash-flow');
         Route::get('/ratios', Ratios::class)->name('ratios');
 
-        Route::get('/periods', [AccountingController::class, 'periods'])->name('periods');
+        Route::get('/periods', Periods::class)->name('periods');
         Route::post('/periods/{period}/close', [AccountingController::class, 'closePeriod'])->name('period.close');
-        Route::get('/fiscal-years', [FiscalYearController::class, 'index'])->name('fiscal-years');
+        Route::get('/fiscal-years', FiscalYears::class)->name('fiscal-years');
         Route::post('/fiscal-years', [FiscalYearController::class, 'store'])->name('fiscal-years.store');
         Route::post('/fiscal-years/{year}/close', [FiscalYearController::class, 'close'])->name('fiscal-years.close');
         Route::get('/fiscal-years/{yearCode}/report', [FiscalYearController::class, 'report'])->name('fiscal-years.report');
@@ -486,7 +489,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/reconciliation/import', [AccountingController::class, 'importBankStatement'])->name('reconciliation.import');
         Route::post('/reconciliation/{reconciliation}/exception', [AccountingController::class, 'markAsException'])->name('reconciliation.exception');
         Route::get('/reconciliation/export', [AccountingController::class, 'exportReconciliation'])->name('reconciliation.export');
-        Route::get('/budget', [AccountingController::class, 'budget'])->name('budget');
+        Route::get('/budget', BudgetReport::class)->name('budget');
         Route::post('/budget', [AccountingController::class, 'storeBudget'])->name('budget.store');
         Route::put('/budget/{budget}', [AccountingController::class, 'updateBudget'])->name('budget.update');
         Route::patch('/budget/{budget}', [AccountingController::class, 'updateBudget'])->name('budget.patch');
