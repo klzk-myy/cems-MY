@@ -276,7 +276,7 @@ class CustomerRiskScoringService
             $factors[] = 'Large transaction amounts';
         }
 
-        if ($customer->is_pep) {
+        if ($customer->pep_status) {
             $factors[] = 'PEP customer';
         }
 

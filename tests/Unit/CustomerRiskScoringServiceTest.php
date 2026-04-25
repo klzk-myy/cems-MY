@@ -222,6 +222,48 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(30, $result);
     }
 
+    public function test_extract_risk_factors_includes_pep_customer(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('extractRiskFactors');
+        $method->setAccessible(true);
+
+        $customer = new Customer;
+        $customer->pep_status = true;
+
+        $scores = [
+            'velocity' => 0,
+            'structuring' => 0,
+            'geographic' => 0,
+            'amount' => 0,
+        ];
+
+        $result = $method->invoke($this->service, $customer, $scores);
+
+        $this->assertContains('PEP customer', $result);
+    }
+
+    public function test_extract_risk_factors_excludes_pep_when_not_pep(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('extractRiskFactors');
+        $method->setAccessible(true);
+
+        $customer = new Customer;
+        $customer->pep_status = false;
+
+        $scores = [
+            'velocity' => 0,
+            'structuring' => 0,
+            'geographic' => 0,
+            'amount' => 0,
+        ];
+
+        $result = $method->invoke($this->service, $customer, $scores);
+
+        $this->assertNotContains('PEP customer', $result);
+    }
+
     public function test_threshold_service_integration(): void
     {
         $this->assertEquals('50000', $this->thresholdService->getRiskHighThreshold());
