@@ -53,6 +53,7 @@ use App\Livewire\Stock\TillReport;
 use App\Livewire\Stock\Transfer\Create;
 use App\Livewire\Stock\Transfer\Index as TransferIndex;
 use App\Livewire\Stock\Transfer\Show;
+use App\Livewire\Transactions\Create as TransactionCreate;
 use App\Livewire\Transactions\Index as TransactionIndex;
 use App\Models\Branch;
 use App\Models\Currency;
@@ -154,7 +155,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/list', TransactionIndex::class)->name('list'); // backward compat
 
         // Create requires MFA
-        Route::get('/create', [TransactionController::class, 'create'])->name('create')
+        Route::get('/create', TransactionCreate::class)->name('create')
             ->middleware('mfa.verified');
         Route::post('/', [TransactionController::class, 'store'])->name('store')
             ->middleware(['mfa.verified', 'throttle:transactions']);
