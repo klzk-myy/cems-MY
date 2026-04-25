@@ -26,6 +26,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
   - Multi-currency support with instant rate calculation
   - Stock reservation system for concurrency control (24h expiry)
   - PendingApproval workflow for transactions ≥ RM 3,000
+  - **Rate Management**: Daily rate workflow with configurable spread, deviation validation, copy previous rates, and manual override capability
 
 - **Till/Counter Management**
   - Full lifecycle: open, close, handover
@@ -56,6 +57,13 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 - **CTOS Reporting**
   - All cash transactions (Buy and Sell) ≥ RM 25,000
   - Compliance officer sign-off workflow via `POST /api/v1/compliance/ctos/{id}/submit`
+
+- **Rate Management**
+  - Daily rate workflow: fetch from API, copy previous, or manual override
+  - Configurable spread (default 2%) and max deviation (5%)
+  - Rate validation against market before transaction execution
+  - Full audit trail for all rate changes
+  - See `buz.opn.brc.md` for business opening workflow documentation
 
 - **STR Generation & Automation**
   - Suspicious Transaction Report creation and submission
@@ -294,6 +302,26 @@ app/
 | STR Submit | 3/min |
 | Bulk Export | 1/5min |
 | Sensitive Ops | 3/min |
+
+### Rate Management
+
+Rates are managed via `RateManagementService` and `RateApiService`:
+
+```bash
+# Fetch latest rates from external API
+POST /api/v1/rates/fetch
+
+# Copy previous day's rates
+POST /api/v1/rates/copy-previous
+
+# Manual override (Manager/Admin)
+PUT /api/v1/rates/{currencyCode}
+
+# Check if rates are set
+GET /api/v1/rates/check
+```
+
+All rate changes are logged to audit trail. Spread and deviation thresholds configured in `config/thresholds.php`.
 
 ### IP Protection
 

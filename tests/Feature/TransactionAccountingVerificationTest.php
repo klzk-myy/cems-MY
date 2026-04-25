@@ -267,7 +267,9 @@ class TransactionAccountingVerificationTest extends TestCase
                 $customer = $customers[$i % count($customers)];
                 $type = ($i % 2 === 0) ? TransactionType::Sell : TransactionType::Buy;
                 $amountForeign = (string) (100 + ($i * 50)); // Vary amounts: 100, 150, 200, ...
-                $rate = '4.50';
+                // Use different rates for buy vs sell to test spread revenue
+                // Sell at higher rate (we profit from spread), buy at lower rate
+                $rate = ($type === TransactionType::Sell) ? '4.5500' : '4.4500';
 
                 if ($type === TransactionType::Sell) {
                     // For sell, we need sufficient USD position

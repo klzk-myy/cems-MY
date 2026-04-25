@@ -208,6 +208,37 @@ return [
 | `MathService` | BCMath precision calculations |
 | `AuditService` | Audit log with async hash sealing |
 | `ThresholdService` | Centralized threshold access with audit logging |
+| `RateApiService` | External rate API fetching with spread calculation |
+| `RateManagementService` | Daily rate workflow (fetch, copy, override, validate) |
+
+**13. Rate Management**
+
+Daily rate workflow before counter opening:
+- `RateApiService::fetchLatestRates()` - Fetches from external API, stores in `exchange_rates` table
+- `RateManagementService::fetchAndStoreRates()` - Fetch and persist rates
+- `RateManagementService::overrideRate()` - Manager manual override with audit logging
+- `RateManagementService::validateTransactionRate()` - Validate teller-submitted rate vs market
+- `RateManagementService::areAllRatesSet()` - Check if rates are ready for opening
+
+Rate configuration via `config/thresholds.php`:
+```php
+'rates' => [
+    'spread' => env('RATE_SPREAD', '0.02'),           // 2% spread
+    'max_deviation_percent' => env('RATE_MAX_DEVIATION', '0.05'), // 5% max deviation
+    'precision' => env('RATE_PRECISION', 4),          // 4 decimal places
+    'cache_duration' => env('RATE_CACHE_DURATION', 60),
+],
+```
+
+**Rate API Endpoints** (`routes/api_v1.php`):
+- `GET /api/v1/rates` - List current rates
+- `GET /api/v1/rates/summary` - Rates with spread calculation
+- `POST /api/v1/rates/fetch` - Fetch from external API (Manager+)
+- `POST /api/v1/rates/copy-previous` - Copy previous day's rates (Manager+)
+- `PUT /api/v1/rates/{currency}` - Manual override (Manager+)
+- `GET /api/v1/rates/check` - Check if all required rates are set
+
+See `buz.opn.brc.md` for complete business opening and daily branch opening workflow documentation.
 
 ### Counter Management
 
@@ -247,6 +278,8 @@ BNM compliance reports via Artisan commands:
 ### Test Organization
 
 Tests use `RefreshDatabase` trait and are in `tests/Feature/` and `tests/Unit/`. Key test files:
+- `tests/Feature/TransactionAccountingVerificationTest.php` - Verifies 60 transactions (20/branch × 3 branches) with accounting and ledger balance validation
+- `tests/Feature/TransactionWorkflowTest.php` - Transaction creation, approval, cancellation
 - `tests/Feature/TransactionWorkflowTest.php` - Transaction creation, approval, cancellation
 - `tests/Feature/TransactionTest.php` - Transaction web controller tests
 - `tests/Feature/RealWorldTransactionWorkflowTest.php` - End-to-end transaction scenarios
