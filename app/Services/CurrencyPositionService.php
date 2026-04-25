@@ -235,15 +235,31 @@ class CurrencyPositionService
     /**
      * Get all currency positions visible to the given user.
      *
-     * Admin/Manager/Compliance can see all positions.
-     * Tellers can only see positions for their currently open counter session.
+     * - Admin: sees consolidated positions (same currency aggregated across all branches)
+     * - Compliance Officer: sees all positions (no consolidation)
+     * - Manager: sees only their own branch's positions
+     * - Teller: sees only positions for their currently open counter session
      */
     public function getVisiblePositionsForUser(User $user): Collection
     {
-        if ($user->role->canManageAllBranches() || $user->role->isComplianceOfficer() || $user->role->isManager()) {
+        // Admin: consolidated view across all branches
+        if ($user->role->canManageAllBranches()) {
+            return $this->getConsolidatedPositions();
+        }
+
+        // Compliance: sees all positions
+        if ($user->role->isComplianceOfficer()) {
             return CurrencyPosition::with('currency')->get();
         }
 
+        // Manager: sees only own branch
+        if ($user->role->isManager()) {
+            return CurrencyPosition::with('currency')
+                ->where('branch_id', $user->branch_id)
+                ->get();
+        }
+
+        // Teller: sees only their open counter session
         $activeSession = CounterSession::where('user_id', $user->id)
             ->where('status', CounterSessionStatus::Open)
             ->first();
@@ -253,6 +269,61 @@ class CurrencyPositionService
         }
 
         return collect();
+    }
+
+    /**
+     * Get consolidated positions aggregated by currency code across all branches.
+     *
+     * For Admin dashboard view - shows total of each currency across all branches.
+     * Uses weighted average for avg_cost and sums unrealized_pnl.
+     */
+    protected function getConsolidatedPositions(): Collection
+    {
+        $positions = CurrencyPosition::with('currency')->get();
+
+        if ($positions->isEmpty()) {
+            return collect();
+        }
+
+        // Group by currency_code and consolidate
+        $consolidated = $positions->groupBy('currency_code')->map(function ($group, $currencyCode) {
+            $totalBalance = '0';
+            $totalValue = '0';
+            $totalUnrealizedPnl = '0';
+            $firstCurrency = null;
+
+            foreach ($group as $position) {
+                $firstCurrency = $firstCurrency ?? $position->currency;
+                $totalBalance = $this->mathService->add($totalBalance, $position->balance);
+                // Value = balance * avg_cost_rate
+                $positionValue = $this->mathService->multiply($position->balance, $position->avg_cost_rate ?? '0');
+                $totalValue = $this->mathService->add($totalValue, $positionValue);
+                $totalUnrealizedPnl = $this->mathService->add($totalUnrealizedPnl, $position->unrealized_pnl ?? '0');
+            }
+
+            // Weighted average cost = total value / total balance
+            $weightedAvgCost = $this->mathService->compare($totalBalance, '0') !== 0
+                ? $this->mathService->divide($totalValue, $totalBalance)
+                : '0';
+
+            // Create a virtual consolidated position
+            $consolidatedPosition = new CurrencyPosition([
+                'currency_code' => $currencyCode,
+                'branch_id' => null, // Indicates consolidated across branches
+                'till_id' => 'CONSOLIDATED',
+                'balance' => $totalBalance,
+                'avg_cost_rate' => $weightedAvgCost,
+                'last_valuation_rate' => $group->first()->last_valuation_rate,
+                'unrealized_pnl' => $totalUnrealizedPnl,
+                'last_valuation_at' => $group->max('last_valuation_at'),
+            ]);
+            $consolidatedPosition->setRelation('currency', $firstCurrency);
+            $consolidatedPosition->setAttribute('is_consolidated', true);
+
+            return $consolidatedPosition;
+        });
+
+        return $consolidated->values();
     }
 
     /**
