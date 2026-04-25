@@ -2,11 +2,17 @@
 
 namespace Tests\Unit;
 
+use App\Enums\UserRole;
+use App\Models\ThresholdAudit;
+use App\Models\User;
 use App\Services\ThresholdService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ThresholdServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ThresholdService $service;
 
     protected function setUp(): void
@@ -164,5 +170,56 @@ class ThresholdServiceTest extends TestCase
             $value = $this->service->$method();
             $this->assertIsInt($value, "{$method} should return int");
         }
+    }
+
+    public function test_set_audits_threshold_change(): void
+    {
+        $admin = $this->adminUser();
+        $this->actingAs($admin);
+
+        $result = $this->service->set('approval', 'auto_approve', '15000', 'Testing audit');
+
+        $this->assertTrue($result);
+
+        $audit = ThresholdAudit::where('category', 'approval')
+            ->where('key', 'auto_approve')
+            ->first();
+
+        $this->assertNotNull($audit);
+        $this->assertEquals('10000', $audit->old_value);
+        $this->assertEquals('15000', $audit->new_value);
+        $this->assertEquals('Testing audit', $audit->change_reason);
+        $this->assertEquals($admin->id, $audit->changed_by);
+    }
+
+    public function test_set_does_not_audit_when_value_unchanged(): void
+    {
+        $this->actingAs($this->adminUser());
+
+        // Set same value as current config
+        $result = $this->service->set('approval', 'auto_approve', '10000', 'Should not audit');
+
+        $this->assertFalse($result);
+
+        $auditCount = ThresholdAudit::where('category', 'approval')
+            ->where('key', 'auto_approve')
+            ->where('change_reason', 'Should not audit')
+            ->count();
+
+        $this->assertEquals(0, $auditCount);
+    }
+
+    public function test_set_updates_config_value(): void
+    {
+        $this->actingAs($this->adminUser());
+
+        $this->service->set('approval', 'auto_approve', '20000');
+
+        $this->assertEquals('20000', config('thresholds.approval.auto_approve'));
+    }
+
+    private function adminUser()
+    {
+        return User::factory()->create(['role' => UserRole::Admin]);
     }
 }

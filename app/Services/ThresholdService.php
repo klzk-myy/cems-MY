@@ -64,6 +64,33 @@ class ThresholdService
     public const FALLBACK_CURRENCY_FLOW_LOOKBACK_DAYS = 7;
 
     /**
+     * Set a threshold value in config and audit the change.
+     *
+     * @param  string  $category  The threshold category (e.g., 'approval', 'cdd')
+     * @param  string  $key  The threshold key (e.g., 'auto_approve', 'manager')
+     * @param  string|int|float  $value  The new value
+     * @param  string|null  $reason  The reason for the change
+     * @return bool True if value was changed, false if same
+     */
+    public function set(string $category, string $key, string|int|float $value, ?string $reason = null): bool
+    {
+        $oldValue = config("thresholds.{$category}.{$key}");
+
+        // If value is same, do not audit or update
+        if ((string) $oldValue === (string) $value) {
+            return false;
+        }
+
+        // Update the config value
+        config(["thresholds.{$category}.{$key}" => $value]);
+
+        // Audit the change
+        $this->auditChange($category, $key, (string) $oldValue, (string) $value, $reason);
+
+        return true;
+    }
+
+    /**
      * Get a threshold value from config, with fallback to constant.
      */
     public function get(string $category, string $key, ?string $fallbackConstant = null): string|int|float
