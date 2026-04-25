@@ -367,22 +367,14 @@ async function copyPreviousRates(event) {
 }
 
 function openOverrideModal(currency, currentBuy, currentSell) {
-    console.log('openOverrideModal called', { currency, currentBuy, currentSell });
     document.getElementById('override-currency').textContent = currency;
     document.getElementById('override_currency').value = currency;
     document.getElementById('override_buy').value = currentBuy;
     document.getElementById('override_sell').value = currentSell;
     document.getElementById('override_reason').value = '';
-    const errorDiv = document.getElementById('override-error');
-    errorDiv.style.display = 'none';
-    errorDiv.textContent = '';
+    document.getElementById('override-error').style.display = 'none';
     const modal = document.getElementById('override-modal');
-    console.log('Modal element:', modal);
-    console.log('Modal classes before:', modal.className);
     modal.classList.remove('hidden');
-    console.log('Modal classes after:', modal.className);
-    // Force reflow
-    modal.offsetHeight;
     modal.style.display = 'flex';
 }
 
