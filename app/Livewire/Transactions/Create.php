@@ -10,7 +10,6 @@ use App\Models\Customer;
 use App\Services\MathService;
 use App\Services\RateManagementService;
 use App\Services\TransactionService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
@@ -269,9 +268,6 @@ class Create extends BaseComponent
             $transactionService->createTransaction($data);
 
             $this->success('Transaction created successfully!');
-
-            // Redirect to transactions list
-            return redirect()->route('transactions.index');
         } catch (\Exception $e) {
             $this->error($e->getMessage());
 
