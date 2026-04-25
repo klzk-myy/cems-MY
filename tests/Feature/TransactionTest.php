@@ -2,14 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Enums\StockReservationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
-use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -321,16 +319,8 @@ class TransactionTest extends TestCase
             'version' => 0,
         ]);
 
-        // Create stock reservation for the transaction (required for approval flow)
-        StockReservation::create([
-            'transaction_id' => $transaction->id,
-            'currency_code' => 'USD',
-            'till_id' => (string) $counter->id,
-            'amount_foreign' => '12000.00',
-            'status' => StockReservationStatus::Pending,
-            'expires_at' => now()->addHours(24),
-            'created_by' => $teller->id,
-        ]);
+        // Note: No stock reservation needed for Buy transactions
+        // Buy transactions add foreign currency, they don't consume it
 
         // Create currency position with sufficient balance
         CurrencyPosition::create([

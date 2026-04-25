@@ -215,8 +215,8 @@ class TransactionServiceTest extends TestCase
         $this->assertInstanceOf(Transaction::class, $transaction);
         // Transactions >= RM 10,000 (auto_approve threshold) get PendingApproval status
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
-        // Amount 12000 * 4.5 = 54000 MYR >= 10000 = Standard CDD
-        $this->assertEquals(CddLevel::Standard, $transaction->cdd_level);
+        // Amount 12000 * 4.5 = 54000 MYR >= 50000 = Enhanced CDD (large amount trigger)
+        $this->assertEquals(CddLevel::Enhanced, $transaction->cdd_level);
         $this->assertNotNull($transaction->hold_reason);
     }
 
@@ -473,11 +473,12 @@ class TransactionServiceTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        // Create position for sell
+        // Create position for sell - must be large enough that available balance
+        // (balance - pending reservations) >= sell amount at approval time
         CurrencyPosition::create([
             'currency_code' => 'USD',
             'till_id' => (string) $counter->id,
-            'balance' => '3000.00',
+            'balance' => '5000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
         ]);
