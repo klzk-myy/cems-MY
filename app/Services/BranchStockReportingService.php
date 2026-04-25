@@ -10,12 +10,9 @@ use App\Models\TellerAllocation;
 
 class BranchStockReportingService
 {
-    protected MathService $mathService;
-
-    public function __construct()
-    {
-        $this->mathService = new MathService;
-    }
+    public function __construct(
+        protected MathService $mathService,
+    ) {}
 
     public function getBranchPoolSummary(Branch $branch): array
     {

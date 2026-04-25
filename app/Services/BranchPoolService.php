@@ -9,12 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 class BranchPoolService
 {
-    protected MathService $mathService;
-
-    public function __construct()
-    {
-        $this->mathService = new MathService;
-    }
+    public function __construct(
+        protected MathService $mathService,
+    ) {}
 
     public function getOrCreateForBranch(Branch $branch, string $currencyCode): BranchPool
     {

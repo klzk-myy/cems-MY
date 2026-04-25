@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Services\BranchPoolService;
+use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,7 +18,7 @@ class BranchPoolServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new BranchPoolService;
+        $this->service = new BranchPoolService(new MathService);
     }
 
     public function test_get_or_create_for_branch(): void

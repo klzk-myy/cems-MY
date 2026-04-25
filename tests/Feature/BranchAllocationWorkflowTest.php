@@ -103,7 +103,7 @@ class BranchAllocationWorkflowTest extends TestCase
         ]);
 
         $mathService = new MathService;
-        $branchPoolService = new BranchPoolService;
+        $branchPoolService = new BranchPoolService($mathService);
         $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService);
         $this->branchPoolService = $branchPoolService;
         $this->tellerAllocationService = $tellerAllocationService;

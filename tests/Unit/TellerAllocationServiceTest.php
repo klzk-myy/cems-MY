@@ -24,7 +24,7 @@ class TellerAllocationServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->branchPoolService = new BranchPoolService;
+        $this->branchPoolService = new BranchPoolService(new MathService);
         $this->service = new TellerAllocationService($this->branchPoolService, new MathService);
     }
 

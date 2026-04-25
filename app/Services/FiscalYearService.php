@@ -27,17 +27,12 @@ use Illuminate\Support\Facades\DB;
 class FiscalYearService
 {
     /**
-     * Math service for high-precision calculations.
-     */
-    protected MathService $mathService;
-
-    /**
      * Create a new FiscalYearService instance.
      */
-    public function __construct(MathService $mathService)
-    {
-        $this->mathService = $mathService;
-    }
+    public function __construct(
+        protected MathService $mathService,
+        protected LedgerService $ledgerService,
+    ) {}
 
     /**
      * Create a new fiscal year.
@@ -151,11 +146,10 @@ class FiscalYearService
         $yearEndDate = $year->end_date->toDateString();
 
         // Get trial balance as of year-end
-        $ledgerService = new LedgerService(new MathService);
-        $trialBalance = $ledgerService->getTrialBalance($yearEndDate);
+        $trialBalance = $this->ledgerService->getTrialBalance($yearEndDate);
 
         // Get P&L summary
-        $pAndL = $ledgerService->getProfitAndLoss(
+        $pAndL = $this->ledgerService->getProfitAndLoss(
             $year->start_date->toDateString(),
             $yearEndDate
         );

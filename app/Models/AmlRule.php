@@ -198,7 +198,7 @@ class AmlRule extends Model
     {
         $windowDays = $conditions['window_days'] ?? 1;
         $minTransactionCount = $conditions['min_transaction_count'] ?? 3;
-        $aggregateThreshold = $conditions['aggregate_threshold'] ?? config('thresholds.aml.aggregate_threshold', '50000');
+        $aggregateThreshold = $conditions['aggregate_threshold'] ?? config('thresholds.aml.aggregate_threshold');
 
         $windowStart = now()->subDays($windowDays);
 
