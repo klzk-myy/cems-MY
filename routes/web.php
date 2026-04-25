@@ -50,7 +50,7 @@ use App\Livewire\Stock\Index as StockIndex;
 use App\Livewire\Stock\Position;
 use App\Livewire\Stock\Reconciliation;
 use App\Livewire\Stock\TillReport;
-use App\Livewire\Stock\Transfer\Create;
+use App\Livewire\Stock\Transfer\Create as StockTransferCreate;
 use App\Livewire\Stock\Transfer\Index as TransferIndex;
 use App\Livewire\Stock\Transfer\Show;
 use App\Livewire\Transactions\Create as TransactionCreate;
@@ -251,7 +251,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
         // Page views - Livewire components
         Route::get('/', TransferIndex::class)->name('index');
-        Route::get('/create', Create::class)->name('create')
+        Route::get('/create', StockTransferCreate::class)->name('create')
             ->middleware('role:manager');
         Route::get('/{stockTransfer}', Show::class)->name('show');
 

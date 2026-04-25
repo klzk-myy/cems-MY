@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Services\MathService;
 use App\Services\RateManagementService;
 use App\Services\TransactionService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
@@ -231,7 +232,7 @@ class Create extends BaseComponent
     }
 
     // Step 3: Submit
-    public function submit(): void
+    public function submit(): ?RedirectResponse
     {
         $this->validate([
             'customerId' => 'required|exists:customers,id',
@@ -250,7 +251,7 @@ class Create extends BaseComponent
             if (! $counter) {
                 $this->error('Counter not found');
 
-                return;
+                return null;
             }
 
             $data = [
@@ -265,14 +266,16 @@ class Create extends BaseComponent
             ];
 
             $transactionService = app(TransactionService::class);
-            $transaction = $transactionService->createTransaction($data);
+            $transactionService->createTransaction($data);
 
             $this->success('Transaction created successfully!');
 
             // Redirect to transactions list
-            redirect()->route('transactions.index');
+            return redirect()->route('transactions.index');
         } catch (\Exception $e) {
             $this->error($e->getMessage());
+
+            return null;
         }
     }
 
