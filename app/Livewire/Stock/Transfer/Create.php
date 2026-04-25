@@ -199,7 +199,7 @@ class Create extends BaseComponent
                 ], $this->items),
             ];
 
-            $stockTransferService = new StockTransferService($user);
+            $stockTransferService = new StockTransferService($this->mathService, $this->auditService, $user);
             $transfer = $stockTransferService->createRequest($transferData);
 
             $this->success('Transfer request created successfully');

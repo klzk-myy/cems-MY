@@ -156,7 +156,7 @@ class Show extends BaseComponent
     public function approveByBranchManager(): void
     {
         try {
-            $stockTransferService = new StockTransferService(Auth::user());
+            $stockTransferService = new StockTransferService($this->mathService, $this->auditService, Auth::user());
             $stockTransferService->approveByBranchManager($this->stockTransfer);
 
             $this->auditService->logStockTransferEvent('stock_transfer_approved_bm', $this->stockTransfer->id, [
@@ -173,7 +173,7 @@ class Show extends BaseComponent
     public function approveByHQ(): void
     {
         try {
-            $stockTransferService = new StockTransferService(Auth::user());
+            $stockTransferService = new StockTransferService($this->mathService, $this->auditService, Auth::user());
             $stockTransferService->approveByHQ($this->stockTransfer);
 
             $this->auditService->logStockTransferEvent('stock_transfer_approved_hq', $this->stockTransfer->id, [
@@ -190,7 +190,7 @@ class Show extends BaseComponent
     public function dispatchTransfer(): void
     {
         try {
-            $stockTransferService = new StockTransferService(Auth::user());
+            $stockTransferService = new StockTransferService($this->mathService, $this->auditService, Auth::user());
             $stockTransferService->dispatch($this->stockTransfer);
 
             $this->auditService->logStockTransferEvent('stock_transfer_dispatched', $this->stockTransfer->id);
@@ -223,7 +223,7 @@ class Show extends BaseComponent
                 ];
             }
 
-            $stockTransferService = new StockTransferService(Auth::user());
+            $stockTransferService = new StockTransferService($this->mathService, $this->auditService, Auth::user());
             $stockTransferService->receiveItems($this->stockTransfer, $items);
 
             $this->auditService->logStockTransferEvent('stock_transfer_partially_received', $this->stockTransfer->id, [
@@ -241,7 +241,7 @@ class Show extends BaseComponent
     public function complete(): void
     {
         try {
-            $stockTransferService = new StockTransferService(Auth::user());
+            $stockTransferService = new StockTransferService($this->mathService, $this->auditService, Auth::user());
             $stockTransferService->complete($this->stockTransfer);
 
             $this->auditService->logStockTransferEvent('stock_transfer_completed', $this->stockTransfer->id);
@@ -274,7 +274,7 @@ class Show extends BaseComponent
         }
 
         try {
-            $stockTransferService = new StockTransferService(Auth::user());
+            $stockTransferService = new StockTransferService($this->mathService, $this->auditService, Auth::user());
             $stockTransferService->cancel($this->stockTransfer, $this->cancelReason);
 
             $this->auditService->logStockTransferEvent('stock_transfer_cancelled', $this->stockTransfer->id, [
