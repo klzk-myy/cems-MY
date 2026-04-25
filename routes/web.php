@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
-use App\Http\Controllers\AmlRuleController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchOpeningController;
@@ -60,6 +59,10 @@ use App\Livewire\Compliance\Dashboard;
 use App\Livewire\Compliance\Edd\Form as EddForm;
 use App\Livewire\Compliance\Edd\Index as EddIndex;
 use App\Livewire\Compliance\Edd\Templates\Index as EddTemplatesIndex;
+use App\Livewire\Compliance\Rules\Form as RulesForm;
+use App\Livewire\Compliance\Rules\Index as RulesIndex;
+use App\Livewire\Compliance\Sanctions\Index as SanctionsIndex;
+use App\Livewire\Compliance\Sanctions\Show as SanctionsShow;
 use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
 use App\Livewire\Counters\Index;
@@ -346,8 +349,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Sanction Lists
         Route::prefix('compliance/sanctions')->name('compliance.sanctions.')->group(function () {
-            Route::get('/', [SanctionListController::class, 'index'])->name('index');
-            Route::get('/{list}', [SanctionListController::class, 'show'])->name('show');
+            Route::get('/', SanctionsIndex::class)->name('index');
+            Route::get('/{list}', SanctionsShow::class)->name('show');
             Route::post('/{list}/import', [SanctionListController::class, 'triggerImport'])->name('import');
             Route::get('/entries', [SanctionListController::class, 'entriesIndex'])->name('entries.index');
             Route::get('/entries/create', [SanctionListController::class, 'createEntry'])->name('entries.create');
@@ -395,14 +398,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // AML Rules (Compliance Officers only)
     Route::middleware('role:compliance')->prefix('compliance/rules')->name('compliance.rules.')->group(function () {
-        Route::get('/', [AmlRuleController::class, 'index'])->name('index');
-        Route::get('/create', [AmlRuleController::class, 'create'])->name('create');
-        Route::post('/', [AmlRuleController::class, 'store'])->name('store');
-        Route::get('/{rule}', [AmlRuleController::class, 'show'])->name('show');
-        Route::get('/{rule}/edit', [AmlRuleController::class, 'edit'])->name('edit');
-        Route::put('/{rule}', [AmlRuleController::class, 'update'])->name('update');
-        Route::patch('/{rule}/toggle', [AmlRuleController::class, 'toggle'])->name('toggle');
-        Route::delete('/{rule}', [AmlRuleController::class, 'destroy'])->name('destroy');
+        Route::get('/', RulesIndex::class)->name('index');
+        Route::get('/create', RulesForm::class)->name('create');
+        Route::get('/{rule}', RulesForm::class)->name('show');
     });
 
     // STR Reports - Compliance officers create/manage
