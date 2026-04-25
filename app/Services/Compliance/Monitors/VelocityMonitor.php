@@ -19,15 +19,16 @@ class VelocityMonitor extends BaseMonitor
 
     protected VelocityRiskService $velocityRiskService;
 
+    protected int $velocityWindowDays;
+
     public function __construct(MathService $math, VelocityRiskService $velocityRiskService, ThresholdService $thresholdService)
     {
         parent::__construct($math);
         $this->threshold = $thresholdService->getVelocityAlertThreshold();
         $this->warningThreshold = $thresholdService->getVelocityWarningThreshold();
         $this->velocityRiskService = $velocityRiskService;
+        $this->velocityWindowDays = $thresholdService->getVelocityWindowDays();
     }
-
-    public const LOOKBACK_HOURS = 24;
 
     protected function getFindingType(): FindingType
     {
@@ -37,7 +38,7 @@ class VelocityMonitor extends BaseMonitor
     public function run(): array
     {
         $findings = [];
-        $cutoffTime = now()->subHours(self::LOOKBACK_HOURS);
+        $cutoffTime = now()->subDays($this->velocityWindowDays);
 
         $customerData = Transaction::where('created_at', '>=', $cutoffTime)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
@@ -72,8 +73,9 @@ class VelocityMonitor extends BaseMonitor
                 subjectId: $customerId,
                 details: [
                     'customer_name' => $customer?->full_name ?? 'Unknown',
-                    'transactions_24h' => $transactionCount,
-                    'total_amount_24h' => $amount24h,
+                    'transactions_in_window' => $transactionCount,
+                    'total_amount_in_window' => $amount24h,
+                    'window_days' => $this->velocityWindowDays,
                     'threshold' => $this->threshold,
                     'recommendation' => 'STR recommended if suspicious',
                 ]
@@ -90,8 +92,9 @@ class VelocityMonitor extends BaseMonitor
                 subjectId: $customerId,
                 details: [
                     'customer_name' => $customer?->full_name ?? 'Unknown',
-                    'transactions_24h' => $transactionCount,
-                    'total_amount_24h' => $amount24h,
+                    'transactions_in_window' => $transactionCount,
+                    'total_amount_in_window' => $amount24h,
+                    'window_days' => $this->velocityWindowDays,
                     'threshold' => $this->warningThreshold,
                     'approaching_threshold' => true,
                 ]
