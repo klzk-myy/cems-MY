@@ -46,6 +46,10 @@ use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
 use App\Livewire\Counters\Index;
 use App\Livewire\Counters\Open;
+use App\Livewire\Stock\Index as StockIndex;
+use App\Livewire\Stock\Position;
+use App\Livewire\Stock\Reconciliation;
+use App\Livewire\Stock\TillReport;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
@@ -226,16 +230,16 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Stock & Cash
     Route::prefix('stock-cash')->name('stock-cash.')->group(function () {
-        Route::get('/', [StockCashController::class, 'index'])->name('index');
+        Route::get('/', StockIndex::class)->name('index');
         Route::post('/open', [StockCashController::class, 'openTill'])->name('open')
             ->middleware('role:manager');
         Route::post('/close', [StockCashController::class, 'closeTill'])->name('close')
             ->middleware('role:manager');
-        Route::get('/position/{position}', [StockCashController::class, 'showPosition'])->name('position')
+        Route::get('/position/{position}', Position::class)->name('position')
             ->middleware('role:manager');
-        Route::get('/till-report', [StockCashController::class, 'tillReport'])->name('till-report')
+        Route::get('/till-report', TillReport::class)->name('till-report')
             ->middleware('role:manager');
-        Route::get('/reconciliation', [StockCashController::class, 'reconciliationReport'])->name('reconciliation');
+        Route::get('/reconciliation', Reconciliation::class)->name('reconciliation');
     });
 
     // Stock Transfers
