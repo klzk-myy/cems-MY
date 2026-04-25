@@ -220,10 +220,9 @@ class RevaluationService
      *               - total_loss: string Total losses (as string for precision)
      *               - net_pnl: string Net profit/loss (as string for precision)
      *               - report_path: string|null Path to generated report (if any)
-     *               - errors: array List of errors encountered during processing
      *
      * @throws \InvalidArgumentException If posting date falls outside an open period
-     * @throws \RuntimeException If all revaluations fail
+     * @throws \RuntimeException If any revaluation fails (errors are not silently swallowed)
      */
     public function runRevaluationWithJournal(?string $date = null, ?int $postedBy = null): array
     {
@@ -344,9 +343,9 @@ class RevaluationService
             }
         }
 
-        // If all currencies failed, throw exception
-        if (empty($results) && ! empty($errors)) {
-            throw new \RuntimeException('All revaluations failed: '.implode(', ', array_column($errors, 'error')));
+        // If there are any errors, throw exception so caller MUST handle them
+        if (! empty($errors)) {
+            throw new \RuntimeException('Revaluation errors occurred: '.implode('; ', array_column($errors, 'error')));
         }
 
         return [
@@ -357,7 +356,6 @@ class RevaluationService
             'total_loss' => $totalLoss,
             'net_pnl' => $this->mathService->add($totalGain, $totalLoss),
             'report_path' => null,
-            'errors' => $errors,
         ];
     }
 
