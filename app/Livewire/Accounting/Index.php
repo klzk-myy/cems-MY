@@ -4,6 +4,7 @@ namespace App\Livewire\Accounting;
 
 use App\Livewire\BaseComponent;
 use App\Models\JournalEntry;
+use App\Services\LedgerService;
 use Illuminate\View\View;
 
 class Index extends BaseComponent
