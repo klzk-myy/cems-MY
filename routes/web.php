@@ -24,7 +24,6 @@ use App\Http\Controllers\EnhancedDiligenceController;
 use App\Http\Controllers\FinancialStatementController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
-use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\RateController;
 use App\Http\Controllers\Report\AnalyticsController;
@@ -46,6 +45,8 @@ use App\Livewire\Accounting\Index as AccountingIndex;
 use App\Livewire\Accounting\Journal\Create as JournalCreate;
 use App\Livewire\Accounting\Journal\Index as JournalIndex;
 use App\Livewire\Accounting\Journal\Show as JournalShow;
+use App\Livewire\Accounting\Ledger\Account as LedgerAccount;
+use App\Livewire\Accounting\Ledger\Index as LedgerIndex;
 use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
 use App\Livewire\Counters\Index;
@@ -455,8 +456,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/journal', [AccountingController::class, 'store'])->name('journal.store');
         Route::post('/journal/{entry}/reverse', [AccountingController::class, 'reverse'])->name('journal.reverse');
 
-        Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger');
-        Route::get('/ledger/{accountCode}', [LedgerController::class, 'account'])->name('ledger.account');
+        Route::get('/ledger', LedgerIndex::class)->name('ledger');
+        Route::get('/ledger/{accountCode}', LedgerAccount::class)->name('ledger.account');
         Route::get('/trial-balance', [FinancialStatementController::class, 'trialBalance'])->name('trial-balance');
         Route::get('/profit-loss', [FinancialStatementController::class, 'profitLoss'])->name('profit-loss');
         Route::get('/balance-sheet', [FinancialStatementController::class, 'balanceSheet'])->name('balance-sheet');
