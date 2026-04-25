@@ -55,10 +55,13 @@ use App\Livewire\Accounting\Revaluation\History;
 use App\Livewire\Accounting\TrialBalance;
 use App\Livewire\Compliance\Alerts\Index as AlertsIndex;
 use App\Livewire\Compliance\Alerts\Show as AlertsShow;
+use App\Livewire\Compliance\Ctos\Index as CtosIndex;
 use App\Livewire\Compliance\Dashboard;
 use App\Livewire\Compliance\Edd\Form as EddForm;
 use App\Livewire\Compliance\Edd\Index as EddIndex;
 use App\Livewire\Compliance\Edd\Templates\Index as EddTemplatesIndex;
+use App\Livewire\Compliance\Reporting\Index as ReportingIndex;
+use App\Livewire\Compliance\RiskDashboard\Index as RiskDashboardIndex;
 use App\Livewire\Compliance\Rules\Form as RulesForm;
 use App\Livewire\Compliance\Rules\Index as RulesIndex;
 use App\Livewire\Compliance\Sanctions\Index as SanctionsIndex;
@@ -341,7 +344,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Risk Dashboard
         Route::prefix('compliance/risk-dashboard')->name('compliance.risk-dashboard.')->group(function () {
-            Route::get('/', [RiskDashboardController::class, 'index'])->name('index');
+            Route::get('/', RiskDashboardIndex::class)->name('index');
             Route::get('/customer/{customer}', [RiskDashboardController::class, 'customer'])->name('customer');
             Route::get('/trends', [RiskDashboardController::class, 'trends'])->name('trends');
             Route::post('/rescreen', [RiskDashboardController::class, 'rescreen'])->name('rescreen');
@@ -363,7 +366,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // CTOS Reports
         Route::prefix('compliance/ctos')->name('compliance.ctos.')->group(function () {
-            Route::get('/', [CtosController::class, 'index'])->name('index');
+            Route::get('/', CtosIndex::class)->name('index');
             Route::get('/{id}', [CtosController::class, 'show'])->name('show');
             Route::post('/{id}/submit', [CtosController::class, 'submit'])->name('submit');
         });
@@ -383,7 +386,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Compliance Reporting
         Route::prefix('compliance/reporting')->name('compliance.reporting.')->group(function () {
-            Route::get('/', [ComplianceReportingController::class, 'index'])->name('index');
+            Route::get('/', ReportingIndex::class)->name('index');
             Route::get('/generate', [ComplianceReportingController::class, 'generate'])->name('generate');
             Route::post('/run', [ComplianceReportingController::class, 'run'])->name('run');
             Route::get('/history', [ComplianceReportingController::class, 'history'])->name('history');
