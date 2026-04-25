@@ -282,7 +282,7 @@ class CurrencyPositionService
         $positions = CurrencyPosition::with('currency')->get();
 
         if ($positions->isEmpty()) {
-            return collect();
+            return new Collection;
         }
 
         // Group by currency_code and consolidate
@@ -323,7 +323,7 @@ class CurrencyPositionService
             return $consolidatedPosition;
         });
 
-        return $consolidated->values();
+        return new Collection($consolidated->values());
     }
 
     /**
