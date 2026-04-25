@@ -167,71 +167,75 @@
 <!-- Copy Previous Modal -->
 <div id="copy-modal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/50" onclick="closeCopyModal()"></div>
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[--content-bg] rounded-xl shadow-2xl p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold">Copy Previous Rates</h3>
-            <button onclick="closeCopyModal()" class="btn btn-ghost btn-sm p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
-        <form onsubmit="copyPreviousRates(event)">
-            <div class="space-y-4">
-                <div>
-                    <label class="form-label">Select Date</label>
-                    <select name="copy_date" id="copy_date" class="form-input">
-                        @foreach($availableDates as $date)
-                        <option value="{{ $date }}">{{ $date }}</option>
-                        @endforeach
-                    </select>
-                    <p class="form-hint">Rates will be copied as both buy and sell rates</p>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="flex items-center justify-between p-6 border-b border-[--color-border]">
+                <h3 class="text-lg font-semibold">Copy Previous Rates</h3>
+                <button onclick="closeCopyModal()" class="btn btn-ghost btn-sm p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form onsubmit="copyPreviousRates(event)" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="form-label">Select Date</label>
+                        <select name="copy_date" id="copy_date" class="form-input">
+                            @foreach($availableDates as $date)
+                            <option value="{{ $date }}">{{ $date }}</option>
+                            @endforeach
+                        </select>
+                        <p class="form-hint">Rates will be copied as both buy and sell rates</p>
+                    </div>
                 </div>
-            </div>
-            <div class="flex gap-3 mt-6">
-                <button type="button" onclick="closeCopyModal()" class="btn btn-secondary flex-1">Cancel</button>
-                <button type="submit" class="btn btn-primary flex-1">Copy Rates</button>
-            </div>
-        </form>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeCopyModal()" class="btn btn-secondary flex-1">Cancel</button>
+                    <button type="submit" class="btn btn-primary flex-1">Copy Rates</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <!-- Override Modal -->
 <div id="override-modal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/50" onclick="closeOverrideModal()"></div>
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[--content-bg] rounded-xl shadow-2xl p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold">Override Rate: <span id="override-currency"></span></h3>
-            <button onclick="closeOverrideModal()" class="btn btn-ghost btn-sm p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="flex items-center justify-between p-6 border-b border-[--color-border]">
+                <h3 class="text-lg font-semibold">Override Rate: <span id="override-currency"></span></h3>
+                <button onclick="closeOverrideModal()" class="btn btn-ghost btn-sm p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form onsubmit="overrideRate(event)" class="p-6">
+                <input type="hidden" name="override_currency" id="override_currency">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label">Buy Rate</label>
+                            <input type="number" name="override_buy" id="override_buy" step="0.0001" min="0.0001" class="form-input" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Sell Rate</label>
+                            <input type="number" name="override_sell" id="override_sell" step="0.0001" min="0.0001" class="form-input" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Reason (optional)</label>
+                        <textarea name="override_reason" id="override_reason" rows="2" class="form-input" placeholder="e.g., Special rate for VIP client"></textarea>
+                    </div>
+                    <div id="override-error" class="text-danger text-sm hidden"></div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeOverrideModal()" class="btn btn-secondary flex-1">Cancel</button>
+                    <button type="submit" class="btn btn-primary flex-1">Save Changes</button>
+                </div>
+            </form>
         </div>
-        <form onsubmit="overrideRate(event)">
-            <input type="hidden" name="override_currency" id="override_currency">
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="form-label">Buy Rate</label>
-                        <input type="number" name="override_buy" id="override_buy" step="0.0001" min="0.0001" class="form-input" required>
-                    </div>
-                    <div>
-                        <label class="form-label">Sell Rate</label>
-                        <input type="number" name="override_sell" id="override_sell" step="0.0001" min="0.0001" class="form-input" required>
-                    </div>
-                </div>
-                <div>
-                    <label class="form-label">Reason (optional)</label>
-                    <textarea name="override_reason" id="override_reason" rows="2" class="form-input" placeholder="e.g., Special rate for VIP client"></textarea>
-                </div>
-                <div id="override-error" class="text-danger text-sm" style="display: none;"></div>
-            </div>
-            <div class="flex gap-3 mt-6">
-                <button type="button" onclick="closeOverrideModal()" class="btn btn-secondary flex-1">Cancel</button>
-                <button type="submit" class="btn btn-primary flex-1">Save Changes</button>
-            </div>
-        </form>
     </div>
 </div>
 @endsection
