@@ -127,7 +127,7 @@
         @else
             {{-- Confirmation Form --}}
             <div class="card">
-                <form wire:submit="processApproval" class="card-body">
+                <form wire:submit="processApproval" id="processApproval" class="card-body">
                     <div class="flex items-center gap-3 mb-4">
                         @if($action === 'approve')
                             <div class="w-10 h-10 bg-[--color-success]/10 rounded-lg flex items-center justify-center">

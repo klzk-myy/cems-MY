@@ -111,7 +111,7 @@
             </div>
             @else
             <div class="card">
-                <form wire:submit="approve" class="card-body">
+                <form wire:submit="approve" id="approveForm" class="card-body">
                     <div class="form-group mb-6">
                         <label class="form-label">Approval Notes (Optional)</label>
                         <textarea wire:model="notes" class="form-textarea" rows="3" placeholder="Add any notes about this approval..."></textarea>
