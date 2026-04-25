@@ -10,7 +10,6 @@ use App\Http\Controllers\Compliance\CaseManagementController;
 use App\Http\Controllers\Compliance\ComplianceReportingController;
 use App\Http\Controllers\Compliance\ComplianceWorkspaceController;
 use App\Http\Controllers\Compliance\CtosController;
-use App\Http\Controllers\Compliance\EddTemplateController;
 use App\Http\Controllers\Compliance\FindingController;
 use App\Http\Controllers\Compliance\RiskDashboardController;
 use App\Http\Controllers\Compliance\SanctionListController;
@@ -20,7 +19,6 @@ use App\Http\Controllers\CounterController;
 use App\Http\Controllers\Customer\CustomerKycController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\EnhancedDiligenceController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\MfaController;
@@ -59,6 +57,9 @@ use App\Livewire\Accounting\TrialBalance;
 use App\Livewire\Compliance\Alerts\Index as AlertsIndex;
 use App\Livewire\Compliance\Alerts\Show as AlertsShow;
 use App\Livewire\Compliance\Dashboard;
+use App\Livewire\Compliance\Edd\Form as EddForm;
+use App\Livewire\Compliance\Edd\Index as EddIndex;
+use App\Livewire\Compliance\Edd\Templates\Index as EddTemplatesIndex;
 use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
 use App\Livewire\Counters\Index;
@@ -377,16 +378,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             Route::post('/{id}/dismiss', [FindingController::class, 'dismiss'])->name('dismiss');
         });
 
-        // EDD Templates
-        Route::prefix('compliance/edd-templates')->name('compliance.edd-templates.')->group(function () {
-            Route::get('/', [EddTemplateController::class, 'index'])->name('index');
-            Route::post('/', [EddTemplateController::class, 'store'])->name('store');
-            Route::get('/{template}', [EddTemplateController::class, 'show'])->name('show');
-            Route::put('/{template}', [EddTemplateController::class, 'update'])->name('update');
-            Route::delete('/{template}', [EddTemplateController::class, 'destroy'])->name('destroy');
-            Route::post('/{template}/duplicate', [EddTemplateController::class, 'duplicate'])->name('duplicate');
-        });
-
         // Compliance Reporting
         Route::prefix('compliance/reporting')->name('compliance.reporting.')->group(function () {
             Route::get('/', [ComplianceReportingController::class, 'index'])->name('index');
@@ -436,21 +427,16 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->middleware(['mfa.verified', 'throttle:str-submission']);
     });
 
-    // Enhanced Due Diligence - Compliance officers create/manage
+    // Enhanced Due Diligence - Livewire components
     Route::middleware('role:compliance')->prefix('compliance/edd')->name('compliance.edd.')->group(function () {
-        Route::get('/', [EnhancedDiligenceController::class, 'index'])->name('index');
-        Route::get('/create', [EnhancedDiligenceController::class, 'create'])->name('create');
-        Route::post('/', [EnhancedDiligenceController::class, 'store'])->name('store');
-        Route::get('/{record}', [EnhancedDiligenceController::class, 'show'])->name('show');
-        Route::get('/{record}/edit', [EnhancedDiligenceController::class, 'edit'])->name('edit');
-        Route::put('/{record}', [EnhancedDiligenceController::class, 'update'])->name('update');
-        Route::post('/{record}/submit', [EnhancedDiligenceController::class, 'submitReview'])->name('submit');
+        Route::get('/', EddIndex::class)->name('index');
+        Route::get('/create', EddForm::class)->name('create');
+        Route::get('/{record}', EddForm::class)->name('show');
     });
 
-    // EDD Approval - Managers and Compliance officers
-    Route::middleware('role:manager,compliance')->prefix('compliance/edd')->name('compliance.edd.')->group(function () {
-        Route::post('/{record}/approve', [EnhancedDiligenceController::class, 'approve'])->name('approve');
-        Route::post('/{record}/reject', [EnhancedDiligenceController::class, 'reject'])->name('reject');
+    // EDD Templates - Livewire component
+    Route::middleware('role:compliance')->prefix('compliance/edd-templates')->name('compliance.edd-templates.')->group(function () {
+        Route::get('/', EddTemplatesIndex::class)->name('index');
     });
 
     // -------------------------------------------------------------------------
