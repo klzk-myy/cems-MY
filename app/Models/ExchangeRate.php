@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ExchangeRate extends Model
 {
     protected $fillable = [
+        'branch_id',
         'currency_code',
         'rate_buy',
         'rate_sell',
@@ -25,8 +26,18 @@ class ExchangeRate extends Model
         return $this->belongsTo(Currency::class, 'currency_code');
     }
 
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     public function scopeLatestRates($query)
     {
         return $query->orderBy('fetched_at', 'desc');
+    }
+
+    public function scopeForBranch($query, $branchId)
+    {
+        return $query->where('branch_id', $branchId);
     }
 }

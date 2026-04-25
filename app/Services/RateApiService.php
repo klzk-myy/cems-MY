@@ -7,12 +7,6 @@ use App\Models\ExchangeRateHistory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
-/**
- * Rate API Service
- *
- * Fetches exchange rates from external API, applies configurable spread,
- * and stores rates in the exchange_rates table for daily operations.
- */
 class RateApiService
 {
     protected string $apiKey;
@@ -21,24 +15,12 @@ class RateApiService
 
     protected MathService $mathService;
 
-    /**
-     * Get spread from thresholds config (default 2%)
-     */
     protected string $spread;
 
-    /**
-     * Get max deviation percent from thresholds config (default 5%)
-     */
     protected string $maxDeviationPercent;
 
-    /**
-     * Precision for rate calculations
-     */
     protected int $precision;
 
-    /**
-     * Cache duration in seconds
-     */
     protected int $cacheDuration;
 
     public function __construct(?MathService $mathService = null)
@@ -52,14 +34,11 @@ class RateApiService
         $this->cacheDuration = (int) config('thresholds.rates.cache_duration', 60);
     }
 
-    /**
-     * Fetch latest rates from API, apply spread, and store in exchange_rates table.
-     *
-     * @return array Processed rates by currency
-     */
-    public function fetchLatestRates(): array
+    public function fetchLatestRates(?int $branchId = null): array
     {
-        return Cache::remember('exchange_rates', $this->cacheDuration, function () {
+        $cacheKey = $branchId ? "exchange_rates_branch_{$branchId}" : 'exchange_rates';
+
+        return Cache::remember($cacheKey, $this->cacheDuration, function () use ($branchId) {
             $response = Http::get("{$this->baseUrl}/latest/MYR");
 
             if (! $response->successful()) {
@@ -74,23 +53,13 @@ class RateApiService
 
             $processed = $this->processRates($data['rates'], $data['time_last_updated'] ?? time());
 
-            // Store rates in exchange_rates table
-            $this->storeRatesToTable($processed);
-
-            // Log rates to history table
-            $this->logRatesToHistory($processed);
+            $this->storeRatesToTable($processed, $branchId);
+            $this->logRatesToHistory($processed, $branchId);
 
             return $processed;
         });
     }
 
-    /**
-     * Process raw API rates and apply spread.
-     *
-     * @param  array  $rates  Raw rates from API
-     * @param  int  $timestamp  API timestamp
-     * @return array Processed rates
-     */
     protected function processRates(array $rates, $timestamp): array
     {
         $processed = [];
@@ -103,7 +72,6 @@ class RateApiService
                 $rate = $rates[$currency];
                 $rateStr = (string) $rate;
 
-                // Apply spread: buy rate = mid - halfspread, sell rate = mid + halfspread
                 $buyRate = $this->mathService->multiply($rateStr, $this->mathService->subtract('1', $halfSpread));
                 $sellRate = $this->mathService->multiply($rateStr, $this->mathService->add('1', $halfSpread));
 
@@ -119,30 +87,23 @@ class RateApiService
         return $processed;
     }
 
-    /**
-     * Round rate to configured precision.
-     *
-     * @param  string  $rate  Rate to round
-     * @return string Rounded rate
-     */
     protected function roundRate(string $rate): string
     {
         return bcadd($rate, '0', $this->precision);
     }
 
-    /**
-     * Store rates to exchange_rates table.
-     * This table is used for daily rate management before counter opening.
-     *
-     * @param  array  $rates  Processed rates
-     */
-    protected function storeRatesToTable(array $rates): void
+    protected function storeRatesToTable(array $rates, ?int $branchId = null): void
     {
         $now = now();
 
         foreach ($rates as $currencyCode => $rateData) {
-            ExchangeRate::updateOrCreate(
-                ['currency_code' => $currencyCode],
+            $query = ExchangeRate::where('currency_code', $currencyCode);
+            if ($branchId !== null) {
+                $query->forBranch($branchId);
+            }
+
+            $query->updateOrCreate(
+                ['currency_code' => $currencyCode, 'branch_id' => $branchId],
                 [
                     'rate_buy' => $rateData['buy'],
                     'rate_sell' => $rateData['sell'],
@@ -153,20 +114,20 @@ class RateApiService
         }
     }
 
-    /**
-     * Log rates to history table for audit trail.
-     *
-     * @param  array  $rates  Processed rates
-     */
-    protected function logRatesToHistory(array $rates): void
+    protected function logRatesToHistory(array $rates, ?int $branchId = null): void
     {
         $today = now()->toDateString();
         $userId = auth()->id() ?? 1;
 
         foreach ($rates as $currencyCode => $rateData) {
-            $exists = ExchangeRateHistory::forCurrency($currencyCode)
-                ->whereDate('effective_date', $today)
-                ->exists();
+            $query = ExchangeRateHistory::forCurrency($currencyCode)
+                ->whereDate('effective_date', $today);
+
+            if ($branchId !== null) {
+                $query->where('branch_id', $branchId);
+            }
+
+            $exists = $query->exists();
 
             if (! $exists) {
                 ExchangeRateHistory::create([
@@ -174,36 +135,26 @@ class RateApiService
                     'rate' => $rateData['mid'],
                     'effective_date' => $today,
                     'created_by' => $userId,
-                    'notes' => "API fetch - Buy: {$rateData['buy']}, Sell: {$rateData['sell']}",
+                    'notes' => "API fetch - Buy: {$rateData['buy']}, Sell: {$rateData['sell']}".($branchId ? " (Branch: {$branchId})" : ''),
                 ]);
             }
         }
     }
 
-    /**
-     * Get rate for a specific currency from cached/fresh rates.
-     *
-     * @param  string  $currency  Currency code
-     * @return array|null Rate data with buy/sell/mid or null if not found
-     */
-    public function getRateForCurrency(string $currency): ?array
+    public function getRateForCurrency(string $currency, ?int $branchId = null): ?array
     {
-        $rates = $this->fetchLatestRates();
+        $rates = $this->fetchLatestRates($branchId);
 
         return $rates[$currency] ?? null;
     }
 
-    /**
-     * Get the current market rate from exchange_rates table.
-     * Used for deviation validation.
-     *
-     * @param  string  $currencyCode  Currency code
-     * @param  string  $type  'buy' or 'sell'
-     * @return string|null Current rate or null if not found
-     */
-    public function getCurrentRate(string $currencyCode, string $type = 'mid'): ?string
+    public function getCurrentRate(string $currencyCode, string $type = 'mid', ?int $branchId = null): ?string
     {
-        $exchangeRate = ExchangeRate::where('currency_code', $currencyCode)->first();
+        $query = ExchangeRate::where('currency_code', $currencyCode);
+        if ($branchId !== null) {
+            $query->forBranch($branchId);
+        }
+        $exchangeRate = $query->first();
 
         if (! $exchangeRate) {
             return null;
@@ -212,26 +163,17 @@ class RateApiService
         return match ($type) {
             'buy' => $exchangeRate->rate_buy,
             'sell' => $exchangeRate->rate_sell,
-            default => $exchangeRate->rate_buy, // Default to buy for backward compatibility
+            default => $exchangeRate->rate_buy,
         };
     }
 
-    /**
-     * Validate a submitted rate against current market rate.
-     *
-     * Returns array with 'valid' boolean and 'reason' if invalid.
-     *
-     * @param  string  $submittedRate  Rate submitted by user
-     * @param  string  $currencyCode  Currency code
-     * @param  string  $type  Transaction type ('buy' or 'sell')
-     * @return array{valid: bool, reason: string|null, deviation_percent: string|null, max_allowed: string}
-     */
     public function validateRateDeviation(
         string $submittedRate,
         string $currencyCode,
-        string $type = 'buy'
+        string $type = 'buy',
+        ?int $branchId = null
     ): array {
-        $marketRate = $this->getCurrentRate($currencyCode, $type);
+        $marketRate = $this->getCurrentRate($currencyCode, $type, $branchId);
 
         if ($marketRate === null) {
             return [
@@ -265,30 +207,25 @@ class RateApiService
         ];
     }
 
-    /**
-     * Clear the rates cache to force fresh fetch.
-     */
-    public function clearCache(): void
+    public function clearCache(?int $branchId = null): void
     {
-        Cache::forget('exchange_rates');
+        $cacheKey = $branchId ? "exchange_rates_branch_{$branchId}" : 'exchange_rates';
+        Cache::forget($cacheKey);
     }
 
-    /**
-     * Get rate trend for a currency over specified days.
-     *
-     * @param  string  $currencyCode  Currency code
-     * @param  int  $days  Number of days to look back
-     * @return array Trend data with dates and rates
-     */
-    public function getRateTrend(string $currencyCode, int $days = 30): array
+    public function getRateTrend(string $currencyCode, int $days = 30, ?int $branchId = null): array
     {
         $endDate = now()->toDateString();
         $startDate = now()->subDays($days)->toDateString();
 
-        $histories = ExchangeRateHistory::forCurrency($currencyCode)
-            ->forDateRange($startDate, $endDate)
-            ->orderBy('effective_date', 'asc')
-            ->get();
+        $query = ExchangeRateHistory::forCurrency($currencyCode)
+            ->forDateRange($startDate, $endDate);
+
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $histories = $query->orderBy('effective_date', 'asc')->get();
 
         if ($histories->isEmpty()) {
             return [
@@ -334,25 +271,16 @@ class RateApiService
         ];
     }
 
-    /**
-     * Get the configured spread percentage.
-     */
     public function getSpread(): string
     {
         return $this->spread;
     }
 
-    /**
-     * Get the configured max deviation percentage.
-     */
     public function getMaxDeviationPercent(): string
     {
         return $this->maxDeviationPercent;
     }
 
-    /**
-     * Get the configured precision.
-     */
     public function getPrecision(): int
     {
         return $this->precision;

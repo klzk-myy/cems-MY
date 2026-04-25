@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Services\RateManagementService;
@@ -19,13 +20,18 @@ class RateController extends Controller
         $this->rateService = $rateService;
     }
 
-    /**
-     * Display rate management page with current rates table.
-     */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $rates = $this->rateService->getRatesSummary();
-        $availableDates = ExchangeRateHistory::select('effective_date')
+        $user = Auth::user();
+        $branchId = $this->resolveBranchId($user, $request);
+
+        $rates = $this->rateService->getRatesSummary($branchId);
+
+        $historyQuery = ExchangeRateHistory::query();
+        if ($branchId !== null) {
+            $historyQuery->where('branch_id', $branchId);
+        }
+        $availableDates = $historyQuery->select('effective_date')
             ->distinct()
             ->orderBy('effective_date', 'desc')
             ->limit(30)
@@ -34,15 +40,16 @@ class RateController extends Controller
             ->map(fn ($date) => $date->format('Y-m-d'))
             ->toArray();
 
+        $branch = $branchId ? Branch::find($branchId) : null;
+
         return view('rates.index', [
             'rates' => $rates,
             'availableDates' => $availableDates,
+            'currentBranch' => $branch,
+            'canSelectBranch' => $user->role->isAdmin(),
         ]);
     }
 
-    /**
-     * Fetch rates from external API.
-     */
     public function fetchFromApi(Request $request): JsonResponse
     {
         $user = Auth::user();
@@ -54,14 +61,13 @@ class RateController extends Controller
             ], 403);
         }
 
-        $result = $this->rateService->fetchAndStoreRates($user);
+        $branchId = $this->resolveBranchId($user, $request);
+
+        $result = $this->rateService->fetchAndStoreRates($user, $branchId);
 
         return response()->json($result);
     }
 
-    /**
-     * Copy previous day's rates.
-     */
     public function copyPrevious(Request $request): JsonResponse
     {
         $user = Auth::user();
@@ -73,13 +79,19 @@ class RateController extends Controller
             ], 403);
         }
 
+        $branchId = $this->resolveBranchId($user, $request);
+
         $validated = $request->validate([
             'date' => 'nullable|date|before_or_equal:today',
         ]);
 
         $targetDate = $validated['date'] ?? now()->subDay()->toDateString();
 
-        $historicalRates = ExchangeRateHistory::where('effective_date', $targetDate)->get();
+        $historyQuery = ExchangeRateHistory::where('effective_date', $targetDate);
+        if ($branchId !== null) {
+            $historyQuery->where('branch_id', $branchId);
+        }
+        $historicalRates = $historyQuery->get();
 
         if ($historicalRates->isEmpty()) {
             return response()->json([
@@ -90,7 +102,11 @@ class RateController extends Controller
 
         $copied = [];
         foreach ($historicalRates as $histRate) {
-            $exchangeRate = ExchangeRate::where('currency_code', $histRate->currency_code)->first();
+            $query = ExchangeRate::where('currency_code', $histRate->currency_code);
+            if ($branchId !== null) {
+                $query->forBranch($branchId);
+            }
+            $exchangeRate = $query->first();
 
             if ($exchangeRate) {
                 $oldBuy = $exchangeRate->rate_buy;
@@ -120,9 +136,6 @@ class RateController extends Controller
         ]);
     }
 
-    /**
-     * Override rate for a specific currency.
-     */
     public function override(Request $request, string $currencyCode): JsonResponse
     {
         $user = Auth::user();
@@ -133,6 +146,8 @@ class RateController extends Controller
                 'message' => 'Only managers and admins can override rates',
             ], 403);
         }
+
+        $branchId = $this->resolveBranchId($user, $request);
 
         $validated = $request->validate([
             'rate_buy' => 'required|numeric|min:0.0001',
@@ -145,30 +160,47 @@ class RateController extends Controller
             $validated['rate_buy'],
             $validated['rate_sell'],
             $user,
-            $validated['reason'] ?? null
+            $validated['reason'] ?? null,
+            $branchId
         );
 
         return response()->json($result);
     }
 
-    /**
-     * Get rate history for a currency.
-     */
     public function history(Request $request, string $currencyCode): JsonResponse
     {
+        $user = Auth::user();
+        $branchId = $this->resolveBranchId($user, $request);
         $days = $request->get('days', 30);
 
-        $histories = ExchangeRateHistory::forCurrency($currencyCode)
+        $query = ExchangeRateHistory::forCurrency($currencyCode)
             ->forDateRange(
                 now()->subDays($days)->toDateString(),
                 now()->toDateString()
-            )
-            ->orderBy('effective_date', 'desc')
-            ->get();
+            );
+
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $histories = $query->orderBy('effective_date', 'desc')->get();
 
         return response()->json([
             'success' => true,
             'data' => $histories,
         ]);
+    }
+
+    protected function resolveBranchId($user, Request $request): ?int
+    {
+        if ($user->role->isAdmin() && $request->has('branch_id')) {
+            return (int) $request->get('branch_id');
+        }
+
+        if ($user->role->isManager()) {
+            return $user->branch_id;
+        }
+
+        return null;
     }
 }

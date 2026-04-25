@@ -6,12 +6,6 @@ use App\Models\ExchangeRate;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
-/**
- * Rate Management Service
- *
- * Handles daily rate setting workflow before counter opening.
- * Managers review and approve rates before tellers can use them.
- */
 class RateManagementService
 {
     protected RateApiService $rateApiService;
@@ -26,17 +20,10 @@ class RateManagementService
         $this->mathService = $mathService ?? new MathService;
     }
 
-    /**
-     * Fetch latest rates from API and store in exchange_rates table.
-     * Called during daily setup before counter opening.
-     *
-     * @param  User|null  $initiatedBy  User who initiated the fetch
-     * @return array{success: bool, message: string, rates: array}
-     */
-    public function fetchAndStoreRates(?User $initiatedBy = null): array
+    public function fetchAndStoreRates(?User $initiatedBy = null, ?int $branchId = null): array
     {
         try {
-            $rates = $this->rateApiService->fetchLatestRates();
+            $rates = $this->rateApiService->fetchLatestRates($branchId);
 
             return [
                 'success' => true,
@@ -52,46 +39,36 @@ class RateManagementService
         }
     }
 
-    /**
-     * Get current rates from exchange_rates table for all currencies.
-     *
-     * @return Collection Current rates
-     */
-    public function getCurrentRates(): Collection
+    public function getCurrentRates(?int $branchId = null): Collection
     {
-        return ExchangeRate::all();
+        $query = ExchangeRate::query();
+
+        if ($branchId !== null) {
+            $query->forBranch($branchId);
+        }
+
+        return $query->get();
     }
 
-    /**
-     * Get rate for a specific currency.
-     *
-     * @param  string  $currencyCode  Currency code
-     * @return ExchangeRate|null Rate model or null
-     */
-    public function getRateForCurrency(string $currencyCode): ?ExchangeRate
+    public function getRateForCurrency(string $currencyCode, ?int $branchId = null): ?ExchangeRate
     {
-        return ExchangeRate::where('currency_code', $currencyCode)->first();
+        $query = ExchangeRate::where('currency_code', $currencyCode);
+
+        if ($branchId !== null) {
+            $query->forBranch($branchId);
+        }
+
+        return $query->first();
     }
 
-    /**
-     * Manually override a rate.
-     * Requires manager or admin role.
-     *
-     * @param  string  $currencyCode  Currency code
-     * @param  string  $newBuyRate  New buy rate
-     * @param  string  $newSellRate  New sell rate
-     * @param  User  $approvedBy  User approving the change
-     * @param  string|null  $reason  Reason for override
-     * @return array{success: bool, message: string}
-     */
     public function overrideRate(
         string $currencyCode,
         string $newBuyRate,
         string $newSellRate,
         User $approvedBy,
-        ?string $reason = null
+        ?string $reason = null,
+        ?int $branchId = null
     ): array {
-        // Check permissions - only manager and above can override
         if (! $approvedBy->role->isManager() && ! $approvedBy->role->isAdmin()) {
             return [
                 'success' => false,
@@ -99,7 +76,6 @@ class RateManagementService
             ];
         }
 
-        // Validate rates are positive
         if ($this->mathService->compare($newBuyRate, '0') <= 0 ||
             $this->mathService->compare($newSellRate, '0') <= 0) {
             return [
@@ -108,7 +84,6 @@ class RateManagementService
             ];
         }
 
-        // Validate sell rate is higher than buy rate (spread check)
         if ($this->mathService->compare($newSellRate, $newBuyRate) <= 0) {
             return [
                 'success' => false,
@@ -116,12 +91,29 @@ class RateManagementService
             ];
         }
 
-        $exchangeRate = ExchangeRate::where('currency_code', $currencyCode)->first();
+        $query = ExchangeRate::where('currency_code', $currencyCode);
+        if ($branchId !== null) {
+            $query->forBranch($branchId);
+        }
+        $exchangeRate = $query->first();
 
         if (! $exchangeRate) {
+            $exchangeRate = ExchangeRate::create([
+                'branch_id' => $branchId,
+                'currency_code' => $currencyCode,
+                'rate_buy' => $newBuyRate,
+                'rate_sell' => $newSellRate,
+                'source' => 'manual_override',
+                'fetched_at' => now(),
+            ]);
+
             return [
-                'success' => false,
-                'message' => "No existing rate found for {$currencyCode}",
+                'success' => true,
+                'message' => "Rate for {$currencyCode} created successfully",
+                'old_buy_rate' => null,
+                'old_sell_rate' => null,
+                'new_buy_rate' => $newBuyRate,
+                'new_sell_rate' => $newSellRate,
             ];
         }
 
@@ -135,7 +127,6 @@ class RateManagementService
             'fetched_at' => now(),
         ]);
 
-        // Log the override
         app(AuditService::class)->log(
             'rate_overridden',
             $approvedBy->id,
@@ -150,6 +141,7 @@ class RateManagementService
             ],
             [
                 'currency_code' => $currencyCode,
+                'branch_id' => $branchId,
             ]
         );
 
@@ -163,49 +155,37 @@ class RateManagementService
         ];
     }
 
-    /**
-     * Validate a transaction rate against current market rate.
-     *
-     * @param  string  $submittedRate  Rate submitted by teller
-     * @param  string  $currencyCode  Currency code
-     * @param  string  $transactionType  'buy' or 'sell'
-     * @return array{valid: bool, reason: string|null, deviation_percent: string|null}
-     */
     public function validateTransactionRate(
         string $submittedRate,
         string $currencyCode,
-        string $transactionType = 'buy'
+        string $transactionType = 'buy',
+        ?int $branchId = null
     ): array {
         return $this->rateApiService->validateRateDeviation(
             $submittedRate,
             $currencyCode,
-            $transactionType
+            $transactionType,
+            $branchId
         );
     }
 
-    /**
-     * Check if rates are available for a currency.
-     *
-     * @param  string  $currencyCode  Currency code
-     * @return bool True if rate exists
-     */
-    public function hasRateForCurrency(string $currencyCode): bool
+    public function hasRateForCurrency(string $currencyCode, ?int $branchId = null): bool
     {
-        return ExchangeRate::where('currency_code', $currencyCode)->exists();
+        $query = ExchangeRate::where('currency_code', $currencyCode);
+
+        if ($branchId !== null) {
+            $query->forBranch($branchId);
+        }
+
+        return $query->exists();
     }
 
-    /**
-     * Check if all required rates are set (for daily opening workflow).
-     *
-     * @param  array  $currencyCodes  Array of currency codes
-     * @return array{all_set: bool, missing: array}
-     */
-    public function areAllRatesSet(array $currencyCodes): array
+    public function areAllRatesSet(array $currencyCodes, ?int $branchId = null): array
     {
         $missing = [];
 
         foreach ($currencyCodes as $code) {
-            if (! $this->hasRateForCurrency($code)) {
+            if (! $this->hasRateForCurrency($code, $branchId)) {
                 $missing[] = $code;
             }
         }
@@ -216,14 +196,9 @@ class RateManagementService
         ];
     }
 
-    /**
-     * Get rates summary for review before counter opening.
-     *
-     * @return array Summary of current rates
-     */
-    public function getRatesSummary(): array
+    public function getRatesSummary(?int $branchId = null): array
     {
-        $rates = $this->getCurrentRates();
+        $rates = $this->getCurrentRates($branchId);
         $summary = [];
 
         foreach ($rates as $rate) {
@@ -234,19 +209,13 @@ class RateManagementService
                 'spread' => $this->calculateSpread($rate->rate_buy, $rate->rate_sell),
                 'fetched_at' => $rate->fetched_at?->toIso8601String(),
                 'source' => $rate->source,
+                'branch_id' => $rate->branch_id,
             ];
         }
 
         return $summary;
     }
 
-    /**
-     * Calculate the spread between buy and sell rates.
-     *
-     * @param  string  $buyRate  Buy rate
-     * @param  string  $sellRate  Sell rate
-     * @return string Spread as percentage
-     */
     protected function calculateSpread(string $buyRate, string $sellRate): string
     {
         $mid = $this->mathService->divide(

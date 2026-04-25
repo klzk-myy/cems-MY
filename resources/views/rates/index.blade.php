@@ -5,13 +5,24 @@
 @section('header-title')
 <div>
     <h1 class="text-2xl font-semibold text-[--color-ink]">Exchange Rates</h1>
-    <p class="text-sm text-[--color-ink-muted]">Daily rate management for currency trading</p>
+    <p class="text-sm text-[--color-ink-muted]">
+        @if($currentBranch)
+            {{ $currentBranch->name }} ({{ $currentBranch->code }})
+        @else
+            All Branches
+        @endif
+    </p>
 </div>
 @endsection
 
 @section('header-actions')
 <div class="flex items-center gap-3">
     @if(auth()->user()->role->isManager() || auth()->user()->role->isAdmin())
+    @if($canSelectBranch)
+    <select id="branch-select" onchange="changeBranch(this.value)" class="form-input py-2 px-3 text-sm">
+        <option value="">-- Select Branch --</option>
+    </select>
+    @endif
     <button onclick="openCopyModal()" class="btn btn-secondary">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -228,6 +239,50 @@
 @push('scripts')
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+let currentBranchId = '{{ $currentBranch?->id ?? '' }}';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadBranches();
+});
+
+async function loadBranches() {
+    const select = document.getElementById('branch-select');
+    if (!select) return;
+
+    try {
+        const response = await fetch('/api/v1/branches', {
+            headers: {
+                'Authorization': 'Bearer ' + (await getAuthToken())
+            }
+        });
+        const result = await response.json();
+
+        if (result.data) {
+            select.innerHTML = '<option value="">-- Select Branch --</option>';
+            result.data.forEach(branch => {
+                const selected = branch.id == currentBranchId ? 'selected' : '';
+                select.innerHTML += `<option value="${branch.id}" ${selected}>${branch.code} - ${branch.name}</option>`;
+            });
+        }
+    } catch (error) {
+        console.error('Failed to load branches:', error);
+    }
+}
+
+function changeBranch(branchId) {
+    const url = new URL(window.location.href);
+    if (branchId) {
+        url.searchParams.set('branch_id', branchId);
+    } else {
+        url.searchParams.delete('branch_id');
+    }
+    window.location.href = url.toString();
+}
+
+function getBranchId() {
+    const select = document.getElementById('branch-select');
+    return select ? select.value : '';
+}
 
 async function fetchRates() {
     const btn = document.getElementById('btn-fetch');
@@ -235,7 +290,10 @@ async function fetchRates() {
     btn.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Fetching...';
 
     try {
-        const response = await fetch('/api/v1/rates/fetch', {
+        const branchId = getBranchId();
+        const url = '/api/v1/rates/fetch' + (branchId ? '?branch_id=' + branchId : '');
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -277,9 +335,11 @@ function closeCopyModal() {
 async function copyPreviousRates(event) {
     event.preventDefault();
     const date = document.getElementById('copy_date').value;
+    const branchId = getBranchId();
 
     try {
-        const response = await fetch('/api/v1/rates/copy-previous', {
+        const url = '/api/v1/rates/copy-previous' + (branchId ? '?branch_id=' + branchId : '');
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -323,9 +383,11 @@ async function overrideRate(event) {
     const sellRate = document.getElementById('override_sell').value;
     const reason = document.getElementById('override_reason').value;
     const errorDiv = document.getElementById('override-error');
+    const branchId = getBranchId();
 
     try {
-        const response = await fetch(`/api/v1/rates/${currency}`, {
+        const url = `/api/v1/rates/${currency}` + (branchId ? '?branch_id=' + branchId : '');
+        const response = await fetch(url, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

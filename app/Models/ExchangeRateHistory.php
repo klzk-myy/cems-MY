@@ -10,6 +10,7 @@ class ExchangeRateHistory extends Model
     use HasFactory;
 
     protected $fillable = [
+        'branch_id',
         'currency_code',
         'rate',
         'effective_date',
@@ -32,30 +33,28 @@ class ExchangeRateHistory extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /**
-     * Scope for specific currency
-     */
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     public function scopeForCurrency($query, string $code)
     {
         return $query->where('currency_code', $code);
     }
 
-    /**
-     * Scope for date range
-     */
     public function scopeForDateRange($query, string $from, string $to)
     {
         return $query->whereBetween('effective_date', [$from, $to]);
     }
 
-    /**
-     * Get latest rate for a currency
-     */
-    public static function getLatestRate(string $currencyCode): ?float
+    public static function getLatestRate(string $currencyCode, ?int $branchId = null): ?float
     {
-        $latest = self::forCurrency($currencyCode)
-            ->orderBy('effective_date', 'desc')
-            ->first();
+        $query = self::forCurrency($currencyCode);
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+        $latest = $query->orderBy('effective_date', 'desc')->first();
 
         return $latest ? (float) $latest->rate : null;
     }
