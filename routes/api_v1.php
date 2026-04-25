@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Compliance\DashboardController;
 use App\Http\Controllers\Api\V1\Compliance\EddController;
 use App\Http\Controllers\Api\V1\Compliance\FindingController;
 use App\Http\Controllers\Api\V1\Compliance\RiskController;
+use App\Http\Controllers\Api\V1\CounterOpeningController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EodReconciliationController;
 use App\Http\Controllers\Api\V1\RateController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\V1\SanctionController;
 use App\Http\Controllers\Api\V1\SanctionListController;
 use App\Http\Controllers\Api\V1\ScreeningController;
 use App\Http\Controllers\Api\V1\StrController;
+use App\Http\Controllers\Api\V1\TellerAllocationController;
 use App\Http\Controllers\Api\V1\TransactionApprovalController;
 use App\Http\Controllers\Api\V1\TransactionCancellationController;
 use App\Http\Controllers\Api\V1\TransactionController;
@@ -232,5 +234,43 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{currencyCode}', [RateController::class, 'override'])
             ->middleware('role:manager,admin');
         Route::post('/validate', [RateController::class, 'validateRate']);
+    });
+
+    // Teller Allocation API - Part of daily opening workflow
+    Route::prefix('allocations')->group(function () {
+        // Teller: Get own active allocation
+        Route::get('/my-active', [TellerAllocationController::class, 'myActiveAllocation']);
+        // Manager: Get pending allocations for their branch
+        Route::get('/pending', [TellerAllocationController::class, 'pendingForBranch'])
+            ->middleware('role:manager,admin');
+        // Manager: Get active allocations for their branch
+        Route::get('/active', [TellerAllocationController::class, 'activeForBranch'])
+            ->middleware('role:manager,admin');
+        // Manager: Approve allocation
+        Route::post('/{allocationId}/approve', [TellerAllocationController::class, 'approve'])
+            ->middleware('role:manager,admin');
+        // Manager: Reject allocation
+        Route::post('/{allocationId}/reject', [TellerAllocationController::class, 'reject'])
+            ->middleware('role:manager,admin');
+        // Manager: Modify active allocation
+        Route::post('/{allocationId}/modify', [TellerAllocationController::class, 'modify'])
+            ->middleware('role:manager,admin');
+        // Manager: Return allocation to pool (EOD)
+        Route::post('/{allocationId}/return-to-pool', [TellerAllocationController::class, 'returnToPool'])
+            ->middleware('role:manager,admin');
+        // Get specific allocation details
+        Route::get('/{allocationId}', [TellerAllocationController::class, 'show']);
+    });
+
+    // Counter Opening Workflow API - Daily branch opening
+    Route::prefix('counters')->group(function () {
+        // Manager: Get pending opening requests for branch
+        Route::get('/pending-requests', [CounterOpeningController::class, 'pendingRequests'])
+            ->middleware('role:manager,admin');
+        // Teller: Initiate opening request (request float allocation)
+        Route::post('/{counterId}/opening-request', [CounterOpeningController::class, 'initiateOpeningRequest']);
+        // Manager: Approve allocations and open counter
+        Route::post('/{counterId}/approve-and-open', [CounterOpeningController::class, 'approveAndOpen'])
+            ->middleware('role:manager,admin');
     });
 });

@@ -532,18 +532,31 @@ Stores current day's rates:
 ### Teller Allocation
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/v1/tellers/{id}/allocations` | Teller | Request float |
-| POST | `/api/v1/allocations/{id}/approve` | Manager | Approve allocation |
-| POST | `/api/v1/allocations/{id}/reject` | Manager | Reject request |
+| GET | `/api/v1/allocations/my-active` | Teller | Get own active allocation |
+| GET | `/api/v1/allocations/pending` | Manager+ | Get pending allocations for branch |
+| GET | `/api/v1/allocations/active` | Manager+ | Get active allocations for branch |
+| GET | `/api/v1/allocations/{id}` | Any | Get specific allocation |
+| POST | `/api/v1/allocations/{id}/approve` | Manager+ | Approve allocation |
+| POST | `/api/v1/allocations/{id}/reject` | Manager+ | Reject allocation |
+| POST | `/api/v1/allocations/{id}/modify` | Manager+ | Modify active allocation |
+| POST | `/api/v1/allocations/{id}/return-to-pool` | Manager+ | Return to pool (EOD) |
 
-### Counter Management
+### Counter Opening Workflow
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/v1/counters/{id}/opening-request` | Manager | Request open |
-| POST | `/api/v1/counters/{id}/approve-and-open` | Manager | Approve & open |
-| POST | `/api/v1/counters/{id}/close` | Teller | Request close |
-| POST | `/api/v1/counters/{id}/approve-close` | Manager | Approve close |
-| POST | `/api/v1/counters/{id}/handover` | Manager | Transfer custody |
+| GET | `/api/v1/counters/pending-requests` | Manager+ | Get pending opening requests |
+| POST | `/api/v1/counters/{id}/opening-request` | Teller | Initiate opening request |
+| POST | `/api/v1/counters/{id}/approve-and-open` | Manager+ | Approve & open counter |
+
+### Counter Management (Web)
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/counters/{id}/open` | Teller | Show counter open form |
+| POST | `/counters/{id}/open` | Teller | Direct open counter |
+| GET | `/counters/{id}/close` | Teller | Show counter close form |
+| POST | `/counters/{id}/close` | Teller | Request close |
+| POST | `/counters/{id}/approve-close` | Manager | Approve close |
+| POST | `/counters/{id}/handover` | Manager | Transfer custody |
 
 ### Transactions
 | Method | Endpoint | Auth | Description |
