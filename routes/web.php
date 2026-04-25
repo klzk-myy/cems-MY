@@ -42,6 +42,10 @@ use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionReportController;
 use App\Http\Controllers\UserController;
+use App\Livewire\Accounting\Index as AccountingIndex;
+use App\Livewire\Accounting\Journal\Create as JournalCreate;
+use App\Livewire\Accounting\Journal\Index as JournalIndex;
+use App\Livewire\Accounting\Journal\Show as JournalShow;
 use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
 use App\Livewire\Counters\Index;
@@ -441,11 +445,14 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     // -------------------------------------------------------------------------
 
     Route::middleware('role:manager')->prefix('accounting')->name('accounting.')->group(function () {
-        Route::get('/', [DashboardController::class, 'accounting'])->name('index');
-        Route::get('/journal', [AccountingController::class, 'index'])->name('journal');
-        Route::get('/journal/create', [AccountingController::class, 'create'])->name('journal.create');
+        // Dashboard & Journal - Livewire components
+        Route::get('/', AccountingIndex::class)->name('index');
+        Route::get('/journal', JournalIndex::class)->name('journal');
+        Route::get('/journal/create', JournalCreate::class)->name('journal.create');
+        Route::get('/journal/{entry}', JournalShow::class)->name('journal.show');
+
+        // Action routes - Controller actions (POST)
         Route::post('/journal', [AccountingController::class, 'store'])->name('journal.store');
-        Route::get('/journal/{entry}', [AccountingController::class, 'show'])->name('journal.show');
         Route::post('/journal/{entry}/reverse', [AccountingController::class, 'reverse'])->name('journal.reverse');
 
         Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger');
