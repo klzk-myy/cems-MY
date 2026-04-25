@@ -7,7 +7,6 @@ use App\Models\Transaction;
 use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Illuminate\View\View;
-use Livewire\Redirector;
 
 class Approve extends BaseComponent
 {
@@ -54,7 +53,7 @@ class Approve extends BaseComponent
         $this->notes = null;
     }
 
-    public function approve(): Redirector
+    public function approve(): mixed
     {
         // Prevent self-approval (segregation of duties - AML/CFT compliance)
         if ($this->transaction->user_id === auth()->id()) {
