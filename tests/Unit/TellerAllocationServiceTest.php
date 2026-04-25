@@ -173,6 +173,27 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertArrayHasKey('allocation', $result);
     }
 
+    public function test_sell_without_allocation_is_rejected(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+        $allocation = TellerAllocation::factory()->create([
+            'user_id' => $teller->id,
+            'branch_id' => $branch->id,
+            'currency_code' => 'USD',
+            'status' => TellerAllocationStatus::ACTIVE,
+            'current_balance' => '0.0000',
+            'daily_limit_myr' => '10000.0000',
+            'daily_used_myr' => '0.0000',
+            'session_date' => now()->toDateString(),
+        ]);
+
+        $result = $this->service->validateTransaction($teller, 'USD', '1000.0000', false);
+
+        $this->assertFalse($result['valid']);
+        $this->assertEquals('No USD balance available to sell', $result['reason']);
+    }
+
     public function test_force_return_all_open(): void
     {
         $branch = Branch::factory()->create();

@@ -180,8 +180,15 @@ class TellerAllocationService
             return ['valid' => false, 'reason' => 'No active allocation for this currency'];
         }
 
-        if ($isBuy && ! $allocation->hasAvailable($amountMyr)) {
-            return ['valid' => false, 'reason' => 'Insufficient allocation balance'];
+        if ($isBuy) {
+            if (! $allocation->hasAvailable($amountMyr)) {
+                return ['valid' => false, 'reason' => 'Insufficient allocation balance'];
+            }
+        } else {
+            // For Sell, verify teller actually has currency allocated to sell
+            if ($this->mathService->compare($allocation->current_balance, '0') <= 0) {
+                return ['valid' => false, 'reason' => "No {$currencyCode} balance available to sell"];
+            }
         }
 
         if (! $allocation->hasDailyLimitRemaining($amountMyr)) {
