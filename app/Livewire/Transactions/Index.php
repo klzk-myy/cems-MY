@@ -33,11 +33,6 @@ class Index extends BaseComponent
         'dateTo' => ['except' => ''],
     ];
 
-    public function mount(): void
-    {
-        // Initial load uses query string parameters if present
-    }
-
     public function applyFilters(): void
     {
         $this->resetPage();
@@ -75,12 +70,12 @@ class Index extends BaseComponent
         }
 
         // Type filter
-        if (! empty($this->type) && in_array($this->type, ['Buy', 'Sell'], true)) {
+        if (! empty($this->type) && TransactionType::tryFrom($this->type) !== null) {
             $query->where('type', $this->type);
         }
 
         // Status filter
-        if (! empty($this->status)) {
+        if (! empty($this->status) && TransactionStatus::tryFrom($this->status) !== null) {
             $query->where('status', $this->status);
         }
 
