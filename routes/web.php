@@ -26,6 +26,7 @@ use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\MfaController;
+use App\Http\Controllers\RateController;
 use App\Http\Controllers\Report\AnalyticsController;
 use App\Http\Controllers\Report\RegulatoryReportController;
 use App\Http\Controllers\ReportController;
@@ -128,6 +129,11 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/recovery', [MfaController::class, 'recovery'])->name('recovery');
         Route::get('/trusted-devices', [MfaController::class, 'trustedDevices'])->name('trusted-devices');
         Route::delete('/trusted-devices/{deviceId}', [MfaController::class, 'removeDevice'])->name('trusted-devices.remove');
+    });
+
+    // Exchange Rates (Manager/Admin only)
+    Route::middleware('role:manager,admin')->group(function () {
+        Route::get('/rates', [RateController::class, 'index'])->name('rates.index');
     });
 
     // Transactions
