@@ -88,18 +88,18 @@ class TellerAllocationService
             if (! $this->branchPoolService->allocateToTeller($branch, $allocation->currency_code, $newAmount)) {
                 throw new PoolAllocationException('Failed to allocate additional amount from branch pool');
             }
-            $allocation->current_balance = bcadd($allocation->current_balance, $newAmount, 4);
-            $allocation->allocated_amount = bcadd($allocation->allocated_amount, $newAmount, 4);
+            $allocation->current_balance = $this->mathService->add($allocation->current_balance, $newAmount);
+            $allocation->allocated_amount = $this->mathService->add($allocation->allocated_amount, $newAmount);
         } else {
-            $availableToReturn = bcsub($allocation->allocated_amount, $allocation->current_balance, 4);
+            $availableToReturn = $this->mathService->subtract($allocation->allocated_amount, $allocation->current_balance);
             $returnAmount = $this->mathService->compare($newAmount, $availableToReturn) < 0 ? $newAmount : $availableToReturn;
 
-            if ($returnAmount > 0) {
+            if ($this->mathService->compare($returnAmount, '0') > 0) {
                 $this->branchPoolService->deallocateFromTeller($branch, $allocation->currency_code, $returnAmount);
             }
 
-            $allocation->allocated_amount = bcsub($allocation->allocated_amount, $newAmount, 4);
-            $allocation->current_balance = bcsub($allocation->current_balance, bcsub($newAmount, $returnAmount, 4), 4);
+            $allocation->allocated_amount = $this->mathService->subtract($allocation->allocated_amount, $newAmount);
+            $allocation->current_balance = $this->mathService->subtract($allocation->current_balance, $this->mathService->subtract($newAmount, $returnAmount));
         }
 
         $allocation->save();

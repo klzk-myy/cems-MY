@@ -249,4 +249,40 @@ class TellerAllocationServiceTest extends TestCase
 
         $this->assertEquals($teller2->id, $result->user_id);
     }
+
+    public function test_allocation_calculations_use_math_service_precision(): void
+    {
+        $branch = Branch::factory()->create();
+        $pool = BranchPool::factory()->for($branch)->myr()->create([
+            'available_balance' => '100000.0000',
+            'allocated_balance' => '0.0000',
+        ]);
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+        $manager = User::factory()->create(['role' => 'manager', 'branch_id' => $branch->id]);
+
+        // Create an approved allocation
+        $allocation = $this->service->requestAllocation($teller, $manager, 'MYR', '10000.0000');
+        $this->service->approveAllocation($allocation, $manager, '10000.0000', '50000.0000');
+        $this->service->activateAllocation($allocation);
+        $allocation->refresh();
+
+        // Test increase using modifyAllocation
+        $this->branchPoolService->allocateToTeller($branch, 'MYR', '5000.0000');
+        $this->service->modifyAllocation($allocation, $manager, '5000.0000', true);
+        $allocation->refresh();
+
+        $this->assertEquals('15000.0000', $allocation->current_balance);
+        $this->assertEquals('15000.0000', $allocation->allocated_amount);
+
+        // Test decrease using modifyAllocation
+        $this->service->modifyAllocation($allocation, $manager, '3000.0000', false);
+        $allocation->refresh();
+
+        // When decreasing, allocated_amount decreases but current_balance decreases by (newAmount - returnAmount)
+        // if newAmount > availableToReturn, returnAmount = availableToReturn
+        // availableToReturn = allocated - current_balance = 15000 - 15000 = 0
+        // So returnAmount = 0, current_balance = 15000 - (3000 - 0) = 12000
+        $this->assertEquals('12000.0000', $allocation->current_balance);
+        $this->assertEquals('12000.0000', $allocation->allocated_amount);
+    }
 }
