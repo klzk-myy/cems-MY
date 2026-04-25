@@ -50,6 +50,9 @@ use App\Livewire\Stock\Index as StockIndex;
 use App\Livewire\Stock\Position;
 use App\Livewire\Stock\Reconciliation;
 use App\Livewire\Stock\TillReport;
+use App\Livewire\Stock\Transfer\Create;
+use App\Livewire\Stock\Transfer\Index as TransferIndex;
+use App\Livewire\Stock\Transfer\Show;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
@@ -244,12 +247,13 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Stock Transfers
     Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
-        Route::get('/', [StockTransferController::class, 'index'])->name('index');
-        Route::get('/create', [StockTransferController::class, 'create'])->name('create')
+        // Page views - Livewire components
+        Route::get('/', TransferIndex::class)->name('index');
+        Route::get('/create', Create::class)->name('create')
             ->middleware('role:manager');
-        Route::post('/', [StockTransferController::class, 'store'])->name('store')
-            ->middleware('role:manager');
-        Route::get('/{stockTransfer}', [StockTransferController::class, 'show'])->name('show');
+        Route::get('/{stockTransfer}', Show::class)->name('show');
+
+        // Action routes - Controller actions (API-like operations)
         Route::post('/{stockTransfer}/approve-bm', [StockTransferController::class, 'approveBm'])->name('approve-bm')
             ->middleware('role:manager');
         Route::post('/{stockTransfer}/approve-hq', [StockTransferController::class, 'approveHq'])->name('approve-hq')
