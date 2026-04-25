@@ -54,6 +54,7 @@ use App\Livewire\Stock\Transfer\Create as StockTransferCreate;
 use App\Livewire\Stock\Transfer\Index as TransferIndex;
 use App\Livewire\Stock\Transfer\Show;
 use App\Livewire\Transactions\Approve as TransactionApprove;
+use App\Livewire\Transactions\Cancel as TransactionCancel;
 use App\Livewire\Transactions\Create as TransactionCreate;
 use App\Livewire\Transactions\Index as TransactionIndex;
 use App\Livewire\Transactions\Show as TransactionShow;
@@ -177,8 +178,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         // Approval & Cancellation
         Route::post('/{transaction}/approve', [TransactionApprovalController::class, 'approve'])->name('approve')
             ->middleware(['role:manager', 'mfa.verified']);
-        Route::get('/{transaction}/cancel', [TransactionCancellationController::class, 'showCancel'])->name('cancel.show')
-            ->middleware('mfa.verified');
+        Route::get('/{transaction}/cancel', TransactionCancel::class)->name('cancel.show')
+            ->middleware(['role:manager', 'mfa.verified']);
         Route::post('/{transaction}/cancel', [TransactionCancellationController::class, 'cancel'])->name('cancel')
             ->middleware(['role:manager', 'mfa.verified']);
 
