@@ -199,40 +199,40 @@
 </div>
 
 <!-- Override Modal -->
-<div id="override-modal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/50" onclick="closeOverrideModal()"></div>
-    <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div class="flex items-center justify-between p-6 border-b border-[--color-border]">
-                <h3 class="text-lg font-semibold">Override Rate: <span id="override-currency"></span></h3>
-                <button onclick="closeOverrideModal()" class="btn btn-ghost btn-sm p-1">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div id="override-modal" class="fixed inset-0 z-50 hidden overflow-auto">
+    <div class="absolute inset-0 bg-black/70" onclick="closeOverrideModal()"></div>
+    <div class="relative min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full">
+            <div class="flex items-center justify-between p-5 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                <h3 class="text-lg font-bold text-gray-900">Override Rate: <span id="override-currency"></span></h3>
+                <button onclick="closeOverrideModal()" class="btn btn-ghost btn-sm p-1 text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-            <form onsubmit="overrideRate(event)" class="p-6">
+            <form onsubmit="overrideRate(event)" class="p-5">
                 <input type="hidden" name="override_currency" id="override_currency">
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="form-label">Buy Rate</label>
-                            <input type="number" name="override_buy" id="override_buy" step="0.0001" min="0.0001" class="form-input" required>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Buy Rate</label>
+                            <input type="number" name="override_buy" id="override_buy" step="0.0001" min="0.0001" class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                         </div>
                         <div>
-                            <label class="form-label">Sell Rate</label>
-                            <input type="number" name="override_sell" id="override_sell" step="0.0001" min="0.0001" class="form-input" required>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Sell Rate</label>
+                            <input type="number" name="override_sell" id="override_sell" step="0.0001" min="0.0001" class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                         </div>
                     </div>
                     <div>
-                        <label class="form-label">Reason (optional)</label>
-                        <textarea name="override_reason" id="override_reason" rows="2" class="form-input" placeholder="e.g., Special rate for VIP client"></textarea>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Reason (optional)</label>
+                        <textarea name="override_reason" id="override_reason" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Special rate for VIP client"></textarea>
                     </div>
-                    <div id="override-error" class="text-danger text-sm hidden"></div>
+                    <div id="override-error" class="text-red-600 text-sm hidden"></div>
                 </div>
                 <div class="flex gap-3 mt-6">
-                    <button type="button" onclick="closeOverrideModal()" class="btn btn-secondary flex-1">Cancel</button>
-                    <button type="submit" class="btn btn-primary flex-1">Save Changes</button>
+                    <button type="button" onclick="closeOverrideModal()" class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium">Save Changes</button>
                 </div>
             </form>
         </div>
