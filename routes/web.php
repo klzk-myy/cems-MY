@@ -53,8 +53,10 @@ use App\Livewire\Stock\TillReport;
 use App\Livewire\Stock\Transfer\Create as StockTransferCreate;
 use App\Livewire\Stock\Transfer\Index as TransferIndex;
 use App\Livewire\Stock\Transfer\Show;
+use App\Livewire\Transactions\Approve as TransactionApprove;
 use App\Livewire\Transactions\Create as TransactionCreate;
 use App\Livewire\Transactions\Index as TransactionIndex;
+use App\Livewire\Transactions\Show as TransactionShow;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
@@ -169,7 +171,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         });
 
         // View
-        Route::get('/{transaction}', [TransactionController::class, 'show'])->name('show');
+        Route::get('/{transaction}', TransactionShow::class)->name('show');
         Route::get('/{transaction}/receipt', [TransactionController::class, 'receipt'])->name('receipt');
 
         // Approval & Cancellation
@@ -181,7 +183,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->middleware(['role:manager', 'mfa.verified']);
 
         // Large transaction confirmation
-        Route::get('/{transaction}/confirm', [TransactionApprovalController::class, 'showConfirm'])->name('confirm.show')
+        Route::get('/{transaction}/confirm', TransactionApprove::class)->name('confirm.show')
             ->middleware('role:manager');
         Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm')
             ->middleware('role:manager');
