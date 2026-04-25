@@ -11,7 +11,20 @@
 
 @section('content')
 {{-- Position Summary --}}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+    {{-- MYR Cash Card --}}
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-card-icon bg-[--color-success]/10 text-[--color-success]">
+                <span class="font-bold">MYR</span>
+            </div>
+        </div>
+        <p class="stat-card-label">Cash in Hand</p>
+        <p class="stat-card-value">{{ number_format($myrCashInHand ?? 0, 2) }}</p>
+        <p class="stat-card-change text-[--color-ink-muted]">Ringgit Malaysia</p>
+    </div>
+
+    {{-- Foreign Currency Cards --}}
     @foreach($positions ?? [] as $position)
     <div class="stat-card">
         <div class="stat-card-header">

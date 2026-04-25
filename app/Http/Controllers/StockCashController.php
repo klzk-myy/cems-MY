@@ -69,6 +69,27 @@ class StockCashController extends Controller
         // Available currencies for opening tills
         $currencies = Currency::where('is_active', true)->get();
 
+        // Calculate MYR cash in hand from today's till balances
+        // For open tills: use opening_balance. For closed tills: use closing_balance
+        $myrQuery = TillBalance::whereDate('date', today())
+            ->where('currency_code', 'MYR');
+
+        // Scope by branch for non-admin users
+        $user = auth()->user();
+        if (! $user->role->canManageAllBranches()) {
+            $myrQuery->where('branch_id', $user->branch_id);
+        }
+
+        $myrBalances = $myrQuery->get();
+        $myrCashInHand = '0';
+        foreach ($myrBalances as $balance) {
+            // Use closing_balance if closed, otherwise opening_balance
+            $balanceAmount = $balance->closed_at
+                ? ($balance->closing_balance ?? '0')
+                : ($balance->opening_balance ?? '0');
+            $myrCashInHand = $this->mathService->add($myrCashInHand, (string) $balanceAmount);
+        }
+
         return view('stock-cash.index', compact(
             'positions',
             'totalPnl',
@@ -76,7 +97,8 @@ class StockCashController extends Controller
             'closedTills',
             'todayBalances',
             'stats',
-            'currencies'
+            'currencies',
+            'myrCashInHand'
         ));
     }
 
