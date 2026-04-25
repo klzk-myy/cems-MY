@@ -9,7 +9,6 @@ use App\Models\Currency;
 use App\Services\MathService;
 use App\Services\StockTransferService;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\Validate;
 
 class Create extends BaseComponent
 {
