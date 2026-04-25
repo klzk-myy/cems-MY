@@ -15,8 +15,8 @@ class ExchangeRate extends Model
     ];
 
     protected $casts = [
-        'rate_buy' => 'decimal:6',
-        'rate_sell' => 'decimal:6',
+        'rate_buy' => 'decimal:4',
+        'rate_sell' => 'decimal:4',
         'fetched_at' => 'datetime',
     ];
 

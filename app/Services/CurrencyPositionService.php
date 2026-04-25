@@ -29,6 +29,11 @@ class CurrencyPositionService
     protected MathService $mathService;
 
     /**
+     * Precision for position calculations (4 decimals for rates/balances)
+     */
+    protected int $positionPrecision = 4;
+
+    /**
      * Create a new CurrencyPositionService instance.
      *
      * @param  MathService  $mathService  Math service for high-precision calculations
@@ -36,6 +41,7 @@ class CurrencyPositionService
     public function __construct(MathService $mathService)
     {
         $this->mathService = $mathService;
+        $this->positionPrecision = (int) config('thresholds.rates.precision', 4);
     }
 
     /**
@@ -114,10 +120,13 @@ class CurrencyPositionService
             }
 
             $position->update([
-                'balance' => $newBalance,
-                'avg_cost_rate' => $newAvgCost,
-                'last_valuation_rate' => $rate,
-                'unrealized_pnl' => $this->mathService->calculateRevaluationPnl($newBalance, $newAvgCost, $rate),
+                'balance' => $this->mathService->round($newBalance, $this->positionPrecision),
+                'avg_cost_rate' => $this->mathService->round($newAvgCost, $this->positionPrecision),
+                'last_valuation_rate' => $this->mathService->round($rate, $this->positionPrecision),
+                'unrealized_pnl' => $this->mathService->round(
+                    $this->mathService->calculateRevaluationPnl($newBalance, $newAvgCost, $rate),
+                    $this->positionPrecision
+                ),
                 'last_valuation_at' => now(),
             ]);
 

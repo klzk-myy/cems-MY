@@ -130,4 +130,20 @@ return [
         'round_trip_threshold' => env('THRESHOLD_ROUND_TRIP', '5000'),
         'lookback_days' => env('THRESHOLD_CURRENCY_FLOW_LOOKBACK_DAYS', 7),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Exchange Rate Spreads
+    |--------------------------------------------------------------------------
+    |
+    | The spread determines the buy/sell rate difference. A 2% spread means
+    | buy rate is 1% below mid and sell rate is 1% above mid.
+    |
+    */
+    'rates' => [
+        'spread' => env('RATE_SPREAD', '0.02'), // 2% default spread
+        'max_deviation_percent' => env('RATE_MAX_DEVIATION', '0.05'), // 5% max deviation from market rate
+        'precision' => env('RATE_PRECISION', 4), // 4 decimal places for rates
+        'cache_duration' => env('RATE_CACHE_DURATION', 60), // seconds
+    ],
 ];

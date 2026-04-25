@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Compliance\FindingController;
 use App\Http\Controllers\Api\V1\Compliance\RiskController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EodReconciliationController;
+use App\Http\Controllers\Api\V1\RateController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SanctionController;
 use App\Http\Controllers\Api\V1\SanctionListController;
@@ -214,5 +215,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/screening/customer/{customer}/history', [ScreeningController::class, 'history']);
         Route::get('/screening/customer/{customer}/status', [ScreeningController::class, 'status']);
         Route::post('/screening/batch', [ScreeningController::class, 'batchScreen']);
+    });
+
+    // Exchange Rates API - Manager/Admin only for modifications
+    Route::prefix('rates')->group(function () {
+        Route::get('/', [RateController::class, 'index']);
+        Route::get('/summary', [RateController::class, 'summary']);
+        Route::get('/dates', [RateController::class, 'availableDates']);
+        Route::get('/history/{currencyCode}', [RateController::class, 'history']);
+        Route::get('/check', [RateController::class, 'checkSet']);
+        Route::get('/{currencyCode}', [RateController::class, 'show']);
+        Route::post('/fetch', [RateController::class, 'fetchFromApi'])
+            ->middleware('role:manager,admin');
+        Route::post('/copy-previous', [RateController::class, 'copyPrevious'])
+            ->middleware('role:manager,admin');
+        Route::put('/{currencyCode}', [RateController::class, 'override'])
+            ->middleware('role:manager,admin');
+        Route::post('/validate', [RateController::class, 'validateRate']);
     });
 });

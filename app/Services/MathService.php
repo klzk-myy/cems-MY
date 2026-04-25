@@ -126,14 +126,17 @@ class MathService
      * @param  string  $positionAmount  Current position balance
      * @param  string  $oldRate  Previous valuation rate
      * @param  string  $newRate  Current market rate
+     * @param  int|null  $precision  Optional precision override (default: scale)
      * @return string Revaluation P&L (positive = gain, negative = loss)
      */
     public function calculateRevaluationPnl(
         string $positionAmount,
         string $oldRate,
-        string $newRate
+        string $newRate,
+        ?int $precision = null
     ): string {
         $rateDiff = $this->subtract($newRate, $oldRate);
+        $precision = $precision ?? $this->scale;
 
         return $this->multiply($positionAmount, $rateDiff);
     }

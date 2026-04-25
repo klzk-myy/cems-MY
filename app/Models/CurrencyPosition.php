@@ -23,8 +23,8 @@ class CurrencyPosition extends Model
 
     protected $casts = [
         'balance' => 'decimal:4',
-        'avg_cost_rate' => 'decimal:6',
-        'last_valuation_rate' => 'decimal:6',
+        'avg_cost_rate' => 'decimal:4',
+        'last_valuation_rate' => 'decimal:4',
         'unrealized_pnl' => 'decimal:4',
         'last_valuation_at' => 'datetime',
     ];
