@@ -50,6 +50,14 @@ class ComplianceService
     protected ?ThresholdService $thresholdService;
 
     /**
+     * Last CDD triggers captured for audit trail.
+     * Populated by determineCDDLevel when Enhanced CDD is returned.
+     *
+     * @var array<string>
+     */
+    protected array $lastCddTriggers = [];
+
+    /**
      * BNM STR filing deadline in working days.
      */
     private const STR_FILING_DEADLINE_DAYS = 3;
@@ -99,8 +107,27 @@ class ComplianceService
         $pepStatus = $customer->pep_status ?? false;
         $sanctionStatus = $this->checkSanctionMatch($customer);
 
+        // Track Enhanced CDD triggers for audit trail
+        $triggers = [];
+
         // Enhanced Due Diligence triggers (risk-based per pd-00.md 14C.13)
-        if ($pepStatus || $sanctionStatus || $customer->risk_rating === 'High') {
+        if ($pepStatus) {
+            $triggers[] = 'PEP customer';
+        }
+        if ($sanctionStatus) {
+            $triggers[] = 'Sanctions match';
+        }
+        if ($this->mathService->compare($amount, $this->thresholdService->getLargeTransactionThreshold()) >= 0) {
+            $triggers[] = 'Large amount >= RM '.$this->thresholdService->getLargeTransactionThreshold();
+        }
+        if ($customer->risk_rating === 'High') {
+            $triggers[] = 'High risk customer';
+        }
+
+        // Store triggers for audit trail if Enhanced
+        if (! empty($triggers)) {
+            $this->lastCddTriggers = $triggers;
+
             return CddLevel::Enhanced;
         }
 
@@ -115,6 +142,17 @@ class ComplianceService
         }
 
         return CddLevel::Simplified;
+    }
+
+    /**
+     * Get the triggers that determined the Enhanced CDD level.
+     * Must be called immediately after determineCDDLevel when Enhanced is returned.
+     *
+     * @return array<string> List of trigger reasons
+     */
+    public function getLastCddTriggers(): array
+    {
+        return $this->lastCddTriggers;
     }
 
     /**
