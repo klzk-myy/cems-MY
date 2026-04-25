@@ -37,20 +37,24 @@ php artisan report:msb2 --date=2026-04-06
 
 ```
 app/
-├── Console/Commands/  # 35 Artisan commands (29 main + 6 Backup)
-├── Enums/  # 34 PHP 8.1 enums replacing magic strings
+├── Console/Commands/  # 29 Artisan commands
+├── Enums/  # 42 PHP 8.1 enums replacing magic strings
 ├── Events/  # 14 Event classes (TransactionCreated, CounterSessionOpened, etc.)
-├── Exceptions/Domain/  # 35 typed domain exceptions (InsufficientStockException, etc.)
+├── Exceptions/Domain/  # 30 typed domain exceptions (InsufficientStockException, etc.)
 ├── Http/
 │   ├── Controllers/  # 28 controllers (16 main + 12 in sub-dirs)
-│   ├── Middleware/  # 21 middleware classes
+│   ├── Middleware/  # 20 middleware classes
 │   ├── Requests/  # Form request validation classes
 │   └── Resources/  # API resource transformers
-├── Jobs/  # 19 background jobs (7 main + 7 Compliance + 5 Sanctions)
+├── Jobs/  # 21 background jobs (8 main + 8 Compliance/ + 5 Sanctions/)
 ├── Jobs/Audit/  # Async jobs (SealAuditHashJob)
-├── Models/  # 64 Eloquent models
+├── Models/  # 66 Eloquent models
 ├── Observers/  # Model observers for event-driven hooks
-└── Services/  # 82 services (70 top-level + 4 Compliance/ + 8 Monitors/)
+├── Services/  # 83 services (66 top-level + 4 Compliance/ + 8 Monitors/ + 5 Risk/)
+└── Services/
+    ├── Compliance/  # Compliance case & reporting services
+    ├── Compliance/Monitors/  # 8 compliance monitoring services
+    └── Risk/  # 5 risk calculation services
 ```
 
 ### Key Architectural Patterns
@@ -117,7 +121,7 @@ All monetary calculations use `App\Services\MathService` (BCMath), not floats. N
 Events fire for critical operations (`TransactionCreated`, `CounterSessionOpened`, etc.) with listeners for audit logging, notifications, and compliance triggers.
 
 **9. Background Processing**
-Laravel queues handle async compliance screening, STR report submission, and sanctions rescreening via `App\Jobs\`. Laravel Horizon provides a dashboard to monitor queue jobs, failures, and throughput (`php artisan horizon`).
+Laravel queues handle async compliance screening, STR report submission, and sanctions rescreening via `App\Jobs\` (8 main + 8 Compliance + 5 Sanctions jobs). Laravel Horizon provides a dashboard to monitor queue jobs, failures, and throughput (`php artisan horizon`).
 
 **10. Role Hierarchy**
 Permissions inherit upward: `Admin` > `ComplianceOfficer` > `Manager` > `Teller`.
