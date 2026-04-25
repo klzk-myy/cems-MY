@@ -68,15 +68,22 @@ class CurrencyPosition extends Model
 
     /**
      * Computed market value in MYR: balance × last_valuation_rate.
-     * Returns '0' if last_valuation_rate is null (never been revalued).
+     * Falls back to avg_cost_rate if last_valuation_rate is null (never been revalued).
      */
     public function getMarketValueAttribute(): string
     {
-        if (! $this->last_valuation_rate || bccomp($this->last_valuation_rate, '0', 6) === 0) {
+        $rate = $this->last_valuation_rate;
+
+        // Fall back to avg_cost_rate if last_valuation_rate is not set
+        if (! $rate || bccomp($rate, '0', 6) === 0) {
+            $rate = $this->avg_cost_rate;
+        }
+
+        if (! $rate || bccomp($rate, '0', 6) === 0) {
             return '0';
         }
 
-        return bcmul($this->balance, $this->last_valuation_rate, 2);
+        return bcmul($this->balance, $rate, 2);
     }
 
     /**

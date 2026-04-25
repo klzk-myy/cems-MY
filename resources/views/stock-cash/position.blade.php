@@ -19,8 +19,8 @@
                 <dd class="text-2xl font-mono">RM {{ number_format($position->average_cost ?? 0, 4) }}</dd>
             </div>
             <div class="p-4 bg-[--color-surface-elevated] rounded">
-                <dt class="text-sm text-[--color-ink-muted]">Current Value</dt>
-                <dd class="text-2xl font-mono">RM {{ number_format($position->current_value ?? 0, 2) }}</dd>
+                <dt class="text-sm text-[--color-ink-muted]">Market Value</dt>
+                <dd class="text-2xl font-mono">RM {{ number_format($position->market_value, 2) }}</dd>
             </div>
             <div class="p-4 bg-[--color-surface-elevated] rounded">
                 <dt class="text-sm text-[--color-ink-muted]">Unrealized P/L</dt>
