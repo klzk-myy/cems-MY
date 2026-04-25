@@ -511,7 +511,7 @@ class CounterService
         if (! empty($numericIds)) {
             $currencies = Currency::whereIn('id', $numericIds)->pluck('code', 'id');
             foreach ($currencies as $id => $code) {
-                $resolved[$id] = $code;
+                $resolved[$code] = $code; // Always use string code as key
             }
         }
 
@@ -541,7 +541,7 @@ class CounterService
         if (! empty($numericIds)) {
             $currencies = Currency::whereIn('id', $numericIds)->pluck('code', 'id');
             foreach ($currencies as $id => $code) {
-                $resolved[$id] = $code;
+                $resolved[$code] = $code; // Always use string code as key
             }
         }
 

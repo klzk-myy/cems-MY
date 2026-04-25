@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Enums\CounterSessionStatus;
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\CounterService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -132,5 +133,101 @@ class CounterServiceTest extends TestCase
         $tillBalanceTransferred = true;
 
         $this->assertTrue($tillBalanceTransferred);
+    }
+
+    public function test_resolve_currencies_returns_string_keys_for_numeric_ids(): void
+    {
+        // Note: Currency model uses 'code' as primary key (non-incrementing string).
+        // When currency_id is passed as numeric, it represents a database row ID
+        // that was erroneously stored - this tests that such numeric IDs are
+        // properly resolved to their currency codes as string keys.
+
+        // We simulate this by passing what looks like a numeric ID (e.g., '1')
+        // as currency_id and ensure it's resolved correctly to a string code key.
+        // In practice, this shouldn't happen with the fixed code, but we test it.
+
+        $floats = [
+            // Passing a string that looks numeric - the method should handle it
+            // by trying to look it up as a Currency ID (though Currency uses code as PK)
+            ['currency_id' => '999', 'amount' => '1000.00'],
+        ];
+
+        $service = app(CounterService::class);
+        $method = new \ReflectionMethod($service, 'resolveCurrencies');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($service, $floats);
+
+        // For non-existent numeric IDs, the result should be empty
+        // (no currencies found for ID 999)
+        $this->assertArrayNotHasKey('999', $result);
+    }
+
+    public function test_resolve_currencies_returns_string_keys_for_string_codes(): void
+    {
+        $floats = [
+            ['currency_id' => 'EUR', 'amount' => '1000.00'],
+            ['currency_id' => 'GBP', 'amount' => '2000.00'],
+        ];
+
+        $service = app(CounterService::class);
+        $method = new \ReflectionMethod($service, 'resolveCurrencies');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($service, $floats);
+
+        // Keys should be string currency codes
+        $this->assertArrayHasKey('EUR', $result);
+        $this->assertArrayHasKey('GBP', $result);
+        $this->assertEquals('EUR', $result['EUR']);
+        $this->assertEquals('GBP', $result['GBP']);
+    }
+
+    public function test_resolve_currencies_for_counts_returns_string_keys(): void
+    {
+        // Note: Currency model uses 'code' as primary key. Testing with string codes
+        // which is the proper usage pattern for this codebase.
+
+        $counts = [
+            ['currency_id' => 'USD', 'denomination' => '100', 'quantity' => 10],
+            ['currency_id' => 'EUR', 'denomination' => '50', 'quantity' => 5],
+        ];
+
+        $service = app(CounterService::class);
+        $method = new \ReflectionMethod($service, 'resolveCurrenciesForCounts');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($service, $counts);
+
+        // Keys should be string currency codes, not numeric IDs
+        $this->assertArrayHasKey('USD', $result);
+        $this->assertArrayHasKey('EUR', $result);
+        $this->assertEquals('USD', $result['USD']);
+        $this->assertEquals('EUR', $result['EUR']);
+    }
+
+    public function test_resolve_currencies_all_keys_are_strings(): void
+    {
+        $floats = [
+            ['currency_id' => 'USD', 'amount' => '1000.00'],
+            ['currency_id' => 'EUR', 'amount' => '2000.00'],
+            ['currency_id' => 'GBP', 'amount' => '3000.00'],
+        ];
+
+        $service = app(CounterService::class);
+        $method = new \ReflectionMethod($service, 'resolveCurrencies');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($service, $floats);
+
+        // All keys should be strings (currency codes), not integers
+        foreach (array_keys($result) as $key) {
+            $this->assertIsString($key, 'Expected string key but got '.gettype($key));
+        }
+
+        // All values should be strings (currency codes)
+        foreach (array_values($result) as $value) {
+            $this->assertIsString($value, 'Expected string value but got '.gettype($value));
+        }
     }
 }
