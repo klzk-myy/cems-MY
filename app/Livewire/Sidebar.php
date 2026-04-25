@@ -2,15 +2,21 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
+use App\Models\Alert;
+use Illuminate\Database\Eloquent\Collection;
 
-class Sidebar extends Component
+class Sidebar extends BaseComponent
 {
     public string $activeRoute = '';
+
+    public ?Collection $pendingAlerts = null;
 
     public function mount()
     {
         $this->activeRoute = request()->path();
+        $this->pendingAlerts = Alert::whereNull('assigned_to')
+            ->whereNull('case_id')
+            ->get();
     }
 
     public function isActive(string $path): bool

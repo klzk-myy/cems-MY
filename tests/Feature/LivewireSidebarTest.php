@@ -22,7 +22,8 @@ class LivewireSidebarTest extends TestCase
     {
         $component = Livewire::test(Sidebar::class);
 
-        // The activeRoute should be set to the current request path
+        // The activeRoute should be set to a non-empty string (the current request path)
+        $this->assertIsString($component->instance()->activeRoute);
         $this->assertNotEmpty($component->instance()->activeRoute);
     }
 
