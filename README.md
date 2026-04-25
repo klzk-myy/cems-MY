@@ -250,19 +250,19 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full system architecture do
 
 ```
 app/
-├── Console/Commands/        # 35 Artisan CLI commands (29 main + 6 Backup)
-├── Enums/                  # 34 PHP 8.1 enums (UserRole, TransactionStatus, CddLevel, etc.)
-├── Events/                 # Event classes (TransactionCreated, CounterSessionOpened, etc.)
-├── Exceptions/Domain/       # 35 typed domain exceptions
+├── Console/Commands/        # 29 Artisan CLI commands
+├── Enums/                  # 42 PHP 8.1 enums (UserRole, TransactionStatus, CddLevel, etc.)
+├── Events/                 # 14 Event classes (TransactionCreated, CounterSessionOpened, etc.)
+├── Exceptions/Domain/       # 30 typed domain exceptions
 ├── Http/
 │   ├── Controllers/        # 28 controllers (16 main + 12 in sub-dirs)
-│   ├── Middleware/          # 21 middleware classes
+│   ├── Middleware/          # 20 middleware classes
 │   ├── Requests/            # Form request validation classes
 │   └── Resources/           # API resource transformers
-├── Jobs/                   # 19 background jobs (7 main + 7 Compliance + 5 Sanctions)
-├── Models/                 # 64 Eloquent models
+├── Jobs/                   # 21 background jobs (8 main + 8 Compliance + 5 Sanctions)
+├── Models/                 # 66 Eloquent models
 ├── Observers/              # Model observers for event-driven hooks
-└── Services/               # 83 services (71 top-level + 12 in Compliance sub-dirs)
+└── Services/               # 83 services (66 top-level + 4 Compliance/ + 8 Monitors/ + 5 Risk/)
 ```
 
 ## User Roles
