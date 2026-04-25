@@ -4,6 +4,7 @@ namespace App\Livewire\Accounting;
 
 use App\Livewire\BaseComponent;
 use App\Services\BudgetService;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class BudgetReport extends BaseComponent
@@ -37,7 +38,7 @@ class BudgetReport extends BaseComponent
         $this->report = $reportData['items'] ?? [];
 
         $unbudgeted = $this->budgetService->getAccountsWithoutBudget($this->periodCode);
-        $this->unbudgetedAccounts = $unbudgeted ?? [];
+        $this->unbudgetedAccounts = $unbudgeted instanceof Collection ? $unbudgeted->toArray() : ($unbudgeted ?? []);
     }
 
     public function updatedPeriodCode(): void
