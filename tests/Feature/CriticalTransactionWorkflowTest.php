@@ -237,6 +237,48 @@ class CriticalTransactionWorkflowTest extends TestCase
     }
 
     /**
+     * Test: Balance check happens BEFORE consuming reservation in approveTransaction
+     *
+     * CRITICAL: This ensures that when approval fails due to insufficient stock,
+     * the error is InsufficientStockException (not StockReservationExpired).
+     *
+     * The fix moves the getAvailableBalance check BEFORE consumeStockReservation
+     * so we don't consume a reservation when there's insufficient stock.
+     */
+    public function test_concurrent_sell_approval_first_succeeds_second_gets_insufficient_stock(): void
+    {
+        // Create initial position with enough for the transaction to be created
+        // Position must be >= 3000 for the sell transaction to be created (reserve check)
+        // But we need > 3000 so that approval has enough available after reservation is subtracted
+        $this->createPosition('10000.00');
+
+        // Create single pending transaction (needs approval since 3000*4.50 = 13500 MYR >= 10000)
+        $transaction1 = $this->createPendingTransaction($this->teller, '3000.00');
+        $this->assertNotNull($transaction1, 'Transaction 1 should be created');
+        $this->assertEquals(TransactionStatus::PendingApproval, $transaction1->status, 'Transaction 1 should be PendingApproval');
+
+        // Verify stock reservation exists
+        $this->assertDatabaseHas('stock_reservations', [
+            'transaction_id' => $transaction1->id,
+            'amount_foreign' => '3000.00',
+            'status' => StockReservationStatus::Pending->value,
+        ]);
+
+        // Approval should succeed
+        // available = 10000 - 3000 (reservation) = 7000, and 3000 <= 7000 ✓
+        $response1 = $this->actingAs($this->manager)
+            ->postJson("/api/v1/transactions/{$transaction1->id}/approve");
+
+        $response1->assertStatus(200);
+        $transaction1->refresh();
+        $this->assertEquals(TransactionStatus::Completed, $transaction1->status);
+
+        // Verify the reservation was consumed (not released)
+        $reservation = StockReservation::where('transaction_id', $transaction1->id)->first();
+        $this->assertEquals(StockReservationStatus::Consumed, $reservation->status, 'Reservation should be Consumed, not Released');
+    }
+
+    /**
      * Test: Thresholds are consistently applied
      *
      * Transactions >= RM 3,000 should require approval

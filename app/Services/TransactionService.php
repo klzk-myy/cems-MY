@@ -859,6 +859,21 @@ class TransactionService
                     );
                 }
 
+                // FIX: Check available balance BEFORE consuming reservation
+                // This prevents consuming reservation when there's insufficient stock
+                $available = $this->positionService->getAvailableBalance(
+                    $lockedTransaction->currency_code,
+                    (string) $lockedTransaction->till_id
+                );
+
+                if ($this->mathService->compare($available, (string) $lockedTransaction->amount_foreign) < 0) {
+                    throw new InsufficientStockException(
+                        $lockedTransaction->currency_code,
+                        (string) $lockedTransaction->amount_foreign,
+                        $available
+                    );
+                }
+
                 // Consume the stock reservation for Sell transactions only
                 // Buy transactions do not consume stock - they add foreign currency to the position
                 $reservation = null;
@@ -868,21 +883,6 @@ class TransactionService
                     if (! $reservation) {
                         throw new StockReservationExpiredException($lockedTransaction->id);
                     }
-                }
-
-                // Verify stock is still available for Sell transactions (reservation protects this, but double-check)
-                $available = $this->positionService->getAvailableBalance(
-                    $lockedTransaction->currency_code,
-                    (string) $lockedTransaction->till_id
-                );
-
-                if ($this->mathService->compare($available, (string) $lockedTransaction->amount_foreign) < 0) {
-                    $this->positionService->releaseStockReservation($lockedTransaction->id);
-                    throw new InsufficientStockException(
-                        $lockedTransaction->currency_code,
-                        (string) $lockedTransaction->amount_foreign,
-                        $available
-                    );
                 }
 
                 // Execute position and till balance updates
