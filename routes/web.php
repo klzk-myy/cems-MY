@@ -53,6 +53,7 @@ use App\Livewire\Stock\TillReport;
 use App\Livewire\Stock\Transfer\Create;
 use App\Livewire\Stock\Transfer\Index as TransferIndex;
 use App\Livewire\Stock\Transfer\Show;
+use App\Livewire\Transactions\Index as TransactionIndex;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
@@ -149,8 +150,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Transactions
     Route::prefix('transactions')->name('transactions.')->group(function () {
-        Route::get('/', [TransactionController::class, 'index'])->name('index');
-        Route::get('/list', [TransactionController::class, 'index'])->name('list'); // backward compat
+        Route::get('/', TransactionIndex::class)->name('index');
+        Route::get('/list', TransactionIndex::class)->name('list'); // backward compat
 
         // Create requires MFA
         Route::get('/create', [TransactionController::class, 'create'])->name('create')
