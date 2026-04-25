@@ -60,7 +60,7 @@ class Approve extends BaseComponent
         if ($this->transaction->user_id === auth()->id()) {
             $this->error('You cannot approve your own transaction. Segregation of duties requires a different approver.');
 
-            return redirect()->route('transactions.show', $this->transaction);
+            return $this->redirect(route('transactions.show', $this->transaction));
         }
 
         try {
@@ -74,25 +74,25 @@ class Approve extends BaseComponent
             if (! $result['success']) {
                 $this->error($result['message']);
 
-                return redirect()->route('transactions.show', $this->transaction);
+                return $this->redirect(route('transactions.show', $this->transaction));
             }
 
             $this->success('Transaction approved and completed successfully!');
 
-            return redirect()->route('transactions.show', $this->transaction);
+            return $this->redirect(route('transactions.show', $this->transaction));
 
         } catch (\InvalidArgumentException $e) {
             $this->error($e->getMessage());
 
-            return redirect()->route('transactions.show', $this->transaction);
+            return $this->redirect(route('transactions.show', $this->transaction));
         } catch (\RuntimeException $e) {
             $this->error($e->getMessage());
 
-            return redirect()->route('transactions.show', $this->transaction);
+            return $this->redirect(route('transactions.show', $this->transaction));
         } catch (\Exception $e) {
             $this->error('Approval failed: '.$e->getMessage());
 
-            return redirect()->route('transactions.show', $this->transaction);
+            return $this->redirect(route('transactions.show', $this->transaction));
         }
     }
 
