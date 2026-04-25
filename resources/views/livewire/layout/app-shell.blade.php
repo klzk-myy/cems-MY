@@ -1,5 +1,5 @@
 <div class="app-shell">
-    <x-sidebar />
+    <livewire:sidebar />
     <div class="main-wrapper">
         <header class="sticky top-0 z-40 bg-[--content-bg]/80 backdrop-blur-md border-b border-[--color-border]">
             <div class="flex items-center justify-between px-8 py-4">
