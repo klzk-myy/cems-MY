@@ -56,6 +56,9 @@ use App\Livewire\Accounting\Ratios;
 use App\Livewire\Accounting\Reconciliation\Report;
 use App\Livewire\Accounting\Revaluation\History;
 use App\Livewire\Accounting\TrialBalance;
+use App\Livewire\Compliance\Alerts\Index as AlertsIndex;
+use App\Livewire\Compliance\Alerts\Show as AlertsShow;
+use App\Livewire\Compliance\Dashboard;
 use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
 use App\Livewire\Counters\Index;
@@ -293,7 +296,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Compliance Dashboard (Compliance Officers only)
     Route::middleware('role:compliance')->group(function () {
-        Route::get('/compliance', [DashboardController::class, 'compliance'])->name('compliance');
+        Route::get('/compliance', Dashboard::class)->name('compliance');
         Route::get('/compliance/flagged', [DashboardController::class, 'compliance'])->name('compliance.flagged');
         Route::patch('/compliance/flags/{flaggedTransaction}/assign', [DashboardController::class, 'assignFlag'])->name('compliance.flags.assign');
         Route::patch('/compliance/flags/{flaggedTransaction}/resolve', [DashboardController::class, 'resolveFlag'])->name('compliance.flags.resolve');
@@ -306,8 +309,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Alert Triage
         Route::prefix('compliance/alerts')->name('compliance.alerts.')->group(function () {
-            Route::get('/', [AlertTriageController::class, 'index'])->name('index');
-            Route::get('/{alert}', [AlertTriageController::class, 'show'])->name('show');
+            Route::get('/', AlertsIndex::class)->name('index');
+            Route::get('/{alert}', AlertsShow::class)->name('show');
             Route::post('/{alert}/assign', [AlertTriageController::class, 'assign'])->name('assign');
             Route::post('/{alert}/resolve', [AlertTriageController::class, 'resolve'])->name('resolve');
             Route::post('/{alert}/dismiss', [AlertTriageController::class, 'dismiss'])->name('dismiss');
