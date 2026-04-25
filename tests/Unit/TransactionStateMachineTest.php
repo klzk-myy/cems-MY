@@ -125,4 +125,17 @@ class TransactionStateMachineTest extends TestCase
         $this->assertTrue($result);
         $this->assertEquals(TransactionStatus::Cancelled, $transaction->status);
     }
+
+    public function test_release_method_has_been_removed(): void
+    {
+        $transaction = $this->createTransaction(TransactionStatus::Draft);
+        $stateMachine = new TransactionStateMachine($transaction);
+
+        // The release() method was removed because it was dead code - it transitioned
+        // PendingApproval -> PendingApproval which is a no-op and was never called
+        $this->assertFalse(
+            method_exists($stateMachine, 'release'),
+            'release() method should not exist on TransactionStateMachine'
+        );
+    }
 }
