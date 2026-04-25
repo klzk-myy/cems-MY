@@ -322,9 +322,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Case Management
         Route::prefix('compliance/cases')->name('compliance.cases.')->group(function () {
-            Route::get('/', [CaseManagementController::class, 'index'])->name('index');
+            Route::get('/', App\Livewire\Compliance\Cases\Index::class)->name('index');
             Route::post('/', [CaseManagementController::class, 'store'])->name('store');
-            Route::get('/{case}', [CaseManagementController::class, 'show'])->name('show');
+            Route::get('/{case}', App\Livewire\Compliance\Cases\Show::class)->name('show');
             Route::patch('/{case}', [CaseManagementController::class, 'update'])->name('update');
             Route::post('/{case}/merge', [CaseManagementController::class, 'merge'])->name('merge');
             Route::post('/{case}/link-alert', [CaseManagementController::class, 'linkAlert'])->name('link-alert');
