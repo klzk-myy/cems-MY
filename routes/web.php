@@ -56,6 +56,7 @@ use App\Livewire\BranchOpenings\Step2;
 use App\Livewire\BranchOpenings\Step3;
 use App\Livewire\Compliance\Alerts\Index as AlertsIndex;
 use App\Livewire\Compliance\Alerts\Show as AlertsShow;
+use App\Livewire\Compliance\Cases\Index;
 use App\Livewire\Compliance\Ctos\Index as CtosIndex;
 use App\Livewire\Compliance\Dashboard;
 use App\Livewire\Compliance\Edd\Form as EddForm;
@@ -69,7 +70,8 @@ use App\Livewire\Compliance\Sanctions\Index as SanctionsIndex;
 use App\Livewire\Compliance\Sanctions\Show as SanctionsShow;
 use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
-use App\Livewire\Counters\Index;
+use App\Livewire\Counters\History as CountersHistory;
+use App\Livewire\Counters\Index as CountersIndex;
 use App\Livewire\Counters\Open;
 use App\Livewire\Customers\Create as CustomerCreate;
 use App\Livewire\Customers\Edit as CustomerEdit;
@@ -256,13 +258,13 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Counters
     Route::prefix('counters')->name('counters.')->group(function () {
-        Route::get('/', Index::class)->name('index');
+        Route::get('/', CountersIndex::class)->name('index');
         Route::get('/open', Open::class)->name('open');
         Route::post('/open', Open::class)->name('open.store');
         Route::get('/{counter}/close', Close::class)->name('close.show');
         Route::post('/{counter}/close', Close::class)->name('close');
         Route::get('/{counter}/status', [CounterController::class, 'status'])->name('status');
-        Route::get('/{counter}/history', [CounterController::class, 'history'])->name('history');
+        Route::get('/{counter}/history', CountersHistory::class)->name('history');
         Route::get('/{counter}/handover', Handover::class)->name('handover.show');
         Route::post('/{counter}/handover', Handover::class)->name('handover');
     });
@@ -336,7 +338,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Case Management
         Route::prefix('compliance/cases')->name('compliance.cases.')->group(function () {
-            Route::get('/', App\Livewire\Compliance\Cases\Index::class)->name('index');
+            Route::get('/', Index::class)->name('index');
             Route::post('/', [CaseManagementController::class, 'store'])->name('store');
             Route::get('/{case}', App\Livewire\Compliance\Cases\Show::class)->name('show');
             Route::patch('/{case}', [CaseManagementController::class, 'update'])->name('update');
