@@ -10,14 +10,14 @@
                 </button>
                 <div>
                     <div class="flex items-center gap-3">
-                        <h1 class="text-2xl font-semibold text-[--color-ink]">
+                        <h1 class="text-2xl font-semibold text-gray-900">
                             Transfer #{{ $transferData['transfer_number'] ?? $stockTransferId }}
                         </h1>
                         <span class="badge {{ $transferData['status_badge_class'] ?? 'badge-default' }}">
                             {{ $transferData['status_label'] ?? 'Unknown' }}
                         </span>
                     </div>
-                    <p class="text-sm text-[--color-ink-muted]">
+                    <p class="text-sm text-gray-500">
                         Created {{ $transferData['requested_at'] ?? 'N/A' }}
                     </p>
                 </div>
@@ -44,24 +44,24 @@
             <div class="card-body">
                 <dl class="space-y-4">
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">Transfer Date</dt>
+                        <dt class="text-sm text-gray-500">Transfer Date</dt>
                         <dd class="font-mono">{{ $transferData['transfer_date'] ?? 'N/A' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">Transfer Type</dt>
+                        <dt class="text-sm text-gray-500">Transfer Type</dt>
                         <dd>{{ $transferData['type'] ?? 'Standard' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">Source Branch</dt>
+                        <dt class="text-sm text-gray-500">Source Branch</dt>
                         <dd class="font-medium">{{ $transferData['source_branch_name'] ?? 'N/A' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">Destination Branch</dt>
+                        <dt class="text-sm text-gray-500">Destination Branch</dt>
                         <dd class="font-medium">{{ $transferData['destination_branch_name'] ?? 'N/A' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">Total Value</dt>
-                        <dd class="text-xl font-mono font-bold text-[--color-accent]">
+                        <dt class="text-sm text-gray-500">Total Value</dt>
+                        <dd class="text-xl font-mono font-bold text-amber-500">
                             RM {{ number_format((float) ($transferData['total_value'] ?? 0), 2) }}
                         </dd>
                     </div>
@@ -76,34 +76,34 @@
             <div class="card-body">
                 <dl class="space-y-4">
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">Requested By</dt>
+                        <dt class="text-sm text-gray-500">Requested By</dt>
                         <dd class="font-medium">{{ $transferData['requested_by'] ?? 'N/A' }}</dd>
-                        <dd class="text-sm text-[--color-ink-muted]">{{ $transferData['requested_at'] ?? '' }}</dd>
+                        <dd class="text-sm text-gray-500">{{ $transferData['requested_at'] ?? '' }}</dd>
                     </div>
                     @if($transferData['branch_manager_approved_by'])
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">Branch Manager Approved</dt>
-                        <dd class="font-medium text-[--color-success]">{{ $transferData['branch_manager_approved_by'] }}</dd>
-                        <dd class="text-sm text-[--color-ink-muted]">{{ $transferData['branch_manager_approved_at'] ?? '' }}</dd>
+                        <dt class="text-sm text-gray-500">Branch Manager Approved</dt>
+                        <dd class="font-medium text-green-600">{{ $transferData['branch_manager_approved_by'] }}</dd>
+                        <dd class="text-sm text-gray-500">{{ $transferData['branch_manager_approved_at'] ?? '' }}</dd>
                     </div>
                     @endif
                     @if($transferData['hq_approved_by'])
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">HQ Approved</dt>
-                        <dd class="font-medium text-[--color-success]">{{ $transferData['hq_approved_by'] }}</dd>
-                        <dd class="text-sm text-[--color-ink-muted]">{{ $transferData['hq_approved_at'] ?? '' }}</dd>
+                        <dt class="text-sm text-gray-500">HQ Approved</dt>
+                        <dd class="font-medium text-green-600">{{ $transferData['hq_approved_by'] }}</dd>
+                        <dd class="text-sm text-gray-500">{{ $transferData['hq_approved_at'] ?? '' }}</dd>
                     </div>
                     @endif
                     @if($transferData['dispatched_at'])
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">Dispatched</dt>
-                        <dd class="text-sm text-[--color-ink-muted]">{{ $transferData['dispatched_at'] }}</dd>
+                        <dt class="text-sm text-gray-500">Dispatched</dt>
+                        <dd class="text-sm text-gray-500">{{ $transferData['dispatched_at'] }}</dd>
                     </div>
                     @endif
                     @if($transferData['completed_at'])
                     <div>
-                        <dt class="text-sm text-[--color-ink-muted]">Completed</dt>
-                        <dd class="text-sm text-[--color-ink-muted]">{{ $transferData['completed_at'] }}</dd>
+                        <dt class="text-sm text-gray-500">Completed</dt>
+                        <dd class="text-sm text-gray-500">{{ $transferData['completed_at'] }}</dd>
                     </div>
                     @endif
                 </dl>
@@ -161,7 +161,7 @@
                 @endif
 
                 @if(!$canApproveBm && !$canApproveHq && !$canDispatch && !$canReceive && !$canComplete && !$canCancel)
-                    <p class="text-[--color-ink-muted] text-sm text-center py-4">No actions available</p>
+                    <p class="text-gray-500 text-sm text-center py-4">No actions available</p>
                 @endif
             </div>
         </div>
@@ -190,7 +190,7 @@
                     <tr>
                         <td>
                             <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center font-bold text-xs">
+                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center font-bold text-xs">
                                     {{ substr($item['currency_code'], 0, 1) }}
                                 </div>
                                 <span class="font-mono font-medium">{{ $item['currency_code'] }}</span>
@@ -206,7 +206,7 @@
                                     {{ number_format((float) $item['variance'], 2) }}
                                 </span>
                             @else
-                                <span class="text-[--color-ink-muted] font-mono">-</span>
+                                <span class="text-gray-500 font-mono">-</span>
                             @endif
                         </td>
                         <td>
@@ -221,7 +221,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-8 text-[--color-ink-muted]">No items in this transfer</td>
+                        <td colspan="7" class="text-center py-8 text-gray-500">No items in this transfer</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -243,7 +243,7 @@
             <h3 class="card-title">Notes</h3>
         </div>
         <div class="card-body">
-            <p class="text-[--color-ink-muted]">{{ $transferData['notes'] }}</p>
+            <p class="text-gray-500">{{ $transferData['notes'] }}</p>
         </div>
     </div>
     @endif
@@ -266,8 +266,8 @@
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="fixed inset-0 bg-black opacity-25"></div>
             <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                <h3 class="text-lg font-semibold text-[--color-ink] mb-4">Cancel Transfer</h3>
-                <p class="text-[--color-ink-muted] mb-4">Are you sure you want to cancel this transfer? This action cannot be undone.</p>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Cancel Transfer</h3>
+                <p class="text-gray-500 mb-4">Are you sure you want to cancel this transfer? This action cannot be undone.</p>
                 <div class="form-group mb-4">
                     <label class="form-label">Reason for Cancellation</label>
                     <textarea
@@ -292,20 +292,20 @@
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="fixed inset-0 bg-black opacity-25"></div>
             <div class="relative bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
-                <h3 class="text-lg font-semibold text-[--color-ink] mb-4">Receive Items</h3>
-                <p class="text-[--color-ink-muted] mb-4">Enter the quantity received for each item.</p>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Receive Items</h3>
+                <p class="text-gray-500 mb-4">Enter the quantity received for each item.</p>
 
                 <div class="space-y-4 mb-6">
                     @foreach($items as $item)
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center font-bold text-xs">
+                            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center font-bold text-xs">
                                 {{ substr($item['currency_code'], 0, 1) }}
                             </div>
                             <span class="font-mono font-medium">{{ $item['currency_code'] }}</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="text-sm text-[--color-ink-muted]">of {{ number_format((float) $item['quantity'], 2) }}</span>
+                            <span class="text-sm text-gray-500">of {{ number_format((float) $item['quantity'], 2) }}</span>
                             <input
                                 type="number"
                                 wire:model.live="receiveQuantities.{{ $item['id'] }}"

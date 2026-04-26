@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Sanction Lists</h1>
-    <p class="text-sm text-[--color-ink-muted]">Manage sanctions lists and entries</p>
+    <h1 class="text-2xl font-semibold text-gray-900">Sanction Lists</h1>
+    <p class="text-sm text-gray-500">Manage sanctions lists and entries</p>
 </div>
 @endsection
 
@@ -23,25 +23,25 @@
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
     <div class="stat-card">
         <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Total Lists</p>
+            <p class="text-sm text-gray-500">Total Lists</p>
             <p class="text-2xl font-bold">{{ number_format($summary['total_lists'] ?? 0) }}</p>
         </div>
     </div>
     <div class="stat-card">
         <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Active Lists</p>
+            <p class="text-sm text-gray-500">Active Lists</p>
             <p class="text-2xl font-bold">{{ number_format($summary['active_lists'] ?? 0) }}</p>
         </div>
     </div>
     <div class="stat-card">
         <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Total Entries</p>
+            <p class="text-sm text-gray-500">Total Entries</p>
             <p class="text-2xl font-bold">{{ number_format($summary['total_entries'] ?? 0) }}</p>
         </div>
     </div>
     <div class="stat-card">
         <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Last Import</p>
+            <p class="text-sm text-gray-500">Last Import</p>
             <p class="text-2xl font-bold">
                 @if($summary['last_import'])
                     {{ $summary['last_import']->format('d M Y') }}
@@ -98,7 +98,7 @@
                 @forelse($lists as $list)
                 <tr>
                     <td>
-                        <a href="{{ route('compliance.sanctions.show', $list->id) }}" class="font-medium text-[--color-accent] hover:underline">
+                        <a href="{{ route('compliance.sanctions.show', $list->id) }}" class="font-medium text-amber-500 hover:underline">
                             {{ $list->name }}
                         </a>
                     </td>
@@ -138,7 +138,7 @@
                     <td colspan="6">
                         <div class="empty-state py-12">
                             <div class="empty-state-icon">
-                                <svg class="w-8 h-8 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
                             </div>

@@ -1,14 +1,14 @@
 <div class="app-shell">
     <livewire:sidebar />
     <div class="main-wrapper">
-        <header class="sticky top-0 z-40 bg-[--content-bg]/80 backdrop-blur-md border-b border-[--color-border]">
+        <header class="sticky top-0 z-40 bg-[--content-bg]/80 backdrop-blur-md border-b border-gray-200">
             <div class="flex items-center justify-between px-8 py-4">
                 {{-- Page Title --}}
                 <div>
                     @hasSection('header-title')
                         @yield('header-title')
                     @else
-                        <h1 class="text-xl font-semibold text-[--color-ink]">@yield('title', 'CEMS-MY')</h1>
+                        <h1 class="text-xl font-semibold text-gray-900">@yield('title', 'CEMS-MY')</h1>
                     @endif
                 </div>
 
@@ -64,18 +64,18 @@
         </main>
 
         {{-- Footer --}}
-        <footer class="border-t border-[--color-border] py-6 px-8 bg-[--color-canvas]">
-            <div class="flex items-center justify-between text-sm text-[--color-ink-muted]">
+        <footer class="border-t border-gray-200 py-6 px-8 bg-white">
+            <div class="flex items-center justify-between text-sm text-gray-500">
                 <div class="flex items-center gap-3">
-                    <div class="w-6 h-6 bg-[--color-accent] rounded flex items-center justify-center">
+                    <div class="w-6 h-6 bg-amber-500 rounded flex items-center justify-center">
                         <span class="text-white font-bold text-xs">C</span>
                     </div>
                     <span>CEMS-MY v1.0 - Bank Negara Malaysia Compliant MSB Management System</span>
                 </div>
                 <div class="flex items-center gap-6">
-                    <a href="#" class="hover:text-[--color-ink] transition-colors">Documentation</a>
-                    <a href="#" class="hover:text-[--color-ink] transition-colors">Support</a>
-                    <a href="#" class="hover:text-[--color-ink] transition-colors">Security</a>
+                    <a href="#" class="hover:text-gray-900 transition-colors">Documentation</a>
+                    <a href="#" class="hover:text-gray-900 transition-colors">Support</a>
+                    <a href="#" class="hover:text-gray-900 transition-colors">Security</a>
                 </div>
             </div>
         </footer>

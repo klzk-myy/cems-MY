@@ -10,8 +10,8 @@
         </svg>
     </a>
     <div>
-        <h1 class="text-xl font-semibold text-[--color-ink]">New Transaction</h1>
-        <p class="text-sm text-[--color-ink-muted]">Create a new currency exchange transaction</p>
+        <h1 class="text-xl font-semibold text-gray-900">New Transaction</h1>
+        <p class="text-sm text-gray-500">Create a new currency exchange transaction</p>
     </div>
 </div>
 @endsection
@@ -25,7 +25,7 @@
                 {{-- Step 1 --}}
                 <div class="flex items-center gap-2">
                     <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors
-                        {{ $currentStep >= 1 ? 'bg-[--color-accent] text-white' : 'bg-[--color-canvas-subtle] text-[--color-ink-muted]' }}">
+                        {{ $currentStep >= 1 ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500' }}">
                         @if($currentStep > 1)
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -34,16 +34,16 @@
                             1
                         @endif
                     </div>
-                    <span class="text-sm font-medium {{ $currentStep >= 1 ? 'text-[--color-ink]' : 'text-[--color-ink-muted]' }}">Customer</span>
+                    <span class="text-sm font-medium {{ $currentStep >= 1 ? 'text-gray-900' : 'text-gray-500' }}">Customer</span>
                 </div>
 
                 {{-- Connector --}}
-                <div class="w-16 h-0.5 {{ $currentStep > 1 ? 'bg-[--color-accent]' : 'bg-[--color-border]' }}"></div>
+                <div class="w-16 h-0.5 {{ $currentStep > 1 ? 'bg-amber-500' : 'bg-gray-200' }}"></div>
 
                 {{-- Step 2 --}}
                 <div class="flex items-center gap-2">
                     <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors
-                        {{ $currentStep >= 2 ? 'bg-[--color-accent] text-white' : 'bg-[--color-canvas-subtle] text-[--color-ink-muted]' }}">
+                        {{ $currentStep >= 2 ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500' }}">
                         @if($currentStep > 2)
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -52,19 +52,19 @@
                             2
                         @endif
                     </div>
-                    <span class="text-sm font-medium {{ $currentStep >= 2 ? 'text-[--color-ink]' : 'text-[--color-ink-muted]' }}">Currency & Amount</span>
+                    <span class="text-sm font-medium {{ $currentStep >= 2 ? 'text-gray-900' : 'text-gray-500' }}">Currency & Amount</span>
                 </div>
 
                 {{-- Connector --}}
-                <div class="w-16 h-0.5 {{ $currentStep > 2 ? 'bg-[--color-accent]' : 'bg-[--color-border]' }}"></div>
+                <div class="w-16 h-0.5 {{ $currentStep > 2 ? 'bg-amber-500' : 'bg-gray-200' }}"></div>
 
                 {{-- Step 3 --}}
                 <div class="flex items-center gap-2">
                     <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors
-                        {{ $currentStep >= 3 ? 'bg-[--color-accent] text-white' : 'bg-[--color-canvas-subtle] text-[--color-ink-muted]' }}">
+                        {{ $currentStep >= 3 ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500' }}">
                         3
                     </div>
-                    <span class="text-sm font-medium {{ $currentStep >= 3 ? 'text-[--color-ink]' : 'text-[--color-ink-muted]' }}">Review</span>
+                    <span class="text-sm font-medium {{ $currentStep >= 3 ? 'text-gray-900' : 'text-gray-500' }}">Review</span>
                 </div>
             </div>
         </div>

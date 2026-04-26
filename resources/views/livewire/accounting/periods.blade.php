@@ -1,8 +1,8 @@
 <div>
     {{-- Header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink]">Accounting Periods</h1>
-        <p class="text-sm text-[--color-ink-muted]">Manage accounting period opening and closing</p>
+        <h1 class="text-2xl font-semibold text-gray-900">Accounting Periods</h1>
+        <p class="text-sm text-gray-500">Manage accounting period opening and closing</p>
     </div>
 
     <div class="card">
@@ -29,7 +29,7 @@
                         <td>{{ $period['name'] }}</td>
                         <td>{{ $period['start_date'] }}</td>
                         <td>{{ $period['end_date'] }}</td>
-                        <td class="text-[--color-ink-muted]">{{ ucfirst($period['period_type']) }}</td>
+                        <td class="text-gray-500">{{ ucfirst($period['period_type']) }}</td>
                         <td>
                             @if($period['is_closed'])
                                 <span class="badge badge-default">Closed</span>
@@ -42,7 +42,7 @@
                                 <button
                                     wire:click="closePeriod({{ $period['id'] }})"
                                     wire:confirm="Are you sure you want to close this period? This action cannot be undone."
-                                    class="btn btn-ghost btn-sm text-[--color-danger]">
+                                    class="btn btn-ghost btn-sm text-red-600">
                                     Close
                                 </button>
                             @endif
@@ -50,7 +50,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-8 text-[--color-ink-muted]">No periods found</td>
+                        <td colspan="7" class="text-center py-8 text-gray-500">No periods found</td>
                     </tr>
                     @endforelse
                 </tbody>

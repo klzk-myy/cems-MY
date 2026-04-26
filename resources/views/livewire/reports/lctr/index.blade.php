@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Large Cash Transaction Report</h1>
-    <p class="text-sm text-[--color-ink-muted]">Monthly - {{ $month ? \Carbon\Carbon::parse($month)->format('F Y') : '' }}</p>
+    <h1 class="text-2xl font-semibold text-gray-900">Large Cash Transaction Report</h1>
+    <p class="text-sm text-gray-500">Monthly - {{ $month ? \Carbon\Carbon::parse($month)->format('F Y') : '' }}</p>
 </div>
 @endsection
 
@@ -39,7 +39,7 @@
                     <td>{{ $tx['Transaction_Type'] ?? 'N/A' }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="text-center py-8 text-[--color-ink-muted]">No transactions found</td></tr>
+                <tr><td colspan="5" class="text-center py-8 text-gray-500">No transactions found</td></tr>
                 @endforelse
             </tbody>
         </table>

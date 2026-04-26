@@ -1,8 +1,8 @@
 <div>
     {{-- Header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink]">New Journal Entry</h1>
-        <p class="text-sm text-[--color-ink-muted]">Create a double-entry journal entry</p>
+        <h1 class="text-2xl font-semibold text-gray-900">New Journal Entry</h1>
+        <p class="text-sm text-gray-500">Create a double-entry journal entry</p>
     </div>
 
     <form wire:submit.prevent="save">
@@ -81,7 +81,7 @@
                                     </td>
                                     <td>
                                         @if(count($lines) > 2)
-                                        <button type="button" wire:click="removeLine({{ $index }})" class="btn btn-ghost btn-icon text-[--color-danger]">
+                                        <button type="button" wire:click="removeLine({{ $index }})" class="btn btn-ghost btn-icon text-red-600">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
@@ -97,17 +97,17 @@
                     {{-- Totals --}}
                     <div class="mt-4 flex justify-end">
                         <div class="w-80">
-                            <div class="flex justify-between py-2 border-b border-[--color-border]">
-                                <span class="text-[--color-ink-muted]">Total Debits:</span>
+                            <div class="flex justify-between py-2 border-b border-gray-200">
+                                <span class="text-gray-500">Total Debits:</span>
                                 <span class="font-mono font-medium">{{ number_format((float) $totalDebits, 2) }} MYR</span>
                             </div>
-                            <div class="flex justify-between py-2 border-b border-[--color-border]">
-                                <span class="text-[--color-ink-muted]">Total Credits:</span>
+                            <div class="flex justify-between py-2 border-b border-gray-200">
+                                <span class="text-gray-500">Total Credits:</span>
                                 <span class="font-mono font-medium">{{ number_format((float) $totalCredits, 2) }} MYR</span>
                             </div>
                             <div class="flex justify-between py-2">
-                                <span class="text-[--color-ink-muted]">Difference:</span>
-                                <span class="font-mono font-medium {{ $isBalanced ? 'text-[--color-success]' : 'text-[--color-danger]' }}">
+                                <span class="text-gray-500">Difference:</span>
+                                <span class="font-mono font-medium {{ $isBalanced ? 'text-green-600' : 'text-red-600' }}">
                                     {{ number_format((float) bcsub($totalDebits, $totalCredits, 4), 4) }} MYR
                                 </span>
                             </div>
@@ -116,14 +116,14 @@
 
                     {{-- Balance Status --}}
                     @error('balance')
-                        <div class="mt-4 p-3 bg-[--color-danger]/10 border border-[--color-danger]/20 rounded">
-                            <p class="text-[--color-danger] text-sm">{{ $message }}</p>
+                        <div class="mt-4 p-3 bg-red-600/10 border border-red-600/20 rounded">
+                            <p class="text-red-600 text-sm">{{ $message }}</p>
                         </div>
                     @enderror
 
                     @error('lines')
-                        <div class="mt-4 p-3 bg-[--color-danger]/10 border border-[--color-danger]/20 rounded">
-                            <p class="text-[--color-danger] text-sm">{{ $message }}</p>
+                        <div class="mt-4 p-3 bg-red-600/10 border border-red-600/20 rounded">
+                            <p class="text-red-600 text-sm">{{ $message }}</p>
                         </div>
                     @enderror
 

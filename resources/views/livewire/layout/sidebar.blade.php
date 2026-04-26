@@ -1,14 +1,14 @@
 {{-- Sidebar --}}
 <aside class="sidebar">
     {{-- Logo --}}
-    <div class="px-4 py-5 border-b border-[--sidebar-border]">
+    <div class="px-4 py-5 border-b border-gray-700">
         <a href="{{ auth()->check() ? '/dashboard' : '/' }}" class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-[--color-accent] rounded-lg flex items-center justify-center">
+            <div class="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center">
                 <span class="text-white font-bold text-lg">C</span>
             </div>
             <div>
                 <span class="text-white font-semibold">CEMS-MY</span>
-                <p class="text-[10px] text-[--sidebar-text-muted]">Currency Exchange MSB</p>
+                <p class="text-[10px] text-gray-400">Currency Exchange MSB</p>
             </div>
         </a>
     </div>
@@ -19,9 +19,9 @@
             <input
                 type="search"
                 placeholder="Search..."
-                class="w-full pl-9 pr-4 py-2 text-sm bg-[--sidebar-hover] border border-[--sidebar-border] rounded-lg text-[--sidebar-text] placeholder:text-[--sidebar-text-muted] focus:outline-none focus:border-[--sidebar-border] focus:ring-1 focus:ring-[--color-accent]/30"
+                class="w-full pl-9 pr-4 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder:text-gray-400 focus:outline-none focus:border-gray-700 focus:ring-1 focus:ring-amber-500/30"
             >
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--sidebar-text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
         </div>
@@ -147,7 +147,7 @@
                 </svg>
                 <span>Findings</span>
             </a>
-            <a href="/compliance/unified" class="flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg {{ $this->isActive('compliance/unified') ? 'bg-[--color-accent] text-white' : 'text-[--color-ink-muted] hover:bg-[--color-canvas-subtle]' }}">
+            <a href="/compliance/unified" class="flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg {{ $this->isActive('compliance/unified') ? 'bg-amber-500 text-white' : 'text-gray-500 hover:bg-gray-100' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
@@ -348,20 +348,20 @@
     </nav>
 
     {{-- User Section --}}
-    <div class="px-4 py-4 border-t border-[--sidebar-border]">
+    <div class="px-4 py-4 border-t border-gray-700">
         @auth
             <div class="flex items-center gap-3 mb-3">
-                <div class="w-9 h-9 bg-[--sidebar-hover] rounded-lg flex items-center justify-center">
+                <div class="w-9 h-9 bg-gray-800 rounded-lg flex items-center justify-center">
                     <span class="text-white font-semibold text-sm">{{ substr(auth()->user()->username, 0, 1) }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-white truncate">{{ auth()->user()->username }}</p>
-                    <p class="text-xs text-[--sidebar-text-muted]">{{ auth()->user()->role->label() }}</p>
+                    <p class="text-xs text-gray-400">{{ auth()->user()->role->label() }}</p>
                 </div>
             </div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="btn btn-ghost w-full text-[--sidebar-text] hover:bg-[--sidebar-hover] hover:text-white">
+                <button type="submit" class="btn btn-ghost w-full text-gray-200 hover:bg-gray-800 hover:text-white">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>

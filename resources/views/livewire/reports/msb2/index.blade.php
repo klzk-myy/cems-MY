@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">MSB2 Report</h1>
-    <p class="text-sm text-[--color-ink-muted]">Daily Transaction Summary for Bank Negara Malaysia</p>
+    <h1 class="text-2xl font-semibold text-gray-900">MSB2 Report</h1>
+    <p class="text-sm text-gray-500">Daily Transaction Summary for Bank Negara Malaysia</p>
 </div>
 @endsection
 
@@ -35,19 +35,19 @@
     <div class="card-body">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
-                <p class="text-sm text-[--color-ink-muted]">Total Transactions</p>
+                <p class="text-sm text-gray-500">Total Transactions</p>
                 <p class="text-2xl font-semibold">{{ number_format($report['total_transactions']) }}</p>
             </div>
             <div>
-                <p class="text-sm text-[--color-ink-muted]">Buy Volume</p>
+                <p class="text-sm text-gray-500">Buy Volume</p>
                 <p class="text-2xl font-semibold">{{ number_format($report['buy_volume'], 2) }} MYR</p>
             </div>
             <div>
-                <p class="text-sm text-[--color-ink-muted]">Sell Volume</p>
+                <p class="text-sm text-gray-500">Sell Volume</p>
                 <p class="text-2xl font-semibold">{{ number_format($report['sell_volume'], 2) }} MYR</p>
             </div>
             <div>
-                <p class="text-sm text-[--color-ink-muted]">Net Volume</p>
+                <p class="text-sm text-gray-500">Net Volume</p>
                 <p class="text-2xl font-semibold">{{ number_format(bcsub($report['buy_volume'], $report['sell_volume'], 2), 2) }} MYR</p>
             </div>
         </div>
@@ -77,7 +77,7 @@
                     <td class="font-mono text-right">{{ number_format($currency['sell_count'] ?? 0) }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="text-center py-8 text-[--color-ink-muted]">No data</td></tr>
+                <tr><td colspan="5" class="text-center py-8 text-gray-500">No data</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -88,7 +88,7 @@
     <div class="card-body">
         <div class="empty-state py-16">
             <div class="empty-state-icon">
-                <svg class="w-12 h-12 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
             </div>

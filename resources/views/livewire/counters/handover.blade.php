@@ -13,15 +13,15 @@
         @endif
 
         @if($session)
-        <div class="bg-[--color-surface-elevated] p-6 rounded-lg mb-6">
-            <h4 class="text-sm font-medium text-[--color-ink-muted] mb-4">Current Session</h4>
+        <div class="bg-gray-50 p-6 rounded-lg mb-6">
+            <h4 class="text-sm font-medium text-gray-500 mb-4">Current Session</h4>
             <dl class="grid grid-cols-2 gap-4">
                 <div>
-                    <dt class="text-sm text-[--color-ink-muted]">Current Holder</dt>
+                    <dt class="text-sm text-gray-500">Current Holder</dt>
                     <dd class="font-medium">{{ $session->user->username ?? 'N/A' }}</dd>
                 </div>
                 <div>
-                    <dt class="text-sm text-[--color-ink-muted]">Opened At</dt>
+                    <dt class="text-sm text-gray-500">Opened At</dt>
                     <dd class="font-mono">{{ $session->opened_at?->format('Y-m-d H:i:s') ?? 'N/A' }}</dd>
                 </div>
             </dl>

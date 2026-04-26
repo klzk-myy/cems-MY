@@ -1,8 +1,8 @@
 <div>
     {{-- Header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink]">Currency Revaluation</h1>
-        <p class="text-sm text-[--color-ink-muted]">Monthly exchange rate revaluation for currency positions</p>
+        <h1 class="text-2xl font-semibold text-gray-900">Currency Revaluation</h1>
+        <p class="text-sm text-gray-500">Monthly exchange rate revaluation for currency positions</p>
     </div>
 
     {{-- Header Actions --}}
@@ -29,7 +29,7 @@
 
     {{-- Run Message --}}
     @if($runMessage)
-        <div class="mb-6 p-4 rounded-lg {{ str_contains($runMessage, 'failed') ? 'bg-[--color-danger]' : 'bg-[--color-success]' }} bg-opacity-10 text-[--color-ink]">
+        <div class="mb-6 p-4 rounded-lg {{ str_contains($runMessage, 'failed') ? 'bg-red-600' : 'bg-green-600' }} bg-opacity-10 text-gray-900">
             <p class="text-sm">{{ $runMessage }}</p>
         </div>
     @endif
@@ -55,13 +55,13 @@
                         <td>
                             <div class="flex items-center gap-3">
                                 <span class="font-mono font-medium">{{ $position['currency_code'] }}</span>
-                                <span class="text-[--color-ink-muted] text-sm">{{ $position['currency_name'] }}</span>
+                                <span class="text-gray-500 text-sm">{{ $position['currency_name'] }}</span>
                             </div>
                         </td>
                         <td class="font-mono">{{ number_format((float) $position['balance'], 4) }}</td>
                         <td class="font-mono">{{ number_format((float) $position['current_rate'], 6) }}</td>
                         <td class="font-mono">{{ number_format((float) $position['previous_rate'], 6) }}</td>
-                        <td class="font-mono {{ (float) $position['unrealized_pnl'] >= 0 ? 'text-[--color-success]' : 'text-[--color-danger]' }}">
+                        <td class="font-mono {{ (float) $position['unrealized_pnl'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ number_format((float) $position['unrealized_pnl'], 2) }} MYR
                         </td>
                         <td>
@@ -71,7 +71,7 @@
                                 <span class="badge badge-success">Current</span>
                             @endif
                         </td>
-                        <td class="text-[--color-ink-muted] text-sm">
+                        <td class="text-gray-500 text-sm">
                             @if($position['last_valuation_at'])
                                 {{ \Carbon\Carbon::parse($position['last_valuation_at'])->format('d M Y H:i') }}
                             @else
@@ -81,7 +81,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-12 text-[--color-ink-muted]">No currency positions found</td>
+                        <td colspan="7" class="text-center py-12 text-gray-500">No currency positions found</td>
                     </tr>
                     @endforelse
                 </tbody>

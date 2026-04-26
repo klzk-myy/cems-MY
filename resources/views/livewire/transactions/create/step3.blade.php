@@ -1,17 +1,17 @@
 <div>
     <div class="card-header">
         <h3 class="card-title">Step 3: Review & Submit</h3>
-        <p class="text-sm text-[--color-ink-muted]">Review transaction details before submitting</p>
+        <p class="text-sm text-gray-500">Review transaction details before submitting</p>
     </div>
     <div class="card-body space-y-6">
         {{-- Customer Summary --}}
-        <div class="p-4 bg-[--color-canvas-subtle] rounded-lg border border-[--color-border]">
-            <h4 class="text-sm font-semibold text-[--color-ink-muted] uppercase tracking-wide mb-3">Customer</h4>
+        <div class="p-4 bg-gray-100 rounded-lg border border-gray-200">
+            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Customer</h4>
             <div class="flex items-center justify-between">
                 <div>
                     <p class="font-semibold text-lg">{{ $customerName ?? 'N/A' }}</p>
                     @if($selectedCustomer)
-                        <p class="text-sm text-[--color-ink-muted]">
+                        <p class="text-sm text-gray-500">
                             {{ $selectedCustomer->ic_number ?? 'N/A' }}
                             @if($selectedCustomer->nationality)
                                 &bull; {{ $selectedCustomer->nationality }}
@@ -26,46 +26,46 @@
         </div>
 
         {{-- Transaction Details --}}
-        <div class="p-4 bg-[--color-canvas-subtle] rounded-lg border border-[--color-border]">
-            <h4 class="text-sm font-semibold text-[--color-ink-muted] uppercase tracking-wide mb-3">Transaction Details</h4>
+        <div class="p-4 bg-gray-100 rounded-lg border border-gray-200">
+            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Transaction Details</h4>
 
             <div class="grid grid-cols-2 gap-6">
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">Transaction Type</p>
+                    <p class="text-sm text-gray-500">Transaction Type</p>
                     <p class="font-semibold">
                         @if($type === 'Buy')
-                            <span class="text-[--color-success]">Buy Foreign Currency</span>
+                            <span class="text-green-600">Buy Foreign Currency</span>
                         @else
-                            <span class="text-[--color-warning]">Sell Foreign Currency</span>
+                            <span class="text-amber-500">Sell Foreign Currency</span>
                         @endif
                     </p>
                 </div>
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">Currency</p>
+                    <p class="text-sm text-gray-500">Currency</p>
                     <p class="font-semibold">{{ $currencyCode ?? 'N/A' }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">Foreign Amount</p>
+                    <p class="text-sm text-gray-500">Foreign Amount</p>
                     <p class="font-semibold">{{ number_format((float)($amountForeign ?? 0), 2) }} {{ $currencyCode ?? '' }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">Exchange Rate</p>
+                    <p class="text-sm text-gray-500">Exchange Rate</p>
                     <p class="font-semibold">{{ number_format((float)($rate ?? 0), 4) }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">MYR Value</p>
+                    <p class="text-sm text-gray-500">MYR Value</p>
                     <p class="font-semibold text-lg">RM {{ number_format((float)($amountLocal ?? 0), 2) }}</p>
                 </div>
             </div>
         </div>
 
         {{-- Branch & Counter --}}
-        <div class="p-4 bg-[--color-canvas-subtle] rounded-lg border border-[--color-border]">
-            <h4 class="text-sm font-semibold text-[--color-ink-muted] uppercase tracking-wide mb-3">Branch & Counter</h4>
+        <div class="p-4 bg-gray-100 rounded-lg border border-gray-200">
+            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Branch & Counter</h4>
             <div class="flex items-center justify-between">
                 <div class="grid grid-cols-2 gap-6">
                     <div>
-                        <p class="text-sm text-[--color-ink-muted]">Branch</p>
+                        <p class="text-sm text-gray-500">Branch</p>
                         <p class="font-semibold">
                             @foreach($branches as $branch)
                                 @if($branch->id === $branchId)
@@ -75,7 +75,7 @@
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-[--color-ink-muted]">Counter</p>
+                        <p class="text-sm text-gray-500">Counter</p>
                         <p class="font-semibold">
                             @foreach($counters ?? [] as $counter)
                                 @if($counter->id === $counterId)
@@ -92,16 +92,16 @@
         </div>
 
         {{-- Purpose & Source of Funds --}}
-        <div class="p-4 bg-[--color-canvas-subtle] rounded-lg border border-[--color-border]">
-            <h4 class="text-sm font-semibold text-[--color-ink-muted] uppercase tracking-wide mb-3">Purpose & Source of Funds</h4>
+        <div class="p-4 bg-gray-100 rounded-lg border border-gray-200">
+            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Purpose & Source of Funds</h4>
             <div class="flex items-center justify-between">
                 <div class="grid grid-cols-2 gap-6">
                     <div>
-                        <p class="text-sm text-[--color-ink-muted]">Purpose</p>
+                        <p class="text-sm text-gray-500">Purpose</p>
                         <p class="font-semibold capitalize">{{ $purpose ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-[--color-ink-muted]">Source of Funds</p>
+                        <p class="text-sm text-gray-500">Source of Funds</p>
                         <p class="font-semibold capitalize">{{ str_replace('_', ' ', $sourceOfFunds ?? 'N/A') }}</p>
                     </div>
                 </div>
@@ -138,9 +138,9 @@
         @endif
 
         {{-- Submit Section --}}
-        <div class="pt-4 border-t border-[--color-border]">
+        <div class="pt-4 border-t border-gray-200">
             <div class="flex items-center justify-between">
-                <div class="text-sm text-[--color-ink-muted]">
+                <div class="text-sm text-gray-500">
                     By submitting this transaction, you confirm that all information is accurate and complete.
                 </div>
                 <button type="button" wire:click="submit" class="btn btn-primary" wire:loading.attr="disabled">

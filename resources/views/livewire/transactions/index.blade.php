@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Transactions</h1>
-    <p class="text-sm text-[--color-ink-muted]">Manage currency exchange transactions</p>
+    <h1 class="text-2xl font-semibold text-gray-900">Transactions</h1>
+    <p class="text-sm text-gray-500">Manage currency exchange transactions</p>
 </div>
 @endsection
 
@@ -87,7 +87,7 @@
                     <td class="font-mono text-xs">#{{ $tx->id }}</td>
                     <td>
                         <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center">
+                            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                                 <span class="text-xs font-medium">{{ substr($tx->customer->full_name ?? 'N/A', 0, 1) }}</span>
                             </div>
                             <span class="font-medium">{{ $tx->customer->full_name ?? 'N/A' }}</span>
@@ -123,7 +123,7 @@
                         @endphp
                         <span class="badge {{ $statusClass }}">{{ $tx->status->label() }}</span>
                     </td>
-                    <td class="text-[--color-ink-muted]">{{ $tx->created_at->format('d M Y, H:i') }}</td>
+                    <td class="text-gray-500">{{ $tx->created_at->format('d M Y, H:i') }}</td>
                     <td>
                         <div class="table-actions">
                             <a href="{{ route('transactions.show', $tx->id) }}" class="btn btn-ghost btn-icon" title="View">
@@ -147,7 +147,7 @@
                     <td colspan="10">
                         <div class="empty-state py-12">
                             <div class="empty-state-icon">
-                                <svg class="w-8 h-8 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                 </svg>
                             </div>

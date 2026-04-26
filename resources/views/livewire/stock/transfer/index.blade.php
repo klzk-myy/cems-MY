@@ -1,60 +1,60 @@
 <div>
     {{-- Header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink]">Stock Transfers</h1>
-        <p class="text-sm text-[--color-ink-muted]">Inter-branch currency transfers</p>
+        <h1 class="text-2xl font-semibold text-gray-900">Stock Transfers</h1>
+        <p class="text-sm text-gray-500">Inter-branch currency transfers</p>
     </div>
 
     {{-- Status Summary Cards --}}
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
         <button
             wire:click="$set('statusFilter', '')"
-            class="p-4 rounded-lg border transition-all {{ $statusFilter === '' ? 'bg-[--color-accent] text-white border-[--color-accent]' : 'bg-[--color-surface-elevated] border-[--color-border] hover:border-[--color-accent]' }}"
+            class="p-4 rounded-lg border transition-all {{ $statusFilter === '' ? 'bg-amber-500 text-white border-amber-500' : 'bg-gray-50 border-gray-200 hover:border-amber-500' }}"
         >
             <p class="text-2xl font-mono font-bold">{{ $statusCounts['all'] ?? 0 }}</p>
-            <p class="text-xs text-[--color-ink-muted] {{ $statusFilter === '' ? 'text-white/80' : '' }}">All</p>
+            <p class="text-xs text-gray-500 {{ $statusFilter === '' ? 'text-white/80' : '' }}">All</p>
         </button>
         <button
             wire:click="$set('statusFilter', 'Requested')"
-            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'Requested' ? 'bg-[--color-accent] text-white border-[--color-accent]' : 'bg-[--color-surface-elevated] border-[--color-border] hover:border-[--color-accent]' }}"
+            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'Requested' ? 'bg-amber-500 text-white border-amber-500' : 'bg-gray-50 border-gray-200 hover:border-amber-500' }}"
         >
             <p class="text-2xl font-mono font-bold">{{ $statusCounts['requested'] ?? 0 }}</p>
-            <p class="text-xs text-[--color-ink-muted] {{ $statusFilter === 'Requested' ? 'text-white/80' : '' }}">Pending</p>
+            <p class="text-xs text-gray-500 {{ $statusFilter === 'Requested' ? 'text-white/80' : '' }}">Pending</p>
         </button>
         <button
             wire:click="$set('statusFilter', 'BranchManagerApproved')"
-            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'BranchManagerApproved' ? 'bg-[--color-accent] text-white border-[--color-accent]' : 'bg-[--color-surface-elevated] border-[--color-border] hover:border-[--color-accent]' }}"
+            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'BranchManagerApproved' ? 'bg-amber-500 text-white border-amber-500' : 'bg-gray-50 border-gray-200 hover:border-amber-500' }}"
         >
             <p class="text-2xl font-mono font-bold">{{ $statusCounts['bm_approved'] ?? 0 }}</p>
-            <p class="text-xs text-[--color-ink-muted] {{ $statusFilter === 'BranchManagerApproved' ? 'text-white/80' : '' }}">BM Approved</p>
+            <p class="text-xs text-gray-500 {{ $statusFilter === 'BranchManagerApproved' ? 'text-white/80' : '' }}">BM Approved</p>
         </button>
         <button
             wire:click="$set('statusFilter', 'HQApproved')"
-            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'HQApproved' ? 'bg-[--color-accent] text-white border-[--color-accent]' : 'bg-[--color-surface-elevated] border-[--color-border] hover:border-[--color-accent]' }}"
+            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'HQApproved' ? 'bg-amber-500 text-white border-amber-500' : 'bg-gray-50 border-gray-200 hover:border-amber-500' }}"
         >
             <p class="text-2xl font-mono font-bold">{{ $statusCounts['hq_approved'] ?? 0 }}</p>
-            <p class="text-xs text-[--color-ink-muted] {{ $statusFilter === 'HQApproved' ? 'text-white/80' : '' }}">HQ Approved</p>
+            <p class="text-xs text-gray-500 {{ $statusFilter === 'HQApproved' ? 'text-white/80' : '' }}">HQ Approved</p>
         </button>
         <button
             wire:click="$set('statusFilter', 'InTransit')"
-            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'InTransit' ? 'bg-[--color-accent] text-white border-[--color-accent]' : 'bg-[--color-surface-elevated] border-[--color-border] hover:border-[--color-accent]' }}"
+            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'InTransit' ? 'bg-amber-500 text-white border-amber-500' : 'bg-gray-50 border-gray-200 hover:border-amber-500' }}"
         >
             <p class="text-2xl font-mono font-bold">{{ $statusCounts['in_transit'] ?? 0 }}</p>
-            <p class="text-xs text-[--color-ink-muted] {{ $statusFilter === 'InTransit' ? 'text-white/80' : '' }}">In Transit</p>
+            <p class="text-xs text-gray-500 {{ $statusFilter === 'InTransit' ? 'text-white/80' : '' }}">In Transit</p>
         </button>
         <button
             wire:click="$set('statusFilter', 'Completed')"
-            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'Completed' ? 'bg-[--color-accent] text-white border-[--color-accent]' : 'bg-[--color-surface-elevated] border-[--color-border] hover:border-[--color-accent]' }}"
+            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'Completed' ? 'bg-amber-500 text-white border-amber-500' : 'bg-gray-50 border-gray-200 hover:border-amber-500' }}"
         >
             <p class="text-2xl font-mono font-bold">{{ $statusCounts['completed'] ?? 0 }}</p>
-            <p class="text-xs text-[--color-ink-muted] {{ $statusFilter === 'Completed' ? 'text-white/80' : '' }}">Completed</p>
+            <p class="text-xs text-gray-500 {{ $statusFilter === 'Completed' ? 'text-white/80' : '' }}">Completed</p>
         </button>
         <button
             wire:click="$set('statusFilter', 'Cancelled')"
-            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'Cancelled' ? 'bg-[--color-accent] text-white border-[--color-accent]' : 'bg-[--color-surface-elevated] border-[--color-border] hover:border-[--color-accent]' }}"
+            class="p-4 rounded-lg border transition-all {{ $statusFilter === 'Cancelled' ? 'bg-amber-500 text-white border-amber-500' : 'bg-gray-50 border-gray-200 hover:border-amber-500' }}"
         >
             <p class="text-2xl font-mono font-bold">{{ $statusCounts['cancelled'] ?? 0 }}</p>
-            <p class="text-xs text-[--color-ink-muted] {{ $statusFilter === 'Cancelled' ? 'text-white/80' : '' }}">Cancelled</p>
+            <p class="text-xs text-gray-500 {{ $statusFilter === 'Cancelled' ? 'text-white/80' : '' }}">Cancelled</p>
         </button>
     </div>
 
@@ -122,7 +122,7 @@
                         <td class="font-mono text-xs">#{{ $transfer['id'] }}</td>
                         <td>
                             <div class="flex items-center gap-2">
-                                <svg class="w-4 h-4 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                                 </svg>
                                 <span class="text-sm">{{ $transfer['source_branch_name'] ?? 'N/A' }}</span>
@@ -130,7 +130,7 @@
                         </td>
                         <td>
                             <div class="flex items-center gap-2">
-                                <svg class="w-4 h-4 text-[--color-success]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
                                 </svg>
                                 <span class="text-sm">{{ $transfer['destination_branch_name'] ?? 'N/A' }}</span>
@@ -147,13 +147,13 @@
                         </td>
                         <td>
                             <div class="flex items-center gap-2">
-                                <div class="w-6 h-6 bg-[--color-canvas-subtle] rounded flex items-center justify-center text-xs">
+                                <div class="w-6 h-6 bg-gray-100 rounded flex items-center justify-center text-xs">
                                     {{ substr($transfer['requested_by'] ?? '?', 0, 1) }}
                                 </div>
                                 <span class="text-sm">{{ $transfer['requested_by'] ?? 'N/A' }}</span>
                             </div>
                         </td>
-                        <td class="text-[--color-ink-muted]">{{ \Carbon\Carbon::parse($transfer['created_at'])->format('d M Y') }}</td>
+                        <td class="text-gray-500">{{ \Carbon\Carbon::parse($transfer['created_at'])->format('d M Y') }}</td>
                         <td>
                             <div class="table-actions">
                                 <a href="{{ route('stock-transfers.show', $transfer['id']) }}" class="btn btn-ghost btn-icon" title="View">
@@ -170,7 +170,7 @@
                         <td colspan="9">
                             <div class="empty-state py-12">
                                 <div class="empty-state-icon">
-                                    <svg class="w-8 h-8 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                                     </svg>
                                 </div>

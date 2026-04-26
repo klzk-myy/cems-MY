@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Currency Position Limits</h1>
-    <p class="text-sm text-[--color-ink-muted]">Monitor currency exposure against configured limits</p>
+    <h1 class="text-2xl font-semibold text-gray-900">Currency Position Limits</h1>
+    <p class="text-sm text-gray-500">Monitor currency exposure against configured limits</p>
 </div>
 @endsection
 
@@ -27,19 +27,19 @@
     <div class="card-body">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
-                <p class="text-sm text-[--color-ink-muted]">Total Currencies</p>
+                <p class="text-sm text-gray-500">Total Currencies</p>
                 <p class="text-2xl font-semibold">{{ number_format($reportData['summary']['total_currencies'] ?? 0) }}</p>
             </div>
             <div>
-                <p class="text-sm text-[--color-ink-muted]">Total Exposure</p>
+                <p class="text-sm text-gray-500">Total Exposure</p>
                 <p class="text-2xl font-semibold">{{ number_format($reportData['total_exposure_myr'] ?? 0, 2) }} MYR</p>
             </div>
             <div>
-                <p class="text-sm text-[--color-ink-muted]">At Warning</p>
+                <p class="text-sm text-gray-500">At Warning</p>
                 <p class="text-2xl font-semibold text-yellow-600">{{ number_format($reportData['summary']['currencies_at_warning'] ?? 0) }}</p>
             </div>
             <div>
-                <p class="text-sm text-[--color-ink-muted]">At Critical</p>
+                <p class="text-sm text-gray-500">At Critical</p>
                 <p class="text-2xl font-semibold text-red-600">{{ number_format($reportData['summary']['currencies_at_critical'] ?? 0) }}</p>
             </div>
         </div>
@@ -79,7 +79,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="text-center py-8 text-[--color-ink-muted]">No data</td></tr>
+                <tr><td colspan="6" class="text-center py-8 text-gray-500">No data</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -90,7 +90,7 @@
     <div class="card-body">
         <div class="empty-state py-16">
             <div class="empty-state-icon">
-                <svg class="w-12 h-12 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
             </div>

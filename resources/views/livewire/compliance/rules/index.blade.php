@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">AML Rules</h1>
-    <p class="text-sm text-[--color-ink-muted]">Configure AML rule engine</p>
+    <h1 class="text-2xl font-semibold text-gray-900">AML Rules</h1>
+    <p class="text-sm text-gray-500">Configure AML rule engine</p>
 </div>
 @endsection
 
@@ -23,7 +23,7 @@
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-info]/10 text-[--color-info]">
+            <div class="stat-card-icon bg-blue-500/10 text-blue-500">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                 </svg>
@@ -35,7 +35,7 @@
 
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-success]/10 text-[--color-success]">
+            <div class="stat-card-icon bg-green-600/10 text-green-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -47,7 +47,7 @@
 
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-ink-muted]/10 text-[--color-ink-muted]">
+            <div class="stat-card-icon bg-gray-500/10 text-gray-500">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
                 </svg>
@@ -112,7 +112,7 @@
                     <td>
                         <div>
                             <p class="font-medium">{{ $rule->rule_name }}</p>
-                            <p class="text-xs text-[--color-ink-muted]">{{ $rule->rule_code }}</p>
+                            <p class="text-xs text-gray-500">{{ $rule->rule_code }}</p>
                         </div>
                     </td>
                     <td>
@@ -141,11 +141,11 @@
                                 title="{{ $rule->is_active ? 'Disable' : 'Enable' }}"
                             >
                                 @if($rule->is_active)
-                                    <svg class="w-4 h-4 text-[--color-danger]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
                                     </svg>
                                 @else
-                                    <svg class="w-4 h-4 text-[--color-success]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                 @endif
@@ -158,7 +158,7 @@
                     <td colspan="7">
                         <div class="empty-state py-12">
                             <div class="empty-state-icon">
-                                <svg class="w-8 h-8 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                 </svg>
                             </div>

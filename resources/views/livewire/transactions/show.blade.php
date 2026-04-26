@@ -7,8 +7,8 @@
                 </svg>
             </a>
             <div>
-                <h1 class="text-xl font-semibold text-[--color-ink]">Transaction #{{ $transaction->id }}</h1>
-                <p class="text-sm text-[--color-ink-muted]">{{ $transaction->created_at->format('d M Y, H:i:s') }}</p>
+                <h1 class="text-xl font-semibold text-gray-900">Transaction #{{ $transaction->id }}</h1>
+                <p class="text-sm text-gray-500">{{ $transaction->created_at->format('d M Y, H:i:s') }}</p>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -51,26 +51,26 @@
                 <div class="card-body">
                     <div class="grid grid-cols-2 gap-6">
                         <div>
-                            <p class="text-sm text-[--color-ink-muted] mb-1">Transaction Type</p>
+                            <p class="text-sm text-gray-500 mb-1">Transaction Type</p>
                             <span class="badge {{ $transaction->type->value === 'Buy' ? 'badge-success' : 'badge-warning' }}">
                                 {{ $transaction->type->label() }}
                             </span>
                         </div>
                         <div>
-                            <p class="text-sm text-[--color-ink-muted] mb-1">Currency</p>
+                            <p class="text-sm text-gray-500 mb-1">Currency</p>
                             <p class="font-mono font-medium">{{ $transaction->currency_code }}</p>
                         </div>
                         <div>
-                            <p class="text-sm text-[--color-ink-muted] mb-1">Foreign Amount</p>
+                            <p class="text-sm text-gray-500 mb-1">Foreign Amount</p>
                             <p class="font-mono text-xl font-semibold">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</p>
                         </div>
                         <div>
-                            <p class="text-sm text-[--color-ink-muted] mb-1">Exchange Rate</p>
+                            <p class="text-sm text-gray-500 mb-1">Exchange Rate</p>
                             <p class="font-mono text-xl font-semibold">{{ $transaction->rate }}</p>
                         </div>
                         <div class="col-span-2">
-                            <p class="text-sm text-[--color-ink-muted] mb-1">MYR Value</p>
-                            <p class="font-mono text-3xl font-bold text-[--color-accent]">{{ number_format($transaction->amount_local, 2) }} MYR</p>
+                            <p class="text-sm text-gray-500 mb-1">MYR Value</p>
+                            <p class="font-mono text-3xl font-bold text-amber-500">{{ number_format($transaction->amount_local, 2) }} MYR</p>
                         </div>
                     </div>
                 </div>
@@ -84,12 +84,12 @@
                 </div>
                 <div class="card-body">
                     <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 bg-[--color-canvas-subtle] rounded-xl flex items-center justify-center">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
                             <span class="text-lg font-semibold">{{ substr($transaction->customer->full_name ?? 'N/A', 0, 1) }}</span>
                         </div>
                         <div class="flex-1">
                             <p class="font-semibold text-lg">{{ $transaction->customer->full_name ?? 'N/A' }}</p>
-                            <p class="text-sm text-[--color-ink-muted]">{{ $transaction->customer->ic_number ?? 'N/A' }}</p>
+                            <p class="text-sm text-gray-500">{{ $transaction->customer->ic_number ?? 'N/A' }}</p>
                             <div class="flex gap-4 mt-2">
                                 <span class="badge badge-default">{{ $transaction->cdd_level->label() ?? 'N/A' }}</span>
                                 @if($transaction->customer->is_pep ?? false)
@@ -113,16 +113,16 @@
                     <div class="space-y-4">
                         @forelse($this->auditLogs ?? [] as $log)
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full bg-[--color-border-strong] mt-2"></div>
+                            <div class="w-2 h-2 rounded-full bg-gray-400 mt-2"></div>
                             <div class="flex-1">
                                 <p class="text-sm">{{ $log->description ?? 'Action taken' }}</p>
-                                <p class="text-xs text-[--color-ink-muted]">
+                                <p class="text-xs text-gray-500">
                                     {{ $log->user->username ?? 'System' }} - {{ $log->created_at->format('d M Y, H:i:s') }}
                                 </p>
                             </div>
                         </div>
                         @empty
-                        <p class="text-sm text-[--color-ink-muted]">No audit logs available</p>
+                        <p class="text-sm text-gray-500">No audit logs available</p>
                         @endforelse
                     </div>
                 </div>
@@ -138,11 +138,11 @@
                 </div>
                 <div class="card-body space-y-3">
                     <div>
-                        <p class="text-sm text-[--color-ink-muted]">Counter</p>
+                        <p class="text-sm text-gray-500">Counter</p>
                         <p class="font-medium">{{ $transaction->counter->name ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-[--color-ink-muted]">Branch</p>
+                        <p class="text-sm text-gray-500">Branch</p>
                         <p class="font-medium">{{ $transaction->branch->name ?? 'N/A' }}</p>
                     </div>
                 </div>
@@ -156,11 +156,11 @@
                 </div>
                 <div class="card-body space-y-2">
                     @foreach($transaction->flags as $flag)
-                    <div class="flex items-center gap-2 p-2 bg-[--color-danger]/5 rounded-lg border border-[--color-danger]/10">
-                        <svg class="w-4 h-4 text-[--color-danger]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-2 p-2 bg-red-600/5 rounded-lg border border-red-600/10">
+                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                         </svg>
-                        <span class="text-sm font-medium text-[--color-danger]">{{ $flag->flagType->label() ?? $flag->type }}</span>
+                        <span class="text-sm font-medium text-red-600">{{ $flag->flagType->label() ?? $flag->type }}</span>
                     </div>
                     @endforeach
                 </div>
@@ -174,12 +174,12 @@
                 </div>
                 <div class="card-body">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                             <span class="font-semibold">{{ substr($transaction->user->username ?? 'N/A', 0, 1) }}</span>
                         </div>
                         <div>
                             <p class="font-medium">{{ $transaction->user->username ?? 'N/A' }}</p>
-                            <p class="text-xs text-[--color-ink-muted]">{{ $transaction->created_at->diffForHumans() }}</p>
+                            <p class="text-xs text-gray-500">{{ $transaction->created_at->diffForHumans() }}</p>
                         </div>
                     </div>
                 </div>

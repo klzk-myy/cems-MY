@@ -1,7 +1,7 @@
 <div>
     <div class="card-header">
         <h3 class="card-title">Step 1: Select Customer</h3>
-        <p class="text-sm text-[--color-ink-muted]">Search for an existing customer or create a new one</p>
+        <p class="text-sm text-gray-500">Search for an existing customer or create a new one</p>
     </div>
     <div class="card-body">
         {{-- Customer Search --}}
@@ -15,7 +15,7 @@
                 @if($customerSearch)
                     <button type="button"
                             wire:click="clearCustomer"
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-[--color-ink-muted] hover:text-[--color-ink]">
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -25,9 +25,9 @@
 
             {{-- Search Results Dropdown --}}
             @if($showCustomerResults && $searchResults->isNotEmpty())
-                <div class="absolute z-50 w-full mt-1 bg-white border border-[--color-border] rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                <div class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto">
                     @foreach($searchResults as $customer)
-                        <div class="p-3 hover:bg-[--color-canvas-subtle] cursor-pointer border-b border-[--color-border] last:border-b-0"
+                        <div class="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0"
                              wire:click="selectCustomer({{ $customer->id }})">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
@@ -47,7 +47,7 @@
                                     {{ $customer->risk_rating ?? 'Unknown' }}
                                 </span>
                             </div>
-                            <div class="text-xs text-[--color-ink-muted] mt-1">
+                            <div class="text-xs text-gray-500 mt-1">
                                 {{ $customer->ic_number ?? 'N/A' }}
                                 @if($customer->nationality)
                                     &bull; {{ $customer->nationality }}
@@ -59,7 +59,7 @@
             @endif
 
             @if($showCustomerResults && $searchResults->isEmpty() && strlen($customerSearch) >= 2)
-                <div class="p-4 text-center text-[--color-ink-muted]">
+                <div class="p-4 text-center text-gray-500">
                     No customers found matching "{{ $customerSearch }}"
                 </div>
             @endif
@@ -67,11 +67,11 @@
 
         {{-- Selected Customer Info --}}
         @if($selectedCustomer)
-            <div class="mt-6 p-4 bg-[--color-canvas-subtle] rounded-lg border border-[--color-border]">
+            <div class="mt-6 p-4 bg-gray-100 rounded-lg border border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="font-semibold text-lg">{{ $selectedCustomer->full_name }}</p>
-                        <p class="text-sm text-[--color-ink-muted]">
+                        <p class="text-sm text-gray-500">
                             {{ $selectedCustomer->ic_number ?? 'N/A' }}
                             @if($selectedCustomer->nationality)
                                 &bull; {{ $selectedCustomer->nationality }}

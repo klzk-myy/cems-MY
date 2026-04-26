@@ -2,28 +2,28 @@
     {{-- Header --}}
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-2xl font-semibold text-[--color-ink]">Position - {{ $positionData['currency_code'] ?? 'N/A' }}</h1>
-            <p class="text-sm text-[--color-ink-muted]">Currency position details</p>
+            <h1 class="text-2xl font-semibold text-gray-900">Position - {{ $positionData['currency_code'] ?? 'N/A' }}</h1>
+            <p class="text-sm text-gray-500">Currency position details</p>
         </div>
         <a href="{{ route('stock-cash.index') }}" class="btn btn-secondary">Back</a>
     </div>
 
     {{-- Position Details --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="p-4 bg-[--color-surface-elevated] rounded">
-            <dt class="text-sm text-[--color-ink-muted]">Quantity</dt>
+        <div class="p-4 bg-gray-50 rounded">
+            <dt class="text-sm text-gray-500">Quantity</dt>
             <dd class="text-2xl font-mono">{{ number_format((float) ($positionData['quantity'] ?? 0), 2) }}</dd>
         </div>
-        <div class="p-4 bg-[--color-surface-elevated] rounded">
-            <dt class="text-sm text-[--color-ink-muted]">Average Cost</dt>
+        <div class="p-4 bg-gray-50 rounded">
+            <dt class="text-sm text-gray-500">Average Cost</dt>
             <dd class="text-2xl font-mono">RM {{ number_format((float) ($positionData['avg_cost'] ?? 0), 4) }}</dd>
         </div>
-        <div class="p-4 bg-[--color-surface-elevated] rounded">
-            <dt class="text-sm text-[--color-ink-muted]">Market Value</dt>
+        <div class="p-4 bg-gray-50 rounded">
+            <dt class="text-sm text-gray-500">Market Value</dt>
             <dd class="text-2xl font-mono">RM {{ number_format((float) ($positionData['market_value'] ?? 0), 2) }}</dd>
         </div>
-        <div class="p-4 bg-[--color-surface-elevated] rounded">
-            <dt class="text-sm text-[--color-ink-muted]">Unrealized P/L</dt>
+        <div class="p-4 bg-gray-50 rounded">
+            <dt class="text-sm text-gray-500">Unrealized P/L</dt>
             @php
                 $pl = (float) ($positionData['unrealized_pl'] ?? 0);
                 $plClass = $pl >= 0 ? 'text-green-600' : 'text-red-600';
@@ -36,16 +36,16 @@
 
     {{-- Additional Details --}}
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        <div class="p-4 bg-[--color-surface-elevated] rounded">
-            <dt class="text-sm text-[--color-ink-muted]">Last Valuation Rate</dt>
+        <div class="p-4 bg-gray-50 rounded">
+            <dt class="text-sm text-gray-500">Last Valuation Rate</dt>
             <dd class="text-xl font-mono">{{ number_format((float) ($positionData['last_valuation_rate'] ?? 0), 4) }}</dd>
         </div>
-        <div class="p-4 bg-[--color-surface-elevated] rounded">
-            <dt class="text-sm text-[--color-ink-muted]">Last Valuation At</dt>
+        <div class="p-4 bg-gray-50 rounded">
+            <dt class="text-sm text-gray-500">Last Valuation At</dt>
             <dd class="text-xl font-mono">{{ $positionData['last_valuation_at'] ?? 'N/A' }}</dd>
         </div>
-        <div class="p-4 bg-[--color-surface-elevated] rounded">
-            <dt class="text-sm text-[--color-ink-muted]">Till ID</dt>
+        <div class="p-4 bg-gray-50 rounded">
+            <dt class="text-sm text-gray-500">Till ID</dt>
             <dd class="text-xl font-mono">{{ $positionData['till_id'] ?? 'N/A' }}</dd>
         </div>
     </div>
@@ -81,7 +81,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center py-8 text-[--color-ink-muted]">No transactions</td>
+                        <td colspan="5" class="text-center py-8 text-gray-500">No transactions</td>
                     </tr>
                     @endforelse
                 </tbody>

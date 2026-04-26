@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">EDD Templates</h1>
-    <p class="text-sm text-[--color-ink-muted]">Manage Enhanced Due Diligence questionnaire templates</p>
+    <h1 class="text-2xl font-semibold text-gray-900">EDD Templates</h1>
+    <p class="text-sm text-gray-500">Manage Enhanced Due Diligence questionnaire templates</p>
 </div>
 @endsection
 
@@ -67,7 +67,7 @@
                 <tr>
                     <td>
                         <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center text-xs">
+                            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-xs">
                                 {{ substr($template->name, 0, 1) }}
                             </div>
                             <span class="font-medium">{{ $template->name }}</span>
@@ -87,7 +87,7 @@
                         @endif
                     </td>
                     <td>
-                        <span class="text-sm text-[--color-ink-muted]">
+                        <span class="text-sm text-gray-500">
                             {{ $template->enhanced_diligence_records_count ?? 0 }} records
                         </span>
                     </td>
@@ -105,16 +105,16 @@
                             </button>
                             <button type="button" wire:click="toggleActive({{ $template->id }})" class="btn btn-ghost btn-icon" title="{{ $template->is_active ? 'Deactivate' : 'Activate' }}">
                                 @if($template->is_active)
-                                    <svg class="w-4 h-4 text-[--color-warning]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
                                     </svg>
                                 @else
-                                    <svg class="w-4 h-4 text-[--color-success]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                 @endif
                             </button>
-                            <button type="button" wire:click="delete({{ $template->id }})" class="btn btn-ghost btn-icon text-[--color-danger]" title="Delete" {{ $template->enhanced_diligence_records_count > 0 ? 'disabled' : '' }}>
+                            <button type="button" wire:click="delete({{ $template->id }})" class="btn btn-ghost btn-icon text-red-600" title="Delete" {{ $template->enhanced_diligence_records_count > 0 ? 'disabled' : '' }}>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                 </svg>
@@ -127,7 +127,7 @@
                     <td colspan="6">
                         <div class="empty-state py-12">
                             <div class="empty-state-icon">
-                                <svg class="w-8 h-8 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                 </svg>
                             </div>
@@ -146,8 +146,8 @@
 {{-- Create/Edit Modal --}}
 @if($showModal)
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" x-data="{ show: true }" x-show="show" x-on:click.self="show = false; $wire.closeModal()">
-    <div class="bg-[--color-surface] rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" x-show="show" x-on:click.stop>
-        <div class="p-6 border-b border-[--color-border]">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" x-show="show" x-on:click.stop>
+        <div class="p-6 border-b border-gray-200">
             <h3 class="text-lg font-semibold">{{ $editingTemplate ? 'Edit Template' : 'New Template' }}</h3>
         </div>
         <div class="p-6 space-y-4">
@@ -165,7 +165,7 @@
                     @endforeach
                 </select>
                 @if($templateType)
-                    <p class="text-sm text-[--color-ink-muted] mt-1">
+                    <p class="text-sm text-gray-500 mt-1">
                         {{ \App\Enums\EddTemplateType::tryFrom($templateType)?->description() ?? '' }}
                     </p>
                 @endif
@@ -183,7 +183,7 @@
                 </label>
             </div>
 
-            <div class="border-t border-[--color-border] pt-4">
+            <div class="border-t border-gray-200 pt-4">
                 <div class="flex items-center justify-between mb-4">
                     <h4 class="font-medium">Questions</h4>
                     <button type="button" wire:click="addSection()" class="btn btn-ghost btn-sm">
@@ -195,10 +195,10 @@
                 </div>
 
                 @forelse($questions['sections'] as $sectionIndex => $section)
-                    <div class="mb-4 p-4 bg-[--color-canvas-subtle] rounded-lg">
+                    <div class="mb-4 p-4 bg-gray-100 rounded-lg">
                         <div class="flex items-center gap-2 mb-3">
                             <input type="text" wire:model="questions.sections.{{ $sectionIndex }}.title" class="form-input flex-1" placeholder="Section title...">
-                            <button type="button" wire:click="removeSection({{ $sectionIndex }})" class="btn btn-ghost btn-icon text-[--color-danger]">
+                            <button type="button" wire:click="removeSection({{ $sectionIndex }})" class="btn btn-ghost btn-icon text-red-600">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
@@ -218,14 +218,14 @@
                                     <input type="checkbox" wire:model="questions.sections.{{ $sectionIndex }}.questions.{{ $questionIndex }}.required">
                                     Required
                                 </label>
-                                <button type="button" wire:click="removeQuestion({{ $sectionIndex }}, {{ $questionIndex }})" class="btn btn-ghost btn-icon text-[--color-danger]">
+                                <button type="button" wire:click="removeQuestion({{ $sectionIndex }}, {{ $questionIndex }})" class="btn btn-ghost btn-icon text-red-600">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
                                 </button>
                             </div>
                         @empty
-                            <p class="text-sm text-[--color-ink-muted] py-2">No questions in this section</p>
+                            <p class="text-sm text-gray-500 py-2">No questions in this section</p>
                         @endforelse
 
                         <button type="button" wire:click="addQuestion({{ $sectionIndex }})" class="btn btn-ghost btn-sm mt-2">
@@ -236,13 +236,13 @@
                         </button>
                     </div>
                 @empty
-                    <div class="text-center py-8 text-[--color-ink-muted]">
+                    <div class="text-center py-8 text-gray-500">
                         <p>No sections added yet. Click "Add Section" to begin.</p>
                     </div>
                 @endforelse
             </div>
         </div>
-        <div class="p-6 border-t border-[--color-border] flex justify-end gap-3">
+        <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
             <button type="button" wire:click="closeModal()" class="btn btn-ghost">Cancel</button>
             <button type="button" wire:click="save()" class="btn btn-primary">
                 {{ $editingTemplate ? 'Update Template' : 'Create Template' }}

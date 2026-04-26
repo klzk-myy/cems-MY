@@ -1,8 +1,8 @@
 <div>
     {{-- Header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink]">Reconciliation Report</h1>
-        <p class="text-sm text-[--color-ink-muted]">Detailed bank reconciliation analysis</p>
+        <h1 class="text-2xl font-semibold text-gray-900">Reconciliation Report</h1>
+        <p class="text-sm text-gray-500">Detailed bank reconciliation analysis</p>
     </div>
 
     {{-- Filters --}}
@@ -38,11 +38,11 @@
             </div>
             <div class="stat-card">
                 <p class="stat-card-label">Matched</p>
-                <p class="stat-card-value text-[--color-success]">{{ $report['matched_count'] ?? 0 }}</p>
+                <p class="stat-card-value text-green-600">{{ $report['matched_count'] ?? 0 }}</p>
             </div>
             <div class="stat-card">
                 <p class="stat-card-label">Unmatched</p>
-                <p class="stat-card-value text-[--color-warning]">{{ $report['unmatched_count'] ?? 0 }}</p>
+                <p class="stat-card-value text-amber-500">{{ $report['unmatched_count'] ?? 0 }}</p>
             </div>
         </div>
 
@@ -58,7 +58,7 @@
             </div>
             <div class="stat-card">
                 <p class="stat-card-label">Net Amount</p>
-                <p class="stat-card-value font-mono {{ (float) ($report['net_amount'] ?? 0) >= 0 ? 'text-[--color-success]' : 'text-[--color-danger]' }}">
+                <p class="stat-card-value font-mono {{ (float) ($report['net_amount'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
                     {{ number_format((float) ($report['net_amount'] ?? 0), 2) }} MYR
                 </p>
             </div>
@@ -68,8 +68,8 @@
             {{-- Matched Items --}}
             <div class="card">
                 <div class="card-header">
-                    <h4 class="font-semibold text-[--color-success]">Matched Items</h4>
-                    <span class="text-sm text-[--color-ink-muted]">{{ count($matchedItems) }} items</span>
+                    <h4 class="font-semibold text-green-600">Matched Items</h4>
+                    <span class="text-sm text-gray-500">{{ count($matchedItems) }} items</span>
                 </div>
                 <div class="table-container max-h-96 overflow-y-auto">
                     <table class="table">
@@ -89,7 +89,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="3" class="text-center py-4 text-[--color-ink-muted]">No matched items</td>
+                                <td colspan="3" class="text-center py-4 text-gray-500">No matched items</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -100,8 +100,8 @@
             {{-- Unmatched Items --}}
             <div class="card">
                 <div class="card-header">
-                    <h4 class="font-semibold text-[--color-warning]">Unmatched Items</h4>
-                    <span class="text-sm text-[--color-ink-muted]">{{ count($unmatchedItems) }} items</span>
+                    <h4 class="font-semibold text-amber-500">Unmatched Items</h4>
+                    <span class="text-sm text-gray-500">{{ count($unmatchedItems) }} items</span>
                 </div>
                 <div class="table-container max-h-96 overflow-y-auto">
                     <table class="table">
@@ -118,7 +118,7 @@
                             <tr>
                                 <td class="text-sm">{{ $item['statement_date'] ?? 'N/A' }}</td>
                                 <td class="font-mono text-xs">{{ $item['reference'] ?? 'N/A' }}</td>
-                                <td class="font-mono text-right {{ $item['amount'] >= 0 ? 'text-[--color-success]' : 'text-[--color-danger]' }}">
+                                <td class="font-mono text-right {{ $item['amount'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ number_format((float) $item['amount'], 2) }}
                                 </td>
                                 <td>
@@ -127,7 +127,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="4" class="text-center py-4 text-[--color-ink-muted]">No unmatched items</td>
+                                <td colspan="4" class="text-center py-4 text-gray-500">No unmatched items</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -140,8 +140,8 @@
         @if(count($exceptions) > 0)
         <div class="card mt-6">
             <div class="card-header">
-                <h4 class="font-semibold text-[--color-danger]">Exceptions</h4>
-                <span class="text-sm text-[--color-ink-muted]">{{ count($exceptions) }} items</span>
+                <h4 class="font-semibold text-red-600">Exceptions</h4>
+                <span class="text-sm text-gray-500">{{ count($exceptions) }} items</span>
             </div>
             <div class="table-container">
                 <table class="table">
@@ -160,10 +160,10 @@
                             <td class="text-sm">{{ $item['statement_date'] ?? 'N/A' }}</td>
                             <td class="font-mono text-xs">{{ $item['reference'] ?? 'N/A' }}</td>
                             <td class="max-w-xs truncate">{{ $item['description'] ?? 'N/A' }}</td>
-                            <td class="font-mono text-right {{ $item['amount'] >= 0 ? 'text-[--color-success]' : 'text-[--color-danger]' }}">
+                            <td class="font-mono text-right {{ $item['amount'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                 {{ number_format((float) $item['amount'], 2) }}
                             </td>
-                            <td class="text-sm text-[--color-danger]">{{ $item['notes'] ?? 'N/A' }}</td>
+                            <td class="text-sm text-red-600">{{ $item['notes'] ?? 'N/A' }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -173,13 +173,13 @@
         @endif
 
         {{-- Report Metadata --}}
-        <p class="text-xs text-[--color-ink-muted] mt-4">
+        <p class="text-xs text-gray-500 mt-4">
             Report generated at: {{ $report['generated_at'] ?? now()->toIso8601String() }}
         </p>
     @else
         <div class="card">
             <div class="card-body text-center py-12">
-                <p class="text-[--color-ink-muted]">Select a statement date and account code to generate a report</p>
+                <p class="text-gray-500">Select a statement date and account code to generate a report</p>
             </div>
         </div>
     @endif

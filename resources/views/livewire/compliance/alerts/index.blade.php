@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Alert Triage</h1>
-    <p class="text-sm text-[--color-ink-muted]">Review and resolve compliance alerts</p>
+    <h1 class="text-2xl font-semibold text-gray-900">Alert Triage</h1>
+    <p class="text-sm text-gray-500">Review and resolve compliance alerts</p>
 </div>
 @endsection
 
@@ -22,7 +22,7 @@
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-danger]/10 text-[--color-danger]">
+            <div class="stat-card-icon bg-red-600/10 text-red-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                 </svg>
@@ -34,7 +34,7 @@
 
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-warning]/10 text-[--color-warning]">
+            <div class="stat-card-icon bg-amber-500/10 text-amber-500">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -46,7 +46,7 @@
 
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-info]/10 text-[--color-info]">
+            <div class="stat-card-icon bg-blue-500/10 text-blue-500">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -58,7 +58,7 @@
 
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-success]/10 text-[--color-success]">
+            <div class="stat-card-icon bg-green-600/10 text-green-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -146,23 +146,23 @@
                     <td>
                         @if($alert->customer)
                         <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center text-xs">
+                            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-xs">
                                 {{ substr($alert->customer->full_name, 0, 1) }}
                             </div>
                             <div>
                                 <p class="text-sm font-medium">{{ $alert->customer->full_name }}</p>
-                                <p class="text-xs text-[--color-ink-muted]">{{ $alert->customer->id_type ?? 'N/A' }}</p>
+                                <p class="text-xs text-gray-500">{{ $alert->customer->id_type ?? 'N/A' }}</p>
                             </div>
                         </div>
                         @else
-                        <span class="text-[--color-ink-muted]">System</span>
+                        <span class="text-gray-500">System</span>
                         @endif
                     </td>
                     <td class="max-w-xs truncate">{{ $alert->reason }}</td>
                     <td>
                         @if($alert->assignedTo)
                         <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 bg-[--color-canvas-subtle] rounded flex items-center justify-center text-xs">
+                            <div class="w-6 h-6 bg-gray-100 rounded flex items-center justify-center text-xs">
                                 {{ substr($alert->assignedTo->username, 0, 1) }}
                             </div>
                             <span class="text-sm">{{ $alert->assignedTo->username }}</span>
@@ -182,7 +182,7 @@
                         @endphp
                         <span class="badge {{ $statusClass }}">{{ $alert->status->label() ?? 'Pending' }}</span>
                     </td>
-                    <td class="text-[--color-ink-muted]">{{ $alert->created_at->diffForHumans() }}</td>
+                    <td class="text-gray-500">{{ $alert->created_at->diffForHumans() }}</td>
                     <td>
                         <div class="table-actions">
                             <a href="{{ route('compliance.alerts.show', $alert->id) }}" class="btn btn-ghost btn-icon" title="View">
@@ -199,7 +199,7 @@
                     <td colspan="8">
                         <div class="empty-state py-12">
                             <div class="empty-state-icon">
-                                <svg class="w-8 h-8 text-[--color-success]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>

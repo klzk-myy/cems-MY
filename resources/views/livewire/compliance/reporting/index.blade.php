@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Compliance Reporting Center</h1>
-    <p class="text-sm text-[--color-ink-muted]">Generate and schedule BNM compliance reports</p>
+    <h1 class="text-2xl font-semibold text-gray-900">Compliance Reporting Center</h1>
+    <p class="text-sm text-gray-500">Generate and schedule BNM compliance reports</p>
 </div>
 @endsection
 
@@ -46,10 +46,10 @@
     </div>
     <div class="card-body">
         @foreach($schedules as $schedule)
-        <div class="flex items-center justify-between p-4 border-b border-[--color-border] last:border-0">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 last:border-0">
             <div>
                 <p class="font-medium">{{ $reportTypes[$schedule->report_type] ?? $schedule->report_type }}</p>
-                <p class="text-sm text-[--color-ink-muted]">
+                <p class="text-sm text-gray-500">
                     {{ $schedule->getFriendlySchedule() }} - Next: {{ $schedule->next_run_at?->format('d M Y H:i') ?? 'N/A' }}
                 </p>
             </div>
@@ -82,7 +82,7 @@
                     <td>
                         <span class="font-medium">{{ $reportTypes[$report->report_type] ?? $report->report_type }}</span>
                     </td>
-                    <td class="text-[--color-ink-muted]">
+                    <td class="text-gray-500">
                         {{ $report->period_start?->format('d M Y') ?? 'N/A' }} -
                         {{ $report->period_end?->format('d M Y') ?? 'N/A' }}
                     </td>

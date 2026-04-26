@@ -1,8 +1,8 @@
 <div>
     {{-- Header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink]">Bank Reconciliation</h1>
-        <p class="text-sm text-[--color-ink-muted]">Match bank statement transactions with internal records</p>
+        <h1 class="text-2xl font-semibold text-gray-900">Bank Reconciliation</h1>
+        <p class="text-sm text-gray-500">Match bank statement transactions with internal records</p>
     </div>
 
     {{-- Header Actions --}}
@@ -71,11 +71,11 @@
         </div>
         <div class="stat-card">
             <p class="stat-card-label">Matched</p>
-            <p class="stat-card-value text-[--color-success]">{{ $reconciliations->total() - collect($reconciliations->items())->filter(fn($i) => $i->status !== 'matched')->count() }}</p>
+            <p class="stat-card-value text-green-600">{{ $reconciliations->total() - collect($reconciliations->items())->filter(fn($i) => $i->status !== 'matched')->count() }}</p>
         </div>
         <div class="stat-card">
             <p class="stat-card-label">Unmatched</p>
-            <p class="stat-card-value text-[--color-warning]">{{ collect($reconciliations->items())->filter(fn($i) => $i->status === 'unmatched')->count() }}</p>
+            <p class="stat-card-value text-amber-500">{{ collect($reconciliations->items())->filter(fn($i) => $i->status === 'unmatched')->count() }}</p>
         </div>
     </div>
 
@@ -124,7 +124,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center py-12 text-[--color-ink-muted]">No reconciliation items found</td>
+                        <td colspan="8" class="text-center py-12 text-gray-500">No reconciliation items found</td>
                     </tr>
                     @endforelse
                 </tbody>

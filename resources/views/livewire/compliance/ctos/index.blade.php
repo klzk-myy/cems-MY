@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">CTOS Reports</h1>
-    <p class="text-sm text-[--color-ink-muted]">Cash Transaction Reports to BNM</p>
+    <h1 class="text-2xl font-semibold text-gray-900">CTOS Reports</h1>
+    <p class="text-sm text-gray-500">Cash Transaction Reports to BNM</p>
 </div>
 @endsection
 
@@ -30,15 +30,15 @@
     </div>
     <div class="stat-card">
         <p class="stat-card-label">Submitted</p>
-        <p class="stat-card-value text-[--color-info]">{{ number_format($summary['submitted'] ?? 0) }}</p>
+        <p class="stat-card-value text-blue-500">{{ number_format($summary['submitted'] ?? 0) }}</p>
     </div>
     <div class="stat-card">
         <p class="stat-card-label">Acknowledged</p>
-        <p class="stat-card-value text-[--color-success]">{{ number_format($summary['acknowledged'] ?? 0) }}</p>
+        <p class="stat-card-value text-green-600">{{ number_format($summary['acknowledged'] ?? 0) }}</p>
     </div>
     <div class="stat-card">
         <p class="stat-card-label">Rejected</p>
-        <p class="stat-card-value text-[--color-danger]">{{ number_format($summary['rejected'] ?? 0) }}</p>
+        <p class="stat-card-value text-red-600">{{ number_format($summary['rejected'] ?? 0) }}</p>
     </div>
 </div>
 
@@ -145,7 +145,7 @@
     </div>
     @if($reports->hasPages())
         <div class="card-footer flex justify-between items-center">
-            <p class="text-sm text-[--color-ink-muted]">
+            <p class="text-sm text-gray-500">
                 Page {{ $reports->currentPage() }} of {{ $reports->lastPage() }}
             </p>
             <div class="flex gap-2">

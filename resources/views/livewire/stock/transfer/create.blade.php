@@ -8,8 +8,8 @@
                 </svg>
             </button>
             <div>
-                <h1 class="text-2xl font-semibold text-[--color-ink]">Create Stock Transfer</h1>
-                <p class="text-sm text-[--color-ink-muted]">Request a new inter-branch currency transfer</p>
+                <h1 class="text-2xl font-semibold text-gray-900">Create Stock Transfer</h1>
+                <p class="text-sm text-gray-500">Request a new inter-branch currency transfer</p>
             </div>
         </div>
     </div>

@@ -7,10 +7,10 @@
                 </svg>
             </a>
             <div>
-                <h1 class="text-xl font-semibold text-[--color-ink]">
+                <h1 class="text-xl font-semibold text-gray-900">
                     {{ $record ? 'EDD Record: '.$record->edd_reference : 'New EDD Record' }}
                 </h1>
-                <p class="text-sm text-[--color-ink-muted]">
+                <p class="text-sm text-gray-500">
                     @if($record)
                         {{ $record->status->label() ?? 'Unknown Status' }}
                     @else
@@ -55,7 +55,7 @@
                     {{-- Step 1: Customer & Risk --}}
                     <div class="flex items-center gap-2">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors
-                            {{ $currentStep >= 1 ? 'bg-[--color-accent] text-white' : 'bg-[--color-canvas-subtle] text-[--color-ink-muted]' }}">
+                            {{ $currentStep >= 1 ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500' }}">
                             @if($currentStep > 1)
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -64,16 +64,16 @@
                                 1
                             @endif
                         </div>
-                        <span class="text-sm font-medium {{ $currentStep >= 1 ? 'text-[--color-ink]' : 'text-[--color-ink-muted]' }}">Customer & Risk</span>
+                        <span class="text-sm font-medium {{ $currentStep >= 1 ? 'text-gray-900' : 'text-gray-500' }}">Customer & Risk</span>
                     </div>
 
                     {{-- Connector --}}
-                    <div class="w-16 h-0.5 {{ $currentStep > 1 ? 'bg-[--color-accent]' : 'bg-[--color-border]' }}"></div>
+                    <div class="w-16 h-0.5 {{ $currentStep > 1 ? 'bg-amber-500' : 'bg-gray-200' }}"></div>
 
                     {{-- Step 2: Source of Funds --}}
                     <div class="flex items-center gap-2">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors
-                            {{ $currentStep >= 2 ? 'bg-[--color-accent] text-white' : 'bg-[--color-canvas-subtle] text-[--color-ink-muted]' }}">
+                            {{ $currentStep >= 2 ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500' }}">
                             @if($currentStep > 2)
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -82,19 +82,19 @@
                                 2
                             @endif
                         </div>
-                        <span class="text-sm font-medium {{ $currentStep >= 2 ? 'text-[--color-ink]' : 'text-[--color-ink-muted]' }}">Source of Funds</span>
+                        <span class="text-sm font-medium {{ $currentStep >= 2 ? 'text-gray-900' : 'text-gray-500' }}">Source of Funds</span>
                     </div>
 
                     {{-- Connector --}}
-                    <div class="w-16 h-0.5 {{ $currentStep > 2 ? 'bg-[--color-accent]' : 'bg-[--color-border]' }}"></div>
+                    <div class="w-16 h-0.5 {{ $currentStep > 2 ? 'bg-amber-500' : 'bg-gray-200' }}"></div>
 
                     {{-- Step 3: Background & Review --}}
                     <div class="flex items-center gap-2">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors
-                            {{ $currentStep >= 3 ? 'bg-[--color-accent] text-white' : 'bg-[--color-canvas-subtle] text-[--color-ink-muted]' }}">
+                            {{ $currentStep >= 3 ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500' }}">
                             3
                         </div>
-                        <span class="text-sm font-medium {{ $currentStep >= 3 ? 'text-[--color-ink]' : 'text-[--color-ink-muted]' }}">Background & Review</span>
+                        <span class="text-sm font-medium {{ $currentStep >= 3 ? 'text-gray-900' : 'text-gray-500' }}">Background & Review</span>
                     </div>
                 </div>
             </div>
@@ -112,13 +112,13 @@
                             <div class="form-group">
                                 <label class="form-label required">Customer</label>
                                 @if($record && $record->customer)
-                                    <div class="flex items-center gap-3 p-4 bg-[--color-canvas-subtle] rounded-lg">
-                                        <div class="w-10 h-10 bg-[--color-accent] rounded-lg flex items-center justify-center text-white font-semibold">
+                                    <div class="flex items-center gap-3 p-4 bg-gray-100 rounded-lg">
+                                        <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center text-white font-semibold">
                                             {{ substr($record->customer->full_name, 0, 1) }}
                                         </div>
                                         <div>
                                             <p class="font-medium">{{ $record->customer->full_name }}</p>
-                                            <p class="text-sm text-[--color-ink-muted]">{{ $record->customer->ic_number ?? 'N/A' }}</p>
+                                            <p class="text-sm text-gray-500">{{ $record->customer->ic_number ?? 'N/A' }}</p>
                                         </div>
                                     </div>
                                 @else
@@ -262,8 +262,8 @@
     {{-- Reject Modal --}}
     @if($showRejectModal ?? false)
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" x-data="{ show: true }" x-show="show" x-on:click.self="show = false; $wire.showRejectModal = false">
-        <div class="bg-[--color-surface] rounded-xl shadow-xl w-full max-w-md mx-4" x-show="show" x-on:click.stop>
-            <div class="p-6 border-b border-[--color-border]">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4" x-show="show" x-on:click.stop>
+            <div class="p-6 border-b border-gray-200">
                 <h3 class="text-lg font-semibold">Reject EDD Record</h3>
             </div>
             <div class="p-6 space-y-4">
@@ -272,7 +272,7 @@
                     <textarea wire:model="rejectReason" class="form-input" rows="3" placeholder="Enter the reason for rejection..."></textarea>
                 </div>
             </div>
-            <div class="p-6 border-t border-[--color-border] flex justify-end gap-3">
+            <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
                 <button type="button" wire:click="$set('showRejectModal', false)" class="btn btn-ghost">Cancel</button>
                 <button type="button" wire:click="reject($rejectReason)" class="btn btn-danger" {{ !$rejectReason ? 'disabled' : '' }}>
                     Reject

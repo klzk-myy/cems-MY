@@ -7,8 +7,8 @@
                 </svg>
             </a>
             <div>
-                <h1 class="text-xl font-semibold text-[--color-ink]">Alert #{{ $alert->id }}</h1>
-                <p class="text-sm text-[--color-ink-muted]">{{ $alert->type->label() ?? 'Unknown Type' }}</p>
+                <h1 class="text-xl font-semibold text-gray-900">Alert #{{ $alert->id }}</h1>
+                <p class="text-sm text-gray-500">{{ $alert->type->label() ?? 'Unknown Type' }}</p>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -65,16 +65,16 @@
                 <div class="card-body">
                     <div class="space-y-4">
                         <div>
-                            <p class="text-sm text-[--color-ink-muted] mb-1">Description</p>
-                            <p class="text-[--color-ink]">{{ $alert->reason }}</p>
+                            <p class="text-sm text-gray-500 mb-1">Description</p>
+                            <p class="text-gray-900">{{ $alert->reason }}</p>
                         </div>
                         <div class="grid grid-cols-2 gap-6">
                             <div>
-                                <p class="text-sm text-[--color-ink-muted] mb-1">Alert Type</p>
+                                <p class="text-sm text-gray-500 mb-1">Alert Type</p>
                                 <p class="font-medium">{{ $alert->type->label() ?? 'Unknown' }}</p>
                             </div>
                             <div>
-                                <p class="text-sm text-[--color-ink-muted] mb-1">Risk Score</p>
+                                <p class="text-sm text-gray-500 mb-1">Risk Score</p>
                                 <p class="font-mono">{{ $alert->risk_score ?? 'N/A' }}</p>
                             </div>
                         </div>
@@ -91,12 +91,12 @@
                 </div>
                 <div class="card-body">
                     <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 bg-[--color-canvas-subtle] rounded-xl flex items-center justify-center">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
                             <span class="text-lg font-semibold">{{ substr($alert->customer->full_name, 0, 1) }}</span>
                         </div>
                         <div class="flex-1">
                             <p class="font-semibold text-lg">{{ $alert->customer->full_name }}</p>
-                            <p class="text-sm text-[--color-ink-muted]">{{ $alert->customer->id_type ?? 'N/A' }}</p>
+                            <p class="text-sm text-gray-500">{{ $alert->customer->id_type ?? 'N/A' }}</p>
                             <div class="flex gap-2 mt-2">
                                 <span class="badge badge-default">{{ $alert->customer->cdd_level ?? 'N/A' }}</span>
                                 @if($alert->customer->pep_status ?? false)
@@ -122,15 +122,15 @@
                 <div class="card-body">
                     <div class="grid grid-cols-3 gap-4">
                         <div>
-                            <p class="text-sm text-[--color-ink-muted]">Transaction ID</p>
+                            <p class="text-sm text-gray-500">Transaction ID</p>
                             <p class="font-mono">#{{ $alert->flaggedTransaction->transaction->id }}</p>
                         </div>
                         <div>
-                            <p class="text-sm text-[--color-ink-muted]">Amount</p>
+                            <p class="text-sm text-gray-500">Amount</p>
                             <p class="font-mono">{{ number_format($alert->flaggedTransaction->transaction->amount_local, 2) }} MYR</p>
                         </div>
                         <div>
-                            <p class="text-sm text-[--color-ink-muted]">Type</p>
+                            <p class="text-sm text-gray-500">Type</p>
                             <span class="badge {{ $alert->flaggedTransaction->transaction->type->value === 'Buy' ? 'badge-success' : 'badge-warning' }}">
                                 {{ $alert->flaggedTransaction->transaction->type->label() }}
                             </span>
@@ -150,10 +150,10 @@
                 </div>
                 <div class="card-body space-y-4">
                     <div>
-                        <p class="text-sm text-[--color-ink-muted] mb-1">Assigned To</p>
+                        <p class="text-sm text-gray-500 mb-1">Assigned To</p>
                         @if($alert->assignedTo)
                             <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center text-xs">
+                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-xs">
                                     {{ substr($alert->assignedTo->username, 0, 1) }}
                                 </div>
                                 <span class="font-medium">{{ $alert->assignedTo->username }}</span>
@@ -163,11 +163,11 @@
                         @endif
                     </div>
                     <div>
-                        <p class="text-sm text-[--color-ink-muted] mb-1">Created At</p>
+                        <p class="text-sm text-gray-500 mb-1">Created At</p>
                         <p class="text-sm">{{ $alert->created_at->format('d M Y, H:i') }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-[--color-ink-muted] mb-1">Last Updated</p>
+                        <p class="text-sm text-gray-500 mb-1">Last Updated</p>
                         <p class="text-sm">{{ $alert->updated_at->diffForHumans() }}</p>
                     </div>
                 </div>

@@ -2,8 +2,8 @@
     {{-- Header --}}
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-2xl font-semibold text-[--color-ink]">Till Report</h1>
-            <p class="text-sm text-[--color-ink-muted]">Till balance and status report</p>
+            <h1 class="text-2xl font-semibold text-gray-900">Till Report</h1>
+            <p class="text-sm text-gray-500">Till balance and status report</p>
         </div>
         <a href="{{ route('stock-cash.index') }}" class="btn btn-secondary">Back</a>
     </div>
@@ -13,7 +13,7 @@
         <div class="card-body">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label for="tillId" class="block text-sm font-medium text-[--color-ink] mb-1">Till ID</label>
+                    <label for="tillId" class="block text-sm font-medium text-gray-900 mb-1">Till ID</label>
                     <input
                         type="text"
                         id="tillId"
@@ -23,7 +23,7 @@
                     />
                 </div>
                 <div>
-                    <label for="date" class="block text-sm font-medium text-[--color-ink] mb-1">Date</label>
+                    <label for="date" class="block text-sm font-medium text-gray-900 mb-1">Date</label>
                     <input
                         type="date"
                         id="date"
@@ -38,20 +38,20 @@
     @if($tillId && !empty($balances))
         {{-- Summary --}}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="p-4 bg-[--color-surface-elevated] rounded">
-                <dt class="text-sm text-[--color-ink-muted]">Till ID</dt>
+            <div class="p-4 bg-gray-50 rounded">
+                <dt class="text-sm text-gray-500">Till ID</dt>
                 <dd class="text-xl font-mono">{{ $tillId }}</dd>
             </div>
-            <div class="p-4 bg-[--color-surface-elevated] rounded">
-                <dt class="text-sm text-[--color-ink-muted]">Date</dt>
+            <div class="p-4 bg-gray-50 rounded">
+                <dt class="text-sm text-gray-500">Date</dt>
                 <dd class="text-xl font-mono">{{ $date }}</dd>
             </div>
-            <div class="p-4 bg-[--color-surface-elevated] rounded">
-                <dt class="text-sm text-[--color-ink-muted]">Currencies</dt>
+            <div class="p-4 bg-gray-50 rounded">
+                <dt class="text-sm text-gray-500">Currencies</dt>
                 <dd class="text-xl font-mono">{{ count($balances) }}</dd>
             </div>
-            <div class="p-4 bg-[--color-surface-elevated] rounded">
-                <dt class="text-sm text-[--color-ink-muted]">Status</dt>
+            <div class="p-4 bg-gray-50 rounded">
+                <dt class="text-sm text-gray-500">Status</dt>
                 <dd class="text-xl font-mono">
                     @if(!empty($balances) && ($balances[0]['closed_at'] ?? null))
                         <span class="badge badge-success">Closed</span>
@@ -90,20 +90,20 @@
                                 @if($balance['closer'])
                                     {{ $balance['closer']['name'] }}
                                 @else
-                                    <span class="text-[--color-ink-muted]">-</span>
+                                    <span class="text-gray-500">-</span>
                                 @endif
                             </td>
                             <td class="font-mono text-right">
                                 @if($balance['closing_balance'])
                                     RM {{ number_format((float) $balance['closing_balance'], 2) }}
                                 @else
-                                    <span class="text-[--color-ink-muted]">Open</span>
+                                    <span class="text-gray-500">Open</span>
                                 @endif
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center py-8 text-[--color-ink-muted]">No data found</td>
+                            <td colspan="6" class="text-center py-8 text-gray-500">No data found</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -113,13 +113,13 @@
     @elseif($tillId)
         <div class="card">
             <div class="card-body text-center py-12">
-                <p class="text-[--color-ink-muted]">No till report data found for Till ID: {{ $tillId }} on {{ $date }}</p>
+                <p class="text-gray-500">No till report data found for Till ID: {{ $tillId }} on {{ $date }}</p>
             </div>
         </div>
     @else
         <div class="card">
             <div class="card-body text-center py-12">
-                <p class="text-[--color-ink-muted]">Enter a Till ID to view the till report</p>
+                <p class="text-gray-500">Enter a Till ID to view the till report</p>
             </div>
         </div>
     @endif

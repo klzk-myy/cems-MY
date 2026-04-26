@@ -2,8 +2,8 @@
     {{-- Header --}}
     <div class="mb-6 flex justify-between items-center">
         <div>
-            <h1 class="text-2xl font-semibold text-[--color-ink]">Fiscal Years</h1>
-            <p class="text-sm text-[--color-ink-muted]">Manage annual fiscal years</p>
+            <h1 class="text-2xl font-semibold text-gray-900">Fiscal Years</h1>
+            <p class="text-sm text-gray-500">Manage annual fiscal years</p>
         </div>
         <button
             wire:click="$set('showCreateForm', 'yes')"
@@ -33,7 +33,7 @@
                         required
                         maxlength="10">
                     @error('newYearCode')
-                        <span class="text-[--color-danger] text-sm">{{ $message }}</span>
+                        <span class="text-red-600 text-sm">{{ $message }}</span>
                     @enderror
                 </div>
                 <div class="form-group">
@@ -45,7 +45,7 @@
                         class="form-input"
                         required>
                     @error('newStartDate')
-                        <span class="text-[--color-danger] text-sm">{{ $message }}</span>
+                        <span class="text-red-600 text-sm">{{ $message }}</span>
                     @enderror
                 </div>
                 <div class="form-group">
@@ -57,7 +57,7 @@
                         class="form-input"
                         required>
                     @error('newEndDate')
-                        <span class="text-[--color-danger] text-sm">{{ $message }}</span>
+                        <span class="text-red-600 text-sm">{{ $message }}</span>
                     @enderror
                 </div>
             </div>
@@ -79,17 +79,17 @@
         </div>
         <div class="modal-body">
             <div class="grid grid-cols-2 gap-4">
-                <div class="p-4 bg-[--color-surface] rounded">
-                    <p class="text-sm text-[--color-ink-muted]">Total Revenue</p>
+                <div class="p-4 bg-white rounded">
+                    <p class="text-sm text-gray-500">Total Revenue</p>
                     <p class="text-xl font-mono font-semibold">${{ number_format($yearReport['total_revenue'] ?? 0, 2) }}</p>
                 </div>
-                <div class="p-4 bg-[--color-surface] rounded">
-                    <p class="text-sm text-[--color-ink-muted]">Total Expenses</p>
+                <div class="p-4 bg-white rounded">
+                    <p class="text-sm text-gray-500">Total Expenses</p>
                     <p class="text-xl font-mono font-semibold">${{ number_format($yearReport['total_expenses'] ?? 0, 2) }}</p>
                 </div>
-                <div class="p-4 bg-[--color-surface] rounded col-span-2">
-                    <p class="text-sm text-[--color-ink-muted]">Net Income</p>
-                    <p class="text-2xl font-mono font-bold {{ ($yearReport['net_income'] ?? 0) >= 0 ? 'text-[--color-success]' : 'text-[--color-danger]' }}">
+                <div class="p-4 bg-white rounded col-span-2">
+                    <p class="text-sm text-gray-500">Net Income</p>
+                    <p class="text-2xl font-mono font-bold {{ ($yearReport['net_income'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
                         ${{ number_format($yearReport['net_income'] ?? 0, 2) }}
                     </p>
                 </div>
@@ -139,7 +139,7 @@
                                 @if(!$year['is_closed'])
                                 <button
                                     wire:click="$dispatch('confirm-close-year', { yearCode: '{{ $year['year_code'] }}' })"
-                                    class="btn btn-ghost btn-sm text-[--color-danger]">
+                                    class="btn btn-ghost btn-sm text-red-600">
                                     Close
                                 </button>
                                 @endif
@@ -148,7 +148,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center py-8 text-[--color-ink-muted]">No fiscal years found</td>
+                        <td colspan="5" class="text-center py-8 text-gray-500">No fiscal years found</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -170,7 +170,7 @@
             </div>
             <form wire:submit="closeFiscalYear(yearCode, confirmCode)">
                 <div class="modal-body">
-                    <p class="text-[--color-ink-muted] mb-4">Enter the fiscal year code to confirm: <strong class="font-mono" x-text="yearCode"></strong></p>
+                    <p class="text-gray-500 mb-4">Enter the fiscal year code to confirm: <strong class="font-mono" x-text="yearCode"></strong></p>
                     <div class="form-group">
                         <label class="form-label">Confirm Year Code</label>
                         <input

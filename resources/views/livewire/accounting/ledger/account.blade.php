@@ -3,8 +3,8 @@
     <div class="mb-6">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-[--color-ink]">Account: {{ $accountInfo['account_code'] ?? '' }}</h1>
-                <p class="text-sm text-[--color-ink-muted]">{{ $accountInfo['account_name'] ?? '' }}</p>
+                <h1 class="text-2xl font-semibold text-gray-900">Account: {{ $accountInfo['account_code'] ?? '' }}</h1>
+                <p class="text-sm text-gray-500">{{ $accountInfo['account_name'] ?? '' }}</p>
             </div>
             <a href="{{ route('accounting.ledger') }}" class="btn btn-ghost">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -19,32 +19,32 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="card">
             <div class="card-body">
-                <p class="text-sm text-[--color-ink-muted]">Opening Balance</p>
-                <p class="text-xl font-mono font-semibold text-[--color-ink]">
+                <p class="text-sm text-gray-500">Opening Balance</p>
+                <p class="text-xl font-mono font-semibold text-gray-900">
                     {{ number_format((float) ($accountInfo['opening_balance'] ?? '0'), 2) }} MYR
                 </p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p class="text-sm text-[--color-ink-muted]">Total Debits</p>
-                <p class="text-xl font-mono font-semibold text-[--color-ink]">
+                <p class="text-sm text-gray-500">Total Debits</p>
+                <p class="text-xl font-mono font-semibold text-gray-900">
                     {{ number_format((float) ($accountInfo['total_debits'] ?? '0'), 2) }} MYR
                 </p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p class="text-sm text-[--color-ink-muted]">Total Credits</p>
-                <p class="text-xl font-mono font-semibold text-[--color-ink]">
+                <p class="text-sm text-gray-500">Total Credits</p>
+                <p class="text-xl font-mono font-semibold text-gray-900">
                     {{ number_format((float) ($accountInfo['total_credits'] ?? '0'), 2) }} MYR
                 </p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p class="text-sm text-[--color-ink-muted]">Closing Balance</p>
-                <p class="text-xl font-mono font-semibold text-[--color-ink]">
+                <p class="text-sm text-gray-500">Closing Balance</p>
+                <p class="text-xl font-mono font-semibold text-gray-900">
                     {{ number_format((float) ($accountInfo['closing_balance'] ?? '0'), 2) }} MYR
                 </p>
             </div>
@@ -112,7 +112,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center py-12 text-[--color-ink-muted]">No ledger entries found</td>
+                        <td colspan="6" class="text-center py-12 text-gray-500">No ledger entries found</td>
                     </tr>
                     @endforelse
                 </tbody>

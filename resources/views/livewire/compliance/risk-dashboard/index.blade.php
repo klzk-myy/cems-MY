@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Customer Risk Dashboard</h1>
-    <p class="text-sm text-[--color-ink-muted]">Risk scoring and monitoring</p>
+    <h1 class="text-2xl font-semibold text-gray-900">Customer Risk Dashboard</h1>
+    <p class="text-sm text-gray-500">Risk scoring and monitoring</p>
 </div>
 @endsection
 
@@ -23,38 +23,38 @@
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-danger]/10 text-[--color-danger]">
+            <div class="stat-card-icon bg-red-600/10 text-red-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                 </svg>
             </div>
         </div>
         <p class="stat-card-label">High Risk Customers</p>
-        <p class="stat-card-value text-[--color-danger]">{{ number_format($summary['high_risk'] ?? 0) }}</p>
+        <p class="stat-card-value text-red-600">{{ number_format($summary['high_risk'] ?? 0) }}</p>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-warning]/10 text-[--color-warning]">
+            <div class="stat-card-icon bg-amber-500/10 text-amber-500">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
             </div>
         </div>
         <p class="stat-card-label">Medium Risk Customers</p>
-        <p class="stat-card-value text-[--color-warning]">{{ number_format($summary['medium_risk'] ?? 0) }}</p>
+        <p class="stat-card-value text-amber-500">{{ number_format($summary['medium_risk'] ?? 0) }}</p>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-success]/10 text-[--color-success]">
+            <div class="stat-card-icon bg-green-600/10 text-green-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
             </div>
         </div>
         <p class="stat-card-label">Low Risk Customers</p>
-        <p class="stat-card-value text-[--color-success]">{{ number_format($summary['low_risk'] ?? 0) }}</p>
+        <p class="stat-card-value text-green-600">{{ number_format($summary['low_risk'] ?? 0) }}</p>
     </div>
 </div>
 
@@ -78,7 +78,7 @@
                 <tr>
                     <td>
                         <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center text-xs">
+                            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-xs">
                                 {{ substr($customer->full_name ?? $customer->name ?? 'U', 0, 1) }}
                             </div>
                             <span class="font-medium">{{ $customer->full_name ?? $customer->name ?? 'Unknown' }}</span>

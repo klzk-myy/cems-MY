@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Counters</h1>
-    <p class="text-sm text-[--color-ink-muted]">Manage till/counter sessions</p>
+    <h1 class="text-2xl font-semibold text-gray-900">Counters</h1>
+    <p class="text-sm text-gray-500">Manage till/counter sessions</p>
 </div>
 @endsection
 
@@ -50,15 +50,15 @@
         <div class="card-body">
             <div class="space-y-3">
                 <div class="flex justify-between">
-                    <span class="text-sm text-[--color-ink-muted]">Branch</span>
+                    <span class="text-sm text-gray-500">Branch</span>
                     <span class="text-sm font-medium">{{ $counter['branch_name'] }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-sm text-[--color-ink-muted]">Operator</span>
+                    <span class="text-sm text-gray-500">Operator</span>
                     <span class="text-sm font-medium">{{ $counter['operator_name'] }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-sm text-[--color-ink-muted]">Opening Float</span>
+                    <span class="text-sm text-gray-500">Opening Float</span>
                     <span class="text-sm font-medium font-mono">{{ number_format($counter['opening_float'] ?? 0, 2) }} MYR</span>
                 </div>
             </div>

@@ -3,8 +3,8 @@
     <div class="mb-6">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-[--color-ink]">Journal Entry {{ $entryData['entry_number'] }}</h1>
-                <p class="text-sm text-[--color-ink-muted]">Double-entry accounting record</p>
+                <h1 class="text-2xl font-semibold text-gray-900">Journal Entry {{ $entryData['entry_number'] }}</h1>
+                <p class="text-sm text-gray-500">Double-entry accounting record</p>
             </div>
             <div class="flex items-center gap-3">
                 <span class="badge {{ $entryData['status_color'] }}">{{ $entryData['status_label'] }}</span>
@@ -19,18 +19,18 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div class="card">
             <div class="card-body">
-                <h3 class="text-sm font-medium text-[--color-ink-muted] mb-2">Entry Information</h3>
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Entry Information</h3>
                 <dl class="space-y-2">
                     <div class="flex justify-between">
-                        <dt class="text-[--color-ink-muted]">Date:</dt>
+                        <dt class="text-gray-500">Date:</dt>
                         <dd class="font-medium">{{ $entryData['entry_date'] }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-[--color-ink-muted]">Type:</dt>
+                        <dt class="text-gray-500">Type:</dt>
                         <dd class="font-medium">{{ $entryData['reference_type'] ?? 'Manual' }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-[--color-ink-muted]">Created:</dt>
+                        <dt class="text-gray-500">Created:</dt>
                         <dd class="font-medium">{{ $entryData['created_at'] }}</dd>
                     </div>
                 </dl>
@@ -39,21 +39,21 @@
 
         <div class="card">
             <div class="card-body">
-                <h3 class="text-sm font-medium text-[--color-ink-muted] mb-2">People</h3>
+                <h3 class="text-sm font-medium text-gray-500 mb-2">People</h3>
                 <dl class="space-y-2">
                     <div class="flex justify-between">
-                        <dt class="text-[--color-ink-muted]">Created By:</dt>
+                        <dt class="text-gray-500">Created By:</dt>
                         <dd class="font-medium">{{ $entryData['creator']['name'] ?? 'N/A' }}</dd>
                     </div>
                     @if($entryData['poster'])
                     <div class="flex justify-between">
-                        <dt class="text-[--color-ink-muted]">Posted By:</dt>
+                        <dt class="text-gray-500">Posted By:</dt>
                         <dd class="font-medium">{{ $entryData['poster']['name'] ?? 'N/A' }}</dd>
                     </div>
                     @endif
                     @if($entryData['reverser'])
                     <div class="flex justify-between">
-                        <dt class="text-[--color-ink-muted]">Reversed By:</dt>
+                        <dt class="text-gray-500">Reversed By:</dt>
                         <dd class="font-medium">{{ $entryData['reverser']['name'] ?? 'N/A' }}</dd>
                     </div>
                     @endif
@@ -63,23 +63,23 @@
 
         <div class="card">
             <div class="card-body">
-                <h3 class="text-sm font-medium text-[--color-ink-muted] mb-2">Totals</h3>
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Totals</h3>
                 <dl class="space-y-2">
                     <div class="flex justify-between">
-                        <dt class="text-[--color-ink-muted]">Total Debits:</dt>
+                        <dt class="text-gray-500">Total Debits:</dt>
                         <dd class="font-mono font-medium">{{ number_format((float) $entryData['total_debits'], 2) }} MYR</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-[--color-ink-muted]">Total Credits:</dt>
+                        <dt class="text-gray-500">Total Credits:</dt>
                         <dd class="font-mono font-medium">{{ number_format((float) $entryData['total_credits'], 2) }} MYR</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-[--color-ink-muted]">Balanced:</dt>
+                        <dt class="text-gray-500">Balanced:</dt>
                         <dd class="font-medium">
                             @if($entryData['is_balanced'])
-                                <span class="text-[--color-success]">Yes</span>
+                                <span class="text-green-600">Yes</span>
                             @else
-                                <span class="text-[--color-danger]">No</span>
+                                <span class="text-red-600">No</span>
                             @endif
                         </dd>
                     </div>
@@ -91,8 +91,8 @@
     {{-- Description --}}
     <div class="card mb-6">
         <div class="card-body">
-            <h3 class="text-sm font-medium text-[--color-ink-muted] mb-2">Description</h3>
-            <p class="text-[--color-ink]">{{ $entryData['description'] ?? 'No description' }}</p>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Description</h3>
+            <p class="text-gray-900">{{ $entryData['description'] ?? 'No description' }}</p>
         </div>
     </div>
 
@@ -118,28 +118,28 @@
                         <td>
                             <div>
                                 <span class="font-medium">{{ $line['account_code'] }}</span>
-                                <span class="text-[--color-ink-muted]"> - {{ $line['account_name'] }}</span>
+                                <span class="text-gray-500"> - {{ $line['account_name'] }}</span>
                             </div>
                         </td>
                         <td>
                             <span class="badge badge-default">{{ $line['account_type'] }}</span>
                         </td>
-                        <td class="text-right font-mono {{ $line['is_debit'] ? '' : 'text-[--color-ink-muted]' }}">
+                        <td class="text-right font-mono {{ $line['is_debit'] ? '' : 'text-gray-500' }}">
                             {{ $line['is_debit'] ? number_format((float) $line['debit'], 2) : '-' }}
                         </td>
-                        <td class="text-right font-mono {{ $line['is_credit'] ? '' : 'text-[--color-ink-muted]' }}">
+                        <td class="text-right font-mono {{ $line['is_credit'] ? '' : 'text-gray-500' }}">
                             {{ $line['is_credit'] ? number_format((float) $line['credit'], 2) : '-' }}
                         </td>
-                        <td class="text-[--color-ink-muted]">{{ $line['description'] ?? '-' }}</td>
+                        <td class="text-gray-500">{{ $line['description'] ?? '-' }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center py-8 text-[--color-ink-muted]">No journal lines found</td>
+                        <td colspan="5" class="text-center py-8 text-gray-500">No journal lines found</td>
                     </tr>
                     @endforelse
                 </tbody>
                 <tfoot>
-                    <tr class="border-t-2 border-[--color-border]">
+                    <tr class="border-t-2 border-gray-200">
                         <td colspan="2" class="font-medium">Totals</td>
                         <td class="text-right font-mono font-medium">{{ number_format((float) $entryData['total_debits'], 2) }}</td>
                         <td class="text-right font-mono font-medium">{{ number_format((float) $entryData['total_credits'], 2) }}</td>
@@ -171,10 +171,10 @@
     {{-- Reverse Modal --}}
     @if($showReverseModal ?? false)
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" wire:click.self="$set('showReverseModal', false)">
-        <div class="bg-[--color-surface] rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div class="p-6">
-                <h3 class="text-lg font-semibold text-[--color-ink] mb-4">Reverse Journal Entry</h3>
-                <p class="text-sm text-[--color-ink-muted] mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Reverse Journal Entry</h3>
+                <p class="text-sm text-gray-500 mb-4">
                     This will create a new reversing entry and mark this entry as reversed. This action cannot be undone.
                 </p>
                 <div class="form-group">
@@ -185,7 +185,7 @@
                     @enderror
                 </div>
             </div>
-            <div class="px-6 py-4 bg-[--color-canvas-subtle] rounded-b-lg flex justify-end gap-3">
+            <div class="px-6 py-4 bg-gray-100 rounded-b-lg flex justify-end gap-3">
                 <button type="button" wire:click="$set('showReverseModal', false)" class="btn btn-ghost">Cancel</button>
                 <button type="button" wire:click="reverse(reverseReason)" class="btn btn-danger" @if($isLoading) disabled @endif>
                     @if($isLoading)

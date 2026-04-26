@@ -1,8 +1,8 @@
 <div>
     {{-- Header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink]">Revaluation History</h1>
-        <p class="text-sm text-[--color-ink-muted]">Historical log of currency revaluation entries</p>
+        <h1 class="text-2xl font-semibold text-gray-900">Revaluation History</h1>
+        <p class="text-sm text-gray-500">Historical log of currency revaluation entries</p>
     </div>
 
     {{-- Filters --}}
@@ -63,14 +63,14 @@
                         <td class="font-mono">{{ number_format((float) $entry->old_rate, 6) }}</td>
                         <td class="font-mono">{{ number_format((float) $entry->new_rate, 6) }}</td>
                         <td class="font-mono">{{ number_format((float) $entry->position_amount, 4) }}</td>
-                        <td class="font-mono {{ (float) $entry->gain_loss_amount >= 0 ? 'text-[--color-success]' : 'text-[--color-danger]' }}">
+                        <td class="font-mono {{ (float) $entry->gain_loss_amount >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ number_format((float) $entry->gain_loss_amount, 2) }} MYR
                         </td>
-                        <td class="text-[--color-ink-muted]">{{ $entry->postedBy?->name ?? 'System' }}</td>
+                        <td class="text-gray-500">{{ $entry->postedBy?->name ?? 'System' }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center py-12 text-[--color-ink-muted]">No revaluation entries found</td>
+                        <td colspan="8" class="text-center py-12 text-gray-500">No revaluation entries found</td>
                     </tr>
                     @endforelse
                 </tbody>

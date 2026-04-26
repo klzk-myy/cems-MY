@@ -1,8 +1,8 @@
 <div>
     {{-- Header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink]">Journal Entries</h1>
-        <p class="text-sm text-[--color-ink-muted]">Double-entry accounting records</p>
+        <h1 class="text-2xl font-semibold text-gray-900">Journal Entries</h1>
+        <p class="text-sm text-gray-500">Double-entry accounting records</p>
     </div>
 
     {{-- Header Actions --}}
@@ -78,7 +78,7 @@
                         <td>{{ $entry->entry_date?->format('d M Y') ?? 'N/A' }}</td>
                         <td class="font-mono text-xs">JE-{{ str_pad($entry->id, 6, '0', STR_PAD_LEFT) }}</td>
                         <td>{{ $entry->description }}</td>
-                        <td class="text-[--color-ink-muted]">{{ $entry->lines->count() }} accounts</td>
+                        <td class="text-gray-500">{{ $entry->lines->count() }} accounts</td>
                         <td class="font-mono">{{ number_format((float) $entry->getTotalDebits(), 2) }} MYR</td>
                         <td>
                             @php
@@ -104,7 +104,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-12 text-[--color-ink-muted]">No journal entries found</td>
+                        <td colspan="7" class="text-center py-12 text-gray-500">No journal entries found</td>
                     </tr>
                     @endforelse
                 </tbody>

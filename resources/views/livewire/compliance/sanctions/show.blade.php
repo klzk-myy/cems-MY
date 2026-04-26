@@ -4,8 +4,8 @@
 
 @section('header-title')
 <div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">{{ $list->name ?? 'Sanction List' }}</h1>
-    <p class="text-sm text-[--color-ink-muted]">
+    <h1 class="text-2xl font-semibold text-gray-900">{{ $list->name ?? 'Sanction List' }}</h1>
+    <p class="text-sm text-gray-500">
         @if($list->is_active)
             <span class="badge badge-success">Active</span>
         @else
@@ -34,19 +34,19 @@
         <div class="card-body">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">Name</p>
+                    <p class="text-sm text-gray-500">Name</p>
                     <p class="font-medium">{{ $list->name ?? 'N/A' }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">Type</p>
+                    <p class="text-sm text-gray-500">Type</p>
                     <p class="font-medium">{{ $list->list_type ?? 'N/A' }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">Entry Count</p>
+                    <p class="text-sm text-gray-500">Entry Count</p>
                     <p class="font-medium">{{ number_format($list->entry_count ?? 0) }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">Last Updated</p>
+                    <p class="text-sm text-gray-500">Last Updated</p>
                     <p class="font-medium">
                         @if($list->last_updated_at)
                             {{ $list->last_updated_at->format('d M Y H:i') }}
@@ -56,11 +56,11 @@
                     </p>
                 </div>
                 <div class="col-span-2">
-                    <p class="text-sm text-[--color-ink-muted]">Source URL</p>
+                    <p class="text-sm text-gray-500">Source URL</p>
                     <p class="font-medium text-sm truncate">{{ $list->source_url ?? 'N/A' }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-[--color-ink-muted]">Update Status</p>
+                    <p class="text-sm text-gray-500">Update Status</p>
                     <p class="font-medium">
                         <span class="badge {{ $list->update_status_badge ?? 'badge-neutral' }}">
                             {{ ucfirst($list->update_status ?? 'unknown') }}
@@ -132,7 +132,7 @@
                             <div>
                                 <p class="font-medium">{{ $entry->entity_name }}</p>
                                 @if($entry->aliases && count($entry->aliases) > 0)
-                                    <p class="text-xs text-[--color-ink-muted]">
+                                    <p class="text-xs text-gray-500">
                                         Also known as: {{ implode(', ', array_slice($entry->aliases, 0, 3)) }}
                                         @if(count($entry->aliases) > 3)
                                             +{{ count($entry->aliases) - 3 }} more
@@ -162,7 +162,7 @@
                         <td colspan="6">
                             <div class="empty-state py-12">
                                 <div class="empty-state-icon">
-                                    <svg class="w-8 h-8 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
                                 </div>

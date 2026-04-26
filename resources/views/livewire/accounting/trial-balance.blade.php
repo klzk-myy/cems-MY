@@ -1,8 +1,8 @@
 <div>
     {{-- Header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink]">Trial Balance</h1>
-        <p class="text-sm text-[--color-ink-muted]">All accounts with debit/credit balances</p>
+        <h1 class="text-2xl font-semibold text-gray-900">Trial Balance</h1>
+        <p class="text-sm text-gray-500">All accounts with debit/credit balances</p>
     </div>
 
     {{-- Date Filter --}}
@@ -17,7 +17,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Trial Balance</h3>
-            <span class="text-sm text-[--color-ink-muted]">As of {{ $asOfDate }}</span>
+            <span class="text-sm text-gray-500">As of {{ $asOfDate }}</span>
         </div>
         <div class="table-container">
             <table class="table">
@@ -43,9 +43,9 @@
                         $totalCredit += (float) ($account['credit'] ?? 0);
                     @endphp
                     @empty
-                    <tr><td colspan="4" class="text-center py-8 text-[--color-ink-muted]">No accounts found</td></tr>
+                    <tr><td colspan="4" class="text-center py-8 text-gray-500">No accounts found</td></tr>
                     @endforelse
-                    <tr class="font-semibold bg-[--color-canvas-subtle]">
+                    <tr class="font-semibold bg-gray-100">
                         <td colspan="2">Total</td>
                         <td class="font-mono text-right">{{ number_format($totalDebit, 2) }}</td>
                         <td class="font-mono text-right">{{ number_format($totalCredit, 2) }}</td>
