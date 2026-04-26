@@ -6,7 +6,7 @@
 <div class="card">
     <div class="card-header"><h3 class="card-title">Transaction Batch Upload</h3></div>
     <div class="card-body">
-        <form method="POST" action="{{ route('transactions.batch.upload') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('transactions.batch-upload') }}" enctype="multipart/form-data">
             @csrf
             <div class="mb-6">
                 <label class="form-label">CSV File</label>

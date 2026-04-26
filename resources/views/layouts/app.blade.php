@@ -41,7 +41,7 @@
                        class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 {{ request()->routeIs('customers.*') ? 'bg-[#f7f7f8] text-[#171717]' : 'text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]' }}">
                         Customers
                     </a>
-                    <a href="{{ route('compliance.index') }}"
+                    <a href="{{ route('compliance') }}"
                        class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 {{ request()->routeIs('compliance.*') ? 'bg-[#f7f7f8] text-[#171717]' : 'text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]' }}">
                         Compliance
                     </a>

@@ -48,7 +48,7 @@
         @endif
 
         <div class="mt-6">
-            <a href="{{ route('transactions.batch.upload') }}" class="btn btn-secondary">Upload Another</a>
+            <a href="{{ route('transactions.batch-upload') }}" class="btn btn-secondary">Upload Another</a>
         </div>
     </div>
 </div>
