@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\AuditController;
-use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchOpeningController;
 use App\Http\Controllers\Compliance\AlertTriageController;
 use App\Http\Controllers\Compliance\CaseManagementController;
@@ -33,7 +32,6 @@ use App\Http\Controllers\Transaction\TransactionCancellationController;
 use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionReportController;
-use App\Http\Controllers\UserController;
 use App\Livewire\Accounting\BalanceSheet;
 use App\Livewire\Accounting\BudgetReport;
 use App\Livewire\Accounting\CashFlow;
@@ -50,6 +48,10 @@ use App\Livewire\Accounting\Ratios;
 use App\Livewire\Accounting\Reconciliation\Report;
 use App\Livewire\Accounting\Revaluation\History;
 use App\Livewire\Accounting\TrialBalance;
+use App\Livewire\Branches\Create as BranchCreate;
+use App\Livewire\Branches\Edit as BranchEdit;
+use App\Livewire\Branches\Index as BranchIndex;
+use App\Livewire\Branches\Show as BranchShow;
 use App\Livewire\Compliance\Alerts\Index as AlertsIndex;
 use App\Livewire\Compliance\Alerts\Show as AlertsShow;
 use App\Livewire\Compliance\Ctos\Index as CtosIndex;
@@ -90,6 +92,11 @@ use App\Livewire\Transactions\Cancel as TransactionCancel;
 use App\Livewire\Transactions\Create as TransactionCreate;
 use App\Livewire\Transactions\Index as TransactionIndex;
 use App\Livewire\Transactions\Show as TransactionShow;
+use App\Livewire\Users\Create as UserCreate;
+use App\Livewire\Users\Edit as UserEdit;
+use App\Livewire\Users\Index as UserIndex;
+use App\Livewire\Users\ResetPassword as UserResetPassword;
+use App\Livewire\Users\Show as UserShow;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
@@ -532,27 +539,20 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     });
 
     // User Management (Admin only)
-    Route::middleware(['role:admin', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('index');
-        Route::get('/create', [UserController::class, 'create'])->name('create');
-        Route::post('/', [UserController::class, 'store'])->name('store');
-        Route::get('/{user}', [UserController::class, 'show'])->name('show');
-        Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
-        Route::put('/{user}', [UserController::class, 'update'])->name('update');
-        Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
-        Route::post('/{user}/toggle', [UserController::class, 'toggleActive'])->name('toggle');
-        Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
+    Route::middleware(['auth', 'role:admin', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
+        Route::get('/', UserIndex::class)->name('index');
+        Route::get('/create', UserCreate::class)->name('create');
+        Route::get('/{user}', UserShow::class)->name('show');
+        Route::get('/{user}/edit', UserEdit::class)->name('edit');
+        Route::get('/{user}/reset-password', UserResetPassword::class)->name('reset-password');
     });
 
     // Branch Management (Admin only)
     Route::middleware(['auth', 'role:admin'])->prefix('branches')->name('branches.')->group(function () {
-        Route::get('/', [BranchController::class, 'index'])->name('index');
-        Route::get('/create', [BranchController::class, 'create'])->name('create');
-        Route::post('/', [BranchController::class, 'store'])->name('store');
-        Route::get('/{branch}', [BranchController::class, 'show'])->name('show');
-        Route::get('/{branch}/edit', [BranchController::class, 'edit'])->name('edit');
-        Route::put('/{branch}', [BranchController::class, 'update'])->name('update');
-        Route::delete('/{branch}', [BranchController::class, 'destroy'])->name('destroy');
+        Route::get('/', BranchIndex::class)->name('index');
+        Route::get('/create', BranchCreate::class)->name('create');
+        Route::get('/{branch}', BranchShow::class)->name('show');
+        Route::get('/{branch}/edit', BranchEdit::class)->name('edit');
     });
 
     // Branch Opening Wizard (Admin only)
