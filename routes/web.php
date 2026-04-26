@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
-use App\Http\Controllers\BranchOpeningController;
 use App\Http\Controllers\Compliance\AlertTriageController;
 use App\Http\Controllers\Compliance\CaseManagementController;
 use App\Http\Controllers\Compliance\ComplianceReportingController;
@@ -50,6 +49,11 @@ use App\Livewire\Branches\Create as BranchCreate;
 use App\Livewire\Branches\Edit as BranchEdit;
 use App\Livewire\Branches\Index as BranchIndex;
 use App\Livewire\Branches\Show as BranchShow;
+use App\Livewire\BranchOpenings\Complete;
+use App\Livewire\BranchOpenings\Index as BranchOpeningsIndex;
+use App\Livewire\BranchOpenings\Step1;
+use App\Livewire\BranchOpenings\Step2;
+use App\Livewire\BranchOpenings\Step3;
 use App\Livewire\Compliance\Alerts\Index as AlertsIndex;
 use App\Livewire\Compliance\Alerts\Show as AlertsShow;
 use App\Livewire\Compliance\Ctos\Index as CtosIndex;
@@ -71,6 +75,10 @@ use App\Livewire\Customers\Create as CustomerCreate;
 use App\Livewire\Customers\Edit as CustomerEdit;
 use App\Livewire\Customers\Index as CustomerIndex;
 use App\Livewire\Customers\Show as CustomerShow;
+use App\Livewire\Mfa\Recovery as MfaRecovery;
+use App\Livewire\Mfa\Setup as MfaSetup;
+use App\Livewire\Mfa\TrustedDevices as MfaTrustedDevices;
+use App\Livewire\Mfa\Verify as MfaVerify;
 use App\Livewire\Rates\Index as RatesIndex;
 use App\Livewire\Reports\Analytics\ComplianceSummary;
 use App\Livewire\Reports\Analytics\CustomerAnalysis;
@@ -179,13 +187,13 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // MFA Setup & Verification
     Route::prefix('mfa')->name('mfa.')->group(function () {
-        Route::get('/setup', [MfaController::class, 'setup'])->name('setup');
+        Route::get('/setup', MfaSetup::class)->name('setup');
         Route::post('/setup', [MfaController::class, 'setupStore'])->name('setup.store');
-        Route::get('/verify', [MfaController::class, 'verify'])->name('verify');
+        Route::get('/verify', MfaVerify::class)->name('verify');
         Route::post('/verify', [MfaController::class, 'verifyStore'])->name('verify.store');
         Route::post('/disable', [MfaController::class, 'disable'])->name('disable');
-        Route::get('/recovery', [MfaController::class, 'recovery'])->name('recovery');
-        Route::get('/trusted-devices', [MfaController::class, 'trustedDevices'])->name('trusted-devices');
+        Route::get('/recovery', MfaRecovery::class)->name('recovery');
+        Route::get('/trusted-devices', MfaTrustedDevices::class)->name('trusted-devices');
         Route::delete('/trusted-devices/{deviceId}', [MfaController::class, 'removeDevice'])->name('trusted-devices.remove');
     });
 
@@ -538,14 +546,11 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Branch Opening Wizard (Admin only)
     Route::middleware(['auth', 'role:admin'])->prefix('branches/open')->name('branches.open.')->group(function () {
-        Route::get('/', [BranchOpeningController::class, 'index'])->name('index');
-        Route::get('/step1', [BranchOpeningController::class, 'step1'])->name('step1');
-        Route::post('/step1', [BranchOpeningController::class, 'processStep1'])->name('step1.process');
-        Route::get('/step2/{branch}', [BranchOpeningController::class, 'step2'])->name('step2');
-        Route::post('/step2/{branch}', [BranchOpeningController::class, 'processStep2'])->name('step2.process');
-        Route::get('/step3/{branch}', [BranchOpeningController::class, 'step3'])->name('step3');
-        Route::post('/step3/{branch}', [BranchOpeningController::class, 'processStep3'])->name('step3.process');
-        Route::get('/complete/{branch}', [BranchOpeningController::class, 'complete'])->name('complete');
+        Route::get('/', BranchOpeningsIndex::class)->name('index');
+        Route::get('/step1', Step1::class)->name('step1');
+        Route::get('/step2/{branch}', Step2::class)->name('step2');
+        Route::get('/step3/{branch}', Step3::class)->name('step3');
+        Route::get('/complete/{branch}', Complete::class)->name('complete');
     });
 
     // -------------------------------------------------------------------------
