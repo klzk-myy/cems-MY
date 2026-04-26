@@ -23,7 +23,6 @@ use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\RateController;
 use App\Http\Controllers\Report\AnalyticsController;
-use App\Http\Controllers\Report\RegulatoryReportController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\SetupController;
@@ -492,17 +491,12 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     Route::middleware('role:manager,admin')->prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [DashboardController::class, 'reports'])->name('index');
 
-        // BNM Regulatory Reports
-        Route::get('/msb2', [RegulatoryReportController::class, 'msb2'])->name('msb2');
-        Route::get('/msb2/generate', [RegulatoryReportController::class, 'msb2Generate'])->name('msb2.generate');
-        Route::get('/lctr', [RegulatoryReportController::class, 'lctr'])->name('lctr');
-        Route::get('/lctr/generate', [RegulatoryReportController::class, 'lctrGenerate'])->name('lctr.generate');
-        Route::get('/lmca', [RegulatoryReportController::class, 'lmca'])->name('lmca');
-        Route::get('/lmca/generate', [RegulatoryReportController::class, 'lmcaGenerate'])->name('lmca.generate');
-        Route::get('/quarterly-lvr', [RegulatoryReportController::class, 'quarterlyLvr'])->name('quarterly-lvr');
-        Route::get('/quarterly-lvr/generate', [RegulatoryReportController::class, 'quarterlyLvrGenerate'])->name('quarterly-lvr.generate');
-        Route::get('/position-limit', [RegulatoryReportController::class, 'positionLimit'])->name('position-limit');
-        Route::get('/position-limit/generate', [RegulatoryReportController::class, 'positionLimitGenerate'])->name('position-limit.generate');
+        // BNM Regulatory Reports - Livewire Components
+        Route::get('/msb2', App\Livewire\Reports\Msb2\Index::class)->name('msb2');
+        Route::get('/lctr', App\Livewire\Reports\Lctr\Index::class)->name('lctr');
+        Route::get('/lmca', App\Livewire\Reports\Lmca\Index::class)->name('lmca');
+        Route::get('/quarterly-lvr', App\Livewire\Reports\QuarterlyLvr\Index::class)->name('quarterly-lvr');
+        Route::get('/position-limit', App\Livewire\Reports\PositionLimit\Index::class)->name('position-limit');
 
         // Analytics
         Route::get('/monthly-trends', [AnalyticsController::class, 'monthlyTrends'])->name('monthly-trends');
