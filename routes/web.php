@@ -13,13 +13,10 @@ use App\Http\Controllers\Compliance\SanctionListController;
 use App\Http\Controllers\Compliance\ScreeningController;
 use App\Http\Controllers\Compliance\UnifiedAlertController;
 use App\Http\Controllers\CounterController;
-use App\Http\Controllers\Customer\CustomerKycController;
-use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\MfaController;
-use App\Http\Controllers\RateController;
 use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StockCashController;
@@ -70,6 +67,11 @@ use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
 use App\Livewire\Counters\Index;
 use App\Livewire\Counters\Open;
+use App\Livewire\Customers\Create as CustomerCreate;
+use App\Livewire\Customers\Edit as CustomerEdit;
+use App\Livewire\Customers\Index as CustomerIndex;
+use App\Livewire\Customers\Show as CustomerShow;
+use App\Livewire\Rates\Index as RatesIndex;
 use App\Livewire\Reports\Analytics\ComplianceSummary;
 use App\Livewire\Reports\Analytics\CustomerAnalysis;
 use App\Livewire\Reports\Analytics\MonthlyTrends;
@@ -188,8 +190,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     });
 
     // Exchange Rates (Manager/Admin only)
-    Route::middleware('role:manager,admin')->group(function () {
-        Route::get('/rates', [RateController::class, 'index'])->name('rates.index');
+    Route::middleware('auth')->prefix('rates')->name('rates.')->group(function () {
+        Route::get('/', RatesIndex::class)->name('index');
     });
 
     // Transactions
@@ -238,29 +240,10 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Customers
     Route::prefix('customers')->name('customers.')->group(function () {
-        Route::get('/search', [CustomerController::class, 'search'])->name('search');
-        Route::post('/quick-create', [CustomerController::class, 'quickCreate'])->name('quickCreate')
-            ->middleware('throttle:10,1');
-        Route::get('/exchange-rates', [CustomerController::class, 'getExchangeRates'])->name('exchangeRates');
-        Route::get('/', [CustomerController::class, 'index'])->name('index');
-        Route::get('/create', [CustomerController::class, 'create'])->name('create');
-        Route::post('/', [CustomerController::class, 'store'])->name('store')
-            ->middleware('throttle:30,1');
-        Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
-        Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
-        Route::put('/{customer}', [CustomerController::class, 'update'])->name('update')
-            ->middleware('throttle:30,1');
-        Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy')
-            ->middleware('throttle:15,1');
-
-        // KYC Document Management
-        Route::get('/{customer}/kyc', [CustomerKycController::class, 'kyc'])->name('kyc');
-        Route::post('/{customer}/kyc', [CustomerKycController::class, 'uploadDocument'])->name('kyc.upload')
-            ->middleware('throttle:30,1');
-        Route::post('/{customer}/kyc/{document}/verify', [CustomerKycController::class, 'verifyDocument'])->name('kyc.verify')
-            ->middleware('role:compliance');
-        Route::delete('/{customer}/kyc/{document}', [CustomerKycController::class, 'deleteDocument'])->name('kyc.delete')
-            ->middleware('throttle:15,1');
+        Route::get('/', CustomerIndex::class)->name('index');
+        Route::get('/create', CustomerCreate::class)->name('create');
+        Route::get('/{customer}', CustomerShow::class)->name('show');
+        Route::get('/{customer}/edit', CustomerEdit::class)->name('edit');
     });
 
     // Counters
