@@ -22,8 +22,6 @@ use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\RateController;
-use App\Http\Controllers\Report\AnalyticsController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StockCashController;
@@ -69,6 +67,10 @@ use App\Livewire\Counters\Close;
 use App\Livewire\Counters\Handover;
 use App\Livewire\Counters\Index;
 use App\Livewire\Counters\Open;
+use App\Livewire\Reports\Analytics\ComplianceSummary;
+use App\Livewire\Reports\Analytics\CustomerAnalysis;
+use App\Livewire\Reports\Analytics\MonthlyTrends;
+use App\Livewire\Reports\Analytics\Profitability;
 use App\Livewire\Stock\Index as StockIndex;
 use App\Livewire\Stock\Position;
 use App\Livewire\Stock\Reconciliation;
@@ -498,17 +500,15 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/quarterly-lvr', App\Livewire\Reports\QuarterlyLvr\Index::class)->name('quarterly-lvr');
         Route::get('/position-limit', App\Livewire\Reports\PositionLimit\Index::class)->name('position-limit');
 
-        // Analytics
-        Route::get('/monthly-trends', [AnalyticsController::class, 'monthlyTrends'])->name('monthly-trends');
-        Route::get('/profitability', [AnalyticsController::class, 'profitability'])->name('profitability');
-        Route::get('/customer-analysis', [AnalyticsController::class, 'customerAnalysis'])->name('customer-analysis');
-        Route::get('/compliance-summary', [AnalyticsController::class, 'complianceSummary'])->name('compliance-summary');
+        // Analytics - Livewire Components
+        Route::get('/monthly-trends', MonthlyTrends::class)->name('monthly-trends');
+        Route::get('/profitability', Profitability::class)->name('profitability');
+        Route::get('/customer-analysis', CustomerAnalysis::class)->name('customer-analysis');
+        Route::get('/compliance-summary', ComplianceSummary::class)->name('compliance-summary');
 
-        // Report Management
-        Route::get('/history', [ReportController::class, 'history'])->name('history');
-        Route::get('/download/{filename}', [ReportController::class, 'download'])->name('download');
-        Route::get('/compare', [ReportController::class, 'compare'])->name('compare');
-        Route::get('/export', [ReportController::class, 'export'])->name('export');
+        // Report Management - Livewire Components
+        Route::get('/history', App\Livewire\Reports\History\Index::class)->name('history');
+        Route::get('/compare', App\Livewire\Reports\Compare\Index::class)->name('compare');
     });
 
     // -------------------------------------------------------------------------
