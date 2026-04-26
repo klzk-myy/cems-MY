@@ -18,9 +18,9 @@
                 <form method="POST" action="{{ route('login') }}" class="space-y-4">
                     @csrf
                     <div>
-                        <label for="email" class="block text-sm font-medium text-[#171717] mb-1.5">Email address</label>
-                        <input type="email" id="email" name="email" value="{{ old('email') }}" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg focus:border-[#d4a843] focus:ring-2 focus:ring-[#d4a843]/30" placeholder="you@example.com" required>
-                        @error('email')
+                        <label for="username" class="block text-sm font-medium text-[#171717] mb-1.5">Username</label>
+                        <input type="text" id="username" name="username" value="{{ old('username') }}" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg focus:border-[#d4a843] focus:ring-2 focus:ring-[#d4a843]/30" placeholder="Enter your username" required>
+                        @error('username')
                             <p class="text-xs text-[#ef4444] mt-1">{{ $message }}</p>
                         @enderror
                     </div>
