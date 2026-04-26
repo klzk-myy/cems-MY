@@ -71,6 +71,13 @@ use App\Livewire\Reports\Analytics\ComplianceSummary;
 use App\Livewire\Reports\Analytics\CustomerAnalysis;
 use App\Livewire\Reports\Analytics\MonthlyTrends;
 use App\Livewire\Reports\Analytics\Profitability;
+use App\Livewire\Reports\Compare\Index as CompareIndex;
+use App\Livewire\Reports\History\Index as HistoryIndex;
+use App\Livewire\Reports\Lctr\Index as LctrIndex;
+use App\Livewire\Reports\Lmca\Index as LmcaIndex;
+use App\Livewire\Reports\Msb2\Index as Msb2Index;
+use App\Livewire\Reports\PositionLimit\Index as PositionLimitIndex;
+use App\Livewire\Reports\QuarterlyLvr\Index as QuarterlyLvrIndex;
 use App\Livewire\Stock\Index as StockIndex;
 use App\Livewire\Stock\Position;
 use App\Livewire\Stock\Reconciliation;
@@ -494,11 +501,11 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/', [DashboardController::class, 'reports'])->name('index');
 
         // BNM Regulatory Reports - Livewire Components
-        Route::get('/msb2', App\Livewire\Reports\Msb2\Index::class)->name('msb2');
-        Route::get('/lctr', App\Livewire\Reports\Lctr\Index::class)->name('lctr');
-        Route::get('/lmca', App\Livewire\Reports\Lmca\Index::class)->name('lmca');
-        Route::get('/quarterly-lvr', App\Livewire\Reports\QuarterlyLvr\Index::class)->name('quarterly-lvr');
-        Route::get('/position-limit', App\Livewire\Reports\PositionLimit\Index::class)->name('position-limit');
+        Route::get('/msb2', Msb2Index::class)->name('msb2');
+        Route::get('/lctr', LctrIndex::class)->name('lctr');
+        Route::get('/lmca', LmcaIndex::class)->name('lmca');
+        Route::get('/quarterly-lvr', QuarterlyLvrIndex::class)->name('quarterly-lvr');
+        Route::get('/position-limit', PositionLimitIndex::class)->name('position-limit');
 
         // Analytics - Livewire Components
         Route::get('/monthly-trends', MonthlyTrends::class)->name('monthly-trends');
@@ -507,8 +514,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/compliance-summary', ComplianceSummary::class)->name('compliance-summary');
 
         // Report Management - Livewire Components
-        Route::get('/history', App\Livewire\Reports\History\Index::class)->name('history');
-        Route::get('/compare', App\Livewire\Reports\Compare\Index::class)->name('compare');
+        Route::get('/history', HistoryIndex::class)->name('history');
+        Route::get('/compare', CompareIndex::class)->name('compare');
     });
 
     // -------------------------------------------------------------------------
