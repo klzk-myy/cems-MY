@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
-use App\Http\Controllers\AuditController;
 use App\Http\Controllers\BranchOpeningController;
 use App\Http\Controllers\Compliance\AlertTriageController;
 use App\Http\Controllers\Compliance\CaseManagementController;
@@ -48,6 +47,8 @@ use App\Livewire\Accounting\Ratios;
 use App\Livewire\Accounting\Reconciliation\Report;
 use App\Livewire\Accounting\Revaluation\History;
 use App\Livewire\Accounting\TrialBalance;
+use App\Livewire\Audit\Dashboard as AuditDashboard;
+use App\Livewire\Audit\Index as AuditIndex;
 use App\Livewire\Branches\Create as BranchCreate;
 use App\Livewire\Branches\Edit as BranchEdit;
 use App\Livewire\Branches\Index as BranchIndex;
@@ -530,12 +531,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     // -------------------------------------------------------------------------
 
     // Audit Log (Managers only)
-    Route::middleware(['role:manager'])->prefix('audit')->name('audit.')->group(function () {
-        Route::get('/', [AuditController::class, 'index'])->name('index');
-        Route::get('/dashboard', [AuditController::class, 'dashboard'])->name('dashboard');
-        Route::get('/rotate', [AuditController::class, 'rotate'])->name('rotate');
-        Route::get('/{log}', [AuditController::class, 'show'])->name('show');
-        Route::post('/export', [AuditController::class, 'export'])->name('export');
+    Route::middleware(['auth', 'role:manager'])->prefix('audit')->name('audit.')->group(function () {
+        Route::get('/', AuditIndex::class)->name('index');
+        Route::get('/dashboard', AuditDashboard::class)->name('dashboard');
     });
 
     // User Management (Admin only)
