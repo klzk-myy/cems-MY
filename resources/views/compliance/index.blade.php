@@ -1,229 +1,106 @@
-@extends('layouts.base')
-
-@section('title', 'Compliance Dashboard')
-
-@section('header-title')
-<div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Compliance Dashboard</h1>
-    <p class="text-sm text-[--color-ink-muted]">AML/CFT monitoring and reporting</p>
-</div>
-@endsection
-
-@section('header-actions')
-<div class="flex items-center gap-3">
-    <a href="/compliance/alerts" class="btn btn-secondary">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-        </svg>
-        Alert Triage
-    </a>
-    <a href="/str" class="btn btn-primary">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-        </svg>
-        New STR
-    </a>
-</div>
-@endsection
-
-@section('content')
-{{-- Compliance Stats --}}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-danger]/10 text-[--color-danger]">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance - CEMS-MY</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="font-sans antialiased">
+    <div class="flex min-h-screen">
+        <aside class="w-60 bg-white border-r border-[#e5e5e5] flex flex-col shrink-0">
+            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+                <h1 class="text-lg font-semibold text-[#171717]">CEMS-MY</h1>
             </div>
-        </div>
-        <p class="stat-card-label">Active Alerts</p>
-        <p class="stat-card-value">{{ number_format($stats['active_alerts'] ?? 0) }}</p>
-        <p class="stat-card-change text-[--color-ink-muted]">{{ $stats['pending_review'] ?? 0 }} pending review</p>
+            <nav class="flex-1 p-4 space-y-6 overflow-y-auto">
+                <div>
+                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Main</div>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Dashboard</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Transactions</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Counters</a>
+                </div>
+                <div>
+                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Management</div>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Customers</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 bg-[#f7f7f8] text-[#171717]">Compliance</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Reports</a>
+                </div>
+                <div>
+                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">System</div>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Users</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Rates</a>
+                </div>
+            </nav>
+        </aside>
+        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-2xl font-semibold text-[#171717]">Compliance</h1>
+                    <p class="text-sm text-[#6b6b6b] mt-1">AML/CFT monitoring and regulatory reporting</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="#" class="px-4 py-2 text-sm font-medium text-[#171717] bg-white border border-[#e5e5e5] rounded-lg hover:bg-[#f7f7f8]">View Alerts</a>
+                    <a href="#" class="px-4 py-2 text-sm font-medium text-white bg-[#0a0a0a] rounded-lg hover:bg-[#262626]">New Case</a>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                    <div class="text-2xl font-semibold text-[#171717]">12</div>
+                    <div class="text-sm text-[#6b6b6b] mt-1">Open Alerts</div>
+                    <div class="text-xs text-[#ef4444] mt-2">3 Critical</div>
+                </div>
+                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                    <div class="text-2xl font-semibold text-[#171717]">5</div>
+                    <div class="text-sm text-[#6b6b6b] mt-1">Pending Cases</div>
+                </div>
+                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                    <div class="text-2xl font-semibold text-[#171717]">3</div>
+                    <div class="text-sm text-[#6b6b6b] mt-1">STR Submitted</div>
+                    <div class="text-xs text-[#6b6b6b] mt-2">This month</div>
+                </div>
+                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                    <div class="text-2xl font-semibold text-[#171717]">8</div>
+                    <div class="text-sm text-[#6b6b6b] mt-1">CTOS Filed</div>
+                    <div class="text-xs text-[#6b6b6b] mt-2">This month</div>
+                </div>
+            </div>
+            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-[#f7f7f8] border-b border-[#e5e5e5]">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Alert ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Type</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Severity</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Customer</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-[#e5e5e5] hover:bg-[#f7f7f8]/50">
+                            <td class="px-4 py-3 font-mono text-xs text-[#171717]">ALR-20260426-001</td>
+                            <td class="px-4 py-3 text-[#171717]">Velocity Alert</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Critical</span></td>
+                            <td class="px-4 py-3 text-[#171717]">John Tan</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Under Review</span></td>
+                        </tr>
+                        <tr class="border-b border-[#e5e5e5] hover:bg-[#f7f7f8]/50">
+                            <td class="px-4 py-3 font-mono text-xs text-[#171717]">ALR-20260426-002</td>
+                            <td class="px-4 py-3 text-[#171717]">Structuring Detected</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-orange-100 text-orange-700">High</span></td>
+                            <td class="px-4 py-3 text-[#171717]">Ahmad Razali</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Under Review</span></td>
+                        </tr>
+                        <tr class="hover:bg-[#f7f7f8]/50">
+                            <td class="px-4 py-3 font-mono text-xs text-[#171717]">ALR-20260425-003</td>
+                            <td class="px-4 py-3 text-[#171717]">Sanctions Rescreen</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Medium</span></td>
+                            <td class="px-4 py-3 text-[#171717]">Siti Nurhaliza</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Resolved</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
     </div>
-
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-warning]/10 text-[--color-warning]">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
-            </div>
-        </div>
-        <p class="stat-card-label">Open Cases</p>
-        <p class="stat-card-value">{{ number_format($stats['open_cases'] ?? 0) }}</p>
-        <p class="stat-card-change text-[--color-ink-muted]">{{ $stats['cases_needing_attention'] ?? 0 }} need attention</p>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-info]/10 text-[--color-info]">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-            </div>
-        </div>
-        <p class="stat-card-label">EDD Records</p>
-        <p class="stat-card-value">{{ number_format($stats['edd_records'] ?? 0) }}</p>
-        <p class="stat-card-change text-[--color-ink-muted]">{{ $stats['edd_pending'] ?? 0 }} pending</p>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <div class="stat-card-icon bg-[--color-success]/10 text-[--color-success]">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-            </div>
-        </div>
-        <p class="stat-card-label">STR Submitted</p>
-        <p class="stat-card-value">{{ number_format($stats['str_submitted'] ?? 0) }}</p>
-        <p class="stat-card-change text-[--color-ink-muted]">{{ $stats['str_pending'] ?? 0 }} pending</p>
-    </div>
-</div>
-
-{{-- Quick Actions & Alerts --}}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    {{-- Quick Actions --}}
-    <div class="card lg:col-span-2">
-        <div class="card-header">
-            <h3 class="card-title">Compliance Actions</h3>
-        </div>
-        <div class="card-body">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <a href="/compliance/alerts" class="flex flex-col items-center gap-3 p-4 rounded-xl bg-[--color-canvas-subtle] hover:bg-[--color-canvas-emphasis] transition-colors">
-                    <div class="w-12 h-12 bg-[--color-danger] rounded-xl flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[--color-ink]">Alert Triage</span>
-                </a>
-                <a href="/compliance/cases" class="flex flex-col items-center gap-3 p-4 rounded-xl bg-[--color-canvas-subtle] hover:bg-[--color-canvas-emphasis] transition-colors">
-                    <div class="w-12 h-12 bg-[--color-warning] rounded-xl flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[--color-ink]">Cases</span>
-                </a>
-                <a href="/compliance/edd" class="flex flex-col items-center gap-3 p-4 rounded-xl bg-[--color-canvas-subtle] hover:bg-[--color-canvas-emphasis] transition-colors">
-                    <div class="w-12 h-12 bg-[--color-info] rounded-xl flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[--color-ink]">EDD</span>
-                </a>
-                <a href="/str" class="flex flex-col items-center gap-3 p-4 rounded-xl bg-[--color-canvas-subtle] hover:bg-[--color-canvas-emphasis] transition-colors">
-                    <div class="w-12 h-12 bg-[--color-accent] rounded-xl flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-[--color-ink]">STR Studio</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    {{-- Compliance Status --}}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">System Status</h3>
-        </div>
-        <div class="card-body space-y-4">
-            <div class="flex items-center justify-between">
-                <span class="text-sm text-[--color-ink]">Sanctions Screening</span>
-                <span class="badge badge-success">Active</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-sm text-[--color-ink]">CTOS Reporting</span>
-                <span class="badge badge-success">Operational</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-sm text-[--color-ink]">STR Automation</span>
-                <span class="badge badge-success">Ready</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-sm text-[--color-ink]">EDD Workflow</span>
-                <span class="badge badge-success">Active</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Recent Alerts --}}
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Recent Alerts</h3>
-        <a href="/compliance/alerts" class="btn btn-ghost btn-sm">View All</a>
-    </div>
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Priority</th>
-                    <th>Type</th>
-                    <th>Customer</th>
-                    <th>Description</th>
-                    <th>Created</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($recent_alerts ?? [] as $alert)
-                <tr>
-                    <td>
-                        @php
-                            $priorityClass = match($alert->priority->value ?? '') {
-                                'Critical' => 'badge-danger',
-                                'High' => 'badge-warning',
-                                'Medium' => 'badge-info',
-                                default => 'badge-default'
-                            };
-                        @endphp
-                        <span class="badge {{ $priorityClass }}">{{ $alert->priority->label() ?? 'Low' }}</span>
-                    </td>
-                    <td>{{ $alert->type->label() ?? 'Unknown' }}</td>
-                    <td>
-                        <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 bg-[--color-canvas-subtle] rounded flex items-center justify-center">
-                                <span class="text-xs">{{ substr($alert->customer->full_name ?? '?', 0, 1) }}</span>
-                            </div>
-                            <span class="text-sm">{{ $alert->customer->full_name ?? 'N/A' }}</span>
-                        </div>
-                    </td>
-                    <td class="max-w-xs truncate">{{ $alert->description }}</td>
-                    <td class="text-[--color-ink-muted]">{{ $alert->created_at->diffForHumans() }}</td>
-                    <td>
-                        @php
-                            $statusClass = match($alert->status->value ?? '') {
-                                'Resolved' => 'badge-success',
-                                'Dismissed' => 'badge-default',
-                                default => 'badge-warning'
-                            };
-                        @endphp
-                        <span class="badge {{ $statusClass }}">{{ $alert->status->label() ?? 'Pending' }}</span>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6">
-                        <div class="empty-state py-8">
-                            <div class="empty-state-icon">
-                                <svg class="w-8 h-8 text-[--color-success]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <p class="empty-state-title">No alerts</p>
-                            <p class="empty-state-description">All systems are operating normally</p>
-                        </div>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
-@endsection
+</body>
+</html>

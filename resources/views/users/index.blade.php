@@ -1,91 +1,89 @@
-@extends('layouts.base')
-
-@section('title', 'Users')
-
-@section('header-title')
-<div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Users</h1>
-    <p class="text-sm text-[--color-ink-muted]">Manage system users</p>
-</div>
-@endsection
-
-@section('header-actions')
-<a href="/users/create" class="btn btn-primary">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-    </svg>
-    Add User
-</a>
-@endsection
-
-@section('content')
-<div class="card">
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Branch</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($users ?? [] as $user)
-                <tr>
-                    <td>
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center font-semibold">
-                                {{ substr($user->username, 0, 1) }}
-                            </div>
-                            <div>
-                                <p class="font-medium">{{ $user->full_name ?? $user->username }}</p>
-                                <p class="text-xs text-[--color-ink-muted]">{{ $user->email }}</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="font-mono">{{ $user->username }}</td>
-                    <td>
-                        <span class="badge badge-info">{{ $user->role->label() ?? 'Unknown' }}</span>
-                    </td>
-                    <td>{{ $user->branch->name ?? 'N/A' }}</td>
-                    <td>
-                        @if($user->is_active)
-                            <span class="badge badge-success">Active</span>
-                        @else
-                            <span class="badge badge-default">Inactive</span>
-                        @endif
-                    </td>
-                    <td>
-                        <div class="table-actions">
-                            <a href="/users/{{ $user->id }}" class="btn btn-ghost btn-icon" title="View">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                            </a>
-                            <a href="/users/{{ $user->id }}/edit" class="btn btn-ghost btn-icon" title="Edit">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6">
-                        <div class="empty-state py-12">
-                            <p class="empty-state-title">No users found</p>
-                            <p class="empty-state-description">Add your first user to get started</p>
-                        </div>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users - CEMS-MY</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="font-sans antialiased">
+    <div class="flex min-h-screen">
+        <aside class="w-60 bg-white border-r border-[#e5e5e5] flex flex-col shrink-0">
+            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+                <h1 class="text-lg font-semibold text-[#171717]">CEMS-MY</h1>
+            </div>
+            <nav class="flex-1 p-4 space-y-6 overflow-y-auto">
+                <div>
+                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Main</div>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Dashboard</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Transactions</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Counters</a>
+                </div>
+                <div>
+                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Management</div>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Customers</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Compliance</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Reports</a>
+                </div>
+                <div>
+                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">System</div>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 bg-[#f7f7f8] text-[#171717]">Users</a>
+                    <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Rates</a>
+                </div>
+            </nav>
+        </aside>
+        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-2xl font-semibold text-[#171717]">Users</h1>
+                    <p class="text-sm text-[#6b6b6b] mt-1">Manage system users and roles</p>
+                </div>
+                <a href="#" class="px-4 py-2 text-sm font-medium text-white bg-[#0a0a0a] rounded-lg hover:bg-[#262626]">Add User</a>
+            </div>
+            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-[#f7f7f8] border-b border-[#e5e5e5]">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Name</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Email</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Role</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Branch</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-[#e5e5e5] hover:bg-[#f7f7f8]/50">
+                            <td class="px-4 py-3 text-[#171717] font-medium">Ahmad Razali</td>
+                            <td class="px-4 py-3 text-[#6b6b6b]">ahmad@cems.my</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">Teller</span></td>
+                            <td class="px-4 py-3 text-[#6b6b6b]">Kuala Lumpur</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Active</span></td>
+                        </tr>
+                        <tr class="border-b border-[#e5e5e5] hover:bg-[#f7f7f8]/50">
+                            <td class="px-4 py-3 text-[#171717] font-medium">Siti Nurhaliza</td>
+                            <td class="px-4 py-3 text-[#6b6b6b]">siti@cems.my</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">Teller</span></td>
+                            <td class="px-4 py-3 text-[#6b6b6b]">Kuala Lumpur</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Active</span></td>
+                        </tr>
+                        <tr class="border-b border-[#e5e5e5] hover:bg-[#f7f7f8]/50">
+                            <td class="px-4 py-3 text-[#171717] font-medium">Mohd Faizal</td>
+                            <td class="px-4 py-3 text-[#6b6b6b]">faizal@cems.my</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700">Manager</span></td>
+                            <td class="px-4 py-3 text-[#6b6b6b]">Kuala Lumpur</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Active</span></td>
+                        </tr>
+                        <tr class="hover:bg-[#f7f7f8]/50">
+                            <td class="px-4 py-3 text-[#171717] font-medium">Nurul Huda</td>
+                            <td class="px-4 py-3 text-[#6b6b6b]">nurul@cems.my</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-orange-100 text-orange-700">Compliance</span></td>
+                            <td class="px-4 py-3 text-[#6b6b6b]">Kuala Lumpur</td>
+                            <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Active</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
     </div>
-</div>
-@endsection
+</body>
+</html>

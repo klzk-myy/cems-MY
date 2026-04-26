@@ -4,71 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - CEMS-MY</title>
-    @vite(['resources/css/app.css'])
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Instrument+Serif&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-[--content-bg] flex items-center justify-center">
-    <div class="w-full max-w-md px-6">
-        {{-- Logo --}}
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 bg-[--color-accent] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span class="text-white font-bold text-3xl">C</span>
+<body class="font-sans antialiased bg-[#f7f7f8]">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-semibold text-[#171717]">CEMS-MY</h1>
+                <p class="text-sm text-[#6b6b6b] mt-1">Currency Exchange Management System</p>
             </div>
-            <h1 class="text-2xl font-bold text-[--color-ink]">CEMS-MY</h1>
-            <p class="text-[--color-ink-muted]">Currency Exchange Management System</p>
-        </div>
-
-        {{-- Login Card --}}
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Sign in to your account</h2>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ route('login') }}" class="space-y-5">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-8">
+                <h2 class="text-xl font-semibold text-[#171717] mb-6">Sign in to your account</h2>
+                <form method="POST" action="{{ route('login') }}" class="space-y-4">
                     @csrf
-
-                    @if($errors->any())
-                        <div class="alert alert-danger">
-                            <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <div class="alert-content">
-                                <p class="alert-title">Login Failed</p>
-                                <p class="alert-description">{{ $errors->first() }}</p>
-                            </div>
-                        </div>
-                    @endif
-
-                    <div class="form-group">
-                        <label class="form-label">Username</label>
-                        <input type="text" name="username" class="form-input" placeholder="Enter your username" value="{{ old('username') }}" required autofocus>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-[#171717] mb-1.5">Email address</label>
+                        <input type="email" id="email" name="email" value="{{ old('email') }}" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg focus:border-[#d4a843] focus:ring-2 focus:ring-[#d4a843]/30" placeholder="you@example.com" required>
+                        @error('email')
+                            <p class="text-xs text-[#ef4444] mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-input" placeholder="Enter your password" required>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-[#171717] mb-1.5">Password</label>
+                        <input type="password" id="password" name="password" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg focus:border-[#d4a843] focus:ring-2 focus:ring-[#d4a843]/30" placeholder="Enter your password" required>
+                        @error('password')
+                            <p class="text-xs text-[#ef4444] mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
-
                     <div class="flex items-center justify-between">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="remember" class="form-checkbox">
-                            <span class="text-sm text-[--color-ink]">Remember me</span>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="remember" class="w-4 h-4 rounded border-[#e5e5e5]">
+                            <span class="text-sm text-[#6b6b6b]">Remember me</span>
                         </label>
+                        <a href="{{ route('password.request') }}" class="text-sm text-[#d4a843] hover:underline">Forgot password?</a>
                     </div>
-
-                    <button type="submit" class="btn btn-primary w-full">
-                        Sign in
-                    </button>
+                    <button type="submit" class="w-full px-4 py-2.5 text-sm font-medium text-white bg-[#0a0a0a] rounded-lg hover:bg-[#262626]">Sign in</button>
                 </form>
             </div>
         </div>
-
-        {{-- Footer --}}
-        <p class="text-center text-sm text-[--color-ink-muted] mt-6">
-            CEMS-MY v1.0 - Bank Negara Malaysia Compliant
-        </p>
     </div>
 </body>
 </html>
