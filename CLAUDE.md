@@ -280,7 +280,6 @@ BNM compliance reports via Artisan commands:
 Tests use `RefreshDatabase` trait and are in `tests/Feature/` and `tests/Unit/`. Key test files:
 - `tests/Feature/TransactionAccountingVerificationTest.php` - Verifies 60 transactions (20/branch × 3 branches) with accounting and ledger balance validation
 - `tests/Feature/TransactionWorkflowTest.php` - Transaction creation, approval, cancellation
-- `tests/Feature/TransactionWorkflowTest.php` - Transaction creation, approval, cancellation
 - `tests/Feature/TransactionTest.php` - Transaction web controller tests
 - `tests/Feature/RealWorldTransactionWorkflowTest.php` - End-to-end transaction scenarios
 - `tests/Feature/RouteConsistencyTest.php` - Route/role access verification
