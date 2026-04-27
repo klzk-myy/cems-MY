@@ -18,6 +18,7 @@ class CustomerController extends Controller
 {
     public function __construct(
         protected AuditService $auditService,
+        protected CustomerService $customerService,
         protected EncryptionService $encryptionService,
         protected CustomerScreeningService $sanctionService,
         protected RiskScoringEngine $riskScoringEngine
@@ -76,66 +77,16 @@ class CustomerController extends Controller
             'employer_address' => 'nullable|string|max:500',
         ]);
 
-        DB::beginTransaction();
         try {
-            $encryptedIdNumber = $this->encryptionService->encrypt($validated['id_number']);
-            $encryptedAddress = ! empty($validated['address'])
-                ? $this->encryptionService->encrypt($validated['address'])
-                : null;
-            $encryptedPhone = ! empty($validated['phone'])
-                ? $this->encryptionService->encrypt($validated['phone'])
-                : null;
-
-            // Initial risk is always 'Low' - risk scoring module determines actual risk
-            $customer = Customer::create([
-                'full_name' => $validated['full_name'],
-                'id_type' => $validated['id_type'],
-                'id_number_encrypted' => $encryptedIdNumber,
-                'date_of_birth' => $validated['date_of_birth'],
-                'nationality' => $validated['nationality'],
-                'address' => $encryptedAddress,
-                'phone' => $encryptedPhone,
-                'email' => $validated['email'] ?? null,
-                'pep_status' => $validated['pep_status'] ?? false,
-                'risk_rating' => 'Low', // Always Low initially - risk scoring module auto-determines
-                'occupation' => $validated['occupation'] ?? null,
-                'employer_name' => $validated['employer_name'] ?? null,
-                'employer_address' => $encryptedAddress ?? null,
-                'is_active' => true,
-            ]);
-
-            // Screen against sanctions - may upgrade to High if hit found
-            $sanctionResponse = $this->sanctionService->screenName($validated['full_name']);
-            if ($sanctionResponse->matches->isNotEmpty()) {
-                $customer->update([
-                    'risk_rating' => 'High',
-                    'sanction_hit' => true,
-                ]);
-
-                // Log sanction hit for compliance audit trail
-                $this->auditService->logCustomer('sanction_match_detected', $customer->id, [
-                    'new' => [
-                        'risk_rating' => 'High',
-                        'sanction_hit' => true,
-                        'matches' => $sanctionResponse->matches->map(fn ($m) => $m->entityName)->toArray(),
-                    ],
-                ]);
-            }
-
-            // Initial risk assessment
-            $this->riskScoringEngine->recalculateForCustomer($customer->id);
-
-            DB::commit();
+            $customer = $this->customerService->createCustomer($validated, auth()->id());
 
             return response()->json([
                 'success' => true,
                 'message' => 'Customer created successfully.',
-                'data' => $customer->fresh()->load(['documents', 'transactions']),
+                'data' => $customer->load(['documents', 'transactions']),
             ], 201);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create customer: '.$e->getMessage(),
