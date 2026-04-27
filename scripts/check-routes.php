@@ -26,9 +26,11 @@
  *   - If you get "Directory not found" errors, ensure the views directory exists
  *   - If you get permission errors, check file system permissions
  *   - If routes are not loading, ensure Laravel is properly configured
+ *   - If you see PHP warnings, ensure Xdebug is properly configured
  */
 
-// Detect vendor/autoload.php dynamically
+// Suppress PHP warnings to ensure clean output
+error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE);
 $vendorAutoload = __DIR__.'/../vendor/autoload.php';
 if (! file_exists($vendorAutoload)) {
     $vendorAutoload = dirname(__DIR__, 2).'/vendor/autoload.php';
@@ -55,7 +57,7 @@ foreach ($argv as $arg) {
     if (str_starts_with($arg, '--format=')) {
         $options['format'] = substr($arg, 9);
     } elseif (str_starts_with($arg, '--path=')) {
-        $options['path'] = substr($arg, 6);
+        $options['path'] = substr($arg, 7);
     }
 }
 
