@@ -48,6 +48,79 @@ class TransactionCancellationService
     ) {}
 
     /**
+     * Cancel a transaction directly (without pending approval workflow).
+     *
+     * This is a simplified cancellation that bypasses the PendingCancellation
+     * state machine and directly cancels or reverses the transaction.
+     * Used by the TransactionCancellationController for direct cancellations.
+     *
+     * @param  Transaction  $transaction  The transaction to cancel
+     * @param  int  $userId  The user ID performing the cancellation
+     * @param  string  $reason  Reason for cancellation
+     * @return array Array containing 'transaction' and optional 'refund_transaction'
+     *
+     * @throws \InvalidArgumentException If user is not authorized or transaction cannot be cancelled
+     */
+    public function cancelTransaction(Transaction $transaction, int $userId, string $reason): array
+    {
+        return DB::transaction(function () use ($transaction, $userId, $reason) {
+            $originalStatus = $transaction->status;
+            $isCompleted = $transaction->status->isCompleted();
+            $refundTransaction = null;
+
+            if ($isCompleted) {
+                // Completed transactions get reversed with a refund
+                $refundTransaction = $this->createRefundTransaction($transaction, $userId);
+                $newStatus = TransactionStatus::Reversed;
+
+                // Reverse stock position
+                $this->reversePositions($transaction);
+
+                // Create reversing journal entries
+                $this->createReversingJournalEntries($transaction, $userId);
+            } else {
+                // Non-completed transactions are simply cancelled
+                $newStatus = TransactionStatus::Cancelled;
+
+                // Release stock reservation for PendingApproval transactions
+                if ($originalStatus->isPendingApproval()) {
+                    $this->positionService->releaseStockReservation($transaction->id);
+                }
+            }
+
+            // Update transaction status
+            $transaction->status = $newStatus;
+            $transaction->cancelled_at = now();
+            $transaction->cancelled_by = $userId;
+            $transaction->cancellation_reason = $reason;
+            $transaction->version = ($transaction->version ?? 0) + 1;
+            $transaction->save();
+
+            // Audit logging
+            $this->auditService->logWithSeverity(
+                $isCompleted ? 'transaction_reversed' : 'transaction_cancelled',
+                [
+                    'user_id' => $userId,
+                    'entity_type' => 'Transaction',
+                    'entity_id' => $transaction->id,
+                    'old_values' => ['status' => $originalStatus->value],
+                    'new_values' => [
+                        'status' => $newStatus->value,
+                        'refund_transaction_id' => $refundTransaction?->id,
+                        'reason' => $reason,
+                    ],
+                ],
+                'INFO'
+            );
+
+            return [
+                'transaction' => $transaction,
+                'refund_transaction' => $refundTransaction,
+            ];
+        });
+    }
+
+    /**
      * Request cancellation of a transaction.
      *
      * Requires manager or admin role. Transitions transaction to PendingCancellation
