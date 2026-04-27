@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\CddLevel;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Services\AuditService;
+use App\Services\CustomerScreeningService;
 use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,7 +14,9 @@ use Illuminate\Http\Request;
 class CustomerController extends Controller
 {
     public function __construct(
-        protected CustomerService $customerService
+        protected CustomerService $customerService,
+        protected AuditService $auditService,
+        protected CustomerScreeningService $customerScreeningService
     ) {}
 
     /**
@@ -254,7 +258,7 @@ class CustomerController extends Controller
 
         // Screen each customer against sanctions
         $results = $customers->map(function ($customer) {
-            $sanctionCheck = $this->sanctionService->screenName($customer->full_name);
+            $sanctionCheck = $this->customerScreeningService->screenName($customer->full_name);
 
             return [
                 'id' => $customer->id,
