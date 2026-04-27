@@ -36,4 +36,33 @@ class CustomerApiTest extends TestCase
 
         $response->assertStatus(201);
     }
+
+    public function test_update_delegates_to_customer_service()
+    {
+        $customer = Customer::factory()->create();
+        $customerService = $this->mock(CustomerService::class);
+        $customerService->shouldReceive('updateCustomer')
+            ->once()
+            ->with(
+                \Mockery::on(function ($c) use ($customer) {
+                    return $c->id === $customer->id;
+                }),
+                \Mockery::on(function ($data) {
+                    return isset($data['full_name']);
+                }),
+                1
+            )
+            ->andReturn($customer);
+
+        $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->putJson("/api/v1/customers/{$customer->id}", [
+                'full_name' => 'Jane Doe',
+                'id_type' => 'MyKad',
+                'id_number' => '123456789012',
+                'date_of_birth' => '1990-01-01',
+                'nationality' => 'Malaysian',
+            ]);
+
+        $response->assertStatus(200);
+    }
 }
