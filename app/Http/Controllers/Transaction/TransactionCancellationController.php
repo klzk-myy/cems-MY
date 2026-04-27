@@ -42,6 +42,10 @@ class TransactionCancellationController extends Controller
             abort(403, 'Unauthorized to cancel this transaction.');
         }
 
+        if (! $this->canBeCancelled($transaction)) {
+            return back()->with('error', 'This transaction cannot be cancelled in its current state.');
+        }
+
         $validated = $request->validate([
             'cancellation_reason' => [
                 'required',

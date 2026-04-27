@@ -19,6 +19,12 @@ class TransactionCancellationTest extends TestCase
         $transaction = Transaction::factory()->create(['status' => TransactionStatus::Completed]);
 
         $cancellationService = \Mockery::mock(TransactionCancellationService::class);
+        $cancellationService->shouldReceive('isWithinCancellationWindow')
+            ->once()
+            ->with(\Mockery::on(function ($t) use ($transaction) {
+                return $t->id === $transaction->id;
+            }))
+            ->andReturn(true);
         $cancellationService->shouldReceive('cancelTransaction')
             ->once()
             ->with(
