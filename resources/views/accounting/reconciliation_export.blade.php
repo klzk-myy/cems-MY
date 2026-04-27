@@ -43,7 +43,7 @@
                 @csrf
                 <button type="submit" class="btn btn-primary">Download PDF</button>
             </form>
-            <form method="POST" action="{{ route('accounting.reconciliation.export.excel', $report['id'] ?? 0) }}">
+            <form method="POST" action="{{ route('accounting.reconciliation.export', $report['id'] ?? 0) }}">
                 @csrf
                 <button type="submit" class="btn btn-secondary">Download Excel</button>
             </form>
