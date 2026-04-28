@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Services\QueryLoggingService;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class QueryLogging
@@ -19,12 +20,21 @@ class QueryLogging
             return $next($request);
         }
 
-        $this->queryLoggingService->enable();
+        try {
+            $this->queryLoggingService->enable();
 
-        $response = $next($request);
+            $response = $next($request);
 
-        $this->queryLoggingService->analyzeAndLog($request);
+            $this->queryLoggingService->analyzeAndLog($request);
 
-        return $response;
+            return $response;
+        } catch (\Exception $e) {
+            Log::error('Query logging middleware error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $next($request);
+        }
     }
 }

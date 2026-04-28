@@ -35,6 +35,7 @@ use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StockCashController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\StrController;
+use App\Http\Controllers\TestQueryLogController;
 use App\Http\Controllers\TestResultsController;
 use App\Http\Controllers\Transaction\TransactionApprovalController;
 use App\Http\Controllers\Transaction\TransactionCancellationController;
@@ -86,6 +87,9 @@ Route::get('/', function () {
 
 // Health check endpoint (public, no auth required)
 Route::get('/health', [HealthCheckController::class, 'index'])->name('health');
+
+// Test route for query logging
+Route::get('/test/query-log', [TestQueryLogController::class, 'index']);
 
 // =============================================================================
 // SETUP ROUTES (Public - No auth required)

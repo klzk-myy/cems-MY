@@ -68,4 +68,31 @@ class QueryLoggingTest extends TestCase
 
         $this->assertGreaterThan(1, count($customerQueries));
     }
+
+    public function test_middleware_logs_queries_when_config_enabled()
+    {
+        Config::set('database.logging', true);
+
+        $response = $this->get('/test/query-log');
+
+        $response->assertStatus(200);
+        $data = $response->json();
+
+        $this->assertArrayHasKey('queries', $data);
+        $this->assertNotEmpty($data['queries']);
+        $this->assertStringContainsString('customers', $data['queries'][0]['query']);
+    }
+
+    public function test_middleware_does_not_log_queries_when_config_disabled()
+    {
+        Config::set('database.logging', false);
+
+        $response = $this->get('/test/query-log');
+
+        $response->assertStatus(200);
+        $data = $response->json();
+
+        $this->assertArrayHasKey('queries', $data);
+        $this->assertEmpty($data['queries']);
+    }
 }
