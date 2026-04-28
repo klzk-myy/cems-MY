@@ -26,6 +26,7 @@ use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\MfaController;
+use App\Http\Controllers\PerformanceMonitoringController;
 use App\Http\Controllers\RateController;
 use App\Http\Controllers\Report\AnalyticsController;
 use App\Http\Controllers\Report\RegulatoryReportController;
@@ -122,6 +123,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Performance Monitoring
+    Route::get('/performance', [PerformanceMonitoringController::class, 'index'])->name('performance');
 
     // MFA Setup & Verification
     Route::prefix('mfa')->name('mfa.')->group(function () {
