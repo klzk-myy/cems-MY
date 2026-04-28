@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Performance Monitoring - CEMS-MY</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        body { font-family: system-ui, sans-serif; background: #f7f7f8; margin: 0; padding: 20px; }
+    </style>
 </head>
 <body class="font-sans antialiased bg-[#f7f7f8]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
