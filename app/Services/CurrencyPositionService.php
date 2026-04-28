@@ -418,7 +418,7 @@ class CurrencyPositionService
      */
     public function reserveStock(Transaction $transaction): StockReservation
     {
-        return StockReservation::create([
+        $reservation = StockReservation::create([
             'transaction_id' => $transaction->id,
             'currency_code' => $transaction->currency_code,
             'till_id' => $transaction->till_id,
@@ -427,6 +427,10 @@ class CurrencyPositionService
             'expires_at' => now()->addHours(24),
             'created_by' => $transaction->user_id,
         ]);
+
+        Cache::forget("position:{$transaction->till_id}:{$transaction->currency_code}:available");
+
+        return $reservation;
     }
 
     /**
@@ -443,6 +447,7 @@ class CurrencyPositionService
 
         if ($reservation) {
             $reservation->update(['status' => StockReservationStatus::Consumed]);
+            Cache::forget("position:{$reservation->till_id}:{$reservation->currency_code}:available");
         }
 
         return $reservation;
@@ -462,6 +467,7 @@ class CurrencyPositionService
 
         if ($reservation) {
             $reservation->update(['status' => StockReservationStatus::Released]);
+            Cache::forget("position:{$reservation->till_id}:{$reservation->currency_code}:available");
         }
 
         return $reservation;
