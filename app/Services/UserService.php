@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\UserRole;
 use App\Models\SystemLog;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -258,5 +259,34 @@ class UserService
         }
 
         return true;
+    }
+
+    /**
+     * Get cached user permissions based on role.
+     */
+    public function getUserPermissions(int $userId): array
+    {
+        return Cache::remember(
+            "user:{$userId}:permissions",
+            now()->addHour(),
+            fn () => $this->calculatePermissions($userId)
+        );
+    }
+
+    /**
+     * Calculate permissions for a user based on role.
+     */
+    protected function calculatePermissions(int $userId): array
+    {
+        $user = User::findOrFail($userId);
+        $role = $user->role;
+
+        return match ($role) {
+            UserRole::Admin => ['*'],
+            UserRole::ComplianceOfficer => ['transactions.view', 'compliance.*', 'reports.*'],
+            UserRole::Manager => ['transactions.create', 'transactions.view', 'transactions.approve', 'reports.view'],
+            UserRole::Teller => ['transactions.create', 'transactions.view'],
+            default => [],
+        };
     }
 }
