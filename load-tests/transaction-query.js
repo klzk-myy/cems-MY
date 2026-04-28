@@ -1,0 +1,34 @@
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  stages: [
+    { duration: '30s', target: 20 },
+    { duration: '1m', target: 40 },
+    { duration: '30s', target: 0 },
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<300'],
+    http_req_failed: ['rate<0.01'],
+  },
+};
+
+export default function () {
+  const id = Math.floor(Math.random() * 1000) + 1;
+  const url = `http://localhost/api/v1/transactions/${id}`;
+
+  const params = {
+    headers: {
+      'Authorization': 'Bearer test-token',
+    },
+  };
+
+  const res = http.get(url, params);
+
+  check(res, {
+    'status is 200': (r) => r.status === 200,
+    'response time < 300ms': (r) => r.timings.duration < 300,
+  });
+
+  sleep(0.5);
+}
