@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Customer;
+use App\Models\User;
 use App\Services\QueryLoggingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
@@ -73,7 +74,8 @@ class QueryLoggingTest extends TestCase
     {
         Config::set('database.logging', true);
 
-        $response = $this->get('/test/query-log');
+        $admin = User::factory()->create(['role' => 'admin']);
+        $response = $this->actingAs($admin)->get('/test/query-log');
 
         $response->assertStatus(200);
         $data = $response->json();
@@ -87,7 +89,8 @@ class QueryLoggingTest extends TestCase
     {
         Config::set('database.logging', false);
 
-        $response = $this->get('/test/query-log');
+        $admin = User::factory()->create(['role' => 'admin']);
+        $response = $this->actingAs($admin)->get('/test/query-log');
 
         $response->assertStatus(200);
         $data = $response->json();

@@ -31,6 +31,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Slow Query Threshold
+    |--------------------------------------------------------------------------
+    |
+    | Queries taking longer than this threshold (in milliseconds) will be
+    | flagged as slow queries for performance monitoring.
+    |
+    */
+
+    'slow_query_threshold_ms' => env('DB_SLOW_QUERY_THRESHOLD_MS', 100),
+
+    /*
+    |--------------------------------------------------------------------------
     | Database Connections
     |--------------------------------------------------------------------------
     |

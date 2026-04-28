@@ -88,8 +88,8 @@ Route::get('/', function () {
 // Health check endpoint (public, no auth required)
 Route::get('/health', [HealthCheckController::class, 'index'])->name('health');
 
-// Test route for query logging
-Route::get('/test/query-log', [TestQueryLogController::class, 'index']);
+// Test route for query logging (admin only)
+Route::middleware(['auth', 'role:admin'])->get('/test/query-log', [TestQueryLogController::class, 'index']);
 
 // =============================================================================
 // SETUP ROUTES (Public - No auth required)

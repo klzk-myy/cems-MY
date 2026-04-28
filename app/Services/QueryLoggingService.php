@@ -8,23 +8,14 @@ use Illuminate\Support\Facades\Log;
 
 class QueryLoggingService
 {
-    private bool $enabled = false;
-
     public function enable(): void
     {
-        $this->enabled = true;
         DB::enableQueryLog();
     }
 
     public function disable(): void
     {
-        $this->enabled = false;
         DB::disableQueryLog();
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
     }
 
     public function getQueries(): array
@@ -34,10 +25,6 @@ class QueryLoggingService
 
     public function analyzeAndLog(Request $request): void
     {
-        if (! $this->enabled) {
-            return;
-        }
-
         $queries = $this->getQueries();
 
         if (empty($queries)) {
