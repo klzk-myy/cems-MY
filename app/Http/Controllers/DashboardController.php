@@ -100,7 +100,7 @@ class DashboardController extends Controller
                 ->count(),
         ];
 
-        return view('compliance', compact('flags', 'stats', 'strStats'));
+        return view('compliance.index', compact('flags', 'stats', 'strStats'));
     }
 
     public function assignFlag(Request $request, FlaggedTransaction $flaggedTransaction)
@@ -187,7 +187,7 @@ class DashboardController extends Controller
         $positions = $this->currencyPositionService->getAllPositions();
         $totalPnl = $this->currencyPositionService->getTotalPnl();
 
-        return view('accounting', compact('positions', 'totalPnl'));
+        return view('accounting.index', compact('positions', 'totalPnl'));
     }
 
     public function reports()
