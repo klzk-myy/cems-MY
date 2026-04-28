@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
+use Mockery;
 use Tests\TestCase;
 
 class PerformanceTrackingMiddlewareTest extends TestCase
@@ -12,49 +14,39 @@ class PerformanceTrackingMiddlewareTest extends TestCase
 
     public function test_performance_tracking_middleware_logs_request_performance()
     {
-        // Allow error logs (e.g., from other middleware or exceptions)
         Log::shouldReceive('error')->zeroOrMoreTimes();
 
         Log::shouldReceive('info')
             ->once()
-            ->with('Request performance', \Mockery::on(function ($context) {
+            ->with('Request performance', Mockery::on(function ($context) {
                 return isset($context['url']) &&
                        isset($context['method']) &&
                        isset($context['duration_ms']) &&
                        isset($context['status']);
-            }));
-
-        // Also expect warning (always logged)
-        Log::shouldReceive('warning')
-            ->once()
-            ->with('Slow endpoint detected', \Mockery::on(function ($context) {
-                return isset($context['url']) &&
-                       isset($context['method']) &&
-                       isset($context['duration_ms']);
             }));
 
         $this->get('/dashboard');
     }
 
-    public function test_performance_tracking_middleware_logs_slow_endpoints()
+    public function test_performance_tracking_middleware_logs_slow_endpoints_when_threshold_exceeded()
     {
         Log::shouldReceive('error')->zeroOrMoreTimes();
 
-        // Both info and warning expected
         Log::shouldReceive('info')
             ->once()
-            ->with('Request performance', \Mockery::on(function ($context) {
-                return isset($context['url']) &&
-                       isset($context['method']) &&
-                       isset($context['duration_ms']) &&
-                       isset($context['status']);
-            }));
+            ->with('Request performance', Mockery::any());
+
+        $thresholdService = Mockery::mock(ThresholdService::class);
+        $thresholdService->shouldReceive('getResponseTimeWarning')->andReturn('0.001');
+        $this->app->instance(ThresholdService::class, $thresholdService);
 
         Log::shouldReceive('warning')
             ->once()
-            ->with('Slow endpoint detected', \Mockery::on(function ($context) {
+            ->with('Slow endpoint detected', Mockery::on(function ($context) {
                 return isset($context['url']) &&
-                       isset($context['duration_ms']);
+                       isset($context['method']) &&
+                       isset($context['duration_ms']) &&
+                       isset($context['threshold_ms']);
             }));
 
         $this->get('/dashboard');

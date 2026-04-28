@@ -34,6 +34,68 @@ class QueryLoggingService
         $this->detectNPlusOne($queries, $request);
     }
 
+    public function getQueryCount(): int
+    {
+        return count($this->getQueries());
+    }
+
+    public function getSlowQueryCount(float $thresholdMs = 100): int
+    {
+        $queries = $this->getQueries();
+        $count = 0;
+
+        foreach ($queries as $query) {
+            $time = $query['time'] ?? 0;
+            if ($time > $thresholdMs) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    public function getNPlusOneCount(): int
+    {
+        $queries = $this->getQueries();
+        $queryCounts = [];
+
+        foreach ($queries as $query) {
+            $pattern = $this->normalizeQuery($query['query']);
+
+            if (! isset($queryCounts[$pattern])) {
+                $queryCounts[$pattern] = 0;
+            }
+
+            $queryCounts[$pattern]++;
+        }
+
+        $nPlusOneCount = 0;
+        foreach ($queryCounts as $pattern => $count) {
+            if ($count > 1) {
+                $nPlusOneCount++;
+            }
+        }
+
+        return $nPlusOneCount;
+    }
+
+    public function getQuerySummary(): array
+    {
+        $queries = $this->getQueries();
+        $totalTime = 0;
+
+        foreach ($queries as $query) {
+            $totalTime += $query['time'] ?? 0;
+        }
+
+        return [
+            'count' => count($queries),
+            'total_time_ms' => $totalTime,
+            'slow_count' => $this->getSlowQueryCount(),
+            'n_plus_one_count' => $this->getNPlusOneCount(),
+        ];
+    }
+
     private function detectNPlusOne(array $queries, Request $request): void
     {
         $queryCounts = [];

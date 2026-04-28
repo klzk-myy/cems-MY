@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Services\ReportingService;
+use App\Services\ThresholdService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,11 +24,10 @@ class ReportGenerationJob implements ShouldQueue
         public string $date
     ) {}
 
-    public function handle(ReportingService $service): void
+    public function handle(ReportingService $service, ThresholdService $thresholdService): void
     {
         $start = microtime(true);
 
-        // Generate the report
         $result = $service->generateReport($this->reportType, $this->date);
 
         $duration = (microtime(true) - $start) * 1000;
@@ -38,11 +38,13 @@ class ReportGenerationJob implements ShouldQueue
             'duration_ms' => round($duration, 2),
         ]);
 
-        if ($duration > 10000) {
+        $threshold = (float) $thresholdService->getJobDurationWarning();
+        if ($duration > $threshold) {
             Log::warning('Slow report generation job', [
                 'report_type' => $this->reportType,
                 'date' => $this->date,
                 'duration_ms' => round($duration, 2),
+                'threshold_ms' => $threshold,
             ]);
         }
     }

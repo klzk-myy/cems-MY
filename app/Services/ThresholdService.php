@@ -334,4 +334,9 @@ class ThresholdService
     {
         return (string) $this->get('performance', 'query_time_warning', '100');
     }
+
+    public function getJobDurationWarning(): string
+    {
+        return (string) $this->get('performance', 'job_duration_warning', '5000');
+    }
 }

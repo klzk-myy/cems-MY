@@ -89,22 +89,44 @@ class PerformanceBaselineService
 
     public function isPerformanceHealthy(): bool
     {
+        $baseline = $this->getBaseline();
+
+        $responseTimeThreshold = (float) $this->thresholdService->getResponseTimeWarning();
+        $cacheHitRateThreshold = (float) $this->thresholdService->getCacheHitRateWarning();
+
         $currentResponseTime = $this->getCurrentResponseTime();
         $currentCacheHitRate = $this->getCurrentCacheHitRate();
 
-        $responseTimeCheck = $this->compareResponseTime($currentResponseTime);
-        $cacheHitRateCheck = $this->compareCacheHitRate($currentCacheHitRate);
+        if ($currentResponseTime > 0 && $currentCacheHitRate > 0) {
+            return $currentResponseTime <= $responseTimeThreshold
+                && $currentCacheHitRate >= $cacheHitRateThreshold;
+        }
+
+        $responseTimeCheck = $this->compareResponseTime($currentResponseTime ?: $baseline['response_time_ms']);
+        $cacheHitRateCheck = $this->compareCacheHitRate($currentCacheHitRate ?: $baseline['cache_hit_rate']);
 
         return $responseTimeCheck['status'] === 'healthy' && $cacheHitRateCheck['status'] === 'healthy';
     }
 
-    protected function getCurrentResponseTime(): float
+    public function getCurrentResponseTime(): float
     {
         return (float) Cache::get('current_response_time_ms', 0);
     }
 
-    protected function getCurrentCacheHitRate(): float
+    public function getCurrentCacheHitRate(): float
     {
         return (float) Cache::get('current_cache_hit_rate', 0);
+    }
+
+    public function getPerformanceSummary(): array
+    {
+        $currentResponseTime = $this->getCurrentResponseTime();
+        $currentCacheHitRate = $this->getCurrentCacheHitRate();
+
+        return [
+            'response_time' => $this->compareResponseTime($currentResponseTime ?: $this->getBaseline()['response_time_ms']),
+            'cache_hit_rate' => $this->compareCacheHitRate($currentCacheHitRate ?: $this->getBaseline()['cache_hit_rate']),
+            'is_healthy' => $this->isPerformanceHealthy(),
+        ];
     }
 }

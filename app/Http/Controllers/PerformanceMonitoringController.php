@@ -14,10 +14,14 @@ class PerformanceMonitoringController extends Controller
 
     public function index()
     {
+        $querySummary = $this->queryLoggingService->getQuerySummary();
+
         $metrics = [
             'cache_stats' => $this->cacheMonitoringService->getCacheStats(),
-            'query_count' => 0,
-            'queries' => [],
+            'query_count' => $querySummary['count'],
+            'slow_query_count' => $querySummary['slow_count'],
+            'n_plus_one_count' => $querySummary['n_plus_one_count'],
+            'total_query_time_ms' => $querySummary['total_time_ms'],
         ];
 
         return view('performance.index', compact('metrics'));

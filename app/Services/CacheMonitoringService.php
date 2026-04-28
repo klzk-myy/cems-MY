@@ -6,14 +6,11 @@ use Illuminate\Support\Facades\Redis;
 
 class CacheMonitoringService
 {
-    protected int $hits = 0;
+    protected const HITS_KEY = 'cache:monitoring:hits';
 
-    protected int $misses = 0;
+    protected const MISSES_KEY = 'cache:monitoring:misses';
 
-    public function __construct()
-    {
-        $this->initializeTracking();
-    }
+    protected const LAST_RESET_KEY = 'cache:monitoring:last_reset';
 
     public function getCacheStats(): array
     {
@@ -26,12 +23,32 @@ class CacheMonitoringService
 
     public function calculateHitRate(): float
     {
-        $total = $this->hits + $this->misses;
+        $hits = (int) Redis::get(self::HITS_KEY) ?: 0;
+        $misses = (int) Redis::get(self::MISSES_KEY) ?: 0;
+        $total = $hits + $misses;
+
         if ($total === 0) {
             return 0.0;
         }
 
-        return ($this->hits / $total) * 100;
+        return ($hits / $total) * 100;
+    }
+
+    public function recordHit(): void
+    {
+        Redis::incr(self::HITS_KEY);
+    }
+
+    public function recordMiss(): void
+    {
+        Redis::incr(self::MISSES_KEY);
+    }
+
+    public function resetCounters(): void
+    {
+        Redis::set(self::HITS_KEY, 0);
+        Redis::set(self::MISSES_KEY, 0);
+        Redis::set(self::LAST_RESET_KEY, time());
     }
 
     protected function getMemoryUsage(): array
@@ -60,11 +77,5 @@ class CacheMonitoringService
         } catch (\Exception $e) {
             return 0;
         }
-    }
-
-    protected function initializeTracking(): void
-    {
-        // Initialize hit/miss tracking
-        // This would typically be done via Redis monitoring or custom middleware
     }
 }

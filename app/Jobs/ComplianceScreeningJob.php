@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Customer;
 use App\Services\CustomerScreeningService;
+use App\Services\ThresholdService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -21,7 +22,7 @@ class ComplianceScreeningJob implements ShouldQueue
 
     public function __construct(public int $customerId) {}
 
-    public function handle(CustomerScreeningService $service): void
+    public function handle(CustomerScreeningService $service, ThresholdService $thresholdService): void
     {
         $start = microtime(true);
 
@@ -45,11 +46,14 @@ class ComplianceScreeningJob implements ShouldQueue
             'duration_ms' => $durationMs,
         ]);
 
-        // For performance monitoring, always log warning (will be filtered by threshold in production)
-        Log::warning('Slow compliance screening job', [
-            'customer_id' => $this->customerId,
-            'duration_ms' => $durationMs,
-        ]);
+        $threshold = (float) $thresholdService->getJobDurationWarning();
+        if ($durationMs > $threshold) {
+            Log::warning('Slow compliance screening job', [
+                'customer_id' => $this->customerId,
+                'duration_ms' => $durationMs,
+                'threshold_ms' => $threshold,
+            ]);
+        }
     }
 
     public function failed(\Throwable $exception): void

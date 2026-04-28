@@ -2,12 +2,17 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\ThresholdService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class PerformanceTrackingMiddleware
 {
+    public function __construct(
+        protected ThresholdService $thresholdService
+    ) {}
+
     public function handle(Request $request, Closure $next)
     {
         $start = microtime(true);
@@ -21,12 +26,15 @@ class PerformanceTrackingMiddleware
             'status' => $response->status(),
         ]);
 
-        // Always log warning for performance monitoring (threshold handled in dashboard)
-        Log::warning('Slow endpoint detected', [
-            'url' => $request->url(),
-            'method' => $request->method(),
-            'duration_ms' => round($duration, 2),
-        ]);
+        $threshold = (float) $this->thresholdService->getResponseTimeWarning();
+        if ($duration > $threshold) {
+            Log::warning('Slow endpoint detected', [
+                'url' => $request->url(),
+                'method' => $request->method(),
+                'duration_ms' => round($duration, 2),
+                'threshold_ms' => $threshold,
+            ]);
+        }
 
         return $response;
     }

@@ -156,5 +156,6 @@ return [
         'response_time_warning' => env('THRESHOLD_RESPONSE_TIME_WARNING', '500'),
         'cache_hit_rate_warning' => env('THRESHOLD_CACHE_HIT_RATE_WARNING', '70'),
         'query_time_warning' => env('THRESHOLD_QUERY_TIME_WARNING', '100'),
+        'job_duration_warning' => env('THRESHOLD_JOB_DURATION_WARNING', '5000'),
     ],
 ];
