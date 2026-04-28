@@ -37,9 +37,18 @@ class TransactionController extends Controller
     /**
      * Display list of transactions
      */
-    public function index()
+    public function index(Request $request)
     {
-        $query = Transaction::with(['customer', 'user']);
+        $query = Transaction::with(['customer', 'currency', 'user', 'branch'])
+            ->when($request->search, function ($q, $search) {
+                return $q->where('reference', 'like', "%{$search}%");
+            })
+            ->when($request->status, function ($q, $status) {
+                return $q->where('status', $status);
+            })
+            ->when($request->customer_id, function ($q, $customerId) {
+                return $q->where('customer_id', $customerId);
+            });
 
         // Branch segregation: non-admin users can only see their branch's transactions
         $user = auth()->user();
@@ -47,7 +56,7 @@ class TransactionController extends Controller
             $query->where('branch_id', $user->branch_id);
         }
 
-        $transactions = $query->orderBy('created_at', 'desc')->paginate(20);
+        $transactions = $query->orderBy('created_at', 'desc')->paginate(50);
 
         return view('transactions.index', compact('transactions'));
     }
