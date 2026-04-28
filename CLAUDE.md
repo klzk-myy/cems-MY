@@ -280,7 +280,6 @@ BNM compliance reports via Artisan commands:
 Tests use `RefreshDatabase` trait and are in `tests/Feature/` and `tests/Unit/`. Key test files:
 - `tests/Feature/TransactionAccountingVerificationTest.php` - Verifies 60 transactions (20/branch × 3 branches) with accounting and ledger balance validation
 - `tests/Feature/TransactionWorkflowTest.php` - Transaction creation, approval, cancellation
-- `tests/Feature/TransactionWorkflowTest.php` - Transaction creation, approval, cancellation
 - `tests/Feature/TransactionTest.php` - Transaction web controller tests
 - `tests/Feature/RealWorldTransactionWorkflowTest.php` - End-to-end transaction scenarios
 - `tests/Feature/RouteConsistencyTest.php` - Route/role access verification
@@ -320,3 +319,23 @@ Tests use `RefreshDatabase` trait and are in `tests/Feature/` and `tests/Unit/`.
 - **Concurrency**: Use `lockForUpdate()` for position updates to prevent race conditions.
 - **Database Transactions**: Wrap multi-step financial operations in `DB::transaction()` for atomicity (especially transactions ≥ RM 25,000).
 - **Thresholds**: All threshold values must be accessed via `ThresholdService` (read from `config/thresholds.php`). No hardcoded threshold constants in services.
+
+### Frontend Styling
+
+Tailwind v4 with CSS-based `@theme` configuration — single source of truth for design tokens.
+
+- Design tokens defined in `resources/css/app.css` `@theme` block (colors, typography, radius, spacing)
+- `tailwind.config.js` deleted — no dual color sources
+- Views use pure Tailwind utilities (no `.card`, `.btn`, `.form-*` component classes)
+- Nav classes in `app.css` use CSS variables (`var(--sidebar-*)`)
+- Livewire installed but not yet in active use
+
+**Class mapping reference:**
+
+| Old Class      | Tailwind Equivalent                                                    |
+|----------------|-----------------------------------------------------------------------|
+| `.card`        | `bg-white border border-[#e5e5e5] rounded-xl`                       |
+| `.btn-primary` | `px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]` |
+| `.btn-secondary` | `px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]` |
+| `.form-input`  | `w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg` |
+| `.badge-success` | `inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700` |

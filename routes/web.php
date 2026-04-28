@@ -16,11 +16,13 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\MfaController;
+use App\Http\Controllers\PerformanceMonitoringController;
 use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StockCashController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\StrController;
+use App\Http\Controllers\TestQueryLogController;
 use App\Http\Controllers\TestResultsController;
 use App\Http\Controllers\Transaction\TransactionApprovalController;
 use App\Http\Controllers\Transaction\TransactionCancellationController;
@@ -155,6 +157,9 @@ Route::get('/', function () {
 // Health check endpoint (public, no auth required)
 Route::get('/health', [HealthCheckController::class, 'index'])->name('health');
 
+// Test route for query logging (admin only)
+Route::middleware(['auth', 'role:admin'])->get('/test/query-log', [TestQueryLogController::class, 'index']);
+
 // =============================================================================
 // SETUP ROUTES (Public - No auth required)
 // =============================================================================
@@ -186,6 +191,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Performance Monitoring
+    Route::get('/performance', [PerformanceMonitoringController::class, 'index'])->name('performance');
 
     // MFA Setup & Verification
     Route::prefix('mfa')->name('mfa.')->group(function () {

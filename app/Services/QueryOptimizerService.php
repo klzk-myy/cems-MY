@@ -31,7 +31,7 @@ class QueryOptimizerService
 
     public function __construct()
     {
-        $this->slowQueryThreshold = config('database.slow_query_threshold', 1000);
+        $this->slowQueryThreshold = config('database.slow_query_threshold_ms', 1000);
     }
 
     /**

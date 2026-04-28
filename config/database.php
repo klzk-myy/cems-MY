@@ -19,6 +19,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Query Logging
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, all database queries will be logged to help with
+    | debugging and N+1 query detection.
+    |
+    */
+
+    'logging' => env('DB_LOGGING', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Slow Query Threshold
+    |--------------------------------------------------------------------------
+    |
+    | Queries taking longer than this threshold (in milliseconds) will be
+    | flagged as slow queries for performance monitoring.
+    |
+    */
+
+    'slow_query_threshold_ms' => env('DB_SLOW_QUERY_THRESHOLD_MS', 100),
+
+    /*
+    |--------------------------------------------------------------------------
     | Database Connections
     |--------------------------------------------------------------------------
     |

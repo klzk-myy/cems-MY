@@ -317,4 +317,26 @@ class ThresholdService
     {
         return (int) $this->get('currency_flow', 'lookback_days', 'FALLBACK_CURRENCY_FLOW_LOOKBACK_DAYS');
     }
+
+    // Performance thresholds
+
+    public function getResponseTimeWarning(): string
+    {
+        return (string) $this->get('performance', 'response_time_warning', '500');
+    }
+
+    public function getCacheHitRateWarning(): string
+    {
+        return (string) $this->get('performance', 'cache_hit_rate_warning', '70');
+    }
+
+    public function getQueryTimeWarning(): string
+    {
+        return (string) $this->get('performance', 'query_time_warning', '100');
+    }
+
+    public function getJobDurationWarning(): string
+    {
+        return (string) $this->get('performance', 'job_duration_warning', '5000');
+    }
 }

@@ -17,6 +17,7 @@ use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\TillBalance;
 use App\Models\Transaction;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -272,7 +273,18 @@ class AccountingService
                     'running_balance' => $newBalance,
                 ]);
             }
+
+            $this->invalidateTrialBalanceCache();
         });
+    }
+
+    protected function invalidateTrialBalanceCache(): void
+    {
+        try {
+            Cache::tags(['ledger', 'trial-balance'])->flush();
+        } catch (\Exception $e) {
+            // Tags not supported on this cache driver - cache will expire naturally
+        }
     }
 
     /**

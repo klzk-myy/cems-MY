@@ -6,21 +6,17 @@ use App\Enums\CddLevel;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Services\AuditService;
-use App\Services\Compliance\RiskScoringEngine;
 use App\Services\CustomerScreeningService;
 use App\Services\CustomerService;
-use App\Services\EncryptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
     public function __construct(
+        protected CustomerService $customerService,
         protected AuditService $auditService,
-        protected EncryptionService $encryptionService,
-        protected CustomerScreeningService $sanctionService,
-        protected RiskScoringEngine $riskScoringEngine
+        protected CustomerScreeningService $customerScreeningService
     ) {}
 
     /**
@@ -76,66 +72,16 @@ class CustomerController extends Controller
             'employer_address' => 'nullable|string|max:500',
         ]);
 
-        DB::beginTransaction();
         try {
-            $encryptedIdNumber = $this->encryptionService->encrypt($validated['id_number']);
-            $encryptedAddress = ! empty($validated['address'])
-                ? $this->encryptionService->encrypt($validated['address'])
-                : null;
-            $encryptedPhone = ! empty($validated['phone'])
-                ? $this->encryptionService->encrypt($validated['phone'])
-                : null;
-
-            // Initial risk is always 'Low' - risk scoring module determines actual risk
-            $customer = Customer::create([
-                'full_name' => $validated['full_name'],
-                'id_type' => $validated['id_type'],
-                'id_number_encrypted' => $encryptedIdNumber,
-                'date_of_birth' => $validated['date_of_birth'],
-                'nationality' => $validated['nationality'],
-                'address' => $encryptedAddress,
-                'phone' => $encryptedPhone,
-                'email' => $validated['email'] ?? null,
-                'pep_status' => $validated['pep_status'] ?? false,
-                'risk_rating' => 'Low', // Always Low initially - risk scoring module auto-determines
-                'occupation' => $validated['occupation'] ?? null,
-                'employer_name' => $validated['employer_name'] ?? null,
-                'employer_address' => $encryptedAddress ?? null,
-                'is_active' => true,
-            ]);
-
-            // Screen against sanctions - may upgrade to High if hit found
-            $sanctionResponse = $this->sanctionService->screenName($validated['full_name']);
-            if ($sanctionResponse->matches->isNotEmpty()) {
-                $customer->update([
-                    'risk_rating' => 'High',
-                    'sanction_hit' => true,
-                ]);
-
-                // Log sanction hit for compliance audit trail
-                $this->auditService->logCustomer('sanction_match_detected', $customer->id, [
-                    'new' => [
-                        'risk_rating' => 'High',
-                        'sanction_hit' => true,
-                        'matches' => $sanctionResponse->matches->map(fn ($m) => $m->entityName)->toArray(),
-                    ],
-                ]);
-            }
-
-            // Initial risk assessment
-            $this->riskScoringEngine->recalculateForCustomer($customer->id);
-
-            DB::commit();
+            $customer = $this->customerService->createCustomer($validated, auth()->id());
 
             return response()->json([
                 'success' => true,
                 'message' => 'Customer created successfully.',
-                'data' => $customer->fresh()->load(['documents', 'transactions']),
+                'data' => $customer->load(['documents', 'transactions']),
             ], 201);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create customer: '.$e->getMessage(),
@@ -184,44 +130,14 @@ class CustomerController extends Controller
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'pep_status' => 'sometimes|boolean',
-            // risk_rating is auto-determined, not manually settable
             'occupation' => 'nullable|string|max:255',
             'employer_name' => 'nullable|string|max:255',
             'employer_address' => 'nullable|string|max:500',
             'is_active' => 'sometimes|boolean',
         ]);
 
-        DB::beginTransaction();
         try {
-            $encryptedIdNumber = $this->encryptionService->encrypt($validated['id_number']);
-            $encryptedAddress = ! empty($validated['address'])
-                ? $this->encryptionService->encrypt($validated['address'])
-                : null;
-            $encryptedPhone = ! empty($validated['phone'])
-                ? $this->encryptionService->encrypt($validated['phone'])
-                : null;
-
-            $customer->update([
-                'full_name' => $validated['full_name'],
-                'id_type' => $validated['id_type'],
-                'id_number_encrypted' => $encryptedIdNumber,
-                'date_of_birth' => $validated['date_of_birth'],
-                'nationality' => $validated['nationality'],
-                'address' => $encryptedAddress,
-                'phone' => $encryptedPhone,
-                'email' => $validated['email'] ?? null,
-                'pep_status' => $validated['pep_status'] ?? false,
-                // Note: risk_rating is NOT updated here - risk scoring engine manages it
-                'occupation' => $validated['occupation'] ?? null,
-                'employer_name' => $validated['employer_name'] ?? null,
-                'employer_address' => $encryptedAddress ?? null,
-                'is_active' => $validated['is_active'] ?? true,
-            ]);
-
-            // Re-assess risk
-            $this->riskScoringEngine->recalculateForCustomer($customer->id);
-
-            DB::commit();
+            $customer = $this->customerService->updateCustomer($customer, $validated, auth()->id());
 
             return response()->json([
                 'success' => true,
@@ -230,8 +146,6 @@ class CustomerController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update customer: '.$e->getMessage(),
@@ -344,7 +258,7 @@ class CustomerController extends Controller
 
         // Screen each customer against sanctions
         $results = $customers->map(function ($customer) {
-            $sanctionCheck = $this->sanctionService->screenName($customer->full_name);
+            $sanctionCheck = $this->customerScreeningService->screenName($customer->full_name);
 
             return [
                 'id' => $customer->id,

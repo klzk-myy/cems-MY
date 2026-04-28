@@ -53,7 +53,7 @@ class QueryLogServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->slowQueryThreshold = config('database.slow_query_threshold', 1000);
+        $this->slowQueryThreshold = config('database.slow_query_threshold_ms', 1000);
         $this->highQueryCountThreshold = config('database.high_query_count_threshold', 50);
 
         // Listen to all database queries

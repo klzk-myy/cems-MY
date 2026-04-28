@@ -1,3 +1,25 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-canvas: #ffffff;
+  --color-canvas-subtle: #f7f7f8;
+  --color-ink: #171717;
+  --color-ink-muted: #6b6b6b;
+  --color-border: #e5e5e5;
+  --color-primary: #0a0a0a;
+  --color-accent: #d4a843;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Typography */
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}

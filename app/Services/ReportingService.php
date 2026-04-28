@@ -603,4 +603,22 @@ class ReportingService
 
         return $filepath;
     }
+
+    /**
+     * Generate a report based on type and date.
+     *
+     * @param  string  $type  Report type (e.g., 'msb2', 'lctr')
+     * @param  string  $date  Date string (YYYY-MM-DD or month)
+     * @return string Filepath of generated report
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function generateReport(string $type, string $date): string
+    {
+        return match ($type) {
+            'msb2' => $this->generateMSB2($date),
+            'lctr' => $this->generateLCTR($date),
+            default => throw new \InvalidArgumentException("Unknown report type: {$type}"),
+        };
+    }
 }

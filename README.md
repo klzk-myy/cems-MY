@@ -51,8 +51,8 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 
 - **Customer Due Diligence (CDD)**
   - Simplified: Transaction < RM 3,000
-  - Standard: RM 3,000 to RM 49,999
-  - Enhanced: ≥ RM 50,000 OR PEP OR Sanction match
+  - Specific: RM 3,000 to RM 9,999
+  - Standard: ≥ RM 10,000 OR Enhanced: ≥ RM 50,000 OR PEP OR Sanction match OR High risk
 
 - **CTOS Reporting**
   - All cash transactions (Buy and Sell) ≥ RM 25,000
@@ -162,11 +162,12 @@ SESSION_LIFETIME=480
 All thresholds support environment variable overrides via `ThresholdService`:
 
 ```env
-THRESHOLD_AUTO_APPROVE=3000
+THRESHOLD_AUTO_APPROVE=10000
 THRESHOLD_MANAGER=50000
-THRESHOLD_CDD_STANDARD=3000
+THRESHOLD_CDD_SPECIFIC=3000
+THRESHOLD_CDD_STANDARD=10000
 THRESHOLD_CDD_LARGE=50000
-THRESHOLD_CTOS=10000
+THRESHOLD_CTOS=25000
 ```
 
 ## Commands
@@ -367,7 +368,8 @@ PendingApproval ──(manager approve)──> Completed
 
 | Condition | Status |
 |-----------|--------|
-| Amount ≥ RM 3,000, no compliance flag | `PendingApproval` (Manager approval) |
+| Amount < RM 10,000, no compliance flag | Auto-approve |
+| Amount ≥ RM 10,000, no compliance flag | `PendingApproval` (Manager approval) |
 | Amount ≥ RM 50,000 | `PendingApproval` (Manager) |
 | High-risk customer or compliance flag | `Pending` (Compliance hold) |
 | CDD required | `PendingCdd` |
@@ -386,10 +388,10 @@ All thresholds are centralized in `config/thresholds.php` and accessed via `Thre
 ```php
 // config/thresholds.php
 return [
-    'approval' => ['auto_approve' => '3000', 'manager' => '50000'],
-    'cdd' => ['standard' => '3000', 'large_transaction' => '50000'],
-    'reporting' => ['ctos' => '10000', 'ctr' => '50000', 'str' => '50000'],
-    'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3],
+    'approval' => ['auto_approve' => '10000', 'manager' => '50000'],
+    'cdd' => ['specific' => '3000', 'standard' => '10000', 'large_transaction' => '50000'],
+    'reporting' => ['ctos' => '25000', 'ctr' => '25000', 'str' => '50000', 'edd' => '50000', 'lctr' => '25000'],
+    'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3, 'hourly_window' => 1, 'lookup_days' => 7],
     // ...
 ];
 ```

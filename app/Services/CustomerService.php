@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\SystemLog;
 use App\Services\Compliance\RiskScoringEngine;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -27,7 +28,8 @@ class CustomerService
         protected EncryptionService $encryptionService,
         protected CustomerScreeningService $screeningService,
         protected RiskScoringEngine $riskScoringEngine,
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected CacheTagsService $cacheTagsService
     ) {}
 
     /**
@@ -40,7 +42,7 @@ class CustomerService
      */
     public function createCustomer(array $data, int $userId): Customer
     {
-        return DB::transaction(function () use ($data) {
+        $customer = DB::transaction(function () use ($data) {
             // Encrypt sensitive fields
             $encryptedData = $this->encryptCustomerData($data);
 
@@ -70,6 +72,9 @@ class CustomerService
 
             return $customer;
         });
+        $this->cacheTagsService->invalidate('dashboard');
+
+        return $customer;
     }
 
     /**
@@ -82,7 +87,7 @@ class CustomerService
      */
     public function updateCustomer(Customer $customer, array $data, int $userId): Customer
     {
-        return DB::transaction(function () use ($customer, $data) {
+        $customer = DB::transaction(function () use ($customer, $data) {
             // Encrypt sensitive fields if provided
             $encryptedData = $this->encryptCustomerData($data);
 
@@ -111,6 +116,23 @@ class CustomerService
 
             return $customer->fresh();
         });
+        $this->cacheTagsService->invalidate('dashboard');
+        // Invalidate individual customer cache
+        Cache::forget("customer:{$customer->id}");
+
+        return $customer;
+    }
+
+    /**
+     * Get a customer by ID with caching.
+     */
+    public function getCustomer(int $customerId): ?Customer
+    {
+        return Cache::remember(
+            "customer:{$customerId}",
+            now()->addMinutes(30),
+            fn () => Customer::find($customerId)
+        );
     }
 
     /**
