@@ -11,6 +11,7 @@ use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -67,7 +68,7 @@ class CurrencyPositionService
         string $type,
         string $tillId = 'MAIN'
     ): CurrencyPosition {
-        return DB::transaction(function () use ($currencyCode, $amount, $rate, $type, $tillId) {
+        $position = DB::transaction(function () use ($currencyCode, $amount, $rate, $type, $tillId) {
             // Lock the position row for update to prevent race conditions on concurrent sells
             $position = CurrencyPosition::where('currency_code', $currencyCode)
                 ->where('till_id', $tillId)
@@ -132,6 +133,12 @@ class CurrencyPositionService
 
             return $position->fresh();
         });
+
+        // Invalidate cache for available balance
+        $cacheKey = "position:{$tillId}:{$currencyCode}:available";
+        Cache::forget($cacheKey);
+
+        return $position;
     }
 
     /**
@@ -380,22 +387,26 @@ class CurrencyPositionService
      */
     public function getAvailableBalance(string $currencyCode, string $tillId): string
     {
-        return DB::transaction(function () use ($currencyCode, $tillId) {
-            // Lock the position to prevent race conditions
-            $position = CurrencyPosition::where('currency_code', $currencyCode)
-                ->where('till_id', $tillId)
-                ->lockForUpdate()
-                ->first();
-            $balance = $position ? $position->balance : '0';
+        $cacheKey = "position:{$tillId}:{$currencyCode}:available";
 
-            // Query reservations within same transaction
-            $reserved = StockReservation::where('currency_code', $currencyCode)
-                ->where('till_id', $tillId)
-                ->where('status', StockReservationStatus::Pending)
-                ->where('expires_at', '>', now())
-                ->sum('amount_foreign');
+        return Cache::remember($cacheKey, now()->addMinute(), function () use ($currencyCode, $tillId) {
+            return DB::transaction(function () use ($currencyCode, $tillId) {
+                // Lock the position to prevent race conditions
+                $position = CurrencyPosition::where('currency_code', $currencyCode)
+                    ->where('till_id', $tillId)
+                    ->lockForUpdate()
+                    ->first();
+                $balance = $position ? $position->balance : '0';
 
-            return $this->mathService->subtract($balance, (string) $reserved);
+                // Query reservations within same transaction
+                $reserved = StockReservation::where('currency_code', $currencyCode)
+                    ->where('till_id', $tillId)
+                    ->where('status', StockReservationStatus::Pending)
+                    ->where('expires_at', '>', now())
+                    ->sum('amount_foreign');
+
+                return $this->mathService->subtract($balance, (string) $reserved);
+            });
         });
     }
 
