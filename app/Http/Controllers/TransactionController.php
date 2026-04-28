@@ -39,14 +39,20 @@ class TransactionController extends Controller
      */
     public function index(Request $request)
     {
+        $validated = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'status' => 'nullable|string|in:'.implode(',', array_map(fn ($case) => $case->value, TransactionStatus::cases())),
+            'customer_id' => 'nullable|integer|exists:customers,id',
+        ]);
+
         $query = Transaction::with(['customer', 'currency', 'user', 'branch'])
-            ->when($request->search, function ($q, $search) {
+            ->when($validated['search'] ?? null, function ($q, string $search) {
                 return $q->where('reference', 'like', "%{$search}%");
             })
-            ->when($request->status, function ($q, $status) {
+            ->when($validated['status'] ?? null, function ($q, string $status) {
                 return $q->where('status', $status);
             })
-            ->when($request->customer_id, function ($q, $customerId) {
+            ->when($validated['customer_id'] ?? null, function ($q, int $customerId) {
                 return $q->where('customer_id', $customerId);
             });
 
