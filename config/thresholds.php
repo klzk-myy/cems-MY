@@ -141,9 +141,20 @@ return [
     |
     */
     'rates' => [
-        'spread' => env('RATE_SPREAD', '0.02'), // 2% default spread
-        'max_deviation_percent' => env('RATE_MAX_DEVIATION', '0.05'), // 5% max deviation from market rate
-        'precision' => env('RATE_PRECISION', 4), // 4 decimal places for rates
-        'cache_duration' => env('RATE_CACHE_DURATION', 60), // seconds
+        'spread' => env('RATE_SPREAD', '0.02'),
+        'max_deviation_percent' => env('RATE_MAX_DEVIATION', '0.05'),
+        'precision' => env('RATE_PRECISION', 4),
+        'cache_duration' => env('RATE_CACHE_DURATION', 60),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Performance Monitoring Thresholds
+    |--------------------------------------------------------------------------
+    */
+    'performance' => [
+        'response_time_warning' => env('THRESHOLD_RESPONSE_TIME_WARNING', '500'),
+        'cache_hit_rate_warning' => env('THRESHOLD_CACHE_HIT_RATE_WARNING', '70'),
+        'query_time_warning' => env('THRESHOLD_QUERY_TIME_WARNING', '100'),
     ],
 ];
