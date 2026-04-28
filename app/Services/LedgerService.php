@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Ledger Service
@@ -522,5 +524,63 @@ class LedgerService
         }
 
         return $activity;
+    }
+
+    /**
+     * Get aggregated account balances (debits and credits) for a period.
+     *
+     * Efficiently retrieves total debits and credits per account, and overall totals,
+     * using a single aggregated query with GROUP BY. Results are cached for 60 seconds.
+     *
+     * @return array{total_debit: string, total_credit: string, accounts: array<int, array{account_code: string, account_name: string, debit: string, credit: string}>}
+     */
+    public function getAccountBalancesForPeriod(string $startDate, string $endDate, ?int $branchId = null): array
+    {
+        $cacheKey = sprintf('ledger.balances.%s.%s.%s', $startDate, $endDate, $branchId ?? 'all');
+        $cacheTags = ['ledger', 'balances'];
+
+        return Cache::tags($cacheTags)->remember($cacheKey, 60, function () use ($startDate, $endDate, $branchId) {
+            $query = DB::table('account_ledger')
+                ->join('chart_of_accounts', 'account_ledger.account_code', '=', 'chart_of_accounts.account_code')
+                ->select(
+                    'account_ledger.account_code',
+                    'chart_of_accounts.account_name',
+                    DB::raw('SUM(account_ledger.debit) as total_debit'),
+                    DB::raw('SUM(account_ledger.credit) as total_credit')
+                )
+                ->whereBetween('account_ledger.entry_date', [$startDate, $endDate])
+                ->when($branchId !== null, function ($q) use ($branchId) {
+                    $q->where('account_ledger.branch_id', $branchId);
+                })
+                ->groupBy('account_ledger.account_code', 'chart_of_accounts.account_name')
+                ->orderBy('account_ledger.account_code');
+
+            $results = $query->get();
+
+            $totalDebit = '0';
+            $totalCredit = '0';
+            $accounts = [];
+
+            foreach ($results as $row) {
+                $debit = (string) $row->total_debit;
+                $credit = (string) $row->total_credit;
+
+                $totalDebit = $this->mathService->add($totalDebit, $debit);
+                $totalCredit = $this->mathService->add($totalCredit, $credit);
+
+                $accounts[] = [
+                    'account_code' => $row->account_code,
+                    'account_name' => $row->account_name,
+                    'debit' => $debit,
+                    'credit' => $credit,
+                ];
+            }
+
+            return [
+                'total_debit' => $totalDebit,
+                'total_credit' => $totalCredit,
+                'accounts' => $accounts,
+            ];
+        });
     }
 }
