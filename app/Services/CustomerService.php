@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\SystemLog;
 use App\Services\Compliance\RiskScoringEngine;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -116,8 +117,22 @@ class CustomerService
             return $customer->fresh();
         });
         $this->cacheTagsService->invalidate('dashboard');
+        // Invalidate individual customer cache
+        Cache::forget("customer:{$customer->id}");
 
         return $customer;
+    }
+
+    /**
+     * Get a customer by ID with caching.
+     */
+    public function getCustomer(int $customerId): ?Customer
+    {
+        return Cache::remember(
+            "customer:{$customerId}",
+            now()->addMinutes(30),
+            fn () => Customer::find($customerId)
+        );
     }
 
     /**
