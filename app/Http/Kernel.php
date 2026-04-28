@@ -12,6 +12,7 @@ use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\IpBlocker;
 use App\Http\Middleware\LogRequests;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
+use App\Http\Middleware\QueryLogging;
 use App\Http\Middleware\QueryPerformanceMonitor;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\SecurityHeaders;
@@ -55,6 +56,7 @@ class Kernel extends HttpKernel
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
         SecurityHeaders::class,
+        QueryLogging::class,
     ];
 
     /**
