@@ -4,7 +4,8 @@ namespace App\Services;
 
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Ledger Service
@@ -75,62 +76,106 @@ class LedgerService
     public function getTrialBalance(?string $asOfDate = null, ?int $branchId = null): array
     {
         $asOfDate = $asOfDate ?? now()->toDateString();
-        $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
+        $cacheKey = "trial_balance.{$asOfDate}.".($branchId ?? 'all');
 
-        $trialBalance = [];
-        $totalDebits = '0';
-        $totalCredits = '0';
+        return Cache::tags(['ledger', 'trial-balance'])->remember($cacheKey, 60, function () use ($asOfDate, $branchId) {
+            $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
+            $accountCodes = $accounts->pluck('account_code')->toArray();
 
-        foreach ($accounts as $account) {
-            $balance = $this->getAccountBalance($account->account_code, $asOfDate, $branchId);
-
-            if (in_array($account->account_type, ['Liability', 'Equity', 'Revenue'])) {
-                // Credit-normal accounts: positive balance = credit, negative balance = debit
-                $debit = $this->mathService->compare($balance, '0') < 0 ? $this->mathService->multiply($balance, '-1') : '0';
-                $credit = $this->mathService->compare($balance, '0') >= 0 ? $balance : '0';
-            } else {
-                // Debit-normal accounts (Asset, Expense): positive balance = debit, negative balance = credit
-                $debit = $this->mathService->compare($balance, '0') >= 0 ? $balance : '0';
-                $credit = $this->mathService->compare($balance, '0') < 0 ? $this->mathService->multiply($balance, '-1') : '0';
+            if (empty($accountCodes)) {
+                return $this->emptyTrialBalance($asOfDate);
             }
 
-            $trialBalance[] = [
-                'account_code' => $account->account_code,
-                'account_name' => $account->account_name,
-                'account_type' => $account->account_type,
-                'debit' => $debit,
-                'credit' => $credit,
-                'balance' => $balance,
+            // Get latest running balance for each account as of the date using window function
+            $subQuery = DB::table('account_ledger')
+                ->select(
+                    'account_code',
+                    'running_balance',
+                    DB::raw('ROW_NUMBER() OVER (PARTITION BY account_code ORDER BY entry_date DESC, id DESC) as rn')
+                )
+                ->where('entry_date', '<=', $asOfDate)
+                ->when($branchId !== null, function ($query) use ($branchId) {
+                    $query->where('branch_id', $branchId);
+                })
+                ->whereIn('account_code', $accountCodes);
+
+            $balances = DB::query()
+                ->fromSub($subQuery, 'ranked')
+                ->where('rn', 1)
+                ->pluck('running_balance', 'account_code')
+                ->toArray();
+
+            $trialBalance = [];
+            $totalDebits = '0';
+            $totalCredits = '0';
+
+            foreach ($accounts as $account) {
+                $balance = $balances[$account->account_code] ?? '0';
+
+                if (in_array($account->account_type, ['Liability', 'Equity', 'Revenue'])) {
+                    $debit = $this->mathService->compare($balance, '0') < 0 ? $this->mathService->multiply($balance, '-1') : '0';
+                    $credit = $this->mathService->compare($balance, '0') >= 0 ? $balance : '0';
+                } else {
+                    $debit = $this->mathService->compare($balance, '0') >= 0 ? $balance : '0';
+                    $credit = $this->mathService->compare($balance, '0') < 0 ? $this->mathService->multiply($balance, '-1') : '0';
+                }
+
+                $trialBalance[] = [
+                    'account_code' => $account->account_code,
+                    'account_name' => $account->account_name,
+                    'account_type' => $account->account_type,
+                    'debit' => $debit,
+                    'credit' => $credit,
+                    'balance' => $balance,
+                ];
+
+                $totalDebits = $this->mathService->add($totalDebits, $debit);
+                $totalCredits = $this->mathService->add($totalCredits, $credit);
+            }
+
+            $totalBalance = $this->mathService->subtract($totalDebits, $totalCredits);
+
+            $totalsByType = [
+                'Asset' => '0',
+                'Liability' => '0',
+                'Equity' => '0',
+                'Revenue' => '0',
+                'Expense' => '0',
             ];
-
-            $totalDebits = $this->mathService->add($totalDebits, $debit);
-            $totalCredits = $this->mathService->add($totalCredits, $credit);
-        }
-
-        $totalBalance = $this->mathService->subtract($totalDebits, $totalCredits);
-
-        // Calculate totals by account type for summary cards
-        $totalsByType = [
-            'Asset' => '0',
-            'Liability' => '0',
-            'Equity' => '0',
-            'Revenue' => '0',
-            'Expense' => '0',
-        ];
-        foreach ($trialBalance as $account) {
-            $type = $account['account_type'];
-            if (isset($totalsByType[$type])) {
-                $totalsByType[$type] = $this->mathService->add($totalsByType[$type], $account['balance']);
+            foreach ($trialBalance as $account) {
+                $type = $account['account_type'];
+                if (isset($totalsByType[$type])) {
+                    $totalsByType[$type] = $this->mathService->add($totalsByType[$type], $account['balance']);
+                }
             }
-        }
 
+            return [
+                'accounts' => $trialBalance,
+                'total_debits' => $totalDebits,
+                'total_credits' => $totalCredits,
+                'total_balance' => $totalBalance,
+                'totals_by_type' => $totalsByType,
+                'is_balanced' => $this->mathService->compare($totalDebits, $totalCredits) === 0,
+                'as_of_date' => $asOfDate,
+            ];
+        });
+    }
+
+    private function emptyTrialBalance(string $asOfDate): array
+    {
         return [
-            'accounts' => $trialBalance,
-            'total_debits' => $totalDebits,
-            'total_credits' => $totalCredits,
-            'total_balance' => $totalBalance,
-            'totals_by_type' => $totalsByType,
-            'is_balanced' => $this->mathService->compare($totalDebits, $totalCredits) === 0,
+            'accounts' => [],
+            'total_debits' => '0',
+            'total_credits' => '0',
+            'total_balance' => '0',
+            'totals_by_type' => [
+                'Asset' => '0',
+                'Liability' => '0',
+                'Equity' => '0',
+                'Revenue' => '0',
+                'Expense' => '0',
+            ],
+            'is_balanced' => true,
             'as_of_date' => $asOfDate,
         ];
     }

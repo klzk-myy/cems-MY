@@ -22,6 +22,8 @@ use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 /**
  * Transaction Service
@@ -480,6 +482,8 @@ class TransactionService
 
             return $transaction;
         });
+
+        return $transaction;
     }
 
     /**
