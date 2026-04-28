@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ExchangeRate;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class RateManagementService
 {
@@ -52,13 +53,16 @@ class RateManagementService
 
     public function getRateForCurrency(string $currencyCode, ?int $branchId = null): ?ExchangeRate
     {
-        $query = ExchangeRate::where('currency_code', $currencyCode);
+        $cacheKey = 'rate:'.$currencyCode.($branchId ? ':'.$branchId : '');
 
-        if ($branchId !== null) {
-            $query->forBranch($branchId);
-        }
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($currencyCode, $branchId) {
+            $query = ExchangeRate::where('currency_code', $currencyCode);
+            if ($branchId !== null) {
+                $query->forBranch($branchId);
+            }
 
-        return $query->first();
+            return $query->first();
+        });
     }
 
     public function overrideRate(
@@ -107,6 +111,10 @@ class RateManagementService
                 'fetched_at' => now(),
             ]);
 
+            // Invalidate cache
+            $cacheKey = 'rate:'.$currencyCode.($branchId ? ':'.$branchId : '');
+            Cache::forget($cacheKey);
+
             return [
                 'success' => true,
                 'message' => "Rate for {$currencyCode} created successfully",
@@ -126,6 +134,10 @@ class RateManagementService
             'source' => 'manual_override',
             'fetched_at' => now(),
         ]);
+
+        // Invalidate cache
+        $cacheKey = 'rate:'.$currencyCode.($branchId ? ':'.$branchId : '');
+        Cache::forget($cacheKey);
 
         app(AuditService::class)->log(
             'rate_overridden',
