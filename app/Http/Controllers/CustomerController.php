@@ -207,6 +207,7 @@ class CustomerController extends Controller
 
         $query->orderBy($sortBy, $sortDir);
 
+        $query->with(['documents', 'transactions']);
         $query->withCount(['documents', 'transactions']);
 
         $customers = $query->paginate(20)->withQueryString();
