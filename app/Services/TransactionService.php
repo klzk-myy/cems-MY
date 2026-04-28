@@ -22,11 +22,6 @@ use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use App\ValueObjects\PreValidationResult;
-use App\ValueObjects\SanctionCheckResult;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Transaction Service
@@ -48,6 +43,7 @@ class TransactionService
         protected CustomerScreeningService $screeningService,
         protected HistoricalRiskAnalysisService $historicalRiskAnalysisService,
         protected ThresholdService $thresholdService,
+        protected CacheTagsService $cacheTagsService,
     ) {}
 
     /**
@@ -322,7 +318,7 @@ class TransactionService
             }
         }
 
-        return DB::transaction(function () use ($data, $userId, $tillBalance, $amountForeign, $rate, $amountLocal, $cddLevel, $status, $holdReason, $approvedBy, &$allocationForUpdate) {
+        $transaction = DB::transaction(function () use ($data, $userId, $tillBalance, $amountForeign, $rate, $amountLocal, $cddLevel, $status, $holdReason, $approvedBy, &$allocationForUpdate) {
             // For Sell transactions, acquire position lock FIRST to prevent race conditions
             // where two concurrent transactions could both pass the duplicate check
             // before either acquires the lock
@@ -931,6 +927,9 @@ class TransactionService
                     'transaction' => $lockedTransaction->fresh(),
                 ];
             });
+            $this->cacheTagsService->invalidate('dashboard');
+
+            return $transaction;
         } catch (InsufficientStockException $e) {
             return [
                 'success' => false,

@@ -8,9 +8,12 @@ use App\Models\ReportGenerated;
 use App\Models\StrReport;
 use App\Models\Transaction;
 use App\Services\AuditService;
+use App\Services\CacheOptimizationService;
+use App\Services\CacheTagsService;
 use App\Services\CurrencyPositionService;
 use App\Services\RateApiService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -20,31 +23,85 @@ class DashboardController extends Controller
 
     protected RateApiService $rateApiService;
 
+    protected CacheOptimizationService $cacheOptimizationService;
+
+    protected CacheTagsService $cacheTagsService;
+
     public function __construct(
         AuditService $auditService,
         CurrencyPositionService $currencyPositionService,
-        RateApiService $rateApiService
+        RateApiService $rateApiService,
+        CacheOptimizationService $cacheOptimizationService,
+        CacheTagsService $cacheTagsService
     ) {
         $this->auditService = $auditService;
         $this->currencyPositionService = $currencyPositionService;
         $this->rateApiService = $rateApiService;
+        $this->cacheOptimizationService = $cacheOptimizationService;
+        $this->cacheTagsService = $cacheTagsService;
     }
 
     public function index()
     {
+        // Use caching for all statistics to reduce database load
         $stats = [
-            'total_transactions' => Transaction::whereDate('created_at', today())->count(),
-            'buy_volume' => Transaction::whereDate('created_at', today())->where('type', 'Buy')->sum('amount_local'),
-            'sell_volume' => Transaction::whereDate('created_at', today())->where('type', 'Sell')->sum('amount_local'),
-            'flagged' => FlaggedTransaction::where('status', 'Open')->count(),
-            'active_customers' => Customer::count(),
+            'total_transactions' => $this->cacheOptimizationService->remember(
+                'dashboard.transactions.total',
+                60,
+                ['dashboard', 'transactions'],
+                function () {
+                    return Transaction::whereDate('created_at', today())->count();
+                }
+            ),
+            'buy_volume' => $this->cacheOptimizationService->remember(
+                'dashboard.transactions.buy_volume',
+                60,
+                ['dashboard', 'transactions'],
+                function () {
+                    return Transaction::whereDate('created_at', today())->where('type', 'Buy')->sum('amount_local');
+                }
+            ),
+            'sell_volume' => $this->cacheOptimizationService->remember(
+                'dashboard.transactions.sell_volume',
+                60,
+                ['dashboard', 'transactions'],
+                function () {
+                    return Transaction::whereDate('created_at', today())->where('type', 'Sell')->sum('amount_local');
+                }
+            ),
+            'flagged' => $this->cacheOptimizationService->remember(
+                'dashboard.compliance.flagged',
+                60,
+                ['dashboard', 'compliance'],
+                function () {
+                    return FlaggedTransaction::where('status', 'Open')->count();
+                }
+            ),
+            'active_customers' => $this->cacheOptimizationService->remember(
+                'dashboard.customers.active',
+                60,
+                ['dashboard', 'customers'],
+                function () {
+                    return Customer::count();
+                }
+            ),
         ];
 
-        $recent_transactions = Transaction::with('customer')
-            ->whereDate('created_at', today())
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get();
+        $recent_transactions = $this->cacheOptimizationService->remember(
+            'dashboard.transactions.recent',
+            60,
+            ['dashboard', 'transactions'],
+            function () {
+                return Transaction::with('customer')
+                    ->whereDate('created_at', today())
+                    ->orderBy('created_at', 'desc')
+                    ->limit(10)
+                    ->get();
+            }
+        );
+
+        // Store cache statistics for testing/monitoring
+        Cache::put('dashboard_cache_stats', $this->cacheOptimizationService->getStats(), now()->addSeconds(60));
 
         return view('dashboard', compact('stats', 'recent_transactions'));
     }
@@ -117,6 +174,9 @@ class DashboardController extends Controller
             'status' => 'Under_Review',
         ]);
 
+        // Invalidate dashboard cache
+        $this->cacheTagsService->invalidate('dashboard');
+
         // Audit log
         $this->auditService->logWithSeverity(
             'compliance_flag_assigned',
@@ -153,6 +213,9 @@ class DashboardController extends Controller
             'reviewed_by' => auth()->id(),
             'resolved_at' => now(),
         ]);
+
+        // Invalidate dashboard cache
+        $this->cacheTagsService->invalidate('dashboard');
 
         // Audit log
         $this->auditService->logWithSeverity(
