@@ -11,6 +11,7 @@ use App\Http\Middleware\EnsureMfaEnabled;
 use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\IpBlocker;
 use App\Http\Middleware\LogRequests;
+use App\Http\Middleware\PerformanceTrackingMiddleware;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Http\Middleware\QueryLogging;
 use App\Http\Middleware\QueryPerformanceMonitor;
@@ -57,6 +58,7 @@ class Kernel extends HttpKernel
         ConvertEmptyStringsToNull::class,
         SecurityHeaders::class,
         QueryLogging::class,
+        PerformanceTrackingMiddleware::class,
     ];
 
     /**
