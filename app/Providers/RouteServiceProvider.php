@@ -166,10 +166,6 @@ class RouteServiceProvider extends ServiceProvider
     private function configureRoutes(): void
     {
         $this->routes(function () {
-            Route::middleware('api')
-                ->prefix('api')
-                ->group(base_path('routes/api.php'));
-
             Route::prefix('api/v1')
                 ->middleware(['api', 'auth:sanctum'])
                 ->group(base_path('routes/api_v1.php'));

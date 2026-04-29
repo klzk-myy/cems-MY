@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\SanctionsWebhookController;
 use App\Http\Controllers\Api\V1\BranchClosingController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\BulkImportController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Api\V1\TransactionApprovalController;
 use App\Http\Controllers\Api\V1\TransactionCancellationController;
 use App\Http\Controllers\Api\V1\TransactionController;
 use App\Http\Controllers\Report\RegulatoryReportController;
+use App\Http\Controllers\TransactionWizardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +47,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Sanctions Webhook (for external list providers to trigger immediate updates)
+// Token-based authentication, not session/cookie based auth
+Route::post('/webhooks/sanctions/update', [SanctionsWebhookController::class, 'invoke'])
+    ->name('api.v1.webhooks.sanctions.update')
+    ->withoutMiddleware('auth:sanctum');
+Route::get('/webhooks/sanctions/health', [SanctionsWebhookController::class, 'health'])
+    ->name('api.v1.webhooks.sanctions.health')
+    ->withoutMiddleware('auth:sanctum');
+
 Route::middleware('auth:sanctum')->group(function () {
     // Transactions API
     Route::get('/transactions', [TransactionController::class, 'index']);
@@ -60,8 +71,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/transactions/{transaction}/reject-cancellation', [TransactionCancellationController::class, 'rejectCancellation'])
         ->middleware(['role:manager,compliance', 'mfa.verified']);
 
+    // Transaction Wizard API
+    Route::prefix('wizard/transactions')->middleware('role:teller')->group(function () {
+        Route::post('/step1', [TransactionWizardController::class, 'step1'])
+            ->name('api.v1.wizard.transactions.step1');
+        Route::post('/step2', [TransactionWizardController::class, 'step2'])
+            ->name('api.v1.wizard.transactions.step2');
+        Route::post('/step3', [TransactionWizardController::class, 'step3'])
+            ->name('api.v1.wizard.transactions.step3');
+        Route::get('/{sessionId}/status', [TransactionWizardController::class, 'status'])
+            ->name('api.v1.wizard.transactions.status');
+        Route::delete('/{sessionId}', [TransactionWizardController::class, 'cancel'])
+            ->name('api.v1.wizard.transactions.cancel');
+    });
+
     // Customers API
     Route::get('/customers', [CustomerController::class, 'index']);
+    Route::get('/customers/search', [CustomerController::class, 'searchForTransaction']);
     Route::post('/customers', [CustomerController::class, 'store'])
         ->middleware('throttle:30,1'); // 30 requests per minute
     Route::get('/customers/{customer}', [CustomerController::class, 'show']);
