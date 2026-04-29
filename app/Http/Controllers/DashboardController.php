@@ -265,7 +265,7 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        return view('reports', compact('recentReports'));
+        return view('reports.index', compact('recentReports'));
     }
 
     /**
