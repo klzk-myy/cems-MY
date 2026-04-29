@@ -93,6 +93,11 @@ class Kernel extends ConsoleKernel
             ->cron('59 23 L * *')
             ->appendOutputTo(storage_path('logs/revaluation.log'));
 
+        // Month-End Close - 1st of month at 01:00
+        $schedule->command('accounting:month-end')
+            ->monthlyOn(1, '01:00')
+            ->appendOutputTo(storage_path('logs/month-end-close.log'));
+
         // ============ COMPLIANCE MONITORS ============
 
         // Sanctions Rescreening Monitor - Weekly on Sunday at 02:00
@@ -194,6 +199,11 @@ class Kernel extends ConsoleKernel
             ->dailyAt('02:00')
             ->appendOutputTo(storage_path('logs/backup-database.log'));
 
+        // Customer Risk Review - Daily at 02:00 (after backup, before morning activity)
+        $schedule->command('customer:risk-review')
+            ->dailyAt('02:00')
+            ->appendOutputTo(storage_path('logs/customer-risk-review.log'));
+
         // Weekly full backup (files + database) on Sunday at 03:00
         $schedule->command('backup:run --type=full')
             ->weeklyOn(0, '03:00')
@@ -218,6 +228,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('backup:monitor --notify')
             ->dailyAt('07:00')
             ->appendOutputTo(storage_path('logs/backup-monitor.log'));
+
+        // Stock Reservation Expiry - Every 15 minutes
+        $schedule->command('reservation:expire')
+            ->everyFifteenMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/reservation-expire.log'));
     }
 
     protected function commands(): void

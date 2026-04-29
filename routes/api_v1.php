@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\BranchClosingController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\BulkImportController;
 use App\Http\Controllers\Api\V1\Compliance\AlertController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Api\V1\Compliance\FindingController;
 use App\Http\Controllers\Api\V1\Compliance\RiskController;
 use App\Http\Controllers\Api\V1\CounterOpeningController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\EmergencyCounterController;
 use App\Http\Controllers\Api\V1\EodReconciliationController;
 use App\Http\Controllers\Api\V1\RateController;
 use App\Http\Controllers\Api\V1\ReportController;
@@ -264,13 +266,33 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Counter Opening Workflow API - Daily branch opening
     Route::prefix('counters')->group(function () {
-        // Manager: Get pending opening requests for branch
         Route::get('/pending-requests', [CounterOpeningController::class, 'pendingRequests'])
-            ->middleware('role:manager,admin');
-        // Teller: Initiate opening request (request float allocation)
-        Route::post('/{counterId}/opening-request', [CounterOpeningController::class, 'initiateOpeningRequest']);
-        // Manager: Approve allocations and open counter
+            ->middleware('role:manager,admin')
+            ->name('api.v1.counters.pending-requests');
+        Route::post('/{counterId}/opening-request', [CounterOpeningController::class, 'initiateOpeningRequest'])
+            ->name('api.v1.counters.opening-request');
         Route::post('/{counterId}/approve-and-open', [CounterOpeningController::class, 'approveAndOpen'])
-            ->middleware('role:manager,admin');
+            ->middleware('role:manager,admin')
+            ->name('api.v1.counters.approve-and-open');
+
+        // Emergency Counter Close
+        Route::post('/{counterId}/emergency-close', [EmergencyCounterController::class, 'initiateClose'])
+            ->name('api.v1.counters.emergency-close');
+        Route::get('/{counterId}/emergency/{closureId}/variance', [EmergencyCounterController::class, 'getVariance'])
+            ->name('api.v1.counters.emergency.variance');
+        Route::post('/{counterId}/emergency/{closureId}/acknowledge', [EmergencyCounterController::class, 'acknowledge'])
+            ->name('api.v1.counters.emergency.acknowledge');
+    });
+
+    // Branch Closing Workflow API
+    Route::prefix('branches/{branchId}/closing')->group(function () {
+        Route::post('/initiate', [BranchClosingController::class, 'initiate'])
+            ->name('api.v1.branches.closing.initiate');
+        Route::get('/checklist', [BranchClosingController::class, 'checklist'])
+            ->name('api.v1.branches.closing.checklist');
+        Route::post('/finalize', [BranchClosingController::class, 'finalize'])
+            ->name('api.v1.branches.closing.finalize');
+        Route::get('/', [BranchClosingController::class, 'show'])
+            ->name('api.v1.branches.closing.show');
     });
 });

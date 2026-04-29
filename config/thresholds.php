@@ -142,9 +142,36 @@ return [
     */
     'rates' => [
         'spread' => env('RATE_SPREAD', '0.02'),
+        'min_spread' => env('RATE_MIN_SPREAD', '0.005'),
+        'max_spread' => env('RATE_MAX_SPREAD', '0.05'),
         'max_deviation_percent' => env('RATE_MAX_DEVIATION', '0.05'),
         'precision' => env('RATE_PRECISION', 4),
         'cache_duration' => env('RATE_CACHE_DURATION', 60),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | KYC Document Expiry
+    |--------------------------------------------------------------------------
+    |
+    | Grace period before blocking transactions when KYC documents expire.
+    | Default: 5 days grace period after document expiry before blocking.
+    |
+    */
+    'kyc' => [
+        'grace_period_days' => env('KYC_GRACE_PERIOD_DAYS', 5),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Risk Review (Periodic Customer Risk Score Recalculation)
+    |--------------------------------------------------------------------------
+    |
+    | Batch size for processing customers due for risk review.
+    |
+    */
+    'risk_review' => [
+        'batch_size' => env('RISK_REVIEW_BATCH_SIZE', 50),
     ],
 
     /*

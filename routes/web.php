@@ -26,6 +26,7 @@ use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\MfaController;
+use App\Http\Controllers\MonthEndCloseController;
 use App\Http\Controllers\PerformanceMonitoringController;
 use App\Http\Controllers\RateController;
 use App\Http\Controllers\Report\AnalyticsController;
@@ -226,6 +227,10 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/{counter}/history', [CounterController::class, 'history'])->name('history');
         Route::get('/{counter}/handover', [CounterController::class, 'showHandover'])->name('handover.show');
         Route::post('/{counter}/handover', [CounterController::class, 'handover'])->name('handover');
+        Route::get('/{counter}/emergency', [CounterController::class, 'showEmergency'])->name('emergency.show');
+        Route::post('/{counter}/emergency', [CounterController::class, 'emergency'])->name('emergency');
+        Route::get('/{counter}/emergency/{closure}', [CounterController::class, 'showEmergencyClosure'])->name('emergency.closure');
+        Route::post('/{counter}/emergency/{closure}/acknowledge', [CounterController::class, 'acknowledgeEmergency'])->name('emergency.acknowledge');
     });
 
     // Stock & Cash
@@ -455,6 +460,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/revaluation', [RevaluationController::class, 'index'])->name('revaluation');
         Route::post('/revaluation/run', [RevaluationController::class, 'run'])->name('revaluation.run');
         Route::get('/revaluation/history', [RevaluationController::class, 'history'])->name('revaluation.history');
+        Route::get('/month-end', [MonthEndCloseController::class, 'index'])->name('month-end');
+        Route::post('/month-end/close', [MonthEndCloseController::class, 'close'])->name('month-end.close');
         Route::get('/reconciliation', [AccountingController::class, 'reconciliation'])->name('reconciliation');
         Route::post('/reconciliation/import', [AccountingController::class, 'importBankStatement'])->name('reconciliation.import');
         Route::post('/reconciliation/{reconciliation}/exception', [AccountingController::class, 'markAsException'])->name('reconciliation.exception');
@@ -545,6 +552,13 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/step3/{branch}', [BranchOpeningController::class, 'step3'])->name('step3');
         Route::post('/step3/{branch}', [BranchOpeningController::class, 'processStep3'])->name('step3.process');
         Route::get('/complete/{branch}', [BranchOpeningController::class, 'complete'])->name('complete');
+    });
+
+    // Branch Closing Workflow
+    Route::middleware(['auth', 'role:admin,manager'])->prefix('branches/{branch}/closing')->name('branch-closing.')->group(function () {
+        Route::get('/', [BranchClosingController::class, 'show'])->name('show');
+        Route::post('/initiate', [BranchClosingController::class, 'initiate'])->name('initiate');
+        Route::post('/finalize', [BranchClosingController::class, 'finalize'])->name('finalize');
     });
 
     // -------------------------------------------------------------------------

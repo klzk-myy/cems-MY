@@ -339,4 +339,16 @@ class ThresholdService
     {
         return (string) $this->get('performance', 'job_duration_warning', '5000');
     }
+
+    // KYC Document Expiry thresholds
+
+    public function getKycGracePeriodDays(): int
+    {
+        return (int) $this->get('kyc', 'grace_period_days', 5);
+    }
+
+    public function getRiskReviewBatchSize(): int
+    {
+        return (int) $this->get('risk_review', 'batch_size', 50);
+    }
 }

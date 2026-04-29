@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Enums\CounterSessionStatus;
 use App\Enums\UserRole;
+use App\Exceptions\Domain\EmergencyCloseCooldownException;
+use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\Currency;
+use App\Models\EmergencyClosure;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\CounterService;
+use App\Services\EmergencyCounterService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -314,5 +318,70 @@ class CounterController extends Controller
 
             return back()->with('error', "Failed to handover counter: {$e->getMessage()}");
         }
+    }
+
+    public function showEmergency(Counter $counter)
+    {
+        $session = $counter->currentSession;
+        if (! $session || ! $session->isOpen()) {
+            abort(400, 'Counter does not have an active session');
+        }
+
+        return view('counters.emergency', compact('counter', 'session'));
+    }
+
+    public function emergency(Request $request, Counter $counter)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $user = Auth::user();
+
+        $emergencyService = app(EmergencyCounterService::class);
+
+        try {
+            $closure = $emergencyService->initiateEmergencyClose(
+                $counter,
+                $user,
+                $request->input('reason')
+            );
+
+            return redirect()->route('counters.index')
+                ->with('success', "Emergency closure initiated for counter {$counter->code}. A manager has been notified.");
+        } catch (EmergencyCloseCooldownException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (EmergencyCloseSessionTooNewException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function showEmergencyClosure(Counter $counter, EmergencyClosure $closure)
+    {
+        if ($closure->counter_id !== $counter->id) {
+            abort(404);
+        }
+
+        $emergencyService = app(EmergencyCounterService::class);
+        $variance = $emergencyService->getVariance($closure);
+
+        return view('counters.emergency-closure', compact('counter', 'closure', 'variance'));
+    }
+
+    public function acknowledgeEmergency(Request $request, Counter $counter, EmergencyClosure $closure)
+    {
+        $this->requireManagerOrAdmin();
+
+        if ($closure->counter_id !== $counter->id) {
+            abort(404);
+        }
+
+        $user = Auth::user();
+        $emergencyService = app(EmergencyCounterService::class);
+
+        $closure = $emergencyService->acknowledge($closure, $user);
+
+        return redirect()->route('counters.index')
+            ->with('success', 'Emergency closure acknowledged');
     }
 }
