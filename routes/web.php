@@ -176,6 +176,16 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/{transaction}/cancel', [TransactionCancellationController::class, 'cancel'])->name('cancel')
             ->middleware(['role:manager', 'mfa.verified']);
 
+        // Cancellation approval/rejection workflow
+        Route::get('/{transaction}/approve-cancel', [TransactionCancellationController::class, 'showApproveCancel'])->name('approve-cancel.show')
+            ->middleware('mfa.verified');
+        Route::post('/{transaction}/approve-cancel', [TransactionCancellationController::class, 'approveCancel'])->name('approve-cancel')
+            ->middleware(['role:manager', 'mfa.verified']);
+        Route::get('/{transaction}/reject-cancel', [TransactionCancellationController::class, 'showRejectCancel'])->name('reject-cancel.show')
+            ->middleware('mfa.verified');
+        Route::post('/{transaction}/reject-cancel', [TransactionCancellationController::class, 'rejectCancel'])->name('reject-cancel')
+            ->middleware(['role:manager', 'mfa.verified']);
+
         // Large transaction confirmation
         Route::get('/{transaction}/confirm', [TransactionApprovalController::class, 'showConfirm'])->name('confirm.show')
             ->middleware('role:manager');

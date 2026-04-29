@@ -34,10 +34,6 @@ class TransactionCancellationController extends Controller
      *
      * Requests cancellation of a transaction, transitioning it to PendingCancellation
      * status where a supervisor must approve the cancellation.
-     *
-     * State transitions:
-     * - Any cancellable state -> PendingCancellation (awaiting supervisor approval)
-     * - Supervisor approves -> Cancelled or Reversed
      */
     public function cancel(Request $request, Transaction $transaction)
     {
@@ -81,6 +77,110 @@ class TransactionCancellationController extends Controller
     }
 
     /**
+     * Show approve cancellation form
+     */
+    public function showApproveCancel(Transaction $transaction)
+    {
+        if (! $this->canApproveOrReject(auth()->user())) {
+            abort(403, 'Unauthorized to approve cancellations.');
+        }
+
+        if (! $transaction->status->isPendingCancellation()) {
+            return back()->with('error', 'This transaction is not pending cancellation.');
+        }
+
+        return view('transactions.approve-cancellation', compact('transaction'));
+    }
+
+    /**
+     * Approve a pending cancellation request.
+     */
+    public function approveCancel(Request $request, Transaction $transaction)
+    {
+        if (! $this->canApproveOrReject(auth()->user())) {
+            abort(403, 'Unauthorized to approve cancellations.');
+        }
+
+        if (! $transaction->status->isPendingCancellation()) {
+            return back()->with('error', 'This transaction is not pending cancellation.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $result = $this->cancellationService->approveCancellation(
+                $transaction,
+                auth()->user(),
+                $validated['reason'] ?? null
+            );
+
+            if ($result) {
+                return redirect()->route('transactions.show', $transaction)
+                    ->with('success', 'Cancellation approved. Transaction has been cancelled.');
+            }
+
+            return back()->with('error', 'Failed to approve cancellation. Please try again.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Approval failed: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Show reject cancellation form
+     */
+    public function showRejectCancel(Transaction $transaction)
+    {
+        if (! $this->canApproveOrReject(auth()->user())) {
+            abort(403, 'Unauthorized to reject cancellations.');
+        }
+
+        if (! $transaction->status->isPendingCancellation()) {
+            return back()->with('error', 'This transaction is not pending cancellation.');
+        }
+
+        return view('transactions.reject-cancellation', compact('transaction'));
+    }
+
+    /**
+     * Reject a pending cancellation request.
+     */
+    public function rejectCancel(Request $request, Transaction $transaction)
+    {
+        if (! $this->canApproveOrReject(auth()->user())) {
+            abort(403, 'Unauthorized to reject cancellations.');
+        }
+
+        if (! $transaction->status->isPendingCancellation()) {
+            return back()->with('error', 'This transaction is not pending cancellation.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|min:10|max:500',
+        ]);
+
+        try {
+            $result = $this->cancellationService->rejectCancellation(
+                $transaction,
+                auth()->user(),
+                $validated['reason']
+            );
+
+            if ($result) {
+                return redirect()->route('transactions.show', $transaction)
+                    ->with('success', 'Cancellation rejected. Transaction has been restored to its previous status.');
+            }
+
+            return back()->with('error', 'Failed to reject cancellation. Transaction history may be corrupted.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Rejection failed: '.$e->getMessage());
+        }
+    }
+
+    /**
      * Check if user can cancel transaction
      *
      * All transaction cancellations require manager or admin approval.
@@ -89,54 +189,48 @@ class TransactionCancellationController extends Controller
      */
     protected function canCancel($user, Transaction $transaction): bool
     {
-        // Managers and admins can cancel any transaction
         if ($user->isAdmin() || $user->isManager()) {
             return true;
         }
 
-        // Tellers cannot cancel any transactions - requires manager approval
-        // This enforces segregation of duties
         return false;
     }
 
     /**
+     * Check if user can approve or reject a cancellation.
+     */
+    protected function canApproveOrReject($user): bool
+    {
+        return $user->isAdmin() || $user->isManager() || $user->isComplianceOfficer();
+    }
+
+    /**
      * Check if transaction can be cancelled (or reversed if completed)
-     *
-     * State transitions:
-     * - draft, pending_approval, approved, processing, failed, rejected -> can be cancelled
-     * - completed -> can be reversed (different from cancelled)
-     * - finalized, already cancelled/reversed/rejected -> cannot be changed
      */
     protected function canBeCancelled(Transaction $transaction): bool
     {
         $status = $transaction->status;
 
-        // Already in a final state that cannot be changed
         if ($status->isFinalized()) {
             return false;
         }
 
-        // Already cancelled or reversed cannot be cancelled again
         if ($status->isCancelled() || $status->isReversed()) {
             return false;
         }
 
-        // Already cancelled (indicated by cancelled_at being set even if status hasn't updated)
         if ($transaction->cancelled_at !== null) {
             return false;
         }
 
-        // Cannot cancel a refund transaction
         if ($transaction->is_refund) {
             return false;
         }
 
-        // Completed transactions can be reversed (within time window)
         if ($status->isCompleted()) {
             return $this->cancellationService->isWithinCancellationWindow($transaction);
         }
 
-        // All other non-final states can be cancelled
         return true;
     }
 }
