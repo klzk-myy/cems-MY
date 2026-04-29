@@ -21,6 +21,8 @@ class CounterSession extends Model
         'closed_by',
         'status',
         'notes',
+        'physical_count_verified',
+        'handover_notes',
     ];
 
     protected $casts = [

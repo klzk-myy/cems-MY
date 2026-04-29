@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Compliance\DashboardController;
 use App\Http\Controllers\Api\V1\Compliance\EddController;
 use App\Http\Controllers\Api\V1\Compliance\FindingController;
 use App\Http\Controllers\Api\V1\Compliance\RiskController;
+use App\Http\Controllers\Api\V1\CounterHandoverController;
 use App\Http\Controllers\Api\V1\CounterOpeningController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EmergencyCounterController;
@@ -283,6 +284,10 @@ Route::middleware('auth:sanctum')->group(function () {
             ->name('api.v1.counters.emergency.variance');
         Route::post('/{counterId}/emergency/{closureId}/acknowledge', [EmergencyCounterController::class, 'acknowledge'])
             ->name('api.v1.counters.emergency.acknowledge');
+
+        // Handover Acknowledge
+        Route::post('/{counterId}/handover/{handoverId}/acknowledge', [CounterHandoverController::class, 'acknowledge'])
+            ->name('api.v1.counters.handover.acknowledge');
     });
 
     // Branch Closing Workflow API

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Enums\TransactionStatus;
+use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Controller;
 use App\Models\SystemLog;
 use App\Models\Transaction;
@@ -13,6 +14,7 @@ use App\Services\ComplianceService;
 use App\Services\CurrencyPositionService;
 use App\Services\MathService;
 use App\Services\ThresholdService;
+use App\Services\TransactionApprovalService;
 use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
@@ -22,6 +24,7 @@ class TransactionApprovalController extends Controller
 {
     public function __construct(
         protected TransactionService $transactionService,
+        protected TransactionApprovalService $approvalService,
         protected CurrencyPositionService $positionService,
         protected ComplianceService $complianceService,
         protected TransactionMonitoringService $monitoringService,
@@ -45,17 +48,10 @@ class TransactionApprovalController extends Controller
     {
         $this->requireManagerOrAdmin();
 
-        if (! $transaction->status->isPending()) {
-            return back()->with('error', 'Transaction is not pending approval.');
-        }
-
-        // Prevent self-approval (segregation of duties - AML/CFT compliance)
-        if ($transaction->user_id === auth()->id()) {
-            return back()->with('error', 'You cannot approve your own transaction. Segregation of duties requires a different approver.');
-        }
-
         try {
-            $result = $this->transactionService->approveTransaction(
+            $this->approvalService->validateApprovalEligibility($transaction, auth()->id());
+
+            $result = $this->approvalService->approve(
                 $transaction,
                 auth()->id(),
                 $request->ip()
@@ -68,6 +64,8 @@ class TransactionApprovalController extends Controller
             return redirect()->route('transactions.show', $transaction)
                 ->with('success', $result['message']);
 
+        } catch (SelfApprovalException $e) {
+            return back()->with('error', $e->getMessage());
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());
         } catch (\RuntimeException $e) {

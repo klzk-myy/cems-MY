@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\ComplianceService;
 use App\Services\CurrencyPositionService;
 use App\Services\MathService;
+use App\Services\TransactionApprovalService;
 use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +20,7 @@ class TransactionApprovalController extends Controller
 {
     public function __construct(
         protected TransactionService $transactionService,
+        protected TransactionApprovalService $approvalService,
         protected CurrencyPositionService $positionService,
         protected ComplianceService $complianceService,
         protected TransactionMonitoringService $monitoringService,
@@ -43,23 +46,10 @@ class TransactionApprovalController extends Controller
 
         $transaction = Transaction::findOrFail($transactionId);
 
-        if (! $transaction->status->isPending()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction is not pending approval.',
-            ], 400);
-        }
-
-        // Prevent self-approval (segregation of duties - AML/CFT compliance)
-        if ($transaction->user_id === auth()->id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You cannot approve your own transaction. Segregation of duties requires a different approver.',
-            ], 403);
-        }
-
         try {
-            $result = $this->transactionService->approveTransaction(
+            $this->approvalService->validateApprovalEligibility($transaction, auth()->id());
+
+            $result = $this->approvalService->approve(
                 $transaction,
                 auth()->id(),
                 $request->ip()
@@ -78,6 +68,11 @@ class TransactionApprovalController extends Controller
                 'data' => $result['transaction'],
             ]);
 
+        } catch (SelfApprovalException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
         } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,

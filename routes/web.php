@@ -227,6 +227,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/{counter}/history', [CounterController::class, 'history'])->name('history');
         Route::get('/{counter}/handover', [CounterController::class, 'showHandover'])->name('handover.show');
         Route::post('/{counter}/handover', [CounterController::class, 'handover'])->name('handover');
+        Route::get('/{counter}/handover/acknowledge', [CounterController::class, 'showAcknowledgeHandover'])->name('handover.acknowledge.show');
+        Route::post('/{counter}/handover/acknowledge', [CounterController::class, 'acknowledgeHandover'])->name('handover.acknowledge');
         Route::get('/{counter}/emergency', [CounterController::class, 'showEmergency'])->name('emergency.show');
         Route::post('/{counter}/emergency', [CounterController::class, 'emergency'])->name('emergency');
         Route::get('/{counter}/emergency/{closure}', [CounterController::class, 'showEmergencyClosure'])->name('emergency.closure');

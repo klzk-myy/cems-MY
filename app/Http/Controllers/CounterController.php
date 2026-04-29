@@ -12,6 +12,7 @@ use App\Models\Currency;
 use App\Models\EmergencyClosure;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\CounterHandoverService;
 use App\Services\CounterService;
 use App\Services\EmergencyCounterService;
 use Illuminate\Http\Request;
@@ -383,5 +384,67 @@ class CounterController extends Controller
 
         return redirect()->route('counters.index')
             ->with('success', 'Emergency closure acknowledged');
+    }
+
+    public function showAcknowledgeHandover(Counter $counter)
+    {
+        $user = Auth::user();
+        $today = now()->toDateString();
+
+        $handover = CounterHandover::with(['counterSession', 'fromUser', 'supervisor'])
+            ->whereHas('counterSession', function ($query) use ($counter, $today) {
+                $query->where('counter_id', $counter->id)
+                    ->where('session_date', $today);
+            })
+            ->where('to_user_id', $user->id)
+            ->whereNull('acknowledged_at')
+            ->first();
+
+        if (! $handover) {
+            return redirect()->route('counters.index')
+                ->with('error', 'No pending handover to acknowledge');
+        }
+
+        return view('counters.acknowledge-handover', compact('counter', 'handover'));
+    }
+
+    public function acknowledgeHandover(Request $request, Counter $counter)
+    {
+        $user = Auth::user();
+        $today = now()->toDateString();
+
+        $handover = CounterHandover::with(['counterSession', 'fromUser', 'supervisor'])
+            ->whereHas('counterSession', function ($query) use ($counter, $today) {
+                $query->where('counter_id', $counter->id)
+                    ->where('session_date', $today);
+            })
+            ->where('to_user_id', $user->id)
+            ->whereNull('acknowledged_at')
+            ->first();
+
+        if (! $handover) {
+            return back()->with('error', 'No pending handover to acknowledge');
+        }
+
+        $request->validate([
+            'verified' => 'required|boolean',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $handoverService = app(CounterHandoverService::class);
+
+        try {
+            $handoverService->acknowledgeHandover(
+                $handover,
+                $user,
+                $request->boolean('verified'),
+                $request->input('notes')
+            );
+
+            return redirect()->route('counters.index')
+                ->with('success', 'Handover acknowledged successfully');
+        } catch (\Exception $e) {
+            return back()->with('error', "Failed to acknowledge handover: {$e->getMessage()}");
+        }
     }
 }

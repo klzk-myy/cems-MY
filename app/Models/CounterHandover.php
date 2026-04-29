@@ -18,13 +18,20 @@ class CounterHandover extends Model
         'physical_count_verified',
         'variance_myr',
         'variance_notes',
+        'acknowledged_at',
     ];
 
     protected $casts = [
         'handover_time' => 'datetime',
         'physical_count_verified' => 'boolean',
         'variance_myr' => 'decimal:2',
+        'acknowledged_at' => 'datetime',
     ];
+
+    public function getSessionAttribute()
+    {
+        return $this->counterSession;
+    }
 
     public function counterSession()
     {
