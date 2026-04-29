@@ -99,7 +99,7 @@ class TransactionWorkflowTest extends TestCase
     /** @test */
     public function it_requires_authentication_to_create_transaction(): void
     {
-        $response = $this->postJson('/api/transactions', [
+        $response = $this->postJson('/api/v1/transactions', [
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -131,7 +131,7 @@ class TransactionWorkflowTest extends TestCase
 
         // Test authenticated request
         $response = $this->actingAs($this->teller, 'sanctum')
-            ->getJson('/api/transactions');
+            ->getJson('/api/v1/transactions');
 
         // Just check that we get a successful response (could be 200 or 500 depending on implementation)
         $this->assertTrue(in_array($response->status(), [200, 201, 500]),
@@ -155,7 +155,7 @@ class TransactionWorkflowTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->teller, 'sanctum')
-            ->getJson("/api/transactions/{$transaction->id}");
+            ->getJson("/api/v1/transactions/{$transaction->id}");
 
         // Just check that we get a response
         $this->assertTrue(in_array($response->status(), [200, 404, 500]),
