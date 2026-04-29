@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ExchangeRate;
+use App\Models\ExchangeRateHistory;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -252,5 +253,57 @@ class RateManagementService
         }
 
         return '0';
+    }
+
+    public function copyPreviousRates(string $targetDate, ?int $branchId = null): array
+    {
+        $historyQuery = ExchangeRateHistory::where('effective_date', $targetDate);
+        if ($branchId !== null) {
+            $historyQuery->where('branch_id', $branchId);
+        }
+        $historicalRates = $historyQuery->get();
+
+        if ($historicalRates->isEmpty()) {
+            return [
+                'success' => false,
+                'message' => "No rates found for date {$targetDate}",
+                'rates' => [],
+            ];
+        }
+
+        $copied = [];
+        foreach ($historicalRates as $histRate) {
+            $query = ExchangeRate::where('currency_code', $histRate->currency_code);
+            if ($branchId !== null) {
+                $query->forBranch($branchId);
+            }
+            $exchangeRate = $query->first();
+
+            if ($exchangeRate) {
+                $oldBuy = $exchangeRate->rate_buy;
+                $oldSell = $exchangeRate->rate_sell;
+
+                $exchangeRate->update([
+                    'rate_buy' => $histRate->rate,
+                    'rate_sell' => $histRate->rate,
+                    'source' => "copied_from_{$targetDate}",
+                    'fetched_at' => now(),
+                ]);
+
+                $copied[] = [
+                    'currency' => $histRate->currency_code,
+                    'old_buy' => $oldBuy,
+                    'old_sell' => $oldSell,
+                    'new_rate' => $histRate->rate,
+                ];
+            }
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Rates copied successfully',
+            'copied_from_date' => $targetDate,
+            'rates' => $copied,
+        ];
     }
 }

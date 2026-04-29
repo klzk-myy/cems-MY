@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
-use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Services\RateManagementService;
 use Illuminate\Http\JsonResponse;
@@ -87,53 +86,9 @@ class RateController extends Controller
 
         $targetDate = $validated['date'] ?? now()->subDay()->toDateString();
 
-        $historyQuery = ExchangeRateHistory::where('effective_date', $targetDate);
-        if ($branchId !== null) {
-            $historyQuery->where('branch_id', $branchId);
-        }
-        $historicalRates = $historyQuery->get();
+        $result = $this->rateService->copyPreviousRates($targetDate, $branchId);
 
-        if ($historicalRates->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => "No rates found for date {$targetDate}",
-            ], 404);
-        }
-
-        $copied = [];
-        foreach ($historicalRates as $histRate) {
-            $query = ExchangeRate::where('currency_code', $histRate->currency_code);
-            if ($branchId !== null) {
-                $query->forBranch($branchId);
-            }
-            $exchangeRate = $query->first();
-
-            if ($exchangeRate) {
-                $oldBuy = $exchangeRate->rate_buy;
-                $oldSell = $exchangeRate->rate_sell;
-
-                $exchangeRate->update([
-                    'rate_buy' => $histRate->rate,
-                    'rate_sell' => $histRate->rate,
-                    'source' => "copied_from_{$targetDate}",
-                    'fetched_at' => now(),
-                ]);
-
-                $copied[] = [
-                    'currency' => $histRate->currency_code,
-                    'old_buy' => $oldBuy,
-                    'old_sell' => $oldSell,
-                    'new_rate' => $histRate->rate,
-                ];
-            }
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Rates copied successfully',
-            'copied_from_date' => $targetDate,
-            'rates' => $copied,
-        ]);
+        return response()->json($result, $result['success'] ? 200 : 404);
     }
 
     public function override(Request $request, string $currencyCode): JsonResponse

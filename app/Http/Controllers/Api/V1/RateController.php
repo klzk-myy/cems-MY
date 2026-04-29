@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\ExchangeRate;
-use App\Models\ExchangeRateHistory;
 use App\Services\RateManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -169,46 +167,9 @@ class RateController extends Controller
 
         $targetDate = $validated['date'] ?? now()->subDay()->toDateString();
 
-        // Get rates from the target date
-        $historicalRates = ExchangeRateHistory::where('effective_date', $targetDate)->get();
+        $result = $this->rateService->copyPreviousRates($targetDate);
 
-        if ($historicalRates->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => "No rates found for date {$targetDate}",
-            ], 404);
-        }
-
-        $copied = [];
-        foreach ($historicalRates as $histRate) {
-            $exchangeRate = ExchangeRate::where('currency_code', $histRate->currency_code)->first();
-
-            if ($exchangeRate) {
-                $oldBuy = $exchangeRate->rate_buy;
-                $oldSell = $exchangeRate->rate_sell;
-
-                $exchangeRate->update([
-                    'rate_buy' => $histRate->rate,
-                    'rate_sell' => $histRate->rate,
-                    'source' => "copied_from_{$targetDate}",
-                    'fetched_at' => now(),
-                ]);
-
-                $copied[] = [
-                    'currency' => $histRate->currency_code,
-                    'old_buy' => $oldBuy,
-                    'old_sell' => $oldSell,
-                    'new_rate' => $histRate->rate,
-                ];
-            }
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Rates copied successfully',
-            'copied_from_date' => $targetDate,
-            'rates' => $copied,
-        ]);
+        return response()->json($result, $result['success'] ? 200 : 404);
     }
 
     /**
