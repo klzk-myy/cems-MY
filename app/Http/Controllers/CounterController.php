@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Models\Counter;
+use App\Models\CounterHandover;
 use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\EmergencyClosure;
@@ -21,15 +22,12 @@ use Illuminate\Support\Facades\Log;
 
 class CounterController extends Controller
 {
-    private CounterService $counterService;
-
-    private AuditService $auditService;
-
-    public function __construct(CounterService $counterService, AuditService $auditService)
-    {
-        $this->counterService = $counterService;
-        $this->auditService = $auditService;
-    }
+    public function __construct(
+        protected CounterService $counterService,
+        protected AuditService $auditService,
+        protected EmergencyCounterService $emergencyCounterService,
+        protected CounterHandoverService $counterHandoverService,
+    ) {}
 
     /**
      * Display a listing of counters
