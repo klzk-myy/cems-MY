@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CddLevel;
 use App\Models\Customer;
 use App\Models\SystemLog;
 use App\Services\Compliance\RiskScoringEngine;
@@ -194,6 +195,50 @@ class CustomerService
         $hash = $this->computeBlindIndex($idNumber);
 
         return Customer::where('id_number_hash', $hash)->first();
+    }
+
+    public function searchCustomers(string $query): array
+    {
+        $query = trim($query);
+
+        $customers = Customer::where('full_name', 'like', "%{$query}%")
+            ->orWhere('id_number_encrypted', 'like', "%{$query}%")
+            ->where('is_active', true)
+            ->limit(10)
+            ->get();
+
+        if ($customers->isEmpty()) {
+            $idHash = $this->computeBlindIndex($query);
+            $byHash = Customer::where('id_number_hash', $idHash)
+                ->where('is_active', true)
+                ->first();
+            if ($byHash) {
+                $customers = collect([$byHash]);
+            }
+        }
+
+        return $customers->map(function ($customer) {
+            $sanctionCheck = $this->screeningService->screenName($customer->full_name);
+
+            return [
+                'id' => $customer->id,
+                'full_name' => $customer->full_name,
+                'ic_number' => $customer->ic_number,
+                'ic_number_masked' => $customer->ic_number ? substr($customer->ic_number, 0, 4).'****'.substr($customer->ic_number, -4) : null,
+                'nationality' => $customer->nationality,
+                'risk_rating' => $customer->risk_rating,
+                'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
+                'is_pep' => $customer->pep_status,
+                'is_sanctioned' => $customer->sanction_hit,
+                'sanction_warning' => $sanctionCheck->matches->isNotEmpty(),
+                'sanction_matches' => $sanctionCheck->matches->map(fn ($m) => [
+                    'entity_name' => $m->entityName,
+                    'score' => round($m->score, 1),
+                    'list' => $m->listName,
+                ])->toArray(),
+                'sanction_action' => $sanctionCheck->action,
+            ];
+        })->toArray();
     }
 
     /**

@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\CddLevel;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Services\AuditService;
-use App\Services\CustomerScreeningService;
 use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,18 +14,14 @@ class CustomerController extends Controller
     public function __construct(
         protected CustomerService $customerService,
         protected AuditService $auditService,
-        protected CustomerScreeningService $customerScreeningService
     ) {}
 
-    /**
-     * List customers with filtering and pagination.
-     */
     public function index(Request $request): JsonResponse
     {
         $query = Customer::query();
 
         if ($request->has('search') && ! empty($request->search)) {
-            $query->where('full_name', 'like', "%{$request->search}%");
+            $query->where('full_name', 'like', '%'.$request->search.'%');
         }
 
         if ($request->has('risk_rating') && ! empty($request->risk_rating)) {
@@ -236,55 +230,13 @@ class CustomerController extends Controller
             'query' => 'required|string|min:2',
         ]);
 
-        $query = trim($validated['query']);
-
-        // Search by name (LIKE search)
-        $customers = Customer::where('full_name', 'like', "%{$query}%")
-            ->orWhere('ic_number', 'like', "%{$query}%")
-            ->where('is_active', true)
-            ->limit(10)
-            ->get();
-
-        // If no results by name, try ID number hash lookup
-        if ($customers->isEmpty()) {
-            $idHash = CustomerService::computeBlindIndex($query);
-            $byHash = Customer::where('id_number_hash', $idHash)
-                ->where('is_active', true)
-                ->first();
-            if ($byHash) {
-                $customers = collect([$byHash]);
-            }
-        }
-
-        // Screen each customer against sanctions
-        $results = $customers->map(function ($customer) {
-            $sanctionCheck = $this->customerScreeningService->screenName($customer->full_name);
-
-            return [
-                'id' => $customer->id,
-                'full_name' => $customer->full_name,
-                'ic_number' => $customer->ic_number,
-                'ic_number_masked' => $customer->ic_number ? substr($customer->ic_number, 0, 4).'****'.substr($customer->ic_number, -4) : null,
-                'nationality' => $customer->nationality,
-                'risk_rating' => $customer->risk_rating,
-                'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
-                'is_pep' => $customer->pep_status,
-                'is_sanctioned' => $customer->sanction_hit,
-                'sanction_warning' => $sanctionCheck->matches->isNotEmpty(),
-                'sanction_matches' => $sanctionCheck->matches->map(fn ($m) => [
-                    'entity_name' => $m->entityName,
-                    'score' => round($m->score, 1),
-                    'list' => $m->listName,
-                ])->toArray(),
-                'sanction_action' => $sanctionCheck->action,
-            ];
-        });
+        $results = $this->customerService->searchCustomers($validated['query']);
 
         return response()->json([
             'success' => true,
-            'query' => $query,
+            'query' => $validated['query'],
             'results' => $results,
-            'count' => $results->count(),
+            'count' => count($results),
         ]);
     }
 }
