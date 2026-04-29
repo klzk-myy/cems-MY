@@ -41,11 +41,11 @@ class StrController extends Controller
         $strReports = $query->orderBy('created_at', 'desc')->paginate(20);
 
         $stats = [
-            'draft' => StrReport::where('status', 'draft')->count(),
-            'pending_review' => StrReport::where('status', 'pending_review')->count(),
-            'pending_approval' => StrReport::where('status', 'pending_approval')->count(),
-            'submitted' => StrReport::where('status', 'submitted')->count(),
-            'acknowledged' => StrReport::where('status', 'acknowledged')->count(),
+            'draft' => StrReport::where('status', StrStatus::Draft->value)->count(),
+            'pending_review' => StrReport::where('status', StrStatus::PendingReview->value)->count(),
+            'pending_approval' => StrReport::where('status', StrStatus::PendingApproval->value)->count(),
+            'submitted' => StrReport::where('status', StrStatus::Submitted->value)->count(),
+            'acknowledged' => StrReport::where('status', StrStatus::Acknowledged->value)->count(),
         ];
 
         return view('str.index', compact('strReports', 'stats'));
@@ -72,7 +72,7 @@ class StrController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'alert_id' => 'nullable|exists:flagged_transactions,id',
             'transaction_ids' => 'required|array',
@@ -81,36 +81,10 @@ class StrController extends Controller
         ]);
 
         try {
-            $strReport = StrReport::create([
-                'str_no' => $this->strService->generateStrNumber(),
-                'branch_id' => Auth::user()->branch_id,
-                'customer_id' => $request->customer_id,
-                'alert_id' => $request->alert_id,
-                'transaction_ids' => $request->transaction_ids,
-                'reason' => $request->reason,
-                'supporting_documents' => [],
-                'status' => 'draft',
-                'created_by' => Auth::id(),
-                'suspicion_date' => now(), // Default to now, can be backdated
-            ]);
-
-            // Calculate filing deadline
-            $deadlineInfo = $this->complianceService->calculateStrDeadline(now());
-            $strReport->filing_deadline = $deadlineInfo['deadline'];
-            $strReport->save();
-
-            // Audit log
-            $this->auditService->logStrAction('str_created', $strReport->id, [
-                'new' => [
-                    'str_no' => $strReport->str_no,
-                    'customer_id' => $strReport->customer_id,
-                    'suspicion_date' => $strReport->suspicion_date->toDateTimeString(),
-                    'filing_deadline' => $deadlineInfo['deadline']->toDateTimeString(),
-                ],
-            ]);
+            $strReport = $this->strService->createStrReport($validated, Auth::user());
 
             return redirect()->route('str.show', $strReport)
-                ->with('success', 'STR draft created successfully. Filing deadline: '.$deadlineInfo['deadline']->format('Y-m-d H:i'));
+                ->with('success', 'STR draft created successfully.');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Failed to create STR: '.$e->getMessage())

@@ -61,6 +61,41 @@ class StrReportService
     }
 
     /**
+     * Create an STR report draft.
+     */
+    public function createStrReport(array $data, User $user): StrReport
+    {
+        $deadlineInfo = $this->complianceService->calculateStrDeadline(now());
+
+        $strReport = StrReport::create([
+            'str_no' => $this->generateStrNumber(),
+            'branch_id' => $data['branch_id'] ?? $user->branch_id,
+            'customer_id' => $data['customer_id'],
+            'alert_id' => $data['alert_id'] ?? null,
+            'transaction_ids' => $data['transaction_ids'] ?? [],
+            'reason' => $data['reason'],
+            'supporting_documents' => [],
+            'status' => StrStatus::Draft->value,
+            'created_by' => $user->id,
+            'suspicion_date' => now(),
+        ]);
+
+        $strReport->filing_deadline = $deadlineInfo['deadline'];
+        $strReport->save();
+
+        $this->auditService->logStrAction('str_created', $strReport->id, [
+            'new' => [
+                'str_no' => $strReport->str_no,
+                'customer_id' => $strReport->customer_id,
+                'suspicion_date' => $strReport->suspicion_date->toDateTimeString(),
+                'filing_deadline' => $deadlineInfo['deadline']->toDateTimeString(),
+            ],
+        ]);
+
+        return $strReport;
+    }
+
+    /**
      * Generate STR from a flagged transaction
      */
     public function generateFromAlert(FlaggedTransaction $alert): StrReport

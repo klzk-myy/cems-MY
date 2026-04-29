@@ -15,7 +15,8 @@ class StrController extends Controller
 {
     public function __construct(
         protected StrReportService $strService,
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected ComplianceService $complianceService,
     ) {}
 
     /**
@@ -52,38 +53,12 @@ class StrController extends Controller
         ]);
 
         try {
-            $strReport = StrReport::create([
-                'str_no' => $this->strService->generateStrNumber(),
-                'branch_id' => Auth::user()->branch_id,
-                'customer_id' => $request->customer_id,
-                'alert_id' => $request->alert_id,
-                'transaction_ids' => $request->transaction_ids,
-                'reason' => $request->reason,
-                'supporting_documents' => [],
-                'status' => 'draft',
-                'created_by' => Auth::id(),
-                'suspicion_date' => now(),
-            ]);
-
-            $complianceService = app(ComplianceService::class);
-            $deadlineInfo = $complianceService->calculateStrDeadline(now());
-            $strReport->filing_deadline = $deadlineInfo['deadline'];
-            $strReport->save();
-
-            $this->auditService->logStrAction('str_created', $strReport->id, [
-                'new' => [
-                    'str_no' => $strReport->str_no,
-                    'customer_id' => $strReport->customer_id,
-                    'suspicion_date' => $strReport->suspicion_date->toDateTimeString(),
-                    'filing_deadline' => $deadlineInfo['deadline']->toDateTimeString(),
-                ],
-            ]);
+            $strReport = $this->strService->createStrReport($validated, $request->user());
 
             return response()->json([
                 'success' => true,
                 'message' => 'STR draft created successfully.',
                 'data' => $strReport->load(['customer', 'transactions']),
-                'filing_deadline' => $deadlineInfo['deadline']->toDateTimeString(),
             ], 201);
 
         } catch (\Exception $e) {
