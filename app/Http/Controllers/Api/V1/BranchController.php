@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\SystemLog;
+use App\Services\BranchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +19,10 @@ use Illuminate\Validation\Rule;
  */
 class BranchController extends Controller
 {
+    public function __construct(
+        protected BranchService $branchService,
+    ) {}
+
     /**
      * List all branches (Admin only).
      */
@@ -57,40 +61,7 @@ class BranchController extends Controller
             'parent_id' => 'nullable|exists:branches,id',
         ]);
 
-        // Ensure only one main branch
-        if (! empty($validated['is_main'])) {
-            Branch::where('is_main', true)->update(['is_main' => false]);
-        }
-
-        $branch = Branch::create([
-            'code' => $validated['code'],
-            'name' => $validated['name'],
-            'type' => $validated['type'],
-            'address' => $validated['address'] ?? null,
-            'city' => $validated['city'] ?? null,
-            'state' => $validated['state'] ?? null,
-            'postal_code' => $validated['postal_code'] ?? null,
-            'country' => $validated['country'] ?? 'Malaysia',
-            'phone' => $validated['phone'] ?? null,
-            'email' => $validated['email'] ?? null,
-            'is_active' => $validated['is_active'] ?? true,
-            'is_main' => $validated['is_main'] ?? false,
-            'parent_id' => $validated['parent_id'] ?? null,
-        ]);
-
-        // Log branch creation
-        SystemLog::create([
-            'user_id' => Auth::id(),
-            'action' => 'branch_created',
-            'entity_type' => 'Branch',
-            'entity_id' => $branch->id,
-            'new_values' => [
-                'code' => $branch->code,
-                'name' => $branch->name,
-                'type' => $branch->type,
-            ],
-            'ip_address' => $request->ip(),
-        ]);
+        $branch = $this->branchService->createBranch($validated, Auth::id(), $request->ip());
 
         return response()->json([
             'success' => true,
@@ -108,7 +79,6 @@ class BranchController extends Controller
         $branch = Branch::findOrFail($id);
         $user = Auth::user();
 
-        // Check authorization: admin OR user's own branch
         if (! $user->role->isAdmin() && $user->branch_id !== $id) {
             return response()->json([
                 'success' => false,
@@ -145,51 +115,7 @@ class BranchController extends Controller
             'parent_id' => 'nullable|exists:branches,id',
         ]);
 
-        $oldValues = [
-            'code' => $branch->code,
-            'name' => $branch->name,
-            'type' => $branch->type,
-            'is_active' => $branch->is_active,
-            'is_main' => $branch->is_main,
-        ];
-
-        // Ensure only one main branch
-        if (! empty($validated['is_main']) && ! $branch->is_main) {
-            Branch::where('is_main', true)->update(['is_main' => false]);
-        }
-
-        $branch->update([
-            'code' => $validated['code'],
-            'name' => $validated['name'],
-            'type' => $validated['type'],
-            'address' => $validated['address'] ?? null,
-            'city' => $validated['city'] ?? null,
-            'state' => $validated['state'] ?? null,
-            'postal_code' => $validated['postal_code'] ?? null,
-            'country' => $validated['country'] ?? 'Malaysia',
-            'phone' => $validated['phone'] ?? null,
-            'email' => $validated['email'] ?? null,
-            'is_active' => $validated['is_active'] ?? true,
-            'is_main' => $validated['is_main'] ?? false,
-            'parent_id' => $validated['parent_id'] ?? null,
-        ]);
-
-        // Log branch update
-        SystemLog::create([
-            'user_id' => Auth::id(),
-            'action' => 'branch_updated',
-            'entity_type' => 'Branch',
-            'entity_id' => $branch->id,
-            'old_values' => $oldValues,
-            'new_values' => [
-                'code' => $branch->code,
-                'name' => $branch->name,
-                'type' => $branch->type,
-                'is_active' => $branch->is_active,
-                'is_main' => $branch->is_main,
-            ],
-            'ip_address' => $request->ip(),
-        ]);
+        $branch = $this->branchService->updateBranch($branch, $validated, Auth::id(), $request->ip());
 
         return response()->json([
             'success' => true,
@@ -205,50 +131,19 @@ class BranchController extends Controller
     {
         $branch = Branch::findOrFail($id);
 
-        // Prevent deactivating the main branch
-        if ($branch->is_main) {
+        try {
+            $this->branchService->deactivateBranch($branch, Auth::id(), $request->ip());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Branch deactivated successfully',
+            ]);
+        } catch (\RuntimeException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot deactivate the main branch',
+                'message' => $e->getMessage(),
             ], 400);
         }
-
-        // Prevent deactivating if it has active child branches
-        if ($branch->children()->where('is_active', true)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot deactivate branch with active child branches',
-            ], 400);
-        }
-
-        $oldValues = [
-            'code' => $branch->code,
-            'name' => $branch->name,
-            'is_active' => $branch->is_active,
-        ];
-
-        // Deactivate instead of delete to preserve audit trail
-        $branch->update(['is_active' => false]);
-
-        // Log branch deactivation
-        SystemLog::create([
-            'user_id' => Auth::id(),
-            'action' => 'branch_deactivated',
-            'entity_type' => 'Branch',
-            'entity_id' => $branch->id,
-            'old_values' => $oldValues,
-            'new_values' => [
-                'code' => $branch->code,
-                'name' => $branch->name,
-                'is_active' => false,
-            ],
-            'ip_address' => $request->ip(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Branch deactivated successfully',
-        ]);
     }
 
     /**
@@ -260,7 +155,6 @@ class BranchController extends Controller
         $branch = Branch::findOrFail($id);
         $user = Auth::user();
 
-        // Check authorization: admin OR user's own branch
         if (! $user->role->isAdmin() && $user->branch_id !== $id) {
             return response()->json([
                 'success' => false,
@@ -285,7 +179,6 @@ class BranchController extends Controller
         $branch = Branch::findOrFail($id);
         $user = Auth::user();
 
-        // Check authorization: admin OR user's own branch
         if (! $user->role->isAdmin() && $user->branch_id !== $id) {
             return response()->json([
                 'success' => false,

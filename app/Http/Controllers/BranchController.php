@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
-use App\Models\SystemLog;
+use App\Services\BranchService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,6 +17,10 @@ use Illuminate\View\View;
  */
 class BranchController extends Controller
 {
+    public function __construct(
+        protected BranchService $branchService,
+    ) {}
+
     /**
      * Display a paginated listing of all branches.
      *
@@ -36,15 +40,8 @@ class BranchController extends Controller
      */
     public function create()
     {
-        $branchTypes = [
-            'head_office' => 'Head Office',
-            'branch' => 'Branch',
-            'sub_branch' => 'Sub-Branch',
-        ];
-
-        $parentBranches = Branch::where('is_active', true)
-            ->orderBy('code')
-            ->get();
+        $branchTypes = $this->branchService->getBranchTypes();
+        $parentBranches = $this->branchService->getParentBranches();
 
         return view('branches.create', compact('branchTypes', 'parentBranches'));
     }
@@ -72,40 +69,7 @@ class BranchController extends Controller
             'parent_id' => 'nullable|exists:branches,id',
         ]);
 
-        // Ensure only one main branch
-        if (! empty($validated['is_main'])) {
-            Branch::where('is_main', true)->update(['is_main' => false]);
-        }
-
-        $branch = Branch::create([
-            'code' => $validated['code'],
-            'name' => $validated['name'],
-            'type' => $validated['type'],
-            'address' => $validated['address'] ?? null,
-            'city' => $validated['city'] ?? null,
-            'state' => $validated['state'] ?? null,
-            'postal_code' => $validated['postal_code'] ?? null,
-            'country' => $validated['country'] ?? 'Malaysia',
-            'phone' => $validated['phone'] ?? null,
-            'email' => $validated['email'] ?? null,
-            'is_active' => $validated['is_active'] ?? true,
-            'is_main' => $validated['is_main'] ?? false,
-            'parent_id' => $validated['parent_id'] ?? null,
-        ]);
-
-        // Log branch creation
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'branch_created',
-            'entity_type' => 'Branch',
-            'entity_id' => $branch->id,
-            'new_values' => [
-                'code' => $branch->code,
-                'name' => $branch->name,
-                'type' => $branch->type,
-            ],
-            'ip_address' => $request->ip(),
-        ]);
+        $branch = $this->branchService->createBranch($validated, auth()->id(), $request->ip());
 
         return redirect()->route('branches.index')
             ->with('success', "Branch {$branch->code} - {$branch->name} created successfully!");
@@ -118,20 +82,7 @@ class BranchController extends Controller
      */
     public function show(Branch $branch)
     {
-        // Get summary statistics for the branch
-        $stats = [
-            'user_count' => $branch->users()->count(),
-            'counter_count' => $branch->counters()->count(),
-            'transaction_today' => $branch->transactions()
-                ->whereDate('created_at', now()->toDateString())
-                ->count(),
-            'transaction_month' => $branch->transactions()
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count(),
-        ];
-
-        // Get child branches if any
+        $stats = $this->branchService->getBranchStats($branch);
         $childBranches = $branch->children()->get();
 
         return view('branches.show', compact('branch', 'stats', 'childBranches'));
@@ -144,16 +95,8 @@ class BranchController extends Controller
      */
     public function edit(Branch $branch)
     {
-        $branchTypes = [
-            'head_office' => 'Head Office',
-            'branch' => 'Branch',
-            'sub_branch' => 'Sub-Branch',
-        ];
-
-        $parentBranches = Branch::where('is_active', true)
-            ->where('id', '!=', $branch->id)
-            ->orderBy('code')
-            ->get();
+        $branchTypes = $this->branchService->getBranchTypes();
+        $parentBranches = $this->branchService->getParentBranches($branch->id);
 
         return view('branches.edit', compact('branch', 'branchTypes', 'parentBranches'));
     }
@@ -181,51 +124,7 @@ class BranchController extends Controller
             'parent_id' => 'nullable|exists:branches,id',
         ]);
 
-        $oldValues = [
-            'code' => $branch->code,
-            'name' => $branch->name,
-            'type' => $branch->type,
-            'is_active' => $branch->is_active,
-            'is_main' => $branch->is_main,
-        ];
-
-        // Ensure only one main branch
-        if (! empty($validated['is_main']) && ! $branch->is_main) {
-            Branch::where('is_main', true)->update(['is_main' => false]);
-        }
-
-        $branch->update([
-            'code' => $validated['code'],
-            'name' => $validated['name'],
-            'type' => $validated['type'],
-            'address' => $validated['address'] ?? null,
-            'city' => $validated['city'] ?? null,
-            'state' => $validated['state'] ?? null,
-            'postal_code' => $validated['postal_code'] ?? null,
-            'country' => $validated['country'] ?? 'Malaysia',
-            'phone' => $validated['phone'] ?? null,
-            'email' => $validated['email'] ?? null,
-            'is_active' => $validated['is_active'] ?? true,
-            'is_main' => $validated['is_main'] ?? false,
-            'parent_id' => $validated['parent_id'] ?? null,
-        ]);
-
-        // Log branch update
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'branch_updated',
-            'entity_type' => 'Branch',
-            'entity_id' => $branch->id,
-            'old_values' => $oldValues,
-            'new_values' => [
-                'code' => $branch->code,
-                'name' => $branch->name,
-                'type' => $branch->type,
-                'is_active' => $branch->is_active,
-                'is_main' => $branch->is_main,
-            ],
-            'ip_address' => $request->ip(),
-        ]);
+        $branch = $this->branchService->updateBranch($branch, $validated, auth()->id(), $request->ip());
 
         return redirect()->route('branches.show', $branch)
             ->with('success', "Branch {$branch->code} - {$branch->name} updated successfully!");
@@ -238,44 +137,14 @@ class BranchController extends Controller
      */
     public function destroy(Request $request, Branch $branch)
     {
-        // Prevent deactivating the main branch
-        if ($branch->is_main) {
+        try {
+            $this->branchService->deactivateBranch($branch, auth()->id(), $request->ip());
+
             return redirect()->route('branches.index')
-                ->with('error', 'Cannot deactivate the main branch!');
-        }
-
-        // Prevent deactivating if it has active child branches
-        if ($branch->children()->where('is_active', true)->exists()) {
+                ->with('success', "Branch {$branch->code} - {$branch->name} has been deactivated!");
+        } catch (\RuntimeException $e) {
             return redirect()->route('branches.index')
-                ->with('error', 'Cannot deactivate branch with active child branches!');
+                ->with('error', $e->getMessage());
         }
-
-        $branchCode = $branch->code;
-        $branchName = $branch->name;
-
-        // Deactivate instead of delete to preserve audit trail
-        $branch->update(['is_active' => false]);
-
-        // Log branch deactivation
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'branch_deactivated',
-            'entity_type' => 'Branch',
-            'entity_id' => $branch->id,
-            'old_values' => [
-                'code' => $branchCode,
-                'name' => $branchName,
-                'is_active' => true,
-            ],
-            'new_values' => [
-                'code' => $branchCode,
-                'name' => $branchName,
-                'is_active' => false,
-            ],
-            'ip_address' => $request->ip(),
-        ]);
-
-        return redirect()->route('branches.index')
-            ->with('success', "Branch {$branchCode} - {$branchName} has been deactivated!");
     }
 }
