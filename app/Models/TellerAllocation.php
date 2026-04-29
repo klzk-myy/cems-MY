@@ -27,6 +27,9 @@ class TellerAllocation extends Model
         'approved_at',
         'opened_at',
         'closed_at',
+        'rejected_at',
+        'rejected_by',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -40,6 +43,7 @@ class TellerAllocation extends Model
         'approved_at' => 'datetime',
         'opened_at' => 'datetime',
         'closed_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

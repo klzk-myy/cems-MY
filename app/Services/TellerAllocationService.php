@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Enums\TellerAllocationStatus;
+use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
 use App\Exceptions\Domain\InsufficientPoolBalanceException;
 use App\Exceptions\Domain\InvalidAllocationStateException;
 use App\Exceptions\Domain\PoolAllocationException;
@@ -10,6 +12,7 @@ use App\Exceptions\Domain\TellerBranchRequiredException;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\TellerAllocation;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -91,6 +94,15 @@ class TellerAllocationService
             $allocation->current_balance = $this->mathService->add($allocation->current_balance, $newAmount);
             $allocation->allocated_amount = $this->mathService->add($allocation->allocated_amount, $newAmount);
         } else {
+            $pendingUsage = $this->calculatePendingTransactionUsage($allocation);
+            $newAllocation = $this->mathService->subtract($allocation->allocated_amount, $newAmount);
+
+            if ($this->mathService->compare($newAllocation, $pendingUsage) < 0) {
+                throw new PoolAllocationException(
+                    "Cannot reduce allocation to {$newAllocation}: {$pendingUsage} MYR required for pending transactions"
+                );
+            }
+
             $availableToReturn = $this->mathService->subtract($allocation->allocated_amount, $allocation->current_balance);
             $returnAmount = $this->mathService->compare($newAmount, $availableToReturn) < 0 ? $newAmount : $availableToReturn;
 
@@ -103,6 +115,41 @@ class TellerAllocationService
         }
 
         $allocation->save();
+
+        return $allocation;
+    }
+
+    private function calculatePendingTransactionUsage(TellerAllocation $allocation): string
+    {
+        $pendingTransactions = Transaction::where('user_id', $allocation->user_id)
+            ->where('currency_code', $allocation->currency_code)
+            ->where('status', '!=', TransactionStatus::Completed->value)
+            ->where('status', '!=', TransactionStatus::Cancelled->value)
+            ->where('status', '!=', TransactionStatus::Failed->value)
+            ->whereDate('created_at', now()->toDateString())
+            ->get();
+
+        $pendingTotal = '0';
+        foreach ($pendingTransactions as $tx) {
+            if ($tx->type === TransactionType::Buy) {
+                $pendingTotal = $this->mathService->add($pendingTotal, $tx->amount_local);
+            }
+        }
+
+        return $pendingTotal;
+    }
+
+    public function rejectAllocation(TellerAllocation $allocation, User $rejector, ?string $reason = null): TellerAllocation
+    {
+        $pool = $this->branchPoolService->getOrCreateForBranch($allocation->branch, $allocation->currency_code);
+        $pool->releaseFunds($allocation->allocated_amount);
+
+        $allocation->update([
+            'status' => TellerAllocationStatus::REJECTED,
+            'rejected_at' => now(),
+            'rejected_by' => $rejector->id,
+            'rejection_reason' => $reason,
+        ]);
 
         return $allocation;
     }

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('requested_amount', 20, 4);
             $table->decimal('daily_limit_myr', 20, 4)->default(0);
             $table->decimal('daily_used_myr', 20, 4)->default(0);
-            $table->enum('status', ['pending', 'approved', 'active', 'returned', 'closed', 'auto_returned'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'active', 'returned', 'closed', 'auto_returned', 'rejected'])->default('pending');
             $table->date('session_date');
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('approved_at')->nullable();

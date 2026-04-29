@@ -194,6 +194,28 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals('No USD balance available to sell', $result['reason']);
     }
 
+    public function test_reject_allocation_releases_pool_balance(): void
+    {
+        $branch = Branch::factory()->create();
+        $pool = BranchPool::factory()->for($branch)->myr()->create([
+            'available_balance' => '50000.0000',
+        ]);
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+        $manager = User::factory()->create(['role' => 'manager', 'branch_id' => $branch->id]);
+        $allocation = $this->service->requestAllocation($teller, $manager, 'MYR', '10000.0000');
+
+        $this->service->rejectAllocation($allocation, $manager, 'Insufficient documentation');
+
+        $pool->refresh();
+        $allocation->refresh();
+        $this->assertEquals('50000.0000', $pool->available_balance);
+        $this->assertEquals('0.0000', $pool->allocated_balance);
+        $this->assertEquals(TellerAllocationStatus::REJECTED, $allocation->status);
+        $this->assertNotNull($allocation->rejected_at);
+        $this->assertEquals($manager->id, $allocation->rejected_by);
+        $this->assertEquals('Insufficient documentation', $allocation->rejection_reason);
+    }
+
     public function test_force_return_all_open(): void
     {
         $branch = Branch::factory()->create();

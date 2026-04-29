@@ -179,17 +179,28 @@ class TellerAllocationController extends Controller
             ], 400);
         }
 
-        $allocation->update([
-            'status' => 'rejected',
-            'approved_by' => $user->id,
-            'approved_at' => now(),
+        $validated = $request->validate([
+            'rejection_reason' => 'nullable|string|max:500',
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Allocation rejected',
-            'data' => $allocation,
-        ]);
+        try {
+            $allocation = $this->allocationService->rejectAllocation(
+                $allocation,
+                $user,
+                $validated['rejection_reason'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Allocation rejected',
+                'data' => $allocation,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
 
     /**

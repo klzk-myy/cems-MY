@@ -57,4 +57,17 @@ class BranchPool extends Model
 
         return true;
     }
+
+    public function releaseFunds(string $amount): bool
+    {
+        if (bccomp($this->allocated_balance, $amount, 4) < 0) {
+            return false;
+        }
+
+        $this->available_balance = bcadd($this->available_balance, $amount, 4);
+        $this->allocated_balance = bcsub($this->allocated_balance, $amount, 4);
+        $this->save();
+
+        return true;
+    }
 }
