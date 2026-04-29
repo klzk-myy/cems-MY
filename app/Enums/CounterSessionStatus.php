@@ -12,6 +12,8 @@ enum CounterSessionStatus: string
     case Open = 'open';
     case Closed = 'closed';
     case HandedOver = 'handed_over';
+    case PendingHandover = 'pending_handover';
+    case EmergencyClosed = 'emergency_closed';
 
     /**
      * Check if the session is open.
@@ -35,6 +37,16 @@ enum CounterSessionStatus: string
     public function isHandedOver(): bool
     {
         return $this === self::HandedOver;
+    }
+
+    public function isPendingHandover(): bool
+    {
+        return $this === self::PendingHandover;
+    }
+
+    public function isEmergencyClosed(): bool
+    {
+        return $this === self::EmergencyClosed;
     }
 
     /**
@@ -78,6 +90,8 @@ enum CounterSessionStatus: string
             self::Open => 'Open',
             self::Closed => 'Closed',
             self::HandedOver => 'Handed Over',
+            self::PendingHandover => 'Pending Handover',
+            self::EmergencyClosed => 'Emergency Closed',
         };
     }
 
@@ -90,6 +104,8 @@ enum CounterSessionStatus: string
             self::Open => 'success',
             self::Closed => 'secondary',
             self::HandedOver => 'warning',
+            self::PendingHandover => 'info',
+            self::EmergencyClosed => 'danger',
         };
     }
 
@@ -102,6 +118,8 @@ enum CounterSessionStatus: string
             self::Open => 'door-open',
             self::Closed => 'door-closed',
             self::HandedOver => 'exchange-alt',
+            self::PendingHandover => 'transfer',
+            self::EmergencyClosed => 'exclamation-triangle',
         };
     }
 }

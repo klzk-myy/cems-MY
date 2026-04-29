@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\CounterOpeningController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EmergencyCounterController;
 use App\Http\Controllers\Api\V1\EodReconciliationController;
+use App\Http\Controllers\Api\V1\MonthEndCloseController;
 use App\Http\Controllers\Api\V1\RateController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SanctionController;
@@ -294,5 +295,13 @@ Route::middleware('auth:sanctum')->group(function () {
             ->name('api.v1.branches.closing.finalize');
         Route::get('/', [BranchClosingController::class, 'show'])
             ->name('api.v1.branches.closing.show');
+    });
+
+    // Month-End Close API - Manager/Admin only
+    Route::prefix('accounting/month-end')->middleware('role:manager,admin')->group(function () {
+        Route::post('/close', [MonthEndCloseController::class, 'close'])
+            ->name('api.v1.accounting.month-end.close');
+        Route::get('/status/{date}', [MonthEndCloseController::class, 'status'])
+            ->name('api.v1.accounting.month-end.status');
     });
 });

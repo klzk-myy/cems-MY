@@ -6,11 +6,11 @@ use App\Enums\CounterSessionStatus;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Models\Counter;
+use App\Models\CounterSession;
 use App\Models\EmergencyClosure;
 use App\Models\TillBalance;
 use App\Models\User;
 use App\Notifications\EmergencyCounterClosureNotification;
-use Illuminate\Support\Facades\Notification;
 
 class EmergencyCounterService
 {
@@ -23,9 +23,12 @@ class EmergencyCounterService
     {
         $this->validateConstraints($counter, $teller);
 
-        $session = $counter->currentSession;
+        $session = CounterSession::where('counter_id', $counter->id)
+            ->whereDate('session_date', now()->toDateString())
+            ->where('status', CounterSessionStatus::Open->value)
+            ->first();
         if (! $session) {
-            throw new \RuntimeException('No active session found for counter');
+            throw new \RuntimeException('No active session found for counter. Counter ID: '.$counter->id.', Date: '.now()->toDateString());
         }
 
         $closure = EmergencyClosure::create([
@@ -74,8 +77,14 @@ class EmergencyCounterService
             throw new EmergencyCloseCooldownException;
         }
 
-        $session = $counter->currentSession;
-        if ($session && $session->created_at->diffInMinutes(now()) < 30) {
+        $openSessions = CounterSession::where('counter_id', $counter->id)
+            ->whereDate('session_date', now()->toDateString())
+            ->where('status', CounterSessionStatus::Open->value)
+            ->first();
+        if (! $openSessions) {
+            throw new \RuntimeException('No active session found for counter');
+        }
+        if ($openSessions->opened_at && $openSessions->opened_at->diffInMinutes(now()) < 30) {
             throw new EmergencyCloseSessionTooNewException;
         }
     }
@@ -88,8 +97,7 @@ class EmergencyCounterService
             ->get();
 
         foreach ($managers as $manager) {
-            Notification::route('mail', $manager->email)
-                ->notify(new EmergencyCounterClosureNotification($closure));
+            $manager->notify(new EmergencyCounterClosureNotification($closure));
         }
     }
 

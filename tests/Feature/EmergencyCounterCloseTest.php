@@ -65,7 +65,7 @@ class EmergencyCounterCloseTest extends TestCase
 
     protected function createOpenSession(): CounterSession
     {
-        return CounterSession::create([
+        $session = CounterSession::create([
             'counter_id' => $this->counter->id,
             'user_id' => $this->teller->id,
             'session_date' => now()->toDateString(),
@@ -73,6 +73,8 @@ class EmergencyCounterCloseTest extends TestCase
             'opened_by' => $this->teller->id,
             'status' => CounterSessionStatus::Open,
         ]);
+
+        return $session;
     }
 
     /** @test */
