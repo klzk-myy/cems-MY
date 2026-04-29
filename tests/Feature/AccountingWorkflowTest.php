@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\AccountLedger;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Models\FiscalYear;
+use App\Models\JournalEntry;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -181,5 +183,87 @@ class AccountingWorkflowTest extends TestCase
 
         $this->assertTrue(in_array($response->status(), [200, 500]),
             "Expected status 200 or 500, got {$response->status()}");
+    }
+
+    /** @test */
+    public function journal_entry_is_created_directly_as_posted_with_ledger_entries(): void
+    {
+        $response = $this->actingAs($this->manager)
+            ->post('/accounting/journal', [
+                'entry_date' => now()->format('Y-m-d'),
+                'description' => 'Test direct post entry',
+                'lines' => [
+                    [
+                        'account_code' => $this->cashAccount->account_code,
+                        'debit' => '1000.00',
+                        'credit' => '0.00',
+                    ],
+                    [
+                        'account_code' => $this->revenueAccount->account_code,
+                        'debit' => '0.00',
+                        'credit' => '1000.00',
+                    ],
+                ],
+            ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $entry = JournalEntry::first();
+        $this->assertNotNull($entry);
+        $this->assertEquals('Posted', $entry->status->value);
+        $this->assertNotNull($entry->posted_at);
+        $this->assertNotNull($entry->posted_by);
+
+        $ledgerEntries = AccountLedger::where('journal_entry_id', $entry->id)->get();
+        $this->assertCount(2, $ledgerEntries);
+    }
+
+    /** @test */
+    public function journal_entry_reversal_marks_original_reversed_and_creates_reversing_entry(): void
+    {
+        $createResponse = $this->actingAs($this->manager)
+            ->post('/accounting/journal', [
+                'entry_date' => now()->format('Y-m-d'),
+                'description' => 'Entry to be reversed',
+                'lines' => [
+                    [
+                        'account_code' => $this->cashAccount->account_code,
+                        'debit' => '500.00',
+                        'credit' => '0.00',
+                    ],
+                    [
+                        'account_code' => $this->revenueAccount->account_code,
+                        'debit' => '0.00',
+                        'credit' => '500.00',
+                    ],
+                ],
+            ]);
+
+        $createResponse->assertSessionHasNoErrors();
+
+        $originalEntry = JournalEntry::first();
+        $this->assertEquals('Posted', $originalEntry->status->value);
+
+        $reverseResponse = $this->actingAs($this->manager)
+            ->post("/accounting/journal/{$originalEntry->id}/reverse", [
+                'reason' => 'Test reversal',
+            ]);
+
+        $reverseResponse->assertSessionHasNoErrors();
+
+        $originalEntry->refresh();
+        $this->assertEquals('Reversed', $originalEntry->status->value);
+        $this->assertNotNull($originalEntry->reversed_at);
+        $this->assertNotNull($originalEntry->reversed_by);
+
+        $reversalEntry = JournalEntry::where('reference_id', $originalEntry->id)->first();
+        $this->assertNotNull($reversalEntry);
+        $this->assertEquals('Posted', $reversalEntry->status->value);
+
+        $originalCashLine = $originalEntry->lines->firstWhere('account_code', $this->cashAccount->account_code);
+        $reversalCashLine = $reversalEntry->lines->firstWhere('account_code', $this->cashAccount->account_code);
+        $this->assertEquals($originalCashLine->debit, $reversalCashLine->credit);
+        $this->assertEquals($originalCashLine->credit, $reversalCashLine->debit);
     }
 }
