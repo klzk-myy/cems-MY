@@ -14,7 +14,7 @@ class TransactionCancellationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_cancel_delegates_to_service()
+    public function test_cancel_calls_request_cancellation()
     {
         $transaction = Transaction::factory()->create(['status' => TransactionStatus::Completed]);
 
@@ -25,19 +25,18 @@ class TransactionCancellationTest extends TestCase
                 return $t->id === $transaction->id;
             }))
             ->andReturn(true);
-        $cancellationService->shouldReceive('cancelTransaction')
+        $cancellationService->shouldReceive('requestCancellation')
             ->once()
             ->with(
                 \Mockery::on(function ($t) use ($transaction) {
                     return $t->id === $transaction->id;
                 }),
-                \Mockery::type('int'),
+                \Mockery::on(function ($u) {
+                    return $u instanceof User;
+                }),
                 'Test cancellation reason'
             )
-            ->andReturn([
-                'transaction' => $transaction,
-                'refund_transaction' => null,
-            ]);
+            ->andReturn(true);
 
         $this->app->instance(TransactionCancellationService::class, $cancellationService);
 
@@ -49,5 +48,18 @@ class TransactionCancellationTest extends TestCase
             ]);
 
         $response->assertRedirect();
+    }
+
+    public function test_direct_cancel_throws_exception()
+    {
+        $transaction = Transaction::factory()->create(['status' => TransactionStatus::Completed]);
+
+        $user = User::factory()->create(['role' => UserRole::Manager]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Direct cancellation is not allowed');
+
+        $cancellationService = app(TransactionCancellationService::class);
+        $cancellationService->cancelTransaction($transaction, $user->id, 'Test reason');
     }
 }

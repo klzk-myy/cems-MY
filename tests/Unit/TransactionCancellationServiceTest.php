@@ -128,4 +128,22 @@ class TransactionCancellationServiceTest extends TestCase
         // No exception means success
         $this->assertTrue(true);
     }
+
+    public function test_cancel_transaction_throws_exception_direct_cancel_not_allowed(): void
+    {
+        $transaction = Transaction::factory()->make([
+            'id' => 99905,
+            'currency_code' => 'USD',
+            'till_id' => 'TEST-TILL',
+            'type' => TransactionType::Buy,
+            'amount_foreign' => '100.00',
+            'rate' => '4.50',
+            'status' => TransactionStatus::Completed,
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Direct cancellation is not allowed');
+
+        $this->cancellationService->cancelTransaction($transaction, 1, 'Test reason');
+    }
 }

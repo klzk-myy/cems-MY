@@ -32,9 +32,12 @@ class TransactionCancellationController extends Controller
     /**
      * Process transaction cancellation
      *
+     * Requests cancellation of a transaction, transitioning it to PendingCancellation
+     * status where a supervisor must approve the cancellation.
+     *
      * State transitions:
-     * - draft, pending_approval, approved, processing, failed, rejected -> cancelled
-     * - completed -> reversed (not cancelled; creates refund transaction)
+     * - Any cancellable state -> PendingCancellation (awaiting supervisor approval)
+     * - Supervisor approves -> Cancelled or Reversed
      */
     public function cancel(Request $request, Transaction $transaction)
     {
@@ -59,18 +62,18 @@ class TransactionCancellationController extends Controller
         ]);
 
         try {
-            $result = $this->cancellationService->cancelTransaction(
+            $result = $this->cancellationService->requestCancellation(
                 $transaction,
-                auth()->id(),
+                auth()->user(),
                 $validated['cancellation_reason']
             );
 
-            $message = $result['refund_transaction']
-                ? 'Transaction reversed successfully. Refund transaction created.'
-                : 'Transaction cancelled successfully.';
+            if ($result) {
+                return redirect()->route('transactions.show', $transaction)
+                    ->with('success', 'Cancellation requested. Awaiting supervisor approval.');
+            }
 
-            return redirect()->route('transactions.show', $transaction)
-                ->with('success', $message);
+            return back()->with('error', 'Cancellation request failed. Please check your permissions or try again.');
 
         } catch (\Exception $e) {
             return back()->with('error', 'Cancellation failed: '.$e->getMessage());
