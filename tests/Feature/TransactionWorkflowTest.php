@@ -61,7 +61,6 @@ class TransactionWorkflowTest extends TestCase
             'name' => 'Test Counter 1',
             'code' => 'CTR'.substr(uniqid(), -4),
             'branch_id' => $this->branch->id,
-            'is_active' => true,
         ]);
 
         // Create test customer with valid ENUM values and required fields
