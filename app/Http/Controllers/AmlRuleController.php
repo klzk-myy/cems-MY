@@ -33,10 +33,8 @@ class AmlRuleController extends Controller
 
     /**
      * Display a listing of AML rules.
-     *
-     * @return View
      */
-    public function index()
+    public function index(): View
     {
         $rules = AmlRule::with('creator')
             ->orderBy('rule_type')
@@ -50,10 +48,8 @@ class AmlRuleController extends Controller
 
     /**
      * Show the form for creating a new AML rule.
-     *
-     * @return View
      */
-    public function create()
+    public function create(): View
     {
         $ruleTypes = AmlRuleType::cases();
         $ruleTypeOptions = [];
@@ -70,10 +66,8 @@ class AmlRuleController extends Controller
 
     /**
      * Store a newly created AML rule.
-     *
-     * @return RedirectResponse
      */
-    public function store(StoreAmlRuleRequest $request)
+    public function store(StoreAmlRuleRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -115,10 +109,8 @@ class AmlRuleController extends Controller
 
     /**
      * Display the specified AML rule.
-     *
-     * @return View
      */
-    public function show(AmlRule $rule)
+    public function show(AmlRule $rule): View
     {
         $rule->load('creator');
 
@@ -140,10 +132,8 @@ class AmlRuleController extends Controller
 
     /**
      * Show the form for editing the specified AML rule.
-     *
-     * @return View
      */
-    public function edit(AmlRule $rule)
+    public function edit(AmlRule $rule): View
     {
         $ruleTypes = AmlRuleType::cases();
         $ruleTypeOptions = [];
@@ -160,10 +150,8 @@ class AmlRuleController extends Controller
 
     /**
      * Update the specified AML rule.
-     *
-     * @return RedirectResponse
      */
-    public function update(UpdateAmlRuleRequest $request, AmlRule $rule)
+    public function update(UpdateAmlRuleRequest $request, AmlRule $rule): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -207,10 +195,8 @@ class AmlRuleController extends Controller
 
     /**
      * Toggle the active status of an AML rule.
-     *
-     * @return RedirectResponse
      */
-    public function toggle(AmlRule $rule)
+    public function toggle(AmlRule $rule): RedirectResponse
     {
         $newStatus = ! $rule->is_active;
 
@@ -235,10 +221,8 @@ class AmlRuleController extends Controller
 
     /**
      * Remove the specified AML rule (soft delete).
-     *
-     * @return RedirectResponse
      */
-    public function destroy(AmlRule $rule)
+    public function destroy(AmlRule $rule): RedirectResponse
     {
         $ruleCode = $rule->rule_code;
 

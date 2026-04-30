@@ -6,6 +6,7 @@ use App\Services\CashFlowService;
 use App\Services\FinancialRatioService;
 use App\Services\LedgerService;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class FinancialStatementController extends Controller
 {
@@ -25,7 +26,7 @@ class FinancialStatementController extends Controller
         $this->ratioService = $ratioService;
     }
 
-    public function trialBalance(Request $request)
+    public function trialBalance(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -35,7 +36,7 @@ class FinancialStatementController extends Controller
         return view('accounting.trial-balance', compact('trialBalance', 'asOfDate'));
     }
 
-    public function profitLoss(Request $request)
+    public function profitLoss(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -47,7 +48,7 @@ class FinancialStatementController extends Controller
         return view('accounting.profit-loss', compact('pl', 'fromDate', 'toDate'));
     }
 
-    public function balanceSheet(Request $request)
+    public function balanceSheet(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -57,7 +58,7 @@ class FinancialStatementController extends Controller
         return view('accounting.balance-sheet', compact('balanceSheet', 'asOfDate'));
     }
 
-    public function cashFlow(Request $request)
+    public function cashFlow(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -72,7 +73,7 @@ class FinancialStatementController extends Controller
         return view('accounting.cash-flow', compact('cashFlow', 'fromDate', 'toDate'));
     }
 
-    public function ratios(Request $request)
+    public function ratios(Request $request): View
     {
         $this->requireManagerOrAdmin();
 

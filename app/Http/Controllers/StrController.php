@@ -9,9 +9,11 @@ use App\Models\StrReport;
 use App\Services\AuditService;
 use App\Services\ComplianceService;
 use App\Services\StrReportService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class StrController extends Controller
 {
@@ -31,7 +33,7 @@ class StrController extends Controller
         $this->complianceService = $complianceService;
     }
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = StrReport::with(['customer', 'creator', 'reviewer', 'approver', 'alert']);
 
@@ -52,7 +54,7 @@ class StrController extends Controller
         return view('str.index', compact('strReports', 'stats'));
     }
 
-    public function create(Request $request)
+    public function create(Request $request): View
     {
         $alertId = $request->get('alert_id');
         $alert = null;
@@ -71,7 +73,7 @@ class StrController extends Controller
         return view('str.create', compact('alert', 'customer', 'pendingAlerts'));
     }
 
-    public function store(StoreStrRequest $request)
+    public function store(StoreStrRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -87,7 +89,7 @@ class StrController extends Controller
         }
     }
 
-    public function show(StrReport $str)
+    public function show(StrReport $str): View
     {
         $str->load(['customer', 'creator', 'reviewer', 'approver', 'alert']);
         $transactions = $str->transactions();
@@ -95,7 +97,7 @@ class StrController extends Controller
         return view('str.show', compact('str', 'transactions'));
     }
 
-    public function generateFromAlert(FlaggedTransaction $flaggedTransaction)
+    public function generateFromAlert(FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
         Log::info('StrController generateFromAlert', [
             'flaggedTransaction_id' => $flaggedTransaction->getKey(),
@@ -104,7 +106,6 @@ class StrController extends Controller
         ]);
 
         try {
-            // Explicitly find the flag to ensure it's loaded from DB
             $alert = FlaggedTransaction::with(['transaction.customer'])->findOrFail($flaggedTransaction->id);
 
             $strReport = $this->strService->generateFromAlert($alert);
@@ -117,7 +118,7 @@ class StrController extends Controller
         }
     }
 
-    public function submitForReview(StrReport $str)
+    public function submitForReview(StrReport $str): RedirectResponse
     {
         if (! $str->isDraft()) {
             return redirect()->back()->with('error', 'Only draft STRs can be submitted for review.');
@@ -126,7 +127,6 @@ class StrController extends Controller
         $oldStatus = $str->status->value;
         $str->update(['status' => 'pending_review']);
 
-        // Audit log
         $this->auditService->logStrAction('str_submitted_for_review', $str->id, [
             'old' => ['status' => $oldStatus],
             'new' => ['status' => 'pending_review'],
@@ -136,7 +136,7 @@ class StrController extends Controller
             ->with('success', 'STR submitted for compliance manager review.');
     }
 
-    public function submitForApproval(StrReport $str)
+    public function submitForApproval(StrReport $str): RedirectResponse
     {
         if (! $str->isPendingReview()) {
             return redirect()->back()->with('error', 'Only STRs pending review can be submitted for approval.');
@@ -148,7 +148,6 @@ class StrController extends Controller
             'reviewed_by' => Auth::id(),
         ]);
 
-        // Audit log
         $this->auditService->logStrAction('str_submitted_for_approval', $str->id, [
             'old' => ['status' => $oldStatus],
             'new' => [
@@ -162,7 +161,7 @@ class StrController extends Controller
             ->with('success', 'STR submitted for principal officer approval.');
     }
 
-    public function approve(StrReport $str)
+    public function approve(StrReport $str): RedirectResponse
     {
         if (! $str->isPendingApproval()) {
             return redirect()->back()->with('error', 'Only STRs pending approval can be approved.');
@@ -174,7 +173,6 @@ class StrController extends Controller
             'approved_by' => Auth::id(),
         ]);
 
-        // Audit log
         $this->auditService->logStrAction('str_approved', $str->id, [
             'old' => ['status' => $oldStatus],
             'new' => [
@@ -189,7 +187,7 @@ class StrController extends Controller
             ->with('success', 'STR approved. Ready for goAML submission.');
     }
 
-    public function submit(StrReport $str)
+    public function submit(StrReport $str): RedirectResponse
     {
         if (! $str->status->canSubmit()) {
             return redirect()->back()->with('error', 'STR cannot be submitted in its current status.');
@@ -199,7 +197,6 @@ class StrController extends Controller
         $submitted = $this->strService->submitToGoAML($str);
 
         if ($submitted) {
-            // Audit log
             $this->auditService->logStrAction('str_submitted_to_goaml', $str->id, [
                 'old' => ['status' => $oldStatus],
                 'new' => [
@@ -218,7 +215,7 @@ class StrController extends Controller
             ->with('error', 'Failed to submit STR to goAML. Please try again.');
     }
 
-    public function trackAcknowledgment(Request $request, StrReport $str)
+    public function trackAcknowledgment(Request $request, StrReport $str): RedirectResponse
     {
         $request->validate([
             'bnm_reference' => 'required|string|max:100',
@@ -234,7 +231,7 @@ class StrController extends Controller
             ->with('success', 'STR acknowledgment tracked with BNM reference: '.$request->bnm_reference);
     }
 
-    public function update(Request $request, StrReport $str)
+    public function update(Request $request, StrReport $str): RedirectResponse
     {
         if (! $str->isDraft()) {
             return redirect()->back()->with('error', 'Only draft STRs can be edited.');
@@ -256,7 +253,7 @@ class StrController extends Controller
             ->with('success', 'STR updated successfully.');
     }
 
-    public function edit(StrReport $str)
+    public function edit(StrReport $str): View
     {
         if (! $str->isDraft()) {
             return redirect()->route('str.show', $str)

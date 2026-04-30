@@ -7,7 +7,9 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\LogRotationService;
 use Barryvdh\DomPDF\PDF;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class AuditController extends Controller
 {
@@ -27,7 +29,7 @@ class AuditController extends Controller
     /**
      * Display audit dashboard with statistics
      */
-    public function dashboard()
+    public function dashboard(): View
     {
         if (! auth()->user()->isManager()) {
             abort(403, 'Unauthorized. Manager access required.');
@@ -83,7 +85,7 @@ class AuditController extends Controller
     /**
      * Rotate old logs
      */
-    public function rotate()
+    public function rotate(): RedirectResponse
     {
         if (! auth()->user()->isManager()) {
             abort(403, 'Unauthorized. Manager access required.');
@@ -98,7 +100,7 @@ class AuditController extends Controller
     /**
      * Display audit log index with filters
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         // Only managers and admins can access
         if (! auth()->user()->isManager()) {

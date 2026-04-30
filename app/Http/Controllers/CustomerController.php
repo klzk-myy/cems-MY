@@ -114,10 +114,8 @@ class CustomerController extends Controller
 
     /**
      * Display a paginated listing of all customers.
-     *
-     * @return View
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = Customer::query();
 
@@ -183,10 +181,8 @@ class CustomerController extends Controller
 
     /**
      * Show the form for creating a new customer.
-     *
-     * @return View
      */
-    public function create()
+    public function create(): View
     {
         $idTypes = [
             'MyKad' => 'MyKad (Malaysian IC)',
@@ -217,10 +213,8 @@ class CustomerController extends Controller
 
     /**
      * Store a newly created customer in the database.
-     *
-     * @return RedirectResponse
      */
-    public function store(StoreCustomerRequest $request)
+    public function store(StoreCustomerRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -243,10 +237,8 @@ class CustomerController extends Controller
 
     /**
      * Display the specified customer's profile with transaction history.
-     *
-     * @return View
      */
-    public function show(Customer $customer)
+    public function show(Customer $customer): View
     {
         $customer->load(['documents', 'transactions' => function ($query) {
             $query->orderBy('created_at', 'desc')->limit(10);
@@ -277,10 +269,8 @@ class CustomerController extends Controller
 
     /**
      * Show the form for editing the specified customer.
-     *
-     * @return View
      */
-    public function edit(Customer $customer)
+    public function edit(Customer $customer): View
     {
         $idTypes = [
             'MyKad' => 'MyKad (Malaysian IC)',
@@ -318,10 +308,8 @@ class CustomerController extends Controller
 
     /**
      * Update the specified customer in the database.
-     *
-     * @return RedirectResponse
      */
-    public function update(UpdateCustomerRequest $request, Customer $customer)
+    public function update(UpdateCustomerRequest $request, Customer $customer): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -339,13 +327,10 @@ class CustomerController extends Controller
 
     /**
      * Remove the specified customer from the database.
-     *
-     * @return RedirectResponse
      */
-    public function destroy(Request $request, Customer $customer)
+    public function destroy(Request $request, Customer $customer): RedirectResponse
     {
-        // Require manager or admin role to delete customers
-        if (! auth()->user()->isManager()) {
+        if (! auth()->user()->isManager() && ! auth()->user()->isAdmin()) {
             abort(403, 'Unauthorized. Manager or Admin access required to delete customers.');
         }
 

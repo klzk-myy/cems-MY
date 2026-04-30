@@ -8,13 +8,13 @@ class EncryptionService
 
     public function __construct()
     {
-        $rawKey = config('app.encryption_key') ?? env('ENCRYPTION_KEY');
+        $rawKey = config('app.key');
         if (empty($rawKey)) {
             throw new \RuntimeException('Encryption key not configured');
         }
 
         // Use PBKDF2 for secure key derivation with proper salt and iteration count
-        $salt = config('app.encryption_salt', env('ENCRYPTION_SALT', 'cems-default-salt'));
+        $salt = config('app.encryption_salt', 'cems-default-salt');
         $iterations = config('app.encryption_iterations', 100000);
 
         // Derive a proper 32-byte key using PBKDF2 (AES-256-CBC requires 32 bytes)

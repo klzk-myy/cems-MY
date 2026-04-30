@@ -146,6 +146,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Encryption Salt
+    |--------------------------------------------------------------------------
+    |
+    | Salt used for PBKDF2 key derivation in EncryptionService.
+    |
+    */
+
+    'encryption_salt' => env('ENCRYPTION_SALT', 'cems-default-salt'),
+
+    'encryption_iterations' => (int) env('ENCRYPTION_ITERATIONS', 100000),
+
+    /*
+    |--------------------------------------------------------------------------
     | Maintenance Mode Driver
     |--------------------------------------------------------------------------
     |

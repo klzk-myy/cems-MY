@@ -24,10 +24,8 @@ class BranchController extends Controller
 
     /**
      * Display a paginated listing of all branches.
-     *
-     * @return View
      */
-    public function index()
+    public function index(): View
     {
         $branches = Branch::orderBy('code')->paginate(20);
 
@@ -36,10 +34,8 @@ class BranchController extends Controller
 
     /**
      * Show the form for creating a new branch.
-     *
-     * @return View
      */
-    public function create()
+    public function create(): View
     {
         $branchTypes = $this->branchService->getBranchTypes();
         $parentBranches = $this->branchService->getParentBranches();
@@ -49,10 +45,8 @@ class BranchController extends Controller
 
     /**
      * Store a newly created branch in the database.
-     *
-     * @return RedirectResponse
      */
-    public function store(StoreBranchRequest $request)
+    public function store(StoreBranchRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -64,10 +58,8 @@ class BranchController extends Controller
 
     /**
      * Display the specified branch with summary statistics.
-     *
-     * @return View
      */
-    public function show(Branch $branch)
+    public function show(Branch $branch): View
     {
         $stats = $this->branchService->getBranchStats($branch);
         $childBranches = $branch->children()->get();
@@ -77,10 +69,8 @@ class BranchController extends Controller
 
     /**
      * Show the form for editing the specified branch.
-     *
-     * @return View
      */
-    public function edit(Branch $branch)
+    public function edit(Branch $branch): View
     {
         $branchTypes = $this->branchService->getBranchTypes();
         $parentBranches = $this->branchService->getParentBranches($branch->id);
@@ -90,10 +80,8 @@ class BranchController extends Controller
 
     /**
      * Update the specified branch in the database.
-     *
-     * @return RedirectResponse
      */
-    public function update(UpdateBranchRequest $request, Branch $branch)
+    public function update(UpdateBranchRequest $request, Branch $branch): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -105,10 +93,8 @@ class BranchController extends Controller
 
     /**
      * Deactivate the specified branch.
-     *
-     * @return RedirectResponse
      */
-    public function destroy(Request $request, Branch $branch)
+    public function destroy(Request $request, Branch $branch): RedirectResponse
     {
         try {
             $this->branchService->deactivateBranch($branch, auth()->id(), $request->ip());

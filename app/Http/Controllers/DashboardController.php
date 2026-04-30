@@ -12,8 +12,10 @@ use App\Services\CacheOptimizationService;
 use App\Services\CacheTagsService;
 use App\Services\CurrencyPositionService;
 use App\Services\RateApiService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
@@ -41,7 +43,7 @@ class DashboardController extends Controller
         $this->cacheTagsService = $cacheTagsService;
     }
 
-    public function index()
+    public function index(): View
     {
         // Use caching for all statistics to reduce database load
         $stats = [
@@ -106,7 +108,7 @@ class DashboardController extends Controller
         return view('dashboard', compact('stats', 'recent_transactions'));
     }
 
-    public function compliance(Request $request)
+    public function compliance(Request $request): View
     {
         // Only Compliance Officers and Admins can access
         if (! auth()->user()->isComplianceOfficer()) {
@@ -160,7 +162,7 @@ class DashboardController extends Controller
         return view('compliance.index', compact('flags', 'stats', 'strStats'));
     }
 
-    public function assignFlag(Request $request, FlaggedTransaction $flaggedTransaction)
+    public function assignFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
         if (! auth()->user()->isComplianceOfficer()) {
             abort(403);
@@ -200,7 +202,7 @@ class DashboardController extends Controller
         return back()->with('success', 'Flag assigned to you for review.');
     }
 
-    public function resolveFlag(Request $request, FlaggedTransaction $flaggedTransaction)
+    public function resolveFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
         if (! auth()->user()->isComplianceOfficer()) {
             abort(403);
@@ -240,7 +242,7 @@ class DashboardController extends Controller
         return back()->with('success', 'Flag marked as resolved.');
     }
 
-    public function accounting()
+    public function accounting(): View
     {
         // Only Managers and Admins can access
         if (! auth()->user()->isManager()) {
@@ -253,7 +255,7 @@ class DashboardController extends Controller
         return view('accounting.index', compact('positions', 'totalPnl'));
     }
 
-    public function reports()
+    public function reports(): View
     {
         // Only Managers, Compliance Officers and Admins can access
         if (! auth()->user()->role->canViewReports()) {

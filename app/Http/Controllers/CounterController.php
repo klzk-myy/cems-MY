@@ -19,9 +19,12 @@ use App\Services\AuditService;
 use App\Services\CounterHandoverService;
 use App\Services\CounterService;
 use App\Services\EmergencyCounterService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class CounterController extends Controller
 {
@@ -35,7 +38,7 @@ class CounterController extends Controller
     /**
      * Display a listing of counters
      */
-    public function index()
+    public function index(): View
     {
         $today = now()->toDateString();
         $counters = Counter::with(['sessions' => function ($query) use ($today) {
@@ -58,7 +61,7 @@ class CounterController extends Controller
     /**
      * Show the form for opening a counter
      */
-    public function showOpen(Counter $counter)
+    public function showOpen(Counter $counter): View
     {
         $availableCounters = $this->counterService->getAvailableCounters();
         $currencies = Currency::where('is_active', true)->get();
@@ -69,7 +72,7 @@ class CounterController extends Controller
     /**
      * Open a counter session
      */
-    public function open(OpenCounterRequest $request, Counter $counter)
+    public function open(OpenCounterRequest $request, Counter $counter): RedirectResponse
     {
         $user = Auth::user();
         $openingFloats = $request->input('opening_floats');
@@ -104,10 +107,7 @@ class CounterController extends Controller
         }
     }
 
-    /**
-     * Show the form for closing a counter
-     */
-    public function showClose(Counter $counter)
+    public function showClose(Counter $counter): View
     {
         $today = now()->toDateString();
         $session = CounterSession::where('counter_id', $counter->id)
@@ -123,9 +123,8 @@ class CounterController extends Controller
     /**
      * Close a counter session
      */
-    public function close(CloseCounterRequest $request, Counter $counter)
+    public function close(CloseCounterRequest $request, Counter $counter): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
 
         $user = Auth::user();
         $closingFloats = $request->input('closing_floats');
@@ -171,12 +170,10 @@ class CounterController extends Controller
         }
     }
 
-    /**
-     * Get counter status via API
-     */
-    public function status(Counter $counter)
+    public function status(Counter $counter): JsonResponse
     {
-        $status = $this->counterService->getCounterStatus($counter);
+        $today = now()->toDateString();
+        $status = $this->counterService->getCounterStatus($counter, $today);
 
         return response()->json([
             'success' => true,
@@ -184,10 +181,7 @@ class CounterController extends Controller
         ]);
     }
 
-    /**
-     * Display counter history
-     */
-    public function history(Request $request, Counter $counter)
+    public function history(Request $request, Counter $counter): View
     {
         $query = CounterSession::where('counter_id', $counter->id)
             ->with(['user', 'openedByUser', 'closedByUser']);
@@ -213,10 +207,7 @@ class CounterController extends Controller
         return view('counters.history', compact('counter', 'sessions', 'users'));
     }
 
-    /**
-     * Show handover form
-     */
-    public function showHandover(Counter $counter)
+    public function showHandover(Counter $counter): View
     {
         $today = now()->toDateString();
         $session = CounterSession::where('counter_id', $counter->id)
@@ -237,13 +228,8 @@ class CounterController extends Controller
         return view('counters.handover', compact('counter', 'session', 'availableUsers', 'supervisors', 'currencies'));
     }
 
-    /**
-     * Process handover
-     */
-    public function handover(HandoverCounterRequest $request, Counter $counter)
+    public function handover(HandoverCounterRequest $request, Counter $counter): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
-
         $fromUser = User::findOrFail($request->input('from_user_id'));
         $today = now()->toDateString();
 
@@ -299,9 +285,14 @@ class CounterController extends Controller
         }
     }
 
-    public function showEmergency(Counter $counter)
+    public function showEmergency(Counter $counter): View
     {
-        $session = $counter->currentSession;
+        $today = now()->toDateString();
+        $session = CounterSession::where('counter_id', $counter->id)
+            ->whereDate('session_date', $today)
+            ->where('status', CounterSessionStatus::Open->value)
+            ->first();
+
         if (! $session || ! $session->isOpen()) {
             abort(400, 'Counter does not have an active session');
         }
@@ -309,7 +300,7 @@ class CounterController extends Controller
         return view('counters.emergency', compact('counter', 'session'));
     }
 
-    public function emergency(Request $request, Counter $counter)
+    public function emergency(Request $request, Counter $counter): RedirectResponse
     {
         $request->validate([
             'reason' => 'required|string|max:500',
@@ -333,7 +324,7 @@ class CounterController extends Controller
         }
     }
 
-    public function showEmergencyClosure(Counter $counter, EmergencyClosure $closure)
+    public function showEmergencyClosure(Counter $counter, EmergencyClosure $closure): View
     {
         if ($closure->counter_id !== $counter->id) {
             abort(404);
@@ -344,7 +335,7 @@ class CounterController extends Controller
         return view('counters.emergency-closure', compact('counter', 'closure', 'variance'));
     }
 
-    public function acknowledgeEmergency(Request $request, Counter $counter, EmergencyClosure $closure)
+    public function acknowledgeEmergency(Request $request, Counter $counter, EmergencyClosure $closure): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -359,7 +350,7 @@ class CounterController extends Controller
             ->with('success', 'Emergency closure acknowledged');
     }
 
-    public function showAcknowledgeHandover(Counter $counter)
+    public function showAcknowledgeHandover(Counter $counter): View
     {
         $user = Auth::user();
         $today = now()->toDateString();
@@ -381,7 +372,7 @@ class CounterController extends Controller
         return view('counters.acknowledge-handover', compact('counter', 'handover'));
     }
 
-    public function acknowledgeHandover(Request $request, Counter $counter)
+    public function acknowledgeHandover(Request $request, Counter $counter): RedirectResponse
     {
         $user = Auth::user();
         $today = now()->toDateString();

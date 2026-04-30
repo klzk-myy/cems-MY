@@ -13,8 +13,10 @@ use App\Services\BankReconciliationService;
 use App\Services\BudgetService;
 use App\Services\MathService;
 use App\Services\PeriodCloseService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class AccountingController extends Controller
 {
@@ -42,9 +44,7 @@ class AccountingController extends Controller
         $this->bankReconciliationService = $bankReconciliationService;
     }
 
-    // Note: Authorization is handled by role:manager middleware at route level
-
-    public function index()
+    public function index(): View
     {
         $entries = JournalEntry::with('postedBy')
             ->orderBy('entry_date', 'desc')
@@ -54,7 +54,7 @@ class AccountingController extends Controller
         return view('accounting.journal.index', compact('entries'));
     }
 
-    public function create()
+    public function create(): View
     {
         $accounts = ChartOfAccount::where('is_active', true)
             ->orderBy('account_code')
@@ -63,7 +63,7 @@ class AccountingController extends Controller
         return view('accounting.journal.create', compact('accounts'));
     }
 
-    public function store(StoreJournalEntryRequest $request)
+    public function store(StoreJournalEntryRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -86,14 +86,14 @@ class AccountingController extends Controller
         }
     }
 
-    public function show(JournalEntry $entry)
+    public function show(JournalEntry $entry): View
     {
         $entry->load('lines.account', 'postedBy', 'reversedBy');
 
         return view('accounting.journal.show', compact('entry'));
     }
 
-    public function reverse(Request $request, JournalEntry $entry)
+    public function reverse(Request $request, JournalEntry $entry): RedirectResponse
     {
         if ($entry->isReversed()) {
             return back()->with('error', 'Entry is already reversed.');
@@ -117,20 +117,14 @@ class AccountingController extends Controller
         }
     }
 
-    /**
-     * Display period management
-     */
-    public function periods(Request $request)
+    public function periods(Request $request): View
     {
         $periods = AccountingPeriod::orderBy('start_date', 'desc')->paginate(12);
 
         return view('accounting.periods', compact('periods'));
     }
 
-    /**
-     * Close a period
-     */
-    public function closePeriod(Request $request, AccountingPeriod $period)
+    public function closePeriod(Request $request, AccountingPeriod $period): RedirectResponse
     {
         try {
             $result = $this->periodCloseService->closePeriod($period, auth()->id());
@@ -142,10 +136,7 @@ class AccountingController extends Controller
         }
     }
 
-    /**
-     * Display budget vs actual report
-     */
-    public function budget(Request $request)
+    public function budget(Request $request): View
     {
         $periodCode = $request->get('period', now()->format('Y-m'));
         $report = $this->budgetService->getBudgetReport($periodCode);
@@ -154,10 +145,7 @@ class AccountingController extends Controller
         return view('accounting.budget', compact('report', 'unbudgeted', 'periodCode'));
     }
 
-    /**
-     * Display bank reconciliation
-     */
-    public function reconciliation(Request $request)
+    public function reconciliation(Request $request): View
     {
         $cashAccounts = ChartOfAccount::where('account_type', 'Asset')
             ->where('account_name', 'like', '%Cash%')
@@ -175,10 +163,7 @@ class AccountingController extends Controller
         return view('accounting.reconciliation', compact('report', 'cashAccounts'));
     }
 
-    /**
-     * Import bank statement lines
-     */
-    public function importBankStatement(Request $request)
+    public function importBankStatement(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'account_code' => 'required|string|exists:chart_of_accounts,account_code',
@@ -200,10 +185,7 @@ class AccountingController extends Controller
             ->with('success', "Imported {$result['imported']} lines. {$result['unmatched']} unmatched.");
     }
 
-    /**
-     * Mark a reconciliation item as exception
-     */
-    public function markAsException(Request $request, BankReconciliation $reconciliation)
+    public function markAsException(Request $request, BankReconciliation $reconciliation): RedirectResponse
     {
         $validated = $request->validate([
             'reason' => 'required|string|max:500',
@@ -215,10 +197,7 @@ class AccountingController extends Controller
             ->with('success', 'Item marked as exception.');
     }
 
-    /**
-     * Generate bank reconciliation report
-     */
-    public function reconciliationReport(Request $request)
+    public function reconciliationReport(Request $request): View
     {
         $validated = $request->validate([
             'account_code' => 'required|string|exists:chart_of_accounts,account_code',
@@ -235,10 +214,7 @@ class AccountingController extends Controller
         return view('accounting.reconciliation_report', compact('report'));
     }
 
-    /**
-     * Export bank reconciliation report
-     */
-    public function exportReconciliation(Request $request)
+    public function exportReconciliation(Request $request): View
     {
         $validated = $request->validate([
             'account_code' => 'required|string|exists:chart_of_accounts,account_code',
@@ -255,10 +231,7 @@ class AccountingController extends Controller
         return view('accounting.reconciliation_export', compact('report'));
     }
 
-    /**
-     * Store or update budget for a period
-     */
-    public function storeBudget(Request $request)
+    public function storeBudget(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'period_code' => 'required|string',
@@ -280,13 +253,10 @@ class AccountingController extends Controller
             ->with('success', 'Budget saved successfully.');
     }
 
-    /**
-     * Update an existing budget
-     */
-    public function updateBudget(Request $request, Budget $budget)
+    public function updateBudget(Request $request, Budget $budget): RedirectResponse
     {
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min=0',
         ]);
 
         $budget->update([
