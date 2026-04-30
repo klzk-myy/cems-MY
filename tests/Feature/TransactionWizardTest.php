@@ -32,7 +32,7 @@ class TransactionWizardTest extends TestCase
         $customer = Customer::factory()->create(['risk_rating' => 'Low']);
 
         $response = $this->actingAs($this->teller)
-            ->postJson('/api/wizard/transactions/step1', [
+            ->postJson('/api/v1/wizard/transactions/step1', [
                 'customer_id' => $customer->id,
                 'type' => 'Buy',
                 'currency_code' => 'USD',
@@ -63,7 +63,7 @@ class TransactionWizardTest extends TestCase
         $customer = Customer::factory()->create(['sanction_hit' => true]);
 
         $response = $this->actingAs($this->teller)
-            ->postJson('/api/wizard/transactions/step1', [
+            ->postJson('/api/v1/wizard/transactions/step1', [
                 'customer_id' => $customer->id,
                 'type' => 'Buy',
                 'currency_code' => 'USD',
@@ -92,7 +92,7 @@ class TransactionWizardTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->teller)
-            ->postJson('/api/wizard/transactions/step1', [
+            ->postJson('/api/v1/wizard/transactions/step1', [
                 'customer_id' => $customer->id,
                 'type' => 'Buy',
                 'currency_code' => 'USD',
@@ -114,7 +114,7 @@ class TransactionWizardTest extends TestCase
         $customer = Customer::factory()->create(['risk_rating' => 'Low']);
 
         $response = $this->actingAs($this->teller)
-            ->postJson('/api/wizard/transactions/step1', [
+            ->postJson('/api/v1/wizard/transactions/step1', [
                 'customer_id' => $customer->id,
                 'type' => 'Buy',
                 'currency_code' => 'USD',
@@ -137,7 +137,7 @@ class TransactionWizardTest extends TestCase
         $customer = Customer::factory()->create(['pep_status' => true]);
 
         $response = $this->actingAs($this->teller)
-            ->postJson('/api/wizard/transactions/step1', [
+            ->postJson('/api/v1/wizard/transactions/step1', [
                 'customer_id' => $customer->id,
                 'type' => 'Buy',
                 'currency_code' => 'USD',

@@ -49,12 +49,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Sanctions Webhook (for external list providers to trigger immediate updates)
 // Token-based authentication, not session/cookie based auth
-Route::post('/webhooks/sanctions/update', [SanctionsWebhookController::class, 'invoke'])
-    ->name('api.v1.webhooks.sanctions.update')
-    ->withoutMiddleware('auth:sanctum');
+Route::post('/webhooks/sanctions/update', [SanctionsWebhookController::class, '__invoke'])
+    ->name('api.v1.webhooks.sanctions.update');
 Route::get('/webhooks/sanctions/health', [SanctionsWebhookController::class, 'health'])
-    ->name('api.v1.webhooks.sanctions.health')
-    ->withoutMiddleware('auth:sanctum');
+    ->name('api.v1.webhooks.sanctions.health');
 
 Route::middleware('auth:sanctum')->group(function () {
     // Transactions API

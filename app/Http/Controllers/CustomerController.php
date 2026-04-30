@@ -6,9 +6,7 @@ use App\Enums\CddLevel;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Services\AuditService;
-use App\Services\CustomerScreeningService;
 use App\Services\CustomerService;
-use App\Services\EncryptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,8 +23,6 @@ class CustomerController extends Controller
     public function __construct(
         protected CustomerService $customerService,
         protected AuditService $auditService,
-        protected CustomerScreeningService $customerScreeningService,
-        protected EncryptionService $encryptionService,
     ) {}
 
     /**
@@ -330,7 +326,7 @@ class CustomerController extends Controller
         ];
 
         // Decrypt ID number for display
-        $decryptedIdNumber = $this->encryptionService->decrypt($customer->id_number_encrypted);
+        $decryptedIdNumber = $this->customerService->decryptIdNumber($customer);
 
         return view('customers.edit', compact(
             'customer',

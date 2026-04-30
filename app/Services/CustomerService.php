@@ -242,6 +242,26 @@ class CustomerService
     }
 
     /**
+     * Decrypt a customer's encrypted id_number.
+     */
+    public function decryptIdNumber(Customer $customer): string
+    {
+        return $this->encryptionService->decrypt($customer->id_number_encrypted);
+    }
+
+    /**
+     * Decrypt a customer's encrypted address.
+     */
+    public function decryptAddress(Customer $customer): string
+    {
+        if (empty($customer->address)) {
+            return '';
+        }
+
+        return $this->encryptionService->decrypt($customer->address);
+    }
+
+    /**
      * Encrypt customer sensitive data.
      *
      * @param  array  $data  Customer data
