@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ReportGenerated;
+use App\Services\DocumentStorageService;
 use App\Services\ExportService;
 use App\Services\ReportingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
@@ -14,12 +14,16 @@ class ReportController extends Controller
 
     protected ExportService $exportService;
 
+    protected DocumentStorageService $documentStorageService;
+
     public function __construct(
         ReportingService $reportingService,
-        ExportService $exportService
+        ExportService $exportService,
+        DocumentStorageService $documentStorageService
     ) {
         $this->reportingService = $reportingService;
         $this->exportService = $exportService;
+        $this->documentStorageService = $documentStorageService;
     }
 
     public function download(string $filename)
@@ -28,11 +32,11 @@ class ReportController extends Controller
 
         $filepath = "reports/{$filename}";
 
-        if (! Storage::exists($filepath)) {
+        if (! $this->documentStorageService->exists($filepath)) {
             abort(404, 'Report not found');
         }
 
-        return Storage::download($filepath);
+        return $this->documentStorageService->download($filepath);
     }
 
     public function export(Request $request)

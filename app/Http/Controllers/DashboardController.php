@@ -14,7 +14,6 @@ use App\Services\CurrencyPositionService;
 use App\Services\RateApiService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -103,7 +102,7 @@ class DashboardController extends Controller
         );
 
         // Store cache statistics for testing/monitoring
-        Cache::put('dashboard_cache_stats', $this->cacheOptimizationService->getStats(), now()->addSeconds(60));
+        $this->cacheOptimizationService->putStats(now()->addSeconds(60));
 
         return view('dashboard', compact('stats', 'recent_transactions'));
     }

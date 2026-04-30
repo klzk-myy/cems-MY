@@ -12,7 +12,6 @@ use App\Services\StrReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class StrController extends Controller
@@ -99,7 +98,7 @@ class StrController extends Controller
 
     public function generateFromAlert(FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
-        Log::info('StrController generateFromAlert', [
+        app('log')->info('StrController generateFromAlert', [
             'flaggedTransaction_id' => $flaggedTransaction->getKey(),
             'flaggedTransaction_exists' => $flaggedTransaction->exists,
             'alert_attributes' => $flaggedTransaction->getAttributes(),

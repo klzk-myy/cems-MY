@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Models\SystemLog;
+use App\Services\DocumentStorageService;
 use App\Services\EncryptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -22,7 +22,8 @@ use Illuminate\View\View;
 class CustomerKycController extends Controller
 {
     public function __construct(
-        protected EncryptionService $encryptionService
+        protected EncryptionService $encryptionService,
+        protected DocumentStorageService $documentStorageService
     ) {}
 
     /**
@@ -160,8 +161,8 @@ class CustomerKycController extends Controller
         }
 
         // Delete the file
-        if (Storage::exists($document->file_path)) {
-            Storage::delete($document->file_path);
+        if ($this->documentStorageService->exists($document->file_path)) {
+            $this->documentStorageService->delete($document->file_path);
         }
 
         $documentType = $document->document_type;

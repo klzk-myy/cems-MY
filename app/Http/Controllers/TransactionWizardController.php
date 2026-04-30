@@ -9,15 +9,15 @@ use App\Http\Requests\TransactionWizardStep2Request;
 use App\Http\Requests\TransactionWizardStep3Request;
 use App\Models\Customer;
 use App\Services\TransactionService;
+use App\Services\WizardSessionService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class TransactionWizardController extends Controller
 {
     public function __construct(
-        protected TransactionService $transactionService
+        protected TransactionService $transactionService,
+        protected WizardSessionService $wizardSessionService
     ) {}
 
     /**
@@ -66,7 +66,7 @@ class TransactionWizardController extends Controller
             'created_at' => now(),
         ];
 
-        Cache::put("wizard:{$sessionId}", $sessionData, now()->addHour());
+        $this->wizardSessionService->put($sessionId, $sessionData);
 
         // Prepare required documents list
         $requiredDocuments = $this->getRequiredDocuments($cddLevel);
@@ -92,7 +92,7 @@ class TransactionWizardController extends Controller
         $validated = $request->validated();
         $sessionId = $validated['wizard_session_id'];
 
-        $sessionData = Cache::get("wizard:{$sessionId}");
+        $sessionData = $this->wizardSessionService->get($sessionId);
         if (! $sessionData) {
             return response()->json([
                 'status' => 'error',
@@ -106,7 +106,7 @@ class TransactionWizardController extends Controller
         $sessionData['transaction_meta'] = $validated['transaction'] ?? [];
         $sessionData['documents'] = $this->processDocuments($request);
 
-        Cache::put("wizard:{$sessionId}", $sessionData, now()->addHour());
+        $this->wizardSessionService->put($sessionId, $sessionData);
 
         // Prepare summary for review
         $summary = $this->prepareTransactionSummary($sessionData);
@@ -127,7 +127,7 @@ class TransactionWizardController extends Controller
         $validated = $request->validated();
         $sessionId = $validated['wizard_session_id'];
 
-        $sessionData = Cache::get("wizard:{$sessionId}");
+        $sessionData = $this->wizardSessionService->get($sessionId);
         if (! $sessionData) {
             return response()->json([
                 'status' => 'error',
@@ -150,7 +150,7 @@ class TransactionWizardController extends Controller
             $transaction = $this->transactionService->createTransaction($transactionData);
 
             // Clear wizard session
-            Cache::forget("wizard:{$sessionId}");
+            $this->wizardSessionService->forget($sessionId);
 
             return response()->json([
                 'status' => 'success',
@@ -163,7 +163,7 @@ class TransactionWizardController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Transaction creation failed in wizard', [
+            app('log')->error('Transaction creation failed in wizard', [
                 'session_id' => $sessionId,
                 'error' => $e->getMessage(),
             ]);
@@ -180,7 +180,7 @@ class TransactionWizardController extends Controller
      */
     public function status(string $sessionId): JsonResponse
     {
-        $sessionData = Cache::get("wizard:{$sessionId}");
+        $sessionData = $this->wizardSessionService->get($sessionId);
 
         if (! $sessionData) {
             return response()->json([
@@ -201,7 +201,7 @@ class TransactionWizardController extends Controller
      */
     public function cancel(string $sessionId): JsonResponse
     {
-        Cache::forget("wizard:{$sessionId}");
+        $this->wizardSessionService->forget($sessionId);
 
         return response()->json([
             'status' => 'cancelled',

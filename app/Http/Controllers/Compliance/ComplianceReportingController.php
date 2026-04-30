@@ -8,14 +8,15 @@ use App\Http\Requests\RunReportRequest;
 use App\Http\Requests\UpdateReportScheduleRequest;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
+use App\Services\DocumentStorageService;
 use App\Services\ReportSchedulingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ComplianceReportingController extends Controller
 {
     public function __construct(
-        protected ReportSchedulingService $reportingService
+        protected ReportSchedulingService $reportingService,
+        protected DocumentStorageService $documentStorageService
     ) {}
 
     public function index()
@@ -67,13 +68,13 @@ class ComplianceReportingController extends Controller
 
     public function download(ReportRun $report)
     {
-        if (! $report->file_path || ! Storage::exists($report->file_path)) {
+        if (! $report->file_path || ! $this->documentStorageService->exists($report->file_path)) {
             abort(404, 'Report file not found');
         }
 
         $report->increment('downloaded_count');
 
-        return Storage::download($report->file_path);
+        return $this->documentStorageService->download($report->file_path);
     }
 
     public function schedule()

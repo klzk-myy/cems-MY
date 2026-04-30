@@ -3,17 +3,18 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Services\DocumentStorageService;
 use App\Services\ExportService;
 use App\Services\ReportingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
     public function __construct(
         protected ReportingService $reportingService,
-        protected ExportService $exportService
+        protected ExportService $exportService,
+        protected DocumentStorageService $documentStorageService
     ) {}
 
     /**
@@ -30,7 +31,7 @@ class ReportController extends Controller
 
         $filepath = "reports/{$filename}";
 
-        if (! Storage::exists($filepath)) {
+        if (! $this->documentStorageService->exists($filepath)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Report not found.',
