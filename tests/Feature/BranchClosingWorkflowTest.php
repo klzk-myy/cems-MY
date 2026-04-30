@@ -40,7 +40,7 @@ class BranchClosingWorkflowTest extends TestCase
 
         $this->currency = Currency::where('code', 'USD')->firstOrFail();
 
-        $this->branch = Branch::create([
+        $this->branch = Branch::factory()->create([
             'code' => 'BR'.substr(uniqid(), -4),
             'name' => 'Test Branch',
             'address' => '123 Test Street',
@@ -49,21 +49,21 @@ class BranchClosingWorkflowTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->pool = BranchPool::create([
+        $this->pool = BranchPool::factory()->create([
             'branch_id' => $this->branch->id,
             'currency_code' => 'USD',
             'available_balance' => '100000.0000',
             'allocated_balance' => '0.0000',
         ]);
 
-        $this->counter = Counter::create([
+        $this->counter = Counter::factory()->create([
             'name' => 'Test Counter 1',
             'code' => 'CTR'.substr(uniqid(), -4),
             'branch_id' => $this->branch->id,
             'is_active' => true,
         ]);
 
-        $this->manager = User::create([
+        $this->manager = User::factory()->create([
             'username' => 'manager'.substr(uniqid(), -6),
             'email' => 'manager-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
@@ -72,7 +72,7 @@ class BranchClosingWorkflowTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->tellerA = User::create([
+        $this->tellerA = User::factory()->create([
             'username' => 'tellerA'.substr(uniqid(), -6),
             'email' => 'tellerA-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),

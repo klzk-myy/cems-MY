@@ -49,7 +49,8 @@ class ProcessTransactionRetry implements ShouldQueue
      * @param  Transaction  $transaction  The transaction to retry
      */
     public function __construct(
-        public Transaction $transaction
+        public Transaction $transaction,
+        public TransactionRecoveryService $recoveryService
     ) {}
 
     /**
@@ -124,8 +125,7 @@ class ProcessTransactionRetry implements ShouldQueue
         ]);
 
         // Move to DLQ on permanent failure
-        $recoveryService = app(TransactionRecoveryService::class);
-        $recoveryService->moveToDeadLetterQueue($this->transaction);
+        $this->recoveryService->moveToDeadLetterQueue($this->transaction);
     }
 
     /**

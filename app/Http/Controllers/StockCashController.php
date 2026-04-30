@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TransactionType;
+use App\Http\Requests\CloseTillRequest;
+use App\Http\Requests\OpenTillRequest;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\SystemLog;
@@ -17,9 +19,12 @@ class StockCashController extends Controller
 {
     protected MathService $mathService;
 
-    public function __construct(MathService $mathService)
+    protected CurrencyPositionService $currencyPositionService;
+
+    public function __construct(MathService $mathService, CurrencyPositionService $currencyPositionService)
     {
         $this->mathService = $mathService;
+        $this->currencyPositionService = $currencyPositionService;
     }
 
     /**
@@ -28,11 +33,9 @@ class StockCashController extends Controller
     public function index()
     {
         $this->requireManagerOrAdmin();
-        $service = new CurrencyPositionService($this->mathService);
-
         // Get current positions
-        $positions = $service->getVisiblePositionsForUser(auth()->user());
-        $totalPnl = $service->getTotalPnl();
+        $positions = $this->currencyPositionService->getVisiblePositionsForUser(auth()->user());
+        $totalPnl = $this->currencyPositionService->getTotalPnl();
 
         // Get till information
         $openTills = TillBalance::whereDate('date', today())
@@ -105,16 +108,11 @@ class StockCashController extends Controller
     /**
      * Open a till
      */
-    public function openTill(Request $request)
+    public function openTill(OpenTillRequest $request)
     {
         $this->requireManagerOrAdmin();
 
-        $validated = $request->validate([
-            'till_id' => 'required|string|max:50',
-            'currency_code' => 'required|string|exists:currencies,code',
-            'opening_balance' => 'required|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         // Check if already open
         $existing = TillBalance::where('till_id', $validated['till_id'])
@@ -155,16 +153,11 @@ class StockCashController extends Controller
     /**
      * Close a till
      */
-    public function closeTill(Request $request)
+    public function closeTill(CloseTillRequest $request)
     {
         $this->requireManagerOrAdmin();
 
-        $validated = $request->validate([
-            'till_id' => 'required|string',
-            'currency_code' => 'required|string',
-            'closing_balance' => 'required|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $tillBalance = TillBalance::where('till_id', $validated['till_id'])
             ->where('currency_code', $validated['currency_code'])

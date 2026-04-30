@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 class BranchOpeningController extends Controller
 {
+    public function __construct(
+        protected BranchPoolService $branchPoolService,
+        protected MathService $mathService,
+    ) {}
+
     public function index()
     {
         return view('branch-openings.index');
@@ -82,7 +87,7 @@ class BranchOpeningController extends Controller
     public function processStep2(Request $request, Branch $branch)
     {
         $currencies = Currency::where('is_active', true)->get();
-        $poolService = app(BranchPoolService::class);
+        $poolService = $this->branchPoolService;
 
         foreach ($currencies as $currency) {
             $amount = $request->input("pool_{$currency->code}");
@@ -145,7 +150,7 @@ class BranchOpeningController extends Controller
     private function calculateTotalPoolAmount(Branch $branch): string
     {
         $total = '0';
-        $mathService = app(MathService::class);
+        $mathService = $this->mathService;
 
         foreach ($branch->branchPools as $pool) {
             $total = $mathService->add($total, $pool->available_balance ?? '0');

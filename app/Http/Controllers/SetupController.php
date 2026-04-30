@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\JournalEntryStatus;
+use App\Http\Requests\SetupRequest;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
@@ -40,16 +41,9 @@ class SetupController extends Controller
         ]);
     }
 
-    public function quickSetup(Request $request)
+    public function quickSetup(SetupRequest $request)
     {
-        $validated = $request->validate([
-            'business_name' => 'required|string|max:255',
-            'admin_email' => 'required|email',
-            'admin_password' => 'required|min:8',
-            'base_currency' => 'required|string|size:3',
-            'setup_exchange_rates' => 'boolean',
-            'setup_branch_pools' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         try {
             DB::beginTransaction();
@@ -79,69 +73,45 @@ class SetupController extends Controller
         }
     }
 
-    public function step1CompanyInfo(Request $request)
+    public function step1CompanyInfo(SetupRequest $request)
     {
-        $validated = $request->validate([
-            'business_name' => 'required|string|max:255',
-            'business_address' => 'nullable|string',
-            'business_phone' => 'nullable|string',
-            'business_email' => 'nullable|email',
-        ]);
+        $validated = $request->validated();
 
         session(['setup.business' => $validated]);
 
         return redirect()->route('setup.wizard', ['step' => 2]);
     }
 
-    public function step2AdminUser(Request $request)
+    public function step2AdminUser(SetupRequest $request)
     {
-        $validated = $request->validate([
-            'admin_name' => 'required|string|max:255',
-            'admin_email' => 'required|email|unique:users,email',
-            'admin_password' => 'required|min:8|confirmed',
-        ]);
+        $validated = $request->validated();
 
         session(['setup.admin' => $validated]);
 
         return redirect()->route('setup.wizard', ['step' => 3]);
     }
 
-    public function step3Currencies(Request $request)
+    public function step3Currencies(SetupRequest $request)
     {
-        $validated = $request->validate([
-            'base_currency' => 'required|string|size:3',
-            'active_currencies' => 'required|array|min:1',
-            'active_currencies.*' => 'string|size:3',
-        ]);
+        $validated = $request->validated();
 
         session(['setup.currencies' => $validated]);
 
         return redirect()->route('setup.wizard', ['step' => 4]);
     }
 
-    public function step4ExchangeRates(Request $request)
+    public function step4ExchangeRates(SetupRequest $request)
     {
-        $validated = $request->validate([
-            'use_default_rates' => 'boolean',
-            'custom_rates' => 'nullable|array',
-            'custom_rates.*.buy' => 'nullable|numeric|min:0.0001',
-            'custom_rates.*.sell' => 'nullable|numeric|min:0.0001',
-        ]);
+        $validated = $request->validated();
 
         session(['setup.rates' => $validated]);
 
         return redirect()->route('setup.wizard', ['step' => 5]);
     }
 
-    public function step5InitialStock(Request $request)
+    public function step5InitialStock(SetupRequest $request)
     {
-        $validated = $request->validate([
-            'initial_myr_cash' => 'required|numeric|min:0',
-            'initial_stock' => 'nullable|array',
-            'initial_stock.*' => 'nullable|numeric|min:0',
-            'initial_foreign_cash' => 'nullable|array',
-            'initial_foreign_cash.*' => 'nullable|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         // Merge initial_stock and initial_foreign_cash into a single stock array
         $stock = $validated['initial_stock'] ?? [];
@@ -157,13 +127,9 @@ class SetupController extends Controller
         return redirect()->route('setup.wizard', ['step' => 6]);
     }
 
-    public function step6OpeningBalance(Request $request)
+    public function step6OpeningBalance(SetupRequest $request)
     {
-        $validated = $request->validate([
-            'opening_balance_myr' => 'required|numeric|min:0',
-            'opening_balance_foreign' => 'nullable|array',
-            'opening_balance_foreign.*' => 'nullable|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         session(['setup.opening_balance' => $validated]);
 

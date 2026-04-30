@@ -36,7 +36,8 @@ class ProcessCustomerImport implements ShouldQueue
     public function __construct(
         public string $filePath,
         public int $userId,
-        public string $jobId
+        public string $jobId,
+        public BulkImportService $importService
     ) {
         $this->onQueue('imports');
     }
@@ -96,8 +97,7 @@ class ProcessCustomerImport implements ShouldQueue
             'error' => $exception->getMessage(),
         ]);
 
-        $importService = app(BulkImportService::class);
-        $importService->storeImportStatus($this->jobId, [
+        $this->importService->storeImportStatus($this->jobId, [
             'status' => 'failed',
             'failed_at' => now()->toDateTimeString(),
             'error' => $exception->getMessage(),

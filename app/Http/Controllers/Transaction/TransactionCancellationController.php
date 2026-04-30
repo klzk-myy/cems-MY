@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ApproveCancelRequest;
+use App\Http\Requests\CancelTransactionRequest;
+use App\Http\Requests\RejectCancelRequest;
 use App\Models\Transaction;
 use App\Services\TransactionCancellationService;
-use Illuminate\Http\Request;
 
 class TransactionCancellationController extends Controller
 {
@@ -35,7 +37,7 @@ class TransactionCancellationController extends Controller
      * Requests cancellation of a transaction, transitioning it to PendingCancellation
      * status where a supervisor must approve the cancellation.
      */
-    public function cancel(Request $request, Transaction $transaction)
+    public function cancel(CancelTransactionRequest $request, Transaction $transaction)
     {
         if (! $this->canCancel(auth()->user(), $transaction)) {
             abort(403, 'Unauthorized to cancel this transaction.');
@@ -45,17 +47,7 @@ class TransactionCancellationController extends Controller
             return back()->with('error', 'This transaction cannot be cancelled in its current state.');
         }
 
-        $validated = $request->validate([
-            'cancellation_reason' => [
-                'required',
-                'string',
-                'min:20',
-                'max:1000',
-            ],
-            'confirm_understanding' => 'required|accepted',
-        ], [
-            'cancellation_reason.min' => 'Cancellation reason must be at least 20 characters for AML audit compliance. Please provide a detailed explanation of why this transaction is being cancelled.',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $this->cancellationService->requestCancellation(
@@ -95,7 +87,7 @@ class TransactionCancellationController extends Controller
     /**
      * Approve a pending cancellation request.
      */
-    public function approveCancel(Request $request, Transaction $transaction)
+    public function approveCancel(ApproveCancelRequest $request, Transaction $transaction)
     {
         if (! $this->canApproveOrReject(auth()->user())) {
             abort(403, 'Unauthorized to approve cancellations.');
@@ -105,9 +97,7 @@ class TransactionCancellationController extends Controller
             return back()->with('error', 'This transaction is not pending cancellation.');
         }
 
-        $validated = $request->validate([
-            'reason' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $this->cancellationService->approveCancellation(
@@ -147,7 +137,7 @@ class TransactionCancellationController extends Controller
     /**
      * Reject a pending cancellation request.
      */
-    public function rejectCancel(Request $request, Transaction $transaction)
+    public function rejectCancel(RejectCancelRequest $request, Transaction $transaction)
     {
         if (! $this->canApproveOrReject(auth()->user())) {
             abort(403, 'Unauthorized to reject cancellations.');
@@ -157,9 +147,7 @@ class TransactionCancellationController extends Controller
             return back()->with('error', 'This transaction is not pending cancellation.');
         }
 
-        $validated = $request->validate([
-            'reason' => 'required|string|min:10|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $this->cancellationService->rejectCancellation(

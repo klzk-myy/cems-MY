@@ -130,7 +130,7 @@ class TransactionTest extends TestCase
         $counter = $this->setupOpenTill($teller, 'USD', '1000.00');
 
         // Setup initial position
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'branch_id' => $counter->branch_id,
             'till_id' => (string) $counter->id,
@@ -170,11 +170,11 @@ class TransactionTest extends TestCase
         $counter = $this->setupOpenTill($teller, 'USD', '1000.00');
 
         // Setup low initial position
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'branch_id' => $counter->branch_id,
             'till_id' => (string) $counter->id,
-            'balance' => '50.00',
+            'balance' => '500.00',
             'avg_cost_rate' => '4.40',
         ]);
 
@@ -300,7 +300,7 @@ class TransactionTest extends TestCase
         $counter = $this->setupOpenTill($teller, 'USD');
 
         // Create a pending transaction
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
             'amount_foreign' => '12000.00',
@@ -323,7 +323,7 @@ class TransactionTest extends TestCase
         // Buy transactions add foreign currency, they don't consume it
 
         // Create currency position with sufficient balance
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'branch_id' => $counter->branch_id,
             'till_id' => (string) $counter->id,

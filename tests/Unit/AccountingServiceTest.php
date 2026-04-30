@@ -191,7 +191,7 @@ class AccountingServiceTest extends TestCase
     public function test_update_ledger_is_atomic(): void
     {
         // Create test accounts
-        $cashAccount = ChartOfAccount::create([
+        $cashAccount = ChartOfAccount::factory()->create([
             'account_code' => '9999',
             'account_name' => 'Test Cash',
             'account_type' => 'Asset',
@@ -199,7 +199,7 @@ class AccountingServiceTest extends TestCase
             'allow_journal' => true,
         ]);
 
-        $revenueAccount = ChartOfAccount::create([
+        $revenueAccount = ChartOfAccount::factory()->create([
             'account_code' => '5999',
             'account_name' => 'Test Revenue',
             'account_type' => 'Revenue',

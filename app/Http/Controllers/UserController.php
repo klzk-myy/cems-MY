@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -62,29 +63,11 @@ class UserController extends Controller
      *
      * @return RedirectResponse
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
         $this->requireAdmin();
-        $validated = $request->validate([
-            'username' => 'required|string|max:50|unique:users',
-            'email' => 'required|email|max:255|unique:users',
-            'password' => [
-                'required',
-                'string',
-                'min:12',
-                'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
-            ],
-            'password_confirmation' => 'required',
-            'role' => ['required', Rule::in([
-                UserRole::Teller->value,
-                UserRole::Manager->value,
-                UserRole::ComplianceOfficer->value,
-                UserRole::Admin->value,
-            ])],
-        ]);
 
-        $user = $this->userService->createUser($validated, auth()->id());
+        $user = $this->userService->createUser($request->validated(), auth()->id());
 
         return redirect()->route('users.index')
             ->with('success', "User {$user->username} created successfully!");
@@ -125,22 +108,11 @@ class UserController extends Controller
      *
      * @return RedirectResponse
      */
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
         $this->requireAdmin();
-        $validated = $request->validate([
-            'username' => ['required', 'string', 'max:50', Rule::unique('users')->ignore($user->id)],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role' => ['required', Rule::in([
-                UserRole::Teller->value,
-                UserRole::Manager->value,
-                UserRole::ComplianceOfficer->value,
-                UserRole::Admin->value,
-            ])],
-            'is_active' => 'required|boolean',
-        ]);
 
-        $user = $this->userService->updateUser($user, $validated, auth()->id());
+        $user = $this->userService->updateUser($user, $request->validated(), auth()->id());
 
         return redirect()->route('users.index')
             ->with('success', "User {$user->username} updated successfully!");

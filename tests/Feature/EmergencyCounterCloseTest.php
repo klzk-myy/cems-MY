@@ -28,7 +28,7 @@ class EmergencyCounterCloseTest extends TestCase
     {
         parent::setUp();
 
-        $this->branch = Branch::create([
+        $this->branch = Branch::factory()->create([
             'code' => 'HQ'.substr(uniqid(), -4),
             'name' => 'Test Head Office',
             'address' => '123 Test Street',
@@ -37,14 +37,14 @@ class EmergencyCounterCloseTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->counter = Counter::create([
+        $this->counter = Counter::factory()->create([
             'name' => 'Test Counter 1',
             'code' => 'CTR'.substr(uniqid(), -4),
             'branch_id' => $this->branch->id,
             'status' => 'active',
         ]);
 
-        $this->teller = User::create([
+        $this->teller = User::factory()->create([
             'username' => 'teller'.substr(uniqid(), -6),
             'email' => 'teller-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
@@ -53,7 +53,7 @@ class EmergencyCounterCloseTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->manager = User::create([
+        $this->manager = User::factory()->create([
             'username' => 'manager'.substr(uniqid(), -6),
             'email' => 'manager-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
@@ -65,7 +65,7 @@ class EmergencyCounterCloseTest extends TestCase
 
     protected function createOpenSession(): CounterSession
     {
-        $session = CounterSession::create([
+        $session = CounterSession::factory()->create([
             'counter_id' => $this->counter->id,
             'user_id' => $this->teller->id,
             'session_date' => now()->toDateString(),
@@ -106,7 +106,7 @@ class EmergencyCounterCloseTest extends TestCase
     {
         $session = $this->createOpenSession();
 
-        EmergencyClosure::create([
+        EmergencyClosure::factory()->create([
             'counter_id' => $this->counter->id,
             'session_id' => $session->id,
             'teller_id' => $this->teller->id,
@@ -128,7 +128,7 @@ class EmergencyCounterCloseTest extends TestCase
     /** @test */
     public function it_enforces_30_minute_session_minimum(): void
     {
-        $session = CounterSession::create([
+        $session = CounterSession::factory()->create([
             'counter_id' => $this->counter->id,
             'user_id' => $this->teller->id,
             'session_date' => now()->toDateString(),
@@ -153,7 +153,7 @@ class EmergencyCounterCloseTest extends TestCase
     {
         $session = $this->createOpenSession();
 
-        $closure = EmergencyClosure::create([
+        $closure = EmergencyClosure::factory()->create([
             'counter_id' => $this->counter->id,
             'session_id' => $session->id,
             'teller_id' => $this->teller->id,
@@ -176,7 +176,7 @@ class EmergencyCounterCloseTest extends TestCase
     {
         $session = $this->createOpenSession();
 
-        $closure = EmergencyClosure::create([
+        $closure = EmergencyClosure::factory()->create([
             'counter_id' => $this->counter->id,
             'session_id' => $session->id,
             'teller_id' => $this->teller->id,
@@ -195,7 +195,7 @@ class EmergencyCounterCloseTest extends TestCase
     {
         $session = $this->createOpenSession();
 
-        $closure = EmergencyClosure::create([
+        $closure = EmergencyClosure::factory()->create([
             'counter_id' => $this->counter->id,
             'session_id' => $session->id,
             'teller_id' => $this->teller->id,

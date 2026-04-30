@@ -64,7 +64,7 @@ class TransactionServiceTest extends TestCase
         // Use seeded currency instead of creating
         $this->currency = Currency::where('code', 'USD')->firstOrFail();
 
-        $this->branch = Branch::create([
+        $this->branch = Branch::factory()->create([
             'code' => 'HQ-TEST',
             'name' => 'Test Head Office',
             'address' => '123 Test Street',
@@ -73,14 +73,13 @@ class TransactionServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->counter = Counter::create([
+        $this->counter = Counter::factory()->create([
             'name' => 'Test Counter',
             'code' => 'CTR-TEST',
             'branch_id' => $this->branch->id,
-            'is_active' => true,
         ]);
 
-        $this->customer = Customer::create([
+        $this->customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
             'id_type' => 'MyKad',
             'id_number_encrypted' => encrypt('123456789012'),
@@ -91,7 +90,7 @@ class TransactionServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->teller = User::create([
+        $this->teller = User::factory()->create([
             'username' => 'testteller',
             'email' => 'teller@test.com',
             'password_hash' => bcrypt('password'),
@@ -100,7 +99,7 @@ class TransactionServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->manager = User::create([
+        $this->manager = User::factory()->create([
             'username' => 'testmanager',
             'email' => 'manager@test.com',
             'password_hash' => bcrypt('password'),
@@ -110,7 +109,7 @@ class TransactionServiceTest extends TestCase
         ]);
 
         // Create till balance (open till)
-        $this->tillBalance = TillBalance::create([
+        $this->tillBalance = TillBalance::factory()->create([
             'till_id' => $this->counter->id,
             'branch_id' => $this->branch->id,
             'currency_code' => $this->currency->code,
@@ -122,7 +121,7 @@ class TransactionServiceTest extends TestCase
         ]);
 
         // Create MYR till balance (required by updateTillBalance)
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => $this->counter->id,
             'currency_code' => 'MYR',
             'opening_balance' => '100000.00',
@@ -131,7 +130,7 @@ class TransactionServiceTest extends TestCase
         ]);
 
         // Create active teller allocation for the currency (required by TransactionService)
-        TellerAllocation::create([
+        TellerAllocation::factory()->create([
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
             'counter_id' => $this->counter->id,
@@ -427,7 +426,7 @@ class TransactionServiceTest extends TestCase
     public function test_get_available_balance_excludes_pending_reservations(): void
     {
         // Create a position with 1000 USD
-        $position = CurrencyPosition::create([
+        $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
             'balance' => '1000.00',
@@ -436,7 +435,7 @@ class TransactionServiceTest extends TestCase
         ]);
 
         // Create a pending reservation for 300 USD
-        StockReservation::create([
+        StockReservation::factory()->create([
             'transaction_id' => 99999, // dummy
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
@@ -457,7 +456,7 @@ class TransactionServiceTest extends TestCase
         $counter = Counter::factory()->create();
 
         // Create till balances
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => (string) $counter->id,
             'currency_code' => 'USD',
             'opening_balance' => '0',
@@ -465,7 +464,7 @@ class TransactionServiceTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => (string) $counter->id,
             'currency_code' => 'MYR',
             'opening_balance' => '100000.00',
@@ -475,7 +474,7 @@ class TransactionServiceTest extends TestCase
 
         // Create position for sell - must be large enough that available balance
         // (balance - pending reservations) >= sell amount at approval time
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => (string) $counter->id,
             'balance' => '5000.00',
@@ -521,7 +520,7 @@ class TransactionServiceTest extends TestCase
         $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
 
         // Position has 2000 USD
-        $position = CurrencyPosition::create([
+        $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
             'balance' => '2000.00',
@@ -530,7 +529,7 @@ class TransactionServiceTest extends TestCase
         ]);
 
         // Create till balance
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => 'TEST-TILL',
             'currency_code' => 'USD',
             'opening_balance' => '0',
@@ -538,7 +537,7 @@ class TransactionServiceTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => 'TEST-TILL',
             'currency_code' => 'MYR',
             'opening_balance' => '100000.00',
@@ -582,7 +581,7 @@ class TransactionServiceTest extends TestCase
         $tillId = (string) $this->counter->id;
 
         // Create USD and MYR till balances
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => $tillId,
             'currency_code' => 'USD',
             'opening_balance' => '0',
@@ -590,7 +589,7 @@ class TransactionServiceTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => $tillId,
             'currency_code' => 'MYR',
             'opening_balance' => '10000.00',
@@ -599,7 +598,7 @@ class TransactionServiceTest extends TestCase
         ]);
 
         // Create USD position
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => $tillId,
             'balance' => '1000.00',
@@ -641,7 +640,7 @@ class TransactionServiceTest extends TestCase
         $tillId = (string) $this->counter->id;
 
         // Create USD position and MYR till balance
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => $tillId,
             'balance' => '1000.00',
@@ -649,7 +648,7 @@ class TransactionServiceTest extends TestCase
             'last_valuation_rate' => '4.50',
         ]);
 
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => $tillId,
             'currency_code' => 'USD',
             'opening_balance' => '0',
@@ -657,7 +656,7 @@ class TransactionServiceTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => $tillId,
             'currency_code' => 'MYR',
             'opening_balance' => '10000.00',

@@ -8,9 +8,7 @@ use App\Models\User;
 use App\Services\BranchPoolService;
 use App\Services\CounterOpeningWorkflowService;
 use App\Services\CounterService;
-use App\Services\MathService;
 use App\Services\TellerAllocationService;
-use App\Services\ThresholdService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,20 +22,12 @@ use Illuminate\Support\Facades\Auth;
  */
 class CounterOpeningController extends Controller
 {
-    protected CounterOpeningWorkflowService $workflowService;
-
     public function __construct(
-        ?CounterOpeningWorkflowService $workflowService = null,
-        ?BranchPoolService $branchPoolService = null,
-        ?TellerAllocationService $tellerAllocationService = null,
-        ?CounterService $counterService = null
-    ) {
-        $mathService = new MathService;
-        $branchPoolService = $branchPoolService ?? new BranchPoolService($mathService);
-        $tellerAllocationService = $tellerAllocationService ?? new TellerAllocationService($branchPoolService, $mathService);
-        $counterService = $counterService ?? new CounterService($tellerAllocationService, app(ThresholdService::class));
-        $this->workflowService = $workflowService ?? new CounterOpeningWorkflowService($branchPoolService, $tellerAllocationService, $counterService);
-    }
+        protected CounterOpeningWorkflowService $workflowService,
+        protected BranchPoolService $branchPoolService,
+        protected TellerAllocationService $tellerAllocationService,
+        protected CounterService $counterService,
+    ) {}
 
     /**
      * Get pending opening requests for a branch.

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StrStatus;
+use App\Http\Requests\StoreStrRequest;
 use App\Models\FlaggedTransaction;
 use App\Models\StrReport;
 use App\Services\AuditService;
@@ -70,15 +71,9 @@ class StrController extends Controller
         return view('str.create', compact('alert', 'customer', 'pendingAlerts'));
     }
 
-    public function store(Request $request)
+    public function store(StoreStrRequest $request)
     {
-        $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'alert_id' => 'nullable|exists:flagged_transactions,id',
-            'transaction_ids' => 'required|array',
-            'transaction_ids.*' => 'exists:transactions,id',
-            'reason' => 'required|string|min:20',
-        ]);
+        $validated = $request->validated();
 
         try {
             $strReport = $this->strService->createStrReport($validated, Auth::user());

@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreBranchRequest;
+use App\Http\Requests\UpdateBranchRequest;
 use App\Models\Branch;
 use App\Services\BranchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 /**
  * BranchController API v1
@@ -43,23 +44,9 @@ class BranchController extends Controller
     /**
      * Create a new branch (Admin only).
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreBranchRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'code' => 'required|string|max:20|unique:branches,code',
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:head_office,branch,sub_branch',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'country' => 'nullable|string|max:50',
-            'phone' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:100',
-            'is_active' => 'boolean',
-            'is_main' => 'boolean',
-            'parent_id' => 'nullable|exists:branches,id',
-        ]);
+        $validated = $request->validated();
 
         $branch = $this->branchService->createBranch($validated, Auth::id(), $request->ip());
 
@@ -95,25 +82,11 @@ class BranchController extends Controller
     /**
      * Update a branch (Admin only).
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateBranchRequest $request, int $id): JsonResponse
     {
         $branch = Branch::findOrFail($id);
 
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', Rule::unique('branches')->ignore($branch->id)],
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:head_office,branch,sub_branch',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'country' => 'nullable|string|max:50',
-            'phone' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:100',
-            'is_active' => 'boolean',
-            'is_main' => 'boolean',
-            'parent_id' => 'nullable|exists:branches,id',
-        ]);
+        $validated = $request->validated();
 
         $branch = $this->branchService->updateBranch($branch, $validated, Auth::id(), $request->ip());
 

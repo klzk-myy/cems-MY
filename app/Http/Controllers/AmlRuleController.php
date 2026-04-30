@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AmlRuleType;
+use App\Http\Requests\StoreAmlRuleRequest;
+use App\Http\Requests\UpdateAmlRuleRequest;
 use App\Models\AmlRule;
 use App\Models\SystemLog;
 use App\Services\AmlRuleService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -72,18 +73,9 @@ class AmlRuleController extends Controller
      *
      * @return RedirectResponse
      */
-    public function store(Request $request)
+    public function store(StoreAmlRuleRequest $request)
     {
-        $validated = $request->validate([
-            'rule_code' => 'required|string|max:50|unique:aml_rules,rule_code',
-            'rule_name' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'rule_type' => 'required|in:'.implode(',', AmlRuleType::values()),
-            'conditions' => 'required|array',
-            'action' => 'required|in:flag,hold,block',
-            'risk_score' => 'required|integer|min:0|max:100',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         // Validate conditions based on rule type
         $ruleType = AmlRuleType::from($validated['rule_type']);
@@ -171,18 +163,9 @@ class AmlRuleController extends Controller
      *
      * @return RedirectResponse
      */
-    public function update(Request $request, AmlRule $rule)
+    public function update(UpdateAmlRuleRequest $request, AmlRule $rule)
     {
-        $validated = $request->validate([
-            'rule_code' => 'required|string|max:50|unique:aml_rules,rule_code,'.$rule->id,
-            'rule_name' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'rule_type' => 'required|in:'.implode(',', AmlRuleType::values()),
-            'conditions' => 'required|array',
-            'action' => 'required|in:flag,hold,block',
-            'risk_score' => 'required|integer|min:0|max:100',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         // Validate conditions based on rule type
         $ruleType = AmlRuleType::from($validated['rule_type']);

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreateReportScheduleRequest;
+use App\Http\Requests\RunReportRequest;
+use App\Http\Requests\UpdateReportScheduleRequest;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
 use App\Services\ReportSchedulingService;
@@ -31,14 +34,8 @@ class ComplianceReportingController extends Controller
         return view('compliance.reporting.generate', compact('reportTypes'));
     }
 
-    public function run(Request $request)
+    public function run(RunReportRequest $request)
     {
-        $request->validate([
-            'report_type' => 'required|in:msb2,lctr,lmca,qlvr,position_limit',
-            'date' => 'nullable|date',
-            'month' => 'nullable|date_format:Y-m',
-            'quarter' => 'nullable|string',
-        ]);
 
         $params = [];
         if ($request->has('date')) {
@@ -91,14 +88,8 @@ class ComplianceReportingController extends Controller
         return view('compliance.reporting.schedule', compact('schedules', 'reportTypes'));
     }
 
-    public function createSchedule(Request $request)
+    public function createSchedule(CreateReportScheduleRequest $request)
     {
-        $request->validate([
-            'report_type' => 'required|in:msb2,lctr,lmca,qlvr,position_limit',
-            'cron_expression' => 'required|string',
-            'parameters' => 'nullable|array',
-            'notification_recipients' => 'nullable|array',
-        ]);
 
         $schedule = $this->reportingService->createSchedule([
             'report_type' => $request->report_type,
@@ -111,14 +102,8 @@ class ComplianceReportingController extends Controller
         return redirect()->back()->with('success', 'Schedule created successfully');
     }
 
-    public function updateSchedule(Request $request, ReportSchedule $schedule)
+    public function updateSchedule(UpdateReportScheduleRequest $request, ReportSchedule $schedule)
     {
-        $request->validate([
-            'cron_expression' => 'nullable|string',
-            'parameters' => 'nullable|array',
-            'is_active' => 'nullable|boolean',
-            'notification_recipients' => 'nullable|array',
-        ]);
 
         $schedule = $this->reportingService->updateSchedule($schedule, $request->all());
 

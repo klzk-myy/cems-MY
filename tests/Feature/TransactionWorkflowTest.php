@@ -47,7 +47,7 @@ class TransactionWorkflowTest extends TestCase
         $this->currency = Currency::where('code', 'USD')->firstOrFail();
 
         // Create test branch with unique code
-        $this->branch = Branch::create([
+        $this->branch = Branch::factory()->create([
             'code' => 'HQ'.substr(uniqid(), -4),
             'name' => 'Test Head Office',
             'address' => '123 Test Street',
@@ -57,7 +57,7 @@ class TransactionWorkflowTest extends TestCase
         ]);
 
         // Create test counter (used as till_id)
-        $this->counter = Counter::create([
+        $this->counter = Counter::factory()->create([
             'name' => 'Test Counter 1',
             'code' => 'CTR'.substr(uniqid(), -4),
             'branch_id' => $this->branch->id,
@@ -65,7 +65,7 @@ class TransactionWorkflowTest extends TestCase
         ]);
 
         // Create test customer with valid ENUM values and required fields
-        $this->customer = Customer::create([
+        $this->customer = Customer::factory()->create([
             'full_name' => 'John Doe',
             'id_type' => 'MyKad',
             'id_number_encrypted' => encrypt('123456789012'.uniqid()),
@@ -77,7 +77,7 @@ class TransactionWorkflowTest extends TestCase
         ]);
 
         // Create test users with unique usernames
-        $this->teller = User::create([
+        $this->teller = User::factory()->create([
             'username' => 'teller'.substr(uniqid(), -6),
             'email' => 'teller-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
@@ -86,7 +86,7 @@ class TransactionWorkflowTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->manager = User::create([
+        $this->manager = User::factory()->create([
             'username' => 'manager'.substr(uniqid(), -6),
             'email' => 'manager-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
@@ -116,7 +116,7 @@ class TransactionWorkflowTest extends TestCase
     public function it_can_list_transactions(): void
     {
         // Create a transaction first
-        Transaction::create([
+        Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -141,7 +141,7 @@ class TransactionWorkflowTest extends TestCase
     /** @test */
     public function it_can_view_transaction_details(): void
     {
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -175,7 +175,7 @@ class TransactionWorkflowTest extends TestCase
         $tillId = (string) $counter->id;
 
         // Create USD position with exactly 1500 USD
-        $position = CurrencyPosition::create([
+        $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => $tillId,
             'balance' => '1500.00',
@@ -183,7 +183,7 @@ class TransactionWorkflowTest extends TestCase
             'last_valuation_rate' => '4.50',
         ]);
 
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => $tillId,
             'currency_code' => 'USD',
             'opening_balance' => '0',
@@ -191,7 +191,7 @@ class TransactionWorkflowTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => $tillId,
             'currency_code' => 'MYR',
             'opening_balance' => '100000.00',

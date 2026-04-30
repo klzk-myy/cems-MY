@@ -69,7 +69,7 @@ class CustomerRiskReviewServiceTest extends TestCase
     {
         $customer = Customer::factory()->create();
 
-        RiskScoreSnapshot::create([
+        RiskScoreSnapshot::factory()->create([
             'customer_id' => $customer->id,
             'snapshot_date' => today(),
             'overall_score' => 50,
@@ -94,7 +94,7 @@ class CustomerRiskReviewServiceTest extends TestCase
     {
         $customer = Customer::factory()->create(['risk_score' => 50]);
 
-        RiskScoreSnapshot::create([
+        RiskScoreSnapshot::factory()->create([
             'customer_id' => $customer->id,
             'snapshot_date' => now()->subDays(100),
             'overall_score' => 50,
@@ -118,7 +118,7 @@ class CustomerRiskReviewServiceTest extends TestCase
     {
         for ($i = 0; $i < 5; $i++) {
             $customer = Customer::factory()->create();
-            RiskScoreSnapshot::create([
+            RiskScoreSnapshot::factory()->create([
                 'customer_id' => $customer->id,
                 'snapshot_date' => now()->subDays(100),
                 'overall_score' => 50,
@@ -142,7 +142,7 @@ class CustomerRiskReviewServiceTest extends TestCase
     {
         $customer = Customer::factory()->create(['risk_score' => 30]);
 
-        RiskScoreSnapshot::create([
+        RiskScoreSnapshot::factory()->create([
             'customer_id' => $customer->id,
             'snapshot_date' => now()->subDays(100),
             'overall_score' => 30,

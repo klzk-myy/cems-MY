@@ -40,7 +40,7 @@ class TransactionStateMachineTest extends TestCase
 
         $this->user = User::factory()->create(['role' => UserRole::Admin]);
 
-        $this->branch = Branch::create([
+        $this->branch = Branch::factory()->create([
             'code' => 'HQ-TEST',
             'name' => 'Test Head Office',
             'address' => '123 Test Street',
@@ -49,16 +49,15 @@ class TransactionStateMachineTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->counter = Counter::create([
+        $this->counter = Counter::factory()->create([
             'name' => 'Test Counter',
             'code' => 'CTR-TEST',
             'branch_id' => $this->branch->id,
-            'is_active' => true,
         ]);
 
         $this->currency = Currency::where('code', 'USD')->firstOrFail();
 
-        $this->customer = Customer::create([
+        $this->customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
             'id_type' => 'MyKad',
             'id_number_encrypted' => encrypt('123456789012'),
@@ -72,7 +71,7 @@ class TransactionStateMachineTest extends TestCase
 
     protected function createTransaction(TransactionStatus $status = TransactionStatus::Draft): Transaction
     {
-        return Transaction::create([
+        return Transaction::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->user->id,
             'customer_id' => $this->customer->id,
@@ -84,7 +83,6 @@ class TransactionStateMachineTest extends TestCase
             'rate' => '3.50',
             'status' => $status->value,
             'cdd_level' => 'Simplified',
-            'transaction_date' => now()->toDateString(),
         ]);
     }
 

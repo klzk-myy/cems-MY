@@ -46,7 +46,7 @@ class KycDocumentExpiryServiceTest extends TestCase
 
     protected function setupTestData(): void
     {
-        $this->branch = Branch::create([
+        $this->branch = Branch::factory()->create([
             'code' => 'HQ-TEST',
             'name' => 'Test Head Office',
             'address' => '123 Test Street',
@@ -55,7 +55,7 @@ class KycDocumentExpiryServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->user = User::create([
+        $this->user = User::factory()->create([
             'username' => 'testuser',
             'email' => 'test@localhost.com',
             'password_hash' => bcrypt('password'),
@@ -64,14 +64,13 @@ class KycDocumentExpiryServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->counter = Counter::create([
+        $this->counter = Counter::factory()->create([
             'name' => 'Test Counter',
             'code' => 'CTR-TEST',
             'branch_id' => $this->branch->id,
-            'is_active' => true,
         ]);
 
-        $this->customer = Customer::create([
+        $this->customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
             'id_type' => 'MyKad',
             'id_number_encrypted' => encrypt('123456789012'),
@@ -85,7 +84,7 @@ class KycDocumentExpiryServiceTest extends TestCase
 
     public function test_no_block_when_all_documents_valid(): void
     {
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'MyKad',
             'file_path' => '/path/to/myKad.jpg',
@@ -101,7 +100,7 @@ class KycDocumentExpiryServiceTest extends TestCase
 
     public function test_no_block_within_grace_period(): void
     {
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'MyKad',
             'file_path' => '/path/to/myKad.jpg',
@@ -117,7 +116,7 @@ class KycDocumentExpiryServiceTest extends TestCase
 
     public function test_blocks_after_grace_period_expired(): void
     {
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'MyKad',
             'file_path' => '/path/to/myKad.jpg',
@@ -140,7 +139,7 @@ class KycDocumentExpiryServiceTest extends TestCase
     {
         $this->customer->update(['cdd_level' => CddLevel::Standard]);
 
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'MyKad',
             'file_path' => '/path/to/myKad.jpg',
@@ -158,7 +157,7 @@ class KycDocumentExpiryServiceTest extends TestCase
     {
         $this->customer->update(['cdd_level' => CddLevel::Standard]);
 
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'MyKad',
             'file_path' => '/path/to/myKad.jpg',
@@ -169,7 +168,7 @@ class KycDocumentExpiryServiceTest extends TestCase
             'verified_at' => now(),
         ]);
 
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'Proof_of_Address',
             'file_path' => '/path/to/poa.jpg',
@@ -187,7 +186,7 @@ class KycDocumentExpiryServiceTest extends TestCase
     {
         $this->customer->update(['cdd_level' => CddLevel::Enhanced]);
 
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'MyKad',
             'file_path' => '/path/to/myKad.jpg',
@@ -198,7 +197,7 @@ class KycDocumentExpiryServiceTest extends TestCase
             'verified_at' => now(),
         ]);
 
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'Proof_of_Address',
             'file_path' => '/path/to/poa.jpg',
@@ -216,7 +215,7 @@ class KycDocumentExpiryServiceTest extends TestCase
     {
         $this->customer->update(['cdd_level' => CddLevel::Enhanced]);
 
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'MyKad',
             'file_path' => '/path/to/myKad.jpg',
@@ -227,7 +226,7 @@ class KycDocumentExpiryServiceTest extends TestCase
             'verified_at' => now(),
         ]);
 
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'Proof_of_Address',
             'file_path' => '/path/to/poa.jpg',
@@ -238,7 +237,7 @@ class KycDocumentExpiryServiceTest extends TestCase
             'verified_at' => now(),
         ]);
 
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'Passport',
             'file_path' => '/path/to/passport.jpg',
@@ -254,7 +253,7 @@ class KycDocumentExpiryServiceTest extends TestCase
 
     public function test_get_expired_documents_returns_only_expired(): void
     {
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'MyKad',
             'file_path' => '/path/to/myKad.jpg',
@@ -265,7 +264,7 @@ class KycDocumentExpiryServiceTest extends TestCase
             'verified_at' => now(),
         ]);
 
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'Proof_of_Address',
             'file_path' => '/path/to/poa.jpg',
@@ -284,7 +283,7 @@ class KycDocumentExpiryServiceTest extends TestCase
 
     public function test_no_grace_for_document_without_expiry_date(): void
     {
-        CustomerDocument::create([
+        CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
             'document_type' => 'MyKad',
             'file_path' => '/path/to/myKad.jpg',

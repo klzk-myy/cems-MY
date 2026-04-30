@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DismissFindingRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -109,11 +110,9 @@ class FindingController extends Controller
         return view('compliance.findings.show', compact('finding'));
     }
 
-    public function dismiss(Request $request, int $id)
+    public function dismiss(DismissFindingRequest $request, int $id)
     {
-        $validated = $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             $response = Http::withToken(session('api_token'))

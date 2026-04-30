@@ -7,6 +7,8 @@ use App\Enums\CaseResolution;
 use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCaseRequest;
+use App\Http\Requests\UpdateCaseRequest;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceFinding;
 use App\Services\Compliance\CaseManagementService;
@@ -65,16 +67,9 @@ class CaseController extends Controller
     /**
      * Create a case.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreCaseRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'finding_id' => 'nullable|exists:compliance_findings,id',
-            'case_type' => 'required|string',
-            'assigned_to' => 'required|exists:users,id',
-            'summary' => 'nullable|string|max:1000',
-            'customer_id' => 'nullable|exists:customers,id',
-            'severity' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         if (! empty($validated['finding_id'])) {
             $finding = ComplianceFinding::findOrFail($validated['finding_id']);
@@ -104,13 +99,9 @@ class CaseController extends Controller
     /**
      * Update a case.
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateCaseRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'assigned_to' => 'nullable|exists:users,id',
-            'priority' => 'nullable|string',
-            'case_summary' => 'nullable|string|max:1000',
-        ]);
+        $validated = $request->validated();
 
         $case = ComplianceCase::findOrFail($id);
 

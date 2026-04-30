@@ -6,6 +6,9 @@ use App\Enums\CounterSessionStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
+use App\Http\Requests\CloseCounterRequest;
+use App\Http\Requests\HandoverCounterRequest;
+use App\Http\Requests\OpenCounterRequest;
 use App\Models\Counter;
 use App\Models\CounterHandover;
 use App\Models\CounterSession;
@@ -66,14 +69,8 @@ class CounterController extends Controller
     /**
      * Open a counter session
      */
-    public function open(Request $request, Counter $counter)
+    public function open(OpenCounterRequest $request, Counter $counter)
     {
-        $request->validate([
-            'opening_floats' => 'required|array',
-            'opening_floats.*.currency_id' => 'required|exists:currencies,code',
-            'opening_floats.*.amount' => 'required|numeric|min:0',
-        ]);
-
         $user = Auth::user();
         $openingFloats = $request->input('opening_floats');
 
@@ -126,16 +123,9 @@ class CounterController extends Controller
     /**
      * Close a counter session
      */
-    public function close(Request $request, Counter $counter)
+    public function close(CloseCounterRequest $request, Counter $counter)
     {
         $this->requireManagerOrAdmin();
-
-        $request->validate([
-            'closing_floats' => 'required|array',
-            'closing_floats.*.currency_id' => 'required|exists:currencies,code',
-            'closing_floats.*.amount' => 'required|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
 
         $user = Auth::user();
         $closingFloats = $request->input('closing_floats');
@@ -250,19 +240,9 @@ class CounterController extends Controller
     /**
      * Process handover
      */
-    public function handover(Request $request, Counter $counter)
+    public function handover(HandoverCounterRequest $request, Counter $counter)
     {
         $this->requireManagerOrAdmin();
-
-        $request->validate([
-            'from_user_id' => 'required|exists:users,id',
-            'to_user_id' => 'required|exists:users,id',
-            'supervisor_id' => 'required|exists:users,id',
-            'physical_counts' => 'required|array',
-            'physical_counts.*.currency_id' => 'required|exists:currencies,code',
-            'physical_counts.*.amount' => 'required|numeric|min:0',
-            'variance_notes' => 'nullable|string',
-        ]);
 
         $fromUser = User::findOrFail($request->input('from_user_id'));
         $today = now()->toDateString();
@@ -337,10 +317,8 @@ class CounterController extends Controller
 
         $user = Auth::user();
 
-        $emergencyService = app(EmergencyCounterService::class);
-
         try {
-            $closure = $emergencyService->initiateEmergencyClose(
+            $closure = $this->emergencyCounterService->initiateEmergencyClose(
                 $counter,
                 $user,
                 $request->input('reason')
@@ -361,8 +339,7 @@ class CounterController extends Controller
             abort(404);
         }
 
-        $emergencyService = app(EmergencyCounterService::class);
-        $variance = $emergencyService->getVariance($closure);
+        $variance = $this->emergencyCounterService->getVariance($closure);
 
         return view('counters.emergency-closure', compact('counter', 'closure', 'variance'));
     }
@@ -376,9 +353,7 @@ class CounterController extends Controller
         }
 
         $user = Auth::user();
-        $emergencyService = app(EmergencyCounterService::class);
-
-        $closure = $emergencyService->acknowledge($closure, $user);
+        $closure = $this->emergencyCounterService->acknowledge($closure, $user);
 
         return redirect()->route('counters.index')
             ->with('success', 'Emergency closure acknowledged');
@@ -429,10 +404,8 @@ class CounterController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $handoverService = app(CounterHandoverService::class);
-
         try {
-            $handoverService->acknowledgeHandover(
+            $this->counterHandoverService->acknowledgeHandover(
                 $handover,
                 $user,
                 $request->boolean('verified'),

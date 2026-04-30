@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreFiscalYearRequest;
 use App\Models\FiscalYear;
 use App\Services\FiscalYearService;
 use Illuminate\Http\Request;
@@ -37,15 +38,9 @@ class FiscalYearController extends Controller
     /**
      * Create a new fiscal year.
      */
-    public function store(Request $request)
+    public function store(StoreFiscalYearRequest $request)
     {
         $this->requireManagerOrAdmin();
-
-        $request->validate([
-            'year_code' => 'required|string|max:10|unique:fiscal_years,year_code',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-        ]);
 
         try {
             $year = $this->fiscalYearService->createFiscalYear(

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreStrRequest;
 use App\Models\StrReport;
 use App\Services\AuditService;
 use App\Services\ComplianceService;
@@ -42,15 +43,9 @@ class StrController extends Controller
     /**
      * Create a new STR report.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreStrRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'alert_id' => 'nullable|exists:flagged_transactions,id',
-            'transaction_ids' => 'required|array',
-            'transaction_ids.*' => 'exists:transactions,id',
-            'reason' => 'required|string|min:20',
-        ]);
+        $validated = $request->validated();
 
         try {
             $strReport = $this->strService->createStrReport($validated, $request->user());

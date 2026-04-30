@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Compliance;
 
 use App\Enums\FlagStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AssignAlertRequest;
+use App\Http\Requests\DismissAlertRequest;
+use App\Http\Requests\ResolveAlertRequest;
 use App\Models\Alert;
 use App\Services\AlertTriageService;
 use Illuminate\Http\Request;
@@ -47,37 +50,25 @@ class AlertTriageController extends Controller
         return view('compliance.alerts.show', compact('alert'));
     }
 
-    public function assign(Request $request, Alert $alert)
+    public function assign(AssignAlertRequest $request, Alert $alert)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
-
-        $this->alertTriageService->assignToOfficer($alert, $request->user_id);
+        $this->alertTriageService->assignToOfficer($alert, $request->assignee_id);
 
         return redirect()->back()->with('success', 'Alert assigned successfully');
     }
 
-    public function resolve(Request $request, Alert $alert)
+    public function resolve(ResolveAlertRequest $request, Alert $alert)
     {
-        $request->validate([
-            'notes' => 'nullable|string',
-        ]);
-
-        $this->alertTriageService->resolveAlert($alert, auth()->id(), $request->notes);
+        $this->alertTriageService->resolveAlert($alert, auth()->id(), $request->resolution);
 
         return redirect()->route('compliance.alerts.index')->with('success', 'Alert resolved successfully');
     }
 
-    public function dismiss(Request $request, Alert $alert)
+    public function dismiss(DismissAlertRequest $request, Alert $alert)
     {
         if ($alert->status === FlagStatus::Resolved || $alert->status === FlagStatus::Rejected) {
             abort(403, 'Cannot dismiss an already resolved or rejected alert.');
         }
-
-        $validated = $request->validate([
-            'reason' => 'nullable|string|max:500',
-        ]);
 
         $alert->update([
             'status' => FlagStatus::Rejected,

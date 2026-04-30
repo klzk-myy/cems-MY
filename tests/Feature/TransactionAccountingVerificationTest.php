@@ -84,22 +84,17 @@ class TransactionAccountingVerificationTest extends TestCase
 
     protected function createFiscalYear(): void
     {
-        FiscalYear::create([
-            'year_code' => now()->year,
+        $fy = FiscalYear::factory()->create([
+            'year_code' => (string) now()->year,
             'start_date' => now()->startOfYear()->toDateString(),
             'end_date' => now()->endOfYear()->toDateString(),
-            'status' => 'Open',
-            'is_closed' => false,
         ]);
 
-        AccountingPeriod::create([
+        AccountingPeriod::factory()->create([
             'period_code' => now()->format('Y-m'),
-            'year_id' => FiscalYear::where('year_code', now()->year)->first()->id,
+            'fiscal_year_id' => $fy->id,
             'start_date' => now()->startOfMonth()->toDateString(),
             'end_date' => now()->endOfMonth()->toDateString(),
-            'period_type' => 'month',
-            'status' => 'open',
-            'is_closed' => false,
         ]);
     }
 
@@ -136,39 +131,34 @@ class TransactionAccountingVerificationTest extends TestCase
         ];
 
         foreach ($branchConfigs as $config) {
-            $branch = Branch::create([
+            $branch = Branch::factory()->create([
                 'code' => $config['code'],
                 'name' => $config['name'],
                 'address' => '123 Test Street',
                 'phone' => '+60312345678',
                 'email' => 'test@localhost.com',
-                'is_active' => true,
             ]);
             $this->branches[$config['code']] = $branch;
 
             // Create teller for this branch
-            $teller = User::create([
+            $teller = User::factory()->create([
                 'username' => 'teller_'.$config['code'].'_'.uniqid(),
                 'email' => 'teller_'.$config['code'].'_'.uniqid().'@test.com',
-                'password_hash' => bcrypt('password'),
                 'role' => UserRole::Teller,
                 'branch_id' => $branch->id,
-                'is_active' => true,
             ]);
             $this->tellers[$config['code']] = $teller;
 
             // Create manager for this branch
-            $manager = User::create([
+            $manager = User::factory()->create([
                 'username' => 'manager_'.$config['code'].'_'.uniqid(),
                 'email' => 'manager_'.$config['code'].'_'.uniqid().'@test.com',
-                'password_hash' => bcrypt('password'),
                 'role' => UserRole::Manager,
                 'branch_id' => $branch->id,
-                'is_active' => true,
             ]);
 
             // Create pool for this branch
-            BranchPool::create([
+            BranchPool::factory()->create([
                 'branch_id' => $branch->id,
                 'currency_code' => 'USD',
                 'available_balance' => '100000.0000',
@@ -176,11 +166,10 @@ class TransactionAccountingVerificationTest extends TestCase
             ]);
 
             // Create counter for this branch
-            $counter = Counter::create([
+            $counter = Counter::factory()->create([
                 'name' => 'Counter '.$config['code'],
                 'code' => 'CTR_'.$config['code'],
                 'branch_id' => $branch->id,
-                'is_active' => true,
             ]);
             $this->counters[$config['code']] = $counter;
 
@@ -200,7 +189,7 @@ class TransactionAccountingVerificationTest extends TestCase
             );
 
             // Create till balances for this counter
-            TillBalance::create([
+            TillBalance::factory()->create([
                 'till_id' => (string) $counter->id,
                 'currency_code' => 'MYR',
                 'branch_id' => $branch->id,
@@ -210,7 +199,7 @@ class TransactionAccountingVerificationTest extends TestCase
                 'opened_by' => $teller->id,
             ]);
 
-            TillBalance::create([
+            TillBalance::factory()->create([
                 'till_id' => (string) $counter->id,
                 'currency_code' => 'USD',
                 'branch_id' => $branch->id,
@@ -221,7 +210,7 @@ class TransactionAccountingVerificationTest extends TestCase
             ]);
 
             // Create USD position for this counter
-            CurrencyPosition::create([
+            CurrencyPosition::factory()->create([
                 'currency_code' => 'USD',
                 'till_id' => (string) $counter->id,
                 'branch_id' => $branch->id,
@@ -232,7 +221,7 @@ class TransactionAccountingVerificationTest extends TestCase
 
             // Create 3 customers for this branch
             for ($c = 0; $c < 3; $c++) {
-                $customer = Customer::create([
+                $customer = Customer::factory()->create([
                     'full_name' => 'Customer '.$config['code'].' - '.$c,
                     'id_type' => 'MyKad',
                     'id_number_encrypted' => encrypt('123456789012'.$config['code'].$c),
@@ -240,7 +229,6 @@ class TransactionAccountingVerificationTest extends TestCase
                     'date_of_birth' => '1990-01-15',
                     'risk_rating' => 'Low',
                     'cdd_level' => 'Simplified',
-                    'is_active' => true,
                 ]);
                 $this->customers[$config['code']][] = $customer;
             }

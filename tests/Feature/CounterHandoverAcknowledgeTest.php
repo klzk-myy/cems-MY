@@ -30,7 +30,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
     {
         parent::setUp();
 
-        $this->branch = Branch::create([
+        $this->branch = Branch::factory()->create([
             'code' => 'HQ'.substr(uniqid(), -4),
             'name' => 'Test Head Office',
             'address' => '123 Test Street',
@@ -39,14 +39,14 @@ class CounterHandoverAcknowledgeTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->counter = Counter::create([
+        $this->counter = Counter::factory()->create([
             'name' => 'Test Counter 1',
             'code' => 'CTR'.substr(uniqid(), -4),
             'branch_id' => $this->branch->id,
             'status' => 'active',
         ]);
 
-        $this->teller1 = User::create([
+        $this->teller1 = User::factory()->create([
             'username' => 'teller1'.substr(uniqid(), -6),
             'email' => 'teller1-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
@@ -55,7 +55,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->teller2 = User::create([
+        $this->teller2 = User::factory()->create([
             'username' => 'teller2'.substr(uniqid(), -6),
             'email' => 'teller2-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
@@ -64,7 +64,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->manager = User::create([
+        $this->manager = User::factory()->create([
             'username' => 'manager'.substr(uniqid(), -6),
             'email' => 'manager-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
@@ -76,7 +76,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
 
     protected function createPendingHandover(): array
     {
-        $session = CounterSession::create([
+        $session = CounterSession::factory()->create([
             'counter_id' => $this->counter->id,
             'user_id' => $this->teller1->id,
             'session_date' => now()->toDateString(),
@@ -85,7 +85,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
             'status' => CounterSessionStatus::Open,
         ]);
 
-        $handover = CounterHandover::create([
+        $handover = CounterHandover::factory()->create([
             'counter_session_id' => $session->id,
             'from_user_id' => $this->teller1->id,
             'to_user_id' => $this->teller2->id,

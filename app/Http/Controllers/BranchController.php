@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreBranchRequest;
+use App\Http\Requests\UpdateBranchRequest;
 use App\Models\Branch;
 use App\Services\BranchService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -51,23 +52,9 @@ class BranchController extends Controller
      *
      * @return RedirectResponse
      */
-    public function store(Request $request)
+    public function store(StoreBranchRequest $request)
     {
-        $validated = $request->validate([
-            'code' => 'required|string|max:20|unique:branches,code',
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:head_office,branch,sub_branch',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'country' => 'nullable|string|max:50',
-            'phone' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:100',
-            'is_active' => 'boolean',
-            'is_main' => 'boolean',
-            'parent_id' => 'nullable|exists:branches,id',
-        ]);
+        $validated = $request->validated();
 
         $branch = $this->branchService->createBranch($validated, auth()->id(), $request->ip());
 
@@ -106,23 +93,9 @@ class BranchController extends Controller
      *
      * @return RedirectResponse
      */
-    public function update(Request $request, Branch $branch)
+    public function update(UpdateBranchRequest $request, Branch $branch)
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', Rule::unique('branches')->ignore($branch->id)],
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:head_office,branch,sub_branch',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'country' => 'nullable|string|max:50',
-            'phone' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:100',
-            'is_active' => 'boolean',
-            'is_main' => 'boolean',
-            'parent_id' => 'nullable|exists:branches,id',
-        ]);
+        $validated = $request->validated();
 
         $branch = $this->branchService->updateBranch($branch, $validated, auth()->id(), $request->ip());
 

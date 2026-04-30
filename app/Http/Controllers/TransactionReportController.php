@@ -6,6 +6,7 @@ use App\Enums\TransactionType;
 use App\Models\Customer;
 use App\Models\SystemLog;
 use App\Services\ExportService;
+use Barryvdh\DomPDF\PDF;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,7 +17,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class TransactionReportController extends Controller
 {
     public function __construct(
-        protected ExportService $exportService
+        protected ExportService $exportService,
+        private PDF $pdf
     ) {}
 
     /**
@@ -336,7 +338,7 @@ class TransactionReportController extends Controller
      */
     protected function exportToPdf(array $data, string $filename, Customer $customer, array $filters)
     {
-        $pdf = app('dompdf.wrapper');
+        $pdf = $this->pdf;
         $pdf->loadView('transactions.export.customer-history-pdf', [
             'data' => $data,
             'customer' => $customer,

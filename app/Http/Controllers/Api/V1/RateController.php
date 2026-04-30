@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\FetchRateRequest;
+use App\Http\Requests\OverrideRateRequest;
 use App\Services\RateManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,7 +55,7 @@ class RateController extends Controller
      * Fetch latest rates from API and store in exchange_rates table.
      * Accessible to Manager and Admin.
      */
-    public function fetchFromApi(Request $request): JsonResponse
+    public function fetchFromApi(FetchRateRequest $request): JsonResponse
     {
         $user = Auth::user();
 
@@ -104,7 +106,7 @@ class RateController extends Controller
      * Override/Manually set rates for a currency.
      * Manager/Admin only.
      */
-    public function override(Request $request, string $currencyCode): JsonResponse
+    public function override(OverrideRateRequest $request, string $currencyCode): JsonResponse
     {
         $user = Auth::user();
 
@@ -115,11 +117,7 @@ class RateController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'rate_buy' => 'required|numeric|min:0.0001',
-            'rate_sell' => 'required|numeric|min:0.0001',
-            'reason' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->rateService->overrideRate(
             $currencyCode,

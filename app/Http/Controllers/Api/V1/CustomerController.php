@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCustomerRequest;
+use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
 use App\Services\AuditService;
 use App\Services\CustomerService;
@@ -49,22 +51,9 @@ class CustomerController extends Controller
      * Create a new customer.
      * Initial risk_rating is always 'Low' - automated risk scoring module determines actual risk.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreCustomerRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'id_type' => 'required|in:MyKad,Passport,Others',
-            'id_number' => 'required|string|max:50',
-            'date_of_birth' => 'required|date|before:today',
-            'nationality' => 'required|string|max:100',
-            'address' => 'nullable|string|max:500',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'pep_status' => 'sometimes|boolean',
-            'occupation' => 'nullable|string|max:255',
-            'employer_name' => 'nullable|string|max:255',
-            'employer_address' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             $customer = $this->customerService->createCustomer($validated, auth()->id());
@@ -110,25 +99,11 @@ class CustomerController extends Controller
      * Update a customer.
      * Note: risk_rating is auto-determined by risk scoring engine, not manually settable.
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateCustomerRequest $request, int $id): JsonResponse
     {
         $customer = Customer::findOrFail($id);
 
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'id_type' => 'required|in:MyKad,Passport,Others',
-            'id_number' => 'required|string|max:50',
-            'date_of_birth' => 'required|date|before:today',
-            'nationality' => 'required|string|max:100',
-            'address' => 'nullable|string|max:500',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'pep_status' => 'sometimes|boolean',
-            'occupation' => 'nullable|string|max:255',
-            'employer_name' => 'nullable|string|max:255',
-            'employer_address' => 'nullable|string|max:500',
-            'is_active' => 'sometimes|boolean',
-        ]);
+        $validated = $request->validated();
 
         try {
             $customer = $this->customerService->updateCustomer($customer, $validated, auth()->id());

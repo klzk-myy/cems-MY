@@ -41,7 +41,7 @@ class RevaluationServiceTest extends TestCase
             ['name' => 'US Dollar', 'symbol' => '$', 'decimal_places' => 2, 'is_active' => true]
         );
 
-        $this->testUser = User::create([
+        $this->testUser = User::factory()->create([
             'username' => 'testuser',
             'email' => 'test@test.com',
             'password_hash' => bcrypt('password'),
@@ -57,7 +57,7 @@ class RevaluationServiceTest extends TestCase
     {
         $parsedDate = Carbon::parse($date);
 
-        return AccountingPeriod::create([
+        return AccountingPeriod::factory()->create([
             'period_code' => $parsedDate->format('Y-m'),
             'start_date' => $parsedDate->startOfMonth()->toDateString(),
             'end_date' => $parsedDate->endOfMonth()->toDateString(),
@@ -73,7 +73,7 @@ class RevaluationServiceTest extends TestCase
         $this->createTestAccountingPeriod($testDate);
 
         // Create a currency position with balance
-        $position = CurrencyPosition::create([
+        $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
             'balance' => '1000.00',
@@ -118,7 +118,7 @@ class RevaluationServiceTest extends TestCase
         $this->createTestAccountingPeriod($testDate);
 
         // Create a currency position with balance
-        $position = CurrencyPosition::create([
+        $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
             'balance' => '1000.00',
@@ -164,7 +164,7 @@ class RevaluationServiceTest extends TestCase
         $this->createTestAccountingPeriod($testDate);
 
         // Create a currency position with zero balance
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
             'balance' => '0.00',

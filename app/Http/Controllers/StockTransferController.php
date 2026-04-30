@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ApproveStockTransferRequest;
+use App\Http\Requests\StoreStockTransferRequest;
 use App\Models\StockTransfer;
 use App\Services\AuditService;
 use App\Services\StockTransferService;
@@ -9,17 +11,10 @@ use Illuminate\Http\Request;
 
 class StockTransferController extends Controller
 {
-    protected AuditService $auditService;
-
-    public function __construct(AuditService $auditService)
-    {
-        $this->auditService = $auditService;
-    }
-
-    protected function getStockTransferService(): StockTransferService
-    {
-        return new StockTransferService(auth()->user());
-    }
+    public function __construct(
+        protected AuditService $auditService,
+        protected StockTransferService $stockTransferService,
+    ) {}
 
     public function index(Request $request)
     {
@@ -47,21 +42,11 @@ class StockTransferController extends Controller
         return view('stock-transfers.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreStockTransferRequest $request)
     {
-        $validated = $request->validate([
-            'source_branch_name' => 'required|string',
-            'destination_branch_name' => 'required|string|different:source_branch_name',
-            'type' => 'required|in:Standard,Emergency,Scheduled,Return',
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.currency_code' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0',
-            'items.*.rate' => 'required|numeric|min:0',
-            'items.*.value_myr' => 'required|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
-        $transfer = $this->getStockTransferService()->createRequest($validated);
+        $transfer = $this->stockTransferService->createRequest($validated);
 
         $this->auditService->logStockTransferEvent('stock_transfer_created', $transfer->id, [
             'new' => [
@@ -83,9 +68,9 @@ class StockTransferController extends Controller
         return view('stock-transfers.show', compact('stockTransfer'));
     }
 
-    public function approveBm(StockTransfer $stockTransfer)
+    public function approveBm(ApproveStockTransferRequest $request, StockTransfer $stockTransfer)
     {
-        $this->getStockTransferService()->approveByBranchManager($stockTransfer);
+        $this->stockTransferService->approveByBranchManager($stockTransfer);
 
         $this->auditService->logStockTransferEvent('stock_transfer_approved_bm', $stockTransfer->id, [
             'new' => ['approved_by' => auth()->user()->username],
@@ -94,9 +79,9 @@ class StockTransferController extends Controller
         return redirect()->back()->with('success', 'Transfer approved by branch manager');
     }
 
-    public function approveHq(StockTransfer $stockTransfer)
+    public function approveHq(ApproveStockTransferRequest $request, StockTransfer $stockTransfer)
     {
-        $this->getStockTransferService()->approveByHQ($stockTransfer);
+        $this->stockTransferService->approveByHQ($stockTransfer);
 
         $this->auditService->logStockTransferEvent('stock_transfer_approved_hq', $stockTransfer->id, [
             'new' => ['approved_by' => auth()->user()->username],
@@ -107,7 +92,7 @@ class StockTransferController extends Controller
 
     public function dispatch(StockTransfer $stockTransfer)
     {
-        $this->getStockTransferService()->dispatch($stockTransfer);
+        $this->stockTransferService->dispatch($stockTransfer);
 
         $this->auditService->logStockTransferEvent('stock_transfer_dispatched', $stockTransfer->id);
 
@@ -122,7 +107,7 @@ class StockTransferController extends Controller
             'items.*.quantity_received' => 'required|numeric|min:0',
         ]);
 
-        $this->getStockTransferService()->receiveItems($stockTransfer, $request->items);
+        $this->stockTransferService->receiveItems($stockTransfer, $request->items);
 
         $this->auditService->logStockTransferEvent('stock_transfer_partially_received', $stockTransfer->id, [
             'new' => ['received_items' => $request->items],
@@ -133,7 +118,7 @@ class StockTransferController extends Controller
 
     public function complete(StockTransfer $stockTransfer)
     {
-        $this->getStockTransferService()->complete($stockTransfer);
+        $this->stockTransferService->complete($stockTransfer);
 
         $this->auditService->logStockTransferEvent('stock_transfer_completed', $stockTransfer->id);
 
@@ -146,7 +131,7 @@ class StockTransferController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
-        $this->getStockTransferService()->cancel($stockTransfer, $request->reason);
+        $this->stockTransferService->cancel($stockTransfer, $request->reason);
 
         $this->auditService->logStockTransferEvent('stock_transfer_cancelled', $stockTransfer->id, [
             'new' => ['reason' => $request->reason, 'cancelled_by' => auth()->user()->username],

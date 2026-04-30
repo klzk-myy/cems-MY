@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\OverrideRateRequest;
 use App\Models\Branch;
 use App\Models\ExchangeRateHistory;
 use App\Services\RateManagementService;
@@ -91,7 +92,7 @@ class RateController extends Controller
         return response()->json($result, $result['success'] ? 200 : 404);
     }
 
-    public function override(Request $request, string $currencyCode): JsonResponse
+    public function override(OverrideRateRequest $request, string $currencyCode): JsonResponse
     {
         $user = Auth::user();
 
@@ -104,11 +105,7 @@ class RateController extends Controller
 
         $branchId = $this->resolveBranchId($user, $request);
 
-        $validated = $request->validate([
-            'rate_buy' => 'required|numeric|min:0.0001',
-            'rate_sell' => 'required|numeric|min:0.0001',
-            'reason' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->rateService->overrideRate(
             $currencyCode,

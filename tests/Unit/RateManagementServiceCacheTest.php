@@ -16,7 +16,7 @@ class RateManagementServiceCacheTest extends TestCase
 
     public function test_get_rate_for_currency_uses_cache()
     {
-        ExchangeRate::create([
+        ExchangeRate::factory()->create([
             'currency_code' => 'USD',
             'rate_buy' => '4.5000',
             'rate_sell' => '4.6000',
@@ -37,7 +37,7 @@ class RateManagementServiceCacheTest extends TestCase
 
     public function test_override_rate_invalidates_cache()
     {
-        ExchangeRate::create([
+        ExchangeRate::factory()->create([
             'currency_code' => 'USD',
             'rate_buy' => '4.5000',
             'rate_sell' => '4.6000',

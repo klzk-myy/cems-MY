@@ -31,7 +31,7 @@ class AccountingWorkflowTest extends TestCase
         parent::setUp();
 
         // Create test branch with unique code
-        $this->branch = Branch::create([
+        $this->branch = Branch::factory()->create([
             'code' => 'HQ'.substr(uniqid(), -4),
             'name' => 'Test Head Office',
             'address' => '123 Test Street',
@@ -41,7 +41,7 @@ class AccountingWorkflowTest extends TestCase
         ]);
 
         // Create manager user with unique username
-        $this->manager = User::create([
+        $this->manager = User::factory()->create([
             'username' => 'manager'.substr(uniqid(), -6),
             'email' => 'manager-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
@@ -51,7 +51,7 @@ class AccountingWorkflowTest extends TestCase
         ]);
 
         // Create fiscal year
-        $this->fiscalYear = FiscalYear::create([
+        $this->fiscalYear = FiscalYear::factory()->create([
             'year_code' => '2026',
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
@@ -60,14 +60,14 @@ class AccountingWorkflowTest extends TestCase
         ]);
 
         // Create chart of accounts with unique codes
-        $this->cashAccount = ChartOfAccount::create([
+        $this->cashAccount = ChartOfAccount::factory()->create([
             'account_code' => '9999',
             'account_name' => 'Test Cash',
             'account_type' => 'Asset',
             'is_active' => true,
         ]);
 
-        $this->revenueAccount = ChartOfAccount::create([
+        $this->revenueAccount = ChartOfAccount::factory()->create([
             'account_code' => '5999',
             'account_name' => 'Test Revenue',
             'account_type' => 'Revenue',

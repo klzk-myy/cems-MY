@@ -6,6 +6,7 @@ use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\LogRotationService;
+use Barryvdh\DomPDF\PDF;
 use Illuminate\Http\Request;
 
 class AuditController extends Controller
@@ -14,10 +15,13 @@ class AuditController extends Controller
 
     protected LogRotationService $logRotationService;
 
-    public function __construct(AuditService $auditService, LogRotationService $logRotationService)
+    protected PDF $pdf;
+
+    public function __construct(AuditService $auditService, LogRotationService $logRotationService, PDF $pdf)
     {
         $this->auditService = $auditService;
         $this->logRotationService = $logRotationService;
+        $this->pdf = $pdf;
     }
 
     /**
@@ -249,7 +253,7 @@ class AuditController extends Controller
     {
         $filename = "audit_log_{$dateFrom}_to_{$dateTo}.pdf";
 
-        $pdf = app('dompdf.wrapper');
+        $pdf = $this->pdf;
         $pdf->loadView('audit.pdf', compact('logs', 'dateFrom', 'dateTo'));
 
         return $pdf->download($filename);

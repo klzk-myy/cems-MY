@@ -31,7 +31,7 @@ class TransactionCancellationServiceTest extends TestCase
         $tillId = 'TEST-TILL-'.uniqid();
 
         // Create initial position: 5000 USD
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => $currencyCode,
             'till_id' => $tillId,
             'balance' => '5000.00',
@@ -81,7 +81,7 @@ class TransactionCancellationServiceTest extends TestCase
         $tillId = 'TEST-TILL-'.uniqid();
 
         // Create initial position
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => $currencyCode,
             'till_id' => $tillId,
             'balance' => '3000.00',

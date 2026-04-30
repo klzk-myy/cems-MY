@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreJournalEntryRequest;
 use App\Models\AccountingPeriod;
 use App\Models\BankReconciliation;
 use App\Models\Budget;
@@ -62,17 +63,9 @@ class AccountingController extends Controller
         return view('accounting.journal.create', compact('accounts'));
     }
 
-    public function store(Request $request)
+    public function store(StoreJournalEntryRequest $request)
     {
-        $validated = $request->validate([
-            'entry_date' => 'required|date',
-            'description' => 'required|string|max:500',
-            'lines' => 'required|array|min:2',
-            'lines.*.account_code' => 'required|string|exists:chart_of_accounts,account_code',
-            'lines.*.debit' => 'required|numeric|min:0',
-            'lines.*.credit' => 'required|numeric|min:0',
-            'lines.*.description' => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         try {
             $entry = $this->accountingService->createJournalEntry(

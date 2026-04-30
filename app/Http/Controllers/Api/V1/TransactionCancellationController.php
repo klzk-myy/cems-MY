@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ApiCancelTransactionRequest;
+use App\Http\Requests\ApproveCancelRequest;
+use App\Http\Requests\RejectCancelRequest;
 use App\Models\Transaction;
 use App\Services\TransactionCancellationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class TransactionCancellationController extends Controller
 {
@@ -22,7 +24,7 @@ class TransactionCancellationController extends Controller
      * Transitions transaction to PendingCancellation status.
      * Requires manager or admin role.
      */
-    public function requestCancellation(Request $request, int $transactionId): JsonResponse
+    public function requestCancellation(ApiCancelTransactionRequest $request, int $transactionId): JsonResponse
     {
         $transaction = Transaction::findOrFail($transactionId);
 
@@ -33,9 +35,7 @@ class TransactionCancellationController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'reason' => 'required|string|min:10|max:1000',
-        ]);
+        $validated = $request->validated();
 
         if (! $this->canBeCancelled($transaction)) {
             return response()->json([
@@ -74,7 +74,7 @@ class TransactionCancellationController extends Controller
      * Transitions transaction to Cancelled status.
      * Requires manager, compliance officer, or admin role.
      */
-    public function approveCancellation(Request $request, int $transactionId): JsonResponse
+    public function approveCancellation(ApproveCancelRequest $request, int $transactionId): JsonResponse
     {
         $transaction = Transaction::findOrFail($transactionId);
 
@@ -92,9 +92,7 @@ class TransactionCancellationController extends Controller
             ], 400);
         }
 
-        $validated = $request->validate([
-            'reason' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->cancellationService->approveCancellation(
             $transaction,
@@ -126,7 +124,7 @@ class TransactionCancellationController extends Controller
      * Returns transaction to its previous status (InProgress, Completed, etc.).
      * Requires manager, compliance officer, or admin role.
      */
-    public function rejectCancellation(Request $request, int $transactionId): JsonResponse
+    public function rejectCancellation(RejectCancelRequest $request, int $transactionId): JsonResponse
     {
         $transaction = Transaction::findOrFail($transactionId);
 
@@ -144,9 +142,7 @@ class TransactionCancellationController extends Controller
             ], 400);
         }
 
-        $validated = $request->validate([
-            'reason' => 'required|string|min:10|max:500',
-        ]);
+        $validated = $request->validated();
 
         $previousStatus = $transaction->status;
 

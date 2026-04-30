@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreEddRequest;
+use App\Http\Requests\UpdateEddRequest;
 use App\Models\Customer;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
@@ -52,25 +54,9 @@ class EnhancedDiligenceController extends Controller
         return view('compliance.edd.create', compact('flag', 'customer', 'customers'));
     }
 
-    public function store(Request $request)
+    public function store(StoreEddRequest $request)
     {
-        $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'flagged_transaction_id' => 'nullable|exists:flagged_transactions,id',
-            'risk_level' => 'required|in:Low,Medium,High',
-            'source_of_funds' => 'required|string',
-            'source_of_funds_description' => 'nullable|string',
-            'purpose_of_transaction' => 'required|string',
-            'business_justification' => 'nullable|string',
-            'employment_status' => 'nullable|string',
-            'employer_name' => 'nullable|string|max:200',
-            'employer_address' => 'nullable|string|max:500',
-            'annual_income_range' => 'nullable|string',
-            'estimated_net_worth' => 'nullable|string',
-            'source_of_wealth' => 'nullable|string',
-            'source_of_wealth_description' => 'nullable|string',
-            'additional_information' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $flag = null;
         if ($request->flagged_transaction_id) {
@@ -106,26 +92,13 @@ class EnhancedDiligenceController extends Controller
         return view('compliance.edd.edit', compact('record'));
     }
 
-    public function update(Request $request, EnhancedDiligenceRecord $record)
+    public function update(UpdateEddRequest $request, EnhancedDiligenceRecord $record)
     {
         if ($record->status === 'Approved') {
             return redirect()->back()->with('error', 'Cannot update an approved EDD record.');
         }
 
-        $validated = $request->validate([
-            'source_of_funds' => 'required|string',
-            'source_of_funds_description' => 'nullable|string',
-            'purpose_of_transaction' => 'required|string',
-            'business_justification' => 'nullable|string',
-            'employment_status' => 'nullable|string',
-            'employer_name' => 'nullable|string|max:200',
-            'employer_address' => 'nullable|string|max:500',
-            'annual_income_range' => 'nullable|string',
-            'estimated_net_worth' => 'nullable|string',
-            'source_of_wealth' => 'nullable|string',
-            'source_of_wealth_description' => 'nullable|string',
-            'additional_information' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $record = $this->eddService->updateEddRecord($record, $validated);
 

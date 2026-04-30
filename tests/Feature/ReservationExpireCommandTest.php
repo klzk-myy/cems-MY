@@ -22,7 +22,7 @@ class ReservationExpireCommandTest extends TestCase
         $teller = User::factory()->create(['role' => 'teller']);
         Currency::factory()->create(['code' => 'USD']);
 
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => 'TILL1',
             'balance' => '1000.00',
@@ -42,7 +42,7 @@ class ReservationExpireCommandTest extends TestCase
             'status' => 'PendingApproval',
         ]);
 
-        $reservation = StockReservation::create([
+        $reservation = StockReservation::factory()->create([
             'transaction_id' => $transaction->id,
             'currency_code' => 'USD',
             'till_id' => 'TILL1',
@@ -75,7 +75,7 @@ class ReservationExpireCommandTest extends TestCase
             'status' => 'PendingApproval',
         ]);
 
-        $reservation = StockReservation::create([
+        $reservation = StockReservation::factory()->create([
             'transaction_id' => $transaction->id,
             'currency_code' => 'USD',
             'till_id' => 'TILL1',
@@ -110,7 +110,7 @@ class ReservationExpireCommandTest extends TestCase
             'status' => 'PendingApproval',
         ]);
 
-        $reservation = StockReservation::create([
+        $reservation = StockReservation::factory()->create([
             'transaction_id' => $transaction->id,
             'currency_code' => 'USD',
             'till_id' => 'TILL1',

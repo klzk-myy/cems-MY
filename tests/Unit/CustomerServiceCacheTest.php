@@ -16,7 +16,7 @@ class CustomerServiceCacheTest extends TestCase
 
     public function test_get_customer_uses_cache()
     {
-        $customer = Customer::create([
+        $customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
             'id_type' => 'MyKad',
             'id_number_encrypted' => encrypt('123456'),
@@ -43,7 +43,7 @@ class CustomerServiceCacheTest extends TestCase
 
     public function test_update_customer_invalidates_cache()
     {
-        $customer = Customer::create([
+        $customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
             'id_type' => 'MyKad',
             'id_number_encrypted' => encrypt('123456'),

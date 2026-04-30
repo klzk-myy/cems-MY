@@ -46,7 +46,7 @@ class BudgetServiceTest extends TestCase
             $this->markTestSkipped('No expense account found');
         }
 
-        Budget::create([
+        Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
             'budget_amount' => '5000.00',
@@ -73,7 +73,7 @@ class BudgetServiceTest extends TestCase
             $this->markTestSkipped('No expense account found');
         }
 
-        Budget::create([
+        Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
             'budget_amount' => '5000.00',
@@ -101,7 +101,7 @@ class BudgetServiceTest extends TestCase
             $this->markTestSkipped('No expense account found');
         }
 
-        Budget::create([
+        Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
             'budget_amount' => '5000.00',
@@ -126,7 +126,7 @@ class BudgetServiceTest extends TestCase
             $this->markTestSkipped('No expense or revenue account found');
         }
 
-        Budget::create([
+        Budget::factory()->create([
             'account_code' => $expenseAccount->account_code,
             'period_code' => $periodCode,
             'budget_amount' => '5000.00',
@@ -134,7 +134,7 @@ class BudgetServiceTest extends TestCase
             'created_by' => $this->adminUser->id,
         ]);
 
-        Budget::create([
+        Budget::factory()->create([
             'account_code' => $revenueAccount->account_code,
             'period_code' => $periodCode,
             'budget_amount' => '10000.00',
@@ -177,7 +177,7 @@ class BudgetServiceTest extends TestCase
             $this->markTestSkipped('No expense account found');
         }
 
-        $budget = Budget::create([
+        $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
             'budget_amount' => '5000.00',
@@ -198,7 +198,7 @@ class BudgetServiceTest extends TestCase
             $this->markTestSkipped('No expense account found');
         }
 
-        $budget = Budget::create([
+        $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
             'budget_amount' => '5000.00',
@@ -218,7 +218,7 @@ class BudgetServiceTest extends TestCase
             $this->markTestSkipped('No expense account found');
         }
 
-        $budget = Budget::create([
+        $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
             'budget_amount' => '5000.00',

@@ -17,6 +17,7 @@ use App\Services\CurrencyPositionService;
 use App\Services\MathService;
 use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
+use Barryvdh\DomPDF\PDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Picqer\Barcode\BarcodeGeneratorPNG;
@@ -31,7 +32,8 @@ class TransactionController extends Controller
         protected MathService $mathService,
         protected AccountingService $accountingService,
         protected TransactionService $transactionService,
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        private PDF $pdf
     ) {}
 
     /**
@@ -224,7 +226,7 @@ class TransactionController extends Controller
             $qrCodeImage = null;
         }
 
-        $pdf = app('dompdf.wrapper');
+        $pdf = $this->pdf;
         $pdf->loadView('transactions.receipt', compact('transaction', 'barcodeImage', 'qrCodeImage', 'barcodeText'));
         $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait');
         $filename = 'receipt_'.str_pad($transaction->id, 8, '0', STR_PAD_LEFT).'.pdf';

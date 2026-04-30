@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CddLevel;
+use App\Http\Requests\StoreCustomerRequest;
+use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Services\AuditService;
@@ -218,32 +220,9 @@ class CustomerController extends Controller
      *
      * @return RedirectResponse
      */
-    public function store(Request $request)
+    public function store(StoreCustomerRequest $request)
     {
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'id_type' => ['required', 'in:MyKad,Passport,Others'],
-            'id_number' => [
-                'required',
-                'string',
-                'max:50',
-                function ($attribute, $value, $fail) use ($request) {
-                    if ($request->id_type === 'MyKad') {
-                        $this->validateMyKadFormat($value, $fail);
-                    }
-                },
-            ],
-            'date_of_birth' => 'required|date|before:today',
-            'nationality' => 'required|string|max:100',
-            'address' => 'nullable|string|max:500',
-            'phone' => ['nullable', 'string', 'max:20', 'regex:/^(\+?6?01)[0-9]{8,9}$/'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'pep_status' => 'sometimes|boolean',
-            // Risk rating always 'Low' initially - automated risk scoring module determines actual risk
-            'occupation' => 'nullable|string|max:255',
-            'employer_name' => 'nullable|string|max:255',
-            'employer_address' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             $customer = $this->customerService->createCustomer($validated, auth()->id());
@@ -342,33 +321,9 @@ class CustomerController extends Controller
      *
      * @return RedirectResponse
      */
-    public function update(Request $request, Customer $customer)
+    public function update(UpdateCustomerRequest $request, Customer $customer)
     {
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'id_type' => ['required', 'in:MyKad,Passport,Others'],
-            'id_number' => [
-                'required',
-                'string',
-                'max:50',
-                function ($attribute, $value, $fail) use ($request) {
-                    if ($request->id_type === 'MyKad') {
-                        $this->validateMyKadFormat($value, $fail);
-                    }
-                },
-            ],
-            'date_of_birth' => 'required|date|before:today',
-            'nationality' => 'required|string|max:100',
-            'address' => 'nullable|string|max:500',
-            'phone' => ['nullable', 'string', 'max:20', 'regex:/^(\+?6?01)[0-9]{8,9}$/'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'pep_status' => 'sometimes|boolean',
-            'risk_rating' => ['required', 'in:Low,Medium,High'],
-            'occupation' => 'nullable|string|max:255',
-            'employer_name' => 'nullable|string|max:255',
-            'employer_address' => 'nullable|string|max:500',
-            'is_active' => 'sometimes|boolean',
-        ]);
+        $validated = $request->validated();
 
         try {
             $customer = $this->customerService->updateCustomer($customer, $validated, auth()->id());

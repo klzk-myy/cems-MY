@@ -26,7 +26,7 @@ class MonthEndCloseTest extends TestCase
     {
         parent::setUp();
 
-        $this->manager = User::create([
+        $this->manager = User::factory()->create([
             'username' => 'manager',
             'email' => 'manager@test.com',
             'password_hash' => bcrypt('password'),
@@ -45,14 +45,14 @@ class MonthEndCloseTest extends TestCase
     protected function createFiscalYearAndPeriod(string $date): AccountingPeriod
     {
         $parsed = Carbon::parse($date);
-        $fiscalYear = FiscalYear::create([
+        $fiscalYear = FiscalYear::factory()->create([
             'year_code' => (string) $parsed->year,
             'start_date' => $parsed->startOfYear()->toDateString(),
             'end_date' => $parsed->endOfYear()->toDateString(),
             'status' => 'Open',
         ]);
 
-        return AccountingPeriod::create([
+        return AccountingPeriod::factory()->create([
             'period_code' => $parsed->format('Y-m'),
             'start_date' => $parsed->startOfMonth()->toDateString(),
             'end_date' => $parsed->endOfMonth()->toDateString(),
@@ -66,7 +66,7 @@ class MonthEndCloseTest extends TestCase
     {
         $date = Carbon::parse('2026-03-31');
 
-        $period = AccountingPeriod::create([
+        $period = AccountingPeriod::factory()->create([
             'period_code' => '2026-03',
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
@@ -93,7 +93,7 @@ class MonthEndCloseTest extends TestCase
     public function test_pre_flight_checks_fails_when_period_already_closed(): void
     {
         $date = Carbon::parse('2026-03-31');
-        $period = AccountingPeriod::create([
+        $period = AccountingPeriod::factory()->create([
             'period_code' => '2026-03',
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
@@ -112,7 +112,7 @@ class MonthEndCloseTest extends TestCase
         $date = Carbon::parse('2026-03-31');
         $period = $this->createFiscalYearAndPeriod($date->toDateString());
 
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => 'TEST',
             'balance' => '1000.00',
@@ -135,7 +135,7 @@ class MonthEndCloseTest extends TestCase
     public function test_close_period_creates_next_period(): void
     {
         $date = Carbon::parse('2026-03-31');
-        $period = AccountingPeriod::create([
+        $period = AccountingPeriod::factory()->create([
             'period_code' => '2026-03',
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
@@ -156,7 +156,7 @@ class MonthEndCloseTest extends TestCase
     public function test_get_month_end_status_returns_correct_data(): void
     {
         $date = Carbon::parse('2026-03-31');
-        AccountingPeriod::create([
+        AccountingPeriod::factory()->create([
             'period_code' => '2026-03',
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
@@ -176,7 +176,7 @@ class MonthEndCloseTest extends TestCase
     public function test_close_period_sets_period_to_closed(): void
     {
         $date = Carbon::parse('2026-03-31');
-        $period = AccountingPeriod::create([
+        $period = AccountingPeriod::factory()->create([
             'period_code' => '2026-03',
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',

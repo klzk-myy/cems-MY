@@ -385,7 +385,7 @@ class CriticalTransactionWorkflowTest extends TestCase
 
     private function openCounterSession(User $user): void
     {
-        CounterSession::create([
+        CounterSession::factory()->create([
             'counter_id' => $this->counter->id,
             'user_id' => $user->id,
             'opened_by' => $user->id,
@@ -394,7 +394,7 @@ class CriticalTransactionWorkflowTest extends TestCase
             'status' => CounterSessionStatus::Open,
         ]);
 
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => (string) $this->counter->id,
             'currency_code' => 'MYR',
             'date' => today(),
@@ -402,7 +402,7 @@ class CriticalTransactionWorkflowTest extends TestCase
             'opened_by' => $user->id,
         ]);
 
-        TillBalance::create([
+        TillBalance::factory()->create([
             'till_id' => (string) $this->counter->id,
             'currency_code' => 'USD',
             'date' => today(),
@@ -413,7 +413,7 @@ class CriticalTransactionWorkflowTest extends TestCase
 
     private function createPosition(string $amount): void
     {
-        CurrencyPosition::create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => (string) $this->counter->id,
             'balance' => $amount,
