@@ -60,7 +60,6 @@ class BranchClosingWorkflowTest extends TestCase
             'name' => 'Test Counter 1',
             'code' => 'CTR'.substr(uniqid(), -4),
             'branch_id' => $this->branch->id,
-            'is_active' => true,
         ]);
 
         $this->manager = User::factory()->create([
