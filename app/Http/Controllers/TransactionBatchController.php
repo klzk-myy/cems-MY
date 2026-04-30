@@ -11,6 +11,7 @@ use App\Services\MathService;
 use App\Services\TransactionImportService;
 use App\Services\TransactionMonitoringService;
 use Illuminate\Http\Request;
+use Psr\Log\LoggerInterface;
 
 class TransactionBatchController extends Controller
 {
@@ -20,7 +21,8 @@ class TransactionBatchController extends Controller
         protected CurrencyPositionService $positionService,
         protected AccountingService $accountingService,
         protected TransactionMonitoringService $monitoringService,
-        protected DocumentStorageService $documentStorageService
+        protected DocumentStorageService $documentStorageService,
+        protected LoggerInterface $logger
     ) {}
 
     /**
@@ -95,7 +97,7 @@ class TransactionBatchController extends Controller
             return redirect()->route('transactions.batch-upload.show', $import)
                 ->with('success', "Import completed. {$import->success_count} transactions imported, {$import->error_count} errors.");
         } catch (\Exception $e) {
-            app('log')->error('Transaction import failed', ['exception' => $e, 'import_id' => $import->id]);
+            $this->logger->error('Transaction import failed', ['exception' => $e, 'import_id' => $import->id]);
             $import->update([
                 'status' => 'failed',
                 'completed_at' => now(),

@@ -13,6 +13,7 @@ use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\User;
+use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -174,9 +175,9 @@ class SetupController extends Controller
         ]);
     }
 
-    public function resetSetup()
+    public function resetSetup(Application $app)
     {
-        if (app()->environment('production')) {
+        if ($app->environment('production')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Reset not allowed in production',
