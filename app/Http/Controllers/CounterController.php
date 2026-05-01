@@ -358,7 +358,7 @@ class CounterController extends Controller
         $handover = CounterHandover::with(['counterSession', 'fromUser', 'supervisor'])
             ->whereHas('counterSession', function ($query) use ($counter, $today) {
                 $query->where('counter_id', $counter->id)
-                    ->where('session_date', $today);
+                    ->whereDate('session_date', $today);
             })
             ->where('to_user_id', $user->id)
             ->whereNull('acknowledged_at')
@@ -380,7 +380,7 @@ class CounterController extends Controller
         $handover = CounterHandover::with(['counterSession', 'fromUser', 'supervisor'])
             ->whereHas('counterSession', function ($query) use ($counter, $today) {
                 $query->where('counter_id', $counter->id)
-                    ->where('session_date', $today);
+                    ->whereDate('session_date', $today);
             })
             ->where('to_user_id', $user->id)
             ->whereNull('acknowledged_at')
