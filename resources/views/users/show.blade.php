@@ -4,14 +4,14 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header flex justify-between items-center">
-        <h3 class="card-title">{{ $user->name ?? 'N/A' }}</h3>
+    <div class="px-6 py-4 border-b border-[--color-border] flex justify-between items-center">
+        <h3 class="text-base font-semibold text-[--color-ink]">{{ $user->name ?? 'N/A' }}</h3>
         <div class="flex gap-2">
-            <a href="{{ route('users.edit', $user->id ?? 0) }}" class="btn btn-secondary">Edit</a>
-            <a href="{{ route('users.index') }}" class="btn btn-secondary">Back</a>
+            <a href="{{ route('users.edit', $user->id ?? 0) }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Edit</a>
+            <a href="{{ route('users.index') }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Back</a>
         </div>
     </div>
-    <div class="card-body">
+    <div class="p-6">
         <dl class="grid grid-cols-2 gap-6">
             <div>
                 <dt class="text-sm text-[--color-ink-muted]">Email</dt>
@@ -35,7 +35,7 @@
                 <dt class="text-sm text-[--color-ink-muted]">Status</dt>
                 <dd>
                     @if(isset($user->is_active))
-                        <span class="badge {{ $user->is_active ? 'badge-success' : 'badge-danger' }}">
+                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $user->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                             {{ $user->is_active ? 'Active' : 'Inactive' }}
                         </span>
                     @else

@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Profit & Loss Statement</h3>
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Profit & Loss Statement</h3>
         <span class="text-sm text-[--color-ink-muted]">{{ $fromDate ?? '' }} - {{ $toDate ?? '' }}</span>
     </div>
-    <div class="card-body">
+    <div class="p-6">
         <div class="grid grid-cols-2 gap-8">
             <div>
                 <h4 class="font-semibold mb-4">Revenue</h4>

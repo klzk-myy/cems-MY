@@ -1,57 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit STR - CEMS-MY</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="font-sans antialiased">
-    <div class="flex min-h-screen">
-        <aside class="w-60 bg-white border-r border-[#e5e5e5] flex flex-col shrink-0">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h1 class="text-lg font-semibold text-[#171717]">CEMS-MY</h1>
-            </div>
-            <nav class="flex-1 p-4 space-y-6 overflow-y-auto">
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Main</div>
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Dashboard</a>
-                    <a href="{{ route('transactions.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Transactions</a>
-                    <a href="{{ route('counters.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Counters</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Management</div>
-                    <a href="{{ route('customers.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Customers</a>
-                    <a href="{{ route('compliance') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Compliance</a>
-                    <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Reports</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">System</div>
-                    <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Users</a>
-                    <a href="{{ route('rates.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Rates</a>
-                    <a href="{{ route('accounting.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Accounting</a>
-                </div>
-            </nav>
-        </aside>
-        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto">
-            <div class="mb-6">
-                <h1 class="text-2xl font-semibold text-[#171717]">Edit STR Report</h1>
-                <p class="text-sm text-[#6b6b6b] mt-1">Update suspicious transaction report</p>
-            </div>
-            <form method="POST" action="{{ route('str.update', $strReport ?? null) }}" class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                @csrf @method('PUT')
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-medium text-[#171717] mb-2">Description</label>
-                        <textarea name="description" rows="4" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">{{ $strReport->description ?? '' }}</textarea>
-                    </div>
-                </div>
-                <div class="mt-6 flex gap-3">
-                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-[#0a0a0a] rounded-lg hover:bg-[#262626]">Update STR</button>
-                    <a href="{{ route('str.index') }}" class="px-4 py-2 text-sm font-medium text-[#171717] bg-white border border-[#e5e5e5] rounded-lg hover:bg-[#f7f7f8]">Cancel</a>
-                </div>
-            </form>
-        </main>
+@extends('layouts.base')
+
+@section('title', 'Edit STR - CEMS-MY')
+
+@section('content')
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">Edit STR</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Draft STR #{{ $str->id }}</p>
     </div>
-</body>
-</html>
+    <a href="{{ route('str.show', $str) }}" class="px-4 py-2 border border-[--color-border] text-[--color-ink] text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">
+        Back
+    </a>
+</div>
+
+<div class="card">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">STR Details</h3>
+    </div>
+    <div class="p-6">
+        <form action="{{ route('str.update', $str) }}" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-2">STR Reason (min 20 chars)</label>
+                    <textarea name="reason" rows="4" class="w-full px-3 py-2 border border-[--color-border] rounded-lg text-sm"
+                        placeholder="Describe why this transaction is suspicious...">{{ $str->reason }}</textarea>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">
+                    Update STR
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection

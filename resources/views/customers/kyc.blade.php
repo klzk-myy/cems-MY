@@ -3,9 +3,9 @@
 @section('title', 'Customer KYC')
 
 @section('content')
-<div class="card">
-    <div class="card-header"><h3 class="card-title">Customer KYC Information</h3></div>
-    <div class="card-body">
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Customer KYC Information</h3></div>
+    <div class="p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <h4 class="text-sm font-medium text-[--color-ink-muted] mb-4">Basic Information</h4>
@@ -24,14 +24,14 @@
                             @if(isset($customer->risk_level))
                                 @php
                                     $riskClass = match($customer->risk_level ?? '') {
-                                        'Low' => 'badge-success',
-                                        'Medium' => 'badge-warning',
-                                        'High' => 'badge-danger',
-                                        'Critical' => 'badge-danger',
-                                        default => 'badge-default'
+                                        'Low' => 'bg-green-100 text-green-700',
+                                        'Medium' => 'bg-yellow-100 text-yellow-700',
+                                        'High' => 'bg-red-100 text-red-700',
+                                        'Critical' => 'bg-red-100 text-red-700',
+                                        default => 'bg-gray-100 text-gray-700'
                                     };
                                 @endphp
-                                <span class="badge {{ $riskClass }}">{{ $customer->risk_level }}</span>
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $riskClass }}">{{ $customer->risk_level }}</span>
                             @else
                                 <span class="text-[--color-ink-muted]">N/A</span>
                             @endif
@@ -43,13 +43,13 @@
                             @if(isset($customer->cdd_level))
                                 @php
                                     $cddClass = match($customer->cdd_level ?? '') {
-                                        'Simplified' => 'badge-info',
-                                        'Standard' => 'badge-warning',
-                                        'Enhanced' => 'badge-danger',
-                                        default => 'badge-default'
+                                        'Simplified' => 'bg-green-100 text-green-700',
+                                        'Standard' => 'bg-yellow-100 text-yellow-700',
+                                        'Enhanced' => 'bg-red-100 text-red-700',
+                                        default => 'bg-gray-100 text-gray-700'
                                     };
                                 @endphp
-                                <span class="badge {{ $cddClass }}">{{ $customer->cdd_level }}</span>
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $cddClass }}">{{ $customer->cdd_level }}</span>
                             @else
                                 <span class="text-[--color-ink-muted]">N/A</span>
                             @endif

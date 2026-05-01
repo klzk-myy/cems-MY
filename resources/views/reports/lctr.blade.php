@@ -10,9 +10,9 @@
 @endsection
 
 @section('content')
-<div class="card">
-    <div class="table-container">
-        <table class="table">
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
             <thead>
                 <tr>
                     <th>Date</th>

@@ -1,100 +1,91 @@
 @extends('layouts.base')
 
-@section('title', 'Case #' . ($case->id ?? ''))
-
-@section('header-title')
-<div class="flex items-center gap-3">
-    <a href="/compliance/cases" class="btn btn-ghost btn-icon">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-    </a>
-    <div>
-        <h1 class="text-xl font-semibold text-[--color-ink]">Case #{{ $case->id ?? '' }}</h1>
-        <p class="text-sm text-[--color-ink-muted]">{{ $case->type->label() ?? 'Unknown Type' }}</p>
-    </div>
-</div>
-@endsection
+@section('title', 'Case Detail - CEMS-MY')
 
 @section('content')
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 space-y-6">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Case Details</h3>
-                @php
-                    $statusClass = match($case->status->value ?? '') {
-                        'Closed' => 'badge-success',
-                        'Escalated' => 'badge-danger',
-                        'InProgress' => 'badge-info',
-                        default => 'badge-warning'
-                    };
-                @endphp
-                <span class="badge {{ $statusClass }}">{{ $case->status->label() ?? 'Open' }}</span>
-            </div>
-            <div class="card-body">
-                <p class="text-[--color-ink]">{{ $case->description ?? 'No description provided.' }}</p>
-            </div>
-        </div>
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">Case #{{ $case->id }}</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Compliance Case</p>
+    </div>
+    <a href="{{ route('compliance.cases.index') }}" class="px-4 py-2 border border-[--color-border] text-[--color-ink] text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">
+        Back
+    </a>
+</div>
 
-        @if($case->customer)
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Customer</h3>
-                <a href="/customers/{{ $case->customer_id }}" class="btn btn-ghost btn-sm">View Profile</a>
-            </div>
-            <div class="card-body">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center font-semibold">
-                        {{ substr($case->customer->full_name, 0, 1) }}
-                    </div>
-                    <div>
-                        <p class="font-medium">{{ $case->customer->full_name }}</p>
-                        <p class="text-sm text-[--color-ink-muted]">{{ $case->customer->ic_number }}</p>
-                    </div>
-                </div>
-            </div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card">
+        <div class="px-6 py-4 border-b border-[--color-border]">
+            <h3 class="text-base font-semibold text-[--color-ink]">Case Details</h3>
         </div>
-        @endif
-
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Notes</h3>
+        <div class="p-6 space-y-4">
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Priority</span>
+                <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded
+                    @if($case->priority === 'critical') bg-red-100 text-red-700
+                    @elseif($case->priority === 'high') bg-orange-100 text-orange-700
+                    @else bg-yellow-100 text-yellow-700
+                    @endif">
+                    {{ ucfirst($case->priority) }}
+                </span>
             </div>
-            <div class="card-body">
-                @forelse($case->notes ?? [] as $note)
-                <div class="border-l-2 border-[--color-border] pl-4 mb-4">
-                    <p class="text-sm">{{ $note->content }}</p>
-                    <p class="text-xs text-[--color-ink-muted] mt-1">
-                        {{ $note->creator->username ?? 'System' }} - {{ $note->created_at->diffForHumans() }}
-                    </p>
-                </div>
-                @empty
-                <p class="text-[--color-ink-muted] text-sm">No notes yet</p>
-                @endforelse
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Status</span>
+                <span class="text-sm text-[--color-ink]">{{ str_replace('_', ' ', ucfirst($case->status)) }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Opened By</span>
+                <span class="text-sm text-[--color-ink]">{{ $case->openedBy->name ?? 'N/A' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Assigned To</span>
+                <span class="text-sm text-[--color-ink]">{{ $case->assignedTo?->username ?? 'Unassigned' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">SLA Deadline</span>
+                <span class="text-sm text-[--color-ink]">{{ $case->sla_deadline?->format('Y-m-d H:i') ?? '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Created</span>
+                <span class="text-sm text-[--color-ink]">{{ $case->created_at->format('Y-m-d H:i') }}</span>
             </div>
         </div>
     </div>
 
-    <div class="space-y-6">
-        <div class="card">
-            <div class="card-header"><h3 class="card-title">Details</h3></div>
-            <div class="card-body space-y-3">
-                <div>
-                    <p class="text-sm text-[--color-ink-muted]">Priority</p>
-                    @php $priorityClass = match($case->priority->value ?? '') { 'Critical' => 'badge-danger', 'High' => 'badge-warning', 'Medium' => 'badge-info', default => 'badge-default' }; @endphp
-                    <span class="badge {{ $priorityClass }}">{{ $case->priority->label() ?? 'Low' }}</span>
+    <div class="card">
+        <div class="px-6 py-4 border-b border-[--color-border]">
+            <h3 class="text-base font-semibold text-[--color-ink]">Linked Alerts</h3>
+        </div>
+        <div class="p-6">
+            @if($case->alerts->count() > 0)
+            <div class="space-y-3">
+                @foreach($case->alerts as $alert)
+                <div class="flex justify-between items-center py-2 border-b border-[--color-border] last:border-0">
+                    <span class="text-sm text-[--color-ink]">#{{ $alert->id }} - {{ $alert->alert_type }}</span>
+                    <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded
+                        @if($alert->status === 'resolved') bg-green-100 text-green-700
+                        @else bg-yellow-100 text-yellow-700
+                        @endif">
+                        {{ $alert->status }}
+                    </span>
                 </div>
-                <div>
-                    <p class="text-sm text-[--color-ink-muted]">Assigned To</p>
-                    <p class="text-sm font-medium">{{ $case->assignee->username ?? 'Unassigned' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-[--color-ink-muted]">Created</p>
-                    <p class="text-sm">{{ $case->created_at->format('d M Y, H:i') }}</p>
-                </div>
+                @endforeach
             </div>
+            @else
+            <p class="text-sm text-[--color-ink-muted]">No linked alerts</p>
+            @endif
         </div>
     </div>
 </div>
+
+@if($case->notes)
+<div class="card mt-6">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Notes</h3>
+    </div>
+    <div class="p-6">
+        <p class="text-sm text-[--color-ink]">{{ $case->notes }}</p>
+    </div>
+</div>
+@endif
 @endsection

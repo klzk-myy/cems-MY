@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Cash Flow Statement</h3>
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Cash Flow Statement</h3>
         <span class="text-sm text-[--color-ink-muted]">{{ $fromDate ?? '' }} - {{ $toDate ?? '' }}</span>
     </div>
-    <div class="card-body">
+    <div class="p-6">
         <h4 class="font-semibold mb-4">Operating Activities</h4>
         @forelse($cashFlow['operating'] ?? [] as $item)
         <div class="flex justify-between py-2 border-b border-[--color-border]">

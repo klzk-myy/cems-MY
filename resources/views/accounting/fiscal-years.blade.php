@@ -4,8 +4,8 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header"><h3 class="card-title">Fiscal Years</h3></div>
-    <div class="table-container">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Fiscal Years</h3></div>
+    <div class="overflow-x-auto">
         <table class="table">
             <thead>
                 <tr>
@@ -24,13 +24,13 @@
                     <td>{{ $year->end_date->format('d M Y') }}</td>
                     <td>
                         @if($year->is_closed)
-                            <span class="badge badge-default">Closed</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
                         @else
-                            <span class="badge badge-success">Open</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span>
                         @endif
                     </td>
                     <td>
-                        <a href="/accounting/fiscal-years/{{ $year->year_code }}" class="btn btn-ghost btn-sm">View</a>
+                        <a href="/accounting/fiscal-years/{{ $year->year_code }}" class="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-[--color-canvas-subtle]">View</a>
                     </td>
                 </tr>
                 @empty

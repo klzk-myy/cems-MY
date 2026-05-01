@@ -4,9 +4,9 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header"><h3 class="card-title">Reject Cancellation</h3></div>
-    <div class="card-body">
-        <div class="bg-[--color-surface-elevated] p-6 rounded-lg mb-6">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Reject Cancellation</h3></div>
+    <div class="p-6">
+        <div class="p-6 bg-[--color-surface-elevated] rounded-lg mb-6">
             <h4 class="text-sm font-medium text-[--color-ink-muted] mb-4">Transaction Details</h4>
             <dl class="grid grid-cols-2 gap-4">
                 <div>
@@ -16,7 +16,7 @@
                 <div>
                     <dt class="text-sm font-medium text-[--color-ink-muted]">Type</dt>
                     <dd>
-                        <span class="badge @if(($transaction->type ?? '') === 'Buy') badge-success @else badge-warning @endif">
+                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ ($transaction->type ?? '') === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
                             {{ $transaction->type ?? 'N/A' }}
                         </span>
                     </dd>
@@ -35,7 +35,7 @@
                 </div>
                 <div>
                     <dt class="text-sm text-[--color-ink-muted]">Status</dt>
-                    <dd><span class="badge badge-warning">Pending Cancellation</span></dd>
+                    <dd><span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Pending Cancellation</span></dd>
                 </div>
             </dl>
         </div>
@@ -43,12 +43,12 @@
         <form method="POST" action="{{ route('transactions.reject-cancel', $transaction->id ?? 0) }}">
             @csrf
             <div class="mb-4">
-                <label class="form-label">Reason for Rejection</label>
-                <textarea name="reason" class="form-input" rows="3" required placeholder="Explain why the cancellation is being rejected"></textarea>
+                <label class="block text-sm font-medium text-[--color-ink] mb-1">Reason for Rejection</label>
+                <textarea name="reason" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" rows="3" required placeholder="Explain why the cancellation is being rejected"></textarea>
             </div>
             <div class="flex gap-3">
-                <button type="submit" class="btn btn-secondary">Reject Cancellation</button>
-                <a href="{{ route('transactions.show', $transaction) }}" class="btn btn-secondary">Back</a>
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700">Reject Cancellation</button>
+                <a href="{{ route('transactions.show', $transaction) }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Back</a>
             </div>
         </form>
     </div>

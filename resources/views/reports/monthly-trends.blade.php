@@ -3,13 +3,13 @@
 @section('title', 'Monthly Trends')
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Monthly Trends - {{ $year ?? date('Y') }}</h3>
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Monthly Trends - {{ $year ?? date('Y') }}</h3>
     </div>
-    <div class="card-body">
-        <div class="table-container">
-            <table class="table">
+    <div class="p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
                 <thead>
                     <tr>
                         <th>Month</th>

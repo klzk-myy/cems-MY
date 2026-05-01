@@ -4,8 +4,8 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header"><h3 class="card-title">Counter History - {{ $counter->name ?? 'N/A' }}</h3></div>
-    <div class="table-container">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Counter History - {{ $counter->name ?? 'N/A' }}</h3></div>
+    <div class="overflow-x-auto">
         <table class="table">
             <thead>
                 <tr>

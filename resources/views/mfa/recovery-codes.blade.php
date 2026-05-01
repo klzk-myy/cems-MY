@@ -8,16 +8,16 @@
 </head>
 <body class="font-sans antialiased">
     <div class="flex min-h-screen">
-        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto flex items-center justify-center">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-8 max-w-md w-full">
-                <h1 class="text-2xl font-semibold text-[#171717] mb-2">Recovery Codes</h1>
-                <p class="text-sm text-[#6b6b6b] mb-4">Save these codes somewhere safe. Each code can only be used once.</p>
-                <div class="bg-[#f7f7f8] rounded-lg p-4 mb-6">
+        <main class="flex-1 bg-[--color-canvas-subtle] p-8 overflow-y-auto flex items-center justify-center">
+            <div class="bg-white border border-[--color-border] rounded-xl p-8 max-w-md w-full">
+                <h1 class="text-2xl font-semibold text-[--color-ink] mb-2">Recovery Codes</h1>
+                <p class="text-sm text-[--color-ink-muted] mb-4">Save these codes somewhere safe. Each code can only be used once.</p>
+                <div class="bg-[--color-canvas-subtle] rounded-lg p-4 mb-6">
                     <ul class="space-y-2 text-sm font-mono">
                         @forelse($recoveryCodes ?? [] as $code)
-                        <li class="text-[#171717]">{{ $code }}</li>
+                        <li class="text-[--color-ink]">{{ $code }}</li>
                         @empty
-                        <li class="text-[#6b6b6b]">No recovery codes available</li>
+                        <li class="text-[--color-ink-muted]">No recovery codes available</li>
                         @endforelse
                     </ul>
                 </div>

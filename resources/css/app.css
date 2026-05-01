@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
+  /* Colors - OpenAI-style dark theme */
   --color-canvas: #ffffff;
   --color-canvas-subtle: #f7f7f8;
   --color-ink: #171717;
@@ -22,4 +22,218 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+
+  /* Sidebar */
+  --sidebar-border: #2d2d2d;
+  --sidebar-hover: #262626;
+  --sidebar-text: #ffffff;
+  --sidebar-text-muted: #9ca3af;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+  background: #0a0a0a;
+}
+
+.sidebar {
+  width: 256px;
+  flex-shrink: 0;
+  background: #0a0a0a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #262626;
+}
+
+.sidebar .nav-section-title {
+  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+.sidebar .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  color: #d1d5db;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+}
+
+.sidebar .nav-item:hover {
+  background: #262626;
+  color: #ffffff;
+}
+
+.sidebar .nav-item.active {
+  background: #262626;
+  color: #ffffff;
+}
+
+.main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #ffffff;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.page-container {
+  padding: 1.5rem;
+  max-width: 1400px;
+}
+
+/* Card styles - OpenAI inspired */
+.card {
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.card:hover {
+  border-color: #d4a843;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Button styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #0a0a0a;
+  color: white;
+  border: 1px solid #0a0a0a;
+}
+
+.btn-primary:hover {
+  background: #262626;
+}
+
+.btn-secondary {
+  background: white;
+  color: #171717;
+  border: 1px solid #e5e5e5;
+}
+
+.btn-secondary:hover {
+  background: #f7f7f8;
+  border-color: #d4a843;
+}
+
+/* Input styles */
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #d4a843;
+  box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.1);
+}
+
+/* Table styles */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b6b6b;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.table td {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table tr:hover td {
+  background: #f7f7f8;
+}
+
+/* Alert styles */
+.alert {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alert-success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.alert-warning {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* Badge styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-danger {
+  background: #fee2e2;
+  color: #991b1b;
 }

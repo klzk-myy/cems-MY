@@ -4,8 +4,8 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header"><h3 class="card-title">Import Results</h3></div>
-    <div class="card-body">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Import Results</h3></div>
+    <div class="p-6">
         <div class="mb-6">
             <dl class="grid grid-cols-3 gap-4">
                 <div class="p-4 bg-[--color-surface-elevated] rounded">
@@ -26,7 +26,7 @@
         @if(!empty($import->errors))
         <div class="mt-6">
             <h4 class="text-sm font-medium text-red-600 mb-4">Errors</h4>
-            <table class="table">
+            <table class="w-full text-sm">
                 <thead>
                     <tr>
                         <th>Row</th>
@@ -48,7 +48,7 @@
         @endif
 
         <div class="mt-6">
-            <a href="{{ route('transactions.batch-upload') }}" class="btn btn-secondary">Upload Another</a>
+            <a href="{{ route('transactions.batch-upload') }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Upload Another</a>
         </div>
     </div>
 </div>

@@ -3,9 +3,9 @@
 @section('title', 'Close Counter')
 
 @section('content')
-<div class="card">
-    <div class="card-header"><h3 class="card-title">Close Counter - {{ $counter->name ?? 'N/A' }}</h3></div>
-    <div class="card-body">
+<div class="card max-w-2xl">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Close Counter - {{ $counter->name ?? 'N/A' }}</h3></div>
+    <div class="p-6">
         <div class="bg-[--color-surface-elevated] p-6 rounded-lg mb-6">
             <h4 class="text-sm font-medium text-[--color-ink-muted] mb-4">Session Summary</h4>
             <dl class="grid grid-cols-2 gap-4">
@@ -28,21 +28,21 @@
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="form-label">Closing Float (MYR)</label>
-                    <input type="number" step="0.01" name="closing_float" class="form-input" required>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-2">Closing Float (MYR)</label>
+                    <input type="number" step="0.01" name="closing_float" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                 </div>
                 <div>
-                    <label class="form-label">Cash In Hand</label>
-                    <input type="number" step="0.01" name="cash_in_hand" class="form-input" required>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-2">Cash In Hand</label>
+                    <input type="number" step="0.01" name="cash_in_hand" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="form-label">Notes</label>
-                    <textarea name="notes" class="form-input" rows="2"></textarea>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-2">Notes</label>
+                    <textarea name="notes" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" rows="2"></textarea>
                 </div>
             </div>
             <div class="mt-6 flex gap-3">
-                <button type="submit" class="btn btn-primary">Close Counter</button>
-                <a href="{{ route('counters.index') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">Close Counter</button>
+                <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Cancel</a>
             </div>
         </form>
     </div>

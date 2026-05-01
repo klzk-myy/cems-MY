@@ -3,9 +3,9 @@
 @section('title', 'Acknowledge Handover')
 
 @section('content')
-<div class="card">
-    <div class="card-header"><h3 class="card-title">Acknowledge Handover - {{ $counter->name ?? 'N/A' }}</h3></div>
-    <div class="card-body">
+<div class="card max-w-2xl">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Acknowledge Handover - {{ $counter->name ?? 'N/A' }}</h3></div>
+    <div class="p-6">
         <div class="bg-[--color-surface-elevated] p-6 rounded-lg mb-6">
             <h4 class="text-sm font-medium text-[--color-ink-muted] mb-4">Handover Details</h4>
             <dl class="grid grid-cols-2 gap-4">
@@ -37,12 +37,12 @@
                 </div>
             </div>
             <div class="mb-6">
-                <label class="form-label">Notes (optional)</label>
-                <textarea name="notes" class="form-input" rows="2" placeholder="Any notes about the handover..."></textarea>
+                <label class="block text-sm font-medium text-[--color-ink] mb-2">Notes (optional)</label>
+                <textarea name="notes" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" rows="2" placeholder="Any notes about the handover..."></textarea>
             </div>
             <div class="mt-6 flex gap-3">
-                <button type="submit" class="btn btn-primary">Acknowledge Handover</button>
-                <a href="{{ route('counters.index') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">Acknowledge Handover</button>
+                <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Cancel</a>
             </div>
         </form>
     </div>

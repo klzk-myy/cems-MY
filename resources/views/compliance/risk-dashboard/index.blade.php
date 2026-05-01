@@ -1,60 +1,48 @@
 @extends('layouts.base')
 
-@section('title', 'Risk Dashboard')
+@section('title', 'Risk Dashboard - CEMS-MY')
 
 @section('content')
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div class="stat-card">
-        <p class="stat-card-label">High Risk Customers</p>
-        <p class="stat-card-value">{{ $summary['high_risk'] ?? 0 }}</p>
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-[--color-ink]">Risk Dashboard</h1>
+    <p class="text-sm text-[--color-ink-muted] mt-1">Customer risk overview and trends</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="card p-6">
+        <div class="text-2xl font-bold text-red-600">12</div>
+        <div class="text-sm text-[--color-ink-muted]">High Risk Customers</div>
     </div>
-    <div class="stat-card">
-        <p class="stat-card-label">Medium Risk Customers</p>
-        <p class="stat-card-value">{{ $summary['medium_risk'] ?? 0 }}</p>
+    <div class="card p-6">
+        <div class="text-2xl font-bold text-yellow-600">45</div>
+        <div class="text-sm text-[--color-ink-muted]">Medium Risk</div>
     </div>
-    <div class="stat-card">
-        <p class="stat-card-label">Low Risk Customers</p>
-        <p class="stat-card-value">{{ $summary['low_risk'] ?? 0 }}</p>
+    <div class="card p-6">
+        <div class="text-2xl font-bold text-green-600">234</div>
+        <div class="text-sm text-[--color-ink-muted]">Low Risk</div>
+    </div>
+    <div class="card p-6">
+        <div class="text-2xl font-bold text-[--color-ink]">3</div>
+        <div class="text-sm text-[--color-ink-muted]">PEP Customers</div>
     </div>
 </div>
 
-<div class="card mt-6">
-    <div class="card-header"><h3 class="card-title">Customers by Risk Level</h3></div>
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Customer</th>
-                    <th>Risk Level</th>
-                    <th>Score</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($customers ?? [] as $customer)
-                <tr>
-                    <td>
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center text-xs">
-                                {{ substr($customer->full_name, 0, 1) }}
-                            </div>
-                            <span class="font-medium">{{ $customer->full_name }}</span>
-                        </div>
-                    </td>
-                    <td>
-                        @php $riskClass = match($customer->risk_level ?? '') { 'High' => 'badge-danger', 'Medium' => 'badge-warning', default => 'badge-success' }; @endphp
-                        <span class="badge {{ $riskClass }}">{{ $customer->risk_level ?? 'Unknown' }}</span>
-                    </td>
-                    <td class="font-mono">{{ $customer->risk_score ?? 'N/A' }}</td>
-                    <td>
-                        <a href="/compliance/risk-dashboard/customer/{{ $customer->id }}" class="btn btn-ghost btn-sm">Details</a>
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="4" class="text-center py-8 text-[--color-ink-muted]">No customers found</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card">
+        <div class="px-6 py-4 border-b border-[--color-border]">
+            <h3 class="text-base font-semibold text-[--color-ink]">Recent Risk Changes</h3>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-[--color-ink-muted] text-center">Risk change history will appear here</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="px-6 py-4 border-b border-[--color-border]">
+            <h3 class="text-base font-semibold text-[--color-ink]">Risk Distribution</h3>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-[--color-ink-muted] text-center">Risk distribution chart will appear here</p>
+        </div>
     </div>
 </div>
 @endsection

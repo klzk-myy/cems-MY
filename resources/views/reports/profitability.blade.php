@@ -3,14 +3,14 @@
 @section('title', 'Profitability Analysis')
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Profitability Analysis</h3>
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Profitability Analysis</h3>
         <span class="text-sm text-[--color-ink-muted]">{{ $startDate ?? '' }} - {{ $endDate ?? '' }}</span>
     </div>
-    <div class="card-body">
-        <div class="table-container">
-            <table class="table">
+    <div class="p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
                 <thead>
                     <tr>
                         <th>Currency</th>
@@ -25,7 +25,7 @@
                         <td class="font-mono">{{ $position['currency'] ?? 'N/A' }}</td>
                         <td class="font-mono text-right">{{ number_format($position['volume'] ?? 0, 2) }}</td>
                         <td class="font-mono text-right">{{ number_format($position['revenue'] ?? 0, 2) }}</td>
-                        <td class="font-mono text-right {{ ($position['profit'] ?? 0) >= 0 ? 'text-[--color-success]' : 'text-[--color-danger]' }}">
+                        <td class="font-mono text-right {{ ($position['profit'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ number_format($position['profit'] ?? 0, 2) }}
                         </td>
                     </tr>

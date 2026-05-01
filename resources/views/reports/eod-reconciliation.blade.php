@@ -48,15 +48,15 @@
         <div class="meta-box">
             <h3>Report Information</h3>
             <div class="value">Generated: {{ $generatedAt }}</div>
-            <div style="margin-top: 4px;">Branch: {{ $report['branch_name'] ?? 'All Branches' }}</div>
-            <div style="margin-top: 4px;">Type: {{ strtoupper($report['report_type'] ?? 'daily') }} Report</div>
+            <div class="mt-1">Branch: {{ $report['branch_name'] ?? 'All Branches' }}</div>
+            <div class="mt-1">Type: {{ strtoupper($report['report_type'] ?? 'daily') }} Report</div>
         </div>
         <div class="meta-box">
             <h3>Report Metadata</h3>
             <div class="value">{{ $report['report_metadata']['generated_by'] ?? 'System' }}</div>
-            <div style="margin-top: 4px;">Version: {{ $report['report_metadata']['version'] ?? '1.0' }}</div>
+            <div class="mt-1">Version: {{ $report['report_metadata']['version'] ?? '1.0' }}</div>
             @if(isset($report['report_metadata']['counter_filter']))
-                <div style="margin-top: 4px;">Counter ID: {{ $report['report_metadata']['counter_filter'] }}</div>
+                <div class="mt-1">Counter ID: {{ $report['report_metadata']['counter_filter'] }}</div>
             @endif
         </div>
     </div>
@@ -80,7 +80,7 @@
     <div class="variance-alert {{ $statusClass }}">
         <strong>{{ $varianceLabel }}</strong>
         @if(isset($varianceStatus['variance_amount']))
-            — Variance Amount: RM {{ number_format((float) $varianceStatus['variance_amount'], 2) }}
+            — Variance Amount: RM {{ number_format($varianceStatus['variance_amount'] ?? 0, 2) }}
         @endif
     </div>
 
@@ -108,33 +108,33 @@
         <thead>
             <tr>
                 <th>Description</th>
-                <th style="text-align: right;">Amount (RM)</th>
+                <th class="text-right">Amount (RM)</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td>Opening Float</td>
-                <td style="text-align: right;">{{ number_format((float) ($report['totals']['opening_float'] ?? 0), 2) }}</td>
+                <td class="text-right">{{ number_format($report['totals']['opening_float'] ?? 0, 2) }}</td>
             </tr>
             <tr>
                 <td>Cash Received</td>
-                <td style="text-align: right;">{{ number_format((float) ($report['totals']['cash_received'] ?? 0), 2) }}</td>
+                <td class="text-right">{{ number_format($report['totals']['cash_received'] ?? 0, 2) }}</td>
             </tr>
             <tr>
                 <td>Cash Paid Out</td>
-                <td style="text-align: right;">{{ number_format((float) ($report['totals']['cash_paid_out'] ?? 0), 2) }}</td>
+                <td class="text-right">{{ number_format($report['totals']['cash_paid_out'] ?? 0, 2) }}</td>
             </tr>
             <tr>
                 <td>Closing Expected</td>
-                <td style="text-align: right;">{{ number_format((float) ($report['totals']['closing_expected'] ?? 0), 2) }}</td>
+                <td class="text-right">{{ number_format($report['totals']['closing_expected'] ?? 0, 2) }}</td>
             </tr>
             <tr>
                 <td>Closing Actual</td>
-                <td style="text-align: right;">{{ number_format((float) ($report['totals']['closing_actual'] ?? 0), 2) }}</td>
+                <td class="text-right">{{ number_format($report['totals']['closing_actual'] ?? 0, 2) }}</td>
             </tr>
             <tr class="total-row">
                 <td>Variance</td>
-                <td style="text-align: right;">{{ number_format((float) ($report['totals']['variance'] ?? 0), 2) }}</td>
+                <td class="text-right">{{ number_format($report['totals']['variance'] ?? 0, 2) }}</td>
             </tr>
         </tbody>
     </table>
@@ -159,12 +159,12 @@
                     <tr>
                         <td>{{ $summary['counter_name'] ?? 'N/A' }}</td>
                         <td>{{ $summary['teller_name'] ?? 'N/A' }}</td>
-                        <td>{{ number_format((float) ($summary['opening_float'] ?? 0), 2) }}</td>
-                        <td>{{ number_format((float) ($summary['total_cash_received'] ?? 0), 2) }}</td>
-                        <td>{{ number_format((float) ($summary['total_cash_paid_out'] ?? 0), 2) }}</td>
-                        <td>{{ number_format((float) ($summary['closing_float_expected'] ?? 0), 2) }}</td>
-                        <td>{{ number_format((float) ($summary['closing_float_actual'] ?? 0), 2) }}</td>
-                        <td>{{ number_format((float) ($summary['variance'] ?? 0), 2) }}</td>
+                        <td class="text-right">{{ number_format($summary['opening_float'] ?? 0, 2) }}</td>
+                        <td class="text-right">{{ number_format($summary['total_cash_received'] ?? 0, 2) }}</td>
+                        <td class="text-right">{{ number_format($summary['total_cash_paid_out'] ?? 0, 2) }}</td>
+                        <td class="text-right">{{ number_format($summary['closing_float_expected'] ?? 0, 2) }}</td>
+                        <td class="text-right">{{ number_format($summary['closing_float_actual'] ?? 0, 2) }}</td>
+                        <td class="text-right">{{ number_format($summary['variance'] ?? 0, 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -191,7 +191,7 @@
                         <td>{{ $tx['id'] ?? 'N/A' }}</td>
                         <td>{{ $tx['customer_name'] ?? $tx['customer_id'] ?? 'N/A' }}</td>
                         <td>{{ $tx['type'] ?? 'N/A' }}</td>
-                        <td>{{ number_format((float) ($tx['amount_local'] ?? 0), 2) }}</td>
+                        <td class="text-right">{{ number_format($tx['amount_local'] ?? 0, 2) }}</td>
                         <td>{{ $tx['currency_code'] ?? 'MYR' }}</td>
                         <td>{{ $tx['status'] ?? 'N/A' }}</td>
                     </tr>
@@ -219,7 +219,7 @@
                         <td>{{ $flag['flag_type'] ?? 'N/A' }}</td>
                         <td>{{ $flag['status'] ?? 'N/A' }}</td>
                         <td>{{ $flag['transaction_id'] ?? 'N/A' }}</td>
-                        <td>{{ number_format((float) ($flag['transaction']['amount_local'] ?? 0), 2) }}</td>
+                        <td class="text-right">{{ number_format($flag['transaction']['amount_local'] ?? 0, 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>

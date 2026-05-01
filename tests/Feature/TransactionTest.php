@@ -169,12 +169,12 @@ class TransactionTest extends TestCase
         $customer = $this->createTestCustomer();
         $counter = $this->setupOpenTill($teller, 'USD', '1000.00');
 
-        // Setup low initial position
+        // Setup low initial position - 50 USD available, selling 100
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'branch_id' => $counter->branch_id,
             'till_id' => (string) $counter->id,
-            'balance' => '500.00',
+            'balance' => '50.00',
             'avg_cost_rate' => '4.40',
         ]);
 

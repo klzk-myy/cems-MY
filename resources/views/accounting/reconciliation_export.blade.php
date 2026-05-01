@@ -3,10 +3,10 @@
 @section('title', 'Export Reconciliation')
 
 @section('content')
-<div class="card">
-    <div class="card-header"><h3 class="card-title">Export Reconciliation Data</h3></div>
-    <div class="card-body">
-        <div class="bg-[--color-surface-elevated] p-6 rounded-lg mb-6">
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Export Reconciliation Data</h3></div>
+    <div class="p-6">
+        <div class="bg-[--color-canvas-subtle] p-6 rounded-lg mb-6">
             <h4 class="text-sm font-medium text-[--color-ink-muted] mb-4">Reconciliation Summary</h4>
             <dl class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
@@ -41,13 +41,13 @@
         <div class="flex gap-3">
             <form method="POST" action="{{ route('accounting.reconciliation.export', $report['id'] ?? 0) }}">
                 @csrf
-                <button type="submit" class="btn btn-primary">Download PDF</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[--color-primary] text-white hover:bg-[--color-primary]/90">Download PDF</button>
             </form>
             <form method="POST" action="{{ route('accounting.reconciliation.export', $report['id'] ?? 0) }}">
                 @csrf
-                <button type="submit" class="btn btn-secondary">Download Excel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Download Excel</button>
             </form>
-            <a href="{{ route('accounting.reconciliation') }}" class="btn btn-secondary">Back</a>
+            <a href="{{ route('accounting.reconciliation') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Back</a>
         </div>
     </div>
 </div>

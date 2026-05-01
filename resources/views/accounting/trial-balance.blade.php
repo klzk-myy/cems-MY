@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Trial Balance</h3>
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Trial Balance</h3>
         <span class="text-sm text-[--color-ink-muted]">As of {{ $asOfDate ?? date('d M Y') }}</span>
     </div>
-    <div class="table-container">
+    <div class="overflow-x-auto">
         <table class="table">
             <thead>
                 <tr>

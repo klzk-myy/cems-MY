@@ -1,70 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create STR - CEMS-MY</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="font-sans antialiased">
-    <div class="flex min-h-screen">
-        <aside class="w-60 bg-white border-r border-[#e5e5e5] flex flex-col shrink-0">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h1 class="text-lg font-semibold text-[#171717]">CEMS-MY</h1>
-            </div>
-            <nav class="flex-1 p-4 space-y-6 overflow-y-auto">
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Main</div>
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Dashboard</a>
-                    <a href="{{ route('transactions.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Transactions</a>
-                    <a href="{{ route('counters.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Counters</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Management</div>
-                    <a href="{{ route('customers.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Customers</a>
-                    <a href="{{ route('compliance') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Compliance</a>
-                    <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Reports</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">System</div>
-                    <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Users</a>
-                    <a href="{{ route('rates.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Rates</a>
-                    <a href="{{ route('accounting.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Accounting</a>
-                </div>
-            </nav>
-        </aside>
-        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto">
-            <div class="mb-6">
-                <h1 class="text-2xl font-semibold text-[#171717]">Create Suspicious Transaction Report</h1>
-                <p class="text-sm text-[#6b6b6b] mt-1">File a new STR with BNM</p>
-            </div>
-            <form method="POST" action="{{ route('str.store') }}" class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                @csrf
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-medium text-[#171717] mb-2">Transaction Reference</label>
-                        <input type="text" name="transaction_reference" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-[#171717] mb-2">Suspicious Activity Description</label>
-                        <textarea name="description" rows="4" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-[#171717] mb-2">Reason for Suspicion</label>
-                        <select name="reason" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                            <option value="structuring">Structuring</option>
-                            <option value="unusual_pattern">Unusual Pattern</option>
-                            <option value="sanctions_match">Sanctions Match</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-6 flex gap-3">
-                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-[#0a0a0a] rounded-lg hover:bg-[#262626]">Submit STR</button>
-                    <a href="{{ route('str.index') }}" class="px-4 py-2 text-sm font-medium text-[#171717] bg-white border border-[#e5e5e5] rounded-lg hover:bg-[#f7f7f8]">Cancel</a>
-                </div>
-            </form>
-        </main>
+@extends('layouts.base')
+
+@section('title', 'Create STR - CEMS-MY')
+
+@section('content')
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">Create STR</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Suspicious Transaction Report</p>
     </div>
-</body>
-</html>
+    <a href="{{ route('str.index') }}" class="px-4 py-2 border border-[--color-border] text-[--color-ink] text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">
+        Back to STR List
+    </a>
+</div>
+
+<div class="card">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Select Alert to Report</h3>
+    </div>
+    <div class="p-6">
+        @if($pendingAlerts->count() > 0)
+        <form action="{{ route('str.store') }}" method="POST">
+            @csrf
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-2">Select Alert</label>
+                    <select name="alert_id" class="w-full px-3 py-2 border border-[--color-border] rounded-lg text-sm">
+                        <option value="">-- Select an alert --</option>
+                        @foreach($pendingAlerts as $alert)
+                        <option value="{{ $alert->id }}">
+                            Alert #{{ $alert->id }} - {{ $alert->transaction->customer->full_name ?? 'Unknown' }}
+                            ({{ $alert->transaction->amount_local ?? 0 }})
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-2">STR Reason (min 20 chars)</label>
+                    <textarea name="reason" rows="4" class="w-full px-3 py-2 border border-[--color-border] rounded-lg text-sm"
+                        placeholder="Describe why this transaction is suspicious..."></textarea>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">
+                    Create STR Draft
+                </button>
+            </div>
+        </form>
+        @else
+        <p class="text-sm text-[--color-ink-muted]">No pending alerts available for STR creation.</p>
+        @endif
+    </div>
+</div>
+@endsection

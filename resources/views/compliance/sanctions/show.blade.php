@@ -1,111 +1,46 @@
 @extends('layouts.base')
 
-@section('title', $list['name'] ?? 'Sanction List')
-
-@section('header-title')
-<div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">{{ $list['name'] ?? 'Sanction List' }}</h1>
-    <p class="text-sm text-[--color-ink-muted]">
-        @if(($list['is_active'] ?? false))
-            <span class="badge badge-success">Active</span>
-        @else
-            <span class="badge badge-default">Inactive</span>
-        @endif
-    </p>
-</div>
-@endsection
-
-@section('header-actions')
-<form method="POST" action="/compliance/sanctions/{{ $list['id'] }}/import" class="inline">
-    @csrf
-    <button type="submit" class="btn btn-primary">Trigger Import</button>
-</form>
-@endsection
+@section('title', 'Sanctions - CEMS-MY')
 
 @section('content')
-<div class="max-w-4xl">
-    <div class="card mb-6">
-        <div class="card-header">
-            <h3 class="card-title">List Information</h3>
-        </div>
-        <div class="card-body">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <p class="text-sm text-[--color-ink-muted]">Name</p>
-                    <p class="font-medium">{{ $list['name'] ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-[--color-ink-muted]">Type</p>
-                    <p class="font-medium">{{ $list['list_type'] ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-[--color-ink-muted]">Source URL</p>
-                    <p class="font-medium text-sm truncate">{{ $list['source_url'] ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-[--color-ink-muted]">Entry Count</p>
-                    <p class="font-medium">{{ number_format($list['entry_count'] ?? 0) }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-[--color-ink-muted]">Last Updated</p>
-                    <p class="font-medium">{{ isset($list['last_updated_at']) ? \Carbon\Carbon::parse($list['last_updated_at'])->format('d M Y H:i') : 'Never' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-[--color-ink-muted]">Status</p>
-                    <p class="font-medium">
-                        @if(($list['is_active'] ?? false))
-                            <span class="badge badge-success">Active</span>
-                        @else
-                            <span class="badge badge-default">Inactive</span>
-                        @endif
-                    </p>
-                </div>
-            </div>
-        </div>
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">{{ $entry->entity_name }}</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Sanctions entry detail</p>
     </div>
+    <a href="{{ route('compliance.sanctions.index') }}" class="px-4 py-2 border border-[--color-border] text-[--color-ink] text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">
+        Back
+    </a>
+</div>
 
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="card">
-        <div class="card-header flex justify-between items-center">
-            <h3 class="card-title">Recent Entries</h3>
-            <a href="/compliance/sanctions/entries?list_id={{ $list['id'] }}" class="btn btn-ghost btn-sm">View All</a>
+        <div class="px-6 py-4 border-b border-[--color-border]">
+            <h3 class="text-base font-semibold text-[--color-ink]">Entry Details</h3>
         </div>
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Entity Name</th>
-                        <th>Type</th>
-                        <th>Nationality</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($list['recent_entries'] ?? [] as $entry)
-                    <tr>
-                        <td class="font-medium">{{ $entry['entity_name'] }}</td>
-                        <td>
-                            <span class="badge badge-default">{{ ucfirst($entry['entity_type'] ?? 'N/A') }}</span>
-                        </td>
-                        <td>{{ $entry['nationality'] ?? 'N/A' }}</td>
-                        <td>
-                            @if(($entry['status'] ?? '') === 'active')
-                                <span class="badge badge-success">Active</span>
-                            @else
-                                <span class="badge badge-default">Inactive</span>
-                            @endif
-                        </td>
-                        <td>
-                            <a href="/compliance/sanctions/entries/{{ $entry['id'] }}" class="btn btn-ghost btn-sm">View</a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="text-center py-8 text-[--color-ink-muted]">No entries in this list</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <div class="p-6 space-y-4">
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Name</span>
+                <span class="text-sm text-[--color-ink]">{{ $entry->entity_name }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">List</span>
+                <span class="text-sm text-[--color-ink]">{{ $entry->list_name ?? 'N/A' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Score</span>
+                <span class="text-sm font-mono text-[--color-ink]">{{ round($entry->score ?? 0, 1) }}%</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Entity Type</span>
+                <span class="text-sm text-[--color-ink]">{{ $entry->entity_type ?? 'Individual' }}</span>
+            </div>
+            @if($entry->additional_info)
+            <div class="pt-4 border-t border-[--color-border]">
+                <p class="text-sm text-[--color-ink-muted] mb-2">Additional Info</p>
+                <p class="text-sm text-[--color-ink]">{{ $entry->additional_info }}</p>
+            </div>
+            @endif
         </div>
     </div>
 </div>

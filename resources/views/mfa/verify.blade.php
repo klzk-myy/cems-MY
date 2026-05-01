@@ -8,14 +8,14 @@
 </head>
 <body class="font-sans antialiased">
     <div class="flex min-h-screen">
-        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto flex items-center justify-center">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-8 max-w-md w-full">
-                <h1 class="text-2xl font-semibold text-[#171717] mb-2">Two-Factor Authentication</h1>
-                <p class="text-sm text-[#6b6b6b] mb-6">Enter the 6-digit code from your authenticator app</p>
+        <main class="flex-1 bg-[--color-canvas-subtle] p-8 overflow-y-auto flex items-center justify-center">
+            <div class="bg-white border border-[--color-border] rounded-xl p-8 max-w-md w-full">
+                <h1 class="text-2xl font-semibold text-[--color-ink] mb-2">Two-Factor Authentication</h1>
+                <p class="text-sm text-[--color-ink-muted] mb-6">Enter the 6-digit code from your authenticator app</p>
                 <form method="POST" action="{{ route('mfa.verify') }}">
                     @csrf
                     <div class="mb-4">
-                        <input type="text" name="code" placeholder="000000" maxlength="6" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg text-center text-2xl tracking-widest" required autofocus>
+                        <input type="text" name="code" placeholder="000000" maxlength="6" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg text-center text-2xl tracking-widest" required autofocus>
                     </div>
                     <button type="submit" class="w-full px-4 py-2.5 text-sm font-medium text-white bg-[#0a0a0a] rounded-lg hover:bg-[#262626]">Verify</button>
                 </form>

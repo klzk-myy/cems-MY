@@ -3,9 +3,9 @@
 @section('title', 'Transaction #' . ($transaction->id ?? ''))
 
 @section('header-title')
-<div class="flex items-center gap-3">
-    <a href="/transactions" class="btn btn-ghost btn-icon">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="flex items-center gap-2">
+    <a href="/transactions" class="p-2 text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
     </a>
@@ -19,15 +19,20 @@
 @section('header-actions')
 <div class="flex items-center gap-3">
     @if(($transaction->status->value ?? '') === 'PendingApproval')
-        <a href="/transactions/{{ $transaction->id }}/confirm" class="btn btn-primary">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            Confirm Transaction
-        </a>
+        @if(auth()->check() && auth()->user()->isManager() && auth()->id() !== $transaction->user_id)
+        <form method="POST" action="/transactions/{{ $transaction->id }}/approve" class="inline">
+            @csrf
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Approve
+            </button>
+        </form>
+        @endif
     @endif
     @if(($transaction->status->value ?? '') === 'Completed')
-        <a href="/transactions/{{ $transaction->id }}/receipt" class="btn btn-secondary" target="_blank">
+        <a href="/transactions/{{ $transaction->id }}/receipt" class="inline-flex items-center gap-2 px-4 py-2 border border-[--color-border] text-[--color-ink] text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]" target="_blank">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
             </svg>
@@ -35,12 +40,14 @@
         </a>
     @endif
     @if(($transaction->status->value ?? '') !== 'Cancelled')
-        <a href="/transactions/{{ $transaction->id }}/cancel" class="btn btn-danger">
+        @can('cancel', $transaction)
+        <a href="/transactions/{{ $transaction->id }}/cancel" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
             Cancel
         </a>
+        @endcan
     @endif
 </div>
 @endsection
@@ -51,8 +58,8 @@
     <div class="lg:col-span-2 space-y-6">
         {{-- Transaction Details --}}
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Transaction Details</h3>
+            <div class="px-6 py-4 border-b border-[--color-border] flex items-center justify-between">
+                <h3 class="text-base font-semibold text-[--color-ink]">Transaction Details</h3>
                 @php
                     $statusClass = match($transaction->status->value ?? '') {
                         'Completed' => 'badge-success',
@@ -62,13 +69,13 @@
                         default => 'badge-default'
                     };
                 @endphp
-                <span class="badge {{ $statusClass }}">{{ $transaction->status->label() ?? '' }}</span>
+                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $statusClass === 'badge-success' ? 'bg-green-100 text-green-700' : ($statusClass === 'badge-warning' ? 'bg-yellow-100 text-yellow-700' : ($statusClass === 'badge-danger' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700')) }}">{{ $transaction->status->label() ?? '' }}</span>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <p class="text-sm text-[--color-ink-muted] mb-1">Transaction Type</p>
-                        <span class="badge {{ $transaction->type->value === 'Buy' ? 'badge-success' : 'badge-warning' }}">
+                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $transaction->type->value === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
                             {{ $transaction->type->label() ?? '' }}
                         </span>
                     </div>
@@ -94,11 +101,11 @@
 
         {{-- Customer Information --}}
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Customer Information</h3>
-                <a href="/customers/{{ $transaction->customer_id }}" class="btn btn-ghost btn-sm">View Profile</a>
+            <div class="px-6 py-4 border-b border-[--color-border] flex items-center justify-between">
+                <h3 class="text-base font-semibold text-[--color-ink]">Customer Information</h3>
+                <a href="/customers/{{ $transaction->customer_id }}" class="px-4 py-2 text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">View Profile</a>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 <div class="flex items-start gap-4">
                     <div class="w-12 h-12 bg-[--color-canvas-subtle] rounded-xl flex items-center justify-center">
                         <span class="text-lg font-semibold">{{ substr($transaction->customer->full_name ?? 'N/A', 0, 1) }}</span>
@@ -107,12 +114,12 @@
                         <p class="font-semibold text-lg">{{ $transaction->customer->full_name ?? 'N/A' }}</p>
                         <p class="text-sm text-[--color-ink-muted]">{{ $transaction->customer->ic_number ?? 'N/A' }}</p>
                         <div class="flex gap-4 mt-2">
-                            <span class="badge badge-default">{{ $transaction->cdd_level->label() ?? 'N/A' }}</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">{{ $transaction->cdd_level?->label() ?? 'N/A' }}</span>
                             @if($transaction->customer->is_pep ?? false)
-                                <span class="badge badge-warning">PEP</span>
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">PEP</span>
                             @endif
                             @if($transaction->customer->is_sanctioned ?? false)
-                                <span class="badge badge-danger">Sanctioned</span>
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Sanctioned</span>
                             @endif
                         </div>
                     </div>
@@ -122,10 +129,10 @@
 
         {{-- Audit Trail --}}
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Audit Trail</h3>
+            <div class="px-6 py-4 border-b border-[--color-border]">
+                <h3 class="text-base font-semibold text-[--color-ink]">Audit Trail</h3>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 <div class="space-y-4">
                     @forelse($transaction->auditLogs ?? [] as $log)
                     <div class="flex items-start gap-3">
@@ -148,11 +155,11 @@
     {{-- Sidebar --}}
     <div class="space-y-6">
         {{-- Counter & Branch --}}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Location</h3>
+        <div class="bg-white border border-[--color-border] rounded-xl">
+            <div class="px-6 py-4 border-b border-[--color-border]">
+                <h3 class="text-base font-semibold text-[--color-ink]">Location</h3>
             </div>
-            <div class="card-body space-y-3">
+            <div class="p-6 space-y-3">
                 <div>
                     <p class="text-sm text-[--color-ink-muted]">Counter</p>
                     <p class="font-medium">{{ $transaction->counter->name ?? 'N/A' }}</p>
@@ -166,11 +173,11 @@
 
         {{-- Compliance Flags --}}
         @if($transaction->flags && $transaction->flags->count() > 0)
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Compliance Flags</h3>
+        <div class="bg-white border border-[--color-border] rounded-xl">
+            <div class="px-6 py-4 border-b border-[--color-border]">
+                <h3 class="text-base font-semibold text-[--color-ink]">Compliance Flags</h3>
             </div>
-            <div class="card-body space-y-2">
+            <div class="p-6 space-y-2">
                 @foreach($transaction->flags as $flag)
                 <div class="flex items-center gap-2 p-2 bg-[--color-danger]/5 rounded-lg border border-[--color-danger]/10">
                     <svg class="w-4 h-4 text-[--color-danger]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,11 +191,11 @@
         @endif
 
         {{-- Created By --}}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Created By</h3>
+        <div class="bg-white border border-[--color-border] rounded-xl">
+            <div class="px-6 py-4 border-b border-[--color-border]">
+                <h3 class="text-base font-semibold text-[--color-ink]">Created By</h3>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center">
                         <span class="font-semibold">{{ substr($transaction->creator->username ?? 'N/A', 0, 1) }}</span>

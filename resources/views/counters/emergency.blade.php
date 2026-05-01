@@ -3,11 +3,11 @@
 @section('title', 'Emergency Counter Closure')
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title text-red-600">Emergency Counter Closure - {{ $counter->code }}</h3>
+<div class="card max-w-2xl">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-red-600">Emergency Counter Closure - {{ $counter->code }}</h3>
     </div>
-    <div class="card-body">
+    <div class="p-6">
         <div class="bg-red-50 border border-red-200 p-4 rounded-lg mb-6">
             <p class="text-red-800 text-sm">
                 <strong>Warning:</strong> This will immediately close the counter without variance calculation.
@@ -48,14 +48,14 @@
         <form method="POST" action="{{ route('counters.emergency', $counter->code) }}">
             @csrf
             <div class="mb-6">
-                <label class="form-label">Reason for Emergency Closure</label>
-                <textarea name="reason" class="form-input" rows="3" required placeholder="Explain why this emergency closure is necessary..."></textarea>
+                <label class="block text-sm font-medium text-[--color-ink] mb-2">Reason for Emergency Closure</label>
+                <textarea name="reason" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" rows="3" required placeholder="Explain why this emergency closure is necessary..."></textarea>
             </div>
             <div class="flex gap-3">
                 <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700">
                     Confirm Emergency Closure
                 </button>
-                <a href="{{ route('counters.index') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Cancel</a>
             </div>
         </form>
     </div>

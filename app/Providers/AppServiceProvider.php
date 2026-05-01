@@ -90,5 +90,21 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('typeLabel', function ($typeExpr, $default = "''") {
             return "<?php echo \App\Helpers\LabelHelper::getTypeLabel({$typeExpr}, {$default}); ?>";
         });
+
+        Blade::if('role', function ($role) {
+            if (! auth()->check()) {
+                return false;
+            }
+
+            $userRole = auth()->user()->role;
+
+            return match ($role) {
+                'admin' => $userRole->isAdmin(),
+                'manager' => $userRole->isManager(),
+                'compliance_officer' => $userRole->isComplianceOfficer(),
+                'teller' => $userRole->isTeller(),
+                default => false,
+            };
+        });
     }
 }

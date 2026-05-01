@@ -1,54 +1,54 @@
 @extends('layouts.base')
 
-@section('title', 'EDD Records')
-
-@section('header-title')
-<div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Enhanced Due Diligence</h1>
-    <p class="text-sm text-[--color-ink-muted]">Manage EDD questionnaires and records</p>
-</div>
-@endsection
+@section('title', 'EDD Records - CEMS-MY')
 
 @section('content')
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">EDD Records</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Enhanced Due Diligence documentation</p>
+    </div>
+</div>
+
 <div class="card">
-    <div class="table-container">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">All EDD Records</h3>
+    </div>
+    <div class="overflow-x-auto">
         <table class="table">
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Customer</th>
-                    <th>Risk Level</th>
+                    <th>Type</th>
                     <th>Status</th>
-                    <th>Created</th>
+                    <th>Date</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($records ?? [] as $record)
-                <tr>
-                    <td>
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-[--color-canvas-subtle] rounded-lg flex items-center justify-center text-xs">
-                                {{ substr($record->customer->full_name ?? '?', 0, 1) }}
-                            </div>
-                            <span class="font-medium">{{ $record->customer->full_name ?? 'N/A' }}</span>
-                        </div>
+                @forelse($eddRecords ?? [] as $record)
+                <tr class="border-b border-[--color-border] hover:bg-[--color-canvas-subtle]/50">
+                    <td class="font-mono text-xs text-[--color-ink]">{{ $record->id }}</td>
+                    <td class="text-[--color-ink]">{{ $record->customer->full_name ?? 'N/A' }}</td>
+                    <td class="text-[--color-ink]">{{ $record->edd_type ?? 'Standard' }}</td>
+                    <td class="text-[--color-ink]">
+                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded
+                            @if($record->status === 'completed') bg-green-100 text-green-700
+                            @elseif($record->status === 'pending') bg-yellow-100 text-yellow-700
+                            @else bg-gray-100 text-gray-700
+                            @endif">
+                            {{ ucfirst($record->status) }}
+                        </span>
                     </td>
-                    <td>
-                        @php $riskClass = match($record->risk_level ?? '') { 'High' => 'badge-danger', 'Medium' => 'badge-warning', default => 'badge-info' }; @endphp
-                        <span class="badge {{ $riskClass }}">{{ $record->risk_level ?? 'N/A' }}</span>
-                    </td>
-                    <td>
-                        @php $statusClass = match($record->status->value ?? '') { 'Approved' => 'badge-success', 'Rejected' => 'badge-danger', default => 'badge-warning' }; @endphp
-                        <span class="badge {{ $statusClass }}">{{ $record->status->label() ?? 'Pending' }}</span>
-                    </td>
-                    <td class="text-[--color-ink-muted]">{{ $record->created_at->format('d M Y') }}</td>
-                    <td>
-                        <a href="/compliance/edd/{{ $record->id }}" class="btn btn-ghost btn-sm">View</a>
+                    <td class="text-[--color-ink] text-sm">{{ $record->created_at->format('Y-m-d') }}</td>
+                    <td class="text-[--color-ink]">
+                        <a href="{{ route('compliance.edd.show', $record) }}" class="text-[--color-accent] hover:underline">View</a>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="text-center py-12 text-[--color-ink-muted]">No EDD records found</td>
+                    <td colspan="6" class="px-4 py-8 text-center text-[--color-ink-muted]">No EDD records found</td>
                 </tr>
                 @endforelse
             </tbody>

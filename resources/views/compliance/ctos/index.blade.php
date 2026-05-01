@@ -1,149 +1,64 @@
 @extends('layouts.base')
 
-@section('title', 'CTOS Reports')
-
-@section('header-title')
-<div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">CTOS Reports</h1>
-    <p class="text-sm text-[--color-ink-muted]">Cash Transaction Reports to BNM</p>
-</div>
-@endsection
+@section('title', 'CTOS Reports - CEMS-MY')
 
 @section('content')
-<div class="grid grid-cols-5 gap-4 mb-6">
-    <div class="card">
-        <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Total</p>
-            <p class="text-2xl font-bold">{{ $summary['total'] }}</p>
-        </div>
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">CTOS Reports</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Credit check reports integration</p>
     </div>
-    <div class="card">
-        <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Draft</p>
-            <p class="text-2xl font-bold">{{ $summary['draft'] }}</p>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Submitted</p>
-            <p class="text-2xl font-bold text-blue-600">{{ $summary['submitted'] }}</p>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Acknowledged</p>
-            <p class="text-2xl font-bold text-green-600">{{ $summary['acknowledged'] }}</p>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Rejected</p>
-            <p class="text-2xl font-bold text-red-600">{{ $summary['rejected'] }}</p>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-6">
-    <div class="card-body">
-        <form method="GET" action="/compliance/ctos" class="flex gap-4 items-end flex-wrap">
-            <div>
-                <label class="form-label">Status</label>
-                <select name="status" class="form-select">
-                    <option value="">All</option>
-                    <option value="Draft" {{ request('status') == 'Draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="Submitted" {{ request('status') == 'Submitted' ? 'selected' : '' }}>Submitted</option>
-                    <option value="Acknowledged" {{ request('status') == 'Acknowledged' ? 'selected' : '' }}>Acknowledged</option>
-                    <option value="Rejected" {{ request('status') == 'Rejected' ? 'selected' : '' }}>Rejected</option>
-                </select>
-            </div>
-            <div>
-                <label class="form-label">From Date</label>
-                <input type="date" name="from_date" value="{{ request('from_date') }}" class="form-input">
-            </div>
-            <div>
-                <label class="form-label">To Date</label>
-                <input type="date" name="to_date" value="{{ request('to_date') }}" class="form-input">
-            </div>
-            <div class="flex gap-2">
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="/compliance/ctos" class="btn btn-ghost">Clear</a>
-            </div>
-        </form>
-    </div>
+    <a href="{{ route('compliance.ctos.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        New Inquiry
+    </a>
 </div>
 
 <div class="card">
-    <div class="table-container">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">CTOS Inquiries</h3>
+    </div>
+    <div class="overflow-x-auto">
         <table class="table">
             <thead>
                 <tr>
-                    <th>CTOS Number</th>
+                    <th>ID</th>
                     <th>Customer</th>
-                    <th>Amount</th>
-                    <th>Type</th>
+                    <th>Report Type</th>
                     <th>Status</th>
                     <th>Date</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($reports as $report)
-                <tr>
-                    <td class="font-mono">{{ $report['ctos_number'] ?? 'N/A' }}</td>
-                    <td>{{ $report['customer_name'] ?? 'N/A' }}</td>
-                    <td class="font-mono">RM {{ number_format($report['amount_local'] ?? 0, 2) }}</td>
-                    <td>
-                        @if(($report['transaction_type'] ?? '') === 'Buy')
-                            <span class="badge badge-success">Buy</span>
-                        @else
-                            <span class="badge badge-info">Sell</span>
-                        @endif
+                @forelse($ctosReports ?? [] as $report)
+                <tr class="border-b border-[--color-border] hover:bg-[--color-canvas-subtle]/50">
+                    <td class="font-mono text-xs text-[--color-ink]">{{ $report->id }}</td>
+                    <td class="text-[--color-ink]">{{ $report->customer->full_name ?? 'N/A' }}</td>
+                    <td class="text-[--color-ink]">{{ $report->report_type ?? 'Standard' }}</td>
+                    <td class="text-[--color-ink]">
+                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded
+                            @if($report->status === 'completed') bg-green-100 text-green-700
+                            @elseif($report->status === 'pending') bg-yellow-100 text-yellow-700
+                            @else bg-gray-100 text-gray-700
+                            @endif">
+                            {{ ucfirst($report->status ?? 'pending') }}
+                        </span>
                     </td>
-                    <td>
-                        @switch($report['status'] ?? 'Draft')
-                            @case('Draft')
-                                <span class="badge badge-default">Draft</span>
-                                @break
-                            @case('Submitted')
-                                <span class="badge badge-info">Submitted</span>
-                                @break
-                            @case('Acknowledged')
-                                <span class="badge badge-success">Acknowledged</span>
-                                @break
-                            @case('Rejected')
-                                <span class="badge badge-danger">Rejected</span>
-                                @break
-                            @default
-                                <span class="badge badge-default">{{ $report['status'] }}</span>
-                        @endswitch
-                    </td>
-                    <td>{{ isset($report['report_date']) ? \Carbon\Carbon::parse($report['report_date'])->format('d M Y') : 'N/A' }}</td>
-                    <td>
-                        <a href="/compliance/ctos/{{ $report['id'] }}" class="btn btn-ghost btn-sm">View</a>
+                    <td class="text-[--color-ink] text-sm">{{ $report->created_at->format('Y-m-d') }}</td>
+                    <td class="text-[--color-ink]">
+                        <a href="{{ route('compliance.ctos.show', $report) }}" class="text-[--color-accent] hover:underline">View</a>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center py-12 text-[--color-ink-muted]">No CTOS reports found</td>
+                    <td colspan="6" class="px-4 py-8 text-center text-[--color-ink-muted]">No CTOS reports found</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
-    @if($pagination['last_page'] > 1)
-    <div class="card-footer flex justify-between items-center">
-        <p class="text-sm text-[--color-ink-muted]">
-            Page {{ $pagination['current_page'] }} of {{ $pagination['last_page'] }}
-        </p>
-        <div class="flex gap-2">
-            @if($pagination['current_page'] > 1)
-                <a href="/compliance/ctos?{{ http_build_query(array_merge(request()->except('page'), ['page' => $pagination['current_page'] - 1])) }}" class="btn btn-ghost btn-sm">Previous</a>
-            @endif
-            @if($pagination['current_page'] < $pagination['last_page'])
-                <a href="/compliance/ctos?{{ http_build_query(array_merge(request()->except('page'), ['page' => $pagination['current_page'] + 1])) }}" class="btn btn-ghost btn-sm">Next</a>
-            @endif
-        </div>
-    </div>
-    @endif
 </div>
 @endsection

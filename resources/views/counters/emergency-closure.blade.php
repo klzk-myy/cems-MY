@@ -3,11 +3,11 @@
 @section('title', 'Emergency Closure Details')
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Emergency Closure Details - {{ $counter->code }}</h3>
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Emergency Closure Details - {{ $counter->code }}</h3>
     </div>
-    <div class="card-body">
+    <div class="p-6">
         <dl class="bg-[--color-surface-elevated] p-6 rounded-lg mb-6">
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -26,9 +26,9 @@
                     <dt class="text-sm text-[--color-ink-muted]">Status</dt>
                     <dd class="font-medium">
                         @if($closure->acknowledged_at)
-                            <span class="badge badge-success">Acknowledged</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Acknowledged</span>
                         @else
-                            <span class="badge badge-warning">Pending Acknowledgment</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Pending Acknowledgment</span>
                         @endif
                     </dd>
                 </div>
@@ -64,11 +64,11 @@
         @if(!$closure->acknowledged_at)
         <form method="POST" action="{{ route('counters.emergency.acknowledge', [$counter->code, $closure->id]) }}">
             @csrf
-            <button type="submit" class="btn btn-primary">Acknowledge Closure</button>
+            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[--color-primary] text-white hover:bg-[--color-ink]">Acknowledge Closure</button>
         </form>
         @endif
 
-        <a href="{{ route('counters.index') }}" class="btn btn-secondary mt-4">Back to Counters</a>
+        <a href="{{ route('counters.index') }}" class="btn btn-secondary mt-4 inline-block">Back to Counters</a>
     </div>
 </div>
 @endsection

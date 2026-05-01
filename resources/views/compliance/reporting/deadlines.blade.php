@@ -3,10 +3,10 @@
 @section('title', 'Compliance Deadlines')
 
 @section('content')
-<div class="card">
-    <div class="card-header"><h3 class="card-title">Upcoming Deadlines</h3></div>
-    <div class="table-container">
-        <table class="table">
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Upcoming Deadlines</h3></div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
             <thead>
                 <tr>
                     <th>Report</th>
@@ -21,9 +21,9 @@
                     <td>{{ $deadline['due_date'] ?? 'N/A' }}</td>
                     <td>
                         @if(($deadline['is_overdue'] ?? false))
-                            <span class="badge badge-danger">Overdue</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Overdue</span>
                         @else
-                            <span class="badge badge-warning">Upcoming</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Upcoming</span>
                         @endif
                     </td>
                 </tr>

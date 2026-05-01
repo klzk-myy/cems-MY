@@ -1,0 +1,1005 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "Stack" [ref=e9] [cursor=pointer]:
+              - /url: "#stack"
+              - button "Stack" [ref=e10]:
+                - img [ref=e12]
+                - text: Stack
+          - listitem [ref=e14]:
+            - link "Context" [ref=e15] [cursor=pointer]:
+              - /url: "#context"
+              - button "Context" [ref=e16]:
+                - img [ref=e18]
+                - text: Context
+          - listitem [ref=e20]:
+            - link "Debug" [ref=e21] [cursor=pointer]:
+              - /url: "#debug"
+              - button "Debug" [ref=e22]:
+                - img [ref=e24]
+                - text: Debug
+          - listitem [ref=e26]:
+            - link "Flare" [ref=e27] [cursor=pointer]:
+              - /url: https://flareapp.io/?utm_campaign=ignition&utm_source=ignition
+              - button "Flare" [ref=e28]:
+                - img [ref=e30]
+                - text: Flare
+        - list [ref=e35]:
+          - listitem [ref=e36]:
+            - link "Share" [ref=e37] [cursor=pointer]:
+              - /url: "#share"
+              - button "Share" [ref=e38]:
+                - img [ref=e40]
+                - text: Share
+            - generic:
+              - generic:
+                - generic:
+                  - heading "Share with Flare" [level=4]
+                  - link "Docs":
+                    - /url: https://flareapp.io/docs/ignition/introducing-ignition/sharing-errors?utm_campaign=ignition&utm_source=ignition
+                    - text: Docs
+                    - img
+                - list:
+                  - listitem:
+                    - generic:
+                      - checkbox "Stack" [checked]
+                      - generic: Stack
+                  - listitem:
+                    - generic:
+                      - checkbox "Context" [checked]
+                      - generic: Context
+                  - listitem:
+                    - generic:
+                      - checkbox "Debug" [checked]
+                      - generic: Debug
+                - generic:
+                  - button "Create Share":
+                    - img
+                    - text: Create Share
+          - listitem [ref=e42]:
+            - link "Docs" [ref=e43] [cursor=pointer]:
+              - /url: https://laravel.com/docs/
+              - button "Docs" [ref=e44]:
+                - img [ref=e46]
+                - text: Docs
+          - listitem [ref=e48]:
+            - link [ref=e49] [cursor=pointer]:
+              - /url: "#settings"
+              - button [ref=e50]:
+                - img [ref=e52]
+            - generic:
+              - generic:
+                - generic:
+                  - heading "Ignition Settings" [level=4]
+                  - link "Docs":
+                    - /url: https://flareapp.io/ignition?utm_campaign=ignition&utm_source=ignition
+                    - text: Docs
+                    - img
+                - generic:
+                  - text: Editor
+                  - generic:
+                    - combobox "Editor":
+                      - option "Clipboard"
+                      - option "Sublime"
+                      - option "TextMate"
+                      - option "Emacs"
+                      - option "MacVim"
+                      - option "PhpStorm"
+                      - option "PHPStorm Remote"
+                      - option "Idea"
+                      - option "VS Code" [selected]
+                      - option "VS Code Insiders"
+                      - option "VS Code Remote"
+                      - option "VS Code Insiders Remote"
+                      - option "VS Codium"
+                      - option "Cursor"
+                      - option "Atom"
+                      - option "Nova"
+                      - option "NetBeans"
+                      - option "Zed"
+                      - option "Windsurf"
+                      - option "Xdebug"
+                    - generic:
+                      - img
+                - generic:
+                  - text: Theme
+                  - button "auto":
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - img
+                        - generic:
+                          - generic:
+                            - img
+                        - generic:
+                          - generic:
+                            - img
+                      - generic: auto
+                - generic:
+                  - button "Save settings"
+                - paragraph:
+                  - text: Settings will be saved locally in
+                  - code: ~/.ignition.json
+                  - text: .
+      - link "Route [counters.showOpen] not defined." [ref=e56] [cursor=pointer]:
+        - /url: "#top"
+        - generic [ref=e57]: Route [counters.showOpen] not defined.
+  - main [ref=e58]:
+    - main [ref=e62]:
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - generic [ref=e67]:
+            - generic [ref=e68]: Symfony
+            - generic [ref=e69]: \
+            - generic [ref=e70]: Component
+            - generic [ref=e71]: \
+            - generic [ref=e72]: Routing
+            - generic [ref=e73]: \
+            - generic [ref=e74]: Exception
+            - generic [ref=e75]: \
+            - generic [ref=e76]: RouteNotFoundException
+          - generic [ref=e77]:
+            - generic [ref=e78]: PHP 8.3.30
+            - generic [ref=e79]:
+              - img [ref=e80]
+              - text: 10.50.2
+        - generic [ref=e83]: Route [counters.showOpen] not defined.
+    - generic [ref=e86]:
+      - complementary [ref=e87]:
+        - generic [ref=e88]:
+          - button "Expand vendor frames" [ref=e90] [cursor=pointer]:
+            - generic [ref=e91]:
+              - img [ref=e92]
+              - img [ref=e94]
+            - text: Expand vendor frames
+          - list [ref=e97]:
+            - listitem [ref=e98] [cursor=pointer]:
+              - text: 2 vendor frames
+              - img [ref=e99]
+            - listitem [ref=e101]:
+              - generic [ref=e103]:
+                - generic [ref=e104]: resources
+                - generic [ref=e105]: /
+                - generic [ref=e106]: views
+                - generic [ref=e107]: /
+                - generic [ref=e108]: counters
+                - generic [ref=e109]: /
+                - generic [ref=e110]: index.blade
+                - generic [ref=e111]: .php
+                - generic [ref=e112]: ": 13"
+              - generic [ref=e113]: require
+            - listitem [ref=e114]
+            - listitem [ref=e115] [cursor=pointer]:
+              - text: 15 vendor frames
+              - img [ref=e116]
+            - listitem [ref=e118] [cursor=pointer]:
+              - generic [ref=e120]:
+                - generic [ref=e121]: App
+                - generic [ref=e122]: \
+                - generic [ref=e123]: Http
+                - generic [ref=e124]: \
+                - generic [ref=e125]: Middleware
+                - generic [ref=e126]: \
+                - generic [ref=e127]: SessionTimeout
+                - generic [ref=e128]: ": 70"
+              - generic [ref=e129]: handle
+            - listitem [ref=e130] [cursor=pointer]:
+              - text: 18 vendor frames
+              - img [ref=e131]
+            - listitem [ref=e133] [cursor=pointer]:
+              - generic [ref=e135]:
+                - generic [ref=e136]: App
+                - generic [ref=e137]: \
+                - generic [ref=e138]: Http
+                - generic [ref=e139]: \
+                - generic [ref=e140]: Middleware
+                - generic [ref=e141]: \
+                - generic [ref=e142]: LogRequests
+                - generic [ref=e143]: ": 33"
+              - generic [ref=e144]: handle
+            - listitem [ref=e145] [cursor=pointer]:
+              - text: 1 vendor frame
+              - img [ref=e146]
+            - listitem [ref=e148] [cursor=pointer]:
+              - generic [ref=e150]:
+                - generic [ref=e151]: App
+                - generic [ref=e152]: \
+                - generic [ref=e153]: Http
+                - generic [ref=e154]: \
+                - generic [ref=e155]: Middleware
+                - generic [ref=e156]: \
+                - generic [ref=e157]: IpBlocker
+                - generic [ref=e158]: ": 54"
+              - generic [ref=e159]: handle
+            - listitem [ref=e160] [cursor=pointer]:
+              - text: 10 vendor frames
+              - img [ref=e161]
+            - listitem [ref=e163] [cursor=pointer]:
+              - generic [ref=e165]:
+                - generic [ref=e166]: App
+                - generic [ref=e167]: \
+                - generic [ref=e168]: Http
+                - generic [ref=e169]: \
+                - generic [ref=e170]: Middleware
+                - generic [ref=e171]: \
+                - generic [ref=e172]: PerformanceTrackingMiddleware
+                - generic [ref=e173]: ": 19"
+              - generic [ref=e174]: handle
+            - listitem [ref=e175] [cursor=pointer]:
+              - text: 1 vendor frame
+              - img [ref=e176]
+            - listitem [ref=e178] [cursor=pointer]:
+              - generic [ref=e180]:
+                - generic [ref=e181]: App
+                - generic [ref=e182]: \
+                - generic [ref=e183]: Http
+                - generic [ref=e184]: \
+                - generic [ref=e185]: Middleware
+                - generic [ref=e186]: \
+                - generic [ref=e187]: QueryLogging
+                - generic [ref=e188]: ": 37"
+              - generic [ref=e189]: handle
+            - listitem [ref=e190] [cursor=pointer]:
+              - text: 1 vendor frame
+              - img [ref=e191]
+            - listitem [ref=e193] [cursor=pointer]:
+              - generic [ref=e195]:
+                - generic [ref=e196]: App
+                - generic [ref=e197]: \
+                - generic [ref=e198]: Http
+                - generic [ref=e199]: \
+                - generic [ref=e200]: Middleware
+                - generic [ref=e201]: \
+                - generic [ref=e202]: SecurityHeaders
+                - generic [ref=e203]: ": 75"
+              - generic [ref=e204]: handle
+            - listitem [ref=e205] [cursor=pointer]:
+              - text: 18 vendor frames
+              - img [ref=e206]
+            - listitem [ref=e208] [cursor=pointer]:
+              - generic [ref=e210]:
+                - generic [ref=e211]: public
+                - generic [ref=e212]: /
+                - generic [ref=e213]: index
+                - generic [ref=e214]: .php
+                - generic [ref=e215]: ": 51"
+              - generic [ref=e216]: "[top]"
+      - generic [ref=e217]:
+        - 'link "resources / views / counters / index.blade .php : 13" [ref=e219] [cursor=pointer]':
+          - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:13
+          - generic [ref=e220]:
+            - generic [ref=e221]: resources
+            - generic [ref=e222]: /
+            - generic [ref=e223]: views
+            - generic [ref=e224]: /
+            - generic [ref=e225]: counters
+            - generic [ref=e226]: /
+            - generic [ref=e227]: index.blade
+            - generic [ref=e228]: .php
+            - generic [ref=e229]: ": 13"
+        - main [ref=e230]:
+          - navigation [ref=e231]:
+            - generic [ref=e232]:
+              - paragraph [ref=e233]: "1"
+              - paragraph [ref=e234]: "2"
+              - paragraph [ref=e235]: "3"
+              - paragraph [ref=e236]: "4"
+              - paragraph [ref=e237]: "5"
+              - paragraph [ref=e238]: "6"
+              - paragraph [ref=e239]: "7"
+              - paragraph [ref=e240]: "8"
+              - paragraph [ref=e241]: "9"
+              - paragraph [ref=e242]: "10"
+              - paragraph [ref=e243]: "11"
+              - paragraph [ref=e244]: "12"
+              - paragraph [ref=e245]: "13"
+              - paragraph [ref=e246]: "14"
+              - paragraph [ref=e247]: "15"
+              - paragraph [ref=e248]: "16"
+              - paragraph [ref=e249]: "17"
+              - paragraph [ref=e250]: "18"
+              - paragraph [ref=e251]: "19"
+              - paragraph [ref=e252]: "20"
+              - paragraph [ref=e253]: "21"
+              - paragraph [ref=e254]: "22"
+              - paragraph [ref=e255]: "23"
+              - paragraph [ref=e256]: "24"
+              - paragraph [ref=e257]: "25"
+              - paragraph [ref=e258]: "26"
+              - paragraph [ref=e259]: "27"
+              - paragraph [ref=e260]: "28"
+              - paragraph [ref=e261]: "29"
+              - paragraph [ref=e262]: "30"
+          - code [ref=e265]:
+            - generic [ref=e266]:
+              - link [ref=e267] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:1
+                - button [ref=e268]:
+                  - img [ref=e269]
+              - generic [ref=e272]: "@extends('layouts.base')"
+            - link [ref=e274] [cursor=pointer]:
+              - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:2
+              - button [ref=e275]:
+                - img [ref=e276]
+            - generic [ref=e279]:
+              - link [ref=e280] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:3
+                - button [ref=e281]:
+                  - img [ref=e282]
+              - generic [ref=e285]: "@section('title', 'Counters - CEMS-MY')"
+            - link [ref=e287] [cursor=pointer]:
+              - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:4
+              - button [ref=e288]:
+                - img [ref=e289]
+            - generic [ref=e292]:
+              - link [ref=e293] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:5
+                - button [ref=e294]:
+                  - img [ref=e295]
+              - generic [ref=e298]: "@section('content')"
+            - generic [ref=e299]:
+              - link [ref=e300] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:6
+                - button [ref=e301]:
+                  - img [ref=e302]
+              - generic [ref=e305]: <div class="mb-6">
+            - generic [ref=e306]:
+              - link [ref=e307] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:7
+                - button [ref=e308]:
+                  - img [ref=e309]
+              - generic [ref=e312]: <div>
+            - generic [ref=e313]:
+              - link [ref=e314] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:8
+                - button [ref=e315]:
+                  - img [ref=e316]
+              - generic [ref=e319]: <h1 class="text-2xl font-semibold text-[--color-ink]">Counters</h1>
+            - generic [ref=e320]:
+              - link [ref=e321] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:9
+                - button [ref=e322]:
+                  - img [ref=e323]
+              - generic [ref=e326]: <p class="text-sm text-[--color-ink-muted] mt-1">Manage teller counters and till sessions</p>
+            - generic [ref=e327]:
+              - link [ref=e328] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:10
+                - button [ref=e329]:
+                  - img [ref=e330]
+              - generic [ref=e333]: </div>
+            - generic [ref=e334]:
+              - link [ref=e335] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:11
+                - button [ref=e336]:
+                  - img [ref=e337]
+              - generic [ref=e340]: "@role('manager')"
+            - generic [ref=e341]:
+              - link [ref=e342] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:12
+                - button [ref=e343]:
+                  - img [ref=e344]
+              - generic [ref=e347]: "@if(count($availableCounters) > 0)"
+            - generic [ref=e348]:
+              - link [ref=e349] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:13
+                - button [ref=e350]:
+                  - img [ref=e351]
+              - generic [ref=e354]: "<a href=\"{{ route('counters.showOpen', $availableCounters[0]) }}\" class=\"px-4 py-2 text-sm font-medium rounded-lg bg-[--color-primary] text-white hover:bg-[--color-ink]\">"
+            - generic [ref=e355]:
+              - link [ref=e356] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:14
+                - button [ref=e357]:
+                  - img [ref=e358]
+              - generic [ref=e360]: Open Counter
+            - generic [ref=e361]:
+              - link [ref=e362] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:15
+                - button [ref=e363]:
+                  - img [ref=e364]
+              - generic [ref=e367]: </a>
+            - generic [ref=e368]:
+              - link [ref=e369] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:16
+                - button [ref=e370]:
+                  - img [ref=e371]
+              - generic [ref=e374]: "@endif"
+            - generic [ref=e375]:
+              - link [ref=e376] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:17
+                - button [ref=e377]:
+                  - img [ref=e378]
+              - generic [ref=e381]: "@endrole"
+            - generic [ref=e382]:
+              - link [ref=e383] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:18
+                - button [ref=e384]:
+                  - img [ref=e385]
+              - generic [ref=e388]: </div>
+            - link [ref=e390] [cursor=pointer]:
+              - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:19
+              - button [ref=e391]:
+                - img [ref=e392]
+            - generic [ref=e395]:
+              - link [ref=e396] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:20
+                - button [ref=e397]:
+                  - img [ref=e398]
+              - generic [ref=e401]: <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            - generic [ref=e402]:
+              - link [ref=e403] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:21
+                - button [ref=e404]:
+                  - img [ref=e405]
+              - generic [ref=e408]: "@foreach($counters as $counter)"
+            - generic [ref=e409]:
+              - link [ref=e410] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:22
+                - button [ref=e411]:
+                  - img [ref=e412]
+              - generic [ref=e415]: <div class="bg-white border border-[--color-border] rounded-xl">
+            - generic [ref=e416]:
+              - link [ref=e417] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:23
+                - button [ref=e418]:
+                  - img [ref=e419]
+              - generic [ref=e422]: <div class="flex items-center justify-between mb-4">
+            - generic [ref=e423]:
+              - link [ref=e424] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:24
+                - button [ref=e425]:
+                  - img [ref=e426]
+              - generic [ref=e429]: "<h3 class=\"text-sm font-semibold text-[--color-ink]\">{{ $counter->name }}</h3>"
+            - generic [ref=e430]:
+              - link [ref=e431] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:25
+                - button [ref=e432]:
+                  - img [ref=e433]
+              - generic [ref=e436]: "@php"
+            - generic [ref=e437]:
+              - link [ref=e438] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:26
+                - button [ref=e439]:
+                  - img [ref=e440]
+              - generic [ref=e443]: $openSession = $counter->sessions->first();
+            - generic [ref=e444]:
+              - link [ref=e445] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:27
+                - button [ref=e446]:
+                  - img [ref=e447]
+              - generic [ref=e450]: "@endphp"
+            - generic [ref=e451]:
+              - link [ref=e452] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:28
+                - button [ref=e453]:
+                  - img [ref=e454]
+              - generic [ref=e457]: "@if($openSession)"
+            - generic [ref=e458]:
+              - link [ref=e459] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:29
+                - button [ref=e460]:
+                  - img [ref=e461]
+              - generic [ref=e464]: <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span>
+            - generic [ref=e465]:
+              - link [ref=e466] [cursor=pointer]:
+                - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:30
+                - button [ref=e467]:
+                  - img [ref=e468]
+              - generic [ref=e471]: "@else"
+    - generic [ref=e473]:
+      - navigation [ref=e474]:
+        - list [ref=e476]:
+          - listitem [ref=e477]:
+            - link "App" [ref=e478] [cursor=pointer]:
+              - /url: "#context-app"
+            - list [ref=e479]:
+              - listitem [ref=e480]:
+                - link "Routing" [ref=e481] [cursor=pointer]:
+                  - /url: "#context-app-routing"
+                  - img [ref=e483]
+                  - generic [ref=e485]: Routing
+              - listitem [ref=e486]:
+                - link "Views" [ref=e487] [cursor=pointer]:
+                  - /url: "#context-app-views"
+                  - img [ref=e489]
+                  - generic [ref=e491]: Views
+          - listitem [ref=e492]:
+            - link "Request" [ref=e493] [cursor=pointer]:
+              - /url: "#context-request"
+            - list [ref=e494]:
+              - listitem [ref=e495]:
+                - link "Browser" [ref=e496] [cursor=pointer]:
+                  - /url: "#context-request-browser"
+                  - img [ref=e498]
+                  - generic [ref=e500]: Browser
+              - listitem [ref=e501]:
+                - link "Headers" [ref=e502] [cursor=pointer]:
+                  - /url: "#context-request-headers"
+                  - img [ref=e504]
+                  - generic [ref=e506]: Headers
+              - listitem [ref=e507]:
+                - link "Body" [ref=e508] [cursor=pointer]:
+                  - /url: "#context-request-body"
+                  - img [ref=e510]
+                  - generic [ref=e512]: Body
+          - listitem [ref=e513]:
+            - link "Context" [ref=e514] [cursor=pointer]:
+              - /url: "#context-context"
+            - list [ref=e515]:
+              - listitem [ref=e516]:
+                - link "User" [ref=e517] [cursor=pointer]:
+                  - /url: "#context-user-user"
+                  - img [ref=e519]
+                  - generic [ref=e521]: User
+              - listitem [ref=e522]:
+                - link "Versions" [ref=e523] [cursor=pointer]:
+                  - /url: "#context-context-versions"
+                  - img [ref=e525]
+                  - generic [ref=e527]: Versions
+      - generic [ref=e528]:
+        - generic [ref=e529]:
+          - heading "App" [level=2] [ref=e530]
+          - generic [ref=e531]:
+            - generic [ref=e532]:
+              - heading "Routing" [level=1] [ref=e533]:
+                - text: Routing
+                - img [ref=e535]
+              - generic [ref=e537]:
+                - generic [ref=e538]:
+                  - term [ref=e539]: Controller
+                  - definition [ref=e540]:
+                    - generic [ref=e541]:
+                      - code [ref=e544]: App\Http\Controllers\CounterController@index
+                      - button "Copy to clipboard" [ref=e546] [cursor=pointer]:
+                        - img [ref=e547]
+                - generic [ref=e549]:
+                  - term [ref=e550]: Route name
+                  - definition [ref=e551]:
+                    - generic [ref=e552]:
+                      - code [ref=e555]: counters.index
+                      - button "Copy to clipboard" [ref=e557] [cursor=pointer]:
+                        - img [ref=e558]
+                - generic [ref=e560]:
+                  - term [ref=e561]: Middleware
+                  - definition [ref=e562]:
+                    - list [ref=e563]:
+                      - listitem [ref=e564]:
+                        - generic [ref=e565]:
+                          - code [ref=e568]: web
+                          - button "Copy to clipboard" [ref=e570] [cursor=pointer]:
+                            - img [ref=e571]
+                      - listitem [ref=e573]:
+                        - generic [ref=e574]:
+                          - code [ref=e577]: auth
+                          - button "Copy to clipboard" [ref=e579] [cursor=pointer]:
+                            - img [ref=e580]
+                      - listitem [ref=e582]:
+                        - generic [ref=e583]:
+                          - code [ref=e586]: session.timeout
+                          - button "Copy to clipboard" [ref=e588] [cursor=pointer]:
+                            - img [ref=e589]
+            - generic [ref=e591]:
+              - heading "Views" [level=1] [ref=e592]:
+                - text: Views
+                - img [ref=e594]
+              - generic [ref=e596]:
+                - generic [ref=e597]:
+                  - term [ref=e598]: View
+                  - definition [ref=e599]:
+                    - link "resources / views / counters / index.blade .php" [ref=e600] [cursor=pointer]:
+                      - /url: vscode://file/%2Fwww%2Fwwwroot%2Flocal.host%2Fresources%2Fviews%2Fcounters%2Findex.blade.php:1
+                      - generic [ref=e601]:
+                        - generic [ref=e602]: resources
+                        - generic [ref=e603]: /
+                        - generic [ref=e604]: views
+                        - generic [ref=e605]: /
+                        - generic [ref=e606]: counters
+                        - generic [ref=e607]: /
+                        - generic [ref=e608]: index.blade
+                        - generic [ref=e609]: .php
+                - generic [ref=e610]:
+                  - term [ref=e611]: Data
+                  - definition
+        - generic [ref=e612]:
+          - heading "Request" [level=2] [ref=e613]
+          - generic [ref=e614]:
+            - generic [ref=e615]:
+              - generic [ref=e616]:
+                - generic [ref=e617]: http://local.host/counters
+                - generic [ref=e618]: GET
+              - generic [ref=e620] [cursor=pointer]:
+                - code [ref=e623]:
+                  - code [ref=e625]: "curl \"http://local.host/counters\" \\ -X GET \\ -H 'cookie: <CENSORED>' \\ -H 'accept-language: en-US,en;q=0.9' \\ -H 'accept-encoding: gzip, deflate' \\ -H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \\ -H 'user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/147.0.0.0 Safari/537.36' \\ -H 'upgrade-insecure-requests: 1' \\ -H 'connection: keep-alive' \\ -H 'host: local.host';"
+                - button "Copy to clipboard" [ref=e627]:
+                  - img [ref=e628]
+                - button [ref=e630]:
+                  - img [ref=e631]
+            - generic [ref=e633]:
+              - heading "Browser" [level=1] [ref=e634]:
+                - text: Browser
+                - img [ref=e636]
+              - generic [ref=e638]:
+                - code [ref=e641]: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/147.0.0.0 Safari/537.36
+                - button "Copy to clipboard" [ref=e643] [cursor=pointer]:
+                  - img [ref=e644]
+            - generic [ref=e646]:
+              - heading "Headers" [level=1] [ref=e647]:
+                - text: Headers
+                - img [ref=e649]
+              - generic [ref=e651]:
+                - generic [ref=e652]:
+                  - term [ref=e653]: cookie
+                  - definition [ref=e654]:
+                    - generic [ref=e655]:
+                      - code [ref=e658]: <CENSORED>
+                      - button "Copy to clipboard" [ref=e660] [cursor=pointer]:
+                        - img [ref=e661]
+                - generic [ref=e663]:
+                  - term [ref=e664]: accept-language
+                  - definition [ref=e665]:
+                    - generic [ref=e666]:
+                      - code [ref=e669]: en-US,en;q=0.9
+                      - button "Copy to clipboard" [ref=e671] [cursor=pointer]:
+                        - img [ref=e672]
+                - generic [ref=e674]:
+                  - term [ref=e675]: accept-encoding
+                  - definition [ref=e676]:
+                    - generic [ref=e677]:
+                      - code [ref=e680]: gzip, deflate
+                      - button "Copy to clipboard" [ref=e682] [cursor=pointer]:
+                        - img [ref=e683]
+                - generic [ref=e685]:
+                  - term [ref=e686]: accept
+                  - definition [ref=e687]:
+                    - generic [ref=e688]:
+                      - code [ref=e691]: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+                      - button "Copy to clipboard" [ref=e693] [cursor=pointer]:
+                        - img [ref=e694]
+                - generic [ref=e696]:
+                  - term [ref=e697]: user-agent
+                  - definition [ref=e698]:
+                    - generic [ref=e699]:
+                      - code [ref=e702]: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/147.0.0.0 Safari/537.36
+                      - button "Copy to clipboard" [ref=e704] [cursor=pointer]:
+                        - img [ref=e705]
+                - generic [ref=e707]:
+                  - term [ref=e708]: upgrade-insecure-requests
+                  - definition [ref=e709]:
+                    - generic [ref=e710]:
+                      - code [ref=e713]: "1"
+                      - button "Copy to clipboard" [ref=e715] [cursor=pointer]:
+                        - img [ref=e716]
+                - generic [ref=e718]:
+                  - term [ref=e719]: connection
+                  - definition [ref=e720]:
+                    - generic [ref=e721]:
+                      - code [ref=e724]: keep-alive
+                      - button "Copy to clipboard" [ref=e726] [cursor=pointer]:
+                        - img [ref=e727]
+                - generic [ref=e729]:
+                  - term [ref=e730]: host
+                  - definition [ref=e731]:
+                    - generic [ref=e732]:
+                      - code [ref=e735]: local.host
+                      - button "Copy to clipboard" [ref=e737] [cursor=pointer]:
+                        - img [ref=e738]
+            - generic [ref=e740]:
+              - heading "Body" [level=1] [ref=e741]:
+                - text: Body
+                - img [ref=e743]
+              - generic [ref=e745]:
+                - code [ref=e748]: "[]"
+                - button "Copy to clipboard" [ref=e750] [cursor=pointer]:
+                  - img [ref=e751]
+        - generic [ref=e753]:
+          - heading "Context" [level=2] [ref=e754]
+          - generic [ref=e755]:
+            - generic [ref=e756]:
+              - heading "User" [level=1] [ref=e757]:
+                - text: User
+                - img [ref=e759]
+              - generic [ref=e761]:
+                - img "admin@cems.my" [ref=e763]
+                - paragraph [ref=e765]: admin@cems.my
+              - generic [ref=e766] [cursor=pointer]:
+                - code [ref=e769]:
+                  - code [ref=e771]: "{ \"id\": 1, \"branch_id\": null, \"username\": \"admin\", \"email\": \"admin@cems.my\", \"role\": \"admin\", \"mfa_enabled\": false, \"mfa_verified_at\": null, \"is_active\": true, \"last_login_at\": \"2026-05-01T10:01:37.000000Z\", \"created_at\": \"2026-05-01T07:05:11.000000Z\", \"updated_at\": \"2026-05-01T10:01:37.000000Z\", \"deleted_at\": null }"
+                - button "Copy to clipboard" [ref=e773]:
+                  - img [ref=e774]
+                - button [ref=e776]:
+                  - img [ref=e777]
+            - generic [ref=e779]:
+              - heading "Versions" [level=1] [ref=e780]:
+                - text: Versions
+                - img [ref=e782]
+              - generic [ref=e784]:
+                - generic [ref=e785]:
+                  - term [ref=e786]: Php Version
+                  - definition [ref=e787]:
+                    - generic [ref=e788]:
+                      - code [ref=e791]: 8.3.30
+                      - button "Copy to clipboard" [ref=e793] [cursor=pointer]:
+                        - img [ref=e794]
+                - generic [ref=e796]:
+                  - term [ref=e797]: Laravel Version
+                  - definition [ref=e798]:
+                    - generic [ref=e799]:
+                      - code [ref=e802]: 10.50.2
+                      - button "Copy to clipboard" [ref=e804] [cursor=pointer]:
+                        - img [ref=e805]
+                - generic [ref=e807]:
+                  - term [ref=e808]: Laravel Locale
+                  - definition [ref=e809]:
+                    - generic [ref=e810]:
+                      - code [ref=e813]: en
+                      - button "Copy to clipboard" [ref=e815] [cursor=pointer]:
+                        - img [ref=e816]
+                - generic [ref=e818]:
+                  - term [ref=e819]: Laravel Config Cached
+                  - definition [ref=e820]:
+                    - generic [ref=e821]:
+                      - img [ref=e822]
+                      - generic [ref=e824]: "false"
+                - generic [ref=e825]:
+                  - term [ref=e826]: App Debug
+                  - definition [ref=e827]:
+                    - generic [ref=e828]:
+                      - img [ref=e829]
+                      - generic [ref=e831]: "true"
+                - generic [ref=e832]:
+                  - term [ref=e833]: App Env
+                  - definition [ref=e834]:
+                    - generic [ref=e835]:
+                      - code [ref=e838]: local
+                      - button "Copy to clipboard" [ref=e840] [cursor=pointer]:
+                        - img [ref=e841]
+    - generic [ref=e844]:
+      - navigation:
+        - list [ref=e845]:
+          - listitem [ref=e846]:
+            - button "11 Queries" [ref=e847] [cursor=pointer]:
+              - generic [ref=e848]: "11"
+              - generic [ref=e849]: Queries
+          - listitem [ref=e850]:
+            - button "5 Logs" [ref=e851] [cursor=pointer]:
+              - generic [ref=e852]: "5"
+              - generic [ref=e853]: Logs
+      - generic [ref=e854]:
+        - generic [ref=e855]:
+          - generic [ref=e856]:
+            - generic [ref=e857]: 6:07:48 PM
+            - generic [ref=e858]:
+              - img "Runtime" [ref=e859]
+              - text: 1.16ms
+            - generic [ref=e861]:
+              - img "Connection" [ref=e862]
+              - text: mysql
+          - generic [ref=e865]:
+            - generic [ref=e866] [cursor=pointer]:
+              - code [ref=e869]:
+                - code [ref=e871]: "select * from `users` where `id` = 1 and `users`.`deleted_at` is null limit 1"
+              - button "Copy to clipboard" [ref=e873]:
+                - img [ref=e874]
+              - button [ref=e876]:
+                - img [ref=e877]
+            - button "1 query parameter" [ref=e880] [cursor=pointer]:
+              - img [ref=e881]
+              - text: 1 query parameter
+        - generic [ref=e883]:
+          - generic [ref=e884]:
+            - generic [ref=e885]: 6:07:48 PM
+            - generic [ref=e886]:
+              - img "Runtime" [ref=e887]
+              - text: 0.62ms
+            - generic [ref=e889]:
+              - img "Connection" [ref=e890]
+              - text: mysql
+          - generic [ref=e893] [cursor=pointer]:
+            - code [ref=e896]:
+              - code [ref=e898]: "select * from `counters` where `counters`.`deleted_at` is null"
+            - button "Copy to clipboard" [ref=e900]:
+              - img [ref=e901]
+            - button [ref=e903]:
+              - img [ref=e904]
+        - generic [ref=e906]:
+          - generic [ref=e907]:
+            - generic [ref=e908]: 6:07:48 PM
+            - generic [ref=e909]:
+              - img "Runtime" [ref=e910]
+              - text: 1.95ms
+            - generic [ref=e912]:
+              - img "Connection" [ref=e913]
+              - text: mysql
+          - generic [ref=e916]:
+            - generic [ref=e917] [cursor=pointer]:
+              - code [ref=e920]:
+                - code [ref=e922]: "select * from `counter_sessions` where `counter_sessions`.`counter_id` in (1, 2, 3, 4, 5) and date(`session_date`) = 2026-05-01 and `status` = open"
+              - button "Copy to clipboard" [ref=e924]:
+                - img [ref=e925]
+              - button [ref=e927]:
+                - img [ref=e928]
+            - button "2 query parameters" [ref=e931] [cursor=pointer]:
+              - img [ref=e932]
+              - text: 2 query parameters
+        - generic [ref=e934]:
+          - generic [ref=e935]:
+            - generic [ref=e936]: 6:07:48 PM
+            - generic [ref=e937]:
+              - img "Runtime" [ref=e938]
+              - text: 0.44ms
+            - generic [ref=e940]:
+              - img "Connection" [ref=e941]
+              - text: mysql
+          - generic [ref=e944]:
+            - generic [ref=e945] [cursor=pointer]:
+              - code [ref=e948]:
+                - code [ref=e950]: "select * from `counters` where `status` = active and `counters`.`deleted_at` is null"
+              - button "Copy to clipboard" [ref=e952]:
+                - img [ref=e953]
+              - button [ref=e955]:
+                - img [ref=e956]
+            - button "1 query parameter" [ref=e959] [cursor=pointer]:
+              - img [ref=e960]
+              - text: 1 query parameter
+        - generic [ref=e962]:
+          - generic [ref=e963]:
+            - generic [ref=e964]: 6:07:48 PM
+            - generic [ref=e965]:
+              - img "Runtime" [ref=e966]
+              - text: 0.23ms
+            - generic [ref=e968]:
+              - img "Connection" [ref=e969]
+              - text: mysql
+          - generic [ref=e972]:
+            - generic [ref=e973] [cursor=pointer]:
+              - code [ref=e976]:
+                - code [ref=e978]: "select `counter_id` from `counter_sessions` where `status` = open"
+              - button "Copy to clipboard" [ref=e980]:
+                - img [ref=e981]
+              - button [ref=e983]:
+                - img [ref=e984]
+            - button "1 query parameter" [ref=e987] [cursor=pointer]:
+              - img [ref=e988]
+              - text: 1 query parameter
+        - generic [ref=e990]:
+          - generic [ref=e991]:
+            - generic [ref=e992]: 6:07:48 PM
+            - generic [ref=e993]:
+              - img "Runtime" [ref=e994]
+              - text: 0.28ms
+            - generic [ref=e996]:
+              - img "Connection" [ref=e997]
+              - text: mysql
+          - generic [ref=e1000]:
+            - generic [ref=e1001] [cursor=pointer]:
+              - code [ref=e1004]:
+                - code [ref=e1006]: "select * from `currencies` where `is_active` = true and `currencies`.`deleted_at` is null"
+              - button "Copy to clipboard" [ref=e1008]:
+                - img [ref=e1009]
+              - button [ref=e1011]:
+                - img [ref=e1012]
+            - button "1 query parameter" [ref=e1015] [cursor=pointer]:
+              - img [ref=e1016]
+              - text: 1 query parameter
+        - generic [ref=e1018]:
+          - generic [ref=e1019]:
+            - generic [ref=e1020]: 6:07:48 PM
+            - generic [ref=e1021]:
+              - img "Runtime" [ref=e1022]
+              - text: 0.37ms
+            - generic [ref=e1024]:
+              - img "Connection" [ref=e1025]
+              - text: mysql
+          - generic [ref=e1028] [cursor=pointer]:
+            - code [ref=e1031]:
+              - code [ref=e1033]: "select * from `counters` where `counters`.`deleted_at` is null"
+            - button "Copy to clipboard" [ref=e1035]:
+              - img [ref=e1036]
+            - button [ref=e1038]:
+              - img [ref=e1039]
+        - generic [ref=e1041]:
+          - generic [ref=e1042]:
+            - generic [ref=e1043]: 6:07:48 PM
+            - generic [ref=e1044]:
+              - img "Runtime" [ref=e1045]
+              - text: 0.28ms
+            - generic [ref=e1047]:
+              - img "Connection" [ref=e1048]
+              - text: mysql
+          - generic [ref=e1051]:
+            - generic [ref=e1052] [cursor=pointer]:
+              - code [ref=e1055]:
+                - code [ref=e1057]: "select * from `counter_sessions` where `counter_sessions`.`counter_id` in (1, 2, 3, 4, 5) and date(`session_date`) = 2026-05-01 and `status` = open"
+              - button "Copy to clipboard" [ref=e1059]:
+                - img [ref=e1060]
+              - button [ref=e1062]:
+                - img [ref=e1063]
+            - button "2 query parameters" [ref=e1066] [cursor=pointer]:
+              - img [ref=e1067]
+              - text: 2 query parameters
+        - generic [ref=e1069]:
+          - generic [ref=e1070]:
+            - generic [ref=e1071]: 6:07:48 PM
+            - generic [ref=e1072]:
+              - img "Runtime" [ref=e1073]
+              - text: 0.23ms
+            - generic [ref=e1075]:
+              - img "Connection" [ref=e1076]
+              - text: mysql
+          - generic [ref=e1079]:
+            - generic [ref=e1080] [cursor=pointer]:
+              - code [ref=e1083]:
+                - code [ref=e1085]: "select * from `counters` where `status` = active and `counters`.`deleted_at` is null"
+              - button "Copy to clipboard" [ref=e1087]:
+                - img [ref=e1088]
+              - button [ref=e1090]:
+                - img [ref=e1091]
+            - button "1 query parameter" [ref=e1094] [cursor=pointer]:
+              - img [ref=e1095]
+              - text: 1 query parameter
+        - generic [ref=e1097]:
+          - generic [ref=e1098]:
+            - generic [ref=e1099]: 6:07:48 PM
+            - generic [ref=e1100]:
+              - img "Runtime" [ref=e1101]
+              - text: 0.21ms
+            - generic [ref=e1103]:
+              - img "Connection" [ref=e1104]
+              - text: mysql
+          - generic [ref=e1107]:
+            - generic [ref=e1108] [cursor=pointer]:
+              - code [ref=e1111]:
+                - code [ref=e1113]: "select `counter_id` from `counter_sessions` where `status` = open"
+              - button "Copy to clipboard" [ref=e1115]:
+                - img [ref=e1116]
+              - button [ref=e1118]:
+                - img [ref=e1119]
+            - button "1 query parameter" [ref=e1122] [cursor=pointer]:
+              - img [ref=e1123]
+              - text: 1 query parameter
+        - generic [ref=e1125]:
+          - generic [ref=e1126]:
+            - generic [ref=e1127]: 6:07:48 PM
+            - generic [ref=e1128]:
+              - img "Runtime" [ref=e1129]
+              - text: 2.47ms
+            - generic [ref=e1131]:
+              - img "Connection" [ref=e1132]
+              - text: mysql
+          - generic [ref=e1135]:
+            - generic [ref=e1136] [cursor=pointer]:
+              - code [ref=e1139]:
+                - code [ref=e1141]: "select * from `currencies` where `is_active` = true and `currencies`.`deleted_at` is null"
+              - button "Copy to clipboard" [ref=e1143]:
+                - img [ref=e1144]
+              - button [ref=e1146]:
+                - img [ref=e1147]
+            - button "1 query parameter" [ref=e1150] [cursor=pointer]:
+              - img [ref=e1151]
+              - text: 1 query parameter
+    - generic [ref=e1154]:
+      - list [ref=e1155]:
+        - listitem [ref=e1156]:
+          - img [ref=e1157]
+        - listitem [ref=e1165]: ·
+        - listitem [ref=e1166]:
+          - link "Source" [ref=e1167] [cursor=pointer]:
+            - /url: https://github.com/spatie/laravel-ignition
+        - listitem [ref=e1168]: ·
+        - listitem [ref=e1169]:
+          - link "Docs" [ref=e1170] [cursor=pointer]:
+            - /url: https://flareapp.io/docs/ignition/introducing-ignition/overview
+        - listitem [ref=e1171]: ·
+        - listitem [ref=e1172]:
+          - link "Laravel" [ref=e1173] [cursor=pointer]:
+            - /url: https://laravel.com
+      - paragraph [ref=e1175]:
+        - text: Ignition is built by
+        - link "Flare" [ref=e1176] [cursor=pointer]:
+          - /url: https://flareapp.io/?utm_campaign=ignition&utm_source=ignition
+          - img [ref=e1177]
+          - text: Flare
+        - text: ", the Laravel error reporting service."

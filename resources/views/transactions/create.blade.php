@@ -4,7 +4,7 @@
 
 @section('header-title')
 <div class="flex items-center gap-3">
-    <a href="/transactions" class="btn btn-ghost btn-icon">
+    <a href="/transactions" class="px-4 py-2 text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
@@ -23,10 +23,10 @@
 
         {{-- Transaction Type --}}
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Transaction Type</h3>
+            <div class="px-6 py-4 border-b border-[--color-border]">
+                <h3 class="text-base font-semibold text-[--color-ink]">Transaction Type</h3>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 <div class="grid grid-cols-2 gap-4">
                     <label class="flex items-center gap-3 p-4 border border-[--color-border] rounded-xl cursor-pointer hover:bg-[--color-canvas-subtle] transition-colors has-[:checked]:border-[--color-accent] has-[:checked]:bg-[--color-accent]/5">
                         <input type="radio" name="type" value="Buy" class="form-checkbox" checked required>
@@ -62,16 +62,16 @@
 
         {{-- Customer Selection --}}
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Customer</h3>
+            <div class="px-6 py-4 border-b border-[--color-border]">
+                <h3 class="text-base font-semibold text-[--color-ink]">Customer</h3>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 <div class="form-group">
                     <label class="form-label">Search Customer (Name or IC Number)</label>
                     <div class="relative">
                         <input type="text"
                                id="customer-search"
-                               class="form-input"
+                               class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg"
                                placeholder="Type customer name or IC number to search..."
                                autocomplete="off">
                         <input type="hidden" name="customer_id" id="customer_id" value="">
@@ -79,7 +79,7 @@
                         </div>
                     </div>
                     @error('customer_id')
-                        <p class="form-error">{{ $message }}</p>
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -109,7 +109,7 @@
                 {{-- No Customer Found - Quick Create --}}
                 <div id="no-customer-found" class="mt-4 p-4 border-2 border-dashed border-[--color-border] rounded-lg text-center hidden">
                     <p class="text-[--color-ink-muted] mb-3">No existing customer found. Create new customer:</p>
-                    <button type="button" id="btn-create-customer" class="btn btn-primary">
+                    <button type="button" id="btn-create-customer" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
@@ -121,28 +121,28 @@
 
         {{-- Currency & Amount --}}
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Currency & Amount</h3>
+            <div class="px-6 py-4 border-b border-[--color-border]">
+                <h3 class="text-base font-semibold text-[--color-ink]">Currency & Amount</h3>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 <div class="grid grid-cols-2 gap-6">
                     <div class="form-group">
                         <label class="form-label">Foreign Currency</label>
-                        <select name="currency_code" id="currency-select" class="form-select" required>
+                        <select name="currency_code" id="currency-select" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                             <option value="">Select currency...</option>
                             @foreach($currencies ?? [] as $code => $name)
                                 <option value="{{ $code }}">{{ $code }} - {{ $name }}</option>
                             @endforeach
                         </select>
                         @error('currency_code')
-                            <p class="form-error">{{ $message }}</p>
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Foreign Amount</label>
-                        <input type="number" name="amount_foreign" id="amount-foreign" class="form-input" step="0.01" min="0.01" placeholder="0.00" required>
+                        <input type="number" name="amount_foreign" id="amount-foreign" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" step="0.01" min="0.01" placeholder="0.00" required>
                         @error('amount_foreign')
-                            <p class="form-error">{{ $message }}</p>
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
@@ -154,17 +154,17 @@
                             <span class="text-xs text-[--color-ink-muted] ml-1">(Daily Rate)</span>
                         </label>
                         <div class="flex items-center gap-2">
-                            <input type="number" name="rate" id="exchange-rate" class="form-input" step="0.0001" min="0.0001" placeholder="0.0000" required>
-                            <button type="button" id="btn-reset-rate" class="btn btn-ghost btn-sm text-xs" title="Reset to daily rate">Reset</button>
+                            <input type="number" name="rate" id="exchange-rate" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" step="0.0001" min="0.0001" placeholder="0.0000" required>
+                            <button type="button" id="btn-reset-rate" class="px-4 py-2 text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle] text-xs" title="Reset to daily rate">Reset</button>
                         </div>
-                        <p class="form-hint" id="rate-hint">Select currency to see daily rate</p>
+                        <p class="text-sm text-[--color-ink-muted] mt-1" id="rate-hint">Select currency to see daily rate</p>
                         @error('rate')
-                            <p class="form-error">{{ $message }}</p>
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">MYR Value (Calculated)</label>
-                        <input type="text" id="myr-value" class="form-input bg-[--color-canvas-subtle]" readonly placeholder="0.00">
+                        <input type="text" id="myr-value" class="w-full px-4 py-2.5 text-sm bg-[--color-canvas-subtle] border border-[--color-border] rounded-lg" readonly placeholder="0.00">
                     </div>
                 </div>
             </div>
@@ -172,33 +172,33 @@
 
         {{-- Counter Selection --}}
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Counter & Branch</h3>
+            <div class="px-6 py-4 border-b border-[--color-border]">
+                <h3 class="text-base font-semibold text-[--color-ink]">Counter & Branch</h3>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 <div class="grid grid-cols-2 gap-6">
                     <div class="form-group">
                         <label class="form-label">Branch</label>
-                        <select name="branch_id" id="branch-select" class="form-select" required>
+                        <select name="branch_id" id="branch-select" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                             <option value="">Select branch...</option>
                             @foreach($branches ?? [] as $branch)
                                 <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                             @endforeach
                         </select>
                         @error('branch_id')
-                            <p class="form-error">{{ $message }}</p>
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Counter</label>
-                        <select name="counter_id" id="counter-select" class="form-select" required>
+                        <select name="counter_id" id="counter-select" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                             <option value="">Select counter...</option>
                             @foreach($counters ?? [] as $counter)
                                 <option value="{{ $counter->id }}">{{ $counter->name }}</option>
                             @endforeach
                         </select>
                         @error('counter_id')
-                            <p class="form-error">{{ $message }}</p>
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
@@ -207,14 +207,14 @@
 
         {{-- Transaction Details --}}
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Transaction Details</h3>
+            <div class="px-6 py-4 border-b border-[--color-border]">
+                <h3 class="text-base font-semibold text-[--color-ink]">Transaction Details</h3>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 <div class="grid grid-cols-2 gap-6">
                     <div class="form-group">
                         <label class="form-label">Purpose</label>
-                        <select name="purpose" class="form-select" required>
+                        <select name="purpose" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                             <option value="">Select purpose...</option>
                             <option value="travel">Travel</option>
                             <option value="education">Education</option>
@@ -225,12 +225,12 @@
                             <option value="other">Other</option>
                         </select>
                         @error('purpose')
-                            <p class="form-error">{{ $message }}</p>
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Source of Funds</label>
-                        <select name="source_of_funds" class="form-select" required>
+                        <select name="source_of_funds" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                             <option value="">Select source...</option>
                             <option value="cash">Cash</option>
                             <option value="bank_transfer">Bank Transfer</option>
@@ -240,7 +240,7 @@
                             <option value="other">Other</option>
                         </select>
                         @error('source_of_funds')
-                            <p class="form-error">{{ $message }}</p>
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
@@ -253,8 +253,8 @@
 
         {{-- Actions --}}
         <div class="flex items-center justify-end gap-3">
-            <a href="/transactions" class="btn btn-ghost">Cancel</a>
-            <button type="submit" class="btn btn-primary" id="btn-submit">
+            <a href="/transactions" class="px-4 py-2 text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">Cancel</a>
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]" id="btn-submit">
                 Create Transaction
             </button>
         </div>
@@ -271,43 +271,32 @@
                 <p class="text-sm text-[--color-ink-muted]">Customer not found in database. Please fill in details.</p>
             </div>
             <form id="quick-customer-form" class="p-6 space-y-4">
-                <div class="form-group">
-                    <label class="form-label">Full Name *</label>
-                    <input type="text" name="full_name" id="new-customer-name" class="form-input" required>
-                </div>
+                <label class="block text-sm font-medium text-[--color-ink] mb-1">Full Name *</label>
+                    <input type="text" name="full_name" id="new-customer-name" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label class="form-label">ID Type *</label>
-                        <select name="id_type" id="new-customer-id-type" class="form-select" required>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-1">ID Type *</label>
+                        <select name="id_type" id="new-customer-id-type" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                             <option value="MyKad">MyKad</option>
                             <option value="Passport">Passport</option>
                             <option value="Others">Others</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">ID Number *</label>
-                        <input type="text" name="id_number" id="new-customer-id-number" class="form-input" required>
-                    </div>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-1">ID Number *</label>
+                        <input type="text" name="id_number" id="new-customer-id-number" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label class="form-label">Date of Birth *</label>
-                        <input type="date" name="date_of_birth" id="new-customer-dob" class="form-input" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Nationality *</label>
-                        <input type="text" name="nationality" id="new-customer-nationality" class="form-input" required placeholder="e.g., Malaysian">
-                    </div>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-1">Date of Birth *</label>
+                        <input type="date" name="date_of_birth" id="new-customer-dob" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required>
+                    <label class="block text-sm font-medium text-[--color-ink] mb-1">Nationality *</label>
+                        <input type="text" name="nationality" id="new-customer-nationality" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" required placeholder="e.g., Malaysian">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Phone</label>
-                    <input type="text" name="phone" id="new-customer-phone" class="form-input" placeholder="e.g., 0123456789">
-                </div>
+                <label class="block text-sm font-medium text-[--color-ink] mb-1">Phone</label>
+                    <input type="text" name="phone" id="new-customer-phone" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" placeholder="e.g., 0123456789">
                 <div id="new-customer-error" class="p-3 bg-red-100 border border-red-300 rounded-lg text-red-700 hidden"></div>
             </form>
             <div class="p-6 border-t border-[--color-border] flex justify-end gap-3">
-                <button type="button" id="btn-cancel-customer" class="btn btn-ghost">Cancel</button>
-                <button type="button" id="btn-save-customer" class="btn btn-primary">
+                <button type="button" id="btn-cancel-customer" class="px-4 py-2 text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">Cancel</button>
+                <button type="button" id="btn-save-customer" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                     Create & Select Customer
                 </button>
             </div>

@@ -1,96 +1,59 @@
 @extends('layouts.base')
 
-@section('title', 'Sanction Lists')
-
-@section('header-title')
-<div>
-    <h1 class="text-2xl font-semibold text-[--color-ink]">Sanction Lists</h1>
-    <p class="text-sm text-[--color-ink-muted]">Manage sanctions lists and entries</p>
-</div>
-@endsection
-
-@section('header-actions')
-<a href="/compliance/sanctions/import-logs" class="btn btn-ghost">
-    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-    </svg>
-    Import Logs
-</a>
-@endsection
+@section('title', 'Sanctions - CEMS-MY')
 
 @section('content')
-<div class="grid grid-cols-4 gap-4 mb-6">
-    <div class="card">
-        <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Total Lists</p>
-            <p class="text-2xl font-bold">{{ count($lists) }}</p>
-        </div>
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">Sanctions List</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Watchlist monitoring and management</p>
     </div>
-    <div class="card">
-        <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Active Lists</p>
-            <p class="text-2xl font-bold">{{ collect($lists)->where('is_active', true)->count() }}</p>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Total Entries</p>
-            <p class="text-2xl font-bold">{{ collect($lists)->sum('entry_count') }}</p>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body">
-            <p class="text-sm text-[--color-ink-muted]">Last Import</p>
-            <p class="text-2xl font-bold">{{ collect($lists)->whereNotNull('last_updated_at')->sortByDesc('last_updated_at')->first()?->last_updated_at?->format('d M Y') ?? 'N/A' }}</p>
-        </div>
-    </div>
+    <div class="flex items-center gap-3">
+    @if($lists && count($lists) > 0)
+    <form method="POST" action="{{ route('compliance.sanctions.import', $lists[0]['id'] ?? 0) }}" class="inline">
+        @csrf
+        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+            </svg>
+            Import List
+        </button>
+    </form>
+    @endif
+</div>
 </div>
 
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">All Sanction Lists</h3>
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Watchlist Entries</h3>
     </div>
-    <div class="table-container">
+    <div class="overflow-x-auto">
         <table class="table">
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Type</th>
-                    <th>Entries</th>
+                    <th>List Type</th>
+                    <th>Score</th>
+                    <th>Entity Type</th>
                     <th>Status</th>
-                    <th>Last Updated</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($lists as $list)
-                <tr>
-                    <td>
-                        <a href="/compliance/sanctions/{{ $list['id'] }}" class="font-medium text-[--color-accent] hover:underline">{{ $list['name'] }}</a>
-                    </td>
-                    <td>{{ $list['list_type'] ?? 'N/A' }}</td>
-                    <td>{{ number_format($list['entry_count'] ?? 0) }}</td>
-                    <td>
-                        @if(($list['is_active'] ?? false))
-                            <span class="badge badge-success">Active</span>
-                        @else
-                            <span class="badge badge-default">Inactive</span>
-                        @endif
-                    </td>
-                    <td>{{ isset($list['last_updated_at']) ? \Carbon\Carbon::parse($list['last_updated_at'])->format('d M Y') : 'Never' }}</td>
-                    <td>
-                        <div class="flex gap-2">
-                            <a href="/compliance/sanctions/{{ $list['id'] }}" class="btn btn-ghost btn-sm">View</a>
-                            <form method="POST" action="/compliance/sanctions/{{ $list['id'] }}/import" class="inline">
-                                @csrf
-                                <button type="submit" class="btn btn-ghost btn-sm">Trigger Import</button>
-                            </form>
-                        </div>
+                @forelse($entries ?? [] as $entry)
+                <tr class="border-b border-[--color-border] hover:bg-[--color-canvas-subtle]/50">
+                    <td class="text-[--color-ink] font-medium">{{ $entry->entity_name }}</td>
+                    <td class="text-[--color-ink]">{{ $entry->list_name ?? 'N/A' }}</td>
+                    <td class="text-[--color-ink] font-mono">{{ round($entry->score ?? 0, 1) }}%</td>
+                    <td class="text-[--color-ink]">{{ $entry->entity_type ?? 'Individual' }}</td>
+                    <td class="text-[--color-ink]">
+                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded {{ $entry->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
+                            {{ $entry->is_active ? 'Active' : 'Inactive' }}
+                        </span>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center py-12 text-[--color-ink-muted]">No sanction lists found</td>
+                    <td colspan="5" class="px-4 py-8 text-center text-[--color-ink-muted]">No sanctions entries found</td>
                 </tr>
                 @endforelse
             </tbody>

@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Customer Transaction History</h3>
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Customer Transaction History</h3>
         <span class="text-sm text-[--color-ink-muted]">{{ $customer->name ?? 'N/A' }}</span>
     </div>
-    <div class="table-container">
+    <div class="overflow-x-auto">
         <table class="table">
             <thead>
                 <tr>
@@ -25,7 +25,7 @@
                 <tr>
                     <td>{{ $tx['date'] ?? 'N/A' }}</td>
                     <td>
-                        <span class="badge @if(($tx['type'] ?? '') === 'Buy') badge-success @else badge-warning @endif">
+                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ ($tx['type'] ?? '') === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
                             {{ $tx['type'] ?? 'N/A' }}
                         </span>
                     </td>

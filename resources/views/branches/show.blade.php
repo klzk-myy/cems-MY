@@ -1,84 +1,104 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $branch->name }} - CEMS-MY</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="font-sans antialiased">
-    <div class="flex min-h-screen">
-        <aside class="w-60 bg-white border-r border-[#e5e5e5] flex flex-col shrink-0">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h1 class="text-lg font-semibold text-[#171717]">CEMS-MY</h1>
-            </div>
-            <nav class="flex-1 p-4 space-y-6 overflow-y-auto">
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Main</div>
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Dashboard</a>
-                    <a href="{{ route('transactions.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Transactions</a>
-                    <a href="{{ route('counters.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Counters</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Management</div>
-                    <a href="{{ route('customers.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Customers</a>
-                    <a href="{{ route('compliance') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Compliance</a>
-                    <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Reports</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">System</div>
-                    <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Users</a>
-                    <a href="{{ route('rates.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Rates</a>
-                    <a href="{{ route('accounting.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Accounting</a>
-                </div>
-            </nav>
-        </aside>
-        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h1 class="text-2xl font-semibold text-[#171717]">{{ $branch->code }} - {{ $branch->name }}</h1>
-                    <p class="text-sm text-[#6b6b6b] mt-1">Branch details and statistics</p>
-                </div>
-                <div class="flex gap-3">
-                    <a href="{{ route('branches.edit', $branch) }}" class="px-4 py-2 text-sm font-medium text-[#171717] bg-white border border-[#e5e5e5] rounded-lg hover:bg-[#f7f7f8]">Edit</a>
-                    <form method="POST" action="{{ route('branches.destroy', $branch) }}" class="inline">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-[#ef4444] rounded-lg hover:bg-[#dc2626]" onclick="return confirm('Deactivate this branch?')">Deactivate</button>
-                    </form>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                    <div class="text-sm text-[#6b6b6b] mb-1">Users</div>
-                    <div class="text-2xl font-semibold text-[#171717]">{{ number_format($stats['user_count'] ?? 0) }}</div>
-                </div>
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                    <div class="text-sm text-[#6b6b6b] mb-1">Counters</div>
-                    <div class="text-2xl font-semibold text-[#171717]">{{ number_format($stats['counter_count'] ?? 0) }}</div>
-                </div>
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                    <div class="text-sm text-[#6b6b6b] mb-1">Today's Transactions</div>
-                    <div class="text-2xl font-semibold text-[#171717]">{{ number_format($stats['transaction_today'] ?? 0) }}</div>
-                </div>
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                    <div class="text-sm text-[#6b6b6b] mb-1">Monthly Transactions</div>
-                    <div class="text-2xl font-semibold text-[#171717]">{{ number_format($stats['transaction_month'] ?? 0) }}</div>
-                </div>
-            </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <h2 class="text-lg font-semibold text-[#171717] mb-4">Branch Information</h2>
-                <dl class="grid grid-cols-2 gap-4 text-sm">
-                    <div><dt class="text-[#6b6b6b]">Type</dt><dd class="text-[#171717] font-medium">{{ ucfirst(str_replace('_', ' ', $branch->type)) }}</dd></div>
-                    <div><dt class="text-[#6b6b6b]">Status</dt><dd class="text-[#171717] font-medium">{{ $branch->is_active ? 'Active' : 'Inactive' }}</dd></div>
-                    <div><dt class="text-[#6b6b6b]">Address</dt><dd class="text-[#171717] font-medium">{{ $branch->address ?? 'N/A' }}</dd></div>
-                    <div><dt class="text-[#6b6b6b]">Phone</dt><dd class="text-[#171717] font-medium">{{ $branch->phone ?? 'N/A' }}</dd></div>
-                    <div><dt class="text-[#6b6b6b]">Email</dt><dd class="text-[#171717] font-medium">{{ $branch->email ?? 'N/A' }}</dd></div>
-                    @if($branch->parent_id)
-                    <div><dt class="text-[#6b6b6b]">Parent Branch</dt><dd class="text-[#171717] font-medium">{{ $branch->parent->code ?? 'N/A' }}</dd></div>
-                    @endif
-                </dl>
-            </div>
-        </main>
+@extends('layouts.base')
+
+@section('title', 'Branch Details - CEMS-MY')
+
+@section('content')
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">{{ $branch->code }} - {{ $branch->name }}</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Branch management</p>
     </div>
-</body>
-</html>
+    <div class="flex items-center gap-3">
+        <a href="{{ route('branches.index') }}" class="px-4 py-2 border border-[--color-border] text-[--color-ink] text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">
+            Back
+        </a>
+        @role('admin')
+        <a href="{{ route('branches.edit', $branch) }}" class="px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">
+            Edit Branch
+        </a>
+        @endrole
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card">
+        <div class="px-6 py-4 border-b border-[--color-border]">
+            <h3 class="text-base font-semibold text-[--color-ink]">Branch Information</h3>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Code</span>
+                <span class="text-sm font-mono text-[--color-ink]">{{ $branch->code }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Name</span>
+                <span class="text-sm text-[--color-ink]">{{ $branch->name }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Type</span>
+                <span class="text-sm text-[--color-ink]">{{ $branch->type ?? 'Branch' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Status</span>
+                <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded {{ $branch->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
+                    {{ $branch->is_active ? 'Active' : 'Inactive' }}
+                </span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Address</span>
+                <span class="text-sm text-[--color-ink]">{{ $branch->address ?? 'N/A' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Phone</span>
+                <span class="text-sm text-[--color-ink]">{{ $branch->phone ?? 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="px-6 py-4 border-b border-[--color-border]">
+            <h3 class="text-base font-semibold text-[--color-ink]">Statistics</h3>
+        </div>
+        <div class="p-6 space-y-4">
+            @foreach($stats as $key => $value)
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">{{ ucfirst(str_replace('_', ' ', $key)) }}</span>
+                <span class="text-sm font-semibold text-[--color-ink]">{{ is_numeric($value) ? number_format($value) : $value }}</span>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</div>
+
+@if($childBranches->count() > 0)
+<div class="card mt-6">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Child Branches</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($childBranches as $child)
+                <tr class="border-b border-[--color-border]">
+                    <td class="text-[--color-ink] font-mono">{{ $child->code }}</td>
+                    <td class="text-[--color-ink]">{{ $child->name }}</td>
+                    <td class="text-[--color-ink]">
+                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded {{ $child->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
+                            {{ $child->is_active ? 'Active' : 'Inactive' }}
+                        </span>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+@endsection

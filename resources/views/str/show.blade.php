@@ -1,55 +1,140 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STR Report Details - CEMS-MY</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="font-sans antialiased">
-    <div class="flex min-h-screen">
-        <aside class="w-60 bg-white border-r border-[#e5e5e5] flex flex-col shrink-0">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h1 class="text-lg font-semibold text-[#171717]">CEMS-MY</h1>
-            </div>
-            <nav class="flex-1 p-4 space-y-6 overflow-y-auto">
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Main</div>
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Dashboard</a>
-                    <a href="{{ route('transactions.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Transactions</a>
-                    <a href="{{ route('counters.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Counters</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Management</div>
-                    <a href="{{ route('customers.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Customers</a>
-                    <a href="{{ route('compliance') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Compliance</a>
-                    <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Reports</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">System</div>
-                    <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Users</a>
-                    <a href="{{ route('rates.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Rates</a>
-                    <a href="{{ route('accounting.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Accounting</a>
-                </div>
-            </nav>
-        </aside>
-        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h1 class="text-2xl font-semibold text-[#171717]">STR Report Details</h1>
-                    <p class="text-sm text-[#6b6b6b] mt-1">Reference: {{ $strReport->reference ?? 'N/A' }}</p>
-                </div>
-                <div class="flex gap-3">
-                    <a href="{{ route('str.edit', $strReport ?? null) }}" class="px-4 py-2 text-sm font-medium text-[#171717] bg-white border border-[#e5e5e5] rounded-lg hover:bg-[#f7f7f8]">Edit</a>
-                </div>
-            </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <dl class="grid grid-cols-2 gap-4 text-sm">
-                    <div><dt class="text-[#6b6b6b]">Status</dt><dd class="text-[#171717] font-medium">{{ $strReport->status ?? 'N/A' }}</dd></div>
-                    <div><dt class="text-[#6b6b6b]">Filed Date</dt><dd class="text-[#171717] font-medium">{{ $strReport->created_at ?? 'N/A' }}</dd></div>
-                </dl>
-            </div>
-        </main>
+@extends('layouts.base')
+
+@section('title', 'STR Detail - CEMS-MY')
+
+@section('content')
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">STR Detail</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Suspicious Transaction Report #{{ $str->id }}</p>
     </div>
-</body>
-</html>
+    <div class="flex items-center gap-3">
+        <a href="{{ route('str.index') }}" class="px-4 py-2 border border-[--color-border] text-[--color-ink] text-sm font-medium rounded-lg hover:bg-[--color-canvas-subtle]">
+            Back
+        </a>
+        @if($str->status->value === 'draft')
+        <a href="{{ route('str.edit', $str) }}" class="px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">
+            Edit STR
+        </a>
+        @endif
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card">
+        <div class="px-6 py-4 border-b border-[--color-border]">
+            <h3 class="text-base font-semibold text-[--color-ink]">STR Information</h3>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Reference</span>
+                <span class="text-sm font-mono text-[--color-ink]">{{ $str->reference_number ?? 'DRAFT' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Status</span>
+                <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded
+                    @if($str->status->value === 'draft') bg-gray-100 text-gray-700
+                    @elseif($str->status->value === 'pending_review') bg-yellow-100 text-yellow-700
+                    @elseif($str->status->value === 'pending_approval') bg-orange-100 text-orange-700
+                    @elseif($str->status->value === 'submitted') bg-blue-100 text-blue-700
+                    @else bg-green-100 text-green-700
+                    @endif">
+                    {{ $str->status->label() }}
+                </span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Created By</span>
+                <span class="text-sm text-[--color-ink]">{{ $str->creator->username ?? 'N/A' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Created At</span>
+                <span class="text-sm text-[--color-ink]">{{ $str->created_at->format('Y-m-d H:i') }}</span>
+            </div>
+            @if($str->submitted_at)
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Submitted At</span>
+                <span class="text-sm text-[--color-ink]">{{ $str->submitted_at->format('Y-m-d H:i') }}</span>
+            </div>
+            @endif
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="px-6 py-4 border-b border-[--color-border]">
+            <h3 class="text-base font-semibold text-[--color-ink]">Customer</h3>
+        </div>
+        <div class="p-6 space-y-4">
+            @if($str->customer)
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Name</span>
+                <span class="text-sm text-[--color-ink]">{{ $str->customer->full_name }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">ID Type</span>
+                <span class="text-sm text-[--color-ink]">{{ $str->customer->id_type }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Nationality</span>
+                <span class="text-sm text-[--color-ink]">{{ $str->customer->nationality }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-[--color-ink-muted]">Risk Rating</span>
+                <span class="text-sm text-[--color-ink]">{{ $str->customer->risk_rating }}</span>
+            </div>
+            @else
+            <p class="text-sm text-[--color-ink-muted]">No customer associated</p>
+            @endif
+        </div>
+    </div>
+</div>
+
+<div class="card mt-6">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">STR Reason</h3>
+    </div>
+    <div class="p-6">
+        <p class="text-sm text-[--color-ink]">{{ $str->reason ?? 'No reason provided' }}</p>
+    </div>
+</div>
+
+@if($str->status->value === 'draft')
+<div class="card mt-6">
+    <div class="p-6">
+        <div class="flex items-center gap-4">
+            <form action="{{ route('str.submit-review', $str) }}" method="POST" class="inline">
+                @csrf
+                <button type="submit" class="px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">
+                    Submit for Review
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+@if($str->status->value === 'pending_review')
+<div class="card mt-6">
+    <div class="p-6">
+        <form action="{{ route('str.submit-approval', $str) }}" method="POST" class="inline">
+            @csrf
+            <button type="submit" class="px-4 py-2 bg-[#0a0a0a] text-white text-sm font-medium rounded-lg hover:bg-[#262626]">
+                Submit for Approval
+            </button>
+        </form>
+    </div>
+</div>
+@endif
+
+@if($str->status->value === 'pending_approval')
+<div class="card mt-6">
+    <div class="p-6">
+        <form action="{{ route('str.approve', $str) }}" method="POST" class="inline">
+            @csrf
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
+                Approve & Submit to goAML
+            </button>
+        </form>
+    </div>
+</div>
+@endif
+@endsection

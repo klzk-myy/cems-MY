@@ -1,47 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Position - CEMS-MY</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="font-sans antialiased">
-    <div class="flex min-h-screen">
-        <aside class="w-60 bg-white border-r border-[#e5e5e5] flex flex-col shrink-0">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h1 class="text-lg font-semibold text-[#171717]">CEMS-MY</h1>
-            </div>
-            <nav class="flex-1 p-4 space-y-6 overflow-y-auto">
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Main</div>
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Dashboard</a>
-                    <a href="{{ route('transactions.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Transactions</a>
-                    <a href="{{ route('counters.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Counters</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Management</div>
-                    <a href="{{ route('customers.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Customers</a>
-                    <a href="{{ route('compliance') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Compliance</a>
-                    <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Reports</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">System</div>
-                    <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Users</a>
-                    <a href="{{ route('rates.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Rates</a>
-                    <a href="{{ route('accounting.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Accounting</a>
-                </div>
-            </nav>
-        </aside>
-        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto">
-            <div class="mb-6">
-                <h1 class="text-2xl font-semibold text-[#171717]">Stock Position</h1>
-                <p class="text-sm text-[#6b6b6b] mt-1">Currency stock positions by branch</p>
-            </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <p class="text-[#6b6b6b]">Stock position details</p>
-            </div>
-        </main>
+@extends('layouts.base')
+
+@section('title', 'Stock Position - CEMS-MY')
+
+@section('content')
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">Stock Position</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Currency stock positions by branch</p>
     </div>
-</body>
-</html>
+    <a href="{{ route('stock-cash.index') }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Back
+    </a>
+</div>
+
+<div class="card mb-6">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Position Details</h3>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-2 gap-6">
+            <div>
+                <p class="text-sm text-[--color-ink-muted] mb-1">Currency</p>
+                <p class="text-lg font-semibold text-[--color-ink]">{{ $position->currency_code ?? 'N/A' }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-[--color-ink-muted] mb-1">Balance</p>
+                <p class="text-lg font-semibold text-[--color-ink]">{{ number_format($position->balance ?? 0, 2) }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-[--color-ink-muted] mb-1">Average Rate</p>
+                <p class="text-lg font-semibold text-[--color-ink]">{{ number_format($position->avg_rate ?? 0, 4) }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-[--color-ink-muted] mb-1">MYR Value</p>
+                <p class="text-lg font-semibold text-[--color-accent]">RM {{ number_format($position->myr_value ?? 0, 2) }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Recent Transactions</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th class="text-right">Amount</th>
+                    <th class="text-right">MYR Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($transactions as $tx)
+                <tr class="border-b border-[--color-border] hover:bg-[--color-canvas-subtle]/50">
+                    <td class="text-[--color-ink-muted]">{{ $tx->created_at->format('d M Y H:i') }}</td>
+                    <td class="text-[--color-ink]">
+                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $tx->type->value === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                            {{ $tx->type->label() }}
+                        </span>
+                    </td>
+                    <td class="text-[--color-ink] text-right font-mono">{{ number_format($tx->amount_foreign, 2) }} {{ $tx->currency_code }}</td>
+                    <td class="text-[--color-ink] text-right font-semibold">RM {{ number_format($tx->amount_local, 2) }}</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="4" class="px-4 py-8 text-center text-[--color-ink-muted]">No transactions found</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+@endsection

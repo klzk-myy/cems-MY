@@ -1,77 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Branches - CEMS-MY</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="font-sans antialiased">
-    <div class="flex min-h-screen">
-        <aside class="w-60 bg-white border-r border-[#e5e5e5] flex flex-col shrink-0">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h1 class="text-lg font-semibold text-[#171717]">CEMS-MY</h1>
-            </div>
-            <nav class="flex-1 p-4 space-y-6 overflow-y-auto">
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Main</div>
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Dashboard</a>
-                    <a href="{{ route('transactions.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Transactions</a>
-                    <a href="{{ route('counters.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Counters</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">Management</div>
-                    <a href="{{ route('customers.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Customers</a>
-                    <a href="{{ route('compliance') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Compliance</a>
-                    <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Reports</a>
-                </div>
-                <div>
-                    <div class="px-3 py-2 text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide">System</div>
-                    <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Users</a>
-                    <a href="{{ route('rates.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Rates</a>
-                    <a href="{{ route('accounting.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg mb-1 text-[#6b6b6b] hover:bg-[#f7f7f8] hover:text-[#171717]">Accounting</a>
-                </div>
-            </nav>
-        </aside>
-        <main class="flex-1 bg-[#f7f7f8] p-8 overflow-y-auto">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h1 class="text-2xl font-semibold text-[#171717]">Branches</h1>
-                    <p class="text-sm text-[#6b6b6b] mt-1">Manage branch locations and settings</p>
-                </div>
-                <a href="{{ route('branches.create') }}" class="px-4 py-2 text-sm font-medium text-white bg-[#0a0a0a] rounded-lg hover:bg-[#262626]">Add Branch</a>
-            </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <table class="w-full text-sm">
-                    <thead class="bg-[#f7f7f8] border-b border-[#e5e5e5]">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Code</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Name</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Type</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($branches ?? [] as $branch)
-                        <tr class="border-b border-[#e5e5e5] hover:bg-[#f7f7f8]/50">
-                            <td class="px-4 py-3 font-mono text-xs text-[#171717]">{{ $branch->code }}</td>
-                            <td class="px-4 py-3 text-[#171717]">{{ $branch->name }}</td>
-                            <td class="px-4 py-3 text-[#6b6b6b]">{{ ucfirst(str_replace('_', ' ', $branch->type)) }}</td>
-                            <td class="px-4 py-3">
-                                <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded {{ $branch->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
-                                    {{ $branch->is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-[#6b6b6b]">No branches found</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </main>
+@extends('layouts.base')
+
+@section('title', 'Branches - CEMS-MY')
+
+@section('content')
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-[--color-ink]">Branches</h1>
+        <p class="text-sm text-[--color-ink-muted] mt-1">Branch management</p>
     </div>
-</body>
-</html>
+    @role('admin')
+    <a href="{{ route('branches.create') }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Add Branch
+    </a>
+    @endrole
+</div>
+
+<div class="card">
+    <div class="overflow-x-auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($branches as $branch)
+                <tr class="border-b border-[--color-border] hover:bg-[--color-canvas-subtle]/50">
+                    <td class="text-[--color-ink] font-mono font-medium">{{ $branch->code }}</td>
+                    <td class="text-[--color-ink]">{{ $branch->name }}</td>
+                    <td class="text-[--color-ink]">{{ $branch->type ?? 'Branch' }}</td>
+                    <td class="text-[--color-ink]">
+                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded {{ $branch->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
+                            {{ $branch->is_active ? 'Active' : 'Inactive' }}
+                        </span>
+                    </td>
+                    <td class="text-[--color-ink] text-sm">{{ $branch->created_at->format('Y-m-d') }}</td>
+                    <td class="text-[--color-ink]">
+                        <a href="{{ route('branches.show', $branch) }}" class="text-[--color-accent] hover:underline">View</a>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="px-4 py-8 text-center text-[--color-ink-muted]">No branches found</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    @if($branches->hasPages())
+    <div class="px-6 py-4 border-t border-[--color-border]">
+        {{ $branches->links() }}
+    </div>
+    @endif
+</div>
+@endsection

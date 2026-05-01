@@ -12,12 +12,12 @@
 @section('header-actions')
 <div class="flex items-center gap-3">
     <form method="GET" class="flex items-center gap-2">
-        <input type="date" name="date" class="form-input" value="{{ request('date', date('Y-m-d')) }}">
-        <button type="submit" class="btn btn-secondary">View</button>
+        <input type="date" name="date" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" value="{{ request('date', date('Y-m-d')) }}">
+        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">View</button>
     </form>
     @if(isset($report))
-        <a href="/reports/msb2/export?date={{ request('date', date('Y-m-d')) }}" class="btn btn-primary">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <a href="/reports/msb2/export?date={{ request('date', date('Y-m-d')) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[--color-primary] text-white hover:bg-[--color-ink]">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
             </svg>
             Export PDF
@@ -28,11 +28,11 @@
 
 @section('content')
 @if(isset($report) && $report)
-<div class="card mb-6">
-    <div class="card-header">
-        <h3 class="card-title">Report Summary - {{ $report['date'] ?? date('d M Y') }}</h3>
+<div class="bg-white border border-[--color-border] rounded-xl mb-6">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Report Summary - {{ $report['date'] ?? date('d M Y') }}</h3>
     </div>
-    <div class="card-body">
+    <div class="p-6">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
                 <p class="text-sm text-[--color-ink-muted]">Total Transactions</p>
@@ -54,10 +54,10 @@
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header"><h3 class="card-title">Transaction Details</h3></div>
-    <div class="table-container">
-        <table class="table">
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Transaction Details</h3></div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
             <thead>
                 <tr>
                     <th>Currency</th>
@@ -84,16 +84,16 @@
     </div>
 </div>
 @else
-<div class="card">
-    <div class="card-body">
-        <div class="empty-state py-16">
-            <div class="empty-state-icon">
-                <svg class="w-12 h-12 text-[--color-ink-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="p-6">
+        <div class="py-16 text-center">
+            <div>
+                <svg class="w-12 h-12 text-[--color-ink-muted] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
             </div>
-            <p class="empty-state-title">Select a Date</p>
-            <p class="empty-state-description">Choose a date above to view the MSB2 report</p>
+            <p class="mt-4 text-sm font-medium text-[--color-ink]">Select a Date</p>
+            <p class="mt-1 text-sm text-[--color-ink-muted]">Choose a date above to view the MSB2 report</p>
         </div>
     </div>
 </div>

@@ -137,7 +137,10 @@ class AlertViewTest extends TestCase
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
 
         $response = $this->actingAs($this->complianceOfficer)
-            ->post(route('compliance.alerts.resolve', $alert));
+            ->post(route('compliance.alerts.resolve', $alert), [
+                'resolution' => 'Test resolution',
+                'resolution_type' => 'legitimate',
+            ]);
 
         $response->assertRedirect(route('compliance.alerts.index'));
         $response->assertSessionHas('success', 'Alert resolved successfully');
@@ -148,7 +151,10 @@ class AlertViewTest extends TestCase
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
 
         $this->actingAs($this->complianceOfficer)
-            ->post(route('compliance.alerts.resolve', $alert));
+            ->post(route('compliance.alerts.resolve', $alert), [
+                'resolution' => 'Test resolution',
+                'resolution_type' => 'legitimate',
+            ]);
 
         $this->assertDatabaseHas('alerts', [
             'id' => $alert->id,
@@ -162,7 +168,8 @@ class AlertViewTest extends TestCase
 
         $response = $this->actingAs($this->complianceOfficer)
             ->post(route('compliance.alerts.resolve', $alert), [
-                'notes' => 'Verified with customer, false positive.',
+                'resolution' => 'Verified with customer, false positive.',
+                'resolution_type' => 'false_positive',
             ]);
 
         $response->assertRedirect(route('compliance.alerts.index'));

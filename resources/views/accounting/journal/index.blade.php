@@ -10,8 +10,8 @@
 @endsection
 
 @section('header-actions')
-<a href="/accounting/journal/create" class="btn btn-primary">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<a href="/accounting/journal/create" class="px-4 py-2 text-sm font-medium rounded-lg bg-[--color-primary] text-white hover:bg-[--color-primary]/90">
+    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
     </svg>
     New Entry
@@ -19,9 +19,9 @@
 @endsection
 
 @section('content')
-<div class="card">
-    <div class="table-container">
-        <table class="table">
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
             <thead>
                 <tr>
                     <th>Date</th>
@@ -50,16 +50,16 @@
                                  ? $entry->status->label()
                                  : (string)$entry->status;
                              $statusClass = match($statusValue) {
-                                 'Posted' => 'badge-success',
-                                 'Pending' => 'badge-warning',
-                                 'Draft' => 'badge-default',
-                                 default => 'badge-default'
+                                 'Posted' => 'inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700',
+                                 'Pending' => 'inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700',
+                                 'Draft' => 'inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700',
+                                 default => 'inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700'
                              };
                          @endphp
-                         <span class="badge {{ $statusClass }}">{{ $statusLabel }}</span>
+                         <span class="{{ $statusClass }}">{{ $statusLabel }}</span>
                      </td>
                      <td>
-                         <a href="/accounting/journal/{{ $entry->id }}" class="btn btn-ghost btn-sm">View</a>
+                         <a href="/accounting/journal/{{ $entry->id }}" class="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-[--color-canvas-subtle]">View</a>
                      </td>
                  </tr>
                 @empty

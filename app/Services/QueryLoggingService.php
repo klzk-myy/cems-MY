@@ -126,7 +126,7 @@ class QueryLoggingService
     {
         $query = preg_replace('/\s+/', ' ', $query);
         $query = preg_replace('/\d+/', '?', $query);
-        $query = preg_replace('/\'[^\']*\'', '?', $query);
+        $query = preg_replace("/'[^']*'/", '?', $query);
 
         return trim($query);
     }

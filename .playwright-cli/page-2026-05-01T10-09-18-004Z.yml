@@ -1,0 +1,313 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - link "C CEMS-MY Currency Exchange MSB" [ref=e5] [cursor=pointer]:
+        - /url: /dashboard
+        - generic [ref=e7]: C
+        - generic [ref=e8]:
+          - text: CEMS-MY
+          - paragraph [ref=e9]: Currency Exchange MSB
+      - generic [ref=e11]:
+        - searchbox "Search..." [ref=e12]
+        - img [ref=e13]
+      - navigation [ref=e15]:
+        - generic [ref=e17]:
+          - button "Dashboard" [ref=e18]:
+            - generic [ref=e19]:
+              - img [ref=e20]
+              - text: Dashboard
+            - img [ref=e22]
+          - generic [ref=e24]:
+            - link "Dashboard" [ref=e25] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Performance" [ref=e26] [cursor=pointer]:
+              - /url: /performance
+            - link "Exchange Rates" [ref=e27] [cursor=pointer]:
+              - /url: /rates
+        - generic [ref=e29]:
+          - button "Operations" [ref=e30]:
+            - generic [ref=e31]:
+              - img [ref=e32]
+              - text: Operations
+            - img [ref=e34]
+          - generic [ref=e36]:
+            - link "Transactions" [ref=e37] [cursor=pointer]:
+              - /url: /transactions
+            - link "Create Transaction" [ref=e38] [cursor=pointer]:
+              - /url: /transactions/create
+            - link "Customers" [ref=e39] [cursor=pointer]:
+              - /url: /customers
+            - link "Create Customer" [ref=e40] [cursor=pointer]:
+              - /url: /customers/create
+        - generic [ref=e42]:
+          - button "Counter" [ref=e43]:
+            - generic [ref=e44]:
+              - img [ref=e45]
+              - text: Counter
+            - img [ref=e47]
+          - link "Counters" [ref=e50] [cursor=pointer]:
+            - /url: /counters
+        - generic [ref=e52]:
+          - button "Stock" [ref=e53]:
+            - generic [ref=e54]:
+              - img [ref=e55]
+              - text: Stock
+            - img [ref=e57]
+          - generic [ref=e59]:
+            - link "Stock & Cash" [ref=e60] [cursor=pointer]:
+              - /url: /stock-cash
+            - link "Stock Transfers" [ref=e61] [cursor=pointer]:
+              - /url: /stock-transfers
+        - generic [ref=e63]:
+          - button "Compliance" [ref=e64]:
+            - generic [ref=e65]:
+              - img [ref=e66]
+              - text: Compliance
+            - img [ref=e68]
+          - generic [ref=e70]:
+            - link "Dashboard" [ref=e71] [cursor=pointer]:
+              - /url: /compliance
+            - link "Alert Triage" [ref=e72] [cursor=pointer]:
+              - /url: /compliance/alerts
+            - link "Cases" [ref=e73] [cursor=pointer]:
+              - /url: /compliance/cases
+            - link "STR Reports" [ref=e74] [cursor=pointer]:
+              - /url: /str
+            - link "EDD Records" [ref=e75] [cursor=pointer]:
+              - /url: /compliance/edd
+            - link "Sanctions" [ref=e76] [cursor=pointer]:
+              - /url: /compliance/sanctions
+            - link "Risk Dashboard" [ref=e77] [cursor=pointer]:
+              - /url: /compliance/risk-dashboard
+            - link "Reporting" [ref=e78] [cursor=pointer]:
+              - /url: /compliance/reporting
+            - link "AML Rules" [ref=e79] [cursor=pointer]:
+              - /url: /compliance/rules
+            - link "CTOS" [ref=e80] [cursor=pointer]:
+              - /url: /compliance/ctos
+            - link "Findings" [ref=e81] [cursor=pointer]:
+              - /url: /compliance/findings
+            - link "EDD Templates" [ref=e82] [cursor=pointer]:
+              - /url: /compliance/edd-templates
+            - link "Workspace" [ref=e83] [cursor=pointer]:
+              - /url: /compliance/workspace
+            - link "Unified Alerts" [ref=e84] [cursor=pointer]:
+              - /url: /compliance/unified
+        - generic [ref=e86]:
+          - button "Accounting" [ref=e87]:
+            - generic [ref=e88]:
+              - img [ref=e89]
+              - text: Accounting
+            - img [ref=e91]
+          - generic [ref=e93]:
+            - link "Overview" [ref=e94] [cursor=pointer]:
+              - /url: /accounting
+            - link "Journal" [ref=e95] [cursor=pointer]:
+              - /url: /accounting/journal
+            - link "Ledger" [ref=e96] [cursor=pointer]:
+              - /url: /accounting/ledger
+            - link "Trial Balance" [ref=e97] [cursor=pointer]:
+              - /url: /accounting/trial-balance
+            - link "Profit & Loss" [ref=e98] [cursor=pointer]:
+              - /url: /accounting/profit-loss
+            - link "Balance Sheet" [ref=e99] [cursor=pointer]:
+              - /url: /accounting/balance-sheet
+            - link "Reconciliation" [ref=e100] [cursor=pointer]:
+              - /url: /accounting/reconciliation
+            - link "Budget" [ref=e101] [cursor=pointer]:
+              - /url: /accounting/budget
+            - link "Revaluation" [ref=e102] [cursor=pointer]:
+              - /url: /accounting/revaluation
+            - link "Month End" [ref=e103] [cursor=pointer]:
+              - /url: /accounting/month-end
+            - link "Periods" [ref=e104] [cursor=pointer]:
+              - /url: /accounting/periods
+            - link "Fiscal Years" [ref=e105] [cursor=pointer]:
+              - /url: /accounting/fiscal-years
+        - generic [ref=e107]:
+          - button "Reports" [ref=e108]:
+            - generic [ref=e109]:
+              - img [ref=e110]
+              - text: Reports
+            - img [ref=e112]
+          - generic [ref=e114]:
+            - link "Overview" [ref=e115] [cursor=pointer]:
+              - /url: /reports
+            - link "MSB2" [ref=e116] [cursor=pointer]:
+              - /url: /reports/msb2
+            - link "LCTR" [ref=e117] [cursor=pointer]:
+              - /url: /reports/lctr
+            - link "LMCA" [ref=e118] [cursor=pointer]:
+              - /url: /reports/lmca
+            - link "Quarterly LVR" [ref=e119] [cursor=pointer]:
+              - /url: /reports/quarterly-lvr
+            - link "Position Limits" [ref=e120] [cursor=pointer]:
+              - /url: /reports/position-limit
+            - link "Monthly Trends" [ref=e121] [cursor=pointer]:
+              - /url: /reports/monthly-trends
+            - link "Profitability" [ref=e122] [cursor=pointer]:
+              - /url: /reports/profitability
+            - link "Customer Analysis" [ref=e123] [cursor=pointer]:
+              - /url: /reports/customer-analysis
+            - link "Compliance Summary" [ref=e124] [cursor=pointer]:
+              - /url: /reports/compliance-summary
+            - link "Report History" [ref=e125] [cursor=pointer]:
+              - /url: /reports/history
+        - generic [ref=e127]:
+          - button "System" [ref=e128]:
+            - generic [ref=e129]:
+              - img [ref=e130]
+              - text: System
+            - img [ref=e133]
+          - generic [ref=e135]:
+            - link "Users" [ref=e136] [cursor=pointer]:
+              - /url: /users
+            - link "Branches" [ref=e137] [cursor=pointer]:
+              - /url: /branches
+            - link "Audit" [ref=e138] [cursor=pointer]:
+              - /url: /audit
+      - generic [ref=e139]:
+        - generic [ref=e140]:
+          - generic [ref=e142]: a
+          - generic [ref=e143]:
+            - paragraph [ref=e144]: admin
+            - paragraph [ref=e145]: Administrator
+        - button "Log out" [ref=e147]:
+          - img [ref=e148]
+          - text: Log out
+    - generic [ref=e150]:
+      - banner [ref=e151]:
+        - heading "Counters - CEMS-MY" [level=1] [ref=e154]
+      - main [ref=e155]:
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - generic [ref=e158]:
+              - heading "Counters" [level=1] [ref=e159]
+              - paragraph [ref=e160]: Manage teller counters and till sessions
+            - link "Open Counter" [ref=e161] [cursor=pointer]:
+              - /url: http://local.host/counters/C01/open
+          - generic [ref=e162]:
+            - generic [ref=e163]:
+              - generic [ref=e164]:
+                - heading "Counter 1 - Main" [level=3] [ref=e165]
+                - generic [ref=e166]: Closed
+              - generic [ref=e167]:
+                - generic [ref=e168]:
+                  - generic [ref=e169]: Teller
+                  - generic [ref=e170]: "-"
+                - generic [ref=e171]:
+                  - generic [ref=e172]: MYR Float
+                  - generic [ref=e173]: "-"
+            - generic [ref=e174]:
+              - generic [ref=e175]:
+                - heading "Counter 2" [level=3] [ref=e176]
+                - generic [ref=e177]: Closed
+              - generic [ref=e178]:
+                - generic [ref=e179]:
+                  - generic [ref=e180]: Teller
+                  - generic [ref=e181]: "-"
+                - generic [ref=e182]:
+                  - generic [ref=e183]: MYR Float
+                  - generic [ref=e184]: "-"
+            - generic [ref=e185]:
+              - generic [ref=e186]:
+                - heading "Counter 3" [level=3] [ref=e187]
+                - generic [ref=e188]: Closed
+              - generic [ref=e189]:
+                - generic [ref=e190]:
+                  - generic [ref=e191]: Teller
+                  - generic [ref=e192]: "-"
+                - generic [ref=e193]:
+                  - generic [ref=e194]: MYR Float
+                  - generic [ref=e195]: "-"
+            - generic [ref=e196]:
+              - generic [ref=e197]:
+                - heading "Counter 4" [level=3] [ref=e198]
+                - generic [ref=e199]: Closed
+              - generic [ref=e200]:
+                - generic [ref=e201]:
+                  - generic [ref=e202]: Teller
+                  - generic [ref=e203]: "-"
+                - generic [ref=e204]:
+                  - generic [ref=e205]: MYR Float
+                  - generic [ref=e206]: "-"
+            - generic [ref=e207]:
+              - generic [ref=e208]:
+                - heading "Counter 5 - Express" [level=3] [ref=e209]
+                - generic [ref=e210]: Closed
+              - generic [ref=e211]:
+                - generic [ref=e212]:
+                  - generic [ref=e213]: Teller
+                  - generic [ref=e214]: "-"
+                - generic [ref=e215]:
+                  - generic [ref=e216]: MYR Float
+                  - generic [ref=e217]: "-"
+          - generic [ref=e218]:
+            - heading "All Counters" [level=3] [ref=e220]
+            - table [ref=e222]:
+              - rowgroup [ref=e223]:
+                - row "Counter Status Current Teller MYR Float Actions" [ref=e224]:
+                  - columnheader "Counter" [ref=e225]
+                  - columnheader "Status" [ref=e226]
+                  - columnheader "Current Teller" [ref=e227]
+                  - columnheader "MYR Float" [ref=e228]
+                  - columnheader "Actions" [ref=e229]
+              - rowgroup [ref=e230]:
+                - row "Counter 1 - Main Closed - - Open" [ref=e231]:
+                  - cell "Counter 1 - Main" [ref=e232]
+                  - cell "Closed" [ref=e233]:
+                    - generic [ref=e234]: Closed
+                  - cell "-" [ref=e235]
+                  - cell "-" [ref=e236]
+                  - cell "Open" [ref=e237]:
+                    - link "Open" [ref=e238] [cursor=pointer]:
+                      - /url: http://local.host/counters/C01/open
+                - row "Counter 2 Closed - - Open" [ref=e239]:
+                  - cell "Counter 2" [ref=e240]
+                  - cell "Closed" [ref=e241]:
+                    - generic [ref=e242]: Closed
+                  - cell "-" [ref=e243]
+                  - cell "-" [ref=e244]
+                  - cell "Open" [ref=e245]:
+                    - link "Open" [ref=e246] [cursor=pointer]:
+                      - /url: http://local.host/counters/C02/open
+                - row "Counter 3 Closed - - Open" [ref=e247]:
+                  - cell "Counter 3" [ref=e248]
+                  - cell "Closed" [ref=e249]:
+                    - generic [ref=e250]: Closed
+                  - cell "-" [ref=e251]
+                  - cell "-" [ref=e252]
+                  - cell "Open" [ref=e253]:
+                    - link "Open" [ref=e254] [cursor=pointer]:
+                      - /url: http://local.host/counters/C03/open
+                - row "Counter 4 Closed - - Open" [ref=e255]:
+                  - cell "Counter 4" [ref=e256]
+                  - cell "Closed" [ref=e257]:
+                    - generic [ref=e258]: Closed
+                  - cell "-" [ref=e259]
+                  - cell "-" [ref=e260]
+                  - cell "Open" [ref=e261]:
+                    - link "Open" [ref=e262] [cursor=pointer]:
+                      - /url: http://local.host/counters/C04/open
+                - row "Counter 5 - Express Closed - - Open" [ref=e263]:
+                  - cell "Counter 5 - Express" [ref=e264]
+                  - cell "Closed" [ref=e265]:
+                    - generic [ref=e266]: Closed
+                  - cell "-" [ref=e267]
+                  - cell "-" [ref=e268]
+                  - cell "Open" [ref=e269]:
+                    - link "Open" [ref=e270] [cursor=pointer]:
+                      - /url: http://local.host/counters/C05/open
+      - contentinfo [ref=e271]:
+        - generic [ref=e272]:
+          - generic [ref=e273]:
+            - generic [ref=e275]: C
+            - generic [ref=e276]: CEMS-MY v1.0 - Bank Negara Malaysia Compliant MSB Management System
+          - generic [ref=e277]:
+            - link "Documentation" [ref=e278] [cursor=pointer]:
+              - /url: "#"
+            - link "Support" [ref=e279] [cursor=pointer]:
+              - /url: "#"
+            - link "Security" [ref=e280] [cursor=pointer]:
+              - /url: "#"
+  - generic [ref=e284]: Loading...

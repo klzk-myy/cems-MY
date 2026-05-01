@@ -4,26 +4,26 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header"><h3 class="card-title">Transaction Batch Upload</h3></div>
-    <div class="card-body">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Transaction Batch Upload</h3></div>
+    <div class="p-6">
         <form method="POST" action="{{ route('transactions.batch-upload') }}" enctype="multipart/form-data">
             @csrf
             <div class="mb-6">
-                <label class="form-label">CSV File</label>
-                <input type="file" name="file" class="form-input" accept=".csv" required>
+                <label class="block text-sm font-medium text-[--color-ink] mb-1">CSV File</label>
+                <input type="file" name="file" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" accept=".csv" required>
                 <p class="text-sm text-[--color-ink-muted] mt-2">
-                    Download template: <a href="#" class="text-primary hover:underline">transaction_template.csv</a>
+                    Download template: <a href="#" class="text-[--color-accent] hover:underline">transaction_template.csv</a>
                 </p>
             </div>
             <div class="flex gap-3">
-                <button type="submit" class="btn btn-primary">Upload</button>
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">Upload</button>
             </div>
         </form>
 
         @if(!empty($recentImports))
         <div class="mt-8">
             <h4 class="text-sm font-medium text-[--color-ink-muted] mb-4">Recent Imports</h4>
-            <table class="table">
+            <table class="w-full text-sm">
                 <thead>
                     <tr>
                         <th>Date</th>

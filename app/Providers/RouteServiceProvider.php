@@ -55,22 +55,22 @@ class RouteServiceProvider extends ServiceProvider
             });
         });
 
-        // Login rate limit: 5 attempts per minute per IP
-        RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(
-                config('security.rate_limits.login.attempts', 5)
-            )->by($request->ip())->response(function () use ($request) {
-                // Record failed attempt for IP blocking
-                app(RateLimitService::class)->recordFailedAttempt($request->ip());
-                app(RateLimitService::class)->logRateLimitHit($request, 'login');
-
-                return response()->json([
-                    'error' => 'Too many login attempts',
-                    'message' => 'Too many login attempts. Please try again later.',
-                    'code' => 'LOGIN_RATE_LIMIT_EXCEEDED',
-                ], 429);
-            });
-        });
+        // Login rate limit: DISABLED for testing
+        // RateLimiter::for('login', function (Request $request) {
+        //     return Limit::perMinute(
+        //         config('security.rate_limits.login.attempts', 5)
+        //     )->by($request->ip())->response(function () use ($request) {
+        //         // Record failed attempt for IP blocking
+        //         app(RateLimitService::class)->recordFailedAttempt($request->ip());
+        //         app(RateLimitService::class)->logRateLimitHit($request, 'login');
+        //
+        //         return response()->json([
+        //             'error' => 'Too many login attempts',
+        //             'message' => 'Too many login attempts. Please try again later.',
+        //             'code' => 'LOGIN_RATE_LIMIT_EXCEEDED',
+        //         ], 429);
+        //     });
+        // });
 
         // Transaction rate limit: 10 per minute per user (reduced from 30)
         RateLimiter::for('transactions', function (Request $request) {

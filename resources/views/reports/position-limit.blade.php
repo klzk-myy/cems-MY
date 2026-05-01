@@ -3,10 +3,10 @@
 @section('title', 'Position Limits')
 
 @section('content')
-<div class="card">
-    <div class="card-header"><h3 class="card-title">Currency Position Limits</h3></div>
-    <div class="table-container">
-        <table class="table">
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Currency Position Limits</h3></div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
             <thead>
                 <tr>
                     <th>Currency</th>
@@ -25,11 +25,11 @@
                     <td class="font-mono text-right">{{ number_format(($data['utilization'] ?? 0) * 100, 1) }}%</td>
                     <td>
                         @if(($data['utilization'] ?? 0) > 0.9)
-                            <span class="badge badge-danger">Critical</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Critical</span>
                         @elseif(($data['utilization'] ?? 0) > 0.75)
-                            <span class="badge badge-warning">Warning</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Warning</span>
                         @else
-                            <span class="badge badge-success">OK</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">OK</span>
                         @endif
                     </td>
                 </tr>

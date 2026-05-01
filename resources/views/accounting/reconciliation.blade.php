@@ -4,24 +4,24 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Bank Reconciliation</h3>
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Bank Reconciliation</h3>
         <span class="text-sm text-[--color-ink-muted]">{{ $fromDate ?? '' }} - {{ $toDate ?? '' }}</span>
     </div>
-    <div class="card-body">
+    <div class="p-6">
         @if($report)
         <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="stat-card">
-                <p class="stat-card-label">Book Balance</p>
-                <p class="stat-card-value">{{ number_format($report['book_balance'] ?? 0, 2) }}</p>
+            <div class="p-4 bg-[--color-canvas-subtle] rounded">
+                <p class="text-sm text-[--color-ink-muted]">Book Balance</p>
+                <p class="text-xl font-semibold text-[--color-ink]">{{ number_format($report['book_balance'] ?? 0, 2) }}</p>
             </div>
-            <div class="stat-card">
-                <p class="stat-card-label">Adjusted Balance</p>
-                <p class="stat-card-value">{{ number_format($report['adjusted_balance'] ?? 0, 2) }}</p>
+            <div class="p-4 bg-[--color-canvas-subtle] rounded">
+                <p class="text-sm text-[--color-ink-muted]">Adjusted Balance</p>
+                <p class="text-xl font-semibold text-[--color-ink]">{{ number_format($report['adjusted_balance'] ?? 0, 2) }}</p>
             </div>
-            <div class="stat-card">
-                <p class="stat-card-label">Outstanding Checks</p>
-                <p class="stat-card-value">{{ number_format($report['outstanding_checks'] ?? 0, 2) }}</p>
+            <div class="p-4 bg-[--color-canvas-subtle] rounded">
+                <p class="text-sm text-[--color-ink-muted]">Outstanding Checks</p>
+                <p class="text-xl font-semibold text-[--color-ink]">{{ number_format($report['outstanding_checks'] ?? 0, 2) }}</p>
             </div>
         </div>
 

@@ -62,6 +62,7 @@ class Transaction extends Model
         'customer_id',
         'user_id',
         'branch_id',
+        'counter_id',
         'till_id',
         'type',
         'currency_code',

@@ -3,12 +3,12 @@
 @section('title', 'Quarterly LVR Report')
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Quarterly Large Value Report</h3>
+<div class="bg-white border border-[--color-border] rounded-xl">
+    <div class="px-6 py-4 border-b border-[--color-border]">
+        <h3 class="text-base font-semibold text-[--color-ink]">Quarterly Large Value Report</h3>
         <span class="text-sm text-[--color-ink-muted]">{{ $quarter ?? 'Q' . ceil(date('m') / 3) . ' ' . date('Y') }}</span>
     </div>
-    <div class="card-body">
+    <div class="p-6">
         <pre class="text-xs overflow-auto">{{ json_encode($reportData ?? [], JSON_PRETTY_PRINT) }}</pre>
     </div>
 </div>
