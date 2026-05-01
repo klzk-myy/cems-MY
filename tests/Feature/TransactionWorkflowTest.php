@@ -231,4 +231,60 @@ class TransactionWorkflowTest extends TestCase
         $this->expectException(InsufficientStockException::class);
         $this->transactionService->createTransaction($data2, $this->teller->id);
     }
+
+    /** @test */
+    public function test_transaction_approval_required_at_10000(): void
+    {
+        $customer = Customer::factory()->create([
+            'risk_rating' => 'Low',
+            'pep_status' => false,
+        ]);
+
+        $counter = Counter::factory()->create();
+
+        $tillId = (string) $counter->id;
+
+        // Create USD position with sufficient balance for Sell
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'till_id' => $tillId,
+            'balance' => '2000.00',
+            'avg_cost_rate' => '4.50',
+            'last_valuation_rate' => '4.50',
+        ]);
+
+        TillBalance::factory()->create([
+            'till_id' => $tillId,
+            'currency_code' => 'MYR',
+            'opening_balance' => '20000.00',
+            'date' => today(),
+            'opened_by' => $this->teller->id,
+        ]);
+
+        TillBalance::factory()->create([
+            'till_id' => $tillId,
+            'currency_code' => 'USD',
+            'opening_balance' => '2000.00',
+            'date' => today(),
+            'opened_by' => $this->teller->id,
+        ]);
+
+        // Transaction at exactly RM 10,000 should require approval (Sell transaction)
+        $data = [
+            'customer_id' => $customer->id,
+            'currency_code' => 'USD',
+            'type' => TransactionType::Sell->value,
+            'amount_foreign' => '1000.00', // 1000 * 10.00 = 10000 exactly
+            'rate' => '10.00',
+            'purpose' => 'Test',
+            'source_of_funds' => 'salary',
+            'till_id' => $tillId,
+            'idempotency_key' => 'test-approval-at-10000',
+        ];
+
+        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+
+        // At exactly RM 10,000, the >= comparison means it requires approval
+        $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
+    }
 }

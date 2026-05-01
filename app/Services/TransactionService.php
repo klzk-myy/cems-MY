@@ -298,22 +298,21 @@ class TransactionService
 
         if ($holdCheck['requires_hold'] || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
             // BNM AML/CFT COMPLIANCE REQUIREMENT:
-            // All transactions >= auto_approve threshold require manager approval, regardless of compliance hold status.
-            // This is a BNM regulatory requirement to ensure proper oversight of all transactions
-            // above the standard CDD threshold (RM 3,000).
+            // Transactions >= RM 10,000 (auto_approve threshold) require manager approval, regardless of compliance hold status.
+            // This is a BNM regulatory requirement to ensure proper oversight of larger transactions.
             //
             // RATIONALE:
-            // - Transactions < RM 3,000: Simplified CDD, can be auto-approved (Completed status)
-            // - Transactions >= RM 3,000: Standard CDD, require manager approval (PendingApproval status)
-            // - Transactions >= RM 50,000 OR high-risk: Enhanced CDD, require compliance hold (PendingApproval status)
+            // - Transactions < RM 10,000: Can be auto-approved (Completed status)
+            // - Transactions >= RM 10,000: Require manager approval (PendingApproval status)
+            // - Transactions >= RM 50,000 OR high-risk: Additional compliance hold (PendingApproval status)
             //
             // This dual-layer approval ensures:
-            // 1. Manager oversight for all transactions above standard CDD threshold
+            // 1. Manager oversight for all transactions at or above auto_approve threshold
             // 2. Compliance officer review for high-risk or large transactions
             // 3. Segregation of duties between tellers, managers, and compliance officers
             //
-            // NOTE: Even if a transaction >= RM 3,000 has no compliance hold reasons,
-            // it still requires manager approval per BNM regulations.
+            // NOTE: CDD levels (Simplified/Specific/Standard/Enhanced) are separate from approval requirements.
+            // CDD determines documentation requirements; approval requirement is based on transaction amount.
             $status = TransactionStatus::PendingApproval;
             if ($holdCheck['requires_hold']) {
                 $holdReason = implode(', ', $holdCheck['reasons']);
