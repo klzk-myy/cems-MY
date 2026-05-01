@@ -60,7 +60,7 @@ class ComplianceService
     /**
      * BNM STR filing deadline in working days.
      */
-    private const STR_FILING_DEADLINE_DAYS = 3;
+    private const STR_FILING_DEADLINE_DAYS = 1;
 
     /**
      * Create a new ComplianceService instance.

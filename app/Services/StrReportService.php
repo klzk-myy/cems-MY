@@ -1009,7 +1009,7 @@ class StrReportService
 
     protected function calculateFilingDeadline(Alert $alert): \DateTime
     {
-        return now()->addDays(3);
+        return now()->addWeekday(1);
     }
 
     protected function getSystemUserId(): int

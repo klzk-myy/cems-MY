@@ -6,6 +6,7 @@ use App\Enums\CddLevel;
 use App\Models\Customer;
 use App\Services\ComplianceService;
 use App\Services\MathService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -115,5 +116,35 @@ class ComplianceServiceTest extends TestCase
         $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
 
         $this->assertEquals(CddLevel::Enhanced, $cddLevel);
+    }
+
+    public function test_str_deadline_is_next_working_day(): void
+    {
+        // Monday suspicion should have Tuesday deadline
+        $monday = Carbon::create(2026, 5, 4, 10, 0, 0); // May 4, 2026 is a Monday
+        Carbon::setTestNow($monday);
+
+        $result = $this->complianceService->calculateStrDeadline($monday);
+
+        $this->assertEquals(1, $result['working_days_until_deadline']);
+        $this->assertTrue($result['deadline']->isTuesday());
+        $this->assertEquals(5, $result['deadline']->day); // Next day (Tuesday)
+
+        Carbon::setTestNow(); // Reset
+    }
+
+    public function test_str_deadline_skips_weekend(): void
+    {
+        // Friday suspicion should have Monday deadline (skips weekend)
+        $friday = Carbon::create(2026, 5, 8, 10, 0, 0); // May 8, 2026 is a Friday
+        Carbon::setTestNow($friday);
+
+        $result = $this->complianceService->calculateStrDeadline($friday);
+
+        $this->assertEquals(1, $result['working_days_until_deadline']);
+        $this->assertTrue($result['deadline']->isMonday());
+        $this->assertEquals(11, $result['deadline']->day); // Following Monday (May 11)
+
+        Carbon::setTestNow(); // Reset
     }
 }
