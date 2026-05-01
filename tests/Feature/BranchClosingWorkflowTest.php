@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\Counter;
 use App\Models\Currency;
+use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\BranchClosingService;
 use App\Services\BranchPoolService;
@@ -255,6 +257,14 @@ class BranchClosingWorkflowTest extends TestCase
     public function test_api_finalize_with_incomplete_checklist_fails(): void
     {
         $user = $this->manager;
+
+        // Create an active teller allocation that should be returned before finalization
+        $allocation = TellerAllocation::factory()->create([
+            'branch_id' => $this->branch->id,
+            'user_id' => $this->tellerA->id,
+            'counter_id' => $this->counter->id,
+            'status' => TellerAllocationStatus::ACTIVE,
+        ]);
 
         $response = $this->actingAs($user, 'sanctum')
             ->postJson("/api/v1/branches/{$this->branch->id}/closing/initiate");
