@@ -12,12 +12,13 @@ class CounterHandoverService
 {
     public function acknowledgeHandover(
         CounterHandover $handover,
-        User $incomingTeller,
+        User $user,
         bool $verified,
         ?string $notes
     ): void {
-        if ($handover->to_user_id !== $incomingTeller->id) {
-            throw new UnauthorizedException('You are not the incoming teller');
+        // Only managers can acknowledge handovers (S2 compliance)
+        if (! $user->isManager()) {
+            throw new UnauthorizedException('Only managers can acknowledge handovers');
         }
 
         if ($handover->counterSession->status !== CounterSessionStatus::PendingHandover) {

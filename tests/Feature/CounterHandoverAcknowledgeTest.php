@@ -207,4 +207,35 @@ class CounterHandoverAcknowledgeTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    /** @test */
+    public function test_handover_acknowledge_requires_manager_role(): void
+    {
+        $result = $this->createPendingHandover();
+        $handover = $result['handover'];
+
+        // Teller should get 403
+        $response = $this->actingAs($this->teller1, 'sanctum')
+            ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
+                'verified' => true,
+            ]);
+
+        $response->assertStatus(403);
+
+        // Manager should get 200
+        $response = $this->actingAs($this->manager, 'sanctum')
+            ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
+                'verified' => true,
+                'notes' => 'Manager verified handover',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Handover acknowledged successfully',
+            ]);
+
+        $handover->refresh();
+        $this->assertNotNull($handover->acknowledged_at);
+    }
 }

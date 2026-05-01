@@ -311,6 +311,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Handover Acknowledge
         Route::post('/{counterId}/handover/{handoverId}/acknowledge', [CounterHandoverController::class, 'acknowledge'])
+            ->middleware('role:manager')
             ->name('api.v1.counters.handover.acknowledge');
     });
 
