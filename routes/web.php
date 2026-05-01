@@ -100,7 +100,9 @@ Route::middleware(['auth', 'role:admin'])->get('/test/query-log', [TestQueryLogC
 
 Route::prefix('setup')->name('setup.')->group(function () {
     Route::get('/', [SetupController::class, 'index'])->name('index');
-    Route::get('/wizard', [SetupController::class, 'wizard'])->name('wizard');
+    Route::get('/wizard', function () {
+        return redirect()->route('setup.index');
+    })->name('wizard');
     Route::post('/quick', [SetupController::class, 'quickSetup'])->name('quick');
     Route::post('/step/1', [SetupController::class, 'step1CompanyInfo'])->name('step1');
     Route::post('/step/2', [SetupController::class, 'step2AdminUser'])->name('step2');
