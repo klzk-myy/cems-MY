@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserRole;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,7 +30,7 @@ class CheckRole
                 'manager' => $user->isManager(),
                 'compliance' => $user->isComplianceOfficer(),
                 'compliance_officer' => $user->isComplianceOfficer(),
-                'teller' => true, // All authenticated users are at least tellers
+                'teller' => $user->role === UserRole::Teller,
                 default => false,
             };
 
