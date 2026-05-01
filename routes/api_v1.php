@@ -220,8 +220,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('branches/{id}/counters', [BranchController::class, 'counters']);
     Route::get('branches/{id}/users', [BranchController::class, 'users']);
 
-    // Bulk Import API - Admin or Manager only
-    Route::middleware(['role:admin,manager'])->group(function () {
+    // Bulk Import API - Admin or Manager only (MFA required for BNM compliance)
+    Route::middleware(['role:admin,manager', 'mfa.verified'])->group(function () {
         Route::post('import/customers', [BulkImportController::class, 'importCustomers']);
         Route::post('import/transactions', [BulkImportController::class, 'importTransactions']);
         Route::get('import/status/{jobId}', [BulkImportController::class, 'getStatus']);
@@ -298,20 +298,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{counterId}/opening-request', [CounterOpeningController::class, 'initiateOpeningRequest'])
             ->name('api.v1.counters.opening-request');
         Route::post('/{counterId}/approve-and-open', [CounterOpeningController::class, 'approveAndOpen'])
-            ->middleware('role:manager,admin')
+            ->middleware(['role:manager,admin', 'mfa.verified'])
             ->name('api.v1.counters.approve-and-open');
 
         // Emergency Counter Close
         Route::post('/{counterId}/emergency-close', [EmergencyCounterController::class, 'initiateClose'])
+            ->middleware(['role:manager,admin', 'mfa.verified'])
             ->name('api.v1.counters.emergency-close');
         Route::get('/{counterId}/emergency/{closureId}/variance', [EmergencyCounterController::class, 'getVariance'])
+            ->middleware(['role:manager,admin', 'mfa.verified'])
             ->name('api.v1.counters.emergency.variance');
         Route::post('/{counterId}/emergency/{closureId}/acknowledge', [EmergencyCounterController::class, 'acknowledge'])
+            ->middleware(['role:manager,admin', 'mfa.verified'])
             ->name('api.v1.counters.emergency.acknowledge');
 
         // Handover Acknowledge
         Route::post('/{counterId}/handover/{handoverId}/acknowledge', [CounterHandoverController::class, 'acknowledge'])
-            ->middleware('role:manager')
+            ->middleware(['role:manager', 'mfa.verified'])
             ->name('api.v1.counters.handover.acknowledge');
     });
 
