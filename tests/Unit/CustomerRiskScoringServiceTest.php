@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\AuditService;
@@ -270,5 +271,46 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertEquals('30000', $this->thresholdService->getRiskMediumThreshold());
         $this->assertEquals('10000', $this->thresholdService->getRiskLowThreshold());
         $this->assertEquals('3000', $this->thresholdService->getStructuringSubThreshold());
+    }
+
+    public function test_risk_tier_boundaries_are_consistent(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getRiskLevel');
+        $method->setAccessible(true);
+
+        // Score 78 should return "High" from both CustomerRiskScoringService and CustomerRiskProfile
+        $scoringServiceResult = $method->invoke($this->service, 78);
+        $profileResult = CustomerRiskProfile::getTierForScore(78);
+
+        $this->assertEquals($profileResult, $scoringServiceResult,
+            "Score 78 returned '{$scoringServiceResult}' from ScoringService but '{$profileResult}' from CustomerRiskProfile. They must be consistent."
+        );
+
+        // Test boundary consistency across all tiers
+        $testCases = [
+            ['score' => 85, 'expected' => 'Critical'],
+            ['score' => 80, 'expected' => 'Critical'],
+            ['score' => 79, 'expected' => 'High'],
+            ['score' => 65, 'expected' => 'High'],
+            ['score' => 60, 'expected' => 'High'],
+            ['score' => 59, 'expected' => 'Medium'],
+            ['score' => 35, 'expected' => 'Medium'],
+            ['score' => 30, 'expected' => 'Medium'],
+            ['score' => 29, 'expected' => 'Low'],
+            ['score' => 0, 'expected' => 'Low'],
+        ];
+
+        foreach ($testCases as $case) {
+            $scoringServiceTier = $method->invoke($this->service, $case['score']);
+            $profileTier = CustomerRiskProfile::getTierForScore($case['score']);
+
+            $this->assertEquals($case['expected'], $scoringServiceTier,
+                "ScoringService: Score {$case['score']} expected '{$case['expected']}' but got '{$scoringServiceTier}'");
+            $this->assertEquals($case['expected'], $profileTier,
+                "CustomerRiskProfile: Score {$case['score']} expected '{$case['expected']}' but got '{$profileTier}'");
+            $this->assertEquals($scoringServiceTier, $profileTier,
+                "Score {$case['score']}: ScoringService returned '{$scoringServiceTier}' but Profile returned '{$profileTier}'");
+        }
     }
 }

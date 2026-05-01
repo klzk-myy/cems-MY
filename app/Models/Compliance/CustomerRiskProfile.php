@@ -136,10 +136,10 @@ class CustomerRiskProfile extends Model
     public static function getTierForScore(int $score): string
     {
         return match (true) {
-            $score <= 25 => 'Low',
-            $score <= 50 => 'Medium',
-            $score <= 75 => 'High',
-            default => 'Critical',
+            $score >= 80 => 'Critical',
+            $score >= 60 => 'High',
+            $score >= 30 => 'Medium',
+            default => 'Low',
         };
     }
 
