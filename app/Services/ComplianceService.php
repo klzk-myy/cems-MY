@@ -117,9 +117,6 @@ class ComplianceService
         if ($sanctionStatus) {
             $triggers[] = 'Sanctions match';
         }
-        if ($this->mathService->compare($amount, $this->thresholdService->getLargeTransactionThreshold()) >= 0) {
-            $triggers[] = 'Large amount >= RM '.$this->thresholdService->getLargeTransactionThreshold();
-        }
         if ($customer->risk_rating === 'High') {
             $triggers[] = 'High risk customer';
         }

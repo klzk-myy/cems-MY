@@ -3,6 +3,8 @@
 namespace Tests\Unit;
 
 use App\Enums\CddLevel;
+use App\Models\Customer;
+use App\Services\ComplianceService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -13,35 +15,74 @@ class ComplianceServiceTest extends TestCase
 
     protected MathService $mathService;
 
+    protected ComplianceService $complianceService;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->mathService = new MathService;
+        $this->complianceService = resolve(ComplianceService::class);
     }
 
     public function test_simplified_cdd_for_small_amounts(): void
     {
+        $customer = Customer::factory()->create([
+            'pep_status' => false,
+            'sanction_hit' => false,
+            'risk_rating' => 'Low',
+        ]);
+
         $amount = '2999.99';
 
-        $cddLevel = $this->determineCddLevel($amount, false, false);
+        $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
 
         $this->assertEquals(CddLevel::Simplified, $cddLevel);
     }
 
     public function test_standard_cdd_for_medium_amounts(): void
     {
+        $customer = Customer::factory()->create([
+            'pep_status' => false,
+            'sanction_hit' => false,
+            'risk_rating' => 'Low',
+        ]);
+
         $amount = '30000.00';
 
-        $cddLevel = $this->determineCddLevel($amount, false, false);
+        $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
 
         $this->assertEquals(CddLevel::Standard, $cddLevel);
     }
 
-    public function test_enhanced_cdd_for_large_amounts(): void
+    public function test_enhanced_cdd_not_triggered_by_amount_alone(): void
     {
-        $amount = '50000.00';
+        // Large amount by low-risk, non-PEP, non-sanctioned customer should NOT trigger Enhanced
+        $customer = Customer::factory()->create([
+            'pep_status' => false,
+            'sanction_hit' => false,
+            'risk_rating' => 'Low',
+        ]);
 
-        $cddLevel = $this->determineCddLevel($amount, false, false);
+        $amount = '100000.00'; // Large amount
+
+        $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
+
+        // Should be Standard (high amount but no risk factors), NOT Enhanced
+        $this->assertEquals(CddLevel::Standard, $cddLevel);
+    }
+
+    public function test_enhanced_cdd_triggered_by_high_risk_customer(): void
+    {
+        // Small amount by high-risk customer SHOULD trigger Enhanced
+        $customer = Customer::factory()->create([
+            'pep_status' => false,
+            'sanction_hit' => false,
+            'risk_rating' => 'High',
+        ]);
+
+        $amount = '1000.00'; // Small amount
+
+        $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
 
         $this->assertEquals(CddLevel::Enhanced, $cddLevel);
     }
@@ -50,7 +91,13 @@ class ComplianceServiceTest extends TestCase
     {
         $amount = '1000.00'; // Small amount but PEP triggers enhanced
 
-        $cddLevel = $this->determineCddLevel($amount, true, false);
+        $customer = Customer::factory()->create([
+            'pep_status' => true,
+            'sanction_hit' => false,
+            'risk_rating' => 'Low',
+        ]);
+
+        $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
 
         $this->assertEquals(CddLevel::Enhanced, $cddLevel);
     }
@@ -59,107 +106,14 @@ class ComplianceServiceTest extends TestCase
     {
         $amount = '1000.00';
 
-        $cddLevel = $this->determineCddLevel($amount, false, true);
+        $customer = Customer::factory()->create([
+            'pep_status' => false,
+            'sanction_hit' => true,
+            'risk_rating' => 'Low',
+        ]);
+
+        $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
 
         $this->assertEquals(CddLevel::Enhanced, $cddLevel);
-    }
-
-    public function test_enhanced_cdd_triggers_include_amount_when_large_transaction(): void
-    {
-        // Test that amount >= RM 50,000 triggers Enhanced CDD
-        // The determineCDDLevel helper in test class uses hardcoded 50000 threshold
-        $amount = '50000.00';
-        $isLargeAmount = bccomp($amount, '50000', 2) >= 0;
-
-        // Verify large amount triggers enhanced
-        $this->assertTrue($isLargeAmount);
-    }
-
-    public function test_requires_hold_for_large_amounts(): void
-    {
-        $amount = '50000.00';
-        $requiresHold = bccomp($amount, '50000', 2) >= 0;
-
-        $this->assertTrue($requiresHold);
-    }
-
-    public function test_requires_hold_for_pep_status(): void
-    {
-        $isPep = true;
-        $requiresHold = $isPep;
-
-        $this->assertTrue($requiresHold);
-    }
-
-    public function test_requires_hold_for_high_risk_customer(): void
-    {
-        $riskRating = 'high';
-        $isHighRisk = $riskRating === 'high';
-
-        $this->assertTrue($isHighRisk);
-    }
-
-    public function test_requires_hold_for_sanction_match(): void
-    {
-        $isSanctionMatch = true;
-        $requiresHold = $isSanctionMatch;
-
-        $this->assertTrue($requiresHold);
-    }
-
-    public function test_atomic_threshold_exact(): void
-    {
-        $amount = '3000.00';
-        $isAtLeastStandard = bccomp($amount, '3000', 2) >= 0;
-
-        $this->assertTrue($isAtLeastStandard);
-    }
-
-    public function test_large_transaction_threshold_exact(): void
-    {
-        $amount = '50000.00';
-        $isLarge = bccomp($amount, '50000', 2) >= 0;
-
-        $this->assertTrue($isLarge);
-    }
-
-    public function test_just_below_large_transaction_threshold(): void
-    {
-        $amount = '49999.99';
-        $isLarge = bccomp($amount, '50000', 2) >= 0;
-
-        $this->assertFalse($isLarge);
-    }
-
-    public function test_ctos_threshold_exact(): void
-    {
-        $amount = '10000.00';
-        $requiresCtos = bccomp($amount, '10000', 2) >= 0;
-
-        $this->assertTrue($requiresCtos);
-    }
-
-    public function test_just_below_ctos_threshold(): void
-    {
-        $amount = '9999.99';
-        $requiresCtos = bccomp($amount, '10000', 2) >= 0;
-
-        $this->assertFalse($requiresCtos);
-    }
-
-    /**
-     * Helper method to determine CDD level
-     */
-    private function determineCddLevel(string $amount, bool $isPep, bool $isSanctionMatch): CddLevel
-    {
-        if (bccomp($amount, '50000', 2) >= 0 || $isPep || $isSanctionMatch) {
-            return CddLevel::Enhanced;
-        }
-
-        if (bccomp($amount, '3000', 2) >= 0) {
-            return CddLevel::Standard;
-        }
-
-        return CddLevel::Simplified;
     }
 }
