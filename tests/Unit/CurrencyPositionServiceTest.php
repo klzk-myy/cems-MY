@@ -2,6 +2,13 @@
 
 namespace Tests\Unit;
 
+use App\Enums\StockReservationStatus;
+use App\Models\Currency;
+use App\Models\CurrencyPosition;
+use App\Models\StockReservation;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Services\CurrencyPositionService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -150,5 +157,132 @@ class CurrencyPositionServiceTest extends TestCase
 
         // 1.000001 / 1000001 ≈ 0.000000999999, bcmath truncates to 0.000001
         $this->assertEquals('0.000001', $avgCost);
+    }
+
+    public function test_consume_rejects_expired_reservation(): void
+    {
+        $teller = User::factory()->create(['role' => 'teller']);
+        Currency::factory()->create(['code' => 'USD']);
+
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'till_id' => 'TILL1',
+            'balance' => '1000.00',
+            'avg_cost_rate' => '4.2000',
+            'last_valuation_rate' => '4.2000',
+        ]);
+
+        $transaction = Transaction::factory()->create([
+            'user_id' => $teller->id,
+            'currency_code' => 'USD',
+            'type' => 'Sell',
+            'amount_foreign' => '100.00',
+            'rate' => '4.2000',
+            'amount_local' => '420.00',
+            'till_id' => 'TILL1',
+            'branch_id' => $teller->branch_id,
+            'status' => 'PendingApproval',
+        ]);
+
+        // Create an expired reservation (expires_at in the past)
+        $expiredReservation = StockReservation::factory()->create([
+            'transaction_id' => $transaction->id,
+            'currency_code' => 'USD',
+            'till_id' => 'TILL1',
+            'amount_foreign' => '100.00',
+            'status' => StockReservationStatus::Pending,
+            'expires_at' => now()->subHour(), // Expired
+            'created_by' => $teller->id,
+        ]);
+
+        $positionService = new CurrencyPositionService(new MathService);
+        $result = $positionService->consumeStockReservation($transaction->id);
+
+        $this->assertNull($result);
+
+        // Verify reservation was NOT consumed (status should still be Pending)
+        $expiredReservation->refresh();
+        $this->assertEquals(StockReservationStatus::Pending, $expiredReservation->status);
+    }
+
+    public function test_consume_accepts_valid_reservation(): void
+    {
+        $teller = User::factory()->create(['role' => 'teller']);
+        Currency::factory()->create(['code' => 'USD']);
+
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'till_id' => 'TILL1',
+            'balance' => '1000.00',
+            'avg_cost_rate' => '4.2000',
+            'last_valuation_rate' => '4.2000',
+        ]);
+
+        $transaction = Transaction::factory()->create([
+            'user_id' => $teller->id,
+            'currency_code' => 'USD',
+            'type' => 'Sell',
+            'amount_foreign' => '100.00',
+            'rate' => '4.2000',
+            'amount_local' => '420.00',
+            'till_id' => 'TILL1',
+            'branch_id' => $teller->branch_id,
+            'status' => 'PendingApproval',
+        ]);
+
+        // Create a valid reservation (expires_at in the future)
+        $validReservation = StockReservation::factory()->create([
+            'transaction_id' => $transaction->id,
+            'currency_code' => 'USD',
+            'till_id' => 'TILL1',
+            'amount_foreign' => '100.00',
+            'status' => StockReservationStatus::Pending,
+            'expires_at' => now()->addHour(), // Still valid
+            'created_by' => $teller->id,
+        ]);
+
+        $positionService = new CurrencyPositionService(new MathService);
+        $result = $positionService->consumeStockReservation($transaction->id);
+
+        $this->assertNotNull($result);
+        $this->assertEquals(StockReservationStatus::Consumed, $result->status);
+    }
+
+    public function test_release_rejects_expired_reservation(): void
+    {
+        $teller = User::factory()->create(['role' => 'teller']);
+        Currency::factory()->create(['code' => 'USD']);
+
+        $transaction = Transaction::factory()->create([
+            'user_id' => $teller->id,
+            'currency_code' => 'USD',
+            'type' => 'Sell',
+            'amount_foreign' => '100.00',
+            'rate' => '4.2000',
+            'amount_local' => '420.00',
+            'till_id' => 'TILL1',
+            'branch_id' => $teller->branch_id,
+            'status' => 'PendingApproval',
+        ]);
+
+        // Create an expired reservation
+        $expiredReservation = StockReservation::factory()->create([
+            'transaction_id' => $transaction->id,
+            'currency_code' => 'USD',
+            'till_id' => 'TILL1',
+            'amount_foreign' => '100.00',
+            'status' => StockReservationStatus::Pending,
+            'expires_at' => now()->subHour(),
+            'created_by' => $teller->id,
+        ]);
+
+        $positionService = new CurrencyPositionService(new MathService);
+        $result = $positionService->releaseStockReservation($transaction->id);
+
+        $this->assertNull($result);
+
+        // Verify reservation was NOT released
+        $expiredReservation->refresh();
+        $this->assertEquals(StockReservationStatus::Pending, $expiredReservation->status);
     }
 }

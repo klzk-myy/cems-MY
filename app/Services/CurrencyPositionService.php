@@ -445,10 +445,12 @@ class CurrencyPositionService
             ->where('status', StockReservationStatus::Pending)
             ->first();
 
-        if ($reservation) {
-            $reservation->update(['status' => StockReservationStatus::Consumed]);
-            Cache::forget("position:{$reservation->till_id}:{$reservation->currency_code}:available");
+        if ($reservation === null || $reservation->isExpired()) {
+            return null;
         }
+
+        $reservation->update(['status' => StockReservationStatus::Consumed]);
+        Cache::forget("position:{$reservation->till_id}:{$reservation->currency_code}:available");
 
         return $reservation;
     }
@@ -465,10 +467,12 @@ class CurrencyPositionService
             ->where('status', StockReservationStatus::Pending)
             ->first();
 
-        if ($reservation) {
-            $reservation->update(['status' => StockReservationStatus::Released]);
-            Cache::forget("position:{$reservation->till_id}:{$reservation->currency_code}:available");
+        if ($reservation === null || $reservation->isExpired()) {
+            return null;
         }
+
+        $reservation->update(['status' => StockReservationStatus::Released]);
+        Cache::forget("position:{$reservation->till_id}:{$reservation->currency_code}:available");
 
         return $reservation;
     }
