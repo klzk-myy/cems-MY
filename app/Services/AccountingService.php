@@ -170,6 +170,38 @@ class AccountingService
     }
 
     /**
+     * Calculate total debits from journal lines.
+     *
+     * @param  array  $lines  Array of journal line items
+     * @return string Total debits as a string for precision
+     */
+    protected function calculateTotalDebits(array $lines): string
+    {
+        $total = '0';
+        foreach ($lines as $line) {
+            $total = $this->mathService->add($total, (string) ($line['debit'] ?? 0));
+        }
+
+        return $total;
+    }
+
+    /**
+     * Calculate total credits from journal lines.
+     *
+     * @param  array  $lines  Array of journal line items
+     * @return string Total credits as a string for precision
+     */
+    protected function calculateTotalCredits(array $lines): string
+    {
+        $total = '0';
+        foreach ($lines as $line) {
+            $total = $this->mathService->add($total, (string) ($line['credit'] ?? 0));
+        }
+
+        return $total;
+    }
+
+    /**
      * Reverse an existing journal entry.
      *
      * Creates a new reversal entry that swaps debits and credits from the

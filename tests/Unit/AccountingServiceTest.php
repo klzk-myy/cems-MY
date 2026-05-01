@@ -2,8 +2,11 @@
 
 namespace Tests\Unit;
 
+use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
+use App\Models\FiscalYear;
+use App\Models\User;
 use App\Services\AccountingService;
 use App\Services\AuditService;
 use App\Services\MathService;
@@ -245,5 +248,108 @@ class AccountingServiceTest extends TestCase
         $this->assertNotNull($revenueLedger);
         $this->assertEquals('0.0000', $revenueLedger->debit);
         $this->assertEquals('1000.0000', $revenueLedger->credit);
+    }
+
+    /** @test */
+    public function test_journal_reversal_produces_correct_economic_effect(): void
+    {
+        // Create test accounts simulating SELL transaction scenario:
+        // - Cash (Asset, debit-normal): debited when sale happens
+        // - Inventory (Asset, debit-normal): credited when inventory leaves
+        $cashAccount = ChartOfAccount::factory()->create([
+            'account_code' => '1001',
+            'account_name' => 'Cash MYR',
+            'account_type' => 'Asset',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+
+        $inventoryAccount = ChartOfAccount::factory()->create([
+            'account_code' => '1501',
+            'account_name' => 'Foreign Currency Inventory',
+            'account_type' => 'Asset',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+
+        // Create necessary dependencies for journal entry
+        $fiscalYear = FiscalYear::factory()->create([
+            'year_code' => '2026',
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'status' => 'Open',
+        ]);
+
+        $period = AccountingPeriod::factory()->create([
+            'fiscal_year_id' => $fiscalYear->id,
+            'period_code' => '2026-01',
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-01-31',
+            'status' => 'open',
+        ]);
+
+        $user = User::factory()->create();
+
+        // Create the accounting service
+        $auditService = new AuditService;
+        $accountingService = new AccountingService($this->mathService, $auditService);
+
+        // Simulate SELL transaction entry (balanced):
+        // Cash is DEBITED (increases) and Inventory is CREDITED (decreases)
+        // Using equal amounts for a simple balanced 2-line entry
+        $sellEntry = $accountingService->createJournalEntry(
+            [
+                ['account_code' => '1001', 'debit' => '5000.00', 'credit' => '0'],
+                ['account_code' => '1501', 'debit' => '0', 'credit' => '5000.00'],
+            ],
+            'Transaction',
+            null,
+            'SELL transaction - Cash received, Inventory reduced',
+            '2026-01-15',
+            $user->id
+        );
+
+        // Get balances after SELL transaction
+        $cashBalanceAfterSell = $accountingService->getAccountBalance('1001', '2026-01-15');
+        $inventoryBalanceAfterSell = $accountingService->getAccountBalance('1501', '2026-01-15');
+
+        // Verify initial sell entry effects (using BCMath)
+        // Cash should be +5000 (debit increases asset)
+        // Inventory should be -5000 (credit decreases asset)
+        $this->assertEquals('5000.0000', $cashBalanceAfterSell);
+        $this->assertEquals('-5000.0000', $inventoryBalanceAfterSell);
+
+        // Reverse the entry - should swap debit/credit for each account
+        $reversalEntry = $accountingService->reverseJournalEntry(
+            $sellEntry,
+            'Reversal of SELL transaction',
+            $user->id
+        );
+
+        // Verify reversal entry has swapped amounts
+        $reversalCashLine = $reversalEntry->lines->firstWhere('account_code', '1001');
+        $reversalInventoryLine = $reversalEntry->lines->firstWhere('account_code', '1501');
+
+        // Cash was debited 5000 in original, should be credited 5000 in reversal
+        $this->assertEquals('0.0000', $reversalCashLine->debit);
+        $this->assertEquals('5000.0000', $reversalCashLine->credit);
+
+        // Inventory was credited 5000 in original, should be debited 5000 in reversal
+        $this->assertEquals('5000.0000', $reversalInventoryLine->debit);
+        $this->assertEquals('0.0000', $reversalInventoryLine->credit);
+
+        // Verify net economic effect returns accounts to near-zero
+        // Note: reversal entry uses current date (2026-05-01), so we query with no date filter
+        // to get the latest running balance which includes both sell and reversal entries
+        $cashBalanceAfterReversal = $accountingService->getAccountBalance('1001');
+        $inventoryBalanceAfterReversal = $accountingService->getAccountBalance('1501');
+
+        $this->assertEquals('0.0000', $cashBalanceAfterReversal);
+        $this->assertEquals('0.0000', $inventoryBalanceAfterReversal);
+
+        // Verify original entry is marked as reversed
+        $sellEntry->refresh();
+        $this->assertEquals('Reversed', $sellEntry->status->value);
+        $this->assertNotNull($sellEntry->reversed_at);
     }
 }
