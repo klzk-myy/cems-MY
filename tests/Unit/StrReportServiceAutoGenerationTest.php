@@ -144,4 +144,46 @@ class StrReportServiceAutoGenerationTest extends TestCase
         $this->assertArrayHasKey('min_transactions', $config);
         $this->assertTrue($config['enabled']);
     }
+
+    /**
+     * Verify STR is triggered by suspicious patterns, not by amount alone.
+     *
+     * Per pd-00.md 22.1.1, STR is required when "the reporting institution suspects
+     * or has reasonable grounds to suspect that the transaction or activity...
+     * regardless of the amount". A small transaction with suspicious pattern (structuring)
+     * should trigger STR, but a large transaction without suspicious pattern should NOT
+     * auto-trigger STR based on amount alone.
+     */
+    public function test_str_triggered_by_suspicion_not_amount(): void
+    {
+        $customer = Customer::factory()->create();
+
+        // Small amount transaction with suspicious pattern (structuring) - should trigger STR
+        $smallAlertWithPattern = Alert::factory()->create([
+            'customer_id' => $customer->id,
+            'type' => ComplianceFlagType::Structuring,
+            'priority' => AlertPriority::High,
+        ]);
+
+        $result = $this->service->evaluateAutoStrTriggers($smallAlertWithPattern);
+
+        // Structuring pattern should trigger STR regardless of amount
+        $this->assertNotNull($result, 'Structuring pattern should trigger STR even for small amounts');
+        $this->assertEquals(StrStatus::PendingApproval, $result->status);
+
+        // Clean up for next assertion
+        StrReport::where('customer_id', $customer->id)->delete();
+
+        // Large amount transaction WITHOUT suspicious pattern - should NOT trigger STR
+        $largeAlertWithoutPattern = Alert::factory()->create([
+            'customer_id' => $customer->id,
+            'type' => ComplianceFlagType::LargeAmount,
+            'priority' => AlertPriority::Medium,
+        ]);
+
+        $result = $this->service->evaluateAutoStrTriggers($largeAlertWithoutPattern);
+
+        // Large amount alone without suspicious pattern should NOT auto-trigger STR
+        $this->assertNull($result, 'Large amount without suspicious pattern should not auto-trigger STR');
+    }
 }

@@ -311,8 +311,8 @@ class RiskCalculationService
         return [
             'amount_24h' => (string) $velocity,
             'with_new_transaction' => $total,
-            'threshold_exceeded' => $this->mathService->compare($total, $this->thresholdService->getLargeTransactionThreshold()) >= 0,
-            'threshold_amount' => $this->thresholdService->getLargeTransactionThreshold(),
+            'threshold_exceeded' => $this->mathService->compare($total, $this->thresholdService->getVelocityAlertThreshold()) >= 0,
+            'threshold_amount' => $this->thresholdService->getVelocityAlertThreshold(),
         ];
     }
 
