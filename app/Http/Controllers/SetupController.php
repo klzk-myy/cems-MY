@@ -21,25 +21,33 @@ use Illuminate\Support\Facades\Hash;
 
 class SetupController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $isSetupComplete = $this->isSetupComplete();
 
+        if ($isSetupComplete) {
+            return view('setup.index', [
+                'isSetupComplete' => true,
+                'currentStep' => 7,
+                'progress' => 100,
+            ]);
+        }
+
+        $step = $request->get('step', $this->getCurrentStep());
+
         return view('setup.index', [
-            'isSetupComplete' => $isSetupComplete,
-            'currentStep' => $this->getCurrentStep(),
+            'isSetupComplete' => false,
+            'currentStep' => (int) $step,
+            'progress' => $this->calculateProgress(),
+            'currencies' => Currency::all(),
         ]);
     }
 
     public function wizard(Request $request)
     {
-        $step = $request->get('step', 1);
+        $step = $request->get('step', $this->getCurrentStep());
 
-        return view('setup.wizard', [
-            'step' => (int) $step,
-            'currencies' => Currency::all(),
-            'progress' => $this->calculateProgress(),
-        ]);
+        return redirect()->route('setup.index', ['step' => $step]);
     }
 
     public function quickSetup(SetupRequest $request)
