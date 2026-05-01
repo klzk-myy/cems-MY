@@ -4,8 +4,11 @@ namespace Tests\Unit;
 
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Enums\UserRole;
+use App\Exceptions\Domain\SegregationOfDutiesException;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\CurrencyPositionService;
 use App\Services\TransactionCancellationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -145,5 +148,72 @@ class TransactionCancellationServiceTest extends TestCase
         $this->expectExceptionMessage('Direct cancellation is not allowed');
 
         $this->cancellationService->cancelTransaction($transaction, 1, 'Test reason');
+    }
+
+    public function test_refund_requires_different_approver_than_requester(): void
+    {
+        // Create a teller who will request the reversal
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+
+        // Create a completed transaction by the same teller
+        $transaction = Transaction::factory()->create([
+            'user_id' => $teller->id,
+            'type' => TransactionType::Buy,
+            'currency_code' => 'USD',
+            'amount_foreign' => '100.00',
+            'rate' => '4.50',
+            'status' => TransactionStatus::Completed,
+            'created_at' => now(), // Within cancellation window
+        ]);
+
+        // Create a currency position for the reversal
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'till_id' => $transaction->till_id,
+            'balance' => '5000.00',
+            'avg_cost_rate' => '4.50',
+            'last_valuation_rate' => '4.50',
+        ]);
+
+        // Attempt to reverse own transaction should throw SegregationOfDutiesException
+        $this->expectException(SegregationOfDutiesException::class);
+        $this->expectExceptionMessage('Segregation of duties violation');
+
+        $this->cancellationService->requestReversal($transaction, $teller, 'Test reversal reason');
+    }
+
+    public function test_manager_can_reverse_other_user_transaction(): void
+    {
+        // Create a teller who created the transaction
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+
+        // Create a manager who will reverse it (different user - allowed)
+        $manager = User::factory()->create(['role' => UserRole::Manager]);
+
+        // Create a completed transaction by the teller
+        $transaction = Transaction::factory()->create([
+            'user_id' => $teller->id,
+            'type' => TransactionType::Buy,
+            'currency_code' => 'USD',
+            'amount_foreign' => '100.00',
+            'rate' => '4.50',
+            'status' => TransactionStatus::Completed,
+            'created_at' => now(), // Within cancellation window
+        ]);
+
+        // Create a currency position for the reversal
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'till_id' => $transaction->till_id,
+            'balance' => '5000.00',
+            'avg_cost_rate' => '4.50',
+            'last_valuation_rate' => '4.50',
+        ]);
+
+        // Manager reversing teller's transaction should succeed
+        $result = $this->cancellationService->requestReversal($transaction, $manager, 'Manager reversing teller error');
+
+        $this->assertTrue($result);
+        $this->assertEquals(TransactionStatus::Reversed, $transaction->status);
     }
 }

@@ -7,6 +7,7 @@ use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionCancelled;
+use App\Exceptions\Domain\SegregationOfDutiesException;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\JournalEntry;
@@ -377,7 +378,19 @@ class TransactionCancellationService
         }
 
         return DB::transaction(function () use ($transaction, $requester, $reason) {
-            // Create refund transaction first (approved by the reversal requester)
+            // Segregation of duties check: approver cannot be the same user who requested reversal
+            // This enforces dual-control as required by BNM AML/CFT regulations (pd-00.md 11.2.4(e))
+            if ($transaction->user_id === $requester->id) {
+                Log::warning('Self-reversal attempted - segregation of duties violation', [
+                    'transaction_id' => $transaction->id,
+                    'requester_id' => $requester->id,
+                    'original_transaction_user_id' => $transaction->user_id,
+                ]);
+
+                throw new SegregationOfDutiesException('reverse this transaction');
+            }
+
+            // Create refund transaction (needs separate approver due to segregation of duties)
             $refundTransaction = $this->createRefundTransaction($transaction, $requester->id);
 
             // Reverse positions
