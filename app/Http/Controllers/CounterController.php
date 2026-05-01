@@ -350,7 +350,7 @@ class CounterController extends Controller
             ->with('success', 'Emergency closure acknowledged');
     }
 
-    public function showAcknowledgeHandover(Counter $counter): View
+    public function showAcknowledgeHandover(Counter $counter): View|RedirectResponse
     {
         $user = Auth::user();
         $today = now()->toDateString();

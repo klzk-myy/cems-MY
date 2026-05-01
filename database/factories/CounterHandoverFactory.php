@@ -26,4 +26,32 @@ class CounterHandoverFactory extends Factory
             'variance_myr' => '0.00',
         ];
     }
+
+    public function forSession(CounterSession $session): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'counter_session_id' => $session->id,
+        ]);
+    }
+
+    public function fromUser(User $user): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'from_user_id' => $user->id,
+        ]);
+    }
+
+    public function toUser(User $user): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'to_user_id' => $user->id,
+        ]);
+    }
+
+    public function supervisedBy(User $user): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'supervisor_id' => $user->id,
+        ]);
+    }
 }
