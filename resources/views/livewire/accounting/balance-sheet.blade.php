@@ -1,4 +1,8 @@
-<div>
+@extends('layouts.base')
+
+@section('title', 'Balance Sheet - CEMS-MY')
+
+@section('content')
     {{-- Header --}}
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Balance Sheet</h1>
@@ -89,4 +93,4 @@
             @endif
         </div>
     </div>
-</div>
+@endsection
