@@ -96,7 +96,7 @@ class AccountingService
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'description' => $description,
-                'status' => JournalEntryStatus::DRAFT->value,
+                'status' => JournalEntryStatus::Draft->value,
                 'created_by' => $createdBy,
             ]);
 
@@ -120,7 +120,7 @@ class AccountingService
                     'reference_type' => $referenceType,
                     'reference_id' => $referenceId,
                     'description' => $description,
-                    'status' => JournalEntryStatus::DRAFT->value,
+                    'status' => JournalEntryStatus::Draft->value,
                 ]
             );
 
@@ -151,7 +151,7 @@ class AccountingService
             }
 
             $entry->update([
-                'status' => JournalEntryStatus::PENDING->value,
+                'status' => JournalEntryStatus::Pending->value,
             ]);
 
             $this->auditService->logJournalWorkflowEvent('journal_entry_submitted', $entry->id, [
@@ -209,7 +209,7 @@ class AccountingService
         // the entry status won't be changed to Posted
         return DB::transaction(function () use ($entry, $approvedBy, $approvalNotes) {
             $entry->update([
-                'status' => JournalEntryStatus::POSTED->value,
+                'status' => JournalEntryStatus::Posted->value,
                 'approved_by' => $approvedBy,
                 'approved_at' => now(),
                 'approval_notes' => $approvalNotes,
@@ -223,7 +223,7 @@ class AccountingService
             $this->auditService->logJournalWorkflowEvent('journal_entry_approved', $entry->id, [
                 'old' => ['status' => 'Pending'],
                 'new' => [
-                    'status' => JournalEntryStatus::POSTED->value,
+                    'status' => JournalEntryStatus::Posted->value,
                     'approved_by' => $approvedBy,
                     'approval_notes' => $approvalNotes,
                 ],
@@ -262,14 +262,14 @@ class AccountingService
             }
 
             $entry->update([
-                'status' => JournalEntryStatus::REJECTED->value,
+                'status' => JournalEntryStatus::Rejected->value,
                 'approval_notes' => $rejectionNotes,
             ]);
 
             $this->auditService->logJournalWorkflowEvent('journal_entry_rejected', $entry->id, [
                 'old' => ['status' => 'Pending'],
                 'new' => [
-                    'status' => JournalEntryStatus::REJECTED->value,
+                    'status' => JournalEntryStatus::Rejected->value,
                     'rejection_notes' => $rejectionNotes,
                 ],
             ]);
@@ -369,7 +369,7 @@ class AccountingService
 
             // Update original entry status and create explicit link via reversal_id
             $originalEntry->update([
-                'status' => JournalEntryStatus::REVERSED->value,
+                'status' => JournalEntryStatus::Reversed->value,
                 'reversed_by' => $reversedBy,
                 'reversed_at' => now(),
             ]);

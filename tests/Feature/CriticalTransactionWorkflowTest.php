@@ -232,7 +232,7 @@ class CriticalTransactionWorkflowTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonFragment([
-                'message' => 'Insufficient stock for USD. Requested: 800.00, Available: 500.000000',
+                'message' => 'Insufficient stock for USD. Requested: 800.00, Available: 500.0000',
             ]);
     }
 
