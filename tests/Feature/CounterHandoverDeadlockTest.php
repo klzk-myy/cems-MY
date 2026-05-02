@@ -12,8 +12,6 @@ use App\Models\TillBalance;
 use App\Models\User;
 use App\Services\CounterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 /**
@@ -28,13 +26,21 @@ class CounterHandoverDeadlockTest extends TestCase
     use RefreshDatabase;
 
     protected Branch $branch;
+
     protected Counter $counter;
+
     protected User $teller1;
+
     protected User $teller2;
+
     protected User $teller3;
+
     protected User $manager;
+
     protected Currency $usd;
+
     protected Currency $eur;
+
     protected Currency $gbp;
 
     protected function setUp(): void
