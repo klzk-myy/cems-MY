@@ -525,13 +525,19 @@ class TransactionService
             throw new TillBalanceMissingException('MYR', $lockedForeign->till_id);
         }
 
-        // Update foreign currency balance
-        $foreignTotal = $lockedForeign->foreign_total ?? '0';
-        $newForeignTotal = $type === TransactionType::Buy->value
-            ? $this->mathService->add($foreignTotal, $amountForeign)
-            : $this->mathService->subtract($foreignTotal, $amountForeign);
+        // Update foreign currency balance using separate buy/sell tracking
+        // Buy: increase buy_total_foreign (we are buying foreign currency from customer, stock increases)
+        // Sell: increase sell_total_foreign (we are selling foreign currency to customer, stock decreases)
+        $buyTotal = $lockedForeign->buy_total_foreign ?? '0';
+        $sellTotal = $lockedForeign->sell_total_foreign ?? '0';
 
-        $lockedForeign->update(['foreign_total' => $newForeignTotal]);
+        if ($type === TransactionType::Buy->value) {
+            $newBuyTotal = $this->mathService->add($buyTotal, $amountForeign);
+            $lockedForeign->update(['buy_total_foreign' => $newBuyTotal]);
+        } else {
+            $newSellTotal = $this->mathService->add($sellTotal, $amountForeign);
+            $lockedForeign->update(['sell_total_foreign' => $newSellTotal]);
+        }
 
         // Update MYR balance - always add (cash in on Sell, cash out on Buy is recorded separately)
         $myrTotal = $myrBalance->transaction_total ?? '0';

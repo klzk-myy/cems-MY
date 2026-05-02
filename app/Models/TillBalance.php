@@ -27,6 +27,8 @@ class TillBalance extends Model
         'notes',
         'foreign_total',
         'transaction_total',
+        'buy_total_foreign',
+        'sell_total_foreign',
     ];
 
     protected $casts = [
@@ -62,14 +64,20 @@ class TillBalance extends Model
 
     /**
      * Calculate the expected balance (opening + transaction activity)
+     * For foreign currency: expected = opening_balance + buy_total_foreign - sell_total_foreign
+     * This correctly tracks position for both buys (adds to position) and sells (reduces position)
      */
     public function getExpectedBalance(): string
     {
         $mathService = app(MathService::class);
         $opening = (string) $this->opening_balance;
-        $foreignTotal = $this->foreign_total !== null ? (string) $this->foreign_total : '0';
+        $buyTotal = $this->buy_total_foreign !== null ? (string) $this->buy_total_foreign : '0';
+        $sellTotal = $this->sell_total_foreign !== null ? (string) $this->sell_total_foreign : '0';
 
-        return $mathService->add($opening, $foreignTotal);
+        // net foreign = buys - sells (buys increase position, sells decrease position)
+        $netForeign = $mathService->subtract($buyTotal, $sellTotal);
+
+        return $mathService->add($opening, $netForeign);
     }
 
     /**

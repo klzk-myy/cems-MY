@@ -21,6 +21,7 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\CurrencyPositionService;
+use App\Services\MathService;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -32,6 +33,8 @@ class TransactionServiceTest extends TestCase
     protected TransactionService $transactionService;
 
     protected CurrencyPositionService $positionService;
+
+    protected MathService $mathService;
 
     protected User $teller;
 
@@ -54,6 +57,7 @@ class TransactionServiceTest extends TestCase
         // Use Laravel container to resolve services with correct dependencies
         $this->transactionService = app(TransactionService::class);
         $this->positionService = app(CurrencyPositionService::class);
+        $this->mathService = app(MathService::class);
 
         // Setup test data
         $this->setupTestData();
@@ -365,6 +369,61 @@ class TransactionServiceTest extends TestCase
             ->first();
         $this->assertNotNull($myrBalance);
         $this->assertEquals('450.0000', $myrBalance->transaction_total);
+    }
+
+    public function test_foreign_currency_position_tracked_separately_for_buy_and_sell(): void
+    {
+        // Reset till balance to zero for clean test
+        $this->tillBalance->update([
+            'buy_total_foreign' => '0',
+            'sell_total_foreign' => '0',
+            'foreign_total' => '0', // legacy field still needed for compatibility
+        ]);
+
+        // Step 1: Do a BUY transaction - should add to buy_total_foreign
+        $buyData = [
+            'customer_id' => $this->customer->id,
+            'till_id' => $this->counter->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => $this->currency->code,
+            'amount_foreign' => '500.00', // Buy 500 USD from customer
+            'rate' => '4.500000', // Rate 4.5
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Salary',
+            'idempotency_key' => uniqid('test_buy_', true),
+        ];
+
+        $this->transactionService->createTransaction($buyData, $this->teller->id);
+        $this->tillBalance->refresh();
+
+        // After BUY: buy_total_foreign should increase, sell_total_foreign unchanged
+        $this->assertEquals('500.0000', $this->tillBalance->buy_total_foreign);
+        $this->assertEquals('0.0000', $this->tillBalance->sell_total_foreign);
+
+        // Step 2: Do a SELL transaction - should add to sell_total_foreign
+        $sellData = [
+            'customer_id' => $this->customer->id,
+            'till_id' => $this->counter->id,
+            'type' => TransactionType::Sell->value,
+            'currency_code' => $this->currency->code,
+            'amount_foreign' => '200.00', // Sell 200 USD to customer
+            'rate' => '4.500000',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Salary',
+            'idempotency_key' => uniqid('test_sell_', true),
+        ];
+
+        $this->transactionService->createTransaction($sellData, $this->teller->id);
+        $this->tillBalance->refresh();
+
+        // After SELL: sell_total_foreign should increase, buy_total_foreign unchanged
+        $this->assertEquals('500.0000', $this->tillBalance->buy_total_foreign);
+        $this->assertEquals('200.0000', $this->tillBalance->sell_total_foreign);
+
+        // Step 3: Verify expected balance calculation: opening + buys - sells
+        // Opening balance was 0, we bought 500 and sold 200, so net = 300 USD
+        $expectedBalance = $this->mathService->add('0', $this->mathService->subtract('500.0000', '200.0000'));
+        $this->assertEquals('300.0000', $this->tillBalance->getExpectedBalance());
     }
 
     public function test_transaction_assigns_correct_cdd_level(): void

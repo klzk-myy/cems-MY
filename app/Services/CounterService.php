@@ -141,10 +141,14 @@ class CounterService
 
                 $tillBalance = $tillBalances->get($currency->code);
                 $openingBalance = $tillBalance ? $tillBalance->opening_balance : '0';
-                $foreignTotal = $tillBalance && $tillBalance->foreign_total !== null
-                    ? $tillBalance->foreign_total
-                    : '0';
-                $expectedBalance = BcmathHelper::add($openingBalance, $foreignTotal);
+                // For foreign currency: expected = opening + buy_total_foreign - sell_total_foreign
+                // This correctly handles position: buys increase stock, sells decrease stock
+                $buyTotal = $tillBalance && $tillBalance->buy_total_foreign !== null
+                    ? $tillBalance->buy_total_foreign : '0';
+                $sellTotal = $tillBalance && $tillBalance->sell_total_foreign !== null
+                    ? $tillBalance->sell_total_foreign : '0';
+                $netForeign = BcmathHelper::subtract($buyTotal, $sellTotal);
+                $expectedBalance = BcmathHelper::add($openingBalance, $netForeign);
 
                 $closingBalance = $float['amount'];
                 $variance = BcmathHelper::subtract($closingBalance, $expectedBalance);
@@ -359,8 +363,11 @@ class CounterService
 
                 if ($balanceRow) {
                     $opening = $balanceRow->opening_balance;
-                    $foreign = $balanceRow->foreign_total ?? '0';
-                    $expected = BcmathHelper::add($opening, $foreign);
+                    // For foreign currency: expected = opening + buy_total_foreign - sell_total_foreign
+                    $buyTotal = $balanceRow->buy_total_foreign ?? '0';
+                    $sellTotal = $balanceRow->sell_total_foreign ?? '0';
+                    $netForeign = BcmathHelper::subtract($buyTotal, $sellTotal);
+                    $expected = BcmathHelper::add($opening, $netForeign);
                     $variance = BcmathHelper::subtract($closingBalance, $expected);
                 } else {
                     // No prior balance; variance is zero (new currency added)
@@ -413,13 +420,18 @@ class CounterService
                 $closed = $closedBalances->get($currencyCode);
 
                 if ($open) {
+                    // Determine notes: include variance details if there was a variance, otherwise generic handover note
+                    $notes = BcmathHelper::compare($totalVarianceMyr, '0') !== 0
+                        ? $varianceNotes
+                        : 'Handover';
+
                     // Close the old open balance
                     $open->update([
                         'closing_balance' => $closingBalance,
                         'variance' => $variance,
                         'closed_at' => $now,
                         'closed_by' => $fromUser->id,
-                        'notes' => 'Handover',
+                        'notes' => $notes,
                     ]);
 
                     // Create new open balance for new session
