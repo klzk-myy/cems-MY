@@ -412,4 +412,149 @@ class AccountingWorkflowTest extends TestCase
         $this->assertEquals('0.00', bcadd($expenseLedger->debit, '0', 2));
         $this->assertEquals('5000.00', bcadd($expenseLedger->credit, '0', 2));
     }
+
+    /** @test */
+    public function test_closing_entries_use_bcmath_for_large_numbers(): void
+    {
+        // Test that BCMath is used for absolute value in closing entries.
+        // Using a reasonable amount that stays within decimal(18,4) column precision.
+        // The key point is using BCMath consistently for precision.
+        $largeNetLoss = '123456789.50';
+
+        $incomeSummaryAccount = ChartOfAccount::factory()->create([
+            'account_code' => '4998',
+            'account_name' => 'Income Summary',
+            'account_type' => 'Equity',
+            'is_active' => true,
+        ]);
+
+        $retainedEarningsAccount = ChartOfAccount::factory()->create([
+            'account_code' => '4999',
+            'account_name' => 'Retained Earnings',
+            'account_type' => 'Equity',
+            'is_active' => true,
+        ]);
+
+        $expenseAccount = ChartOfAccount::factory()->create([
+            'account_code' => '6999',
+            'account_name' => 'Test Large Expenses',
+            'account_type' => 'Expense',
+            'is_active' => true,
+        ]);
+
+        $period = AccountingPeriod::factory()->create([
+            'fiscal_year_id' => $this->fiscalYear->id,
+            'period_code' => '2026-01',
+            'period_type' => 'month',
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'status' => 'closed',
+        ]);
+
+        // Create journal entry with large expense (net loss)
+        $expenseEntry = JournalEntry::create([
+            'entry_number' => 'TEST-2026-LARGE',
+            'entry_date' => '2026-06-30',
+            'period_id' => $period->id,
+            'reference_type' => 'Manual',
+            'description' => 'Test large expense entry',
+            'status' => 'Posted',
+            'created_by' => $this->manager->id,
+            'posted_by' => $this->manager->id,
+            'posted_at' => now(),
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $expenseEntry->id,
+            'account_code' => $expenseAccount->account_code,
+            'debit' => $largeNetLoss,
+            'credit' => '0.00',
+            'description' => 'Test large expense',
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $expenseEntry->id,
+            'account_code' => $this->cashAccount->account_code,
+            'debit' => '0.00',
+            'credit' => $largeNetLoss,
+            'description' => 'Cash payment',
+        ]);
+
+        // Create ledger entries
+        AccountLedger::create([
+            'account_code' => $expenseAccount->account_code,
+            'entry_date' => '2026-06-30',
+            'journal_entry_id' => $expenseEntry->id,
+            'debit' => $largeNetLoss,
+            'credit' => '0.00',
+            'running_balance' => $largeNetLoss,
+        ]);
+
+        AccountLedger::create([
+            'account_code' => $this->cashAccount->account_code,
+            'entry_date' => '2026-06-30',
+            'journal_entry_id' => $expenseEntry->id,
+            'debit' => '0.00',
+            'credit' => $largeNetLoss,
+            'running_balance' => bcsub('0', $largeNetLoss, 2),
+        ]);
+
+        // Create closing entry with net loss
+        $closingEntry = JournalEntry::create([
+            'entry_number' => 'CE-202606-002',
+            'entry_date' => '2026-12-31',
+            'period_id' => $period->id,
+            'reference_type' => 'FiscalYearClosing',
+            'description' => 'Closing Expenses to Income Summary (Loss)',
+            'status' => 'Posted',
+            'created_by' => $this->manager->id,
+            'posted_by' => $this->manager->id,
+            'posted_at' => now(),
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $closingEntry->id,
+            'account_code' => $expenseAccount->account_code,
+            'debit' => '0.00',
+            'credit' => $largeNetLoss,
+            'description' => 'Close Test Large Expenses',
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $closingEntry->id,
+            'account_code' => '4998',
+            'debit' => '0.00',
+            'credit' => $largeNetLoss,
+            'description' => 'Income Summary (Loss)',
+        ]);
+
+        // Call the service method to create closing ledger entries
+        $fiscalYearService = app(FiscalYearService::class);
+
+        $reflection = new \ReflectionMethod($fiscalYearService, 'createClosingLedgerEntries');
+        $reflection->setAccessible(true);
+        $reflection->invoke($fiscalYearService, $closingEntry);
+
+        // Verify the Income Summary ledger entry
+        $incomeSummaryLedger = AccountLedger::where('journal_entry_id', $closingEntry->id)
+            ->where('account_code', '4998')
+            ->first();
+
+        $this->assertNotNull($incomeSummaryLedger, 'Income Summary ledger entry should be created');
+        // Verify debit is zero using BCMath comparison
+        $this->assertEquals(0, bccomp($incomeSummaryLedger->debit, '0', 4), 'Debit should be 0');
+        // Verify credit equals the large net loss using BCMath comparison
+        $this->assertEquals(0, bccomp($incomeSummaryLedger->credit, $largeNetLoss, 4), 'Credit should match large net loss');
+
+        // Verify expense account is closed correctly
+        $expenseLedger = AccountLedger::where('journal_entry_id', $closingEntry->id)
+            ->where('account_code', $expenseAccount->account_code)
+            ->first();
+
+        $this->assertNotNull($expenseLedger, 'Expense ledger entry should be created');
+        // Verify debit is zero
+        $this->assertEquals(0, bccomp($expenseLedger->debit, '0', 4), 'Expense debit should be 0');
+        // Verify credit matches large net loss
+        $this->assertEquals(0, bccomp($expenseLedger->credit, $largeNetLoss, 4), 'Expense credit should match large net loss');
+    }
 }

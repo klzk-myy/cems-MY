@@ -202,7 +202,9 @@ class FiscalYearService
                 JournalLine::create([
                     'journal_entry_id' => $entry->id,
                     'account_code' => '4999',
-                    'debit' => $this->mathService->compare($retainedEarnings, '0') < 0 ? abs($retainedEarnings) : 0,
+                    'debit' => $this->mathService->compare($retainedEarnings, '0') < 0
+                        ? $this->mathService->subtract('0', $retainedEarnings)
+                        : '0',
                     'credit' => $this->mathService->compare($retainedEarnings, '0') >= 0 ? $retainedEarnings : 0,
                     'description' => 'Opening retained earnings',
                 ]);
@@ -387,13 +389,13 @@ class FiscalYearService
                 'journal_entry_id' => $entry->id,
                 'account_code' => '4998',
                 'debit' => 0,
-                'credit' => abs($netIncome),
+                'credit' => $this->mathService->abs($netIncome),
                 'description' => 'Close Income Summary (Loss)',
             ]);
             JournalLine::create([
                 'journal_entry_id' => $entry->id,
                 'account_code' => '4999',
-                'debit' => abs($netIncome),
+                'debit' => $this->mathService->abs($netIncome),
                 'credit' => 0,
                 'description' => 'Transfer to Retained Earnings (Loss)',
             ]);

@@ -24,8 +24,8 @@ class ExpireStockReservations extends Command
     public function handle(): int
     {
         $expired = StockReservation::where('status', StockReservationStatus::Pending)
-            ->where('expires_at', '<=', now())
-            ->get();
+            ->get()
+            ->filter(fn ($reservation) => $reservation->isExpired());
 
         $count = $expired->count();
 
