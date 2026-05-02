@@ -53,7 +53,17 @@ class StrictRateLimit
         if ($burstAllowance > 0) {
             $withinBurst = $this->rateLimitService->checkBurst($request, $limiterName, $burstAllowance);
             if ($withinBurst) {
-                return $next($request);
+                // Still count burst requests against rate limit, just allow temporary excess
+                RateLimiter::hit($key, $decayMinutes * 60);
+
+                $response = $next($request);
+
+                // Add rate limit headers to response
+                $remaining = RateLimiter::remaining($key, $maxAttempts);
+                $response->headers->set('X-RateLimit-Limit', (string) $maxAttempts);
+                $response->headers->set('X-RateLimit-Remaining', (string) $remaining);
+
+                return $response;
             }
         }
 
