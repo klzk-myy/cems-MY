@@ -2,6 +2,7 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\CheckRoleAny;
 use App\Http\Middleware\EncryptCookies;
@@ -9,6 +10,8 @@ use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\IpBlocker;
 use App\Http\Middleware\LogRequests;
 use App\Http\Middleware\PerformanceTrackingMiddleware;
+use App\Http\Middleware\PreventRequestsDuringMaintenance;
+use App\Http\Middleware\QueryLogging;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SessionTimeout;
