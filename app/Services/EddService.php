@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CddLevel;
 use App\Enums\EddStatus;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
@@ -12,9 +13,12 @@ class EddService
 {
     protected MathService $mathService;
 
-    public function __construct(MathService $mathService)
+    protected ComplianceService $complianceService;
+
+    public function __construct(MathService $mathService, ComplianceService $complianceService)
     {
         $this->mathService = $mathService;
+        $this->complianceService = $complianceService;
     }
 
     public function createEddRecord(FlaggedTransaction $flag, array $data = []): EnhancedDiligenceRecord
@@ -91,7 +95,22 @@ class EddService
         $source = is_string($record->source_of_funds) ? trim($record->source_of_funds) : null;
         $purpose = is_string($record->purpose_of_transaction) ? trim($record->purpose_of_transaction) : null;
 
-        return $source !== null && $source !== '' && $purpose !== null && $purpose !== '';
+        if ($source === null || $source === '' || $purpose === null || $purpose === '') {
+            return false;
+        }
+
+        // For Enhanced CDD (High risk), also verify all required documents are uploaded
+        if ($record->risk_level === 'High') {
+            $customer = $record->customer;
+            if ($customer) {
+                $documentCheck = $this->complianceService->verifyCddDocuments($customer, CddLevel::Enhanced);
+                if (! $documentCheck['is_compliant']) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     protected function generateEddReference(): string

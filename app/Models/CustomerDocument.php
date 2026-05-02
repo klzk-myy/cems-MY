@@ -147,4 +147,12 @@ class CustomerDocument extends Model
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }
+
+    /**
+     * Check if the document is verified.
+     */
+    public function isVerified(): bool
+    {
+        return $this->verified_by !== null && $this->verified_at !== null;
+    }
 }

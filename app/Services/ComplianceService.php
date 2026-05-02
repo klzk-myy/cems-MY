@@ -559,9 +559,9 @@ class ComplianceService
 
         // Define required document types per CDD level
         $requiredDocs = match ($cddLevel) {
-            CddLevel::Simplified => ['MyKad_Front', 'MyKad_Back'],
-            CddLevel::Standard => ['MyKad_Front', 'MyKad_Back', 'Proof_of_Address'],
-            CddLevel::Enhanced => ['MyKad_Front', 'MyKad_Back', 'Proof_of_Address', 'Passport'],
+            CddLevel::Simplified => ['MyKad'],
+            CddLevel::Standard => ['MyKad', 'Proof_of_Address'],
+            CddLevel::Enhanced => ['MyKad', 'Proof_of_Address', 'Passport'],
         };
 
         $uploadedTypes = $documents->pluck('document_type')->toArray();
