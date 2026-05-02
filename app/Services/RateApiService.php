@@ -65,15 +65,16 @@ class RateApiService
         $processed = [];
         $currencies = ['USD', 'EUR', 'GBP', 'SGD', 'AUD', 'CAD', 'CHF', 'JPY'];
 
-        $halfSpread = $this->mathService->divide($this->spread, '2');
-
         foreach ($currencies as $currency) {
             if (isset($rates[$currency])) {
                 $rate = $rates[$currency];
                 $rateStr = (string) $rate;
 
-                $buyRate = $this->mathService->multiply($rateStr, $this->mathService->subtract('1', $halfSpread));
-                $sellRate = $this->mathService->multiply($rateStr, $this->mathService->add('1', $halfSpread));
+                // Apply full spread on each side of mid rate
+                // buy = mid * (1 - spread), sell = mid * (1 + spread)
+                // e.g., 2% spread: buy is 2% below mid, sell is 2% above mid
+                $buyRate = $this->mathService->multiply($rateStr, $this->mathService->subtract('1', $this->spread));
+                $sellRate = $this->mathService->multiply($rateStr, $this->mathService->add('1', $this->spread));
 
                 $processed[$currency] = [
                     'buy' => $this->roundRate($buyRate),

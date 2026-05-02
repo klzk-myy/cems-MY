@@ -231,22 +231,24 @@ class RateManagementService
 
     protected function calculateSpread(string $buyRate, string $sellRate): string
     {
+        // Standardized formula: spread percentage = (sell - buy) / (2 * mid) * 100
+        // This matches the RateApiService spread application where:
+        // buy = mid * (1 - spread) and sell = mid * (1 + spread)
+        // So sell - buy = 2 * spread * mid, thus spread = (sell - buy) / (2 * mid)
         $mid = $this->mathService->divide(
             $this->mathService->add($buyRate, $sellRate),
             '2'
         );
 
-        $halfSpread = $this->mathService->divide(
-            $this->mathService->subtract($sellRate, $buyRate),
-            '2'
-        );
-
         if ($this->mathService->compare($mid, '0') > 0) {
+            // Divide by 2*mid to get the spread fraction, then multiply by 100 for percentage
+            $spread = $this->mathService->divide(
+                $this->mathService->subtract($sellRate, $buyRate),
+                $this->mathService->multiply($mid, '2')
+            );
+
             return bcadd(
-                $this->mathService->multiply(
-                    $this->mathService->divide($halfSpread, $mid),
-                    '100'
-                ),
+                $this->mathService->multiply($spread, '100'),
                 '0',
                 2
             );
