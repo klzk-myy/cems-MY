@@ -56,14 +56,36 @@ class EnsureMfaVerified
             $request->session()->forget(['mfa_verified', 'mfa_verified_at']);
         }
 
-        // Check for trusted device
+        // Check for trusted device (with time-limited verification)
         $fingerprint = $mfaService->generateDeviceFingerprint();
         if ($mfaService->hasTrustedDevice($user, $fingerprint)) {
-            // Mark session as verified
+            // Trusted device verification is also time-limited to prevent indefinite extension
+            $maxAge = config('security.mfa_session_max_age', 900); // 15 minutes default
+
+            // Mark session as verified with timestamp
             $request->session()->put('mfa_verified', true);
             $request->session()->put('mfa_verified_at', now()->timestamp);
+            // Store trusted device verification for expiry tracking
+            $request->session()->put('mfa_trusted_device_verified', true);
 
             return $next($request);
+        }
+
+        // Prevent MFA re-verification from extending session beyond maximum lifetime
+        $sessionLifetime = config('security.session.lifetime', 480) * 60; // Convert to seconds
+        $sessionCreatedAt = $request->session()->get('_session_created_at', now()->timestamp);
+        $sessionElapsed = now()->timestamp - $sessionCreatedAt;
+
+        if ($sessionElapsed >= $sessionLifetime) {
+            // Session has already reached maximum lifetime, require full re-auth
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'error' => 'Session expired, please re-authenticate',
+                    'redirect' => route('login'),
+                ], 401);
+            }
+
+            return redirect()->route('login')->with('error', 'Session expired. Please log in again.');
         }
 
         // Redirect to MFA verification

@@ -338,6 +338,99 @@ class MfaRequirementTest extends TestCase
     }
 
     /**
+     * Test that MFA re-verification does not extend session beyond maximum lifetime.
+     */
+    public function test_mfa_reverification_does_not_extend_session_beyond_limit(): void
+    {
+        // Create a session that has already reached maximum lifetime
+        // Session lifetime is 480 minutes (8 hours) by default
+        $sessionData = [
+            'mfa_verified' => true,
+            'mfa_verified_at' => now()->timestamp,
+            '_session_created_at' => now()->timestamp - (480 * 60), // 480 minutes ago (at limit)
+        ];
+
+        // Verify that even with valid MFA session, expired session requires re-auth
+        $response = $this->actingAs($this->admin)
+            ->withSession($sessionData)
+            ->post('/api/v1/import/customers', [], ['Accept' => 'application/json']);
+
+        // Should get 401 because session has reached maximum lifetime
+        $response->assertStatus(401)
+            ->assertJson([
+                'error' => 'Session expired, please re-authenticate',
+            ]);
+    }
+
+    /**
+     * Test that MFA verification works within session lifetime.
+     */
+    public function test_mfa_verification_works_within_session_lifetime(): void
+    {
+        // Create a fresh session that is well within the lifetime
+        $sessionData = [
+            'mfa_verified' => true,
+            'mfa_verified_at' => now()->timestamp,
+            '_session_created_at' => now()->timestamp - (60 * 60), // 1 hour ago (well within limit)
+        ];
+
+        // With valid MFA session and within lifetime - should not get 403/401 for MFA/session reasons
+        $response = $this->actingAs($this->admin)
+            ->withSession($sessionData)
+            ->post('/api/v1/import/customers', [], ['Accept' => 'application/json']);
+
+        // Should not be 403 (MFA required) or 401 (session expired)
+        $this->assertNotEquals(403, $response->status());
+        $this->assertNotEquals(401, $response->status());
+    }
+
+    /**
+     * Test that trusted device re-verification also respects session lifetime limit.
+     */
+    public function test_trusted_device_reverification_respects_session_lifetime(): void
+    {
+        // Session created 7 hours ago (approaching but not at 8-hour limit)
+        $sessionData = [
+            'mfa_verified' => true,
+            'mfa_verified_at' => now()->timestamp,
+            'mfa_trusted_device_verified' => true,
+            '_session_created_at' => now()->timestamp - (7 * 60 * 60), // 7 hours ago
+        ];
+
+        // With valid MFA session and within lifetime - should pass
+        $response = $this->actingAs($this->admin)
+            ->withSession($sessionData)
+            ->post('/api/v1/import/customers', [], ['Accept' => 'application/json']);
+
+        // Should not be 403 (MFA required) or 401 (session expired)
+        $this->assertNotEquals(403, $response->status());
+        $this->assertNotEquals(401, $response->status());
+    }
+
+    /**
+     * Test that expired MFA verification within valid session requires re-verification.
+     */
+    public function test_expired_mfa_verification_requires_re_verification(): void
+    {
+        // Session is fresh but MFA verification has expired (16 minutes ago)
+        $sessionData = [
+            'mfa_verified' => true,
+            'mfa_verified_at' => now()->timestamp - (16 * 60), // 16 minutes ago (exceeded 15-min MFA expiry)
+            '_session_created_at' => now()->timestamp - (60), // 1 minute ago
+        ];
+
+        // Without valid MFA verification - should get 403 MFA required
+        $response = $this->actingAs($this->admin)
+            ->withSession($sessionData)
+            ->post('/api/v1/import/customers', [], ['Accept' => 'application/json']);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'error' => 'MFA verification required',
+            ]);
+    }
+
+    /**
      * Test that import errors endpoint requires MFA verification.
      */
     public function test_import_errors_requires_mfa(): void
