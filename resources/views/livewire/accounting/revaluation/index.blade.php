@@ -1,4 +1,8 @@
-<div>
+@extends('layouts.base')
+
+@section('title', 'Currency Revaluation - CEMS-MY')
+
+@section('content')
     {{-- Header --}}
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Currency Revaluation</h1>
@@ -88,4 +92,4 @@
             </table>
         </div>
     </div>
-</div>
+@endsection

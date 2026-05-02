@@ -1,4 +1,8 @@
-<div>
+@extends('layouts.base')
+
+@section('title', 'Journal Entry - CEMS-MY')
+
+@section('content')
     {{-- Header --}}
     <div class="mb-6">
         <div class="flex items-center justify-between">
@@ -198,4 +202,4 @@
         </div>
     </div>
     @endif
-</div>
+@endsection

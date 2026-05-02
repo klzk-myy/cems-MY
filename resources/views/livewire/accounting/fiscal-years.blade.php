@@ -1,4 +1,8 @@
-<div>
+@extends('layouts.base')
+
+@section('title', 'Fiscal Years - CEMS-MY')
+
+@section('content')
     {{-- Header --}}
     <div class="mb-6 flex justify-between items-center">
         <div>
@@ -188,4 +192,4 @@
             </form>
         </div>
     </div>
-</div>
+@endsection

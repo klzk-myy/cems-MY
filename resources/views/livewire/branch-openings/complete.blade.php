@@ -1,3 +1,8 @@
+@extends('layouts.base')
+
+@section('title', 'Branch Opening Complete')
+
+@section('content')
 <div>
     <div class="bg-white rounded-lg shadow-lg p-6">
         <div class="text-center mb-6">
@@ -46,3 +51,4 @@
         </div>
     </div>
 </div>
+@endsection

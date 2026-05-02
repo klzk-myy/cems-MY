@@ -1,3 +1,8 @@
+@extends('layouts.base')
+
+@section('title', 'Enhanced Due Diligence')
+
+@section('content')
 <div>
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
@@ -95,10 +100,11 @@
                             3
                         </div>
                         <span class="text-sm font-medium {{ $currentStep >= 3 ? 'text-gray-900' : 'text-gray-500' }}">Background & Review</span>
-                    </div>
-                </div>
             </div>
         </div>
+    </div>
+</div>
+@endsection
     @endif
 
     {{-- Form Content --}}

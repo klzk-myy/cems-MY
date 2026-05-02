@@ -1,3 +1,8 @@
+@extends('layouts.base')
+
+@section('title', 'Branch Opening Wizard')
+
+@section('content')
 <div>
     <div class="bg-white rounded-lg shadow-lg p-6">
         <h1 class="text-2xl font-bold mb-6">Branch Opening Wizard</h1>
@@ -40,3 +45,4 @@
         </div>
     </div>
 </div>
+@endsection

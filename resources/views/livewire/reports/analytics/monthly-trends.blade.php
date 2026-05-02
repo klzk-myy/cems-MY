@@ -1,3 +1,8 @@
+@extends('layouts.base')
+
+@section('title', 'Monthly Transaction Trends')
+
+@section('content')
 <div>
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200">
@@ -70,3 +75,4 @@
         </div>
     </div>
 </div>
+@endsection

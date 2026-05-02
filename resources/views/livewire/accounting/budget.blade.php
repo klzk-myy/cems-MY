@@ -1,4 +1,8 @@
-<div>
+@extends('layouts.base')
+
+@section('title', 'Budget vs Actual - CEMS-MY')
+
+@section('content')
     {{-- Header --}}
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Budget vs Actual</h1>
@@ -81,4 +85,4 @@
         </div>
     </div>
     @endif
-</div>
+@endsection

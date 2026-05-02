@@ -1,3 +1,8 @@
+@extends('layouts.base')
+
+@section('title', 'Branch Opening - Step 2')
+
+@section('content')
 <div>
     <div class="bg-white rounded-lg shadow-lg p-6">
         <div class="flex items-center justify-between mb-6">
@@ -48,3 +53,4 @@
         </form>
     </div>
 </div>
+@endsection

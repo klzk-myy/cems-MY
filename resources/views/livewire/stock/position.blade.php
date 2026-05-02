@@ -1,3 +1,5 @@
+@extends('layouts.base')
+
 <div>
     {{-- Header --}}
     <div class="flex justify-between items-center mb-6">

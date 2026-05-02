@@ -1,3 +1,5 @@
+@extends('layouts.base')
+
 <div>
     <div class="flex items-center gap-3 mb-6">
         <a href="{{ route('transactions.show', $transaction) }}" class="btn btn-ghost btn-icon">

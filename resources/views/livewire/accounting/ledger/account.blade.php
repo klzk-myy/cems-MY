@@ -1,4 +1,8 @@
-<div>
+@extends('layouts.base')
+
+@section('title', 'Account Ledger - CEMS-MY')
+
+@section('content')
     {{-- Header --}}
     <div class="mb-6">
         <div class="flex items-center justify-between">
@@ -119,4 +123,4 @@
             </table>
         </div>
     </div>
-</div>
+@endsection

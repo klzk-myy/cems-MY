@@ -1,3 +1,8 @@
+@extends('layouts.base')
+
+@section('title', 'Case Details')
+
+@section('content')
 <div>
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
@@ -81,10 +86,11 @@
                         <div>
                             <p class="font-medium">{{ $case->customer->full_name }}</p>
                             <p class="text-sm text-gray-500">{{ $case->customer->ic_number ?? 'N/A' }}</p>
-                        </div>
-                    </div>
-                </div>
             </div>
+        </div>
+    </div>
+</div>
+@endsection
             @endif
 
             {{-- Linked Alerts --}}

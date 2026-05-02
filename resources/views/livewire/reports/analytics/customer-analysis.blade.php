@@ -1,3 +1,8 @@
+@extends('layouts.base')
+
+@section('title', 'Customer Analysis')
+
+@section('content')
 <div>
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200">
@@ -49,6 +54,8 @@
             @endif
         </div>
     </div>
+</div>
+@endsection
 
     @if(!empty($riskDistribution))
         <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200">

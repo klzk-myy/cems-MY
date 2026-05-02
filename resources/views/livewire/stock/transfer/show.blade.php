@@ -1,3 +1,5 @@
+@extends('layouts.base')
+
 <div>
     {{-- Header --}}
     <div class="mb-6">
