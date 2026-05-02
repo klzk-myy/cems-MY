@@ -85,11 +85,6 @@ class TransactionMonitoringService
                 $flags[] = $this->createFlag($transaction, ComplianceFlagType::HighRiskCountry, 'High-risk country transaction: '.$transaction->customer->nationality);
             }
 
-            // Round amount detection
-            if ($this->isRoundAmount($transaction)) {
-                $flags[] = $this->createFlag($transaction, ComplianceFlagType::RoundAmount, 'Round amount transaction - review purpose: RM '.$transaction->amount_local);
-            }
-
             // Profile deviation check
             if ($this->isProfileDeviation($transaction)) {
                 $flags[] = $this->createFlag($transaction, ComplianceFlagType::ProfileDeviation, 'Transaction volume exceeds customer profile');
@@ -161,17 +156,6 @@ class TransactionMonitoringService
             ->toArray();
 
         return in_array($transaction->customer->nationality, $highRiskCountries, true);
-    }
-
-    protected function isRoundAmount(Transaction $transaction): bool
-    {
-        if ($this->mathService->compare($transaction->amount_local, $this->thresholdService->getCtosThreshold()) < 0) {
-            return false;
-        }
-
-        $remainder = bcmod((string) $transaction->amount_local, $this->thresholdService->getCtosThreshold());
-
-        return $this->mathService->compare($remainder, '0') === 0;
     }
 
     protected function isProfileDeviation(Transaction $transaction): bool
