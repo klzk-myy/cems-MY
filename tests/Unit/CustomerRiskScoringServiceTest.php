@@ -14,6 +14,7 @@ use App\Services\MathService;
 use App\Services\RiskCalculationService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
 
@@ -312,5 +313,44 @@ class CustomerRiskScoringServiceTest extends TestCase
             $this->assertEquals($scoringServiceTier, $profileTier,
                 "Score {$case['score']}: ScoringService returned '{$scoringServiceTier}' but Profile returned '{$profileTier}'");
         }
+    }
+
+    public function test_customer_lock_does_not_auto_expire_before_edd_complete(): void
+    {
+        // Create a customer and risk profile
+        $customer = Customer::factory()->create();
+        $profile = CustomerRiskProfile::createForCustomer($customer->id, 50);
+
+        // Lock for EDD review
+        $profile->lock($customer->id, 'Enhanced Due Diligence required');
+
+        // Verify it's locked immediately
+        $this->assertTrue($profile->isLocked());
+
+        // Simulate time passing (EDD can take days/weeks)
+        // Travel more than 1 hour into the future - lock should NOT expire
+        Carbon::setTestNow(Carbon::now()->addHours(48));
+
+        // Verify lock persists after 48 hours (well beyond old 1-hour auto-expiry)
+        $profile->refresh();
+        $this->assertTrue($profile->isLocked(), 'Customer lock should not auto-expire before EDD is complete');
+
+        // Verify lock metadata is preserved
+        $this->assertEquals($customer->id, $profile->locked_by);
+        $this->assertEquals('Enhanced Due Diligence required', $profile->lock_reason);
+
+        // Manual unlock after EDD completion
+        Carbon::setTestNow(Carbon::now()->addDays(14)); // 2 weeks later
+        $profile->unlock();
+
+        // Verify unlock works
+        $profile->refresh();
+        $this->assertFalse($profile->isLocked());
+        $this->assertNull($profile->locked_until);
+        $this->assertNull($profile->locked_by);
+        $this->assertNull($profile->lock_reason);
+
+        // Reset Carbon mock
+        Carbon::setTestNow();
     }
 }

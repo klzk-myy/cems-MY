@@ -95,11 +95,15 @@ class CustomerRiskProfile extends Model
     }
 
     /**
-     * Lock the risk profile.
+     * Lock the risk profile for EDD review.
+     *
+     * Lock does not auto-expire - manual unlock only after EDD completion.
+     * Uses a far-future date (100 years) to ensure isLocked() returns true
+     * without relying on null which would return false.
      */
     public function lock(int $userId, string $reason): void
     {
-        $this->locked_until = now()->addHour();
+        $this->locked_until = now()->addYears(100);
         $this->locked_by = $userId;
         $this->lock_reason = $reason;
         $this->save();
