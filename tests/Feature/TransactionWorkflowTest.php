@@ -233,6 +233,98 @@ class TransactionWorkflowTest extends TestCase
     }
 
     /** @test */
+    public function test_approval_history_reflects_actual_state_transitions(): void
+    {
+        $customer = Customer::factory()->create([
+            'risk_rating' => 'Low',
+            'pep_status' => false,
+        ]);
+
+        $counter = Counter::factory()->create();
+
+        $tillId = (string) $counter->id;
+
+        // Create USD position with sufficient balance for Sell
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'till_id' => $tillId,
+            'balance' => '2000.00',
+            'avg_cost_rate' => '4.50',
+            'last_valuation_rate' => '4.50',
+        ]);
+
+        TillBalance::factory()->create([
+            'till_id' => $tillId,
+            'currency_code' => 'MYR',
+            'opening_balance' => '20000.00',
+            'date' => today(),
+            'opened_by' => $this->teller->id,
+        ]);
+
+        TillBalance::factory()->create([
+            'till_id' => $tillId,
+            'currency_code' => 'USD',
+            'opening_balance' => '2000.00',
+            'date' => today(),
+            'opened_by' => $this->teller->id,
+        ]);
+
+        // Transaction at exactly RM 10,000 should require approval (Sell transaction)
+        $data = [
+            'customer_id' => $customer->id,
+            'currency_code' => 'USD',
+            'type' => TransactionType::Sell->value,
+            'amount_foreign' => '1000.00', // 1000 * 10.00 = 10000 exactly
+            'rate' => '10.00',
+            'purpose' => 'Test',
+            'source_of_funds' => 'salary',
+            'till_id' => $tillId,
+            'idempotency_key' => 'test-approval-history-'.uniqid(),
+        ];
+
+        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+
+        // Verify initial status is PendingApproval
+        $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
+
+        // Approve the transaction
+        $approvedTransaction = $this->transactionService->approveTransaction(
+            $transaction,
+            $this->manager->id
+        )['transaction'];
+
+        // Verify final status is Completed
+        $this->assertEquals(TransactionStatus::Completed, $approvedTransaction->status);
+
+        // Verify transition history contains exactly one entry (PendingApproval -> Completed)
+        // There should be no "Approved" status in the history since the transaction
+        // jumps directly from PendingApproval to Completed
+        $history = $approvedTransaction->transition_history ?? [];
+
+        // Find any entries with "Approved" as the target status
+        $approvedEntries = array_filter($history, function ($entry) {
+            return ($entry['to'] ?? null) === TransactionStatus::Approved->value;
+        });
+
+        $this->assertEmpty(
+            $approvedEntries,
+            'Transition history should not contain artificial "Approved" status'
+        );
+
+        // Verify the actual transition is recorded: PendingApproval -> Completed
+        $completionEntries = array_filter($history, function ($entry) {
+            return ($entry['from'] ?? null) === TransactionStatus::PendingApproval->value
+                && ($entry['to'] ?? null) === TransactionStatus::Completed->value;
+        });
+
+        $this->assertCount(
+            1,
+            $completionEntries,
+            'Transition history should contain exactly one PendingApproval -> Completed transition'
+        );
+    }
+
+    /** @test */
     public function test_transaction_approval_required_at_10000(): void
     {
         $customer = Customer::factory()->create([

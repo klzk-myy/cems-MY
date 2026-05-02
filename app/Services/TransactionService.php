@@ -807,27 +807,18 @@ class TransactionService
                     }
                 }
 
-                // Build proper transition history: record both Approval and Completion as separate steps
+                // Build proper transition history: record direct PendingApproval -> Completed transition
                 $history = $lockedTransaction->transition_history ?? [];
                 $nowIso = now()->toIso8601String();
 
                 // Determine "from" state based on original status
                 $fromState = $lockedTransaction->status->value;
 
-                // Step 1: Pending/PendingApproval -> Approved
+                // Record actual state transition: PendingApproval -> Completed
                 $history[] = [
                     'from' => $fromState,
-                    'to' => TransactionStatus::Approved->value,
-                    'reason' => 'Transaction approved by manager',
-                    'user_id' => $approverId,
-                    'timestamp' => $nowIso,
-                ];
-
-                // Step 2: Approved -> Completed
-                $history[] = [
-                    'from' => TransactionStatus::Approved->value,
                     'to' => TransactionStatus::Completed->value,
-                    'reason' => 'Transaction completed after approval',
+                    'reason' => 'Transaction approved and completed by manager',
                     'user_id' => $approverId,
                     'timestamp' => $nowIso,
                 ];
