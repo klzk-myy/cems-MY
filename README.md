@@ -264,6 +264,21 @@ app/
 ├── Events/                 # 13 Event classes (TransactionCreated, CounterSessionOpened, etc.)
 ├── Exceptions/Domain/       # 43 typed domain exceptions
 ├── Http/
+│   ├── Controllers/        # 61 controllers (42 web + 19 API)
+│   ├── Middleware/          # 21 middleware classes
+│   ├── Requests/            # Form request validation classes
+│   └── Resources/           # API resource transformers
+├── Jobs/                   # 9 background jobs
+├── Models/                 # 60 Eloquent models
+├── Observers/              # Model observers for event-driven hooks
+└── Services/               # 78 services
+```
+app/
+├── Console/Commands/        # 35 Artisan CLI commands
+├── Enums/                  # 34 PHP 8.1 enums (UserRole, TransactionStatus, CddLevel, etc.)
+├── Events/                 # 13 Event classes (TransactionCreated, CounterSessionOpened, etc.)
+├── Exceptions/Domain/       # 43 typed domain exceptions
+├── Http/
 │   ├── Controllers/        # 50 controllers
 │   ├── Middleware/          # 21 middleware classes
 │   ├── Requests/            # Form request validation classes

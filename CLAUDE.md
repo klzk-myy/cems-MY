@@ -42,15 +42,15 @@ app/
 ├── Events/  # 13 Event classes (TransactionCreated, CounterSessionOpened, etc.)
 ├── Exceptions/Domain/  # 43 typed domain exceptions (InsufficientStockException, etc.)
 ├── Http/
-│   ├── Controllers/  # 50 controllers
+│   ├── Controllers/  # 61 controllers (42 web + 19 API)
 │   ├── Middleware/  # 21 middleware classes
 │   ├── Requests/  # Form request validation classes
 │   └── Resources/  # API resource transformers
-├── Jobs/  # 23 background jobs
+├── Jobs/  # 9 background jobs
 ├── Jobs/Audit/  # Async jobs (SealAuditHashJob)
-├── Models/  # 62 Eloquent models
+├── Models/  # 60 Eloquent models
 ├── Observers/  # Model observers for event-driven hooks
-└── Services/  # 83 services
+└── Services/  # 78 services
 ```
 
 ### Key Architectural Patterns

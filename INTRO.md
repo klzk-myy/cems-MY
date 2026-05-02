@@ -29,17 +29,17 @@ A comprehensive Laravel 10.x application for managing foreign currency trading, 
 CEMS-MY (Laravel 10.x / PHP 8.1+)
 ├── routes/              # HTTP routing
 ├── app/
-│   ├── Console/Commands/ # 41 Artisan commands
+│   ├── Console/Commands/ # 35 Artisan commands
 │   ├── Enums/           # 34 PHP 8.1 enums
 │   ├── Events/          # 13 event classes
 │   ├── Exceptions/Domain/ # 43 typed domain exceptions
 │   ├── Http/
-│   │   ├── Controllers/ # 71 controllers
+│   │   ├── Controllers/ # 61 controllers (42 web + 19 API)
 │   │   └── Middleware/  # 21 middleware classes
-│   ├── Jobs/            # 23 background jobs
-│   ├── Models/          # 62 Eloquent models
-│   └── Services/        # 83 business services
-├── resources/views/     # ~90 Blade templates (Livewire)
+│   ├── Jobs/            # 9 background jobs
+│   ├── Models/          # 60 Eloquent models
+│   └── Services/        # 78 business services
+├── resources/views/     # ~26 Blade templates (Livewire)
 └── config/              # Centralized configuration
 ```
 
@@ -51,7 +51,7 @@ CEMS-MY (Laravel 10.x / PHP 8.1+)
 
 | File | Routes | Purpose |
 |------|--------|---------|
-| `routes/web.php` | ~180 | Web UI routes (session auth) |
+| `routes/web.php` | ~180 | Web UI routes (Livewire + session auth) |
 | `routes/api_v1.php` | ~110 | REST API v1 (Sanctum auth) |
 | `routes/auth.php` | 3 | Login/logout |
 | `routes/console.php` | 1 | Console commands |
@@ -148,7 +148,7 @@ Request → [Middleware Chain] → Controller
 
 ---
 
-## Controllers (71 Controllers)
+## Controllers (61 Controllers)
 
 Organized by domain module:
 
@@ -184,7 +184,7 @@ Organized by domain module:
 |------------|---------|
 | `Api/V1/TellerAllocationController` | Float allocation request/approval |
 
-### 5. Compliance & AML (20)
+### 5. Compliance & AML (11)
 | Controller | Purpose |
 |------------|---------|
 | `Compliance/AlertTriageController` | Alert assignment & resolution |
@@ -198,26 +198,14 @@ Organized by domain module:
 | `Compliance/FindingController` | Compliance findings |
 | `Compliance/ComplianceReportingController` | Report scheduling |
 | `Compliance/ComplianceWorkspaceController` | Compliance dashboard |
-| `StrController` | STR creation/submission |
-| `AmlRuleController` | AML rule configuration |
-| `EnhancedDiligenceController` | EDD record management |
-| `Api/V1/Compliance/AlertController` | Alerts API |
-| `Api/V1/Compliance/CaseController` | Cases API |
-| `Api/V1/Compliance/EddController` | EDD API |
-| `Api/V1/Compliance/CtosReportController` | CTOS API |
-| `Api/V1/Compliance/DashboardController` | Compliance KPIs API |
-| `Api/V1/Compliance/FindingController` | Findings API |
 
-### 6. Accounting & Finance (11)
+### 6. Accounting & Finance (8)
 | Controller | Purpose |
 |------------|---------|
 | `AccountingController` | Journal entries, periods, budget |
-| `LedgerController` | General ledger accounts |
-| `FinancialStatementController` | Trial balance, P&L, balance sheet |
 | `RevaluationController` | Currency revaluation |
 | `FiscalYearController` | Fiscal year closing |
 | `MonthEndCloseController` | Month-end workflow |
-| `DashboardController` (accounting) | Accounting stats |
 | `Api/V1/MonthEndCloseController` | Month-end API |
 | `Api/V1/EodReconciliationController` | EOD reconciliation API |
 
@@ -233,7 +221,7 @@ Organized by domain module:
 | `RateController` | Rate management UI |
 | `Api/V1/RateController` | Rate API (fetch, copy, override) |
 
-### 9. Branch Management (5)
+### 9. Branch Management (4)
 | Controller | Purpose |
 |------------|---------|
 | `BranchController` | Branch CRUD |
@@ -268,9 +256,29 @@ Organized by domain module:
 | `Api/SanctionsWebhookController` | Sanctions webhook receiver |
 | `BulkImportController` | Bulk CSV import |
 
+### 13. STR (3)
+| Controller | Purpose |
+|------------|---------|
+| `StrController` | STR creation/submission |
+| `Api/V1/Compliance/AlertController` | Alerts API |
+| `Api/V1/Compliance/CaseController` | Cases API |
+
+### 14. EDD (3)
+| Controller | Purpose |
+|------------|---------|
+| `Api/V1/Compliance/EddController` | EDD API |
+| `Api/V1/Compliance/CtosReportController` | CTOS API |
+| `Api/V1/Compliance/DashboardController` | Compliance KPIs API |
+
+### 15. Other API (2)
+| Controller | Purpose |
+|------------|---------|
+| `Api/V1/Compliance/FindingController` | Findings API |
+| `Api/V1/LedgerController` | Ledger API |
+
 ---
 
-## Services (83 Services)
+## Services (78 Services)
 
 Business logic layer organized in `app/Services/`:
 
@@ -293,11 +301,10 @@ Business logic layer organized in `app/Services/`:
 | `TellerAllocationService` | Float allocation |
 | `StockTransferService` | Inter-branch transfers |
 
-### Customer Services (7)
+### Customer Services (6)
 | Service | Purpose |
 |---------|---------|
 | `CustomerService` | Customer CRUD & search |
-| `CustomerDocumentService` | KYC document handling |
 | `CustomerRelationService` | PEP relations |
 | `CustomerRiskScoringService` | Risk score calculation |
 | `CustomerRiskReviewService` | Risk review process |
@@ -396,6 +403,92 @@ Business logic layer organized in `app/Services/`:
 | `BudgetService` | Budget management |
 | `LogRotationService` | Log rotation |
 
+### Utility Services (5)
+| Service | Purpose |
+|---------|---------|
+| `GoAmlXmlGenerator` | GoAML XML output |
+| `TestRunnerService` | Test execution |
+| `WizardSessionService` | Transaction wizard |
+| `PreValidationResult` | Validation helper |
+| `ComprehensiveLogService` | Logging |
+
+### Accounting Services (8)
+| Service | Purpose |
+|---------|---------|
+| `AccountingService` | Journal entry creation |
+| `LedgerService` | Trial balance, account ledger |
+| `CurrencyPositionService` | Stock/position management |
+| `RevaluationService` | Monthly currency revaluation |
+| `MonthEndCloseService` | Month-end close |
+| `FiscalYearService` | Fiscal year management |
+| `PeriodCloseService` | Period closing |
+| `BankReconciliationService` | Bank reconciliation |
+
+### Rate Services (3)
+| Service | Purpose |
+|---------|---------|
+| `RateManagementService` | Daily rate workflow |
+| `RateApiService` | External rate API fetch |
+| `RateLimitService` | Rate limiting |
+
+### Risk Services (5) - `Services/Risk/`
+| Service | Purpose |
+|---------|---------|
+| `AmountRiskService` | Amount-based risk |
+| `GeographicRiskService` | Country risk |
+| `PatternRiskService` | Pattern detection |
+| `StructuringRiskService` | Smurfing detection |
+| `VelocityRiskService` | Velocity-based risk |
+
+### Compliance Monitors (8) - `Services/Compliance/Monitors/`
+| Monitor | Purpose |
+|---------|---------|
+| `VelocityMonitor` | Transaction velocity |
+| `StructuringMonitor` | Structuring patterns |
+| `SanctionsRescreeningMonitor` | Periodic rescreening |
+| `StrDeadlineMonitor` | STR deadline tracking |
+| `CustomerLocationAnomalyMonitor` | Location anomalies |
+| `CurrencyFlowMonitor` | Currency flow patterns |
+| `CounterfeitAlertMonitor` | Counterfeit detection |
+| `BaseMonitor` | Abstract base class |
+
+### Reporting Services (6)
+| Service | Purpose |
+|---------|---------|
+| `ReportingService` | Report generation |
+| `ReportSchedulingService` | Scheduled reports |
+| `BranchStockReportingService` | Stock position reports |
+| `CashFlowService` | Cash flow statements |
+| `FinancialRatioService` | Financial ratios |
+| `NarrativeGenerator` | STR narrative generation |
+
+### Infrastructure Services (12)
+| Service | Purpose |
+|---------|---------|
+| `AuditService` | Audit trail with hash chain |
+| `EncryptionService` | PII encryption |
+| `MathService` | BCMath precision |
+| `ThresholdService` | Centralized thresholds |
+| `SystemHealthService` | Health monitoring |
+| `SystemAlertService` | System alerts |
+| `CacheOptimizationService` | Cache management |
+| `QueryLoggingService` | Query logging |
+| `QueryOptimizerService` | Query optimization |
+| `BackupService` | Backup operations |
+| `ExportService` | Data export |
+| `BulkImportService` | Bulk data import |
+
+### Support Services (7)
+| Service | Purpose |
+|---------|---------|
+| `UserService` | User management |
+| `MfaService` | MFA operations |
+| `BranchService` | Branch management |
+| `BranchPoolService` | Branch pool |
+| `BranchClosingService` | Branch closure |
+| `BudgetService` | Budget management |
+| `LogRotationService` | Log rotation |
+
 ### Utility Services (6)
 | Service | Purpose |
 |---------|---------|
@@ -408,7 +501,7 @@ Business logic layer organized in `app/Services/`:
 
 ---
 
-## Models (62 Eloquent Models)
+## Models (60 Eloquent Models)
 
 Organized by domain:
 
@@ -629,7 +722,7 @@ Organized by module:
 
 ---
 
-## Jobs (23 Background Jobs)
+## Jobs (9 Background Jobs)
 
 ### Import (2)
 | Job | Purpose |
@@ -647,18 +740,12 @@ Organized by module:
 |-----|---------|
 | `ReportGenerationJob` | Generate scheduled reports |
 
-### Compliance (8)
+### Compliance (3)
 | Job | Purpose |
 |-----|---------|
 | `ComplianceScreeningJob` | Screen customers |
 | `RescreenHighRiskCustomersJob` | Rescreen high-risk customers |
-| `Compliance/SanctionsRescreeningJob` | Rescreen on new sanctions |
-| `Compliance/StrDeadlineMonitorJob` | Track STR deadlines |
 | `Compliance/CounterfeitAlertJob` | Detect counterfeits |
-| `Compliance/StructuringMonitorJob` | Detect structuring |
-| `Compliance/VelocityMonitorJob` | Monitor velocity |
-| `Compliance/CustomerLocationAnomalyJob` | Detect location anomalies |
-| `Compliance/CurrencyFlowJob` | Monitor currency flow |
 
 ### Accounting (1)
 | Job | Purpose |
@@ -685,6 +772,12 @@ Organized by module:
 | `Sanctions/DownloadUnSanctionsList` | UN list |
 | `ImportSanctionsJob` | Import sanctions |
 | `SubmitStrToGoAmlJob` | Submit STR to goAML |
+| `Compliance/SanctionsRescreeningJob` | Rescreen on new sanctions |
+| `Compliance/StrDeadlineMonitorJob` | Track STR deadlines |
+| `Compliance/StructuringMonitorJob` | Detect structuring |
+| `Compliance/VelocityMonitorJob` | Monitor velocity |
+| `Compliance/CustomerLocationAnomalyJob` | Detect location anomalies |
+| `Compliance/CurrencyFlowJob` | Monitor currency flow |
 
 ---
 
@@ -1053,18 +1146,18 @@ CEMS-MY/
 
 | Component | Count |
 |-----------|-------|
-| Models | 62 |
-| Controllers | 71 |
-| Services | 83 |
+| Models | 60 |
+| Controllers | 61 |
+| Services | 78 |
 | Enums | 34 |
 | Middleware | 21 |
-| Jobs | 23 |
+| Jobs | 9 |
 | Events | 13 |
-| Commands | 41 |
+| Commands | 35 |
 | Exceptions | 43 |
 | Routes | ~294 |
-| Views | 100+ |
+| Views | ~26 |
 
 ---
 
-**Last Updated**: May 2, 2026
+**Last Updated**: May 3, 2026
