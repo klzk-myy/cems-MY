@@ -1,38 +1,22 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
-use App\Http\Controllers\AmlRuleController;
-use App\Http\Controllers\AuditController;
-use App\Http\Controllers\BranchClosingController;
-use App\Http\Controllers\BranchController;
-use App\Http\Controllers\BranchOpeningController;
 use App\Http\Controllers\Compliance\AlertTriageController;
 use App\Http\Controllers\Compliance\CaseManagementController;
 use App\Http\Controllers\Compliance\ComplianceReportingController;
 use App\Http\Controllers\Compliance\ComplianceWorkspaceController;
 use App\Http\Controllers\Compliance\CtosController;
-use App\Http\Controllers\Compliance\EddTemplateController;
 use App\Http\Controllers\Compliance\FindingController;
 use App\Http\Controllers\Compliance\RiskDashboardController;
 use App\Http\Controllers\Compliance\SanctionListController;
 use App\Http\Controllers\Compliance\ScreeningController;
 use App\Http\Controllers\Compliance\UnifiedAlertController;
 use App\Http\Controllers\CounterController;
-use App\Http\Controllers\Customer\CustomerKycController;
-use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\EnhancedDiligenceController;
-use App\Http\Controllers\FinancialStatementController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
-use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\MfaController;
-use App\Http\Controllers\MonthEndCloseController;
 use App\Http\Controllers\PerformanceMonitoringController;
-use App\Http\Controllers\RateController;
-use App\Http\Controllers\Report\AnalyticsController;
-use App\Http\Controllers\Report\RegulatoryReportController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StockCashController;
@@ -45,7 +29,89 @@ use App\Http\Controllers\Transaction\TransactionCancellationController;
 use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionReportController;
-use App\Http\Controllers\UserController;
+use App\Livewire\Accounting\BalanceSheet;
+use App\Livewire\Accounting\BudgetReport;
+use App\Livewire\Accounting\CashFlow;
+use App\Livewire\Accounting\FiscalYears;
+use App\Livewire\Accounting\Index as AccountingIndex;
+use App\Livewire\Accounting\Journal\Create as JournalCreate;
+use App\Livewire\Accounting\Journal\Index as JournalIndex;
+use App\Livewire\Accounting\Journal\Show as JournalShow;
+use App\Livewire\Accounting\Ledger\Account as LedgerAccount;
+use App\Livewire\Accounting\Ledger\Index as LedgerIndex;
+use App\Livewire\Accounting\Periods;
+use App\Livewire\Accounting\ProfitLoss;
+use App\Livewire\Accounting\Ratios;
+use App\Livewire\Accounting\Reconciliation\Report;
+use App\Livewire\Accounting\Revaluation\History;
+use App\Livewire\Accounting\TrialBalance;
+use App\Livewire\Audit\Dashboard as AuditDashboard;
+use App\Livewire\Audit\Index as AuditIndex;
+use App\Livewire\Branches\Create as BranchCreate;
+use App\Livewire\Branches\Edit as BranchEdit;
+use App\Livewire\Branches\Index as BranchIndex;
+use App\Livewire\Branches\Show as BranchShow;
+use App\Livewire\BranchOpenings\Complete;
+use App\Livewire\BranchOpenings\Index as BranchOpeningsIndex;
+use App\Livewire\BranchOpenings\Step1;
+use App\Livewire\BranchOpenings\Step2;
+use App\Livewire\BranchOpenings\Step3;
+use App\Livewire\Compliance\Alerts\Index as AlertsIndex;
+use App\Livewire\Compliance\Alerts\Show as AlertsShow;
+use App\Livewire\Compliance\Cases\Index;
+use App\Livewire\Compliance\Ctos\Index as CtosIndex;
+use App\Livewire\Compliance\Dashboard;
+use App\Livewire\Compliance\Edd\Form as EddForm;
+use App\Livewire\Compliance\Edd\Index as EddIndex;
+use App\Livewire\Compliance\Edd\Templates\Index as EddTemplatesIndex;
+use App\Livewire\Compliance\Reporting\Index as ReportingIndex;
+use App\Livewire\Compliance\RiskDashboard\Index as RiskDashboardIndex;
+use App\Livewire\Compliance\Rules\Form as RulesForm;
+use App\Livewire\Compliance\Rules\Index as RulesIndex;
+use App\Livewire\Compliance\Sanctions\Index as SanctionsIndex;
+use App\Livewire\Compliance\Sanctions\Show as SanctionsShow;
+use App\Livewire\Counters\Close;
+use App\Livewire\Counters\Handover;
+use App\Livewire\Counters\History as CountersHistory;
+use App\Livewire\Counters\Index as CountersIndex;
+use App\Livewire\Counters\Open;
+use App\Livewire\Customers\Create as CustomerCreate;
+use App\Livewire\Customers\Edit as CustomerEdit;
+use App\Livewire\Customers\Index as CustomerIndex;
+use App\Livewire\Customers\Show as CustomerShow;
+use App\Livewire\Mfa\Recovery as MfaRecovery;
+use App\Livewire\Mfa\Setup as MfaSetup;
+use App\Livewire\Mfa\TrustedDevices as MfaTrustedDevices;
+use App\Livewire\Mfa\Verify as MfaVerify;
+use App\Livewire\Rates\Index as RatesIndex;
+use App\Livewire\Reports\Analytics\ComplianceSummary;
+use App\Livewire\Reports\Analytics\CustomerAnalysis;
+use App\Livewire\Reports\Analytics\MonthlyTrends;
+use App\Livewire\Reports\Analytics\Profitability;
+use App\Livewire\Reports\Compare\Index as CompareIndex;
+use App\Livewire\Reports\History\Index as HistoryIndex;
+use App\Livewire\Reports\Lctr\Index as LctrIndex;
+use App\Livewire\Reports\Lmca\Index as LmcaIndex;
+use App\Livewire\Reports\Msb2\Index as Msb2Index;
+use App\Livewire\Reports\PositionLimit\Index as PositionLimitIndex;
+use App\Livewire\Reports\QuarterlyLvr\Index as QuarterlyLvrIndex;
+use App\Livewire\Stock\Index as StockIndex;
+use App\Livewire\Stock\Position;
+use App\Livewire\Stock\Reconciliation;
+use App\Livewire\Stock\TillReport;
+use App\Livewire\Stock\Transfer\Create as StockTransferCreate;
+use App\Livewire\Stock\Transfer\Index as TransferIndex;
+use App\Livewire\Stock\Transfer\Show;
+use App\Livewire\Transactions\Approve as TransactionApprove;
+use App\Livewire\Transactions\Cancel as TransactionCancel;
+use App\Livewire\Transactions\Create as TransactionCreate;
+use App\Livewire\Transactions\Index as TransactionIndex;
+use App\Livewire\Transactions\Show as TransactionShow;
+use App\Livewire\Users\Create as UserCreate;
+use App\Livewire\Users\Edit as UserEdit;
+use App\Livewire\Users\Index as UserIndex;
+use App\Livewire\Users\ResetPassword as UserResetPassword;
+use App\Livewire\Users\Show as UserShow;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
@@ -100,9 +166,7 @@ Route::middleware(['auth', 'role:admin'])->get('/test/query-log', [TestQueryLogC
 
 Route::prefix('setup')->name('setup.')->group(function () {
     Route::get('/', [SetupController::class, 'index'])->name('index');
-    Route::get('/wizard', function () {
-        return redirect()->route('setup.index');
-    })->name('wizard');
+    Route::get('/wizard', [SetupController::class, 'wizard'])->name('wizard');
     Route::post('/quick', [SetupController::class, 'quickSetup'])->name('quick');
     Route::post('/step/1', [SetupController::class, 'step1CompanyInfo'])->name('step1');
     Route::post('/step/2', [SetupController::class, 'step2AdminUser'])->name('step2');
@@ -133,28 +197,28 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // MFA Setup & Verification
     Route::prefix('mfa')->name('mfa.')->group(function () {
-        Route::get('/setup', [MfaController::class, 'setup'])->name('setup');
+        Route::get('/setup', MfaSetup::class)->name('setup');
         Route::post('/setup', [MfaController::class, 'setupStore'])->name('setup.store');
-        Route::get('/verify', [MfaController::class, 'verify'])->name('verify');
+        Route::get('/verify', MfaVerify::class)->name('verify');
         Route::post('/verify', [MfaController::class, 'verifyStore'])->name('verify.store');
         Route::post('/disable', [MfaController::class, 'disable'])->name('disable');
-        Route::get('/recovery', [MfaController::class, 'recovery'])->name('recovery');
-        Route::get('/trusted-devices', [MfaController::class, 'trustedDevices'])->name('trusted-devices');
+        Route::get('/recovery', MfaRecovery::class)->name('recovery');
+        Route::get('/trusted-devices', MfaTrustedDevices::class)->name('trusted-devices');
         Route::delete('/trusted-devices/{deviceId}', [MfaController::class, 'removeDevice'])->name('trusted-devices.remove');
     });
 
     // Exchange Rates (Manager/Admin only)
-    Route::middleware('role:manager,admin')->group(function () {
-        Route::get('/rates', [RateController::class, 'index'])->name('rates.index');
+    Route::middleware('auth')->prefix('rates')->name('rates.')->group(function () {
+        Route::get('/', RatesIndex::class)->name('index');
     });
 
     // Transactions
     Route::prefix('transactions')->name('transactions.')->group(function () {
-        Route::get('/', [TransactionController::class, 'index'])->name('index');
-        Route::get('/list', [TransactionController::class, 'index'])->name('list'); // backward compat
+        Route::get('/', TransactionIndex::class)->name('index');
+        Route::get('/list', TransactionIndex::class)->name('list'); // backward compat
 
         // Create requires MFA
-        Route::get('/create', [TransactionController::class, 'create'])->name('create')
+        Route::get('/create', TransactionCreate::class)->name('create')
             ->middleware('mfa.verified');
         Route::post('/', [TransactionController::class, 'store'])->name('store')
             ->middleware(['mfa.verified', 'throttle:transactions']);
@@ -168,29 +232,19 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         });
 
         // View
-        Route::get('/{transaction}', [TransactionController::class, 'show'])->name('show');
+        Route::get('/{transaction}', TransactionShow::class)->name('show');
         Route::get('/{transaction}/receipt', [TransactionController::class, 'receipt'])->name('receipt');
 
         // Approval & Cancellation
         Route::post('/{transaction}/approve', [TransactionApprovalController::class, 'approve'])->name('approve')
             ->middleware(['role:manager', 'mfa.verified']);
-        Route::get('/{transaction}/cancel', [TransactionCancellationController::class, 'showCancel'])->name('cancel.show')
-            ->middleware('mfa.verified');
+        Route::get('/{transaction}/cancel', TransactionCancel::class)->name('cancel.show')
+            ->middleware(['role:manager', 'mfa.verified']);
         Route::post('/{transaction}/cancel', [TransactionCancellationController::class, 'cancel'])->name('cancel')
             ->middleware(['role:manager', 'mfa.verified']);
 
-        // Cancellation approval/rejection workflow
-        Route::get('/{transaction}/approve-cancel', [TransactionCancellationController::class, 'showApproveCancel'])->name('approve-cancel.show')
-            ->middleware('mfa.verified');
-        Route::post('/{transaction}/approve-cancel', [TransactionCancellationController::class, 'approveCancel'])->name('approve-cancel')
-            ->middleware(['role:manager', 'mfa.verified']);
-        Route::get('/{transaction}/reject-cancel', [TransactionCancellationController::class, 'showRejectCancel'])->name('reject-cancel.show')
-            ->middleware('mfa.verified');
-        Route::post('/{transaction}/reject-cancel', [TransactionCancellationController::class, 'rejectCancel'])->name('reject-cancel')
-            ->middleware(['role:manager', 'mfa.verified']);
-
         // Large transaction confirmation
-        Route::get('/{transaction}/confirm', [TransactionApprovalController::class, 'showConfirm'])->name('confirm.show')
+        Route::get('/{transaction}/confirm', TransactionApprove::class)->name('confirm.show')
             ->middleware('role:manager');
         Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm')
             ->middleware('role:manager');
@@ -204,72 +258,48 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Customers
     Route::prefix('customers')->name('customers.')->group(function () {
-        Route::get('/search', [CustomerController::class, 'search'])->name('search');
-        Route::post('/quick-create', [CustomerController::class, 'quickCreate'])->name('quickCreate')
-            ->middleware('throttle:10,1');
-        Route::get('/exchange-rates', [CustomerController::class, 'getExchangeRates'])->name('exchangeRates');
-        Route::get('/', [CustomerController::class, 'index'])->name('index');
-        Route::get('/create', [CustomerController::class, 'create'])->name('create');
-        Route::post('/', [CustomerController::class, 'store'])->name('store')
-            ->middleware('throttle:30,1');
-        Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
-        Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
-        Route::put('/{customer}', [CustomerController::class, 'update'])->name('update')
-            ->middleware('throttle:30,1');
-        Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy')
-            ->middleware('throttle:15,1');
-
-        // KYC Document Management
-        Route::get('/{customer}/kyc', [CustomerKycController::class, 'kyc'])->name('kyc');
-        Route::post('/{customer}/kyc', [CustomerKycController::class, 'uploadDocument'])->name('kyc.upload')
-            ->middleware('throttle:30,1');
-        Route::post('/{customer}/kyc/{document}/verify', [CustomerKycController::class, 'verifyDocument'])->name('kyc.verify')
-            ->middleware('role:compliance');
-        Route::delete('/{customer}/kyc/{document}', [CustomerKycController::class, 'deleteDocument'])->name('kyc.delete')
-            ->middleware('throttle:15,1');
+        Route::get('/', CustomerIndex::class)->name('index');
+        Route::get('/create', CustomerCreate::class)->name('create');
+        Route::get('/{customer}', CustomerShow::class)->name('show');
+        Route::get('/{customer}/edit', CustomerEdit::class)->name('edit');
     });
 
     // Counters
     Route::prefix('counters')->name('counters.')->group(function () {
-        Route::get('/', [CounterController::class, 'index'])->name('index');
-        Route::get('/{counter}/open', [CounterController::class, 'showOpen'])->name('open.show');
-        Route::post('/{counter}/open', [CounterController::class, 'open'])->name('open');
-        Route::get('/{counter}/close', [CounterController::class, 'showClose'])->name('close.show');
-        Route::post('/{counter}/close', [CounterController::class, 'close'])->name('close');
+        Route::get('/', CountersIndex::class)->name('index');
+        Route::get('/open', Open::class)->name('open');
+        Route::post('/open', Open::class)->name('open.store');
+        Route::get('/{counter}/close', Close::class)->name('close.show');
+        Route::post('/{counter}/close', Close::class)->name('close');
         Route::get('/{counter}/status', [CounterController::class, 'status'])->name('status');
-        Route::get('/{counter}/history', [CounterController::class, 'history'])->name('history');
-        Route::get('/{counter}/handover', [CounterController::class, 'showHandover'])->name('handover.show');
-        Route::post('/{counter}/handover', [CounterController::class, 'handover'])->name('handover');
-        Route::get('/{counter}/handover/acknowledge', [CounterController::class, 'showAcknowledgeHandover'])->name('handover.acknowledge.show');
-        Route::post('/{counter}/handover/acknowledge', [CounterController::class, 'acknowledgeHandover'])->name('handover.acknowledge');
-        Route::get('/{counter}/emergency', [CounterController::class, 'showEmergency'])->name('emergency.show');
-        Route::post('/{counter}/emergency', [CounterController::class, 'emergency'])->name('emergency');
-        Route::get('/{counter}/emergency/{closure}', [CounterController::class, 'showEmergencyClosure'])->name('emergency.closure');
-        Route::post('/{counter}/emergency/{closure}/acknowledge', [CounterController::class, 'acknowledgeEmergency'])->name('emergency.acknowledge');
+        Route::get('/{counter}/history', CountersHistory::class)->name('history');
+        Route::get('/{counter}/handover', Handover::class)->name('handover.show');
+        Route::post('/{counter}/handover', Handover::class)->name('handover');
     });
 
     // Stock & Cash
     Route::prefix('stock-cash')->name('stock-cash.')->group(function () {
-        Route::get('/', [StockCashController::class, 'index'])->name('index');
+        Route::get('/', StockIndex::class)->name('index');
         Route::post('/open', [StockCashController::class, 'openTill'])->name('open')
             ->middleware('role:manager');
         Route::post('/close', [StockCashController::class, 'closeTill'])->name('close')
             ->middleware('role:manager');
-        Route::get('/position/{position}', [StockCashController::class, 'showPosition'])->name('position')
+        Route::get('/position/{position}', Position::class)->name('position')
             ->middleware('role:manager');
-        Route::get('/till-report', [StockCashController::class, 'tillReport'])->name('till-report')
+        Route::get('/till-report', TillReport::class)->name('till-report')
             ->middleware('role:manager');
-        Route::get('/reconciliation', [StockCashController::class, 'reconciliationReport'])->name('reconciliation');
+        Route::get('/reconciliation', Reconciliation::class)->name('reconciliation');
     });
 
     // Stock Transfers
     Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
-        Route::get('/', [StockTransferController::class, 'index'])->name('index');
-        Route::get('/create', [StockTransferController::class, 'create'])->name('create')
+        // Page views - Livewire components
+        Route::get('/', TransferIndex::class)->name('index');
+        Route::get('/create', StockTransferCreate::class)->name('create')
             ->middleware('role:manager');
-        Route::post('/', [StockTransferController::class, 'store'])->name('store')
-            ->middleware('role:manager');
-        Route::get('/{stockTransfer}', [StockTransferController::class, 'show'])->name('show');
+        Route::get('/{stockTransfer}', Show::class)->name('show');
+
+        // Action routes - Controller actions (API-like operations)
         Route::post('/{stockTransfer}/approve-bm', [StockTransferController::class, 'approveBm'])->name('approve-bm')
             ->middleware('role:manager');
         Route::post('/{stockTransfer}/approve-hq', [StockTransferController::class, 'approveHq'])->name('approve-hq')
@@ -290,7 +320,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Compliance Dashboard (Compliance Officers only)
     Route::middleware('role:compliance')->group(function () {
-        Route::get('/compliance', [DashboardController::class, 'compliance'])->name('compliance');
+        Route::get('/compliance', Dashboard::class)->name('compliance');
         Route::get('/compliance/flagged', [DashboardController::class, 'compliance'])->name('compliance.flagged');
         Route::patch('/compliance/flags/{flaggedTransaction}/assign', [DashboardController::class, 'assignFlag'])->name('compliance.flags.assign');
         Route::patch('/compliance/flags/{flaggedTransaction}/resolve', [DashboardController::class, 'resolveFlag'])->name('compliance.flags.resolve');
@@ -303,8 +333,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Alert Triage
         Route::prefix('compliance/alerts')->name('compliance.alerts.')->group(function () {
-            Route::get('/', [AlertTriageController::class, 'index'])->name('index');
-            Route::get('/{alert}', [AlertTriageController::class, 'show'])->name('show');
+            Route::get('/', AlertsIndex::class)->name('index');
+            Route::get('/{alert}', AlertsShow::class)->name('show');
             Route::post('/{alert}/assign', [AlertTriageController::class, 'assign'])->name('assign');
             Route::post('/{alert}/resolve', [AlertTriageController::class, 'resolve'])->name('resolve');
             Route::post('/{alert}/dismiss', [AlertTriageController::class, 'dismiss'])->name('dismiss');
@@ -316,9 +346,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Case Management
         Route::prefix('compliance/cases')->name('compliance.cases.')->group(function () {
-            Route::get('/', [CaseManagementController::class, 'index'])->name('index');
+            Route::get('/', Index::class)->name('index');
             Route::post('/', [CaseManagementController::class, 'store'])->name('store');
-            Route::get('/{case}', [CaseManagementController::class, 'show'])->name('show');
+            Route::get('/{case}', App\Livewire\Compliance\Cases\Show::class)->name('show');
             Route::patch('/{case}', [CaseManagementController::class, 'update'])->name('update');
             Route::post('/{case}/merge', [CaseManagementController::class, 'merge'])->name('merge');
             Route::post('/{case}/link-alert', [CaseManagementController::class, 'linkAlert'])->name('link-alert');
@@ -331,7 +361,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Risk Dashboard
         Route::prefix('compliance/risk-dashboard')->name('compliance.risk-dashboard.')->group(function () {
-            Route::get('/', [RiskDashboardController::class, 'index'])->name('index');
+            Route::get('/', RiskDashboardIndex::class)->name('index');
             Route::get('/customer/{customer}', [RiskDashboardController::class, 'customer'])->name('customer');
             Route::get('/trends', [RiskDashboardController::class, 'trends'])->name('trends');
             Route::post('/rescreen', [RiskDashboardController::class, 'rescreen'])->name('rescreen');
@@ -339,8 +369,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Sanction Lists
         Route::prefix('compliance/sanctions')->name('compliance.sanctions.')->group(function () {
-            Route::get('/', [SanctionListController::class, 'index'])->name('index');
-            Route::get('/{list}', [SanctionListController::class, 'show'])->name('show');
+            Route::get('/', SanctionsIndex::class)->name('index');
+            Route::get('/{list}', SanctionsShow::class)->name('show');
             Route::post('/{list}/import', [SanctionListController::class, 'triggerImport'])->name('import');
             Route::get('/entries', [SanctionListController::class, 'entriesIndex'])->name('entries.index');
             Route::get('/entries/create', [SanctionListController::class, 'createEntry'])->name('entries.create');
@@ -353,7 +383,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // CTOS Reports
         Route::prefix('compliance/ctos')->name('compliance.ctos.')->group(function () {
-            Route::get('/', [CtosController::class, 'index'])->name('index');
+            Route::get('/', CtosIndex::class)->name('index');
             Route::get('/{id}', [CtosController::class, 'show'])->name('show');
             Route::post('/{id}/submit', [CtosController::class, 'submit'])->name('submit');
         });
@@ -371,19 +401,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             Route::post('/{id}/dismiss', [FindingController::class, 'dismiss'])->name('dismiss');
         });
 
-        // EDD Templates
-        Route::prefix('compliance/edd-templates')->name('compliance.edd-templates.')->group(function () {
-            Route::get('/', [EddTemplateController::class, 'index'])->name('index');
-            Route::post('/', [EddTemplateController::class, 'store'])->name('store');
-            Route::get('/{template}', [EddTemplateController::class, 'show'])->name('show');
-            Route::put('/{template}', [EddTemplateController::class, 'update'])->name('update');
-            Route::delete('/{template}', [EddTemplateController::class, 'destroy'])->name('destroy');
-            Route::post('/{template}/duplicate', [EddTemplateController::class, 'duplicate'])->name('duplicate');
-        });
-
         // Compliance Reporting
         Route::prefix('compliance/reporting')->name('compliance.reporting.')->group(function () {
-            Route::get('/', [ComplianceReportingController::class, 'index'])->name('index');
+            Route::get('/', ReportingIndex::class)->name('index');
             Route::get('/generate', [ComplianceReportingController::class, 'generate'])->name('generate');
             Route::post('/run', [ComplianceReportingController::class, 'run'])->name('run');
             Route::get('/history', [ComplianceReportingController::class, 'history'])->name('history');
@@ -398,14 +418,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // AML Rules (Compliance Officers only)
     Route::middleware('role:compliance')->prefix('compliance/rules')->name('compliance.rules.')->group(function () {
-        Route::get('/', [AmlRuleController::class, 'index'])->name('index');
-        Route::get('/create', [AmlRuleController::class, 'create'])->name('create');
-        Route::post('/', [AmlRuleController::class, 'store'])->name('store');
-        Route::get('/{rule}', [AmlRuleController::class, 'show'])->name('show');
-        Route::get('/{rule}/edit', [AmlRuleController::class, 'edit'])->name('edit');
-        Route::put('/{rule}', [AmlRuleController::class, 'update'])->name('update');
-        Route::patch('/{rule}/toggle', [AmlRuleController::class, 'toggle'])->name('toggle');
-        Route::delete('/{rule}', [AmlRuleController::class, 'destroy'])->name('destroy');
+        Route::get('/', RulesIndex::class)->name('index');
+        Route::get('/create', RulesForm::class)->name('create');
+        Route::get('/{rule}', RulesForm::class)->name('show');
     });
 
     // STR Reports - Compliance officers create/manage
@@ -430,21 +445,16 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->middleware(['mfa.verified', 'throttle:str-submission']);
     });
 
-    // Enhanced Due Diligence - Compliance officers create/manage
+    // Enhanced Due Diligence - Livewire components
     Route::middleware('role:compliance')->prefix('compliance/edd')->name('compliance.edd.')->group(function () {
-        Route::get('/', [EnhancedDiligenceController::class, 'index'])->name('index');
-        Route::get('/create', [EnhancedDiligenceController::class, 'create'])->name('create');
-        Route::post('/', [EnhancedDiligenceController::class, 'store'])->name('store');
-        Route::get('/{record}', [EnhancedDiligenceController::class, 'show'])->name('show');
-        Route::get('/{record}/edit', [EnhancedDiligenceController::class, 'edit'])->name('edit');
-        Route::put('/{record}', [EnhancedDiligenceController::class, 'update'])->name('update');
-        Route::post('/{record}/submit', [EnhancedDiligenceController::class, 'submitReview'])->name('submit');
+        Route::get('/', EddIndex::class)->name('index');
+        Route::get('/create', EddForm::class)->name('create');
+        Route::get('/{record}', EddForm::class)->name('show');
     });
 
-    // EDD Approval - Managers and Compliance officers
-    Route::middleware('role:manager,compliance')->prefix('compliance/edd')->name('compliance.edd.')->group(function () {
-        Route::post('/{record}/approve', [EnhancedDiligenceController::class, 'approve'])->name('approve');
-        Route::post('/{record}/reject', [EnhancedDiligenceController::class, 'reject'])->name('reject');
+    // EDD Templates - Livewire component
+    Route::middleware('role:compliance')->prefix('compliance/edd-templates')->name('compliance.edd-templates.')->group(function () {
+        Route::get('/', EddTemplatesIndex::class)->name('index');
     });
 
     // -------------------------------------------------------------------------
@@ -452,37 +462,41 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     // -------------------------------------------------------------------------
 
     Route::middleware('role:manager')->prefix('accounting')->name('accounting.')->group(function () {
-        Route::get('/', [DashboardController::class, 'accounting'])->name('index');
-        Route::get('/journal', [AccountingController::class, 'index'])->name('journal');
-        Route::get('/journal/create', [AccountingController::class, 'create'])->name('journal.create');
+        // Dashboard & Journal - Livewire components
+        Route::get('/', AccountingIndex::class)->name('index');
+        Route::get('/journal', JournalIndex::class)->name('journal');
+        Route::get('/journal/create', JournalCreate::class)->name('journal.create');
+        Route::get('/journal/{entry}', JournalShow::class)->name('journal.show');
+
+        // Action routes - Controller actions (POST)
         Route::post('/journal', [AccountingController::class, 'store'])->name('journal.store');
-        Route::get('/journal/{entry}', [AccountingController::class, 'show'])->name('journal.show');
         Route::post('/journal/{entry}/reverse', [AccountingController::class, 'reverse'])->name('journal.reverse');
 
-        Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger');
-        Route::get('/ledger/{accountCode}', [LedgerController::class, 'account'])->name('ledger.account');
-        Route::get('/trial-balance', [FinancialStatementController::class, 'trialBalance'])->name('trial-balance');
-        Route::get('/profit-loss', [FinancialStatementController::class, 'profitLoss'])->name('profit-loss');
-        Route::get('/balance-sheet', [FinancialStatementController::class, 'balanceSheet'])->name('balance-sheet');
-        Route::get('/cash-flow', [FinancialStatementController::class, 'cashFlow'])->name('cash-flow');
-        Route::get('/ratios', [FinancialStatementController::class, 'ratios'])->name('ratios');
-        Route::get('/periods', [AccountingController::class, 'periods'])->name('periods');
+        Route::get('/ledger', LedgerIndex::class)->name('ledger');
+        Route::get('/ledger/{accountCode}', LedgerAccount::class)->name('ledger.account');
+
+        // Financial Reports - Livewire components
+        Route::get('/trial-balance', TrialBalance::class)->name('trial-balance');
+        Route::get('/profit-loss', ProfitLoss::class)->name('profit-loss');
+        Route::get('/balance-sheet', BalanceSheet::class)->name('balance-sheet');
+        Route::get('/cash-flow', CashFlow::class)->name('cash-flow');
+        Route::get('/ratios', Ratios::class)->name('ratios');
+
+        Route::get('/periods', Periods::class)->name('periods');
         Route::post('/periods/{period}/close', [AccountingController::class, 'closePeriod'])->name('period.close');
-        Route::get('/fiscal-years', [FiscalYearController::class, 'index'])->name('fiscal-years');
+        Route::get('/fiscal-years', FiscalYears::class)->name('fiscal-years');
         Route::post('/fiscal-years', [FiscalYearController::class, 'store'])->name('fiscal-years.store');
         Route::post('/fiscal-years/{year}/close', [FiscalYearController::class, 'close'])->name('fiscal-years.close');
         Route::get('/fiscal-years/{yearCode}/report', [FiscalYearController::class, 'report'])->name('fiscal-years.report');
-        Route::get('/revaluation', [RevaluationController::class, 'index'])->name('revaluation');
+        Route::get('/revaluation', App\Livewire\Accounting\Revaluation\Index::class)->name('revaluation');
+        Route::get('/revaluation/history', History::class)->name('revaluation.history');
         Route::post('/revaluation/run', [RevaluationController::class, 'run'])->name('revaluation.run');
-        Route::get('/revaluation/history', [RevaluationController::class, 'history'])->name('revaluation.history');
-        Route::get('/month-end', [MonthEndCloseController::class, 'index'])->name('month-end');
-        Route::post('/month-end/close', [MonthEndCloseController::class, 'close'])->name('month-end.close');
-        Route::get('/reconciliation', [AccountingController::class, 'reconciliation'])->name('reconciliation');
+        Route::get('/reconciliation', App\Livewire\Accounting\Reconciliation\Index::class)->name('reconciliation');
+        Route::get('/reconciliation/report', Report::class)->name('reconciliation.report');
         Route::post('/reconciliation/import', [AccountingController::class, 'importBankStatement'])->name('reconciliation.import');
         Route::post('/reconciliation/{reconciliation}/exception', [AccountingController::class, 'markAsException'])->name('reconciliation.exception');
-        Route::get('/reconciliation/report', [AccountingController::class, 'reconciliationReport'])->name('reconciliation.report');
         Route::get('/reconciliation/export', [AccountingController::class, 'exportReconciliation'])->name('reconciliation.export');
-        Route::get('/budget', [AccountingController::class, 'budget'])->name('budget');
+        Route::get('/budget', BudgetReport::class)->name('budget');
         Route::post('/budget', [AccountingController::class, 'storeBudget'])->name('budget.store');
         Route::put('/budget/{budget}', [AccountingController::class, 'updateBudget'])->name('budget.update');
         Route::patch('/budget/{budget}', [AccountingController::class, 'updateBudget'])->name('budget.patch');
@@ -495,29 +509,22 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     Route::middleware('role:manager,admin')->prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [DashboardController::class, 'reports'])->name('index');
 
-        // BNM Regulatory Reports
-        Route::get('/msb2', [RegulatoryReportController::class, 'msb2'])->name('msb2');
-        Route::get('/msb2/generate', [RegulatoryReportController::class, 'msb2Generate'])->name('msb2.generate');
-        Route::get('/lctr', [RegulatoryReportController::class, 'lctr'])->name('lctr');
-        Route::get('/lctr/generate', [RegulatoryReportController::class, 'lctrGenerate'])->name('lctr.generate');
-        Route::get('/lmca', [RegulatoryReportController::class, 'lmca'])->name('lmca');
-        Route::get('/lmca/generate', [RegulatoryReportController::class, 'lmcaGenerate'])->name('lmca.generate');
-        Route::get('/quarterly-lvr', [RegulatoryReportController::class, 'quarterlyLvr'])->name('quarterly-lvr');
-        Route::get('/quarterly-lvr/generate', [RegulatoryReportController::class, 'quarterlyLvrGenerate'])->name('quarterly-lvr.generate');
-        Route::get('/position-limit', [RegulatoryReportController::class, 'positionLimit'])->name('position-limit');
-        Route::get('/position-limit/generate', [RegulatoryReportController::class, 'positionLimitGenerate'])->name('position-limit.generate');
+        // BNM Regulatory Reports - Livewire Components
+        Route::get('/msb2', Msb2Index::class)->name('msb2');
+        Route::get('/lctr', LctrIndex::class)->name('lctr');
+        Route::get('/lmca', LmcaIndex::class)->name('lmca');
+        Route::get('/quarterly-lvr', QuarterlyLvrIndex::class)->name('quarterly-lvr');
+        Route::get('/position-limit', PositionLimitIndex::class)->name('position-limit');
 
-        // Analytics
-        Route::get('/monthly-trends', [AnalyticsController::class, 'monthlyTrends'])->name('monthly-trends');
-        Route::get('/profitability', [AnalyticsController::class, 'profitability'])->name('profitability');
-        Route::get('/customer-analysis', [AnalyticsController::class, 'customerAnalysis'])->name('customer-analysis');
-        Route::get('/compliance-summary', [AnalyticsController::class, 'complianceSummary'])->name('compliance-summary');
+        // Analytics - Livewire Components
+        Route::get('/monthly-trends', MonthlyTrends::class)->name('monthly-trends');
+        Route::get('/profitability', Profitability::class)->name('profitability');
+        Route::get('/customer-analysis', CustomerAnalysis::class)->name('customer-analysis');
+        Route::get('/compliance-summary', ComplianceSummary::class)->name('compliance-summary');
 
-        // Report Management
-        Route::get('/history', [ReportController::class, 'history'])->name('history');
-        Route::get('/download/{filename}', [ReportController::class, 'download'])->name('download');
-        Route::get('/compare', [ReportController::class, 'compare'])->name('compare');
-        Route::get('/export', [ReportController::class, 'export'])->name('export');
+        // Report Management - Livewire Components
+        Route::get('/history', HistoryIndex::class)->name('history');
+        Route::get('/compare', CompareIndex::class)->name('compare');
     });
 
     // -------------------------------------------------------------------------
@@ -525,55 +532,35 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     // -------------------------------------------------------------------------
 
     // Audit Log (Managers only)
-    Route::middleware(['role:manager'])->prefix('audit')->name('audit.')->group(function () {
-        Route::get('/', [AuditController::class, 'index'])->name('index');
-        Route::get('/dashboard', [AuditController::class, 'dashboard'])->name('dashboard');
-        Route::get('/rotate', [AuditController::class, 'rotate'])->name('rotate');
-        Route::get('/{log}', [AuditController::class, 'show'])->name('show');
-        Route::post('/export', [AuditController::class, 'export'])->name('export');
+    Route::middleware(['auth', 'role:manager'])->prefix('audit')->name('audit.')->group(function () {
+        Route::get('/', AuditIndex::class)->name('index');
+        Route::get('/dashboard', AuditDashboard::class)->name('dashboard');
     });
 
     // User Management (Admin only)
-    Route::middleware(['role:admin', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('index');
-        Route::get('/create', [UserController::class, 'create'])->name('create');
-        Route::post('/', [UserController::class, 'store'])->name('store');
-        Route::get('/{user}', [UserController::class, 'show'])->name('show');
-        Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
-        Route::put('/{user}', [UserController::class, 'update'])->name('update');
-        Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
-        Route::post('/{user}/toggle', [UserController::class, 'toggleActive'])->name('toggle');
-        Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
+    Route::middleware(['auth', 'role:admin', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
+        Route::get('/', UserIndex::class)->name('index');
+        Route::get('/create', UserCreate::class)->name('create');
+        Route::get('/{user}', UserShow::class)->name('show');
+        Route::get('/{user}/edit', UserEdit::class)->name('edit');
+        Route::get('/{user}/reset-password', UserResetPassword::class)->name('reset-password');
     });
 
     // Branch Management (Admin only)
     Route::middleware(['auth', 'role:admin'])->prefix('branches')->name('branches.')->group(function () {
-        Route::get('/', [BranchController::class, 'index'])->name('index');
-        Route::get('/create', [BranchController::class, 'create'])->name('create');
-        Route::post('/', [BranchController::class, 'store'])->name('store');
-        Route::get('/{branch}', [BranchController::class, 'show'])->name('show');
-        Route::get('/{branch}/edit', [BranchController::class, 'edit'])->name('edit');
-        Route::put('/{branch}', [BranchController::class, 'update'])->name('update');
-        Route::delete('/{branch}', [BranchController::class, 'destroy'])->name('destroy');
+        Route::get('/', BranchIndex::class)->name('index');
+        Route::get('/create', BranchCreate::class)->name('create');
+        Route::get('/{branch}', BranchShow::class)->name('show');
+        Route::get('/{branch}/edit', BranchEdit::class)->name('edit');
     });
 
     // Branch Opening Wizard (Admin only)
     Route::middleware(['auth', 'role:admin'])->prefix('branches/open')->name('branches.open.')->group(function () {
-        Route::get('/', [BranchOpeningController::class, 'index'])->name('index');
-        Route::get('/step1', [BranchOpeningController::class, 'step1'])->name('step1');
-        Route::post('/step1', [BranchOpeningController::class, 'processStep1'])->name('step1.process');
-        Route::get('/step2/{branch}', [BranchOpeningController::class, 'step2'])->name('step2');
-        Route::post('/step2/{branch}', [BranchOpeningController::class, 'processStep2'])->name('step2.process');
-        Route::get('/step3/{branch}', [BranchOpeningController::class, 'step3'])->name('step3');
-        Route::post('/step3/{branch}', [BranchOpeningController::class, 'processStep3'])->name('step3.process');
-        Route::get('/complete/{branch}', [BranchOpeningController::class, 'complete'])->name('complete');
-    });
-
-    // Branch Closing Workflow
-    Route::middleware(['auth', 'role:admin,manager'])->prefix('branches/{branch}/closing')->name('branch-closing.')->group(function () {
-        Route::get('/', [BranchClosingController::class, 'show'])->name('show');
-        Route::post('/initiate', [BranchClosingController::class, 'initiate'])->name('initiate');
-        Route::post('/finalize', [BranchClosingController::class, 'finalize'])->name('finalize');
+        Route::get('/', BranchOpeningsIndex::class)->name('index');
+        Route::get('/step1', Step1::class)->name('step1');
+        Route::get('/step2/{branch}', Step2::class)->name('step2');
+        Route::get('/step3/{branch}', Step3::class)->name('step3');
+        Route::get('/complete/{branch}', Complete::class)->name('complete');
     });
 
     // -------------------------------------------------------------------------
