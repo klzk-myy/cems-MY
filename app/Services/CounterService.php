@@ -326,7 +326,7 @@ class CounterService
             // handovers involve different currency sets (ensures consistent lock order)
             sort($currencyCodes);
             $allBalances = TillBalance::where('till_id', (string) $session->counter_id)
-                ->where('date', $today)
+                ->where('date', $session->session_date)
                 ->whereIn('currency_code', $currencyCodes)
                 ->lockForUpdate()
                 ->get()
@@ -420,8 +420,8 @@ class CounterService
                 $closed = $closedBalances->get($currencyCode);
 
                 if ($open) {
-                    // Determine notes: include variance details if there was a variance, otherwise generic handover note
-                    $notes = BcmathHelper::compare($totalVarianceMyr, '0') !== 0
+                    // Determine notes: include variance details if THIS currency had a variance, otherwise generic handover note
+                    $notes = BcmathHelper::compare($variance, '0') !== 0
                         ? $varianceNotes
                         : 'Handover';
 

@@ -176,7 +176,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
         $this->assertNotNull($closedUsd, 'Should have a closed USD balance');
         if ($closedUsd) {
             $this->assertNotNull($closedUsd->closed_at);
-            $this->assertEquals('10500.00', $closedUsd->closing_balance);
+            $this->assertEquals('10500.00', number_format((float) $closedUsd->closing_balance, 2, '.', ''));
             $this->assertNotNull($closedUsd->variance);
             $this->assertEquals('500.0000', $closedUsd->variance);
             $this->assertNotNull($closedUsd->notes);
@@ -186,7 +186,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
         // EUR should have no variance, so notes should be 'Handover'
         $this->assertNotNull($closedEur, 'Should have a closed EUR balance');
         if ($closedEur) {
-            $this->assertEquals('5000.00', $closedEur->closing_balance);
+            $this->assertEquals('5000.00', number_format((float) $closedEur->closing_balance, 2, '.', ''));
             $this->assertEquals('0.0000', $closedEur->variance);
             $this->assertEquals('Handover', $closedEur->notes);
         }
@@ -195,7 +195,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
         $this->assertNotNull($newUsd, 'Should have a new USD balance for incoming teller');
         if ($newUsd) {
             $this->assertNull($newUsd->closed_at);
-            $this->assertEquals('10500.00', $newUsd->opening_balance);
+            $this->assertEquals('10500.00', number_format((float) $newUsd->opening_balance, 2, '.', ''));
         }
     }
 
