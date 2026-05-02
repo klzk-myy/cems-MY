@@ -19,7 +19,6 @@ use App\Http\Controllers\MfaController;
 use App\Http\Controllers\PerformanceMonitoringController;
 use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\SetupController;
-use App\Http\Controllers\StockCashController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\StrController;
 use App\Http\Controllers\TestQueryLogController;
@@ -220,10 +219,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         // Create requires MFA
         Route::get('/create', TransactionCreate::class)->name('create')
             ->middleware('mfa.verified');
-        Route::post('/', [TransactionController::class, 'store'])->name('store')
-            ->middleware(['mfa.verified', 'throttle:transactions']);
 
-        // Batch upload (Manager only) - must be before /{transaction} wildcard
+        // Batch upload (Manager only)
         Route::middleware('role:manager')->group(function () {
             Route::get('/batch-upload', [TransactionBatchController::class, 'showBatchUpload'])->name('batch-upload');
             Route::post('/batch-upload', [TransactionBatchController::class, 'processBatchUpload']);
@@ -280,10 +277,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     // Stock & Cash
     Route::prefix('stock-cash')->name('stock-cash.')->group(function () {
         Route::get('/', StockIndex::class)->name('index');
-        Route::post('/open', [StockCashController::class, 'openTill'])->name('open')
-            ->middleware('role:manager');
-        Route::post('/close', [StockCashController::class, 'closeTill'])->name('close')
-            ->middleware('role:manager');
         Route::get('/position/{position}', Position::class)->name('position')
             ->middleware('role:manager');
         Route::get('/till-report', TillReport::class)->name('till-report')
@@ -467,10 +460,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/journal', JournalIndex::class)->name('journal');
         Route::get('/journal/create', JournalCreate::class)->name('journal.create');
         Route::get('/journal/{entry}', JournalShow::class)->name('journal.show');
-
-        // Action routes - Controller actions (POST)
-        Route::post('/journal', [AccountingController::class, 'store'])->name('journal.store');
-        Route::post('/journal/{entry}/reverse', [AccountingController::class, 'reverse'])->name('journal.reverse');
 
         Route::get('/ledger', LedgerIndex::class)->name('ledger');
         Route::get('/ledger/{accountCode}', LedgerAccount::class)->name('ledger.account');
