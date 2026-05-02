@@ -238,4 +238,54 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $handover->refresh();
         $this->assertNotNull($handover->acknowledged_at);
     }
+
+    /** @test */
+    public function test_yellow_variance_requires_acknowledgment(): void
+    {
+        // Create a handover with yellow_variance flag set to true
+        $session = CounterSession::factory()->create([
+            'counter_id' => $this->counter->id,
+            'user_id' => $this->teller1->id,
+            'session_date' => now()->toDateString(),
+            'opened_at' => now()->subMinutes(45),
+            'opened_by' => $this->teller1->id,
+            'status' => CounterSessionStatus::PendingHandover,
+        ]);
+
+        $handover = CounterHandover::factory()->create([
+            'counter_session_id' => $session->id,
+            'from_user_id' => $this->teller1->id,
+            'to_user_id' => $this->teller2->id,
+            'supervisor_id' => $this->manager->id,
+            'handover_time' => now(),
+            'physical_count_verified' => true,
+            'variance_myr' => '50.00',
+            'yellow_variance' => true,
+        ]);
+
+        // Attempting to acknowledge without verified=true should fail
+        $response = $this->actingAs($this->manager, 'sanctum')
+            ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
+                'verified' => false,
+                'notes' => 'Ignoring yellow variance',
+            ]);
+
+        $response->assertStatus(422);
+
+        // Acknowledging with verified=true should succeed
+        $response = $this->actingAs($this->manager, 'sanctum')
+            ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
+                'verified' => true,
+                'notes' => 'Acknowledged yellow variance',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Handover acknowledged successfully',
+            ]);
+
+        $handover->refresh();
+        $this->assertNotNull($handover->acknowledged_at);
+    }
 }

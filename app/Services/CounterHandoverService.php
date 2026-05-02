@@ -25,6 +25,11 @@ class CounterHandoverService
             throw new InvalidStateException('Handover is not pending acknowledgment');
         }
 
+        // Yellow variance requires explicit acknowledgment (S7)
+        if ($handover->yellow_variance && ! $verified) {
+            throw new InvalidStateException('Yellow variance requires acknowledgment');
+        }
+
         $handover->counterSession->update([
             'status' => CounterSessionStatus::Open,
             'physical_count_verified' => $verified,

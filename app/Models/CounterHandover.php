@@ -19,6 +19,7 @@ class CounterHandover extends Model
         'variance_myr',
         'variance_notes',
         'acknowledged_at',
+        'yellow_variance',
     ];
 
     protected $casts = [
@@ -26,6 +27,7 @@ class CounterHandover extends Model
         'physical_count_verified' => 'boolean',
         'variance_myr' => 'decimal:2',
         'acknowledged_at' => 'datetime',
+        'yellow_variance' => 'boolean',
     ];
 
     public function getSessionAttribute()

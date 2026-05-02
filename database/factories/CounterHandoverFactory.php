@@ -24,6 +24,7 @@ class CounterHandoverFactory extends Factory
             'handover_time' => now(),
             'physical_count_verified' => true,
             'variance_myr' => '0.00',
+            'yellow_variance' => false,
         ];
     }
 
@@ -52,6 +53,13 @@ class CounterHandoverFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'supervisor_id' => $user->id,
+        ]);
+    }
+
+    public function withYellowVariance(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'yellow_variance' => true,
         ]);
     }
 }

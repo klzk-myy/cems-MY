@@ -381,14 +381,17 @@ class CounterService
             }
 
             // Validate variance thresholds (only red threshold requires supervisor)
+            $hasYellowVariance = false;
             foreach ($perCurrencyVariances as $code => $variance) {
                 $absVar = BcmathHelper::abs($variance);
                 if (BcmathHelper::gt($absVar, $this->thresholdService->getVarianceRedThreshold())) {
                     if (! $supervisor || ! $supervisor->isManager()) {
                         throw new VarianceThresholdException('red', true);
                     }
+                } elseif (BcmathHelper::gt($absVar, $this->thresholdService->getVarianceYellowThreshold())) {
+                    // Yellow threshold does not block handover; flag for acknowledgment
+                    $hasYellowVariance = true;
                 }
-                // Yellow threshold does not block handover; it's for information
             }
 
             // Build variance notes
@@ -466,6 +469,7 @@ class CounterService
                 'physical_count_verified' => true,
                 'variance_myr' => $totalVarianceMyr,
                 'variance_notes' => BcmathHelper::compare($totalVarianceMyr, '0') !== 0 ? $varianceNotes : null,
+                'yellow_variance' => $hasYellowVariance,
             ]);
 
             // Create new session for incoming user (must be after old session closed)
