@@ -163,6 +163,12 @@ class RateApiService
         return match ($type) {
             'buy' => $exchangeRate->rate_buy,
             'sell' => $exchangeRate->rate_sell,
+            'mid' => $this->roundRate(
+                $this->mathService->divide(
+                    $this->mathService->add($exchangeRate->rate_buy, $exchangeRate->rate_sell),
+                    '2'
+                )
+            ),
             default => $exchangeRate->rate_buy,
         };
     }

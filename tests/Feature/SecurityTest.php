@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Rules\PasswordComplexityRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -233,6 +234,52 @@ class SecurityTest extends TestCase
 
         // Should either accept with truncation or reject
         $this->assertTrue(in_array($response->status(), [302, 422, 200, 201]));
+    }
+
+    /**
+     * Test password must meet complexity requirements
+     */
+    public function test_password_must_meet_complexity_requirements(): void
+    {
+        $rule = new PasswordComplexityRule;
+
+        // Test too short (less than 12 characters)
+        $errors = [];
+        $fail = function ($message) use (&$errors) {
+            $errors[] = $message;
+        };
+        $rule->validate('password', 'Short1!', $fail);
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('at least 12 characters', $errors[0]);
+
+        // Test missing uppercase
+        $errors = [];
+        $rule->validate('password', 'lowercase123!@', $fail);
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('uppercase letter', $errors[0]);
+
+        // Test missing lowercase
+        $errors = [];
+        $rule->validate('password', 'UPPERCASE123!@', $fail);
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('lowercase letter', $errors[0]);
+
+        // Test missing number
+        $errors = [];
+        $rule->validate('password', 'NoNumbers!@#abc', $fail);
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('number', $errors[0]);
+
+        // Test missing symbol
+        $errors = [];
+        $rule->validate('password', 'NoSymbol123Abc', $fail);
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('symbol', $errors[0]);
+
+        // Test valid password passes validation
+        $errors = [];
+        $rule->validate('password', 'SecureP@ssw0rd123', $fail);
+        $this->assertEmpty($errors);
     }
 
     /**

@@ -310,12 +310,12 @@ class EodReconciliationService
 
         $actualClosing = $tillBalances->whereNotNull('closing_balance')->sum('closing_balance');
 
-        if ($actualClosing === null || BcmathHelper::eq($actualClosing, '0') && $tillBalances->isNotEmpty()) {
-            // Session not yet closed, return expected value
-            return '0';
+        if ($actualClosing === null || BcmathHelper::eq($actualClosing, '0')) {
+            // Session not yet closed, return expected value to show pending variance
+            return $expectedClosing;
         }
 
-        return BcmathHelper::subtract($actualClosing ?: '0', $expectedClosing);
+        return BcmathHelper::subtract($actualClosing, $expectedClosing);
     }
 
     /**
