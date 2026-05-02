@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Helpers\Thresholdable;
+
 /**
  * AML Rule Type Enum
  *
@@ -9,6 +11,7 @@ namespace App\Enums;
  */
 enum AmlRuleType: string
 {
+    use Thresholdable;
     case Velocity = 'velocity';
     case Structuring = 'structuring';
     case AmountThreshold = 'amount_threshold';
@@ -57,10 +60,10 @@ enum AmlRuleType: string
             self::Structuring => [
                 'window_days' => 1,
                 'min_transaction_count' => 3,
-                'aggregate_threshold' => config('thresholds.aml.aggregate_threshold', '50000'),
+                'aggregate_threshold' => self::getAmlAggregateThreshold(),
             ],
             self::AmountThreshold => [
-                'min_amount' => config('thresholds.cdd.large_transaction', '50000'),
+                'min_amount' => self::getLargeTransactionThreshold(),
                 'currency' => 'MYR',
             ],
             self::Frequency => [

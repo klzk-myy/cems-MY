@@ -63,6 +63,10 @@ class ThresholdService
 
     public const FALLBACK_CURRENCY_FLOW_LOOKBACK_DAYS = 7;
 
+    public const FALLBACK_AML_AGGREGATE = '50000';
+
+    public const FALLBACK_AML_AMOUNT = '50000';
+
     /**
      * Set a threshold value in config and audit the change.
      *
@@ -316,6 +320,18 @@ class ThresholdService
     public function getCurrencyFlowLookbackDays(): int
     {
         return (int) $this->get('currency_flow', 'lookback_days', 'FALLBACK_CURRENCY_FLOW_LOOKBACK_DAYS');
+    }
+
+    // AML thresholds
+
+    public function getAmlAggregateThreshold(): string
+    {
+        return (string) $this->get('aml', 'aggregate_threshold', 'FALLBACK_AML_AGGREGATE');
+    }
+
+    public function getAmlAmountThreshold(): string
+    {
+        return (string) $this->get('aml', 'amount_threshold', 'FALLBACK_AML_AMOUNT');
     }
 
     // Performance thresholds

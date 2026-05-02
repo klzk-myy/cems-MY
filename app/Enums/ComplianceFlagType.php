@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Helpers\Thresholdable;
+
 /**
  * Compliance Flag Type Enum
  *
@@ -10,6 +12,7 @@ namespace App\Enums;
  */
 enum ComplianceFlagType: string
 {
+    use Thresholdable;
     case LargeAmount = 'Large_Amount';
     case SanctionsHit = 'Sanctions_Hit';
     case Velocity = 'Velocity';
@@ -85,9 +88,9 @@ enum ComplianceFlagType: string
     public function thresholdAmount(): ?string
     {
         return match ($this) {
-            self::LargeAmount => config('thresholds.cdd.large_transaction', '50000'),
-            self::EddRequired => config('thresholds.cdd.large_transaction', '50000'),
-            self::Velocity => config('thresholds.cdd.large_transaction', '50000'),
+            self::LargeAmount => self::getLargeTransactionThreshold(),
+            self::EddRequired => self::getLargeTransactionThreshold(),
+            self::Velocity => self::getLargeTransactionThreshold(),
             default => null,
         };
     }

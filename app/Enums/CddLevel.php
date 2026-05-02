@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Helpers\Thresholdable;
+
 /**
  * Customer Due Diligence (CDD) Level Enum
  *
@@ -10,6 +12,8 @@ namespace App\Enums;
  */
 enum CddLevel: string
 {
+    use Thresholdable;
+
     case Simplified = 'Simplified';
     case Specific = 'Specific';
     case Standard = 'Standard';
@@ -36,12 +40,12 @@ enum CddLevel: string
 
         // Amount thresholds per pd-00.md 14C.12
         // >= RM 10,000: Standard CDD
-        if (bccomp($amount, config('thresholds.cdd.standard', '10000')) >= 0) {
+        if (bccomp($amount, self::getStandardCddThreshold()) >= 0) {
             return self::Standard;
         }
 
         // RM 3,000 - 10,000: Specific CDD
-        if (bccomp($amount, config('thresholds.cdd.specific', '3000')) >= 0) {
+        if (bccomp($amount, self::getSpecificCddThreshold()) >= 0) {
             return self::Specific;
         }
 
@@ -101,8 +105,8 @@ enum CddLevel: string
      */
     public function thresholdAmount(): string
     {
-        $specific = config('thresholds.cdd.specific', '3000');
-        $standard = config('thresholds.cdd.standard', '10000');
+        $specific = self::getSpecificCddThreshold();
+        $standard = self::getStandardCddThreshold();
 
         return match ($this) {
             self::Simplified => "< RM {$specific}",
