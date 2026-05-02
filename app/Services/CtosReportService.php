@@ -8,10 +8,10 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Service for CTOS (Cash Transaction Report) generation.
+ * BNM CTOS (Cash Transaction Report) Service
  *
- * BNM requires CTOS for all cash transactions (Buy AND Sell) >= RM 10,000.
- * This is separate from LCTR (Large Cash Transaction Report) which is >= RM 25,000.
+ * Submits CTOS reports for all cash transactions (Buy AND Sell) >= RM 25,000
+ * per pd-00.md paragraph 21.3.1
  */
 class CtosReportService
 {
