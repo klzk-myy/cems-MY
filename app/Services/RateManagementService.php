@@ -100,7 +100,7 @@ class RateManagementService
         if ($branchId !== null) {
             $query->forBranch($branchId);
         }
-        $exchangeRate = $query->first();
+        $exchangeRate = $query->lockForUpdate()->first();
 
         if (! $exchangeRate) {
             $exchangeRate = ExchangeRate::create([
