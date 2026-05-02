@@ -216,4 +216,62 @@ class TransactionCancellationServiceTest extends TestCase
         $this->assertTrue($result);
         $this->assertEquals(TransactionStatus::Reversed, $transaction->status);
     }
+
+    public function test_cancellation_rejection_uses_valid_state_transition(): void
+    {
+        // Create a manager who will request cancellation
+        $manager = User::factory()->create(['role' => UserRole::Manager]);
+
+        // Create a processing transaction (PendingCancellation can reject back to Completed)
+        // Use factory to ensure all FK constraints are satisfied, then set status and history
+        $transaction = Transaction::factory()->create([
+            'user_id' => $manager->id,
+            'type' => TransactionType::Sell,
+            'currency_code' => 'USD',
+            'amount_foreign' => '500.00',
+            'rate' => '4.50',
+            'status' => TransactionStatus::Completed, // Factory creates Completed
+            'created_at' => now(),
+        ]);
+
+        // Manually set to Processing and add history entry (since factory defaults to Completed)
+        $transaction->status = TransactionStatus::Processing;
+        $transaction->transition_history = [
+            ['from' => 'Approved', 'to' => 'Processing', 'timestamp' => now()->toIso8601String()],
+        ];
+        $transaction->save();
+
+        // Request cancellation (goes to PendingCancellation)
+        $result = $this->cancellationService->requestCancellation($transaction, $manager, 'Test cancellation request');
+        $this->assertTrue($result);
+
+        // Transaction should now be in PendingCancellation status
+        $this->assertEquals(TransactionStatus::PendingCancellation, $transaction->status);
+
+        // Create another manager to reject the cancellation (segregation of duties)
+        $manager2 = User::factory()->create(['role' => UserRole::Manager]);
+
+        // Reject the cancellation - should use normal state transition to Completed
+        // (restoring the previous status before cancellation was requested)
+        $result = $this->cancellationService->rejectCancellation($transaction, $manager2, 'Rejection reason');
+
+        $this->assertTrue($result);
+        $this->assertEquals(TransactionStatus::Completed, $transaction->status);
+
+        // Verify the transition history shows the proper state machine path
+        $history = $transaction->transition_history;
+        $this->assertNotEmpty($history);
+
+        // Find the rejection transition
+        $rejectionEntry = null;
+        foreach (array_reverse($history) as $entry) {
+            if ($entry['to'] === 'Completed' && str_contains($entry['reason'] ?? '', 'Cancellation rejected')) {
+                $rejectionEntry = $entry;
+                break;
+            }
+        }
+
+        $this->assertNotNull($rejectionEntry, 'Rejection should be recorded in transition history');
+        $this->assertArrayNotHasKey('forced', $rejectionEntry, 'Rejection should not use forced transition');
+    }
 }

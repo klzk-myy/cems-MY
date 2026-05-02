@@ -297,9 +297,12 @@ class TransactionCancellationService
                 return false;
             }
 
-            // Use forceStatus to bypass normal transition rules since we're going back
+            // Use normal transition to Completed status (cancellation rejection workflow completes)
             $stateMachine = new TransactionStateMachine($transaction);
-            $result = $stateMachine->forceStatus($targetStatus, "Cancellation rejected: {$reason}");
+            $result = $stateMachine->transitionTo(TransactionStatus::Completed, [
+                'reason' => "Cancellation rejected: {$reason}",
+                'user_id' => $rejector->id,
+            ]);
 
             if ($result) {
                 Log::info('Transaction cancellation rejected', [
