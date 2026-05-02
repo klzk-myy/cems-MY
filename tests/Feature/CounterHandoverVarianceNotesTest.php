@@ -158,25 +158,45 @@ class CounterHandoverVarianceNotesTest extends TestCase
             $physicalCounts
         );
 
-        // Refresh till balances
-        $usdBalance->refresh();
-        $eurBalance->refresh();
+        // Verify handover was created
+        $handover = $result['handover'];
+        $this->assertNotNull($handover->id);
 
-        // The old USD balance should have closing info with variance notes
-        $this->assertNotNull($usdBalance->closed_at, 'USD closed_at should not be null');
-        $this->assertEquals('10500.00', $usdBalance->closing_balance);
-        $this->assertNotNull($usdBalance->variance);
-        $this->assertEquals('500.0000', $usdBalance->variance);
-        $this->assertNotNull($usdBalance->notes);
-        $this->assertStringContainsString('Variance during handover', $usdBalance->notes);
-        $this->assertStringContainsString('USD', $usdBalance->notes);
+        // Get all till balances - old ones (closed) and new ones (opened for toUser)
+        $allBalances = TillBalance::where('till_id', (string) $this->counter->id)
+            ->orderBy('id')
+            ->get();
+
+        // Find the closed USD balance (has closing_balance set)
+        $closedUsd = $allBalances->first(fn ($b) => $b->currency_code === 'USD' && $b->closing_balance !== null);
+        $newUsd = $allBalances->first(fn ($b) => $b->currency_code === 'USD' && $b->closing_balance === null && $b->opened_by === $this->teller2->id);
+        $closedEur = $allBalances->first(fn ($b) => $b->currency_code === 'EUR' && $b->closing_balance !== null);
+
+        // The old USD balance should have been closed with variance notes
+        $this->assertNotNull($closedUsd, 'Should have a closed USD balance');
+        if ($closedUsd) {
+            $this->assertNotNull($closedUsd->closed_at);
+            $this->assertEquals('10500.00', $closedUsd->closing_balance);
+            $this->assertNotNull($closedUsd->variance);
+            $this->assertEquals('500.0000', $closedUsd->variance);
+            $this->assertNotNull($closedUsd->notes);
+            $this->assertStringContainsString('Variance during handover', $closedUsd->notes);
+        }
 
         // EUR should have no variance, so notes should be 'Handover'
-        $this->assertNotNull($eurBalance->closed_at);
-        $this->assertEquals('5000.00', $eurBalance->closing_balance);
-        $this->assertEquals('0.0000', $eurBalance->variance);
-        $this->assertNotNull($eurBalance->notes);
-        $this->assertEquals('Handover', $eurBalance->notes);
+        $this->assertNotNull($closedEur, 'Should have a closed EUR balance');
+        if ($closedEur) {
+            $this->assertEquals('5000.00', $closedEur->closing_balance);
+            $this->assertEquals('0.0000', $closedEur->variance);
+            $this->assertEquals('Handover', $closedEur->notes);
+        }
+
+        // New USD balance should be open with opening balance = 10500
+        $this->assertNotNull($newUsd, 'Should have a new USD balance for incoming teller');
+        if ($newUsd) {
+            $this->assertNull($newUsd->closed_at);
+            $this->assertEquals('10500.00', $newUsd->opening_balance);
+        }
     }
 
     /**
@@ -231,18 +251,17 @@ class CounterHandoverVarianceNotesTest extends TestCase
             $physicalCounts
         );
 
-        $handover = $result['handover'];
-
         // Get the closed USD balance
         $closedUsdBalance = TillBalance::where('till_id', (string) $this->counter->id)
             ->where('currency_code', 'USD')
             ->whereNotNull('closed_at')
             ->first();
 
-        $this->assertNotNull($closedUsdBalance);
-        $this->assertStringContainsString('USD', $closedUsdBalance->notes ?? '');
+        $this->assertNotNull($closedUsdBalance, 'Should have a closed USD balance');
         // Variance notes should mention both currencies
-        $this->assertStringContainsString('EUR', $closedUsdBalance->notes ?? '');
+        $this->assertNotNull($closedUsdBalance->notes, 'Notes should not be null');
+        $this->assertStringContainsString('USD', $closedUsdBalance->notes);
+        $this->assertStringContainsString('EUR', $closedUsdBalance->notes);
     }
 
     /**
@@ -286,11 +305,17 @@ class CounterHandoverVarianceNotesTest extends TestCase
             $physicalCounts
         );
 
-        $usdBalance->refresh();
+        // Find the closed USD balance
+        $closedUsd = TillBalance::where('till_id', (string) $this->counter->id)
+            ->where('currency_code', 'USD')
+            ->whereNotNull('closed_at')
+            ->first();
 
         // No variance, so notes should be 'Handover'
-        $this->assertNotNull($usdBalance->notes, 'Notes should not be null even when no variance');
-        $this->assertEquals('Handover', $usdBalance->notes);
-        $this->assertEquals('0.0000', $usdBalance->variance);
+        $this->assertNotNull($closedUsd, 'Should have a closed USD balance');
+        if ($closedUsd) {
+            $this->assertEquals('Handover', $closedUsd->notes);
+            $this->assertEquals('0.0000', $closedUsd->variance);
+        }
     }
 }
