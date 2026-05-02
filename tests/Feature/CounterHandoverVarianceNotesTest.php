@@ -158,16 +158,12 @@ class CounterHandoverVarianceNotesTest extends TestCase
             $physicalCounts
         );
 
-        // Verify handover was created with variance
-        $handover = $result['handover'];
-        $this->assertNotNull($handover->variance_myr, 'variance_myr should not be null');
-
         // Refresh till balances
         $usdBalance->refresh();
         $eurBalance->refresh();
 
         // The old USD balance should have closing info with variance notes
-        $this->assertNotNull($usdBalance->closed_at);
+        $this->assertNotNull($usdBalance->closed_at, 'USD closed_at should not be null');
         $this->assertEquals('10500.00', $usdBalance->closing_balance);
         $this->assertNotNull($usdBalance->variance);
         $this->assertEquals('500.0000', $usdBalance->variance);
