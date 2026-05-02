@@ -220,8 +220,8 @@ class RiskCalculationServiceTest extends TestCase
         $result = $this->service->calculateCumulativeRisk($customer->id);
 
         $this->assertFalse($result['triggered']);
-        // Total should be '0.000000' (MathService uses scale 6)
-        $this->assertEquals('0.000000', $result['total']);
+        // Total should be '0.0000' (MathService uses scale 4)
+        $this->assertEquals('0.0000', $result['total']);
         $this->assertEquals('50000', $result['threshold']);
     }
 
