@@ -413,7 +413,16 @@ class FiscalYearService
         foreach ($entry->lines as $line) {
             $currentBalance = $this->getAccountBalance($line->account_code, $entry->entry_date);
 
-            if ($this->isDebitAccount($line->account_code)) {
+            // Income Summary (4998) is treated as a special debit-normal equity account
+            // for closing entry calculations, despite being classified as Equity.
+            // When closing revenue: credit to 4998 increases balance
+            // When closing expenses: debit to 4998 decreases balance
+            if ($line->account_code === '4998') {
+                $newBalance = $this->mathService->add(
+                    $this->mathService->add($currentBalance, (string) $line->debit),
+                    $this->mathService->multiply((string) $line->credit, '-1')
+                );
+            } elseif ($this->isDebitAccount($line->account_code)) {
                 $newBalance = $this->mathService->add(
                     $this->mathService->add($currentBalance, (string) $line->debit),
                     $this->mathService->multiply((string) $line->credit, '-1')

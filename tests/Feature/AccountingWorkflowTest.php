@@ -3,12 +3,15 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
+use App\Models\JournalLine;
 use App\Models\User;
+use App\Services\FiscalYearService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -56,7 +59,6 @@ class AccountingWorkflowTest extends TestCase
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
             'status' => 'Open',
-            'is_closed' => false,
         ]);
 
         // Create chart of accounts with unique codes
@@ -265,5 +267,149 @@ class AccountingWorkflowTest extends TestCase
         $reversalCashLine = $reversalEntry->lines->firstWhere('account_code', $this->cashAccount->account_code);
         $this->assertEquals($originalCashLine->debit, $reversalCashLine->credit);
         $this->assertEquals($originalCashLine->credit, $reversalCashLine->debit);
+    }
+
+    /** @test */
+    public function test_closing_entries_use_correct_income_summary_account_type(): void
+    {
+        // Income Summary (4998) is classified as Equity in the chart of accounts,
+        // but should be treated as a debit-normal account when creating closing ledger entries.
+        // This ensures that when revenue is credited (reducing it) and expenses are debited (reducing it),
+        // the Income Summary account balance correctly reflects the net income/loss.
+
+        $incomeSummaryAccount = ChartOfAccount::factory()->create([
+            'account_code' => '4998',
+            'account_name' => 'Income Summary',
+            'account_type' => 'Equity', // Correctly classified as Equity
+            'is_active' => true,
+        ]);
+
+        $retainedEarningsAccount = ChartOfAccount::factory()->create([
+            'account_code' => '4999',
+            'account_name' => 'Retained Earnings',
+            'account_type' => 'Equity',
+            'is_active' => true,
+        ]);
+
+        $expenseAccount = ChartOfAccount::factory()->create([
+            'account_code' => '6999',
+            'account_name' => 'Test Expenses',
+            'account_type' => 'Expense',
+            'is_active' => true,
+        ]);
+
+        // Create an accounting period for the fiscal year
+        $period = AccountingPeriod::factory()->create([
+            'fiscal_year_id' => $this->fiscalYear->id,
+            'period_code' => '2026-01',
+            'period_type' => 'month',
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'status' => 'closed',
+        ]);
+
+        // Create journal entry with debit to expense and credit to income summary
+        $expenseEntry = JournalEntry::create([
+            'entry_number' => 'TEST-2026-001',
+            'entry_date' => '2026-06-30',
+            'period_id' => $period->id,
+            'reference_type' => 'Manual',
+            'description' => 'Test expense entry',
+            'status' => 'Posted',
+            'created_by' => $this->manager->id,
+            'posted_by' => $this->manager->id,
+            'posted_at' => now(),
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $expenseEntry->id,
+            'account_code' => $expenseAccount->account_code,
+            'debit' => '5000.00',
+            'credit' => '0.00',
+            'description' => 'Test expense',
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $expenseEntry->id,
+            'account_code' => $this->cashAccount->account_code,
+            'debit' => '0.00',
+            'credit' => '5000.00',
+            'description' => 'Cash payment',
+        ]);
+
+        // Create ledger entries for the expense entry
+        AccountLedger::create([
+            'account_code' => $expenseAccount->account_code,
+            'entry_date' => '2026-06-30',
+            'journal_entry_id' => $expenseEntry->id,
+            'debit' => '5000.00',
+            'credit' => '0.00',
+            'running_balance' => '5000.00',
+        ]);
+
+        AccountLedger::create([
+            'account_code' => $this->cashAccount->account_code,
+            'entry_date' => '2026-06-30',
+            'journal_entry_id' => $expenseEntry->id,
+            'debit' => '0.00',
+            'credit' => '5000.00',
+            'running_balance' => '-5000.00',
+        ]);
+
+        // Now create the closing entry: Close Expenses to Income Summary
+        // This should DEBIT the expense account and CREDIT the income summary
+        $closingEntry = JournalEntry::create([
+            'entry_number' => 'CE-202606-001',
+            'entry_date' => '2026-12-31',
+            'period_id' => $period->id,
+            'reference_type' => 'FiscalYearClosing',
+            'description' => 'Closing Expenses to Income Summary',
+            'status' => 'Posted',
+            'created_by' => $this->manager->id,
+            'posted_by' => $this->manager->id,
+            'posted_at' => now(),
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $closingEntry->id,
+            'account_code' => $expenseAccount->account_code,
+            'debit' => '0.00',
+            'credit' => '5000.00', // Credit expense to close it
+            'description' => 'Close Test Expenses',
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $closingEntry->id,
+            'account_code' => '4998',
+            'debit' => '5000.00', // Debit income summary
+            'credit' => '0.00',
+            'description' => 'Income Summary',
+        ]);
+
+        // Call the service method to create closing ledger entries
+        $fiscalYearService = app(FiscalYearService::class);
+
+        // Use reflection to call the protected method
+        $reflection = new \ReflectionMethod($fiscalYearService, 'createClosingLedgerEntries');
+        $reflection->setAccessible(true);
+        $reflection->invoke($fiscalYearService, $closingEntry);
+
+        // Verify the Income Summary ledger entry was created correctly
+        $incomeSummaryLedger = AccountLedger::where('journal_entry_id', $closingEntry->id)
+            ->where('account_code', '4998')
+            ->first();
+
+        $this->assertNotNull($incomeSummaryLedger, 'Income Summary ledger entry should be created');
+        $this->assertEquals('5000.00', bcadd($incomeSummaryLedger->debit, '0', 2));
+        $this->assertEquals('0.00', bcadd($incomeSummaryLedger->credit, '0', 2));
+
+        // Verify the expense account ledger entry
+        $expenseLedger = AccountLedger::where('journal_entry_id', $closingEntry->id)
+            ->where('account_code', $expenseAccount->account_code)
+            ->first();
+
+        $this->assertNotNull($expenseLedger, 'Expense ledger entry should be created');
+        $this->assertEquals('0.00', bcadd($expenseLedger->debit, '0', 2));
+        $this->assertEquals('5000.00', bcadd($expenseLedger->credit, '0', 2));
     }
 }
