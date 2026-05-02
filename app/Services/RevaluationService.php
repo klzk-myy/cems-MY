@@ -344,8 +344,14 @@ class RevaluationService
         }
 
         // If there are any errors, throw exception so caller MUST handle them
+        // Include both successful and failed currencies in the error for traceability
         if (! empty($errors)) {
-            throw new \RuntimeException('Revaluation errors occurred: '.implode('; ', array_column($errors, 'error')));
+            $successfulCurrencies = array_column($results, 'currency_code');
+            $failedCurrencies = array_column($errors, 'currency_code');
+            $errorMsg = 'Revaluation errors occurred: '.implode('; ', array_column($errors, 'error'));
+            $errorMsg .= '. Successful currencies: '.(empty($successfulCurrencies) ? 'none' : implode(', ', $successfulCurrencies));
+            $errorMsg .= '. Failed currencies: '.implode(', ', $failedCurrencies);
+            throw new \RuntimeException($errorMsg);
         }
 
         return [

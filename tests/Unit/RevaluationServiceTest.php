@@ -111,6 +111,78 @@ class RevaluationServiceTest extends TestCase
         $service->runRevaluationWithJournal($testDate, $this->testUser->id);
     }
 
+    public function test_revaluation_error_includes_successful_currencies(): void
+    {
+        // Arrange: Create an open accounting period
+        $testDate = now()->toDateString();
+        $this->createTestAccountingPeriod($testDate);
+
+        // Create multiple currency positions (USD and EUR)
+        $usdPosition = CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'till_id' => 'TEST-TILL',
+            'balance' => '1000.00',
+            'avg_cost_rate' => '4.50',
+            'last_valuation_rate' => '4.50',
+        ]);
+
+        $eurPosition = CurrencyPosition::factory()->create([
+            'currency_code' => 'EUR',
+            'till_id' => 'TEST-TILL',
+            'balance' => '500.00',
+            'avg_cost_rate' => '5.00',
+            'last_valuation_rate' => '5.00',
+        ]);
+
+        // Mock RateApiService to return different rates (causing gain/loss)
+        $mockRateApi = Mockery::mock(RateApiService::class);
+        $mockRateApi->shouldReceive('getRateForCurrency')
+            ->with('USD')
+            ->andReturn(['mid' => 4.60]);
+        $mockRateApi->shouldReceive('getRateForCurrency')
+            ->with('EUR')
+            ->andReturn(['mid' => 5.10]);
+
+        // Mock AccountingService with sequential behavior:
+        // First call (USD) throws exception, second call (EUR) succeeds
+        $mockAccounting = Mockery::mock(AccountingService::class);
+        $mockAccounting->shouldReceive('createJournalEntry')
+            ->twice()
+            ->andReturnUsing(function () {
+                static $callCount = 0;
+                $callCount++;
+                if ($callCount === 1) {
+                    throw new \RuntimeException('Journal entry failed for USD');
+                }
+
+                return Mockery::mock(JournalEntry::class)->shouldIgnoreMissing();
+            });
+
+        // Mock AuditService
+        $mockAudit = Mockery::mock(AuditService::class);
+        $mockAudit->shouldReceive('logPositionEvent')->andReturn(null);
+
+        // Create the service with mocked dependencies
+        $service = new RevaluationService(
+            $this->mathService,
+            $mockRateApi,
+            $mockAccounting,
+            $mockAudit
+        );
+
+        // Act & Assert: Verify error message includes both successful and failed currencies
+        try {
+            $service->runRevaluationWithJournal($testDate, $this->testUser->id);
+            $this->fail('Expected RuntimeException was not thrown');
+        } catch (\RuntimeException $e) {
+            $message = $e->getMessage();
+            $this->assertStringContainsString('Successful currencies:', $message);
+            $this->assertStringContainsString('Failed currencies:', $message);
+            $this->assertStringContainsString('EUR', $message);
+            $this->assertStringContainsString('USD', $message);
+        }
+    }
+
     public function test_run_revaluation_with_journal_succeeds_when_all_currencies_process(): void
     {
         // Arrange: Create an open accounting period
