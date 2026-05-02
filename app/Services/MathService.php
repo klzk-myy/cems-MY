@@ -9,20 +9,29 @@ namespace App\Services;
  * Essential for financial calculations to prevent floating-point precision errors.
  *
  * All monetary amounts are handled as strings to maintain precision.
+ *
+ * DECISION: Default scale is set to 4 to match database decimal(18,4) storage
+ * precision for monetary amounts (amount_local, amount_foreign, balance,
+ * unrealized_pnl). This prevents silent rounding mismatches between internal
+ * calculations and database storage. Exchange rates use explicit scale=6
+ * where needed (decimal(18,6) in DB).
  */
 class MathService
 {
     /**
      * Decimal scale for BCMath operations.
+     *
+     * Set to 4 to match database decimal(18,4) precision for monetary amounts.
+     * Using scale=6 while DB stores at scale=4 caused silent rounding issues.
      */
-    protected int $scale = 6;
+    protected int $scale = 4;
 
     /**
      * Create a new MathService instance.
      *
-     * @param  int  $scale  Number of decimal places for calculations (default: 6)
+     * @param  int  $scale  Number of decimal places for calculations (default: 4)
      */
-    public function __construct(int $scale = 6)
+    public function __construct(int $scale = 4)
     {
         $this->scale = $scale;
     }
@@ -170,6 +179,16 @@ class MathService
         }
 
         return $number;
+    }
+
+    /**
+     * Get the current scale.
+     *
+     * @return int Current scale value
+     */
+    public function getScale(): int
+    {
+        return $this->scale;
     }
 
     /**

@@ -9,13 +9,19 @@ namespace App\Support;
  * Prevents floating-point precision errors by using string-based comparisons.
  *
  * All methods accept numeric strings and return boolean results.
+ *
+ * DECISION: Default scale is set to 4 to match database decimal(18,4) storage
+ * precision for monetary amounts. This aligns with MathService and prevents
+ * silent rounding mismatches between internal calculations and DB storage.
  */
 class BcmathHelper
 {
     /**
      * Default scale for BCMath operations.
+     *
+     * Set to 4 to match database decimal(18,4) precision for monetary amounts.
      */
-    protected static int $scale = 6;
+    protected static int $scale = 4;
 
     /**
      * Set the scale for BCMath operations.
