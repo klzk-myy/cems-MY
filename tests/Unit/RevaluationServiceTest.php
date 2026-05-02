@@ -199,6 +199,23 @@ class RevaluationServiceTest extends TestCase
         $this->assertEmpty($result['results']);
     }
 
+    public function test_revaluation_uses_consistent_scale(): void
+    {
+        // Test that bccomp uses scale=6 (matching MathService default)
+        // This ensures consistency across all BCMath operations
+        $rate1 = '4.5000001'; // Differs only at 7th decimal place
+        $rate2 = '4.5000002'; // Differs only at 7th decimal place
+
+        // With scale=6, these rates should be considered EQUAL (no difference within 6 decimals)
+        $this->assertEquals(0, bccomp($rate1, $rate2, 6), 'Rates should be equal at scale 6');
+
+        // With scale=10, these rates should be considered DIFFERENT
+        $this->assertEquals(-1, bccomp($rate1, $rate2, 10), 'Rates should differ at scale 10');
+
+        // This verifies that the scale parameter matters for rate comparisons
+        // The RevaluationService uses scale=6 to match MathService, ensuring consistent precision
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

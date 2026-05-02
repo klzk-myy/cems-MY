@@ -106,7 +106,7 @@ class RevaluationService
 
         return DB::transaction(function () use ($position, $oldRate, $newRate, $gainLoss, $date, $postedBy) {
             // Prevent double-counting: check if position was already revalued at this rate
-            if ($position->last_valuation_rate !== null && bccomp($position->last_valuation_rate, $newRate, 10) === 0) {
+            if ($position->last_valuation_rate !== null && bccomp($position->last_valuation_rate, $newRate, 6) === 0) {
                 return null;
             }
 
