@@ -318,6 +318,9 @@ class CounterService
             // HANDOVER TILL BALANCES - Revised for correctness
             // ============================================================
             // Lock all relevant till balances upfront to prevent race conditions
+            // Sort currency codes alphabetically to prevent deadlocks when concurrent
+            // handovers involve different currency sets (ensures consistent lock order)
+            sort($currencyCodes);
             $allBalances = TillBalance::where('till_id', (string) $session->counter_id)
                 ->where('date', $today)
                 ->whereIn('currency_code', $currencyCodes)

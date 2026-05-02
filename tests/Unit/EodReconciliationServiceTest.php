@@ -187,4 +187,77 @@ class EodReconciliationServiceTest extends TestCase
         // Since session is unclosed, variance should return expected closing
         $this->assertEquals('10000.000000', $variance);
     }
+
+    public function test_pending_transactions_excluded_from_eod_variance(): void
+    {
+        $date = Carbon::today();
+
+        // Create a closed counter session
+        CounterSession::create([
+            'counter_id' => $this->counter->id,
+            'user_id' => $this->user->id,
+            'session_date' => $date->toDateString(),
+            'opened_at' => now()->subHours(8),
+            'opened_by' => $this->user->id,
+            'closed_at' => now(),
+            'closed_by' => $this->user->id,
+            'status' => CounterSessionStatus::Closed,
+        ]);
+
+        // Create till balance with closing balance matching only completed transactions
+        DB::table('till_balances')->insert([
+            'till_id' => (string) $this->counter->id,
+            'currency_code' => 'MYR',
+            'branch_id' => $this->branch->id,
+            'opening_balance' => '10000.00',
+            'closing_balance' => '15000.00', // Expected = 15000, Actual = 15000, Variance = 0
+            'date' => $date->toDateString(),
+            'opened_by' => $this->user->id,
+            'closed_by' => $this->user->id,
+        ]);
+
+        // Create a completed Buy transaction (should be included in variance)
+        DB::table('transactions')->insert([
+            'type' => TransactionType::Buy->value,
+            'status' => TransactionStatus::Completed->value,
+            'currency_code' => 'USD',
+            'amount_local' => '5000.00',
+            'amount_foreign' => '1100.00',
+            'rate' => '4.5455',
+            'till_id' => (string) $this->counter->id,
+            'branch_id' => $this->branch->id,
+            'user_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'approved_by' => $this->user->id,
+            'approved_at' => now(),
+            'cdd_level' => 'Simplified',
+            'created_at' => now(),
+        ]);
+
+        // Create a Pending Buy transaction (should NOT be included in variance)
+        DB::table('transactions')->insert([
+            'type' => TransactionType::Buy->value,
+            'status' => TransactionStatus::Pending->value,
+            'currency_code' => 'USD',
+            'amount_local' => '3000.00',
+            'amount_foreign' => '660.00',
+            'rate' => '4.5455',
+            'till_id' => (string) $this->counter->id,
+            'branch_id' => $this->branch->id,
+            'user_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'approved_by' => $this->user->id,
+            'approved_at' => now(),
+            'cdd_level' => 'Simplified',
+            'created_at' => now(),
+        ]);
+
+        // Calculate variance
+        $variance = $this->service->calculateVariance($this->counter->id, $date);
+
+        // Expected closing = 10000 + 5000 (only completed) - 0 = 15000
+        // Actual closing = 15000
+        // Variance = 15000 - 15000 = 0 (Pending transaction excluded)
+        $this->assertEquals('0.000000', $variance);
+    }
 }

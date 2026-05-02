@@ -172,7 +172,7 @@ class EodReconciliationService
         $transactions = Transaction::with(['customer', 'user', 'flags'])
             ->where('till_id', (string) $counterId)
             ->whereDate('created_at', $date->toDateString())
-            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value])
+            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value])
             ->get();
 
         // Buy transactions = cash received (customer sells foreign currency, we buy)
@@ -297,7 +297,7 @@ class EodReconciliationService
         // Get transactions
         $transactions = Transaction::where('till_id', (string) $counterId)
             ->whereDate('created_at', $date->toDateString())
-            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value])
+            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value])
             ->get();
 
         $buyTotal = $transactions->filter(fn ($tx) => $tx->type === TransactionType::Buy)->sum('amount_local');
