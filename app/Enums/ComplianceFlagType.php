@@ -90,7 +90,7 @@ enum ComplianceFlagType: string
         return match ($this) {
             self::LargeAmount => self::getLargeTransactionThreshold(),
             self::EddRequired => self::getLargeTransactionThreshold(),
-            self::Velocity => self::getLargeTransactionThreshold(),
+            self::Velocity => self::getVelocityAlertThreshold(),
             default => null,
         };
     }
