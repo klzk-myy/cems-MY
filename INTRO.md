@@ -39,7 +39,7 @@ CEMS-MY (Laravel 10.x / PHP 8.1+)
 │   ├── Jobs/            # 23 background jobs
 │   ├── Models/          # 62 Eloquent models
 │   └── Services/        # 83 business services
-├── resources/views/     # 100+ Blade templates
+├── resources/views/     # ~90 Blade templates (Livewire)
 └── config/              # Centralized configuration
 ```
 
