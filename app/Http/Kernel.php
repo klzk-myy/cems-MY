@@ -2,23 +2,16 @@
 
 namespace App\Http;
 
-use App\Http\Middleware\Authenticate;
-use App\Http\Middleware\CheckBranchAccess;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\CheckRoleAny;
 use App\Http\Middleware\EncryptCookies;
-use App\Http\Middleware\EnsureMfaEnabled;
 use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\IpBlocker;
 use App\Http\Middleware\LogRequests;
 use App\Http\Middleware\PerformanceTrackingMiddleware;
-use App\Http\Middleware\PreventRequestsDuringMaintenance;
-use App\Http\Middleware\QueryLogging;
-use App\Http\Middleware\QueryPerformanceMonitor;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SessionTimeout;
-use App\Http\Middleware\StrictRateLimit;
 use App\Http\Middleware\TrimStrings;
 use App\Http\Middleware\TrustProxies;
 use App\Http\Middleware\ValidateSignature;
@@ -107,14 +100,10 @@ class Kernel extends HttpKernel
         'verified' => EnsureEmailIsVerified::class,
         'role' => CheckRole::class,
         'role.any' => CheckRoleAny::class,
-        'branch.access' => CheckBranchAccess::class,
-        'mfa.enabled' => EnsureMfaEnabled::class,
         'mfa.verified' => EnsureMfaVerified::class,
         'session.timeout' => SessionTimeout::class,
-        'query.monitor' => QueryPerformanceMonitor::class,
         'security.headers' => SecurityHeaders::class,
         'ip.blocker' => IpBlocker::class,
-        'rate.limit.strict' => StrictRateLimit::class,
         'throttle.login' => 'throttle:login',
         'throttle.transactions' => 'throttle:transactions',
         'throttle.str' => 'throttle:str-submission',
