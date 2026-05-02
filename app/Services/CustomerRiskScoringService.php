@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\RiskTrend;
+use App\Enums\TransactionStatus;
 use App\Events\RiskScoreUpdated;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
@@ -200,7 +201,7 @@ class CustomerRiskScoringService
     {
         return Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subDays(90))
-            ->where('status', 'Completed')
+            ->where('status', TransactionStatus::Completed->value)
             ->get();
     }
 

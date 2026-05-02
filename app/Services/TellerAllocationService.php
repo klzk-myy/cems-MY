@@ -3,18 +3,13 @@
 namespace App\Services;
 
 use App\Enums\TellerAllocationStatus;
-use App\Enums\TransactionStatus;
-use App\Enums\TransactionType;
-use App\Exceptions\Domain\InsufficientPoolBalanceException;
-use App\Exceptions\Domain\InvalidAllocationStateException;
-use App\Exceptions\Domain\PoolAllocationException;
-use App\Exceptions\Domain\TellerBranchRequiredException;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\TellerAllocation;
-use App\Models\Transaction;
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class TellerAllocationService
 {
@@ -28,13 +23,13 @@ class TellerAllocationService
         $branch = $teller->branch;
 
         if (! $branch) {
-            throw new TellerBranchRequiredException;
+            throw new Exception('Teller must be assigned to a branch');
         }
 
         $pool = $this->branchPoolService->getOrCreateForBranch($branch, $currencyCode);
 
         if (! $pool->hasAvailable($requestedAmount)) {
-            throw new InsufficientPoolBalanceException('branch_pool', '0', 'requested');
+            throw new Exception('Insufficient available balance in branch pool');
         }
 
         $allocationData = [
@@ -64,7 +59,7 @@ class TellerAllocationService
         $branch = $allocation->branch;
 
         if (! $this->branchPoolService->allocateToTeller($branch, $allocation->currency_code, $approvedAmount)) {
-            throw new PoolAllocationException;
+            throw new Exception('Failed to allocate from branch pool');
         }
 
         $allocation->approve($approver, $approvedAmount, $dailyLimitMyr);
@@ -75,7 +70,7 @@ class TellerAllocationService
     public function activateAllocation(TellerAllocation $allocation): TellerAllocation
     {
         if (! $allocation->isApproved()) {
-            throw new InvalidAllocationStateException;
+            throw new Exception('Can only activate approved allocation');
         }
 
         $allocation->activate();
@@ -85,73 +80,35 @@ class TellerAllocationService
 
     public function modifyAllocation(TellerAllocation $allocation, User $modifier, string $newAmount, bool $isIncrease): TellerAllocation
     {
-        $branch = $allocation->branch;
+        return DB::transaction(function () use ($allocation, $newAmount, $isIncrease) {
+            $locked = TellerAllocation::where('id', $allocation->id)
+                ->lockForUpdate()
+                ->first();
 
-        if ($isIncrease) {
-            if (! $this->branchPoolService->allocateToTeller($branch, $allocation->currency_code, $newAmount)) {
-                throw new PoolAllocationException('Failed to allocate additional amount from branch pool');
+            $branch = $locked->branch;
+
+            if ($isIncrease) {
+                if (! $this->branchPoolService->allocateToTeller($branch, $locked->currency_code, $newAmount)) {
+                    throw new Exception('Failed to allocate additional amount from branch pool');
+                }
+                $locked->current_balance = $this->mathService->add($locked->current_balance, $newAmount);
+                $locked->allocated_amount = $this->mathService->add($locked->allocated_amount, $newAmount);
+            } else {
+                $availableToReturn = $this->mathService->subtract($locked->allocated_amount, $locked->current_balance);
+                $returnAmount = $this->mathService->compare($newAmount, $availableToReturn) < 0 ? $newAmount : $availableToReturn;
+
+                if ($this->mathService->compare($returnAmount, '0') > 0) {
+                    $this->branchPoolService->deallocateFromTeller($branch, $locked->currency_code, $returnAmount);
+                }
+
+                $locked->allocated_amount = $this->mathService->subtract($locked->allocated_amount, $newAmount);
+                $locked->current_balance = $this->mathService->subtract($locked->current_balance, $this->mathService->subtract($newAmount, $returnAmount));
             }
-            $allocation->current_balance = $this->mathService->add($allocation->current_balance, $newAmount);
-            $allocation->allocated_amount = $this->mathService->add($allocation->allocated_amount, $newAmount);
-        } else {
-            $pendingUsage = $this->calculatePendingTransactionUsage($allocation);
-            $newAllocation = $this->mathService->subtract($allocation->allocated_amount, $newAmount);
 
-            if ($this->mathService->compare($newAllocation, $pendingUsage) < 0) {
-                throw new PoolAllocationException(
-                    "Cannot reduce allocation to {$newAllocation}: {$pendingUsage} MYR required for pending transactions"
-                );
-            }
+            $locked->save();
 
-            $availableToReturn = $this->mathService->subtract($allocation->allocated_amount, $allocation->current_balance);
-            $returnAmount = $this->mathService->compare($newAmount, $availableToReturn) < 0 ? $newAmount : $availableToReturn;
-
-            if ($this->mathService->compare($returnAmount, '0') > 0) {
-                $this->branchPoolService->deallocateFromTeller($branch, $allocation->currency_code, $returnAmount);
-            }
-
-            $allocation->allocated_amount = $this->mathService->subtract($allocation->allocated_amount, $newAmount);
-            $allocation->current_balance = $this->mathService->subtract($allocation->current_balance, $this->mathService->subtract($newAmount, $returnAmount));
-        }
-
-        $allocation->save();
-
-        return $allocation;
-    }
-
-    private function calculatePendingTransactionUsage(TellerAllocation $allocation): string
-    {
-        $pendingTransactions = Transaction::where('user_id', $allocation->user_id)
-            ->where('currency_code', $allocation->currency_code)
-            ->where('status', '!=', TransactionStatus::Completed->value)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->where('status', '!=', TransactionStatus::Failed->value)
-            ->whereDate('created_at', now()->toDateString())
-            ->get();
-
-        $pendingTotal = '0';
-        foreach ($pendingTransactions as $tx) {
-            if ($tx->type === TransactionType::Buy) {
-                $pendingTotal = $this->mathService->add($pendingTotal, $tx->amount_local);
-            }
-        }
-
-        return $pendingTotal;
-    }
-
-    public function rejectAllocation(TellerAllocation $allocation, User $rejector, ?string $reason = null): TellerAllocation
-    {
-        $pool = $this->branchPoolService->getOrCreateForBranch($allocation->branch, $allocation->currency_code);
-        $pool->releaseFunds($allocation->allocated_amount);
-
-        $allocation->update([
-            'status' => TellerAllocationStatus::REJECTED,
-            'rejected_at' => now(),
-            'rejected_by' => $rejector->id,
-            'rejection_reason' => $reason,
-        ]);
-
-        return $allocation;
+            return $locked;
+        });
     }
 
     public function returnToPool(TellerAllocation $allocation): TellerAllocation
@@ -227,15 +184,8 @@ class TellerAllocationService
             return ['valid' => false, 'reason' => 'No active allocation for this currency'];
         }
 
-        if ($isBuy) {
-            if (! $allocation->hasAvailable($amountMyr)) {
-                return ['valid' => false, 'reason' => 'Insufficient allocation balance'];
-            }
-        } else {
-            // For Sell, verify teller actually has currency allocated to sell
-            if ($this->mathService->compare($allocation->current_balance, '0') <= 0) {
-                return ['valid' => false, 'reason' => "No {$currencyCode} balance available to sell"];
-            }
+        if ($isBuy && ! $allocation->hasAvailable($amountMyr)) {
+            return ['valid' => false, 'reason' => 'Insufficient allocation balance'];
         }
 
         if (! $allocation->hasDailyLimitRemaining($amountMyr)) {

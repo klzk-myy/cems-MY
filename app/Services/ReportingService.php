@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\TransactionStatus;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
@@ -11,20 +12,19 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportingService
 {
+    // BNM CTR Threshold: Transactions >= RM50,000 require CTR filing
+    public const CTR_THRESHOLD = 50000;
+
     protected EncryptionService $encryptionService;
 
     protected MathService $mathService;
 
-    protected ThresholdService $thresholdService;
-
     public function __construct(
         EncryptionService $encryptionService,
-        MathService $mathService,
-        ThresholdService $thresholdService
+        MathService $mathService
     ) {
         $this->encryptionService = $encryptionService;
         $this->mathService = $mathService;
-        $this->thresholdService = $thresholdService;
     }
 
     public function generateLCTR(string $month): string
@@ -32,7 +32,7 @@ class ReportingService
         $startDate = now()->parse($month)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        $transactions = Transaction::where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
+        $transactions = Transaction::where('amount_local', '>=', self::CTR_THRESHOLD)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->with(['customer', 'user'])
             ->get();
@@ -159,8 +159,8 @@ class ReportingService
 
         $transactions = Transaction::with(['customer', 'user'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
-            ->where('status', 'Completed')
+            ->where('amount_local', '>=', self::CTR_THRESHOLD)
+            ->where('status', TransactionStatus::Completed->value)
             ->orderBy('created_at')
             ->get();
 
@@ -204,7 +204,7 @@ class ReportingService
     public function generateMSB2Data(string $date): array
     {
         $transactions = Transaction::whereDate('created_at', $date)
-            ->where('status', 'Completed')
+            ->where('status', TransactionStatus::Completed->value)
             ->get();
 
         $currencies = Currency::where('is_active', true)->get();
@@ -313,13 +313,13 @@ class ReportingService
             $buyTxns = Transaction::whereBetween('created_at', [$startDate, $endDate])
                 ->where('currency_code', $currency->code)
                 ->where('type', 'Buy')
-                ->where('status', 'Completed')
+                ->where('status', TransactionStatus::Completed->value)
                 ->get();
 
             $sellTxns = Transaction::whereBetween('created_at', [$startDate, $endDate])
                 ->where('currency_code', $currency->code)
                 ->where('type', 'Sell')
-                ->where('status', 'Completed')
+                ->where('status', TransactionStatus::Completed->value)
                 ->get();
 
             $openingPosition = CurrencyPosition::where('currency_code', $currency->code)
@@ -341,7 +341,7 @@ class ReportingService
         }
 
         $customerCount = Transaction::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'Completed')
+            ->where('status', TransactionStatus::Completed->value)
             ->distinct('customer_id')
             ->count('customer_id');
 
@@ -425,8 +425,8 @@ class ReportingService
 
         $transactions = Transaction::with(['customer', 'user'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
-            ->where('status', 'Completed')
+            ->where('amount_local', '>=', self::CTR_THRESHOLD)
+            ->where('status', TransactionStatus::Completed->value)
             ->orderBy('created_at')
             ->get();
 
@@ -602,23 +602,5 @@ class ReportingService
         fclose($csv);
 
         return $filepath;
-    }
-
-    /**
-     * Generate a report based on type and date.
-     *
-     * @param  string  $type  Report type (e.g., 'msb2', 'lctr')
-     * @param  string  $date  Date string (YYYY-MM-DD or month)
-     * @return string Filepath of generated report
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function generateReport(string $type, string $date): string
-    {
-        return match ($type) {
-            'msb2' => $this->generateMSB2($date),
-            'lctr' => $this->generateLCTR($date),
-            default => throw new \InvalidArgumentException("Unknown report type: {$type}"),
-        };
     }
 }

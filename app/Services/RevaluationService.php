@@ -106,7 +106,7 @@ class RevaluationService
 
         return DB::transaction(function () use ($position, $oldRate, $newRate, $gainLoss, $date, $postedBy) {
             // Prevent double-counting: check if position was already revalued at this rate
-            if ($position->last_valuation_rate !== null && bccomp($position->last_valuation_rate, $newRate, 6) === 0) {
+            if ($position->last_valuation_rate !== null && $this->mathService->compare($position->last_valuation_rate, $newRate) === 0) {
                 return null;
             }
 
@@ -220,9 +220,10 @@ class RevaluationService
      *               - total_loss: string Total losses (as string for precision)
      *               - net_pnl: string Net profit/loss (as string for precision)
      *               - report_path: string|null Path to generated report (if any)
+     *               - errors: array List of errors encountered during processing
      *
      * @throws \InvalidArgumentException If posting date falls outside an open period
-     * @throws \RuntimeException If any revaluation fails (errors are not silently swallowed)
+     * @throws \RuntimeException If all revaluations fail
      */
     public function runRevaluationWithJournal(?string $date = null, ?int $postedBy = null): array
     {
@@ -343,15 +344,9 @@ class RevaluationService
             }
         }
 
-        // If there are any errors, throw exception so caller MUST handle them
-        // Include both successful and failed currencies in the error for traceability
-        if (! empty($errors)) {
-            $successfulCurrencies = array_column($results, 'currency_code');
-            $failedCurrencies = array_column($errors, 'currency_code');
-            $errorMsg = 'Revaluation errors occurred: '.implode('; ', array_column($errors, 'error'));
-            $errorMsg .= '. Successful currencies: '.(empty($successfulCurrencies) ? 'none' : implode(', ', $successfulCurrencies));
-            $errorMsg .= '. Failed currencies: '.implode(', ', $failedCurrencies);
-            throw new \RuntimeException($errorMsg);
+        // If all currencies failed, throw exception
+        if (empty($results) && ! empty($errors)) {
+            throw new \RuntimeException('All revaluations failed: '.implode(', ', array_column($errors, 'error')));
         }
 
         return [
@@ -362,6 +357,7 @@ class RevaluationService
             'total_loss' => $totalLoss,
             'net_pnl' => $this->mathService->add($totalGain, $totalLoss),
             'report_path' => null,
+            'errors' => $errors,
         ];
     }
 
@@ -544,7 +540,7 @@ class RevaluationService
         $limits = config('cems.position_limits', []);
 
         // Check if this currency has a configured limit
-        if (isset($limits[$currencyCode]) && bccomp($gainLossAmount, (string) $limits[$currencyCode], 2) > 0) {
+        if (isset($limits[$currencyCode]) && $this->mathService->compare($gainLossAmount, (string) $limits[$currencyCode]) > 0) {
             $positionLimit = $limits[$currencyCode];
             $this->auditService->logPositionEvent('position_limit_breach', [
                 'new' => [

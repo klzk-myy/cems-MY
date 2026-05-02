@@ -6,12 +6,16 @@ use App\Models\Branch;
 use App\Models\BranchPool;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BranchPoolService
 {
-    public function __construct(
-        protected MathService $mathService,
-    ) {}
+    protected MathService $mathService;
+
+    public function __construct()
+    {
+        $this->mathService = new MathService;
+    }
 
     public function getOrCreateForBranch(Branch $branch, string $currencyCode): BranchPool
     {
@@ -105,6 +109,14 @@ class BranchPoolService
 
             $pool->available_balance = $this->mathService->add($pool->available_balance, $amount);
             $pool->save();
+
+            Log::info('Branch pool replenished', [
+                'branch_id' => $branch->id,
+                'currency_code' => $currencyCode,
+                'amount' => $amount,
+                'approved_by' => $approvedBy,
+                'pool_id' => $pool->id,
+            ]);
 
             return $pool;
         });

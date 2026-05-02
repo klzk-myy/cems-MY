@@ -2,22 +2,12 @@
 
 namespace App\Services;
 
-use App\Enums\AccountCode;
-use App\Enums\TransactionType;
-use App\Exceptions\Domain\AccountNotFoundException;
-use App\Exceptions\Domain\ClosedPeriodException;
-use App\Exceptions\Domain\EntryAlreadyReversedException;
-use App\Exceptions\Domain\EntryNotPostedException;
-use App\Exceptions\Domain\UnbalancedJournalException;
+use App\Enums\JournalEntryStatus;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
-use App\Models\CurrencyPosition;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
-use App\Models\TillBalance;
-use App\Models\Transaction;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -53,10 +43,11 @@ class AccountingService
     }
 
     /**
-     * Create a new journal entry with validation and post directly to ledger.
+     * Create a new journal entry with validation.
      *
      * Validates that the entry is balanced (debits equal credits) and creates
-     * in Posted status, immediately posting to the general ledger.
+     * in Draft status. Entries must be submitted for approval and then approved
+     * before being posted to the ledger.
      *
      * @param  array  $lines  Array of journal line items with keys:
      *                        - account_code: string Account code
@@ -85,10 +76,7 @@ class AccountingService
 
         return DB::transaction(function () use ($lines, $referenceType, $referenceId, $description, $entryDate, $createdBy) {
             if (! $this->validateBalanced($lines)) {
-                throw new UnbalancedJournalException(
-                    $this->calculateTotalDebits($lines),
-                    $this->calculateTotalCredits($lines)
-                );
+                throw new \InvalidArgumentException('Journal entry is not balanced: debits do not equal credits');
             }
 
             // Find the accounting period for this entry date
@@ -96,20 +84,20 @@ class AccountingService
 
             // Validate that the period is open (if period exists)
             if ($period && ! $period->isOpen()) {
-                throw new ClosedPeriodException($period->period_code);
+                throw new \InvalidArgumentException(
+                    "Cannot create entry in closed period {$period->period_code}. Please use an open period or contact administrator."
+                );
             }
 
-            // Create entry in Posted status and immediately post to ledger
+            // Create entry in Draft status - does NOT post to ledger yet
             $entry = JournalEntry::create([
                 'entry_date' => $entryDate,
                 'period_id' => $period?->id,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'description' => $description,
-                'status' => 'Posted',
+                'status' => JournalEntryStatus::DRAFT->value,
                 'created_by' => $createdBy,
-                'posted_by' => $createdBy,
-                'posted_at' => now(),
             ]);
 
             foreach ($lines as $line) {
@@ -122,9 +110,6 @@ class AccountingService
                 ]);
             }
 
-            // Post directly to ledger - no approval workflow needed
-            $this->updateLedger($entry);
-
             $this->auditService->log(
                 'journal_entry_created',
                 $createdBy,
@@ -135,11 +120,161 @@ class AccountingService
                     'reference_type' => $referenceType,
                     'reference_id' => $referenceId,
                     'description' => $description,
-                    'status' => 'Posted',
+                    'status' => JournalEntryStatus::DRAFT->value,
                 ]
             );
 
             return $entry->fresh()->load('lines');
+        });
+    }
+
+    /**
+     * Submit a journal entry for approval.
+     *
+     * Changes status from 'Draft' to 'Pending'. Only draft entries
+     * can be submitted for approval.
+     *
+     * @param  JournalEntry  $entry  The entry to submit
+     * @param  int|null  $submittedBy  User ID submitting (default: authenticated user)
+     * @return JournalEntry Updated entry
+     *
+     * @throws \InvalidArgumentException If entry is not in Draft status
+     */
+    public function submitForApproval(JournalEntry $entry, ?int $submittedBy = null): JournalEntry
+    {
+        $submittedBy = $submittedBy ?? auth()->id();
+
+        // Perform the status update inside transaction, then refresh AFTER commit
+        $entry = DB::transaction(function () use ($entry) {
+            if (! $entry->isDraft()) {
+                throw new \InvalidArgumentException('Only draft entries can be submitted for approval');
+            }
+
+            $entry->update([
+                'status' => JournalEntryStatus::PENDING->value,
+            ]);
+
+            $this->auditService->logJournalWorkflowEvent('journal_entry_submitted', $entry->id, [
+                'old' => ['status' => 'Draft'],
+                'new' => ['status' => 'Pending'],
+            ]);
+
+            // Return the entry from inside the transaction - the model's attributes are updated
+            // but we need to refresh AFTER the transaction commits to sync with database
+            return $entry;
+        });
+
+        // Refresh AFTER the transaction has committed to get the database state
+        $entry->refresh();
+
+        return $entry;
+    }
+
+    /**
+     * Approve a journal entry and post it to the ledger.
+     *
+     * Changes status from 'Pending' to 'Posted', records approval metadata,
+     * and posts the entry to the general ledger.
+     *
+     * @param  JournalEntry  $entry  The entry to approve
+     * @param  int|null  $approvedBy  User ID approving (default: authenticated user)
+     * @param  string|null  $approvalNotes  Optional approval notes
+     * @return JournalEntry Updated entry
+     *
+     * @throws \InvalidArgumentException If entry is not in Pending status
+     */
+    public function approveEntry(
+        JournalEntry $entry,
+        ?int $approvedBy = null,
+        ?string $approvalNotes = null
+    ): JournalEntry {
+        $approvedBy = $approvedBy ?? auth()->id();
+
+        // The model's status should already be 'Pending' after submitForApproval
+        if (! $entry->isPending()) {
+            throw new \InvalidArgumentException('Only pending entries can be approved');
+        }
+
+        // Re-validate period is still open before posting (could have been closed since submission)
+        if ($entry->period_id) {
+            $period = AccountingPeriod::find($entry->period_id);
+            if ($period && ! $period->isOpen()) {
+                throw new \InvalidArgumentException(
+                    "Cannot approve entry - period {$period->period_code} is closed"
+                );
+            }
+        }
+
+        // Wrap in transaction to ensure atomicity - if updateLedger fails,
+        // the entry status won't be changed to Posted
+        return DB::transaction(function () use ($entry, $approvedBy, $approvalNotes) {
+            $entry->update([
+                'status' => JournalEntryStatus::POSTED->value,
+                'approved_by' => $approvedBy,
+                'approved_at' => now(),
+                'approval_notes' => $approvalNotes,
+                'posted_by' => $approvedBy,
+                'posted_at' => now(),
+            ]);
+
+            // Post to the ledger
+            $this->updateLedger($entry);
+
+            $this->auditService->logJournalWorkflowEvent('journal_entry_approved', $entry->id, [
+                'old' => ['status' => 'Pending'],
+                'new' => [
+                    'status' => JournalEntryStatus::POSTED->value,
+                    'approved_by' => $approvedBy,
+                    'approval_notes' => $approvalNotes,
+                ],
+            ]);
+
+            return $entry->fresh();
+        });
+    }
+
+    /**
+     * Reject a journal entry.
+     *
+     * Changes status from 'Pending' to 'Rejected'. The entry can be
+     * edited and resubmitted, or deleted.
+     *
+     * @param  JournalEntry  $entry  The entry to reject
+     * @param  int|null  $rejectedBy  User ID rejecting (default: authenticated user)
+     * @param  string|null  $rejectionNotes  Reason for rejection
+     * @return JournalEntry Updated entry
+     *
+     * @throws \InvalidArgumentException If entry is not in Pending status
+     */
+    public function rejectEntry(
+        JournalEntry $entry,
+        ?int $rejectedBy = null,
+        ?string $rejectionNotes = null
+    ): JournalEntry {
+        $rejectedBy = $rejectedBy ?? auth()->id();
+
+        return DB::transaction(function () use ($entry, $rejectionNotes) {
+            // Re-fetch to ensure we see the latest committed state
+            $entry = JournalEntry::find($entry->id);
+
+            if (! $entry->isPending()) {
+                throw new \InvalidArgumentException('Only pending entries can be rejected');
+            }
+
+            $entry->update([
+                'status' => JournalEntryStatus::REJECTED->value,
+                'approval_notes' => $rejectionNotes,
+            ]);
+
+            $this->auditService->logJournalWorkflowEvent('journal_entry_rejected', $entry->id, [
+                'old' => ['status' => 'Pending'],
+                'new' => [
+                    'status' => JournalEntryStatus::REJECTED->value,
+                    'rejection_notes' => $rejectionNotes,
+                ],
+            ]);
+
+            return $entry->fresh();
         });
     }
 
@@ -170,38 +305,6 @@ class AccountingService
     }
 
     /**
-     * Calculate total debits from journal lines.
-     *
-     * @param  array  $lines  Array of journal line items
-     * @return string Total debits as a string for precision
-     */
-    protected function calculateTotalDebits(array $lines): string
-    {
-        $total = '0';
-        foreach ($lines as $line) {
-            $total = $this->mathService->add($total, (string) ($line['debit'] ?? 0));
-        }
-
-        return $total;
-    }
-
-    /**
-     * Calculate total credits from journal lines.
-     *
-     * @param  array  $lines  Array of journal line items
-     * @return string Total credits as a string for precision
-     */
-    protected function calculateTotalCredits(array $lines): string
-    {
-        $total = '0';
-        foreach ($lines as $line) {
-            $total = $this->mathService->add($total, (string) ($line['credit'] ?? 0));
-        }
-
-        return $total;
-    }
-
-    /**
      * Reverse an existing journal entry.
      *
      * Creates a new reversal entry that swaps debits and credits from the
@@ -227,12 +330,12 @@ class AccountingService
 
             // Validation 1: Check if entry is already reversed
             if ($originalEntry->isReversed()) {
-                throw new EntryAlreadyReversedException($originalEntry->id);
+                throw new \InvalidArgumentException('Entry has already been reversed');
             }
 
             // Validation 2: Check if entry is posted (can only reverse posted entries)
             if (! $originalEntry->isPosted()) {
-                throw new EntryNotPostedException($originalEntry->id);
+                throw new \InvalidArgumentException('Entry must be Posted to be reversed');
             }
 
             // Load lines if not already loaded
@@ -260,11 +363,13 @@ class AccountingService
                 $reversedBy
             );
 
-            // Note: Entry is already posted via createJournalEntry() - no approval needed for reversals
+            // Submit for approval first (Draft -> Pending), then approve (Pending -> Posted)
+            $this->submitForApproval($entry, $reversedBy);
+            $this->approveEntry($entry, $reversedBy, "Reversal of entry {$originalEntry->id}");
 
             // Update original entry status and create explicit link via reversal_id
             $originalEntry->update([
-                'status' => 'Reversed',
+                'status' => JournalEntryStatus::REVERSED->value,
                 'reversed_by' => $reversedBy,
                 'reversed_at' => now(),
             ]);
@@ -280,42 +385,29 @@ class AccountingService
      */
     protected function updateLedger(JournalEntry $entry): void
     {
-        DB::transaction(function () use ($entry) {
-            foreach ($entry->lines as $line) {
-                $currentBalance = $this->getAccountBalance($line->account_code);
+        foreach ($entry->lines as $line) {
+            $currentBalance = $this->getAccountBalance($line->account_code);
 
-                if ($this->isDebitAccount($line->account_code)) {
-                    $newBalance = $this->mathService->add(
-                        $this->mathService->add($currentBalance, (string) $line->debit),
-                        $this->mathService->multiply((string) $line->credit, '-1')
-                    );
-                } else {
-                    $newBalance = $this->mathService->add(
-                        $this->mathService->add($currentBalance, (string) $line->credit),
-                        $this->mathService->multiply((string) $line->debit, '-1')
-                    );
-                }
-
-                AccountLedger::create([
-                    'account_code' => $line->account_code,
-                    'entry_date' => $entry->entry_date,
-                    'journal_entry_id' => $entry->id,
-                    'debit' => $line->debit,
-                    'credit' => $line->credit,
-                    'running_balance' => $newBalance,
-                ]);
+            if ($this->isDebitAccount($line->account_code)) {
+                $newBalance = $this->mathService->add(
+                    $this->mathService->add($currentBalance, (string) $line->debit),
+                    $this->mathService->multiply((string) $line->credit, '-1')
+                );
+            } else {
+                $newBalance = $this->mathService->add(
+                    $this->mathService->add($currentBalance, (string) $line->credit),
+                    $this->mathService->multiply((string) $line->debit, '-1')
+                );
             }
 
-            $this->invalidateTrialBalanceCache();
-        });
-    }
-
-    protected function invalidateTrialBalanceCache(): void
-    {
-        try {
-            Cache::tags(['ledger', 'trial-balance'])->flush();
-        } catch (\Exception $e) {
-            // Tags not supported on this cache driver - cache will expire naturally
+            AccountLedger::create([
+                'account_code' => $line->account_code,
+                'entry_date' => $entry->entry_date,
+                'journal_entry_id' => $entry->id,
+                'debit' => $line->debit,
+                'credit' => $line->credit,
+                'running_balance' => $newBalance,
+            ]);
         }
     }
 
@@ -331,7 +423,7 @@ class AccountingService
     {
         $account = ChartOfAccount::find($accountCode);
         if (! $account) {
-            throw new AccountNotFoundException($accountCode);
+            throw new \InvalidArgumentException("Account not found: {$accountCode}");
         }
 
         return in_array($account->account_type, ['Asset', 'Expense']);
@@ -345,10 +437,9 @@ class AccountingService
      *
      * @param  string  $accountCode  The account code to query
      * @param  string|null  $asOfDate  Date in YYYY-MM-DD format (default: current date)
-     * @param  int|null  $branchId  Optional branch ID to filter by
      * @return string Account balance as a string for precision
      */
-    public function getAccountBalance(string $accountCode, ?string $asOfDate = null, ?int $branchId = null): string
+    public function getAccountBalance(string $accountCode, ?string $asOfDate = null): string
     {
         $query = AccountLedger::where('account_code', $accountCode);
 
@@ -356,12 +447,6 @@ class AccountingService
             // Use date function for cross-database compatibility
             // This ensures proper comparison regardless of datetime vs date storage
             $query->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);
-        }
-
-        if ($branchId !== null) {
-            $query->whereHas('journalEntry', function ($q) use ($branchId) {
-                $q->where('branch_id', $branchId);
-            });
         }
 
         $lastEntry = $query->orderBy('entry_date', 'desc')
@@ -400,117 +485,5 @@ class AccountingService
         // For expense accounts, activity is typically the net amount (debits - credits)
         // This gives us the actual spending in the period
         return $this->mathService->subtract($totalDebits, $totalCredits);
-    }
-
-    /**
-     * Update till balance after transaction.
-     *
-     * @param  string  $tillId  Till identifier
-     * @param  string  $currencyCode  Currency code
-     * @param  string  $type  Transaction type (Buy/Sell)
-     * @param  string  $amountLocal  Local amount in MYR
-     * @param  string  $amountForeign  Foreign currency amount
-     */
-    public function updateTillBalance(string $tillId, string $currencyCode, string $type, string $amountLocal, string $amountForeign): void
-    {
-        $tillBalance = TillBalance::where('till_id', $tillId)
-            ->where('currency_code', $currencyCode)
-            ->where('date', today())
-            ->whereNull('closed_at')
-            ->first();
-
-        if (! $tillBalance) {
-            return;
-        }
-
-        $currentTotal = $tillBalance->transaction_total ?? '0';
-        $foreignTotal = $tillBalance->foreign_total ?? '0';
-
-        if ($type === TransactionType::Buy->value) {
-            $tillBalance->update([
-                'transaction_total' => $this->mathService->add($currentTotal, $amountLocal),
-                'foreign_total' => $this->mathService->add($foreignTotal, $amountForeign),
-            ]);
-        } else {
-            $tillBalance->update([
-                'transaction_total' => $this->mathService->add($currentTotal, $amountLocal),
-                'foreign_total' => $this->mathService->subtract($foreignTotal, $amountForeign),
-            ]);
-        }
-    }
-
-    /**
-     * Create accounting journal entries for a transaction.
-     *
-     * @param  Transaction  $transaction  Transaction to create entries for
-     * @return JournalEntry Created journal entry
-     */
-    public function createTransactionAccountingEntries(Transaction $transaction): JournalEntry
-    {
-        $entries = [];
-
-        if ($transaction->type->isBuy()) {
-            $entries = [
-                [
-                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
-                    'debit' => $transaction->amount_local,
-                    'credit' => '0',
-                    'description' => "Buy {$transaction->amount_foreign} {$transaction->currency_code} @ {$transaction->rate}",
-                ],
-                [
-                    'account_code' => AccountCode::CASH_MYR->value,
-                    'debit' => '0',
-                    'credit' => $transaction->amount_local,
-                    'description' => "Payment for {$transaction->currency_code} purchase",
-                ],
-            ];
-        } else {
-            $position = CurrencyPosition::where('currency_code', $transaction->currency_code)
-                ->where('till_id', $transaction->till_id)
-                ->first();
-
-            $avgCost = $position ? $position->avg_cost_rate : $transaction->rate;
-            $costBasis = $this->mathService->multiply((string) $transaction->amount_foreign, $avgCost);
-            $revenue = $this->mathService->subtract((string) $transaction->amount_local, $costBasis);
-            $isGain = $this->mathService->compare($revenue, '0') >= 0;
-
-            $entries = [
-                [
-                    'account_code' => AccountCode::CASH_MYR->value,
-                    'debit' => $transaction->amount_local,
-                    'credit' => '0',
-                    'description' => "Sale of {$transaction->amount_foreign} {$transaction->currency_code}",
-                ],
-                [
-                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
-                    'debit' => '0',
-                    'credit' => $costBasis,
-                    'description' => "Cost of {$transaction->currency_code} sold",
-                ],
-            ];
-
-            if ($isGain) {
-                $entries[] = [
-                    'account_code' => AccountCode::FOREX_TRADING_REVENUE->value,
-                    'debit' => '0',
-                    'credit' => $revenue,
-                    'description' => "Gain on {$transaction->currency_code} sale",
-                ];
-            } else {
-                $entries[] = [
-                    'account_code' => AccountCode::FOREX_LOSS->value,
-                    'debit' => $this->mathService->multiply($revenue, '-1'),
-                    'credit' => '0',
-                    'description' => "Loss on {$transaction->currency_code} sale",
-                ];
-            }
-        }
-
-        return $this->createJournalEntry(
-            $entries,
-            'Transaction',
-            $transaction->id,
-            "Transaction #{$transaction->id} - {$transaction->type->value} {$transaction->currency_code}"
-        );
     }
 }
