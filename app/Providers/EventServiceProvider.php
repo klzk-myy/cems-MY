@@ -20,7 +20,12 @@ use App\Listeners\TriggerSanctionsRescreening;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -70,7 +75,33 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        parent::boot();
+
+        // Queue event listeners for monitoring
+        Queue::before(function (JobProcessing $event) {
+            Log::info('Queue job starting', [
+                'job' => $event->job->getName(),
+                'id' => $event->job->getJobId(),
+                'queue' => $event->job->getQueue(),
+            ]);
+        });
+
+        Queue::after(function (JobProcessed $event) {
+            Log::info('Queue job completed', [
+                'job' => $event->job->getName(),
+                'id' => $event->job->getJobId(),
+                'queue' => $event->job->getQueue(),
+            ]);
+        });
+
+        Queue::failing(function (JobExceptionOccurred $event) {
+            Log::error('Queue job failing', [
+                'job' => $event->job->getName(),
+                'id' => $event->job->getJobId(),
+                'queue' => $event->job->getQueue(),
+                'error' => $event->exception->getMessage(),
+            ]);
+        });
     }
 
     /**
