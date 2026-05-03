@@ -126,6 +126,20 @@
             </a>
         </li>
 
+        <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-2">Customers</li>
+
+        <li>
+            <a href="{{ route('customers.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('customers.index') ? 'bg-gray-800' : '' }}">
+                Customer List
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('customers.create') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('customers.create') ? 'bg-gray-800' : '' }}">
+                Create Customer
+            </a>
+        </li>
+
         @can('role:manager')
         <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-4">Finance</li>
 
@@ -460,6 +474,12 @@
         <li>
             <a href="{{ route('test-results.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('test-results.*') ? 'bg-gray-800' : '' }}">
                 Test Results
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('test-results.statistics') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('test-results.statistics') ? 'bg-gray-800' : '' }}">
+                Test Statistics
             </a>
         </li>
 
