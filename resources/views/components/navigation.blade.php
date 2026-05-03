@@ -140,7 +140,7 @@
             </a>
         </li>
 
-        @canany(['role:manager', 'role:admin'])
+        @if(auth()->user()->role->isAdmin() || auth()->user()->role->isManager())
         <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-4">Finance</li>
 
         <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-2">Accounting</li>
@@ -246,7 +246,7 @@
                 Rates
             </a>
         </li>
-        @endcanany
+        @endif
 
         @can('role:compliance')
         <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-4">Compliance</li>
@@ -360,7 +360,7 @@
         </li>
         @endcan
 
-        @canany(['role:manager', 'role:admin'])
+        @if(auth()->user()->role->isAdmin() || auth()->user()->role->isManager())
         <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-4">Reports</li>
 
         <li>
@@ -434,7 +434,7 @@
                 Report History
             </a>
         </li>
-        @endcanany
+        @endif
 
         @can('role:admin')
         <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-4">System</li>
