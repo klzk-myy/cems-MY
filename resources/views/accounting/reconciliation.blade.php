@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Bank Reconciliation">
     <div class="space-y-6">
         <!-- Page Header -->
         <div class="flex items-center justify-between">
@@ -179,4 +179,4 @@
             <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">Complete Reconciliation</button>
         </div>
     </div>
-</x-layouts.app>
+</x-app-layout>

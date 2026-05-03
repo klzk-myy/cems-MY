@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-app-layout title="Accounting Periods">
     <div class="space-y-6">
         <!-- Page Header -->
         <div class="flex items-center justify-between">

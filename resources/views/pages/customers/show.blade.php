@@ -6,8 +6,8 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-lg font-semibold mb-4">Personal Information</h2>
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Personal Information</h2>
                 <dl class="space-y-3">
                     <div class="flex justify-between">
                         <dt class="text-gray-500">Full Name</dt>
@@ -36,8 +36,8 @@
                 </dl>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-lg font-semibold mb-4">Risk & Compliance</h2>
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Risk & Compliance</h2>
                 <dl class="space-y-3">
                     <div class="flex justify-between">
                         <dt class="text-gray-500">Risk Level</dt>
