@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'layout' => 'layouts.app',
+
     'comments' => [
         'enabled' => env('APP_ENV', 'production') === 'local',
     ],
