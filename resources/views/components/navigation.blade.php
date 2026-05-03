@@ -53,7 +53,7 @@
                 <a href="{{ route('counters.handover.show', ['counter' => 1]) }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.handover.show') ? 'bg-gray-700' : '' }}">
                     Handover
                 </a>
-                <a href="{{ route('counters.history') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.history') ? 'bg-gray-700' : '' }}">
+                <a href="{{ route('counters.index') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.history') ? 'bg-gray-700' : '' }}">
                     History
                 </a>
             </div>
