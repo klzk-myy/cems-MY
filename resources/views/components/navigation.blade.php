@@ -71,7 +71,7 @@
                 <a href="{{ route('stock-cash.index') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('stock-cash.index') ? 'bg-gray-700' : '' }}">
                     Overview
                 </a>
-                <a href="{{ route('stock-cash.position', ['position' => 1]) }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('stock-cash.position') ? 'bg-gray-700' : '' }}">
+                <a href="{{ route('stock-cash.index') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('stock-cash.position') ? 'bg-gray-700' : '' }}">
                     Position
                 </a>
                 <a href="{{ route('stock-cash.reconciliation') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('stock-cash.reconciliation') ? 'bg-gray-700' : '' }}">
