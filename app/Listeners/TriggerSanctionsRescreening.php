@@ -8,6 +8,7 @@ use App\Enums\FlagStatus;
 use App\Enums\TransactionStatus;
 use App\Events\CustomerRecordUpdated;
 use App\Events\SanctionsListUpdated;
+use App\Jobs\ComplianceScreeningJob;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
@@ -98,7 +99,7 @@ class TriggerSanctionsRescreening
         ]);
 
         foreach ($customersToRescreen as $customer) {
-            $this->rescreenCustomerWithTransactionHold($customer, $event);
+            ComplianceScreeningJob::dispatch($customer->id);
         }
     }
 
