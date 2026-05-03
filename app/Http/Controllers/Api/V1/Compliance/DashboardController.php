@@ -98,9 +98,12 @@ class DashboardController extends Controller
         $filename = 'compliance_audit_trail_'.now()->format('Y-m-d_His').'.csv';
 
         return response()->streamDownload(function () use ($csv) {
-            echo $csv;
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, $csv);
+            fclose($handle);
         }, $filename, [
             'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
