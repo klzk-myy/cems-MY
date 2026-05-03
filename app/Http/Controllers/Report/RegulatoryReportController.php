@@ -180,12 +180,12 @@ class RegulatoryReportController extends Controller
         $summary = DB::table('transactions')
             ->select(
                 'currency_code',
-                DB::raw("SUM(CASE WHEN type = '".TransactionType::Buy->value."' THEN amount_foreign ELSE 0 END) as buy_volume_foreign"),
-                DB::raw("SUM(CASE WHEN type = '".TransactionType::Buy->value."' THEN amount_local ELSE 0 END) as buy_amount_myr"),
-                DB::raw("COUNT(CASE WHEN type = '".TransactionType::Buy->value."' THEN 1 END) as buy_count"),
-                DB::raw("SUM(CASE WHEN type = '".TransactionType::Sell->value."' THEN amount_foreign ELSE 0 END) as sell_volume_foreign"),
-                DB::raw("SUM(CASE WHEN type = '".TransactionType::Sell->value."' THEN amount_local ELSE 0 END) as sell_amount_myr"),
-                DB::raw("COUNT(CASE WHEN type = '".TransactionType::Sell->value."' THEN 1 END) as sell_count")
+                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume_foreign', [TransactionType::Buy->value]),
+                DB::raw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_amount_myr', [TransactionType::Buy->value]),
+                DB::raw('COUNT(CASE WHEN type = ? THEN 1 END) as buy_count', [TransactionType::Buy->value]),
+                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume_foreign', [TransactionType::Sell->value]),
+                DB::raw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_amount_myr', [TransactionType::Sell->value]),
+                DB::raw('COUNT(CASE WHEN type = ? THEN 1 END) as sell_count', [TransactionType::Sell->value])
             )
             ->whereDate('created_at', $date)
             ->where('status', TransactionStatus::Completed)

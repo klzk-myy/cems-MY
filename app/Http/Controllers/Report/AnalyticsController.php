@@ -51,8 +51,8 @@ class AnalyticsController extends Controller
         $monthlyData = $query->select(
             DB::raw('MONTH(created_at) as month'),
             DB::raw('COUNT(*) as count'),
-            DB::raw("SUM(CASE WHEN type = '".TransactionType::Buy->value."' THEN amount_local ELSE 0 END) as buy_volume"),
-            DB::raw("SUM(CASE WHEN type = '".TransactionType::Sell->value."' THEN amount_local ELSE 0 END) as sell_volume"),
+            DB::raw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_volume', [TransactionType::Buy->value]),
+            DB::raw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_volume', [TransactionType::Sell->value]),
             DB::raw('SUM(amount_local) as total_volume')
         )
             ->groupBy('month')
