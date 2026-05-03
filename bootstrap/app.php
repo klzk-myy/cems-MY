@@ -3,7 +3,6 @@
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\CheckRoleAny;
-use App\Http\Middleware\DataBreachDetection;
 use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\IpBlocker;
 use App\Http\Middleware\PerformanceTrackingMiddleware;
@@ -72,7 +71,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle.export' => 'throttle:export',
             'throttle.sensitive' => 'throttle:sensitive',
             'strict.ratelimit' => StrictRateLimit::class,
-            'data.breach' => DataBreachDetection::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
