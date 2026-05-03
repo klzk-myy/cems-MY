@@ -103,4 +103,12 @@ class ProcessTransactionImport implements ShouldQueue
             'error' => $exception->getMessage(),
         ]);
     }
+
+    /**
+     * Get tags for Horizon observability.
+     */
+    public function tags(): array
+    {
+        return ['import', 'transaction', 'csv'];
+    }
 }
