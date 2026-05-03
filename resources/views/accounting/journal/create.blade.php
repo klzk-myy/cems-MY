@@ -135,4 +135,4 @@
             </div>
         </form>
     </div>
-</x-layouts.app>
+</x-app-layout>

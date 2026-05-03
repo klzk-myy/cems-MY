@@ -129,4 +129,4 @@
             </button>
         </div>
     </div>
-</x-layouts.app>
+</x-app-layout>
