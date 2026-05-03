@@ -8,16 +8,16 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-gray-100 flex items-center justify-center">
-    <div class="w-full max-w-md">
-        <div class="bg-white rounded-lg shadow-md p-8">
+    <div class="w-full max-w-md p-6">
+        <div class="bg-white border border-[#e5e5e5] rounded-xl p-8">
             <h1 class="text-2xl font-bold text-center mb-6">{{ config('app.name') }}</h1>
 
             <form method="POST" action="{{ route('login') }}">
                 @csrf
 
                 @if($errors->any())
-                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        <ul>
+                    <div class="mb-4 p-4 text-sm text-red-700 bg-red-50 rounded-lg border border-red-200">
+                        <ul class="list-disc list-inside">
                             @foreach($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
@@ -26,19 +26,25 @@
                 @endif
 
                 <div class="mb-4">
-                    <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
                     <input type="text" name="username" id="username" required
-                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                           class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg @error('username') border-red-500 @enderror"
                            value="{{ old('username') }}">
+                    @error('username')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="mb-6">
-                    <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
                     <input type="password" name="password" id="password" required
-                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                           class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg @error('password') border-red-500 @enderror">
+                    @error('password')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                <button type="submit" class="w-full px-4 py-2.5 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                     Sign In
                 </button>
             </form>

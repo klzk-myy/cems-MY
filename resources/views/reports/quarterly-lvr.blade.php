@@ -195,7 +195,7 @@
         @endif
 
         {{-- Footer Note --}}
-        <div class="bg-[#fafafa] border border-[#e5e5e5] rounded-xl p-4">
+        <div class="bg-gray-50 border border-[#e5e5e5] rounded-xl p-4">
             <p class="text-xs text-[#666666]">
                 <strong class="text-[#333333]">Regulatory Note:</strong>
                 This report includes all transactions equal to or exceeding RM 50,000 in MYR equivalent.

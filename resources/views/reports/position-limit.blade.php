@@ -158,7 +158,7 @@
         @endif
 
         {{-- Regulatory Note --}}
-        <div class="bg-[#fafafa] border border-[#e5e5e5] rounded-xl p-4">
+        <div class="bg-gray-50 border border-[#e5e5e5] rounded-xl p-4">
             <p class="text-xs text-[#666666]">
                 <strong class="text-[#333333]">Regulatory Note:</strong>
                 Position limits are set in accordance with Bank Negara Malaysia requirements for money service businesses.

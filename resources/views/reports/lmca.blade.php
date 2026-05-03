@@ -78,19 +78,19 @@
 
             {{-- Summary Cards --}}
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-[#fafafa] border border-[#e5e5e5] rounded-lg p-4">
+                <div class="bg-gray-50 border border-[#e5e5e5] rounded-lg p-4">
                     <p class="text-xs text-[#666666] mb-1">Total Transactions</p>
                     <p class="text-xl font-semibold text-[#0a0a0a]">{{ number_format($reportData['total_transactions'] ?? 0) }}</p>
                 </div>
-                <div class="bg-[#fafafa] border border-[#e5e5e5] rounded-lg p-4">
+                <div class="bg-gray-50 border border-[#e5e5e5] rounded-lg p-4">
                     <p class="text-xs text-[#666666] mb-1">Total Buy Volume</p>
                     <p class="text-xl font-semibold text-[#0a0a0a]">{{ number_format($reportData['total_buy_volume'] ?? 0, 2) }}</p>
                 </div>
-                <div class="bg-[#fafafa] border border-[#e5e5e5] rounded-lg p-4">
+                <div class="bg-gray-50 border border-[#e5e5e5] rounded-lg p-4">
                     <p class="text-xs text-[#666666] mb-1">Total Sell Volume</p>
                     <p class="text-xl font-semibold text-[#0a0a0a]">{{ number_format($reportData['total_sell_volume'] ?? 0, 2) }}</p>
                 </div>
-                <div class="bg-[#fafafa] border border-[#e5e5e5] rounded-lg p-4">
+                <div class="bg-gray-50 border border-[#e5e5e5] rounded-lg p-4">
                     <p class="text-xs text-[#666666] mb-1">Report Status</p>
                     <p class="text-xl font-semibold text-green-600">Generated</p>
                 </div>
