@@ -44,7 +44,7 @@
                 <a href="{{ route('counters.index') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.index') ? 'bg-gray-700' : '' }}">
                     Counter List
                 </a>
-                <a href="{{ route('counters.open') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.open') ? 'bg-gray-700' : '' }}">
+                <a href="{{ route('counters.index') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.open') ? 'bg-gray-700' : '' }}">
                     Open Counter
                 </a>
                 <a href="{{ route('counters.close.show', ['counter' => 1]) }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.close.show') ? 'bg-gray-700' : '' }}">

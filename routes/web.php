@@ -147,8 +147,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     Route::prefix('counters')->name('counters.')->group(function () {
         Route::get('/', [CounterController::class, 'index'])->name('index');
-        Route::get('/open', [CounterController::class, 'showOpen'])->name('open');
-        Route::post('/open', [CounterController::class, 'open'])->name('open.store');
+        Route::get('/{counter}/open', [CounterController::class, 'showOpen'])->name('open');
+        Route::post('/{counter}/open', [CounterController::class, 'open'])->name('open.store');
         Route::get('/{counter}/close', [CounterController::class, 'showClose'])->name('close.show');
         Route::post('/{counter}/close', [CounterController::class, 'close'])->name('close');
         Route::get('/{counter}/status', [CounterController::class, 'status'])->name('status');
