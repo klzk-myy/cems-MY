@@ -6,7 +6,7 @@ use App\Enums\FlagStatus;
 use App\Livewire\BaseComponent;
 use App\Models\Alert;
 use App\Models\Compliance\ComplianceCase;
-use App\Models\EddRecord;
+use App\Models\EnhancedDiligenceRecord;
 use App\Models\StrReport;
 use App\Services\AlertTriageService;
 use Illuminate\View\View;
@@ -36,8 +36,8 @@ class Dashboard extends BaseComponent
             'cases_needing_attention' => ComplianceCase::where('status', 'open')
                 ->where('priority', 'high')
                 ->count(),
-            'edd_records' => EddRecord::count(),
-            'edd_pending' => EddRecord::where('status', 'pending')->count(),
+            'edd_records' => EnhancedDiligenceRecord::count(),
+            'edd_pending' => EnhancedDiligenceRecord::where('status', 'pending')->count(),
             'str_submitted' => StrReport::where('status', 'submitted')->count(),
             'str_pending' => StrReport::where('status', 'draft')->count(),
         ];
