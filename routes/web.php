@@ -163,13 +163,14 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->middleware('role:manager');
         Route::get('/till-report', [StockCashController::class, 'tillReport'])->name('till-report')
             ->middleware('role:manager');
-        Route::get('/reconciliation', [StockCashController::class, 'reconciliation'])->name('reconciliation');
+        Route::get('/reconciliation', [StockCashController::class, 'reconciliationReport'])->name('reconciliation');
     });
 
     Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
         Route::get('/', [StockTransferController::class, 'index'])->name('index');
         Route::get('/create', [StockTransferController::class, 'create'])->name('create')
             ->middleware('role:manager');
+        Route::post('/', [StockTransferController::class, 'store'])->name('store');
         Route::get('/{stockTransfer}', [StockTransferController::class, 'show'])->name('show');
 
         Route::get('/{stockTransfer}/dispatch', [StockTransferController::class, 'showDispatch'])->name('dispatch.show')
