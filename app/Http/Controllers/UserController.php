@@ -35,7 +35,7 @@ class UserController extends Controller
         $this->requireAdmin();
         $users = User::paginate(20);
 
-        return view('users.index', compact('users'));
+        return view('pages.users.index', compact('users'));
     }
 
     /**

@@ -93,7 +93,7 @@ class StockCashController extends Controller
             $myrCashInHand = $this->mathService->add($myrCashInHand, (string) $balanceAmount);
         }
 
-        return view('stock-cash.index', compact(
+        return view('pages.stock-cash.index', compact(
             'positions',
             'totalPnl',
             'openTills',

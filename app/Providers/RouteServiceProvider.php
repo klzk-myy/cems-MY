@@ -170,6 +170,7 @@ class RouteServiceProvider extends ServiceProvider
                 ->middleware(['api', 'auth:sanctum'])
                 ->group(base_path('routes/api_v1.php'));
 
+            // TEMPORARILY DISABLED - Livewire removal in progress
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });

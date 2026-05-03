@@ -66,7 +66,7 @@ class TransactionController extends Controller
 
         $transactions = $query->orderBy('created_at', 'desc')->paginate(50);
 
-        return view('transactions.index', compact('transactions'));
+        return view('pages.transactions.index', compact('transactions'));
     }
 
     /**
@@ -93,7 +93,7 @@ class TransactionController extends Controller
         }
         $tillBalances = $tillQuery->get();
 
-        return view('transactions.create', compact('currencies', 'customers', 'tillBalances', 'branches', 'counters', 'suggested_rate'));
+        return view('pages.transactions.create', compact('currencies', 'customers', 'tillBalances', 'branches', 'counters', 'suggested_rate'));
     }
 
     /**

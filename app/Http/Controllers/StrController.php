@@ -50,7 +50,7 @@ class StrController extends Controller
             'acknowledged' => StrReport::where('status', StrStatus::Acknowledged->value)->count(),
         ];
 
-        return view('str.index', compact('strReports', 'stats'));
+        return view('pages.str.index', compact('strReports', 'stats'));
     }
 
     public function create(Request $request): View
@@ -69,7 +69,7 @@ class StrController extends Controller
             ->with(['transaction.customer'])
             ->get();
 
-        return view('str.create', compact('alert', 'customer', 'pendingAlerts'));
+        return view('pages.str.create', compact('alert', 'customer', 'pendingAlerts'));
     }
 
     public function store(StoreStrRequest $request): RedirectResponse

@@ -104,7 +104,7 @@ class DashboardController extends Controller
         // Store cache statistics for testing/monitoring
         $this->cacheOptimizationService->putStats(now()->addSeconds(60));
 
-        return view('dashboard', compact('stats', 'recent_transactions'));
+        return view('pages.dashboard', compact('stats', 'recent_transactions'));
     }
 
     public function compliance(Request $request): View
@@ -158,7 +158,7 @@ class DashboardController extends Controller
                 ->count(),
         ];
 
-        return view('compliance.index', compact('flags', 'stats', 'strStats'));
+        return view('pages.compliance.index', compact('flags', 'stats', 'strStats'));
     }
 
     public function assignFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
@@ -251,7 +251,7 @@ class DashboardController extends Controller
         $positions = $this->currencyPositionService->getAllPositions();
         $totalPnl = $this->currencyPositionService->getTotalPnl();
 
-        return view('accounting.index', compact('positions', 'totalPnl'));
+        return view('pages.accounting.index', compact('positions', 'totalPnl'));
     }
 
     public function reports(): View
@@ -266,7 +266,7 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        return view('reports.index', compact('recentReports'));
+        return view('pages.reports.index', compact('recentReports'));
     }
 
     /**
