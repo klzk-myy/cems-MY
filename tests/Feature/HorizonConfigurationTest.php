@@ -17,7 +17,7 @@ class HorizonConfigurationTest extends TestCase
         $this->assertEquals(['high', 'default', 'low'], $supervisor['queue']);
         $this->assertEquals('auto', $supervisor['balance']);
         $this->assertGreaterThanOrEqual(5, $supervisor['maxProcesses']);
-        $this->assertLessThanOrEqual(600, $supervisor['timeout']);
+        $this->assertGreaterThanOrEqual(3600, $supervisor['timeout']);
     }
 
     public function test_horizon_trim_settings_are_configured()
