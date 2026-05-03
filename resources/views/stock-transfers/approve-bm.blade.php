@@ -53,7 +53,7 @@
             <tbody>
                 @foreach($items as $item)
                 <tr class="border-t border-[--color-border-subtle]">
-                    <td class="py-2 font-mono">{{ $item->currency ?? 'N/A' }}</td>
+                    <td class="py-2 font-mono">{{ $item->currency_code ?? 'N/A' }}</td>
                     <td class="py-2 text-right font-mono">{{ number_format($item->denomination ?? 0, 2) }}</td>
                     <td class="py-2 text-right font-mono">{{ $item->quantity ?? 0 }}</td>
                 </tr>

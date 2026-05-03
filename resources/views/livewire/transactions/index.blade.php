@@ -1,37 +1,53 @@
-@extends('layouts.base')
-
-@section('title', 'Transactions - CEMS-MY')
-
-@section('content')
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-semibold text-[#171717]">Transactions</h1>
-            <p class="text-sm text-[#6b6b6b] mt-1">Manage foreign currency transactions</p>
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-[var(--color-ink)]">Transactions</h1>
+            <a href="{{ route('transactions.create') }}" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">New Transaction</a>
         </div>
-        <a href="{{ route('transactions.create') }}" class="px-4 py-2 text-sm font-medium text-white bg-[#0a0a0a] rounded-lg hover:bg-[#262626]">New Transaction</a>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">ID</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Date</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Type</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Amount</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Status</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($transactions as $tx)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-3">{{ $tx->id }}</td>
+                        <td class="px-4 py-3">{{ $tx->created_at->format('Y-m-d H:i') }}</td>
+                        <td class="px-4 py-3">{{ ucfirst($tx->type) }}</td>
+                        <td class="px-4 py-3">${{ number_format($tx->amount, 2) }}</td>
+                        <td class="px-4 py-3">
+                            @if($tx->status === 'approved')
+                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Approved</span>
+                            @elseif($tx->status === 'pending')
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Pending</span>
+                            @else
+                                <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">{{ $tx->status }}</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{{ route('transactions.show', $tx->id) }}" class="text-blue-600 hover:underline">View</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-4 py-3 text-center">No transactions found</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4">
+            {{ $transactions->links() }}
+        </div>
     </div>
-    <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-[#f7f7f8] border-b border-[#e5e5e5]">
-                <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Reference</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Customer</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Type</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">MYR</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="border-b border-[#e5e5e5] hover:bg-[#f7f7f8]/50">
-                    <td class="px-4 py-3 font-mono text-xs text-[#171717]">TXN-20260426-001</td>
-                    <td class="px-4 py-3 text-[#6b6b6b]">26 Apr 2026</td>
-                    <td class="px-4 py-3 text-[#171717]">Ahmad Razali</td>
-                    <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">BUY</span></td>
-                    <td class="px-4 py-3 text-[#171717] font-semibold">RM 5,000</td>
-                    <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Completed</span></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-@endsection
+</div>

@@ -31,7 +31,7 @@
                 </div>
                 <div>
                     <dt class="text-sm text-[--color-ink-muted]">Currency</dt>
-                    <dd class="font-mono">{{ $transaction->currency }}</dd>
+                    <dd class="font-mono">{{ $transaction->currency_code }}</dd>
                 </div>
                 <div>
                     <dt class="text-sm text-[--color-ink-muted]">Amount</dt>

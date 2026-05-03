@@ -1,71 +1,44 @@
-@extends('layouts.base')
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <a href="{{ route('branch-openings.index') }}" class="text-[var(--color-ink)] hover:underline mb-4 inline-block">← Back to Branch Openings</a>
 
-@section('title', 'Branch Opening - Step 3')
+        <h1 class="text-2xl font-bold text-[var(--color-ink)] mb-6">Branch Opening - Step 3</h1>
 
-@section('content')
-<div>
-    <div class="bg-white rounded-lg shadow-lg p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">Step 3: Opening Balance</h1>
-            <div class="text-sm text-gray-600">Step 3 of 3</div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium text-[var(--color-ink)] mb-4">Equipment & Setup</h2>
+
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-[var(--color-ink)]">Number of Counters</label>
+                    <input type="number" wire:model="counter_count" min="1" class="mt-1 block w-full rounded border border-[var(--color-border)] px-3 py-2" />
+                    @error('counter_count') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[var(--color-ink)]">Safe Amount</label>
+                    <input type="number" step="0.01" wire:model="safe_amount" class="mt-1 block w-full rounded border border-[var(--color-border)] px-3 py-2" />
+                    @error('safe_amount') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="col-span-2">
+                    <label class="flex items-center">
+                        <input type="checkbox" wire:model="has_atm" class="mr-3" />
+                        <span class="text-sm font-medium text-[var(--color-ink)]">ATM Available</span>
+                    </label>
+                </div>
+
+                <div class="col-span-2">
+                    <label class="flex items-center">
+                        <input type="checkbox" wire:model="has_foreign_exchange" class="mr-3" />
+                        <span class="text-sm font-medium text-[var(--color-ink)]">Foreign Exchange Services</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-between mt-6">
+                <button wire:click="back" class="px-4 py-2 border border-[var(--color-border)] rounded">← Back</button>
+                <button wire:click="next" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">Next →</button>
+            </div>
         </div>
-
-        <p class="text-gray-600 mb-6">
-            Create the opening balance journal entry for the branch. This represents the initial capital contribution.
-        </p>
-
-        <form wire:submit="processStep3">
-            <div class="space-y-4 mb-8">
-                <div>
-                    <label for="amount" class="block text-sm font-medium text-gray-700">Opening Balance Amount (MYR) *</label>
-                    <input type="number" wire:model="amount" id="amount"
-                           step="0.01" min="0.01" required
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    <p class="mt-1 text-xs text-gray-500">Total from currency pools: {{ $totalPoolAmount }}</p>
-                </div>
-
-                <div>
-                    <label for="reference" class="block text-sm font-medium text-gray-700">Reference</label>
-                    <input type="text" wire:model="reference" id="reference"
-                           placeholder="Opening balance for {{ $branch->code }}"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <h3 class="font-semibold mb-2">Journal Entry Preview</h3>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span>Debit:</span>
-                            <span class="font-medium">1010 - CASH MYR</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Credit:</span>
-                            <span class="font-medium">3000 - EQUITY</span>
-                        </div>
-                        <div class="border-t pt-2 mt-2">
-                            <p class="text-xs text-gray-500">
-                                This entry will be automatically submitted and approved as it represents initial capital.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            @if ($error)
-                <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p class="text-sm text-red-600">{{ $error }}</p>
-                </div>
-            @endif
-
-            <div class="mt-8 flex items-center justify-between">
-                <a href="{{ route('branches.open.step2', ['branch' => $branch->id]) }}" class="text-gray-600 hover:text-gray-800">
-                    Back to Step 2
-                </a>
-                <button type="submit" class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
-                    Complete Branch Opening
-                </button>
-            </div>
-        </form>
     </div>
 </div>
-@endsection

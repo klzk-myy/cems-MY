@@ -1,153 +1,73 @@
-@extends('layouts.base')
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <a href="{{ route('accounting.journal.index') }}" class="text-[var(--color-ink)] hover:underline mb-4 inline-block">← Back to Journal</a>
 
-@section('title', 'New Journal Entry - CEMS-MY')
+        <h1 class="text-2xl font-bold text-[var(--color-ink)] mb-6">Create Journal Entry</h1>
 
-@section('content')
-    {{-- Header --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-gray-900">New Journal Entry</h1>
-        <p class="text-sm text-gray-500">Create a double-entry journal entry</p>
+        <form wire:submit="save" class="bg-white rounded-lg shadow p-6">
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-[var(--color-ink)]">Date</label>
+                <input type="date" wire:model="date" class="mt-1 block w-48 rounded border border-[var(--color-border)] px-3 py-2" />
+                @error('date') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-[var(--color-ink)]">Description</label>
+                <input type="text" wire:model="description" class="mt-1 block w-full rounded border border-[var(--color-border)] px-3 py-2" />
+                @error('description') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-[var(--color-ink)] mb-4">Journal Lines</label>
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-[var(--color-ink)]">Account</th>
+                            <th class="px-4 py-2 text-right text-sm font-medium text-[var(--color-ink)]">Debit</th>
+                            <th class="px-4 py-2 text-right text-sm font-medium text-[var(--color-ink)]">Credit</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($lines as $index => $line)
+                        <tr>
+                            <td class="px-4 py-2">
+                                <select wire:model="lines.{{ $index }}.account_id" class="w-full rounded border border-[var(--color-border)] px-2 py-1">
+                                    <option value="">Select account</option>
+                                    @foreach($accounts as $account)
+                                    <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="px-4 py-2">
+                                <input type="number" step="0.01" wire:model="lines.{{ $index }}.debit" class="w-full text-right rounded border border-[var(--color-border)] px-2 py-1" />
+                            </td>
+                            <td class="px-4 py-2">
+                                <input type="number" step="0.01" wire:model="lines.{{ $index }}.credit" class="w-full text-right rounded border border-[var(--color-border)] px-2 py-1" />
+                            </td>
+                            <td>
+                                <button type="button" wire:click="removeLine({{ $index }})" class="text-red-600 hover:underline">Remove</button>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                <button type="button" wire:click="addLine" class="mt-2 text-sm text-blue-600 hover:underline">+ Add Line</button>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <div class="text-sm">
+                    <span class="text-gray-500">Total Debit:</span> ${{ number_format($totalDebit, 2) }} |
+                    <span class="text-gray-500">Total Credit:</span> ${{ number_format($totalCredit, 2) }}
+                    @if($totalDebit != $totalCredit)
+                        <span class="text-red-600 ml-2">不平衡</span>
+                    @endif
+                </div>
+                <div class="flex gap-4">
+                    <button type="submit" name="action" value="draft" class="px-4 py-2 border border-[var(--color-border)] rounded">Save as Draft</button>
+                    <button type="submit" name="action" value="post" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">Post Entry</button>
+                </div>
+            </div>
+        </form>
     </div>
-
-    <form wire:submit.prevent="save">
-        <div class="max-w-4xl mx-auto">
-            {{-- Basic Info Card --}}
-            <div class="card mb-6">
-                <div class="card-header">
-                    <h3 class="card-title">Entry Details</h3>
-                </div>
-                <div class="card-body">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="form-group">
-                            <label class="form-label">Entry Date</label>
-                            <input type="date" wire:model="entryDate" class="form-input @error('entryDate') form-input-error @enderror">
-                            @error('entryDate')
-                                <p class="form-error">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div class="form-group md:col-span-2">
-                            <label class="form-label">Description</label>
-                            <input type="text" wire:model="description" class="form-input @error('description') form-input-error @enderror" placeholder="Enter journal entry description...">
-                            @error('description')
-                                <p class="form-error">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Journal Lines Card --}}
-            <div class="card mb-6">
-                <div class="card-header">
-                    <h3 class="card-title">Journal Lines</h3>
-                    <button type="button" wire:click="addLine" class="btn btn-ghost btn-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Add Line
-                    </button>
-                </div>
-                <div class="card-body">
-                    {{-- Lines Table --}}
-                    <div class="table-container">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Account</th>
-                                    <th class="w-32">Debit (MYR)</th>
-                                    <th class="w-32">Credit (MYR)</th>
-                                    <th class="w-48">Description</th>
-                                    <th class="w-16"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($lines as $index => $line)
-                                <tr>
-                                    <td>
-                                        <select wire:model="lines.{{ $index }}.account_code" class="form-select @isset($lineErrors[$index]) form-input-error @endisset">
-                                            <option value="">Select account...</option>
-                                            @foreach($accounts as $account)
-                                                <option value="{{ $account['code'] }}">{{ $account['code'] }} - {{ $account['name'] }}</option>
-                                            @endforeach
-                                        </select>
-                                        @isset($lineErrors[$index])
-                                            <p class="form-error text-xs mt-1">{{ $lineErrors[$index] }}</p>
-                                        @endisset
-                                    </td>
-                                    <td>
-                                        <input type="number" wire:model="lines.{{ $index }}.debit" class="form-input font-mono @isset($lineErrors[$index]) form-input-error @endisset" step="0.01" min="0" placeholder="0.00">
-                                    </td>
-                                    <td>
-                                        <input type="number" wire:model="lines.{{ $index }}.credit" class="form-input font-mono @isset($lineErrors[$index]) form-input-error @endisset" step="0.01" min="0" placeholder="0.00">
-                                    </td>
-                                    <td>
-                                        <input type="text" wire:model="lines.{{ $index }}.description" class="form-input" placeholder="Optional note...">
-                                    </td>
-                                    <td>
-                                        @if(count($lines) > 2)
-                                        <button type="button" wire:click="removeLine({{ $index }})" class="btn btn-ghost btn-icon text-red-600">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- Totals --}}
-                    <div class="mt-4 flex justify-end">
-                        <div class="w-80">
-                            <div class="flex justify-between py-2 border-b border-gray-200">
-                                <span class="text-gray-500">Total Debits:</span>
-                                <span class="font-mono font-medium">{{ number_format((float) $totalDebits, 2) }} MYR</span>
-                            </div>
-                            <div class="flex justify-between py-2 border-b border-gray-200">
-                                <span class="text-gray-500">Total Credits:</span>
-                                <span class="font-mono font-medium">{{ number_format((float) $totalCredits, 2) }} MYR</span>
-                            </div>
-                            <div class="flex justify-between py-2">
-                                <span class="text-gray-500">Difference:</span>
-                                <span class="font-mono font-medium {{ $isBalanced ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ number_format((float) bcsub($totalDebits, $totalCredits, 4), 4) }} MYR
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Balance Status --}}
-                    @error('balance')
-                        <div class="mt-4 p-3 bg-red-600/10 border border-red-600/20 rounded">
-                            <p class="text-red-600 text-sm">{{ $message }}</p>
-                        </div>
-                    @enderror
-
-                    @error('lines')
-                        <div class="mt-4 p-3 bg-red-600/10 border border-red-600/20 rounded">
-                            <p class="text-red-600 text-sm">{{ $message }}</p>
-                        </div>
-                    @enderror
-
-                    @if(!$isBalanced)
-                    <div class="mt-4 flex justify-end">
-                        <button type="button" wire:click="autoBalance" class="btn btn-secondary btn-sm">
-                            Auto-Balance Entry
-                        </button>
-                    </div>
-@endif
-@endsection
-            </div>
-
-            {{-- Actions --}}
-            <div class="flex justify-end gap-3">
-                <a href="{{ route('accounting.journal') }}" class="btn btn-ghost">Cancel</a>
-                <button type="submit" class="btn btn-primary" @if(!$isBalanced) disabled @endif>
-                    Create Entry
-                </button>
-            </div>
-        </div>
-    </form>
 </div>

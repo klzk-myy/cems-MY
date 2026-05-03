@@ -1,89 +1,38 @@
-@extends('layouts.base')
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-2xl font-bold text-[var(--color-ink)] mb-6">Stock Position</h1>
 
-<div>
-    {{-- Header --}}
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-semibold text-gray-900">Position - {{ $positionData['currency_code'] ?? 'N/A' }}</h1>
-            <p class="text-sm text-gray-500">Currency position details</p>
-        </div>
-        <a href="{{ route('stock-cash.index') }}" class="btn btn-secondary">Back</a>
-    </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="grid grid-cols-4 gap-6 mb-6">
+                @foreach($positions as $position)
+                <div class="border border-[var(--color-border)] rounded p-4">
+                    <h3 class="font-medium text-[var(--color-ink)]">{{ $position['location'] }}</h3>
+                    <p class="text-2xl font-bold mt-2">{{ $position['quantity'] }}</p>
+                    <p class="text-sm text-gray-500">items</p>
+                </div>
+                @endforeach
+            </div>
 
-    {{-- Position Details --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="p-4 bg-gray-50 rounded">
-            <dt class="text-sm text-gray-500">Quantity</dt>
-            <dd class="text-2xl font-mono">{{ number_format((float) ($positionData['quantity'] ?? 0), 2) }}</dd>
-        </div>
-        <div class="p-4 bg-gray-50 rounded">
-            <dt class="text-sm text-gray-500">Average Cost</dt>
-            <dd class="text-2xl font-mono">RM {{ number_format((float) ($positionData['avg_cost'] ?? 0), 4) }}</dd>
-        </div>
-        <div class="p-4 bg-gray-50 rounded">
-            <dt class="text-sm text-gray-500">Market Value</dt>
-            <dd class="text-2xl font-mono">RM {{ number_format((float) ($positionData['market_value'] ?? 0), 2) }}</dd>
-        </div>
-        <div class="p-4 bg-gray-50 rounded">
-            <dt class="text-sm text-gray-500">Unrealized P/L</dt>
-            @php
-                $pl = (float) ($positionData['unrealized_pl'] ?? 0);
-                $plClass = $pl >= 0 ? 'text-green-600' : 'text-red-600';
-            @endphp
-            <dd class="text-2xl font-mono {{ $plClass }}">
-                {{ $pl >= 0 ? '+' : '' }}RM {{ number_format($pl, 2) }}
-            </dd>
-        </div>
-    </div>
-
-    {{-- Additional Details --}}
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        <div class="p-4 bg-gray-50 rounded">
-            <dt class="text-sm text-gray-500">Last Valuation Rate</dt>
-            <dd class="text-xl font-mono">{{ number_format((float) ($positionData['last_valuation_rate'] ?? 0), 4) }}</dd>
-        </div>
-        <div class="p-4 bg-gray-50 rounded">
-            <dt class="text-sm text-gray-500">Last Valuation At</dt>
-            <dd class="text-xl font-mono">{{ $positionData['last_valuation_at'] ?? 'N/A' }}</dd>
-        </div>
-        <div class="p-4 bg-gray-50 rounded">
-            <dt class="text-sm text-gray-500">Till ID</dt>
-            <dd class="text-xl font-mono">{{ $positionData['till_id'] ?? 'N/A' }}</dd>
-        </div>
-    </div>
-
-    {{-- Recent Transactions --}}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Recent Transactions</h3>
-        </div>
-        <div class="table-container">
-            <table class="table">
-                <thead>
+            <table class="w-full">
+                <thead class="bg-gray-50">
                     <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th class="text-right">Amount</th>
-                        <th class="text-right">Rate</th>
-                        <th class="text-right">MYR Value</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Location</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Product</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">Quantity</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">Value</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($transactions as $tx)
-                    <tr>
-                        <td class="font-mono">{{ $tx['created_at'] }}</td>
-                        <td>
-                            <span class="badge {{ $tx['type'] === 'Buy' ? 'badge-success' : 'badge-warning' }}">
-                                {{ $tx['type'] }}
-                            </span>
-                        </td>
-                        <td class="font-mono text-right">{{ number_format((float) $tx['amount'], 2) }}</td>
-                        <td class="font-mono text-right">{{ number_format((float) $tx['rate'], 4) }}</td>
-                        <td class="font-mono text-right">RM {{ number_format((float) $tx['myr_value'], 2) }}</td>
+                    @forelse($stockPositions as $item)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-3">{{ $item->location }}</td>
+                        <td class="px-4 py-3">{{ $item->product_code }}</td>
+                        <td class="px-4 py-3 text-right">{{ $item->quantity }}</td>
+                        <td class="px-4 py-3 text-right">${{ number_format($item->value, 2) }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center py-8 text-gray-500">No transactions</td>
+                        <td colspan="4" class="px-4 py-3 text-center">No stock positions</td>
                     </tr>
                     @endforelse
                 </tbody>

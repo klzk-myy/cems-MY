@@ -1,9 +1,4 @@
-@extends('layouts.base')
-
-@section('title', 'Accounting Periods - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
+<div>
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Accounting Periods</h1>
         <p class="text-sm text-gray-500">Manage accounting period opening and closing</p>
@@ -61,4 +56,4 @@
             </table>
         </div>
     </div>
-@endsection
+</div>

@@ -1,15 +1,9 @@
-@extends('layouts.base')
-
-@section('title', 'Revaluation History - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
+<div>
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Revaluation History</h1>
         <p class="text-sm text-gray-500">Historical log of currency revaluation entries</p>
     </div>
 
-    {{-- Filters --}}
     <div class="card mb-6">
         <div class="card-body">
             <form wire:submit="applyFilters" class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -42,7 +36,6 @@
         </div>
     </div>
 
-    {{-- History Table --}}
     <div class="card">
         <div class="table-container">
             <table class="table">
@@ -86,4 +79,4 @@
             </div>
         @endif
     </div>
-@endsection
+</div>

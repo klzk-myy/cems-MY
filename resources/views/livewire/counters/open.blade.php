@@ -1,39 +1,31 @@
-@extends('layouts.base')
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-2xl font-bold text-[var(--color-ink)] mb-6">Open Counter</h1>
 
-@section('title', 'Open Counter')
+        <div class="bg-white rounded-lg shadow p-6">
+            <form wire:submit="open">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-[var(--color-ink)]">Select Counter</label>
+                    <select wire:model="counter_id" class="mt-1 block w-full rounded border border-[var(--color-border)] px-3 py-2">
+                        <option value="">Select a counter</option>
+                        @foreach($availableCounters as $counter)
+                        <option value="{{ $counter->id }}">Counter #{{ $counter->number }} - {{ $counter->branch->name ?? 'Main' }}</option>
+                        @endforeach
+                    </select>
+                    @error('counter_id') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                </div>
 
-@section('content')
-<div class="card">
-    <div class="card-header"><h3 class="card-title">Open Counter - {{ $counter->name ?? 'N/A' }}</h3></div>
-    <div class="card-body">
-        @if(session('error'))
-        <div class="alert alert-danger mb-6">
-            <span>{{ session('error') }}</span>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-[var(--color-ink)]">Opening Float Amount</label>
+                    <input type="number" step="0.01" wire:model="opening_float" class="mt-1 block w-full rounded border border-[var(--color-border)] px-3 py-2" />
+                    @error('opening_float') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="flex justify-end gap-4">
+                    <a href="{{ route('counters.index') }}" class="px-4 py-2 border border-[var(--color-border)] rounded">Cancel</a>
+                    <button type="submit" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">Open Counter</button>
+                </div>
+            </form>
         </div>
-        @endif
-
-        <form wire:submit="save">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="form-label">Opening Float (MYR)</label>
-                    <input type="number" step="0.01" wire:model="openingFloat" class="form-input" required>
-                    @error('openingFloat')
-                    <span class="form-error">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div>
-                    <label class="form-label">Notes</label>
-                    <textarea wire:model="notes" class="form-input" rows="2"></textarea>
-                </div>
-            </div>
-            <div class="mt-6 flex gap-3">
-                <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
-                    <span wire:loading.remove>Open Counter</span>
-                    <span wire:loading>Opening...</span>
-                </button>
-                <a href="{{ route('counters.index') }}" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
     </div>
 </div>
-@endsection

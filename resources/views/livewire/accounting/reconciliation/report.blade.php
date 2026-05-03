@@ -1,9 +1,4 @@
-@extends('layouts.base')
-
-@section('title', 'Reconciliation Report - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
+<div>
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Reconciliation Report</h1>
         <p class="text-sm text-gray-500">Detailed bank reconciliation analysis</p>
@@ -187,4 +182,4 @@
             </div>
         </div>
     @endif
-@endsection
+</div>

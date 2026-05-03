@@ -1,21 +1,3 @@
-@extends('layouts.base')
-
-@section('title', $isEditing ? 'Edit AML Rule' : 'Create AML Rule')
-
-@section('header-title')
-<div>
-    <h1 class="text-2xl font-semibold text-gray-900">{{ $isEditing ? 'Edit' : 'Create' }} AML Rule</h1>
-    <p class="text-sm text-gray-500">Configure rule conditions and actions</p>
-</div>
-@endsection
-
-@section('header-actions')
-@if($isEditing)
-<a href="{{ route('compliance.rules.index') }}" class="btn btn-ghost">Back to Rules</a>
-@endif
-@endsection
-
-@section('content')
 <div class="max-w-3xl mx-auto">
     <form wire:submit="save" class="space-y-6">
         {{-- Basic Information --}}
@@ -124,4 +106,3 @@
         </div>
     </form>
 </div>
-@endsection

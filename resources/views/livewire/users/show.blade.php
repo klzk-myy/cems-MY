@@ -1,10 +1,8 @@
-@extends('layouts.base')
-
 <div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
+    <div class="bg-white rounded-xl shadow-sm border border-[--color-border]">
+        <div class="px-6 py-4 border-b border-[--color-border]">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-gray-900">User Details</h2>
+                <h2 class="text-lg font-semibold text-[--color-ink]">User Details</h2>
                 <div class="flex items-center gap-2">
                     <a href="{{ route('users.edit', $user) }}" class="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50">
                         Edit
@@ -21,11 +19,11 @@
                 <div class="space-y-4">
                     <div>
                         <label class="text-sm text-gray-500">Username</label>
-                        <p class="text-gray-900 font-medium">{{ $user->username }}</p>
+                        <p class="text-[--color-ink] font-medium">{{ $user->username }}</p>
                     </div>
                     <div>
                         <label class="text-sm text-gray-500">Email</label>
-                        <p class="text-gray-900">{{ $user->email }}</p>
+                        <p class="text-[--color-ink]">{{ $user->email }}</p>
                     </div>
                     <div>
                         <label class="text-sm text-gray-500">Role</label>
@@ -52,25 +50,25 @@
                 <div class="space-y-4">
                     <div>
                         <label class="text-sm text-gray-500">Branch</label>
-                        <p class="text-gray-900">{{ $user->branch?->name ?? 'N/A' }}</p>
+                        <p class="text-[--color-ink]">{{ $user->branch?->name ?? 'N/A' }}</p>
                     </div>
                     <div>
                         <label class="text-sm text-gray-500">Created At</label>
-                        <p class="text-gray-900">{{ $user->created_at->format('d M Y H:i') }}</p>
+                        <p class="text-[--color-ink]">{{ $user->created_at->format('d M Y H:i') }}</p>
                     </div>
                     <div>
                         <label class="text-sm text-gray-500">Last Login</label>
-                        <p class="text-gray-900">{{ $user->last_login_at ? $user->last_login_at->format('d M Y H:i') : 'Never' }}</p>
+                        <p class="text-[--color-ink]">{{ $user->last_login_at ? $user->last_login_at->format('d M Y H:i') : 'Never' }}</p>
                     </div>
                     <div>
                         <label class="text-sm text-gray-500">MFA Enabled</label>
-                        <p class="text-gray-900">{{ $user->mfa_enabled ? 'Yes' : 'No' }}</p>
+                        <p class="text-[--color-ink]">{{ $user->mfa_enabled ? 'Yes' : 'No' }}</p>
                     </div>
                 </div>
             </div>
 
             @if($user->counters && $user->counters->count() > 0)
-                <div class="mt-6 pt-6 border-t border-gray-200">
+                <div class="mt-6 pt-6 border-t border-[--color-border]">
                     <h3 class="text-sm font-medium text-gray-700 mb-3">Assigned Counters</h3>
                     <div class="flex flex-wrap gap-2">
                         @foreach($user->counters as $counter)

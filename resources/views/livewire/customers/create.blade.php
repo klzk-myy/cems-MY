@@ -1,98 +1,33 @@
-@extends('layouts.base')
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <a href="{{ route('customers.index') }}" class="text-[var(--color-ink)] hover:underline mb-4 inline-block">← Back to Customers</a>
 
-<div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Create New Customer</h2>
-        </div>
+        <h1 class="text-2xl font-bold text-[var(--color-ink)] mb-6">Create Customer</h1>
 
-        <form wire:submit="save" class="p-6 space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form wire:submit="save" class="bg-white rounded-lg shadow p-6">
+            <div class="grid grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input type="text" wire:model="fullName" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    @error('fullName') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    <label class="block text-sm font-medium text-[var(--color-ink)]">Name</label>
+                    <input type="text" wire:model="name" class="mt-1 block w-full rounded border border-[var(--color-border)] px-3 py-2" />
+                    @error('name') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">ID Type</label>
-                    <select wire:model="idType" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        @foreach($idTypes as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                    @error('idType') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    <label class="block text-sm font-medium text-[var(--color-ink)]">Email</label>
+                    <input type="email" wire:model="email" class="mt-1 block w-full rounded border border-[var(--color-border)] px-3 py-2" />
+                    @error('email') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">ID Number</label>
-                    <input type="text" wire:model="idNumber" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    @error('idNumber') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                    <input type="date" wire:model="dateOfBirth" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    @error('dateOfBirth') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
-                    <select wire:model="nationality" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        @foreach($nationalities as $nation)
-                            <option value="{{ $nation }}">{{ $nation }}</option>
-                        @endforeach
-                    </select>
-                    @error('nationality') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input type="text" wire:model="phone" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    @error('phone') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" wire:model="email" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
-                    <input type="text" wire:model="occupation" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <input type="text" wire:model="address" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Employer Name</label>
-                    <input type="text" wire:model="employerName" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Employer Address</label>
-                    <input type="text" wire:model="employerAddress" class="w-full border-gray-300 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-
-                <div class="col-span-2 flex items-center">
-                    <label class="flex items-center cursor-pointer">
-                        <input type="checkbox" wire:model="pepStatus" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        <span class="ml-2 text-sm text-gray-700">PEP (Politically Exposed Person)</span>
-                    </label>
+                    <label class="block text-sm font-medium text-[var(--color-ink)]">Phone</label>
+                    <input type="text" wire:model="phone" class="mt-1 block w-full rounded border border-[var(--color-border)] px-3 py-2" />
+                    @error('phone') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                <a href="{{ route('customers.index') }}" class="px-4 py-2 text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50">
-                    Cancel
-                </a>
-                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
-                    Create Customer
-                </button>
+            <div class="flex justify-end gap-4 mt-6">
+                <a href="{{ route('customers.index') }}" class="px-4 py-2 border border-[var(--color-border)] rounded">Cancel</a>
+                <button type="submit" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">Create</button>
             </div>
         </form>
     </div>

@@ -1,9 +1,4 @@
-@extends('layouts.base')
-
-@section('title', 'Account Ledger - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
+<div>
     <div class="mb-6">
         <div class="flex items-center justify-between">
             <div>
@@ -19,7 +14,6 @@
         </div>
     </div>
 
-    {{-- Summary Cards --}}
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="card">
             <div class="card-body">
@@ -55,7 +49,6 @@
         </div>
     </div>
 
-    {{-- Date Filter --}}
     <div class="card mb-6">
         <div class="card-body">
             <form wire:submit="applyDateFilter" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -75,7 +68,6 @@
         </div>
     </div>
 
-    {{-- Ledger Entries Table --}}
     <div class="card">
         <div class="table-container">
             <table class="table">
@@ -123,4 +115,4 @@
             </table>
         </div>
     </div>
-@endsection
+</div>

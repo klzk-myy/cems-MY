@@ -1,9 +1,4 @@
-@extends('layouts.base')
-
-@section('title', 'Fiscal Years - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
+<div>
     <div class="mb-6 flex justify-between items-center">
         <div>
             <h1 class="text-2xl font-semibold text-gray-900">Fiscal Years</h1>
@@ -16,7 +11,6 @@
         </button>
     </div>
 
-    {{-- Create Form Modal --}}
     @if($showCreateForm === 'yes')
     <div class="modal-backdrop" wire:click="$set('showCreateForm', 'no')"></div>
     <div class="modal">
@@ -73,7 +67,6 @@
     </div>
     @endif
 
-    {{-- Year Report Modal --}}
     @if($yearReport)
     <div class="modal-backdrop" wire:click="closeReport"></div>
     <div class="modal">
@@ -160,7 +153,6 @@
         </div>
     </div>
 
-    {{-- Close Year Confirmation Modal --}}
     <div
         x-data="{ show: false, yearCode: '', confirmCode: '' }"
         x-show="show"
@@ -192,4 +184,4 @@
             </form>
         </div>
     </div>
-@endsection
+</div>

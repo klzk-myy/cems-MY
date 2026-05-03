@@ -1,96 +1,69 @@
-@extends('layouts.base')
-
-@section('title', 'Balance Sheet - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-gray-900">Balance Sheet</h1>
-        <p class="text-sm text-gray-500">Assets, liabilities, and equity</p>
-    </div>
-
-    {{-- Date Filter --}}
-    <div class="card mb-6">
-        <div class="card-body flex items-center gap-4">
-            <label class="text-sm font-medium">As of Date:</label>
-            <input type="date" wire:model.live="asOfDate" class="input w-auto" />
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-[var(--color-ink)]">Balance Sheet</h1>
+            <select wire:model="asOfDate" class="rounded border border-[var(--color-border)] px-3 py-2">
+                @foreach($periods as $period)
+                <option value="{{ $period->end_date }}">{{ $period->name }}</option>
+                @endforeach
+            </select>
         </div>
-    </div>
 
-    {{-- Balance Sheet --}}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Balance Sheet</h3>
-            <span class="text-sm text-gray-500">As of {{ $asOfDate }}</span>
-        </div>
-        <div class="card-body">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {{-- Assets --}}
-                <div>
-                    <h4 class="font-semibold mb-4 text-gray-900">Assets</h4>
-                    @forelse($balanceSheet['assets'] ?? [] as $item)
-                    <div class="flex justify-between py-2 border-b border-gray-200">
-                        <span>{{ $item['account_name'] ?? $item['name'] ?? 'N/A' }}</span>
-                        <span class="font-mono">{{ number_format((float) ($item['balance'] ?? 0), 2) }}</span>
-                    </div>
-                    @empty
-                    <p class="text-gray-500 py-2">No assets</p>
-                    @endforelse
-                    <div class="flex justify-between py-3 font-semibold border-t-2 border-gray-900 mt-2">
-                        <span>Total Assets</span>
-                        <span class="font-mono text-gray-900">{{ number_format((float) ($balanceSheet['total_assets'] ?? 0), 2) }}</span>
-                    </div>
-                </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium text-[var(--color-ink)] mb-4">Assets</h2>
+            <table class="w-full mb-6">
+                <tbody>
+                    @foreach($assets as $asset)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-2 pl-8">{{ $asset->name }}</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($asset->balance, 2) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr class="bg-gray-50 font-bold border-t-2 border-[var(--color-border)]">
+                        <td class="px-4 py-2">Total Assets</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($totalAssets, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
 
-                {{-- Liabilities & Equity --}}
-                <div>
-                    <h4 class="font-semibold mb-4 text-red-600">Liabilities</h4>
-                    @forelse($balanceSheet['liabilities'] ?? [] as $item)
-                    <div class="flex justify-between py-2 border-b border-gray-200">
-                        <span>{{ $item['account_name'] ?? $item['name'] ?? 'N/A' }}</span>
-                        <span class="font-mono">{{ number_format((float) ($item['balance'] ?? 0), 2) }}</span>
-                    </div>
-                    @empty
-                    <p class="text-gray-500 py-2">No liabilities</p>
-                    @endforelse
+            <h2 class="text-lg font-medium text-[var(--color-ink)] mb-4">Liabilities</h2>
+            <table class="w-full mb-6">
+                <tbody>
+                    @foreach($liabilities as $liability)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-2 pl-8">{{ $liability->name }}</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($liability->balance, 2) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr class="bg-gray-50 font-bold border-t-2 border-[var(--color-border)]">
+                        <td class="px-4 py-2">Total Liabilities</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($totalLiabilities, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
 
-                    <h4 class="font-semibold mb-4 mt-6 text-blue-500">Equity</h4>
-                    @forelse($balanceSheet['equity'] ?? [] as $item)
-                    <div class="flex justify-between py-2 border-b border-gray-200">
-                        <span>{{ $item['account_name'] ?? $item['name'] ?? 'N/A' }}</span>
-                        <span class="font-mono">{{ number_format((float) ($item['balance'] ?? 0), 2) }}</span>
-                    </div>
-                    @empty
-                    <p class="text-gray-500 py-2">No equity accounts</p>
-                    @endforelse
+            <h2 class="text-lg font-medium text-[var(--color-ink)] mb-4">Equity</h2>
+            <table class="w-full">
+                <tbody>
+                    @foreach($equity as $eq)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-2 pl-8">{{ $eq->name }}</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($eq->balance, 2) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr class="bg-gray-50 font-bold border-t-2 border-[var(--color-border)]">
+                        <td class="px-4 py-2">Total Equity</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($totalEquity, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
 
-                    <div class="flex justify-between py-3 font-semibold border-t-2 border-gray-900 mt-4">
-                        <span>Total Liabilities & Equity</span>
-                        <span class="font-mono text-blue-500">{{ number_format((float) ($balanceSheet['liabilities_plus_equity'] ?? 0), 2) }}</span>
-                    </div>
+            <div class="mt-6 p-4 bg-gray-100 rounded font-bold">
+                <div class="flex justify-between">
+                    <span>Total Liabilities + Equity</span>
+                    <span>${{ number_format($totalLiabilities + $totalEquity, 2) }}</span>
                 </div>
             </div>
-
-            {{-- Balance Verification --}}
-            @if(isset($balanceSheet['is_balanced']))
-            <div class="mt-8 pt-4 border-t-2 border-gray-900">
-                @if($balanceSheet['is_balanced'])
-                <div class="alert alert-success">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Balance sheet is balanced (Assets = Liabilities + Equity)</span>
-                </div>
-                @else
-                <div class="alert alert-danger">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
-                    <span>Balance sheet is NOT balanced - investigate discrepancy</span>
-                </div>
-                @endif
-            </div>
-            @endif
         </div>
     </div>
-@endsection
+</div>

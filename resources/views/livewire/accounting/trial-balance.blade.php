@@ -1,82 +1,48 @@
-@extends('layouts.base')
-
-@section('title', 'Trial Balance - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-gray-900">Trial Balance</h1>
-        <p class="text-sm text-gray-500">All accounts with debit/credit balances</p>
-    </div>
-
-    {{-- Date Filter --}}
-    <div class="card mb-6">
-        <div class="card-body flex items-center gap-4">
-            <label class="text-sm font-medium">As of Date:</label>
-            <input type="date" wire:model.live="asOfDate" class="input w-auto" />
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-[var(--color-ink)]">Trial Balance</h1>
+            <div class="flex gap-4">
+                <input type="month" wire:model="period" class="rounded border border-[var(--color-border)] px-3 py-2" />
+                <button wire:click="refresh" class="px-4 py-2 border border-[var(--color-border)] rounded">Refresh</button>
+                <button wire:click="export" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">Export</button>
+            </div>
         </div>
-    </div>
 
-    {{-- Trial Balance Table --}}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Trial Balance</h3>
-            <span class="text-sm text-gray-500">As of {{ $asOfDate }}</span>
-        </div>
-        <div class="table-container">
-            <table class="table">
-                <thead>
+        <div class="bg-white rounded-lg shadow p-6">
+            <table class="w-full">
+                <thead class="bg-gray-50">
                     <tr>
-                        <th>Account Code</th>
-                        <th>Account Name</th>
-                        <th class="text-right">Debit (MYR)</th>
-                        <th class="text-right">Credit (MYR)</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Account Code</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Account Name</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">Debit</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">Credit</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @php $totalDebit = 0; $totalCredit = 0; @endphp
-                    @forelse($trialBalance['accounts'] ?? [] as $account)
-                    <tr>
-                        <td class="font-mono">{{ $account['account_code'] }}</td>
-                        <td>{{ $account['account_name'] }}</td>
-                        <td class="font-mono text-right">{{ number_format((float) ($account['debit'] ?? 0), 2) }}</td>
-                        <td class="font-mono text-right">{{ number_format((float) ($account['credit'] ?? 0), 2) }}</td>
+                    @foreach($accounts as $account)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-3">{{ $account->code }}</td>
+                        <td class="px-4 py-3">{{ $account->name }}</td>
+                        <td class="px-4 py-3 text-right">{{ $account->debit_balance > 0 ? '$'.number_format($account->debit_balance, 2) : '' }}</td>
+                        <td class="px-4 py-3 text-right">{{ $account->credit_balance > 0 ? '$'.number_format($account->credit_balance, 2) : '' }}</td>
                     </tr>
-                    @php
-                        $totalDebit += (float) ($account['debit'] ?? 0);
-                        $totalCredit += (float) ($account['credit'] ?? 0);
-                    @endphp
-                    @empty
-                    <tr><td colspan="4" class="text-center py-8 text-gray-500">No accounts found</td></tr>
-                    @endforelse
-                    <tr class="font-semibold bg-gray-100">
-                        <td colspan="2">Total</td>
-                        <td class="font-mono text-right">{{ number_format($totalDebit, 2) }}</td>
-                        <td class="font-mono text-right">{{ number_format($totalCredit, 2) }}</td>
-                    </tr>
+                    @endforeach
                 </tbody>
+                <tfoot class="bg-gray-100 font-bold">
+                    <tr>
+                        <td colspan="2" class="px-4 py-3">Total</td>
+                        <td class="px-4 py-3 text-right">${{ number_format($totalDebits, 2) }}</td>
+                        <td class="px-4 py-3 text-right">${{ number_format($totalCredits, 2) }}</td>
+                    </tr>
+                </tfoot>
             </table>
-        </div>
 
-        {{-- Balance Status --}}
-        @if(isset($trialBalance['is_balanced']))
-        <div class="card-footer">
-            @if($trialBalance['is_balanced'])
-            <div class="alert alert-success">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span>Trial balance is balanced (Debits = Credits)</span>
-            </div>
-            @else
-            <div class="alert alert-danger">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
-                <span>Trial balance is NOT balanced - investigate discrepancy</span>
+            @if(abs($totalDebits - $totalCredits) > 0.01)
+            <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded text-red-800">
+                Trial Balance does not balance! Difference: ${{ number_format(abs($totalDebits - $totalCredits), 2) }}
             </div>
             @endif
         </div>
-        @endif
     </div>
-@endsection
+</div>

@@ -1,5 +1,3 @@
-@extends('layouts.base')
-
 <div>
     <div class="card-header">
         <h3 class="card-title">Step 1: Select Customer</h3>

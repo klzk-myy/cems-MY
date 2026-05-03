@@ -1,54 +1,26 @@
-@extends('layouts.base')
-
-@section('title', 'Branch Opening Complete')
-
-@section('content')
-<div>
-    <div class="bg-white rounded-lg shadow-lg p-6">
-        <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <div class="mb-6">
+                <span class="text-6xl">✓</span>
             </div>
-            <h1 class="text-2xl font-bold text-gray-900">Branch Opening Complete!</h1>
-            <p class="text-gray-600 mt-2">
-                {{ $branch->name }} ({{ $branch->code }}) has been successfully opened
-            </p>
-        </div>
+            <h1 class="text-2xl font-bold text-[var(--color-ink)] mb-4">Branch Opening Complete!</h1>
+            <p class="text-gray-600 mb-6">The branch opening process has been completed successfully.</p>
 
-        <div class="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 class="font-semibold mb-3">Summary</h3>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Branch Code:</span>
-                    <span class="font-medium">{{ $branch->code }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Branch Name:</span>
-                    <span class="font-medium">{{ $branch->name }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Branch Type:</span>
-                    <span class="font-medium">{{ ucwords(str_replace('_', ' ', $branch->type)) }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Currency Pools:</span>
-                    <span class="font-medium">{{ $stats['pool_count'] }} currencies</span>
-                </div>
+            <div class="bg-gray-50 p-4 rounded mb-6 text-left">
+                <h3 class="font-medium text-[var(--color-ink)] mb-2">Summary</h3>
+                <p><strong>Branch:</strong> {{ $branch_name }}</p>
+                <p><strong>Location:</strong> {{ $location }}</p>
+                <p><strong>Scheduled Date:</strong> {{ $scheduled_date }}</p>
+                <p><strong>Manager:</strong> {{ $manager_name }}</p>
+                <p><strong>Staff Count:</strong> {{ count($staff_ids) }}</p>
+                <p><strong>Counters:</strong> {{ $counter_count }}</p>
             </div>
-        </div>
 
-        <div class="space-y-3">
-            <a href="{{ route('branches.show', $branch->id) }}"
-               class="block w-full text-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
-                View Branch Details
-            </a>
-            <a href="{{ route('branches.index') }}"
-               class="block w-full text-center px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition">
-                Back to Branches
-            </a>
+            <div class="flex justify-center gap-4">
+                <a href="{{ route('branch-openings.index') }}" class="px-4 py-2 border border-[var(--color-border)] rounded">View All</a>
+                <a href="{{ route('branches.index') }}" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">Go to Branches</a>
+            </div>
         </div>
     </div>
 </div>
-@endsection

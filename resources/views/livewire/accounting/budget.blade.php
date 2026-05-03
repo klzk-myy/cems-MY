@@ -1,88 +1,52 @@
-@extends('layouts.base')
-
-@section('title', 'Budget vs Actual - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-gray-900">Budget vs Actual</h1>
-        <p class="text-sm text-gray-500">Monitor budget performance by account</p>
-    </div>
-
-    {{-- Period Selector --}}
-    <div class="card mb-6">
-        <div class="card-body flex items-center gap-4">
-            <label class="text-sm text-gray-500">Period:</label>
-            <input
-                type="month"
-                wire:model.live="periodCode"
-                class="form-input w-40">
-            <span class="text-sm text-gray-500">
-                Showing budget data for {{ $periodCode }}
-            </span>
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-[var(--color-ink)]">Budget</h1>
+            <button wire:click="create" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">New Budget</button>
         </div>
-    </div>
 
-    {{-- Budget vs Actual Table --}}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Budget vs Actual</h3>
-        </div>
-        <div class="table-container">
-            <table class="table">
-                <thead>
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex gap-4 mb-6">
+                <select wire:model="fiscalYear" class="rounded border border-[var(--color-border)] px-3 py-2">
+                    @foreach($fiscalYears as $year)
+                    <option value="{{ $year->id }}">{{ $year->name }}</option>
+                    @endforeach
+                </select>
+                <button wire:click="filter" class="px-4 py-2 border border-[var(--color-border)] rounded">Filter</button>
+            </div>
+
+            <table class="w-full">
+                <thead class="bg-gray-50">
                     <tr>
-                        <th>Account</th>
-                        <th class="text-right">Budget</th>
-                        <th class="text-right">Actual</th>
-                        <th class="text-right">Variance</th>
-                        <th class="text-right">Variance %</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Account</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">Budget</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">Actual</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">Variance</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">% Used</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($report as $item)
-                    <tr>
-                        <td>
-                            <div>
-                                <span class="font-mono text-sm">{{ $item['account_code'] }}</span>
-                                <span class="ml-2">{{ $item['account_name'] ?? '' }}</span>
-                            </div>
+                    @forelse($budgetItems as $item)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-3">{{ $item->account->name }}</td>
+                        <td class="px-4 py-3 text-right">${{ number_format($item->budget_amount, 2) }}</td>
+                        <td class="px-4 py-3 text-right">${{ number_format($item->actual_amount, 2) }}</td>
+                        <td class="px-4 py-3 text-right {{ $item->variance >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                            ${{ number_format($item->variance, 2) }}
                         </td>
-                        <td class="font-mono text-right">{{ number_format($item['budget'] ?? 0, 2) }}</td>
-                        <td class="font-mono text-right">{{ number_format($item['actual'] ?? 0, 2) }}</td>
-                        <td class="font-mono text-right {{ ($item['variance'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ number_format($item['variance'] ?? 0, 2) }}
-                        </td>
-                        <td class="font-mono text-right {{ ($item['variance_percentage'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ number_format($item['variance_percentage'] ?? 0, 1) }}%
+                        <td class="px-4 py-3 text-right">
+                            <span class="{{ $item->percent_used > 100 ? 'text-red-600' : ($item->percent_used > 80 ? 'text-yellow-600' : 'text-green-600') }}">
+                                {{ number_format($item->percent_used, 1) }}%
+                            </span>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center py-8 text-gray-500">No budget data for this period</td>
+                        <td colspan="5" class="px-4 py-3 text-center">No budget items found</td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </div>
-
-    {{-- Unbudgeted Accounts --}}
-    @if(!empty($unbudgetedAccounts))
-    <div class="card mt-6">
-        <div class="card-header">
-            <h3 class="card-title">Accounts Without Budget</h3>
-        </div>
-        <div class="card-body">
-            <p class="text-sm text-gray-500 mb-4">The following accounts have no budget set for this period:</p>
-            <div class="flex flex-wrap gap-2">
-                @foreach($unbudgetedAccounts as $account)
-                <span class="inline-flex items-center px-3 py-1 rounded-full bg-white text-sm">
-                    <span class="font-mono">{{ $account['account_code'] ?? $account }}</span>
-                </span>
-                @endforeach
-            </div>
-        </div>
-    </div>
-    @endif
-@endsection
+</div>

@@ -1,30 +1,3 @@
-@extends('layouts.base')
-
-@section('title', $list->name ?? 'Sanction List')
-
-@section('header-title')
-<div>
-    <h1 class="text-2xl font-semibold text-gray-900">{{ $list->name ?? 'Sanction List' }}</h1>
-    <p class="text-sm text-gray-500">
-        @if($list->is_active)
-            <span class="badge badge-success">Active</span>
-        @else
-            <span class="badge badge-default">Inactive</span>
-        @endif
-    </p>
-</div>
-@endsection
-
-@section('header-actions')
-<button wire:click="triggerImport" class="btn btn-primary">
-    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-    </svg>
-    Trigger Import
-</button>
-@endsection
-
-@section('content')
 <div class="max-w-6xl">
     {{-- List Information --}}
     <div class="card mb-6">
@@ -188,4 +161,3 @@
         @endif
     </div>
 </div>
-@endsection

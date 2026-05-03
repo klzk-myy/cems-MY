@@ -1,48 +1,53 @@
-@extends('layouts.base')
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-[var(--color-ink)]">LCTR Reports</h1>
+            <a href="{{ route('reports.lctr.create') }}" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">New Report</a>
+        </div>
 
-@section('title', 'LCTR Report')
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Report ID</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Period</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">Total Transactions</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium text-[var(--color-ink)]">Total Value</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Status</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($reports as $report)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-3">{{ $report->report_number }}</td>
+                        <td class="px-4 py-3">{{ $report->period }}</td>
+                        <td class="px-4 py-3 text-right">{{ number_format($report->total_transactions) }}</td>
+                        <td class="px-4 py-3 text-right">${{ number_format($report->total_value, 2) }}</td>
+                        <td class="px-4 py-3">
+                            @if($report->status === 'submitted')
+                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Submitted</span>
+                            @elseif($report->status === 'draft')
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Draft</span>
+                            @else
+                                <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">{{ $report->status }}</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{{ route('reports.lctr.show', $report->id) }}" class="text-blue-600 hover:underline">View</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-4 py-3 text-center">No reports found</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
-@section('header-title')
-<div>
-    <h1 class="text-2xl font-semibold text-gray-900">Large Cash Transaction Report</h1>
-    <p class="text-sm text-gray-500">Monthly - {{ $month ? \Carbon\Carbon::parse($month)->format('F Y') : '' }}</p>
-</div>
-@endsection
-
-@section('header-actions')
-<form wire:submit="loadReport" class="flex items-center gap-2">
-    <input type="month" wire:model="selectedMonth" class="form-input">
-    <button type="submit" class="btn btn-secondary">View</button>
-</form>
-@endsection
-
-@section('content')
-<div class="bg-white border border-[--color-border] rounded-xl">
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Customer</th>
-                    <th>IC Number</th>
-                    <th class="text-right">Amount (MYR)</th>
-                    <th>Type</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($transactions ?? [] as $tx)
-                <tr>
-                    <td>{{ $tx['Transaction_Date'] ?? 'N/A' }}</td>
-                    <td>{{ $tx['Customer_Name'] ?? 'N/A' }}</td>
-                    <td class="font-mono">{{ $tx['Customer_ID_Number'] ?? 'N/A' }}</td>
-                    <td class="font-mono text-right">{{ number_format($tx['Amount_Local'] ?? 0, 2) }}</td>
-                    <td>{{ $tx['Transaction_Type'] ?? 'N/A' }}</td>
-                </tr>
-                @empty
-                <tr><td colspan="5" class="text-center py-8 text-gray-500">No transactions found</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+        <div class="mt-4">
+            {{ $reports->links() }}
+        </div>
     </div>
 </div>
-@endsection

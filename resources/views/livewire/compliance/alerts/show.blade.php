@@ -1,15 +1,10 @@
-@extends('layouts.base')
-
-@section('title', 'Alert Details')
-
-@section('content')
 <div>
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
             <a href="{{ route('compliance.alerts.index') }}" class="btn btn-ghost btn-icon">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></svg>
+                </a>
             </a>
             <div>
                 <h1 class="text-xl font-semibold text-gray-900">Alert #{{ $alert->id }}</h1>
@@ -202,4 +197,3 @@
         </div>
     </div>
 </div>
-@endsection

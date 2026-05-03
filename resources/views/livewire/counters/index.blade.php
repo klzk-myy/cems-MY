@@ -1,99 +1,60 @@
-@extends('layouts.base')
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-[var(--color-ink)]">Counters</h1>
+            <a href="{{ route('counters.open') }}" class="px-4 py-2 bg-[var(--color-ink)] text-white rounded">Open Counter</a>
+        </div>
 
-@section('title', 'Counters - CEMS-MY')
+        <div class="grid grid-cols-3 gap-6 mb-6">
+            @foreach($counters as $counter)
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-medium text-[var(--color-ink)]">Counter #{{ $counter->number }}</h3>
+                <p class="text-sm text-gray-500 mt-1">{{ $counter->branch->name ?? 'Main' }}</p>
+                <div class="mt-4">
+                    @if($counter->status === 'open')
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Open</span>
+                        <p class="mt-2 text-sm">Opened: {{ $counter->opened_at->format('H:i') }}</p>
+                    @else
+                        <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Closed</span>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
 
-@section('content')
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-semibold text-[#171717]">Counters</h1>
-            <p class="text-sm text-[#6b6b6b] mt-1">Manage teller counters and till sessions</p>
-        </div>
-        <a href="#" class="px-4 py-2 text-sm font-medium text-white bg-[#0a0a0a] rounded-lg hover:bg-[#262626]">Open Counter</a>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-semibold text-[#171717]">Counter 1</h3>
-                <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span>
-            </div>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-[#6b6b6b]">Teller</span>
-                    <span class="text-[#171717]">Ahmad Razali</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-[#6b6b6b]">MYR Balance</span>
-                    <span class="text-[#171717] font-semibold">RM 50,000</span>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-semibold text-[#171717]">Counter 2</h3>
-                <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span>
-            </div>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-[#6b6b6b]">Teller</span>
-                    <span class="text-[#171717]">Siti Nurhaliza</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-[#6b6b6b]">MYR Balance</span>
-                    <span class="text-[#171717] font-semibold">RM 45,000</span>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-semibold text-[#171717]">Counter 3</h3>
-                <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-[#f7f7f8] text-[#6b6b6b]">Closed</span>
-            </div>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-[#6b6b6b]">Teller</span>
-                    <span class="text-[#171717]">-</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-[#6b6b6b]">MYR Balance</span>
-                    <span class="text-[#171717] font-semibold">-</span>
-                </div>
-            </div>
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Counter</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">User</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Status</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($counterSessions as $session)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-3">#{{ $session->counter->number }}</td>
+                        <td class="px-4 py-3">{{ $session->user->name }}</td>
+                        <td class="px-4 py-3">
+                            @if($session->status === 'open')
+                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Open</span>
+                            @else
+                                <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Closed</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{{ route('counters.show', $session->id) }}" class="text-blue-600 hover:underline">View</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" class="px-4 py-3 text-center">No active counter sessions</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
-    <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-[#f7f7f8] border-b border-[#e5e5e5]">
-                <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Counter</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Current Teller</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">MYR Float</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6b6b6b]">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="border-b border-[#e5e5e5] hover:bg-[#f7f7f8]/50">
-                    <td class="px-4 py-3 text-[#171717] font-medium">Counter 1</td>
-                    <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span></td>
-                    <td class="px-4 py-3 text-[#171717]">Ahmad Razali</td>
-                    <td class="px-4 py-3 text-[#171717] font-semibold">RM 50,000</td>
-                    <td class="px-4 py-3"><a href="#" class="text-[#d4a843] hover:underline">View</a></td>
-                </tr>
-                <tr class="border-b border-[#e5e5e5] hover:bg-[#f7f7f8]/50">
-                    <td class="px-4 py-3 text-[#171717] font-medium">Counter 2</td>
-                    <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span></td>
-                    <td class="px-4 py-3 text-[#171717]">Siti Nurhaliza</td>
-                    <td class="px-4 py-3 text-[#171717] font-semibold">RM 45,000</td>
-                    <td class="px-4 py-3"><a href="#" class="text-[#d4a843] hover:underline">View</a></td>
-                </tr>
-                <tr class="hover:bg-[#f7f7f8]/50">
-                    <td class="px-4 py-3 text-[#171717] font-medium">Counter 3</td>
-                    <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-[#f7f7f8] text-[#6b6b6b]">Closed</span></td>
-                    <td class="px-4 py-3 text-[#6b6b6b]">-</td>
-                    <td class="px-4 py-3 text-[#6b6b6b]">-</td>
-                    <td class="px-4 py-3"><a href="#" class="text-[#d4a843] hover:underline">Open</a></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-@endsection
+</div>

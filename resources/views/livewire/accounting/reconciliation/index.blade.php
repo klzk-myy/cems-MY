@@ -1,15 +1,9 @@
-@extends('layouts.base')
-
-@section('title', 'Bank Reconciliation - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
+<div>
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Bank Reconciliation</h1>
         <p class="text-sm text-gray-500">Match bank statement transactions with internal records</p>
     </div>
 
-    {{-- Header Actions --}}
     <div class="flex justify-end mb-6 gap-3">
         <a href="{{ route('accounting.reconciliation.report') }}" class="btn btn-secondary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -19,13 +13,12 @@
         </a>
         <button class="btn btn-primary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></svg>
             </svg>
             Import Statement
         </button>
     </div>
 
-    {{-- Filters --}}
     <div class="card mb-6">
         <div class="card-body">
             <form wire:submit="applyFilters" class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -67,7 +60,6 @@
         </div>
     </div>
 
-    {{-- Summary Cards --}}
     <div class="grid grid-cols-3 gap-4 mb-6">
         <div class="stat-card">
             <p class="stat-card-label">Total Items</p>
@@ -83,7 +75,6 @@
         </div>
     </div>
 
-    {{-- Reconciliations Table --}}
     <div class="card">
         <div class="table-container">
             <table class="table">
@@ -140,4 +131,4 @@
             </div>
         @endif
     </div>
-@endsection
+</div>

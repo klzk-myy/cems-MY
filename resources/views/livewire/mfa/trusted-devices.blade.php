@@ -1,22 +1,44 @@
-@extends('layouts.base')
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-2xl font-bold text-[var(--color-ink)] mb-6">Trusted Devices</h1>
 
-<div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Trusted Devices</h2>
-        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-gray-600 mb-4">These devices will not require two-factor authentication when you log in.</p>
 
-        <div class="p-6">
-            <p class="text-gray-600 mb-6">Devices you've trusted to bypass MFA verification for 30 days.</p>
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Device</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Added</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Last Used</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[var(--color-ink)]">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($devices as $device)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-2">{{ $device->device_icon }}</span>
+                                <span>{{ $device->device_name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">{{ $device->created_at->format('Y-m-d') }}</td>
+                        <td class="px-4 py-3">{{ $device->last_used_at ? $device->last_used_at->format('Y-m-d') : 'Never' }}</td>
+                        <td class="px-4 py-3">
+                            <button wire:click="remove({{ $device->id }})" wire:confirm="Remove this device?" class="text-red-600 hover:underline">Remove</button>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" class="px-4 py-3 text-center">No trusted devices</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
 
-            <div class="text-center py-8">
-                <div class="text-gray-400 mb-2">
-                    <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                    </svg>
-                </div>
-                <p class="text-gray-500">No trusted devices</p>
-                <p class="text-sm text-gray-400 mt-1">Devices you trust will appear here after verification</p>
+            <div class="mt-4 flex justify-end">
+                <button wire:click="addCurrent" class="px-4 py-2 border border-[var(--color-border)] rounded">Add Current Device</button>
             </div>
         </div>
     </div>

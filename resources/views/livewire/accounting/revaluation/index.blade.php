@@ -1,15 +1,9 @@
-@extends('layouts.base')
-
-@section('title', 'Currency Revaluation - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
+<div>
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Currency Revaluation</h1>
         <p class="text-sm text-gray-500">Monthly exchange rate revaluation for currency positions</p>
     </div>
 
-    {{-- Header Actions --}}
     <div class="flex justify-end mb-6">
         <button
             wire:click="runRevaluation"
@@ -31,14 +25,12 @@
         </button>
     </div>
 
-    {{-- Run Message --}}
     @if($runMessage)
         <div class="mb-6 p-4 rounded-lg {{ str_contains($runMessage, 'failed') ? 'bg-red-600' : 'bg-green-600' }} bg-opacity-10 text-gray-900">
             <p class="text-sm">{{ $runMessage }}</p>
         </div>
     @endif
 
-    {{-- Positions Table --}}
     <div class="card">
         <div class="table-container">
             <table class="table">
@@ -92,4 +84,4 @@
             </table>
         </div>
     </div>
-@endsection
+</div>

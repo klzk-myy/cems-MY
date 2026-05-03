@@ -1,8 +1,4 @@
-@extends('layouts.base')
-
-@section('title', 'Users - CEMS-MY')
-
-@section('content')
+<div>
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-semibold text-[#171717]">Users</h1>
@@ -114,4 +110,4 @@
             @endif
         </div>
     </div>
-@endsection
+</div>

@@ -1,77 +1,53 @@
-@extends('layouts.base')
-
-@section('title', 'Profit & Loss - CEMS-MY')
-
-@section('content')
-    {{-- Header --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-gray-900">Profit & Loss</h1>
-        <p class="text-sm text-gray-500">Revenue and expenses for the period</p>
-    </div>
-
-    {{-- Date Range Filter --}}
-    <div class="card mb-6">
-        <div class="card-body flex items-center gap-4">
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium">From:</label>
-                <input type="date" wire:model.live="fromDate" class="input w-auto" />
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium">To:</label>
-                <input type="date" wire:model.live="toDate" class="input w-auto" />
-            </div>
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-[var(--color-ink)]">Profit & Loss Statement</h1>
+            <select wire:model="period" class="rounded border border-[var(--color-border)] px-3 py-2">
+                @foreach($periods as $p)
+                <option value="{{ $p->start_date }}_{{ $p->end_date }}">{{ $p->name }}</option>
+                @endforeach
+            </select>
         </div>
-    </div>
 
-    {{-- P&L Statement --}}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Profit & Loss Statement</h3>
-            <span class="text-sm text-gray-500">{{ $fromDate }} - {{ $toDate }}</span>
-        </div>
-        <div class="card-body">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                    <h4 class="font-semibold mb-4 text-green-600">Revenue</h4>
-                    @forelse($pl['revenues'] ?? [] as $item)
-                    <div class="flex justify-between py-2 border-b border-gray-200">
-                        <span>{{ $item['account_name'] }}</span>
-                        <span class="font-mono">{{ number_format((float) $item['amount'], 2) }}</span>
-                    </div>
-                    @empty
-                    <p class="text-gray-500 py-2">No revenue accounts</p>
-                    @endforelse
-                    <div class="flex justify-between py-3 font-semibold border-t-2 border-gray-900 mt-2">
-                        <span>Total Revenue</span>
-                        <span class="font-mono text-green-600">{{ number_format((float) ($pl['total_revenue'] ?? 0), 2) }}</span>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4 text-red-600">Expenses</h4>
-                    @forelse($pl['expenses'] ?? [] as $item)
-                    <div class="flex justify-between py-2 border-b border-gray-200">
-                        <span>{{ $item['account_name'] }}</span>
-                        <span class="font-mono">{{ number_format((float) $item['amount'], 2) }}</span>
-                    </div>
-                    @empty
-                    <p class="text-gray-500 py-2">No expense accounts</p>
-                    @endforelse
-                    <div class="flex justify-between py-3 font-semibold border-t-2 border-gray-900 mt-2">
-                        <span>Total Expenses</span>
-                        <span class="font-mono text-red-600">{{ number_format((float) ($pl['total_expenses'] ?? 0), 2) }}</span>
-                    </div>
-                </div>
-            </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium text-[var(--color-ink)] mb-4">Revenue</h2>
+            <table class="w-full mb-6">
+                <tbody>
+                    @foreach($revenueAccounts as $account)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-2 pl-8">{{ $account->name }}</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($account->balance, 2) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr class="bg-green-50 font-bold border-t-2 border-[var(--color-border)]">
+                        <td class="px-4 py-2">Total Revenue</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($totalRevenue, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
 
-            {{-- Net Profit / Loss --}}
-            <div class="mt-8 pt-4 border-t-2 border-gray-900">
-                <div class="flex justify-between text-lg font-bold">
-                    <span>Net Profit / (Loss)</span>
-                    <span class="font-mono {{ ($pl['net_profit'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                        {{ number_format((float) ($pl['net_profit'] ?? 0), 2) }} MYR
-                    </span>
+            <h2 class="text-lg font-medium text-[var(--color-ink)] mb-4">Expenses</h2>
+            <table class="w-full mb-6">
+                <tbody>
+                    @foreach($expenseAccounts as $account)
+                    <tr class="border-t border-[var(--color-border)]">
+                        <td class="px-4 py-2 pl-8">{{ $account->name }}</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($account->balance, 2) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr class="bg-red-50 font-bold border-t-2 border-[var(--color-border)]">
+                        <td class="px-4 py-2">Total Expenses</td>
+                        <td class="px-4 py-2 text-right">${{ number_format($totalExpenses, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="mt-6 p-4 {{ $netIncome >= 0 ? 'bg-green-100' : 'bg-red-100' }} rounded font-bold">
+                <div class="flex justify-between text-xl">
+                    <span>Net Income {{ $netIncome >= 0 ? '(Profit)' : '(Loss)' }}</span>
+                    <span>${{ number_format(abs($netIncome), 2) }}</span>
                 </div>
             </div>
         </div>
     </div>
-@endsection
+</div>
