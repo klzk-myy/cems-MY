@@ -85,6 +85,12 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
      */
     protected function reconcile(): array
     {
+        // Find transactions eligible for reconciliation:
+        // 1. status = 'Completed'
+        // 2. cdd_level = 'Enhanced'
+        // 3. journal_entry_id IS NULL (entries not yet created)
+        // OR has_deferred_accounting = true but journal_entry_id = null
+        // Use chunkById to process in batches and avoid memory issues with large datasets
         $report = [
             'fixed_count' => 0,
             'still_missing_count' => 0,
@@ -95,12 +101,7 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
             'still_missing' => [],
         ];
 
-        // Find transactions eligible for reconciliation:
-        // 1. status = 'Completed'
-        // 2. cdd_level = 'Enhanced'
-        // 3. journal_entry_id IS NULL (entries not yet created)
-        // OR has_deferred_accounting = true but journal_entry_id = null
-        $transactions = Transaction::where('status', TransactionStatus::Completed)
+        Transaction::where('status', TransactionStatus::Completed)
             ->where('cdd_level', CddLevel::Enhanced)
             ->where(function ($query) {
                 $query->whereNull('journal_entry_id')
@@ -109,44 +110,48 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
                             ->whereNull('journal_entry_id');
                     });
             })
-            ->get();
+            ->select('id')  // Only fetch IDs to minimize memory
+            ->chunkById(100, function ($transactionIds) use (&$report) {
+                // Get full records by ID for processing
+                $fullTransactions = Transaction::whereIn('id', $transactionIds->pluck('id'))->get();
 
-        Log::info('ReconcileDeferredAccountingJob found transactions to check', [
-            'transaction_count' => $transactions->count(),
-        ]);
+                Log::info('ReconcileDeferredAccountingJob processing chunk', [
+                    'transaction_count' => $fullTransactions->count(),
+                ]);
 
-        foreach ($transactions as $transaction) {
-            $reconciliationResult = $this->reconcileTransaction($transaction);
+                foreach ($fullTransactions as $transaction) {
+                    $reconciliationResult = $this->reconcileTransaction($transaction);
 
-            if ($reconciliationResult['success']) {
-                $report['fixed_count']++;
-                $report['total_amount_fixed'] = $this->mathService->add(
-                    $report['total_amount_fixed'],
-                    (string) $transaction->amount_local
-                );
-                $report['fixed_transactions'][] = [
-                    'transaction_id' => $transaction->id,
-                    'amount_local' => (string) $transaction->amount_local,
-                    'currency' => $transaction->currency_code,
-                ];
-            } elseif ($reconciliationResult['can_reconcile'] === false) {
-                $report['cannot_reconcile_count']++;
-                $report['cannot_reconcile'][] = [
-                    'transaction_id' => $transaction->id,
-                    'amount_local' => (string) $transaction->amount_local,
-                    'currency' => $transaction->currency_code,
-                    'reason' => $reconciliationResult['reason'],
-                ];
-            } else {
-                $report['still_missing_count']++;
-                $report['still_missing'][] = [
-                    'transaction_id' => $transaction->id,
-                    'amount_local' => (string) $transaction->amount_local,
-                    'currency' => $transaction->currency_code,
-                    'reason' => $reconciliationResult['reason'],
-                ];
-            }
-        }
+                    if ($reconciliationResult['success']) {
+                        $report['fixed_count']++;
+                        $report['total_amount_fixed'] = $this->mathService->add(
+                            $report['total_amount_fixed'],
+                            (string) $transaction->amount_local
+                        );
+                        $report['fixed_transactions'][] = [
+                            'transaction_id' => $transaction->id,
+                            'amount_local' => (string) $transaction->amount_local,
+                            'currency' => $transaction->currency_code,
+                        ];
+                    } elseif ($reconciliationResult['can_reconcile'] === false) {
+                        $report['cannot_reconcile_count']++;
+                        $report['cannot_reconcile'][] = [
+                            'transaction_id' => $transaction->id,
+                            'amount_local' => (string) $transaction->amount_local,
+                            'currency' => $transaction->currency_code,
+                            'reason' => $reconciliationResult['reason'],
+                        ];
+                    } else {
+                        $report['still_missing_count']++;
+                        $report['still_missing'][] = [
+                            'transaction_id' => $transaction->id,
+                            'amount_local' => (string) $transaction->amount_local,
+                            'currency' => $transaction->currency_code,
+                            'reason' => $reconciliationResult['reason'],
+                        ];
+                    }
+                }
+            });
 
         return $report;
     }
