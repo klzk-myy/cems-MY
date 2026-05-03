@@ -138,7 +138,7 @@
         </li>
 
         <li>
-            <a href="{{ route('branches.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('branch-closing.*') ? 'bg-gray-800' : '' }}">
+            <a href="{{ route('branches.closing.show', ['branch' => auth()->user()->branch_id ?? 1]) }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('branches.closing.*') ? 'bg-gray-800' : '' }}">
                 Branch Closing
             </a>
         </li>

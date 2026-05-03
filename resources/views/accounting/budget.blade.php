@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-app-layout title="Budget Management">
     <div class="space-y-6">
         <!-- Page Header -->
         <div class="flex items-center justify-between">
@@ -126,4 +126,4 @@
             </div>
         </div>
     </div>
-</x-layouts.app>
+</x-app-layout>

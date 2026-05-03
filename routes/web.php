@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\BranchClosingController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchOpeningController;
 use App\Http\Controllers\Compliance\AlertTriageController;
@@ -393,6 +394,14 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         // Route::get('/create', [BranchController::class, 'create'])->name('create');
         // Route::get('/{branch}', [BranchController::class, 'show'])->name('show');
         // Route::get('/{branch}/edit', [BranchController::class, 'edit'])->name('edit');
+
+        // Branch Closing Workflow
+        Route::get('/{branch}/closing', [BranchClosingController::class, 'show'])
+            ->name('closing.show');
+        Route::post('/{branch}/closing/initiate', [BranchClosingController::class, 'initiate'])
+            ->name('closing.initiate');
+        Route::post('/{branch}/closing/finalize', [BranchClosingController::class, 'finalize'])
+            ->name('closing.finalize');
     });
 
     Route::middleware(['auth', 'role:admin'])->prefix('branches/open')->name('branches.open.')->group(function () {

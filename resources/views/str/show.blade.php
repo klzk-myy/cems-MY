@@ -1,11 +1,4 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>STR Details - {{ $str->str_number }}</title>
-</head>
-<body class="min-h-screen bg-gray-50">
+<x-app-layout title="STR Details - {{ $str->str_number }}">
     <div class="flex min-h-screen flex-col">
         <header class="bg-white shadow-sm">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -161,7 +154,7 @@
                                 @if($str->isDraft())
                                     <form method="POST" action="{{ route('str.submit-for-review', $str) }}">
                                         @csrf
-                                        <button type="submit" class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                                        <button type="submit" class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                                             Submit for Review
                                         </button>
                                     </form>
@@ -173,7 +166,7 @@
                                 @if($str->isPendingReview())
                                     <form method="POST" action="{{ route('str.submit-for-approval', $str) }}">
                                         @csrf
-                                        <button type="submit" class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                                        <button type="submit" class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                                             Submit for Approval
                                         </button>
                                     </form>
@@ -260,7 +253,5 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-</body>
-</html>
+</main>
+</x-app-layout>

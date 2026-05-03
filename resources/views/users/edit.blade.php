@@ -1,12 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit User - CEMS</title>
-</head>
-<body class="bg-gray-50">
-    <div class="min-h-screen flex flex-col">
+<x-app-layout title="Edit User">
         <!-- Page Header -->
         <div class="bg-white border-b border-[#e5e5e5]">
             <div class="max-w-7xl mx-auto px-6 py-6">
@@ -221,5 +213,4 @@
             </div>
         </main>
     </div>
-</body>
-</html>
+</x-app-layout>
