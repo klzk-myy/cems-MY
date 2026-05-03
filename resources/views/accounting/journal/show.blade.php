@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-app-layout title="Journal Entry">
     <div class="space-y-6">
         <!-- Page Header -->
         <div class="flex items-center justify-between">
