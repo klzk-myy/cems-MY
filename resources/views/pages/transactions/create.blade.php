@@ -2,7 +2,7 @@
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-6">New Transaction</h1>
 
-        <form method="POST" action="{{ route('transactions.store') }}" class="bg-white rounded-lg shadow p-6">
+        <form method="POST" action="{{ route('transactions.store') }}" class="bg-white border border-[#e5e5e5] rounded-xl p-6">
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -53,7 +53,7 @@
             </div>
 
             <div class="mt-6 flex gap-4">
-                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Create Transaction</button>
+                <button type="submit" class="px-6 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">Create Transaction</button>
                 <a href="{{ route('transactions.index') }}" class="px-6 py-2 border rounded hover:bg-gray-50">Cancel</a>
             </div>
         </form>

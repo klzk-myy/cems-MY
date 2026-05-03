@@ -3,26 +3,26 @@
         <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Today's Transactions</div>
                 <div class="text-2xl font-bold">{{ $stats['total_transactions'] ?? 0 }}</div>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Buy Volume</div>
                 <div class="text-2xl font-bold text-green-600">
                     {{ number_format($stats['buy_volume'] ?? 0, 2) }}
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Sell Volume</div>
                 <div class="text-2xl font-bold text-red-600">
                     {{ number_format($stats['sell_volume'] ?? 0, 2) }}
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Open Flags</div>
                 <div class="text-2xl font-bold text-yellow-600">
                     {{ $stats['flagged'] ?? 0 }}
@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
             <h2 class="text-lg font-semibold mb-4">Recent Transactions</h2>
 
             @if($recent_transactions->isEmpty())

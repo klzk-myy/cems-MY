@@ -3,21 +3,21 @@
         <h1 class="text-2xl font-bold mb-6">Counters</h1>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Total Counters</div>
                 <div class="text-2xl font-bold">{{ $stats['total'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Open</div>
                 <div class="text-2xl font-bold text-green-600">{{ $stats['open'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Available</div>
                 <div class="text-2xl font-bold text-blue-600">{{ $stats['available'] ?? 0 }}</div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
                 <thead class="bg-gray-50">
                     <tr class="text-left text-sm text-gray-500">

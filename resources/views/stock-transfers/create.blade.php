@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Stock Transfer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<x-app-layout title="Create Stock Transfer">
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8">
             <h1 class="text-2xl font-semibold text-gray-900">Create Stock Transfer</h1>
@@ -118,6 +110,4 @@
                 </div>
             </form>
         </div>
-    </div>
-</body>
-</html>
+</x-app-layout>

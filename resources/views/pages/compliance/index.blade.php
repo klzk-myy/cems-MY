@@ -3,44 +3,44 @@
         <h1 class="text-2xl font-bold mb-6">Compliance Dashboard</h1>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Open Flags</div>
                 <div class="text-2xl font-bold text-yellow-600">{{ $stats['open'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Under Review</div>
                 <div class="text-2xl font-bold text-blue-600">{{ $stats['under_review'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Resolved Today</div>
                 <div class="text-2xl font-bold text-green-600">{{ $stats['resolved_today'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">High Priority</div>
                 <div class="text-2xl font-bold text-red-600">{{ $stats['high_priority'] ?? 0 }}</div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">STR Draft</div>
                 <div class="text-xl font-bold">{{ $strStats['draft'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">STR Pending Review</div>
                 <div class="text-xl font-bold">{{ $strStats['pending_review'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">STR Submitted</div>
                 <div class="text-xl font-bold">{{ $strStats['submitted'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">STR Overdue</div>
                 <div class="text-xl font-bold text-red-600">{{ $strStats['overdue'] ?? 0 }}</div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <div class="px-4 py-3 border-b">
                 <h2 class="text-lg font-semibold">Flagged Transactions</h2>
             </div>

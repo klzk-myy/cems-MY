@@ -2,12 +2,12 @@
     <div class="p-6">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold">Transactions</h1>
-            <a href="{{ route('transactions.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <a href="{{ route('transactions.create') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                 New Transaction
             </a>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <div class="bg-white border border-[#e5e5e5] rounded-xl p-4 mb-6">
             <form method="GET" class="flex gap-4">
                 <input type="text" name="search" placeholder="Search by reference..." 
                        class="border rounded px-3 py-2 flex-1" 
@@ -22,7 +22,7 @@
             </form>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
                 <thead class="bg-gray-50">
                     <tr class="text-left text-sm text-gray-500">

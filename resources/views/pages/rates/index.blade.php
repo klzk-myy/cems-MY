@@ -2,7 +2,7 @@
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-6">Exchange Rates</h1>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
                 <thead class="bg-gray-50">
                     <tr class="text-left text-sm text-gray-500">

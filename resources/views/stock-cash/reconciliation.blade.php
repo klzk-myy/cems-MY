@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Till Reconciliation - {{ $date }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<x-app-layout title="Till Reconciliation - {{ $date }}">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8 flex items-center justify-between">
             <div>
@@ -257,6 +249,4 @@
                 </table>
             </div>
         </div>
-    </div>
-</body>
-</html>
+</x-app-layout>

@@ -3,7 +3,7 @@
         <h1 class="text-2xl font-bold mb-6">Reports</h1>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <h3 class="font-semibold mb-2">BNM Regulatory Reports</h3>
                 <ul class="space-y-2 mt-4">
                     <li><a href="{{ route('reports.msb2') }}" class="text-blue-600 hover:underline">MSB2 Report</a></li>
@@ -14,7 +14,7 @@
                 </ul>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <h3 class="font-semibold mb-2">Analytics</h3>
                 <ul class="space-y-2 mt-4">
                     <li><a href="{{ route('reports.monthly-trends') }}" class="text-blue-600 hover:underline">Monthly Trends</a></li>
@@ -24,7 +24,7 @@
                 </ul>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <h3 class="font-semibold mb-2">Report History</h3>
                 <ul class="space-y-2 mt-4">
                     <li><a href="{{ route('reports.history') }}" class="text-blue-600 hover:underline">View History</a></li>
@@ -34,7 +34,7 @@
         </div>
 
         @if(isset($recentReports) && $recentReports->count() > 0)
-        <div class="bg-white rounded-lg shadow mt-6">
+        <div class="bg-white border border-[#e5e5e5] rounded-xl mt-6">
             <div class="px-4 py-3 border-b">
                 <h2 class="text-lg font-semibold">Recent Reports</h2>
             </div>

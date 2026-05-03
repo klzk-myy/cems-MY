@@ -2,7 +2,7 @@
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-6">Accounting Dashboard</h1>
 
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
             <h2 class="text-lg font-semibold mb-4">Currency Positions</h2>
             <table class="w-full">
                 <thead class="bg-gray-50">
@@ -35,15 +35,15 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <h3 class="font-semibold mb-2">Trial Balance</h3>
                 <a href="{{ route('accounting.trial-balance') }}" class="text-blue-600 hover:underline">View Report</a>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <h3 class="font-semibold mb-2">Profit & Loss</h3>
                 <a href="{{ route('accounting.profit-loss') }}" class="text-blue-600 hover:underline">View Report</a>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <h3 class="font-semibold mb-2">Balance Sheet</h3>
                 <a href="{{ route('accounting.balance-sheet') }}" class="text-blue-600 hover:underline">View Report</a>
             </div>

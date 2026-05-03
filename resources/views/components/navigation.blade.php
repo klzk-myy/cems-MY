@@ -58,6 +58,12 @@
                 Accounting
             </a>
         </li>
+
+        <li>
+            <a href="{{ route('rates.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('rates.*') ? 'bg-gray-800' : '' }}">
+                Rates
+            </a>
+        </li>
         @endcan
 
         @can('role:compliance')
@@ -116,6 +122,24 @@
         <li>
             <a href="{{ route('audit.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('audit.*') ? 'bg-gray-800' : '' }}">
                 Audit
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('setup.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('setup.*') ? 'bg-gray-800' : '' }}">
+                Setup
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('test-results.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('test-results.*') ? 'bg-gray-800' : '' }}">
+                Test Results
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('branches.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('branch-closing.*') ? 'bg-gray-800' : '' }}">
+                Branch Closing
             </a>
         </li>
         @endcan
