@@ -16,7 +16,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\MfaController;
-use App\Http\Controllers\PerformanceMonitoringController;
 use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StockTransferController;
@@ -26,8 +25,6 @@ use App\Http\Controllers\TestResultsController;
 use App\Http\Controllers\Transaction\TransactionApprovalController;
 use App\Http\Controllers\Transaction\TransactionCancellationController;
 use App\Http\Controllers\TransactionBatchController;
-use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\TransactionReportController;
 use App\Livewire\Accounting\BalanceSheet;
 use App\Livewire\Accounting\BudgetReport;
 use App\Livewire\Accounting\CashFlow;
@@ -76,24 +73,26 @@ use App\Livewire\Counters\Index as CountersIndex;
 use App\Livewire\Counters\Open;
 use App\Livewire\Customers\Create as CustomerCreate;
 use App\Livewire\Customers\Edit as CustomerEdit;
+use App\Livewire\Customers\Export;
 use App\Livewire\Customers\Index as CustomerIndex;
 use App\Livewire\Customers\Show as CustomerShow;
 use App\Livewire\Mfa\Recovery as MfaRecovery;
 use App\Livewire\Mfa\Setup as MfaSetup;
 use App\Livewire\Mfa\TrustedDevices as MfaTrustedDevices;
 use App\Livewire\Mfa\Verify as MfaVerify;
+use App\Livewire\Performance;
 use App\Livewire\Rates\Index as RatesIndex;
 use App\Livewire\Reports\Analytics\ComplianceSummary;
 use App\Livewire\Reports\Analytics\CustomerAnalysis;
+use App\Livewire\Reports\Analytics\Lctr;
+use App\Livewire\Reports\Analytics\Lmca;
 use App\Livewire\Reports\Analytics\MonthlyTrends;
+use App\Livewire\Reports\Analytics\PositionLimit;
 use App\Livewire\Reports\Analytics\Profitability;
+use App\Livewire\Reports\Analytics\QuarterlyLvr;
 use App\Livewire\Reports\Compare\Index as CompareIndex;
 use App\Livewire\Reports\History\Index as HistoryIndex;
-use App\Livewire\Reports\Lctr\Index as LctrIndex;
-use App\Livewire\Reports\Lmca\Index as LmcaIndex;
 use App\Livewire\Reports\Msb2\Index as Msb2Index;
-use App\Livewire\Reports\PositionLimit\Index as PositionLimitIndex;
-use App\Livewire\Reports\QuarterlyLvr\Index as QuarterlyLvrIndex;
 use App\Livewire\Stock\Index as StockIndex;
 use App\Livewire\Stock\Position;
 use App\Livewire\Stock\Reconciliation;
@@ -101,7 +100,17 @@ use App\Livewire\Stock\TillReport;
 use App\Livewire\Stock\Transfer\Create as StockTransferCreate;
 use App\Livewire\Stock\Transfer\Index as TransferIndex;
 use App\Livewire\Stock\Transfer\Show;
+use App\Livewire\StockTransfers\ApproveBm;
+use App\Livewire\StockTransfers\ApproveHq;
+use App\Livewire\StockTransfers\Cancel;
+use App\Livewire\StockTransfers\Dispatch;
+use App\Livewire\StockTransfers\Receive;
+use App\Livewire\Str\Create;
+use App\Livewire\Str\Edit;
+use App\Livewire\TestResults\Compare;
+use App\Livewire\TestResults\Statistics;
 use App\Livewire\Transactions\Approve as TransactionApprove;
+use App\Livewire\Transactions\BatchUpload;
 use App\Livewire\Transactions\Cancel as TransactionCancel;
 use App\Livewire\Transactions\Create as TransactionCreate;
 use App\Livewire\Transactions\Index as TransactionIndex;
@@ -189,10 +198,10 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     // -------------------------------------------------------------------------
 
     // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
     // Performance Monitoring
-    Route::get('/performance', [PerformanceMonitoringController::class, 'index'])->name('performance');
+    Route::get('/performance', Performance::class)->name('performance');
 
     // MFA Setup & Verification
     Route::prefix('mfa')->name('mfa.')->group(function () {
@@ -222,7 +231,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // Batch upload (Manager only)
         Route::middleware('role:manager')->group(function () {
-            Route::get('/batch-upload', [TransactionBatchController::class, 'showBatchUpload'])->name('batch-upload');
+            Route::get('/batch-upload', BatchUpload::class)->name('batch-upload');
             Route::post('/batch-upload', [TransactionBatchController::class, 'processBatchUpload']);
             Route::get('/import/{import}', [TransactionBatchController::class, 'showImportResults'])->name('batch-upload.show');
             Route::get('/template', [TransactionBatchController::class, 'downloadTemplate'])->name('template');
@@ -230,7 +239,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         // View
         Route::get('/{transaction}', TransactionShow::class)->name('show');
-        Route::get('/{transaction}/receipt', [TransactionController::class, 'receipt'])->name('receipt');
+        Route::get('/{transaction}/receipt', App\Livewire\Transactions\Receipt\Index::class)->name('receipt');
 
         // Approval & Cancellation
         Route::post('/{transaction}/approve', [TransactionApprovalController::class, 'approve'])->name('approve')
@@ -248,10 +257,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     });
 
     // Customer Transaction History (API)
-    Route::get('/customers/{customer}/history', [TransactionReportController::class, 'customerHistory'])
-        ->name('customers.history');
-    Route::get('/customers/{customer}/history/export', [TransactionReportController::class, 'exportCustomerHistory'])
-        ->name('customers.export');
+    Route::get('/customers/{customer}/history', App\Livewire\Customers\History::class)->name('customers.history');
+    Route::get('/customers/{customer}/history/export', Export::class)->name('customers.export');
 
     // Customers
     Route::prefix('customers')->name('customers.')->group(function () {
@@ -291,6 +298,20 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/create', StockTransferCreate::class)->name('create')
             ->middleware('role:manager');
         Route::get('/{stockTransfer}', Show::class)->name('show');
+
+        // View routes - Livewire components for action confirmation pages
+        Route::get('/{stockTransfer}/dispatch', Dispatch::class)->name('dispatch.show')
+            ->middleware('role:admin');
+        Route::get('/{stockTransfer}/receive', Receive::class)->name('receive.show')
+            ->middleware('role:admin');
+        Route::get('/{stockTransfer}/approve-bm', ApproveBm::class)->name('approve-bm.show')
+            ->middleware('role:manager');
+        Route::get('/{stockTransfer}/approve-hq', ApproveHq::class)->name('approve-hq.show')
+            ->middleware('role:admin');
+        Route::get('/{stockTransfer}/cancel', Cancel::class)->name('cancel.show')
+            ->middleware('role:manager');
+        Route::get('/{stockTransfer}/complete', App\Livewire\StockTransfers\Complete::class)->name('complete.show')
+            ->middleware('role:admin');
 
         // Action routes - Controller actions (API-like operations)
         Route::post('/{stockTransfer}/approve-bm', [StockTransferController::class, 'approveBm'])->name('approve-bm')
@@ -418,12 +439,12 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // STR Reports - Compliance officers create/manage
     Route::middleware('role:compliance')->prefix('str')->name('str.')->group(function () {
-        Route::get('/', [StrController::class, 'index'])->name('index');
-        Route::get('/create', [StrController::class, 'create'])->name('create');
+        Route::get('/', App\Livewire\Str\Index::class)->name('index');
+        Route::get('/create', Create::class)->name('create');
         Route::post('/', [StrController::class, 'store'])->name('store')
             ->middleware('throttle:str-submission');
-        Route::get('/{str}', [StrController::class, 'show'])->name('show');
-        Route::get('/{str}/edit', [StrController::class, 'edit'])->name('edit');
+        Route::get('/{str}', App\Livewire\Str\Show::class)->name('show');
+        Route::get('/{str}/edit', Edit::class)->name('edit');
         Route::put('/{str}', [StrController::class, 'update'])->name('update');
         Route::post('/{str}/submit-review', [StrController::class, 'submitForReview'])->name('submit-review');
         Route::post('/{str}/submit-approval', [StrController::class, 'submitForApproval'])->name('submit-approval');
@@ -476,7 +497,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/fiscal-years', FiscalYears::class)->name('fiscal-years');
         Route::post('/fiscal-years', [FiscalYearController::class, 'store'])->name('fiscal-years.store');
         Route::post('/fiscal-years/{year}/close', [FiscalYearController::class, 'close'])->name('fiscal-years.close');
-        Route::get('/fiscal-years/{yearCode}/report', [FiscalYearController::class, 'report'])->name('fiscal-years.report');
+        Route::get('/fiscal-years/{yearCode}/report', FiscalYears\Report::class)->name('fiscal-years.report');
         Route::get('/revaluation', App\Livewire\Accounting\Revaluation\Index::class)->name('revaluation');
         Route::get('/revaluation/history', History::class)->name('revaluation.history');
         Route::post('/revaluation/run', [RevaluationController::class, 'run'])->name('revaluation.run');
@@ -496,14 +517,14 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     // -------------------------------------------------------------------------
 
     Route::middleware('role:manager,admin')->prefix('reports')->name('reports.')->group(function () {
-        Route::get('/', [DashboardController::class, 'reports'])->name('index');
+        Route::get('/', App\Livewire\Reports\Index::class)->name('index');
 
         // BNM Regulatory Reports - Livewire Components
         Route::get('/msb2', Msb2Index::class)->name('msb2');
-        Route::get('/lctr', LctrIndex::class)->name('lctr');
-        Route::get('/lmca', LmcaIndex::class)->name('lmca');
-        Route::get('/quarterly-lvr', QuarterlyLvrIndex::class)->name('quarterly-lvr');
-        Route::get('/position-limit', PositionLimitIndex::class)->name('position-limit');
+        Route::get('/lctr', Lctr::class)->name('lctr');
+        Route::get('/lmca', Lmca::class)->name('lmca');
+        Route::get('/quarterly-lvr', QuarterlyLvr::class)->name('quarterly-lvr');
+        Route::get('/position-limit', PositionLimit::class)->name('position-limit');
 
         // Analytics - Livewire Components
         Route::get('/monthly-trends', MonthlyTrends::class)->name('monthly-trends');
@@ -562,11 +583,12 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     // Test Results (Admin only)
     Route::middleware(['role:admin'])->prefix('test-results')->name('test-results.')->group(function () {
-        Route::get('/', [TestResultsController::class, 'index'])->name('index');
-        Route::get('/statistics', [TestResultsController::class, 'statistics'])->name('statistics');
+        Route::get('/compare', Compare::class)->name('compare');
+        Route::get('/', App\Livewire\TestResults\Index::class)->name('index');
+        Route::get('/statistics', Statistics::class)->name('statistics');
         Route::get('/status', [TestResultsController::class, 'latestStatus'])->name('status');
         Route::post('/run', [TestResultsController::class, 'run'])->name('run');
-        Route::get('/{testResult}', [TestResultsController::class, 'show'])->name('show');
+        Route::get('/{testResult}', App\Livewire\TestResults\Show::class)->name('show');
         Route::post('/cleanup', [TestResultsController::class, 'cleanup'])->name('cleanup');
         Route::get('/{testResult}/output', [TestResultsController::class, 'output'])->name('output');
     });

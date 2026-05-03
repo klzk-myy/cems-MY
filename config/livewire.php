@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'layout' => 'layouts.app',
+    'layout' => 'livewire.layouts.default',
 
     'comments' => [
         'enabled' => env('APP_ENV', 'production') === 'local',
