@@ -2,55 +2,40 @@
 
 @section('title', 'Reject Cancellation')
 
-@section('content')
-<div class="card">
-    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Reject Cancellation</h3></div>
-    <div class="p-6">
-        <div class="p-6 bg-[--color-surface-elevated] rounded-lg mb-6">
-            <h4 class="text-sm font-medium text-[--color-ink-muted] mb-4">Transaction Details</h4>
-            <dl class="grid grid-cols-2 gap-4">
-                <div>
-                    <dt class="text-sm text-[--color-ink-muted]">ID</dt>
-                    <dd class="font-mono">{{ $transaction->id ?? 'N/A' }}</dd>
-                </div>
-                <div>
-                    <dt class="text-sm font-medium text-[--color-ink-muted]">Type</dt>
-                    <dd>
-                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ ($transaction->type ?? '') === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                            {{ $transaction->type ?? 'N/A' }}
-                        </span>
-                    </dd>
-                </div>
-                <div>
-                    <dt class="text-sm text-[--color-ink-muted]">Currency</dt>
-                    <dd class="font-mono">{{ $transaction->currency ?? 'N/A' }}</dd>
-                </div>
-                <div>
-                    <dt class="text-sm text-[--color-ink-muted]">Amount</dt>
-                    <dd class="font-mono text-lg">{{ number_format($transaction->amount ?? 0, 2) }}</dd>
-                </div>
-                <div>
-                    <dt class="text-sm text-[--color-ink-muted]">MYR Value</dt>
-                    <dd class="font-mono text-lg">RM {{ number_format($transaction->myr_value ?? 0, 2) }}</dd>
-                </div>
-                <div>
-                    <dt class="text-sm text-[--color-ink-muted]">Status</dt>
-                    <dd><span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Pending Cancellation</span></dd>
-                </div>
-            </dl>
-        </div>
+<div class="p-6">
+    <div class="mb-6">
+        <a href="{{ url()->previous() }}" class="text-sm text-[--color-accent] hover:underline">&larr; Back</a>
+    </div>
 
-        <form method="POST" action="{{ route('transactions.reject-cancel', $transaction->id ?? 0) }}">
-            @csrf
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-[--color-ink] mb-1">Reason for Rejection</label>
-                <textarea name="reason" class="w-full px-4 py-2.5 text-sm bg-white border border-[--color-border] rounded-lg" rows="3" required placeholder="Explain why the cancellation is being rejected"></textarea>
+    <div class="max-w-lg mx-auto">
+        <h1 class="text-2xl font-semibold mb-6">Reject Cancellation Request</h1>
+
+        <div class="bg-[--color-bg-secondary] rounded-xl border border-[--color-border] p-6">
+            <p class="text-[--color-text-muted] mb-4">You are about to reject a cancellation request. Please provide a reason.</p>
+
+            <div class="mb-6 p-4 bg-[--color-bg-tertiary] rounded-lg space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-sm text-[--color-text-muted]">Transaction ID</span>
+                    <span class="font-medium">#TXN-2024-001</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-[--color-text-muted]">Amount</span>
+                    <span class="font-medium">$5,000.00</span>
+                </div>
             </div>
-            <div class="flex gap-3">
-                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700">Reject Cancellation</button>
-                <a href="{{ route('transactions.show', $transaction) }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[--color-border] hover:bg-[--color-canvas-subtle]">Back</a>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium mb-2">Rejection Reason</label>
+                <textarea class="w-full px-3 py-2 border border-[--color-border] rounded-lg bg-[--color-bg-primary] focus:outline-none focus:ring-2 focus:ring-[--color-accent]/30" rows="3" placeholder="Enter rejection reason..."></textarea>
             </div>
-        </form>
+
+            <div class="flex gap-4">
+                <form action="{{ route('transactions.reject-cancellation', $transaction->id ?? 1) }}" method="POST" class="flex-1">
+                    @csrf
+                    <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Reject Cancellation</button>
+                </form>
+                <a href="{{ url()->previous() }}" class="px-4 py-2 border border-[--color-border] rounded-lg hover:bg-[--color-bg-tertiary]">Cancel</a>
+            </div>
+        </div>
     </div>
 </div>
-@endsection
