@@ -27,12 +27,8 @@ $routes = collect(Route::getRoutes()->getRoutes())
         // Parse controller and action
         $controller = null;
         $controllerAction = null;
-        $isLivewire = false;
 
-        if (str_contains($action, 'App\\Livewire')) {
-            $isLivewire = true;
-            $controller = $action;
-        } elseif (str_contains($action, '@')) {
+        if (str_contains($action, '@')) {
             [$controller, $controllerAction] = explode('@', $action);
         }
 
@@ -107,7 +103,6 @@ $routes = collect(Route::getRoutes()->getRoutes())
             'middleware' => $middleware,
             'controller' => $controller,
             'action' => $controllerAction,
-            'is_livewire' => $isLivewire,
             'naming_pattern' => $namingPattern,
             'prefix_pattern' => $prefixPattern,
             'category' => $category,
@@ -184,8 +179,7 @@ if ($inlineMiddlewareRoutes->count() > 0) {
 $output = [
     'summary' => [
         'total_routes' => $routes->count(),
-        'livewire_routes' => $routes->where('is_livewire', true)->count(),
-        'controller_routes' => $routes->where('is_livewire', false)->count(),
+        'controller_routes' => $routes->count(),
         'categories' => $categories->toArray(),
         'naming_patterns' => $namingPatterns->toArray(),
         'prefix_patterns' => $prefixPatterns->toArray(),
