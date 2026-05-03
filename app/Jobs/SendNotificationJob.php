@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Notifications\AnonymousNotifiable;
@@ -24,9 +25,11 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
  *   SendNotificationJob::dispatch($user, new LargeTransactionNotification($txn, $conf));
  *   SendNotificationJob::dispatch($users, new SanctionsMatchNotification($entry));
  */
-class SendNotificationJob implements ShouldQueue
+class SendNotificationJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $uniqueFor = 60;
 
     /**
      * The notifiable entity (User, AnonymousNotifiable, or collection)
