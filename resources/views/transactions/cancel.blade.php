@@ -1,127 +1,95 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cancel Transaction - Transactions</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-gray-50">
-    <div class="min-h-screen flex flex-col">
-        <!-- Page Header -->
-        <div class="bg-white border-b border-[#e5e5e5]">
-            <div class="max-w-7xl mx-auto px-6 py-6">
-                <h1 class="text-2xl font-semibold text-gray-900">Cancel Transaction</h1>
-                <p class="mt-1 text-sm text-gray-500">Request cancellation for transaction</p>
+<x-app-layout title="Cancel Transaction">
+    <div class="p-6">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold">Cancel Transaction</h1>
+            <p class="text-sm text-gray-500 mt-1">Request cancellation for transaction</p>
+        </div>
+
+        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+                <h2 class="text-lg font-medium text-gray-900">Transaction Details</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Transaction ID</label>
+                        <p class="text-sm text-gray-900">{{ $transaction['id'] ?? 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Transaction Type</label>
+                        <p class="text-sm text-gray-900">{{ $transaction['type'] ?? 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Amount</label>
+                        <p class="text-sm text-gray-900">{{ $transaction['amount'] ?? 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Currency</label>
+                        <p class="text-sm text-gray-900">{{ $transaction['currency'] ?? 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Customer</label>
+                        <p class="text-sm text-gray-900">{{ $transaction['customer_name'] ?? 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Rate</label>
+                        <p class="text-sm text-gray-900">{{ $transaction['rate'] ?? 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Counter</label>
+                        <p class="text-sm text-gray-900">{{ $transaction['counter_id'] ?? 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Original Date</label>
+                        <p class="text-sm text-gray-900">{{ $transaction['created_at'] ?? 'N/A' }}</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Main Content -->
-        <main class="flex-1 max-w-7xl mx-auto px-6 py-6 w-full">
-            <!-- Transaction Details Card -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-                <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                    <h2 class="text-lg font-medium text-gray-900">Transaction Details</h2>
-                </div>
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Transaction ID</label>
-                            <p class="text-sm text-gray-900">{{ $transaction['id'] ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Transaction Type</label>
-                            <p class="text-sm text-gray-900">{{ $transaction['type'] ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Amount</label>
-                            <p class="text-sm text-gray-900">{{ $transaction['amount'] ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Currency</label>
-                            <p class="text-sm text-gray-900">{{ $transaction['currency'] ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Customer</label>
-                            <p class="text-sm text-gray-900">{{ $transaction['customer_name'] ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Rate</label>
-                            <p class="text-sm text-gray-900">{{ $transaction['rate'] ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Counter</label>
-                            <p class="text-sm text-gray-900">{{ $transaction['counter_id'] ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Original Date</label>
-                            <p class="text-sm text-gray-900">{{ $transaction['created_at'] ?? 'N/A' }}</p>
-                        </div>
+        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+                <h2 class="text-lg font-medium text-gray-900">Cancellation Request</h2>
+            </div>
+            <div class="p-6">
+                <form method="POST" action="{{ route('transactions.cancel.store', $transaction['id'] ?? 0) }}">
+                    @csrf
+                    <div class="mb-4">
+                        <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
+                            Reason for Cancellation <span class="text-red-600">*</span>
+                        </label>
+                        <textarea id="reason" name="reason" rows="4" required class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" placeholder="Enter the reason for cancellation"></textarea>
+                        @error('reason')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                            Submit Cancellation Request
+                        </button>
+                        <a href="{{ route('transactions.show', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+                            Back to Transaction
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="bg-white border border-[#e5e5e5] rounded-xl">
+            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+                <h2 class="text-lg font-medium text-gray-900">Important Notice</h2>
+            </div>
+            <div class="p-6">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-yellow-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <div>
+                        <p class="text-sm text-gray-700">Cancellation requests require manager approval.</p>
+                        <p class="text-sm text-gray-500 mt-1">You will be notified once the request has been processed.</p>
                     </div>
                 </div>
             </div>
-
-            <!-- Cancellation Request Form Card -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-                <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                    <h2 class="text-lg font-medium text-gray-900">Cancellation Request</h2>
-                </div>
-                <div class="p-6">
-                    <form method="POST" action="{{ route('transactions.cancel.store', $transaction['id'] ?? 0) }}">
-                        @csrf
-                        <div class="mb-4">
-                            <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
-                                Reason for Cancellation <span class="text-red-600">*</span>
-                            </label>
-                            <textarea
-                                id="reason"
-                                name="reason"
-                                rows="4"
-                                required
-                                class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg"
-                                placeholder="Enter the reason for cancellation"
-                            ></textarea>
-                            @error('reason')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="flex items-center gap-4">
-                            <button
-                                type="submit"
-                                class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]"
-                            >
-                                Submit Cancellation Request
-                            </button>
-                            <a
-                                href="{{ route('transactions.show', $transaction['id'] ?? 0) }}"
-                                class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50"
-                            >
-                                Back to Transaction
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Warning Notice Card -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl">
-                <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                    <h2 class="text-lg font-medium text-gray-900">Important Notice</h2>
-                </div>
-                <div class="p-6">
-                    <div class="flex items-start gap-3">
-                        <svg class="w-5 h-5 text-yellow-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                        <div>
-                            <p class="text-sm text-gray-700">Cancellation requests require manager approval.</p>
-                            <p class="text-sm text-gray-500 mt-1">You will be notified once the request has been processed.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+        </div>
     </div>
-</body>
-</html>
+</x-app-layout>
