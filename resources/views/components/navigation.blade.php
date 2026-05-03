@@ -144,6 +144,12 @@
         </li>
 
         <li>
+            <a href="{{ route('accounting.journal.create') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('accounting.journal.create') ? 'bg-gray-800' : '' }}">
+                Create Journal
+            </a>
+        </li>
+
+        <li>
             <a href="{{ route('accounting.trial-balance') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('accounting.trial-balance') ? 'bg-gray-800' : '' }}">
                 Trial Balance
             </a>
@@ -186,8 +192,20 @@
         </li>
 
         <li>
+            <a href="{{ route('accounting.revaluation.history') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('accounting.revaluation.history') ? 'bg-gray-800' : '' }}">
+                Revaluation History
+            </a>
+        </li>
+
+        <li>
             <a href="{{ route('accounting.reconciliation') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('accounting.reconciliation') ? 'bg-gray-800' : '' }}">
                 Reconciliation
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('accounting.reconciliation.report') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('accounting.reconciliation.report') ? 'bg-gray-800' : '' }}">
+                Recon Report
             </a>
         </li>
 
@@ -290,6 +308,42 @@
                 Sanctions
             </a>
         </li>
+
+        <li>
+            <a href="{{ route('compliance.sanctions.entries.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.sanctions.entries.*') ? 'bg-gray-800' : '' }}">
+                Sanctions Entries
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('compliance.sanctions.entries.create') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.sanctions.entries.create') ? 'bg-gray-800' : '' }}">
+                Create Sanction
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('compliance.sanctions.import-logs') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.sanctions.import-logs') ? 'bg-gray-800' : '' }}">
+                Import Logs
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('compliance.risk-dashboard.trends') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.risk-dashboard.trends') ? 'bg-gray-800' : '' }}">
+                Risk Trends
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('compliance.reporting.deadlines') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.reporting.deadlines') ? 'bg-gray-800' : '' }}">
+                Reporting Deadlines
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('compliance.reporting.schedule') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.reporting.schedule') ? 'bg-gray-800' : '' }}">
+                Schedule Report
+            </a>
+        </li>
         @endcan
 
         @can('role:manager')
@@ -358,6 +412,12 @@
         <li>
             <a href="{{ route('reports.compare') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.compare') ? 'bg-gray-800' : '' }}">
                 Compare Reports
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('reports.history') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.history') ? 'bg-gray-800' : '' }}">
+                Report History
             </a>
         </li>
         @endcan
