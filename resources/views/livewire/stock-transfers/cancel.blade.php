@@ -1,7 +1,6 @@
-<div class="card">
-    <div class="px-6 py-4 border-b border-[--color-border]"><h3 class="text-base font-semibold text-[--color-ink]">Cancel Stock Transfer</h3></div>
-    <div class="p-6">
-        <h1 class="text-2xl font-semibold text-[--color-ink] mb-4">Cancel - Stock Transfer</h1>
-        <p class="text-[--color-ink-muted]">Cancel view for stock transfers.</p>
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-2xl font-bold text-[var(--color-ink)]">StockTransfer Cancel</h1>
+        <div class="mt-4 text-[var(--color-ink-muted)]">Cancel a stock transfer</div>
     </div>
 </div>

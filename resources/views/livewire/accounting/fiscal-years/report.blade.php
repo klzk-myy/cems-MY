@@ -1,19 +1,6 @@
-<div>
-    <div class="flex items-center justify-between mb-6">
-        <a href="{{ route('accounting.fiscal-years.index') }}" class="btn btn-ghost">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            Back to Fiscal Years
-        </a>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h2 class="text-lg font-semibold">Fiscal Year Report</h2>
-        </div>
-        <div class="card-body">
-            <p class="text-[--color-ink-muted]">Fiscal year report content will be displayed here.</p>
-        </div>
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-2xl font-bold text-[var(--color-ink)]">FiscalYears Report</h1>
+        <div class="mt-4 text-[var(--color-ink-muted)]">View fiscal year report</div>
     </div>
 </div>

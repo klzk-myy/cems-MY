@@ -1,12 +1,6 @@
-<div class="flex items-center justify-between mb-6">
-    <div>
-        <h1 class="text-2xl font-semibold text-[--color-ink]">Open Branch Workflow</h1>
-        <p class="text-sm text-[--color-ink-muted] mt-1">Initialize a new branch with counters and currency pools</p>
-    </div>
-</div>
-
-<div class="card">
-    <div class="p-6">
-        <p class="text-[--color-ink-muted]">This wizard guides you through setting up a new branch.</p>
+<div class="min-h-screen bg-[var(--color-background)] p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-2xl font-bold text-[var(--color-ink)]">BranchOpenings Index</h1>
+        <div class="mt-4 text-[var(--color-ink-muted)]">List all branch opening requests</div>
     </div>
 </div>
