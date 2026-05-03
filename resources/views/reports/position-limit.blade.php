@@ -101,15 +101,7 @@
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <div class="w-20 bg-[#e5e5e5] rounded-full h-2">
-                                        <div class="h-2 rounded-full
-                                            @if($position['utilization_percent'] >= 100)
-                                                bg-red-500
-                                            @elseif($position['utilization_percent'] >= 80)
-                                                bg-yellow-500
-                                            @else
-                                                bg-green-500
-                                            @endif
-                                        " style="width: {{ min($position['utilization_percent'], 100) }}%"></div>
+                                        <div class="h-2 rounded-full {{ $position['utilization_percent'] >= 100 ? 'bg-red-500' : ($position['utilization_percent'] >= 80 ? 'bg-yellow-500' : 'bg-green-500') }}" style="width: {{ min($position['utilization_percent'], 100) }}%"></div>
                                     </div>
                                     <span class="text-xs text-[#666666]">{{ number_format($position['utilization_percent'], 1) }}%</span>
                                 </div>
