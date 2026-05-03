@@ -20,15 +20,37 @@
 
         <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-4">Operations</li>
 
+        <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-2">Transactions</li>
+
         <li>
-            <a href="{{ route('transactions.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('transactions.*') ? 'bg-gray-800' : '' }}">
-                Transactions
+            <a href="{{ route('transactions.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('transactions.index') ? 'bg-gray-800' : '' }}">
+                Transaction List
             </a>
         </li>
 
         <li>
-            <a href="{{ route('customers.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('customers.*') ? 'bg-gray-800' : '' }}">
-                Customers
+            <a href="{{ route('transactions.create') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('transactions.create') ? 'bg-gray-800' : '' }}">
+                New Transaction
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('transactions.batch-upload') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('transactions.batch-upload') ? 'bg-gray-800' : '' }}">
+                Batch Upload
+            </a>
+        </li>
+
+        <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-2">Customers</li>
+
+        <li>
+            <a href="{{ route('customers.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('customers.index') ? 'bg-gray-800' : '' }}">
+                Customer List
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('customers.create') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('customers.create') ? 'bg-gray-800' : '' }}">
+                Create Customer
             </a>
         </li>
 
@@ -170,6 +192,24 @@
         </li>
 
         <li>
+            <a href="{{ route('accounting.fiscal-years') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('accounting.fiscal-years') ? 'bg-gray-800' : '' }}">
+                Fiscal Years
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('accounting.periods') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('accounting.periods') ? 'bg-gray-800' : '' }}">
+                Periods
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('accounting.ledger') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('accounting.ledger') ? 'bg-gray-800' : '' }}">
+                Ledger
+            </a>
+        </li>
+
+        <li>
             <a href="{{ route('rates.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('rates.*') ? 'bg-gray-800' : '' }}">
                 Rates
             </a>
@@ -222,8 +262,8 @@
         </li>
 
         <li>
-            <a href="{{ route('compliance.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.screening.*') ? 'bg-gray-800' : '' }}">
-                Screening
+            <a href="{{ route('compliance.flagged') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.flagged') ? 'bg-gray-800' : '' }}">
+                Flagged Transactions
             </a>
         </li>
 
@@ -306,6 +346,18 @@
         <li>
             <a href="{{ route('reports.quarterly-lvr') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.quarterly-lvr') ? 'bg-gray-800' : '' }}">
                 Quarterly LVR
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('reports.monthly-trends') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.monthly-trends') ? 'bg-gray-800' : '' }}">
+                Monthly Trends
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('reports.compare') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.compare') ? 'bg-gray-800' : '' }}">
+                Compare Reports
             </a>
         </li>
         @endcan
