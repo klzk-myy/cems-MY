@@ -47,20 +47,15 @@
                 <a href="{{ route('counters.open') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.open') ? 'bg-gray-700' : '' }}">
                     Open Counter
                 </a>
-                <a href="{{ route('counters.close', ['counter' => 1]) }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.close') ? 'bg-gray-700' : '' }}">
+                <a href="{{ route('counters.close.show', ['counter' => 1]) }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.close.show') ? 'bg-gray-700' : '' }}">
                     Close Counter
                 </a>
-                <a href="{{ route('counters.handover', ['counter' => 1]) }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.handover') ? 'bg-gray-700' : '' }}">
+                <a href="{{ route('counters.handover.show', ['counter' => 1]) }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.handover.show') ? 'bg-gray-700' : '' }}">
                     Handover
                 </a>
                 <a href="{{ route('counters.history') }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.history') ? 'bg-gray-700' : '' }}">
                     History
                 </a>
-                @can('role:manager')
-                <a href="{{ route('counters.emergency', ['counter' => 1]) }}" class="flex items-center pl-8 py-2 text-sm hover:bg-gray-700 {{ request()->routeIs('counters.emergency') ? 'bg-gray-700' : '' }}">
-                    Emergency Closure
-                </a>
-                @endcan
             </div>
         </li>
 
