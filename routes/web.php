@@ -159,7 +159,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     Route::prefix('stock-cash')->name('stock-cash.')->group(function () {
         Route::get('/', [StockCashController::class, 'index'])->name('index');
-        Route::get('/position/{position}', [StockCashController::class, 'position'])->name('position')
+        Route::get('/position/{position}', [StockCashController::class, 'showPosition'])->name('position')
             ->middleware('role:manager');
         Route::get('/till-report', [StockCashController::class, 'tillReport'])->name('till-report')
             ->middleware('role:manager');
