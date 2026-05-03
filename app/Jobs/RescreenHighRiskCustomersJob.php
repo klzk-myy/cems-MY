@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Services\CustomerScreeningService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -23,30 +24,29 @@ class RescreenHighRiskCustomersJob implements ShouldQueue
 
     public function handle(CustomerScreeningService $service): void
     {
-        $customers = Customer::where('risk_score', '>=', 70)
-            ->orWhere('sanction_hit', true)
-            ->pluck('id');
+        $query = Customer::where(function (Builder $q) {
+            $q->where('risk_score', '>=', 70)
+                ->orWhere('sanction_hit', true);
+        })->select('id');
 
-        Log::info('RescreenHighRiskCustomersJob: Starting high-risk rescreening', [
-            'customer_count' => $customers->count(),
-        ]);
+        $totalCount = 0;
 
-        foreach ($customers as $customerId) {
-            $customer = Customer::find($customerId);
-            if ($customer) {
+        $query->chunkById(100, function ($customers) use ($service, &$totalCount) {
+            foreach ($customers as $customer) {
                 try {
                     $service->screenCustomer($customer, 'Scheduled high-risk rescreening');
+                    $totalCount++;
                 } catch (\Exception $e) {
                     Log::error('RescreenHighRiskCustomersJob: Failed to rescreen customer', [
-                        'customer_id' => $customerId,
+                        'customer_id' => $customer->id,
                         'error' => $e->getMessage(),
                     ]);
                 }
             }
-        }
+        });
 
         Log::info('RescreenHighRiskCustomersJob: Completed high-risk rescreening', [
-            'customer_count' => $customers->count(),
+            'customer_count' => $totalCount,
         ]);
     }
 
