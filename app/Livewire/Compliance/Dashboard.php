@@ -5,7 +5,7 @@ namespace App\Livewire\Compliance;
 use App\Enums\FlagStatus;
 use App\Livewire\BaseComponent;
 use App\Models\Alert;
-use App\Models\ComplianceCase;
+use App\Models\Compliance\ComplianceCase;
 use App\Models\EddRecord;
 use App\Models\StrReport;
 use App\Services\AlertTriageService;
