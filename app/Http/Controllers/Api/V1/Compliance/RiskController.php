@@ -114,7 +114,10 @@ class RiskController extends Controller
      */
     public function portfolio(): JsonResponse
     {
-        $all = DB::select('SELECT risk_tier, COUNT(*) as count FROM customer_risk_profiles GROUP BY risk_tier');
+        $all = DB::table('customer_risk_profiles')
+            ->select('risk_tier', DB::raw('COUNT(*) as count'))
+            ->groupBy('risk_tier')
+            ->get();
         $byTier = [];
         foreach ($all as $row) {
             $byTier[$row->risk_tier] = (int) $row->count;
