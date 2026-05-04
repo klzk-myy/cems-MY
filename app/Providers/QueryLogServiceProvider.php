@@ -34,6 +34,21 @@ class QueryLogServiceProvider extends ServiceProvider
     private int $highQueryCountThreshold = 50;
 
     /**
+     * Cached request data for shutdown function
+     */
+    private ?array $requestData = null;
+
+    /**
+     * Whether shutdown logging is safe (app bootstrapped)
+     */
+    private bool $shutdownLoggingSafe = true;
+
+    /**
+     * Whether running in testing environment (cached at boot)
+     */
+    private bool $isTesting = false;
+
+    /**
      * Register services.
      */
     public function register(): void
@@ -48,6 +63,10 @@ class QueryLogServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Always set defaults - even for early return
+        $this->shutdownLoggingSafe = false;
+        $this->isTesting = false;
+
         // Only monitor in non-production or when explicitly enabled
         if (! $this->shouldMonitor()) {
             return;
@@ -56,14 +75,36 @@ class QueryLogServiceProvider extends ServiceProvider
         $this->slowQueryThreshold = config('database.slow_query_threshold_ms', 1000);
         $this->highQueryCountThreshold = config('database.high_query_count_threshold', 50);
 
+        // Cache request data for shutdown function (request() not available then)
+        $this->cacheRequestData();
+
         // Listen to all database queries
         DB::listen(function ($query) {
             $this->logQuery($query);
         });
 
-        // Log summary at end of request
-        if (function_exists('register_shutdown_function')) {
+        // Only register shutdown function if it's safe (not in testing/console without proper bootstrap)
+        if ($this->shutdownLoggingSafe && function_exists('register_shutdown_function')) {
             register_shutdown_function([$this, 'logRequestSummary']);
+        }
+    }
+
+    /**
+     * Cache request data at boot time for use in shutdown function
+     */
+    private function cacheRequestData(): void
+    {
+        try {
+            $this->requestData = [
+                'url' => request()->url(),
+                'method' => request()->method(),
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'user_id' => auth()->id(),
+            ];
+        } catch (\Exception $e) {
+            // Request not available (e.g., in console/bootstrap context)
+            $this->requestData = null;
         }
     }
 
@@ -72,19 +113,37 @@ class QueryLogServiceProvider extends ServiceProvider
      */
     private function shouldMonitor(): bool
     {
-        // Always monitor in debug mode
-        if (config('app.debug')) {
-            return true;
-        }
+        // Always disable shutdown logging by default until proven safe
+        $this->shutdownLoggingSafe = false;
+        $this->isTesting = false;
 
-        // Check if explicitly enabled
-        if (config('database.query_monitoring_enabled', false)) {
+        // In testing environment, enable monitoring but disable shutdown logging
+        if ($this->app->environment('testing')) {
+            $this->isTesting = true;
+            $this->shutdownLoggingSafe = false;
+
             return true;
         }
 
         // Check if running in console (CLI)
         if ($this->app->runningInConsole()) {
-            return config('database.query_monitoring_console', false);
+            $this->shutdownLoggingSafe = config('database.query_monitoring_console', false);
+
+            return $this->shutdownLoggingSafe;
+        }
+
+        // Always monitor in debug mode
+        if (config('app.debug')) {
+            $this->shutdownLoggingSafe = true;
+
+            return true;
+        }
+
+        // Check if explicitly enabled
+        if (config('database.query_monitoring_enabled', false)) {
+            $this->shutdownLoggingSafe = true;
+
+            return true;
         }
 
         return false;
@@ -123,6 +182,8 @@ class QueryLogServiceProvider extends ServiceProvider
             json_encode($queryData['bindings'])
         );
 
+        $requestData = $this->requestData ?? [];
+
         // Log to file
         Log::channel('query')->warning($message, [
             'time_ms' => $queryData['time_ms'],
@@ -130,27 +191,27 @@ class QueryLogServiceProvider extends ServiceProvider
             'sql' => $queryData['sql'],
             'bindings' => $queryData['bindings'],
             'connection' => $queryData['connection'],
-            'url' => request()->url(),
-            'method' => request()->method(),
-            'user_id' => auth()->id(),
+            'url' => $requestData['url'] ?? null,
+            'method' => $requestData['method'] ?? null,
+            'user_id' => $requestData['user_id'] ?? null,
         ]);
 
         // Log to database if very slow (> 5000ms)
         if ($queryData['time_ms'] > 5000 && $this->shouldLogToDatabase()) {
             try {
                 SystemLog::create([
-                    'user_id' => auth()->id(),
+                    'user_id' => $requestData['user_id'] ?? null,
                     'action' => 'slow_query',
                     'entity_type' => 'database',
                     'entity_id' => null,
                     'details' => [
                         'sql' => substr($queryData['sql'], 0, 1000),
                         'time_ms' => $queryData['time_ms'],
-                        'url' => request()->url(),
+                        'url' => $requestData['url'] ?? null,
                         'threshold_ms' => $this->slowQueryThreshold,
                     ],
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
+                    'ip_address' => $requestData['ip'] ?? null,
+                    'user_agent' => $requestData['user_agent'] ?? null,
                 ]);
             } catch (\Exception $e) {
                 // Don't let logging errors affect the application
@@ -164,9 +225,16 @@ class QueryLogServiceProvider extends ServiceProvider
      */
     public function logRequestSummary(): void
     {
+        // Don't log during shutdown in testing - app container may be unavailable
+        if ($this->isTesting) {
+            return;
+        }
+
         if (empty($this->requestQueries)) {
             return;
         }
+
+        $requestData = $this->requestData ?? [];
 
         $totalQueries = count($this->requestQueries);
         $totalTime = array_sum(array_column($this->requestQueries, 'time_ms'));
@@ -174,13 +242,13 @@ class QueryLogServiceProvider extends ServiceProvider
 
         // Build summary
         $summary = [
-            'url' => request()->url(),
-            'method' => request()->method(),
+            'url' => $requestData['url'] ?? null,
+            'method' => $requestData['method'] ?? null,
             'total_queries' => $totalQueries,
             'total_time_ms' => round($totalTime, 2),
             'avg_time_ms' => round($totalTime / $totalQueries, 2),
             'slow_queries_count' => count($slowQueries),
-            'user_id' => auth()->id(),
+            'user_id' => $requestData['user_id'] ?? null,
             'timestamp' => now()->toDateTimeString(),
         ];
 
@@ -193,13 +261,13 @@ class QueryLogServiceProvider extends ServiceProvider
         ) {
             try {
                 SystemLog::create([
-                    'user_id' => auth()->id(),
+                    'user_id' => $requestData['user_id'] ?? null,
                     'action' => 'query_summary',
                     'entity_type' => 'request',
                     'entity_id' => null,
                     'details' => $summary,
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
+                    'ip_address' => $requestData['ip'] ?? null,
+                    'user_agent' => $requestData['user_agent'] ?? null,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Failed to log query summary to database: '.$e->getMessage());
@@ -209,7 +277,7 @@ class QueryLogServiceProvider extends ServiceProvider
         // Log warnings for performance issues
         if ($totalQueries > $this->highQueryCountThreshold) {
             Log::channel('query')->warning("High query count detected: {$totalQueries} queries", [
-                'url' => request()->url(),
+                'url' => $requestData['url'] ?? null,
                 'suggestion' => 'Consider using eager loading or caching',
             ]);
         }
@@ -217,7 +285,7 @@ class QueryLogServiceProvider extends ServiceProvider
         if (count($slowQueries) > 5) {
             Log::channel('query')->warning('Multiple slow queries detected', [
                 'count' => count($slowQueries),
-                'url' => request()->url(),
+                'url' => $requestData['url'] ?? null,
                 'suggestion' => 'Review database indexes and query optimization',
             ]);
         }
