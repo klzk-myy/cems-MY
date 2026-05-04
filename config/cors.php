@@ -20,8 +20,8 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => array_filter([
-        env('CORS_ALLOWED_ORIGIN_1'),
-        env('CORS_ALLOWED_ORIGIN_2'),
+        env('CORS_ALLOWED_ORIGIN_1', ''),
+        env('CORS_ALLOWED_ORIGIN_2', ''),
     ]),
 
     'allowed_origins_patterns' => [],
