@@ -13,6 +13,7 @@ use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\User;
+use App\Services\SetupService;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -21,6 +22,10 @@ use Illuminate\Support\Facades\Hash;
 
 class SetupController extends Controller
 {
+    public function __construct(
+        protected SetupService $setupService,
+    ) {}
+
     public function index(Request $request)
     {
         $isSetupComplete = $this->isSetupComplete();
@@ -279,49 +284,12 @@ class SetupController extends Controller
 
     private function seedCoreData(array $config): void
     {
-        $admin = User::create([
-            'username' => 'admin',
-            'email' => $config['admin_email'],
-            'password_hash' => Hash::make($config['admin_password']),
-            'role' => 'admin',
-            'mfa_enabled' => false,
-            'is_active' => true,
-        ]);
-
-        Artisan::call('db:seed', [
-            '--class' => 'CurrencySeeder',
-            '--force' => true,
-        ]);
-
-        Artisan::call('db:seed', [
-            '--class' => 'ChartOfAccountsSeeder',
-            '--force' => true,
-        ]);
-
-        Branch::create([
-            'code' => 'HQ',
-            'name' => $config['business_name'].' - Head Office',
-            'type' => 'head_office',
-            'is_active' => true,
-            'is_main' => true,
-        ]);
+        $this->setupService->seedCoreData($config);
     }
 
     private function seedOptionalData(array $config): void
     {
-        if ($config['setup_exchange_rates'] ?? false) {
-            Artisan::call('db:seed', [
-                '--class' => 'ExchangeRateSeeder',
-                '--force' => true,
-            ]);
-        }
-
-        if ($config['setup_branch_pools'] ?? false) {
-            Artisan::call('db:seed', [
-                '--class' => 'BranchPoolSeeder',
-                '--force' => true,
-            ]);
-        }
+        $this->setupService->seedOptionalData($config);
     }
 
     private function executeSetup(array $setupData): void
