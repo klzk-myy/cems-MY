@@ -99,7 +99,7 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
+        if (! $this->allocationService->canManageAllocations($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only managers and admins can approve allocations',
@@ -156,7 +156,7 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
+        if (! $this->allocationService->canManageAllocations($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only managers and admins can reject allocations',
@@ -211,7 +211,7 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
+        if (! $this->allocationService->canManageAllocations($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only managers and admins can modify allocations',
@@ -268,7 +268,7 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
+        if (! $this->allocationService->canManageAllocations($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only managers and admins can return allocations to pool',
@@ -311,19 +311,8 @@ class TellerAllocationController extends Controller
             'currency_code' => 'required|string|size:3',
         ]);
 
-        $allocation = $this->allocationService->getActiveAllocation($user, $validated['currency_code']);
+        $result = $this->allocationService->getActiveAllocationForTeller($user, $validated['currency_code']);
 
-        if (! $allocation) {
-            return response()->json([
-                'success' => true,
-                'data' => null,
-                'message' => 'No active allocation found',
-            ]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $allocation,
-        ]);
+        return response()->json($result);
     }
 }

@@ -194,4 +194,36 @@ class TellerAllocationService
 
         return ['valid' => true, 'allocation' => $allocation];
     }
+
+    /**
+     * Check if user has permission to approve/reject allocations.
+     */
+    public function canManageAllocations(User $user): bool
+    {
+        return $user->role->isManager() || $user->role->isAdmin();
+    }
+
+    /**
+     * Get active allocation for a teller with currency validation.
+     *
+     * @return array Result with allocation or error
+     */
+    public function getActiveAllocationForTeller(User $teller, string $currencyCode): array
+    {
+        $allocation = $this->getActiveAllocation($teller, $currencyCode);
+
+        if (! $allocation) {
+            return [
+                'success' => true,
+                'data' => null,
+                'message' => 'No active allocation found',
+            ];
+        }
+
+        return [
+            'success' => true,
+            'data' => $allocation,
+            'message' => null,
+        ];
+    }
 }

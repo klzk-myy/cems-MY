@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\TransactionType;
 use App\Models\Customer;
 use App\Models\SystemLog;
+use App\Services\CustomerReportService;
 use App\Services\ExportService;
 use Barryvdh\DomPDF\PDF;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -18,6 +17,7 @@ class TransactionReportController extends Controller
 {
     public function __construct(
         protected ExportService $exportService,
+        protected CustomerReportService $customerReportService,
         private PDF $pdf
     ) {}
 
@@ -66,8 +66,7 @@ class TransactionReportController extends Controller
         $transactions = $query->paginate(20)->withQueryString();
 
         // Calculate stats and chart data
-        $stats = $this->calculateStats($customer, $validated);
-        $chartData = $this->calculateChartData($customer, $validated);
+        $summary = $this->customerReportService->getTransactionSummary($customer, $validated);
 
         // Log access for audit trail
         SystemLog::create([
@@ -86,8 +85,8 @@ class TransactionReportController extends Controller
 
         return view('transactions.customer-history', array_merge(
             compact('customer', 'transactions', 'validated'),
-            ['stats' => $stats],
-            $chartData
+            ['stats' => $summary['stats']],
+            $summary['chart']
         ));
     }
 
@@ -143,8 +142,8 @@ class TransactionReportController extends Controller
         // Get all records for export (no pagination)
         $transactions = $query->get();
 
-        // Prepare export data
-        $exportData = $this->prepareExportData($transactions, $customer);
+        // Prepare export data using service
+        $exportData = $this->customerReportService->prepareExportData($transactions);
 
         // Generate filename
         $timestamp = now()->format('Ymd_His');
@@ -178,121 +177,13 @@ class TransactionReportController extends Controller
     }
 
     /**
-     * Calculate statistics for customer transactions.
-     */
-    protected function calculateStats(Customer $customer, array $filters): array
-    {
-        $query = $customer->transactions();
-
-        if (! empty($filters['date_from'])) {
-            $query->whereDate('created_at', '>=', $filters['date_from']);
-        }
-        if (! empty($filters['date_to'])) {
-            $query->whereDate('created_at', '<=', $filters['date_to']);
-        }
-
-        $transactions = $query->get();
-
-        $buyTransactions = $transactions->where('type', TransactionType::Buy);
-        $sellTransactions = $transactions->where('type', TransactionType::Sell);
-
-        $buyVolume = $buyTransactions->sum('amount_local');
-        $sellVolume = $sellTransactions->sum('amount_local');
-        $totalVolume = $buyVolume + $sellVolume;
-        $totalCount = $transactions->count();
-
-        return [
-            'total_count' => $totalCount,
-            'buy_count' => $buyTransactions->count(),
-            'sell_count' => $sellTransactions->count(),
-            'buy_volume' => $buyVolume,
-            'sell_volume' => $sellVolume,
-            'total_volume' => $totalVolume,
-            'avg_transaction' => $totalCount > 0 ? $totalVolume / $totalCount : 0,
-            'first_transaction' => $transactions->min('created_at'),
-            'last_transaction' => $transactions->max('created_at'),
-        ];
-    }
-
-    /**
-     * Calculate chart data for customer transactions.
-     */
-    protected function calculateChartData(Customer $customer, array $filters): array
-    {
-        // Get all transactions and aggregate in PHP for database compatibility
-        $query = $customer->transactions()
-            ->select('created_at', 'type', 'amount_local');
-
-        if (! empty($filters['date_from'])) {
-            $query->whereDate('created_at', '>=', $filters['date_from']);
-        }
-        if (! empty($filters['date_to'])) {
-            $query->whereDate('created_at', '<=', $filters['date_to']);
-        }
-
-        $transactions = $query->get();
-
-        // Get last 12 months of labels
-        $chartLabels = [];
-        $chartBuyData = [];
-        $chartSellData = [];
-
-        for ($i = 11; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $monthKey = $date->format('Y-m');
-            $chartLabels[] = $date->format('M Y');
-
-            $monthTransactions = $transactions->filter(function ($t) use ($date) {
-                return $t->created_at->year === $date->year && $t->created_at->month === $date->month;
-            });
-
-            $buyTotal = $monthTransactions->where('type', TransactionType::Buy)->sum('amount_local');
-            $sellTotal = $monthTransactions->where('type', TransactionType::Sell)->sum('amount_local');
-
-            $chartBuyData[] = $buyTotal ?: 0;
-            $chartSellData[] = $sellTotal ?: 0;
-        }
-
-        return [
-            'chartLabels' => $chartLabels,
-            'chartBuyData' => $chartBuyData,
-            'chartSellData' => $chartSellData,
-        ];
-    }
-
-    /**
      * Calculate summary statistics for customer transactions.
      *
-     * @deprecated Use calculateStats() instead
+     * @deprecated Use CustomerReportService::calculateStats() instead
      */
     protected function calculateSummary(Customer $customer, array $filters): array
     {
-        return $this->calculateStats($customer, $filters);
-    }
-
-    /**
-     * Prepare transaction data for export.
-     *
-     * @param  Collection  $transactions
-     */
-    protected function prepareExportData($transactions, Customer $customer): array
-    {
-        return $transactions->map(function ($transaction) {
-            return [
-                'Transaction ID' => $transaction->id,
-                'Date' => $transaction->created_at->format('Y-m-d H:i:s'),
-                'Type' => $transaction->type->label(),
-                'Currency' => $transaction->currency_code,
-                'Foreign Amount' => $transaction->amount_foreign,
-                'MYR Amount' => $transaction->amount_local,
-                'Rate' => $transaction->rate,
-                'Status' => $transaction->status->label(),
-                'Processed By' => $transaction->user?->name ?? 'N/A',
-                'Purpose' => $transaction->purpose ?? 'N/A',
-                'Source of Funds' => $transaction->source_of_funds ?? 'N/A',
-                'CDD Level' => $transaction->cdd_level?->label() ?? 'N/A',
-            ];
-        })->toArray();
+        return $this->customerReportService->calculateStats($customer, $filters);
     }
 
     /**
