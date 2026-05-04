@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Request;
 
 class AuditService
@@ -812,14 +813,17 @@ class AuditService
         $inserted = SystemLog::insert($batchData);
 
         if ($inserted) {
-            // Dispatch async jobs to seal hashes
+            // Dispatch async jobs to seal hashes in chunks
             // Get the IDs of the inserted records
             $lastId = SystemLog::max('id');
             $count = count($logs);
             $firstId = $lastId - $count + 1;
 
-            for ($i = 0; $i < $count; $i++) {
-                SealAuditHashJob::dispatch($firstId + $i);
+            $chunks = collect(range($firstId, $firstId + $count - 1))->chunk(100);
+            foreach ($chunks as $chunk) {
+                Bus::batch(
+                    $chunk->map(fn ($id) => new SealAuditHashJob($id))->toArray()
+                )->dispatch();
             }
         }
 

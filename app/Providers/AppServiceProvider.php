@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\Contracts\TransactionServiceInterface;
+use App\Services\TransactionService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Blade;
@@ -16,7 +18,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            TransactionServiceInterface::class,
+            TransactionService::class
+        );
     }
 
     /**

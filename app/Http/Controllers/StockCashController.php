@@ -12,8 +12,8 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Services\CurrencyPositionService;
 use App\Services\MathService;
+use App\Services\TillService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class StockCashController extends Controller
 {
@@ -21,10 +21,13 @@ class StockCashController extends Controller
 
     protected CurrencyPositionService $currencyPositionService;
 
-    public function __construct(MathService $mathService, CurrencyPositionService $currencyPositionService)
+    protected TillService $tillService;
+
+    public function __construct(MathService $mathService, CurrencyPositionService $currencyPositionService, TillService $tillService)
     {
         $this->mathService = $mathService;
         $this->currencyPositionService = $currencyPositionService;
+        $this->tillService = $tillService;
     }
 
     /**
@@ -216,21 +219,6 @@ class StockCashController extends Controller
     }
 
     /**
-     * Calculate sum of transaction amounts using MathService for precision.
-     *
-     * @param  Collection  $transactions
-     */
-    protected function calculateTransactionSum($transactions, TransactionType $type): string
-    {
-        $sum = '0';
-        foreach ($transactions->where('type', $type) as $transaction) {
-            $sum = $this->mathService->add($sum, (string) $transaction->amount_local);
-        }
-
-        return $sum;
-    }
-
-    /**
      * Show currency position details
      */
     public function showPosition(CurrencyPosition $position)
@@ -305,54 +293,22 @@ class StockCashController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
-        // Calculate summary statistics using MathService for precision
-        $buyAmount = $this->calculateTransactionSum($transactions, TransactionType::Buy);
-        $sellAmount = $this->calculateTransactionSum($transactions, TransactionType::Sell);
-        $netFlow = $this->mathService->subtract($buyAmount, $sellAmount);
-
+        // Generate summary and reconciliation using service
         $summary = [
             'opening_balance' => $tillBalance->opening_balance,
             'total_buy_count' => $transactions->where('type', TransactionType::Buy)->count(),
-            'total_buy_amount' => $buyAmount,
+            'total_buy_amount' => $this->tillService->calculateTransactionSum($transactions, TransactionType::Buy),
             'total_sell_count' => $transactions->where('type', TransactionType::Sell)->count(),
-            'total_sell_amount' => $sellAmount,
+            'total_sell_amount' => $this->tillService->calculateTransactionSum($transactions, TransactionType::Sell),
             'total_transactions' => $transactions->count(),
-            'net_flow' => $netFlow,
+            'net_flow' => $this->mathService->subtract(
+                $this->tillService->calculateTransactionSum($transactions, TransactionType::Buy),
+                $this->tillService->calculateTransactionSum($transactions, TransactionType::Sell)
+            ),
         ];
 
-        // Calculate expected closing balance
-        // For buy: + foreign currency (stock in), - MYR (cash out)
-        // For sell: - foreign currency (stock out), + MYR (cash in)
-        $expectedClosing = $this->mathService->add(
-            (string) $tillBalance->opening_balance,
-            (string) $summary['net_flow']
-        );
-
-        // Get actual closing balance (if till is closed) - keep as string for precision
-        $actualClosing = $tillBalance->closing_balance
-            ? (string) $tillBalance->closing_balance
-            : null;
-
-        // Calculate variance
-        $variance = $actualClosing !== null
-            ? $this->mathService->subtract((string) $actualClosing, (string) $expectedClosing)
-            : null;
-
-        $reconciliation = [
-            'opening_balance' => $summary['opening_balance'],
-            'purchases' => [
-                'count' => $summary['total_buy_count'],
-                'total' => $summary['total_buy_amount'],
-            ],
-            'sales' => [
-                'count' => $summary['total_sell_count'],
-                'total' => $summary['total_sell_amount'],
-            ],
-            'expected_closing' => $expectedClosing,
-            'actual_closing' => $actualClosing,
-            'variance' => $variance,
-            'is_closed' => $tillBalance->closed_at !== null,
-        ];
+        // Generate reconciliation data using service
+        $reconciliation = $this->tillService->generateReconciliation($tillBalance, $transactions);
 
         return view('stock-cash.reconciliation', compact(
             'tillBalance',

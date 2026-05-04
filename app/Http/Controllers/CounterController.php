@@ -10,7 +10,6 @@ use App\Http\Requests\CloseCounterRequest;
 use App\Http\Requests\HandoverCounterRequest;
 use App\Http\Requests\OpenCounterRequest;
 use App\Models\Counter;
-use App\Models\CounterHandover;
 use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\EmergencyClosure;
@@ -355,14 +354,11 @@ class CounterController extends Controller
         $user = Auth::user();
         $today = now()->toDateString();
 
-        $handover = CounterHandover::with(['counterSession', 'fromUser', 'supervisor'])
-            ->whereHas('counterSession', function ($query) use ($counter, $today) {
-                $query->where('counter_id', $counter->id)
-                    ->whereDate('session_date', $today);
-            })
-            ->where('to_user_id', $user->id)
-            ->whereNull('acknowledged_at')
-            ->first();
+        $handover = $this->counterHandoverService->findPendingHandover(
+            $user->id,
+            $counter->id,
+            $today
+        );
 
         if (! $handover) {
             return redirect()->route('counters.index')
@@ -377,14 +373,11 @@ class CounterController extends Controller
         $user = Auth::user();
         $today = now()->toDateString();
 
-        $handover = CounterHandover::with(['counterSession', 'fromUser', 'supervisor'])
-            ->whereHas('counterSession', function ($query) use ($counter, $today) {
-                $query->where('counter_id', $counter->id)
-                    ->whereDate('session_date', $today);
-            })
-            ->where('to_user_id', $user->id)
-            ->whereNull('acknowledged_at')
-            ->first();
+        $handover = $this->counterHandoverService->findPendingHandover(
+            $user->id,
+            $counter->id,
+            $today
+        );
 
         if (! $handover) {
             return back()->with('error', 'No pending handover to acknowledge');

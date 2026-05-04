@@ -10,6 +10,18 @@ use App\Models\User;
 
 class CounterHandoverService
 {
+    public function findPendingHandover(int $userId, int $counterId, string $date): ?CounterHandover
+    {
+        return CounterHandover::with(['counterSession', 'fromUser', 'supervisor'])
+            ->whereHas('counterSession', function ($query) use ($counterId, $date) {
+                $query->where('counter_id', $counterId)
+                    ->whereDate('session_date', $date);
+            })
+            ->where('to_user_id', $userId)
+            ->whereNull('acknowledged_at')
+            ->first();
+    }
+
     public function acknowledgeHandover(
         CounterHandover $handover,
         User $user,

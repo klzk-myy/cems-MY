@@ -61,7 +61,7 @@ class UnifiedAlertController extends Controller
 
     protected function fetchAlerts(?string $source, ?string $priority, ?string $status, ?string $type, ?string $customerSearch, ?string $fromDate, ?string $toDate): array
     {
-        $query = Alert::with(['customer', 'assignedTo']);
+        $query = Alert::with(['customer', 'assignedTo', 'flaggedTransaction']);
 
         if ($priority) {
             $query->where('priority', strtolower($priority));

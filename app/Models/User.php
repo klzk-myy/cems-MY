@@ -48,12 +48,15 @@ class User extends Authenticatable
         'email',
         'password',
         'password_hash',
+        'is_active',
+        'last_login_at',
+    ];
+
+    protected $guarded = [
         'role',
         'mfa_enabled',
         'mfa_secret',
         'mfa_verified_at',
-        'is_active',
-        'last_login_at',
     ];
 
     /**

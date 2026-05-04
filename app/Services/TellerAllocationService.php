@@ -111,6 +111,28 @@ class TellerAllocationService
         });
     }
 
+    public function rejectAllocation(TellerAllocation $allocation, User $rejector, ?string $reason = null): TellerAllocation
+    {
+        if (! $allocation->isPending()) {
+            throw new Exception('Can only reject pending allocations');
+        }
+
+        return DB::transaction(function () use ($allocation, $rejector, $reason) {
+            // Deallocate any allocated amount back to pool
+            if ($this->mathService->compare($allocation->allocated_amount, '0') > 0) {
+                $this->branchPoolService->deallocateFromTeller(
+                    $allocation->branch,
+                    $allocation->currency_code,
+                    $allocation->allocated_amount
+                );
+            }
+
+            $allocation->reject($rejector, $reason);
+
+            return $allocation;
+        });
+    }
+
     public function returnToPool(TellerAllocation $allocation): TellerAllocation
     {
         $branch = $allocation->branch;
@@ -193,5 +215,37 @@ class TellerAllocationService
         }
 
         return ['valid' => true, 'allocation' => $allocation];
+    }
+
+    /**
+     * Check if user has permission to approve/reject allocations.
+     */
+    public function canManageAllocations(User $user): bool
+    {
+        return $user->role->isManager() || $user->role->isAdmin();
+    }
+
+    /**
+     * Get active allocation for a teller with currency validation.
+     *
+     * @return array Result with allocation or error
+     */
+    public function getActiveAllocationForTeller(User $teller, string $currencyCode): array
+    {
+        $allocation = $this->getActiveAllocation($teller, $currencyCode);
+
+        if (! $allocation) {
+            return [
+                'success' => true,
+                'data' => null,
+                'message' => 'No active allocation found',
+            ];
+        }
+
+        return [
+            'success' => true,
+            'data' => $allocation,
+            'message' => null,
+        ];
     }
 }

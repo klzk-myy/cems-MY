@@ -92,10 +92,10 @@ class ReportingService
         $summary = DB::table('transactions')
             ->select(
                 'currency_code',
-                DB::raw("SUM(CASE WHEN type = 'Buy' THEN amount_foreign ELSE 0 END) as buy_volume"),
-                DB::raw("SUM(CASE WHEN type = 'Buy' THEN 1 ELSE 0 END) as buy_count"),
-                DB::raw("SUM(CASE WHEN type = 'Sell' THEN amount_foreign ELSE 0 END) as sell_volume"),
-                DB::raw("SUM(CASE WHEN type = 'Sell' THEN 1 ELSE 0 END) as sell_count")
+                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume', ['Buy']),
+                DB::raw('SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as buy_count', ['Buy']),
+                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume', ['Sell']),
+                DB::raw('SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as sell_count', ['Sell'])
             )
             ->whereDate('created_at', $queryDate)
             ->groupBy('currency_code')

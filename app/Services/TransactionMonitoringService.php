@@ -38,14 +38,16 @@ class TransactionMonitoringService
             );
             if ($velocityCheck['threshold_exceeded']) {
                 $flags[] = $this->createFlag($transaction, ComplianceFlagType::Velocity, "24h velocity exceeded: RM {$velocityCheck['with_new_transaction']}");
+                // Calculate count before logging (avoid N+1)
+                $transactionCount = Transaction::where('customer_id', $transaction->customer_id)
+                    ->where('created_at', '>=', now()->subHours(24))
+                    ->count();
                 $this->auditService->logAmlMonitorEvent('aml_velocity_alert_triggered', $transaction->id, [
                     'entity_type' => 'Transaction',
                     'new' => [
                         'customer_id' => $transaction->customer_id,
                         'velocity_amount' => $velocityCheck['with_new_transaction'],
-                        'transaction_count' => Transaction::where('customer_id', $transaction->customer_id)
-                            ->where('created_at', '>=', now()->subHours(24))
-                            ->count(),
+                        'transaction_count' => $transactionCount,
                     ],
                 ]);
             }

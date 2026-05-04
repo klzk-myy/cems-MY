@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/webhooks/sanctions/update', [SanctionsWebhookController::class, '__invoke'])
     ->name('api.v1.webhooks.sanctions.update');
 Route::get('/webhooks/sanctions/health', [SanctionsWebhookController::class, 'health'])
+    ->middleware('throttle:30,1')
     ->name('api.v1.webhooks.sanctions.health');
 
 Route::middleware('auth:sanctum')->group(function () {

@@ -23,7 +23,8 @@ class CustomerController extends Controller
         $query = Customer::query();
 
         if ($request->has('search') && ! empty($request->search)) {
-            $query->where('full_name', 'like', '%'.$request->search.'%');
+            $searchTerm = str_replace(['%', '_'], ['\%', '\_'], $request->search);
+            $query->where('full_name', 'like', '%'.$searchTerm.'%');
         }
 
         if ($request->has('risk_rating') && ! empty($request->risk_rating)) {

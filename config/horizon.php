@@ -223,7 +223,7 @@ return [
                 'maxProcesses' => 10,
                 'minProcesses' => 2,
                 'tries' => 3,
-                'timeout' => 300,
+                'timeout' => 3600,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
