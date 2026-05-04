@@ -22,7 +22,14 @@ class RiskController extends Controller
     {
         $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)
             ->with('customer')
-            ->firstOrFail();
+            ->first();
+
+        if (! $profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Risk profile not found.',
+            ], 404);
+        }
 
         return response()->json([
             'success' => true,
@@ -84,7 +91,15 @@ class RiskController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
-        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->firstOrFail();
+        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
+
+        if (! $profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Risk profile not found.',
+            ], 404);
+        }
+
         $profile->lock(auth()->id(), $validated['reason']);
 
         return response()->json([
@@ -99,7 +114,15 @@ class RiskController extends Controller
      */
     public function unlock(string $customerId): JsonResponse
     {
-        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->firstOrFail();
+        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
+
+        if (! $profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Risk profile not found.',
+            ], 404);
+        }
+
         $profile->unlock();
 
         return response()->json([

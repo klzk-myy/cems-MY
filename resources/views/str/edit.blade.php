@@ -31,7 +31,7 @@
                         @csrf
                         @method('PUT')
 
-                        <input type="hidden" name="reason" value="STR edited by {{ auth()->user()->username }}">
+                        <input type="hidden" name="reason" value="{{ e('STR edited by ' . auth()->user()->username) }}">
 
                         <!-- Customer Information (Read-only) -->
                         <div class="mb-6 p-4 bg-gray-50 rounded-lg">

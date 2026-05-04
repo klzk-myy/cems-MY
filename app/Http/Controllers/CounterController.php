@@ -112,7 +112,11 @@ class CounterController extends Controller
         $session = CounterSession::where('counter_id', $counter->id)
             ->whereDate('session_date', $today)
             ->where('status', CounterSessionStatus::Open->value)
-            ->firstOrFail();
+            ->first();
+
+        if (! $session) {
+            abort(404, 'No open session found for this counter today.');
+        }
 
         $currencies = Currency::where('is_active', true)->get();
 
@@ -133,7 +137,11 @@ class CounterController extends Controller
         $session = CounterSession::where('counter_id', $counter->id)
             ->whereDate('session_date', $today)
             ->where('status', CounterSessionStatus::Open->value)
-            ->firstOrFail();
+            ->first();
+
+        if (! $session) {
+            return back()->with('error', 'No open session found for this counter today.');
+        }
 
         try {
             $this->counterService->closeSession($session, $user, $closingFloats, $notes);
@@ -212,7 +220,11 @@ class CounterController extends Controller
         $session = CounterSession::where('counter_id', $counter->id)
             ->whereDate('session_date', $today)
             ->where('status', CounterSessionStatus::Open->value)
-            ->firstOrFail();
+            ->first();
+
+        if (! $session) {
+            abort(404, 'No open session found for this counter today.');
+        }
 
         $availableUsers = User::where('is_active', true)
             ->where('id', '!=', Auth::id())
@@ -229,17 +241,30 @@ class CounterController extends Controller
 
     public function handover(HandoverCounterRequest $request, Counter $counter): RedirectResponse
     {
-        $fromUser = User::findOrFail($request->input('from_user_id'));
+        $fromUser = User::find($request->input('from_user_id'));
+        if (! $fromUser) {
+            return back()->with('error', 'From user not found.');
+        }
         $today = now()->toDateString();
 
         $session = CounterSession::where('counter_id', $counter->id)
             ->whereDate('session_date', $today)
             ->where('user_id', $fromUser->id)
             ->where('status', CounterSessionStatus::Open->value)
-            ->firstOrFail();
+            ->first();
 
-        $toUser = User::findOrFail($request->input('to_user_id'));
-        $supervisor = User::findOrFail($request->input('supervisor_id'));
+        if (! $session) {
+            return back()->with('error', 'No open session found for this counter and user today.');
+        }
+
+        $toUser = User::find($request->input('to_user_id'));
+        if (! $toUser) {
+            return back()->with('error', 'To user not found.');
+        }
+        $supervisor = User::find($request->input('supervisor_id'));
+        if (! $supervisor) {
+            return back()->with('error', 'Supervisor not found.');
+        }
         $physicalCounts = $request->input('physical_counts');
 
         try {

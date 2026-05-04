@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\AccountNotFoundException;
 use App\Exceptions\Domain\FiscalYearClosedException;
+use App\Exceptions\Domain\FiscalYearNotFoundException;
 use App\Exceptions\Domain\InvalidFiscalYearStateException;
 use App\Exceptions\Domain\OpenPeriodsException;
 use App\Exceptions\Domain\PermissionDeniedException;
@@ -142,7 +143,12 @@ class FiscalYearService
      */
     public function getYearEndReport(string $yearCode): array
     {
-        $year = FiscalYear::where('year_code', $yearCode)->firstOrFail();
+        $year = FiscalYear::where('year_code', $yearCode)->first();
+
+        if (! $year) {
+            throw new FiscalYearNotFoundException($yearCode);
+        }
+
         $yearEndDate = $year->end_date->toDateString();
 
         // Get trial balance as of year-end

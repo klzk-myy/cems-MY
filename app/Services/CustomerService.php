@@ -200,9 +200,10 @@ class CustomerService
     public function searchCustomers(string $query): array
     {
         $query = trim($query);
+        $escapedQuery = str_replace(['%', '_'], ['\\%', '\\_'], $query);
 
-        $customers = Customer::where('full_name', 'like', "%{$query}%")
-            ->orWhere('id_number_encrypted', 'like', "%{$query}%")
+        $customers = Customer::where('full_name', 'like', "%{$escapedQuery}%")
+            ->orWhere('id_number_encrypted', 'like', "%{$escapedQuery}%")
             ->where('is_active', true)
             ->limit(10)
             ->get();

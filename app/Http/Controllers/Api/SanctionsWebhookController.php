@@ -22,6 +22,15 @@ class SanctionsWebhookController extends Controller
         $configuredToken = config('sanctions.webhook.token', '');
         $providedToken = $request->header('X-Webhook-Token', '');
 
+        // Reject if no token is configured (prevents accidental open webhooks)
+        if (empty($configuredToken)) {
+            Log::warning('Sanctions webhook called but no token configured', [
+                'ip' => $request->ip(),
+            ]);
+
+            return response()->json(['error' => 'Webhook not configured'], 401);
+        }
+
         if (! hash_equals($configuredToken, $providedToken)) {
             Log::warning('Sanctions webhook received with invalid or missing token', [
                 'ip' => $request->ip(),

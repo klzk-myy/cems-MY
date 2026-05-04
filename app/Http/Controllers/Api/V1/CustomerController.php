@@ -80,12 +80,24 @@ class CustomerController extends Controller
     {
         $customer = Customer::with(['documents', 'transactions' => function ($query) {
             $query->orderBy('created_at', 'desc')->limit(10);
-        }])->findOrFail($id);
+        }])->find($id);
+
+        if (! $customer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer not found.',
+            ], 404);
+        }
+
+        $stats = DB::table('transactions')
+            ->where('customer_id', $id)
+            ->selectRaw('COUNT(*) as total_transactions, SUM(amount_local) as total_volume, AVG(amount_local) as avg_transaction')
+            ->first();
 
         $transactionStats = [
-            'total_transactions' => $customer->transactions()->count(),
-            'total_volume' => $customer->transactions()->sum('amount_local'),
-            'avg_transaction' => $customer->transactions()->avg('amount_local') ?? 0,
+            'total_transactions' => $stats->total_transactions ?? 0,
+            'total_volume' => $stats->total_volume ?? '0',
+            'avg_transaction' => $stats->avg_transaction ?? 0,
             'last_transaction' => $customer->last_transaction_at,
         ];
 

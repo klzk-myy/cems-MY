@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\RiskTrend;
 use App\Enums\TransactionStatus;
 use App\Events\RiskScoreUpdated;
+use App\Exceptions\Domain\RiskProfileNotFoundException;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
@@ -185,7 +186,11 @@ class CustomerRiskScoringService
      */
     public function lockCustomerRisk(int $customerId, int $userId, string $reason): CustomerRiskProfile
     {
-        $profile = CustomerRiskProfile::where('customer_id', $customerId)->firstOrFail();
+        $profile = CustomerRiskProfile::where('customer_id', $customerId)->first();
+
+        if (! $profile) {
+            throw new RiskProfileNotFoundException($customerId);
+        }
 
         $profile->lock($userId, $reason);
 

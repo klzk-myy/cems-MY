@@ -437,6 +437,10 @@ class StrReportService
      */
     protected function isTestMode(): bool
     {
+        if ($this->app->environment('production')) {
+            return false;
+        }
+
         return config('services.goaml.test_mode', false) === true;
     }
 
