@@ -7,64 +7,93 @@
 </head>
 <body class="bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page Header -->
         <div class="mb-8">
             <h1 class="text-2xl font-bold text-gray-900">Unified Compliance View</h1>
             <p class="mt-1 text-sm text-gray-500">Comprehensive overview of all compliance activities</p>
         </div>
 
-        <!-- Summary Cards -->
+        <form method="GET" action="/compliance/unified" class="bg-white border border-[#e5e5e5] rounded-xl p-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
+                <div>
+                    <label for="source" class="block text-xs font-medium text-gray-500 uppercase mb-1">Source</label>
+                    <select name="source" id="source" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                        <option value="all" {{ ($request->get('source', 'all') === 'all') ? 'selected' : '' }}>All</option>
+                        <option value="alert" {{ ($request->get('source') === 'alert') ? 'selected' : '' }}>Alert</option>
+                        <option value="finding" {{ ($request->get('source') === 'finding') ? 'selected' : '' }}>Finding</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="priority" class="block text-xs font-medium text-gray-500 uppercase mb-1">Priority</label>
+                    <select name="priority" id="priority" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                        <option value="">All</option>
+                        <option value="Critical" {{ ($request->get('priority') === 'Critical') ? 'selected' : '' }}>Critical</option>
+                        <option value="High" {{ ($request->get('priority') === 'High') ? 'selected' : '' }}>High</option>
+                        <option value="Medium" {{ ($request->get('priority') === 'Medium') ? 'selected' : '' }}>Medium</option>
+                        <option value="Low" {{ ($request->get('priority') === 'Low') ? 'selected' : '' }}>Low</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="status" class="block text-xs font-medium text-gray-500 uppercase mb-1">Status</label>
+                    <select name="status" id="status" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                        <option value="">All</option>
+                        <option value="open" {{ ($request->get('status') === 'open') ? 'selected' : '' }}>Open</option>
+                        <option value="in_review" {{ ($request->get('status') === 'in_review') ? 'selected' : '' }}>In Review</option>
+                        <option value="resolved" {{ ($request->get('status') === 'resolved') ? 'selected' : '' }}>Resolved</option>
+                        <option value="dismissed" {{ ($request->get('status') === 'dismissed') ? 'selected' : '' }}>Dismissed</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="type" class="block text-xs font-medium text-gray-500 uppercase mb-1">Type</label>
+                    <select name="type" id="type" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                        <option value="">All</option>
+                        <option value="Velocity_Exceeded" {{ ($request->get('type') === 'Velocity_Exceeded') ? 'selected' : '' }}>Velocity Exceeded</option>
+                        <option value="Structuring_Pattern" {{ ($request->get('type') === 'Structuring_Pattern') ? 'selected' : '' }}>Structuring Pattern</option>
+                        <option value="Sanction_Match" {{ ($request->get('type') === 'Sanction_Match') ? 'selected' : '' }}>Sanction Match</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="customer" class="block text-xs font-medium text-gray-500 uppercase mb-1">Customer</label>
+                    <input type="text" name="customer" id="customer" value="{{ $request->get('customer') }}" placeholder="Search..." class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                </div>
+                <div>
+                    <label for="from_date" class="block text-xs font-medium text-gray-500 uppercase mb-1">From Date</label>
+                    <input type="date" name="from_date" id="from_date" value="{{ $request->get('from_date') }}" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                </div>
+                <div>
+                    <label for="to_date" class="block text-xs font-medium text-gray-500 uppercase mb-1">To Date</label>
+                    <input type="date" name="to_date" id="to_date" value="{{ $request->get('to_date') }}" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                </div>
+            </div>
+            <div class="mt-4 flex gap-2">
+                <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
+                    Apply Filters
+                </button>
+                <a href="/compliance/unified" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300">
+                    Clear
+                </a>
+            </div>
+        </form>
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Active Alerts</p>
-                        <p class="text-3xl font-bold text-orange-600 mt-1">24</p>
+                        <p class="text-xs font-medium text-gray-500 uppercase">Total Items</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $stats['total'] }}</p>
                     </div>
-                    <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
                     </div>
                 </div>
-                <a href="#" class="text-sm text-blue-600 hover:text-blue-800 mt-2 inline-block">View All</a>
             </div>
 
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Open Cases</p>
-                        <p class="text-3xl font-bold text-blue-600 mt-1">8</p>
-                    </div>
-                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                        </svg>
-                    </div>
-                </div>
-                <a href="#" class="text-sm text-blue-600 hover:text-blue-800 mt-2 inline-block">View All</a>
-            </div>
-
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Pending Reviews</p>
-                        <p class="text-3xl font-bold text-yellow-600 mt-1">15</p>
-                    </div>
-                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-                <a href="#" class="text-sm text-blue-600 hover:text-blue-800 mt-2 inline-block">View All</a>
-            </div>
-
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">High Risk Customers</p>
-                        <p class="text-3xl font-bold text-red-600 mt-1">12</p>
+                        <p class="text-xs font-medium text-gray-500 uppercase">Critical</p>
+                        <p class="text-3xl font-bold text-red-600 mt-1">{{ $stats['critical'] }}</p>
                     </div>
                     <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,108 +101,101 @@
                         </svg>
                     </div>
                 </div>
-                <a href="#" class="text-sm text-blue-600 hover:text-blue-800 mt-2 inline-block">View All</a>
-            </div>
-        </div>
-
-        <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- Recent Alerts -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Recent Alerts</h3>
-                    <a href="#" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
-                </div>
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">Velocity Alert</p>
-                            <p class="text-xs text-gray-500">Ahmad Razali - RM 45,000</p>
-                        </div>
-                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Critical</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">Structuring Alert</p>
-                            <p class="text-xs text-gray-500">Siti Nurhaliza - 5 transactions</p>
-                        </div>
-                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">High</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">Sanctions Match</p>
-                            <p class="text-xs text-gray-500">Tan Wei Ming - Potential</p>
-                        </div>
-                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">High</span>
-                    </div>
-                </div>
             </div>
 
-            <!-- Pending Tasks -->
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Pending Tasks</h3>
-                    <a href="#" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 uppercase">Pending</p>
+                        <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $stats['pending'] }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
                 </div>
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between p-3 border border-[#e5e5e5] rounded-lg">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">Review EDD Request</p>
-                            <p class="text-xs text-gray-500">Customer: Lee Mei Ling</p>
-                        </div>
-                        <span class="text-xs text-gray-500">Due: Today</span>
+                <p class="text-xs text-yellow-600 mt-1">Pending/Open</p>
+            </div>
+
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 uppercase">Resolved Today</p>
+                        <p class="text-3xl font-bold text-green-600 mt-1">{{ $stats['resolved_today'] }}</p>
                     </div>
-                    <div class="flex items-center justify-between p-3 border border-[#e5e5e5] rounded-lg">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">Approve STR</p>
-                            <p class="text-xs text-gray-500">Case: CASE-2024-001</p>
-                        </div>
-                        <span class="text-xs text-gray-500">Due: Tomorrow</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3 border border-[#e5e5e5] rounded-lg">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">Complete CDD Review</p>
-                            <p class="text-xs text-gray-500">Customer: Tan Wei Ming</p>
-                        </div>
-                        <span class="text-xs text-gray-500">Due: Jan 20</span>
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Activity -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activity</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned To</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-15 14:30</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">John Smith</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Alert Reviewed</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">ALT-2024-001 marked as investigating</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-15 14:15</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Jane Doe</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Case Created</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">CASE-2024-002 for high-risk review</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-15 13:45</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">John Smith</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Customer Screened</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">Ahmad Razali - Sanctions check</td>
-                    </tr>
+                    @forelse($items as $item)
+                        <tr class="badge-info">
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ $item['source'] }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ $item['id'] }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded
+                                    @if($item['priority'] === 'Critical') bg-red-100 text-red-700
+                                    @elseif($item['priority'] === 'High') bg-yellow-100 text-yellow-700
+                                    @else bg-gray-100 text-gray-700
+                                    @endif">
+                                    {{ $item['priority_label'] ?? $item['priority'] }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ $item['type_label'] ?? $item['type'] }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ $item['customer']['name'] ?? 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded
+                                    @if($item['status'] === 'Resolved' || $item['status'] === 'Case_Created') bg-green-100 text-green-700
+                                    @elseif($item['status'] === 'Dismissed' || $item['status'] === 'Rejected') bg-gray-100 text-gray-700
+                                    @else bg-blue-100 text-blue-700
+                                    @endif">
+                                    {{ $item['status_label'] ?? $item['status'] }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ $item['assigned_to'] ?? 'Unassigned' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ $item['date']->format('Y-m-d H:i') }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <a href="{{ $item['url'] }}" class="text-blue-600 hover:text-blue-800">View</a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">No items found</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
+
+            @if($pagination['last_page'] > 1)
+                <div class="mt-4 flex justify-center">
+                    <p class="text-sm text-gray-500">
+                        Page {{ $pagination['current_page'] }} of {{ $pagination['last_page'] }}
+                        (Total: {{ $pagination['total'] }} items)
+                    </p>
+                </div>
+            @endif
         </div>
     </div>
 </body>
