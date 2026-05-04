@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Report;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreLctrReportRequest;
+use App\Http\Requests\StoreMsb2ReportRequest;
 use App\Models\ReportGenerated;
 use App\Models\Transaction;
 use App\Services\MathService;
@@ -114,13 +116,9 @@ class RegulatoryReportController extends Controller
         return response()->json($report);
     }
 
-    public function generateLCTR(Request $request)
+    public function generateLCTR(StoreLctrReportRequest $request)
     {
-        $request->validate([
-            'month' => 'required|date_format:Y-m',
-        ]);
-
-        $filepath = $this->reportingService->generateLCTR($request->month);
+        $filepath = $this->reportingService->generateLCTR($request->validated('month'));
 
         return response()->json([
             'message' => 'LCTR report generated',
@@ -233,13 +231,9 @@ class RegulatoryReportController extends Controller
         return response()->json($report);
     }
 
-    public function generateMSB2(Request $request)
+    public function generateMSB2(StoreMsb2ReportRequest $request)
     {
-        $request->validate([
-            'date' => 'required|date_format:Y-m-d',
-        ]);
-
-        $filepath = $this->reportingService->generateMSB2($request->date);
+        $filepath = $this->reportingService->generateMSB2($request->validated('date'));
 
         return response()->json([
             'message' => 'MSB(2) report generated',
