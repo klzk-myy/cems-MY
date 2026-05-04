@@ -21,6 +21,7 @@ use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Contracts\TransactionServiceInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 
@@ -30,7 +31,7 @@ use Illuminate\Support\Facades\Event;
  * Handles core transaction creation logic for both web and API controllers.
  * Ensures BCMath precision for all monetary calculations and compliance checks.
  */
-class TransactionService
+class TransactionService implements TransactionServiceInterface
 {
     public function __construct(
         protected MathService $mathService,
