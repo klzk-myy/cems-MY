@@ -111,6 +111,28 @@ class TellerAllocationService
         });
     }
 
+    public function rejectAllocation(TellerAllocation $allocation, User $rejector, ?string $reason = null): TellerAllocation
+    {
+        if (! $allocation->isPending()) {
+            throw new Exception('Can only reject pending allocations');
+        }
+
+        return DB::transaction(function () use ($allocation, $rejector, $reason) {
+            // Deallocate any allocated amount back to pool
+            if ($this->mathService->compare($allocation->allocated_amount, '0') > 0) {
+                $this->branchPoolService->deallocateFromTeller(
+                    $allocation->branch,
+                    $allocation->currency_code,
+                    $allocation->allocated_amount
+                );
+            }
+
+            $allocation->reject($rejector, $reason);
+
+            return $allocation;
+        });
+    }
+
     public function returnToPool(TellerAllocation $allocation): TellerAllocation
     {
         $branch = $allocation->branch;
