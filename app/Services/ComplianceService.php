@@ -18,9 +18,10 @@ use Illuminate\Support\Facades\DB;
  * Compliance Service
  *
  * Provides compliance-related operations for money changing transactions.
- * Handles Customer Due Diligence (CDD) level determination, sanctions screening,
- * velocity checks, structuring detection, aggregate transaction tracking,
- * and transaction hold decisions.
+ * Handles sanctions screening, velocity checks, structuring detection,
+ * aggregate transaction tracking, and transaction hold decisions.
+ *
+ * NOTE: CDD level determination has been extracted to CddLevelDeterminationService.
  *
  * This service ensures compliance with BNM regulations and AML/CFT requirements:
  * - BNM AML/CFT Policy (Revised 2025)
@@ -50,6 +51,11 @@ class ComplianceService
     protected ?ThresholdService $thresholdService;
 
     /**
+     * CDD level determination service (extracted from this service).
+     */
+    protected CddLevelDeterminationService $cddLevelService;
+
+    /**
      * Last CDD triggers captured for audit trail.
      * Populated by determineCDDLevel when Enhanced CDD is returned.
      *
@@ -76,7 +82,8 @@ class ComplianceService
         ?CustomerScreeningService $screeningService = null,
         ?ThresholdService $thresholdService = null,
         ?VelocityRiskService $velocityRiskService = null,
-        ?StructuringRiskService $structuringRiskService = null
+        ?StructuringRiskService $structuringRiskService = null,
+        ?CddLevelDeterminationService $cddLevelService = null
     ) {
         $this->encryptionService = $encryptionService;
         $this->mathService = $mathService;
@@ -84,6 +91,50 @@ class ComplianceService
         $this->thresholdService = $thresholdService ?? new ThresholdService;
         $this->velocityRiskService = $velocityRiskService;
         $this->structuringRiskService = $structuringRiskService;
+
+        // Create CddLevelDeterminationService with closure - container may auto-resolve
+        // an instance without the closure, so we always create one with our closure
+        $this->cddLevelService = new CddLevelDeterminationService(
+            $this->mathService,
+            $this->thresholdService,
+            fn (Customer $customer) => $this->checkSanctionMatchInternal($customer)
+        );
+    }
+
+    /**
+     * Internal check for sanction match (used by CDD level determination).
+     */
+    private function checkSanctionMatchInternal(Customer $customer): bool
+    {
+        // Check customer's sanction_hit flag directly first
+        if ($customer->sanction_hit ?? false) {
+            return true;
+        }
+
+        if ($this->screeningService !== null) {
+            $result = $this->screeningService->screenCustomer($customer);
+
+            return $result->action !== 'clear';
+        }
+
+        $customerName = $customer->full_name;
+        if (! is_string($customerName) || trim($customerName) === '') {
+            return false;
+        }
+
+        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $customerName);
+        $pattern = '%'.$escaped.'%';
+
+        $driver = DB::connection()->getDriverName();
+        $operator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
+        $escapeClause = $driver === 'sqlite' ? " ESCAPE '\\'" : " ESCAPE '\\\\'";
+
+        $matches = DB::table('sanction_entries')
+            ->whereRaw("entity_name {$operator} ?{$escapeClause}", [$pattern])
+            ->orWhereRaw("aliases {$operator} ?{$escapeClause}", [$pattern])
+            ->count();
+
+        return $matches > 0;
     }
 
     /**
@@ -93,9 +144,7 @@ class ComplianceService
      * - Standard: >= RM 10,000
      * - Enhanced: PEP, Sanction match, or High risk (risk-based, not amount-based)
      *
-     * SECURITY NOTE: This method always uses the customer's actual record values
-     * for PEP status and sanctions screening. No override parameters are allowed
-     * to prevent bypassing Enhanced CDD requirements.
+     * Delegates to CddLevelDeterminationService.
      *
      * @param  string  $amount  Transaction amount in MYR (as string for precision)
      * @param  Customer  $customer  The customer initiating the transaction
@@ -103,42 +152,10 @@ class ComplianceService
      */
     public function determineCDDLevel(string $amount, Customer $customer): CddLevel
     {
-        // Always use customer record - no overrides allowed for security
-        $pepStatus = $customer->pep_status ?? false;
-        $sanctionStatus = $this->checkSanctionMatch($customer);
+        $level = $this->cddLevelService->determineCDDLevel($amount, $customer);
+        $this->lastCddTriggers = $this->cddLevelService->getLastCddTriggers();
 
-        // Track Enhanced CDD triggers for audit trail
-        $triggers = [];
-
-        // Enhanced Due Diligence triggers (risk-based per pd-00.md 14C.13)
-        if ($pepStatus) {
-            $triggers[] = 'PEP customer';
-        }
-        if ($sanctionStatus) {
-            $triggers[] = 'Sanctions match';
-        }
-        if ($customer->risk_rating === 'High') {
-            $triggers[] = 'High risk customer';
-        }
-
-        // Store triggers for audit trail if Enhanced
-        if (! empty($triggers)) {
-            $this->lastCddTriggers = $triggers;
-
-            return CddLevel::Enhanced;
-        }
-
-        // Standard CDD: >= RM 10,000 per pd-00.md 14C.12.2
-        if ($this->mathService->compare($amount, $this->thresholdService->getStandardCddThreshold()) >= 0) {
-            return CddLevel::Standard;
-        }
-
-        // Specific CDD: >= RM 3,000 per pd-00.md 14C.12.1
-        if ($this->mathService->compare($amount, $this->thresholdService->getSpecificCddThreshold()) >= 0) {
-            return CddLevel::Specific;
-        }
-
-        return CddLevel::Simplified;
+        return $level;
     }
 
     /**
