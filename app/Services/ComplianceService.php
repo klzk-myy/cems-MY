@@ -64,6 +64,16 @@ class ComplianceService
     protected array $lastCddTriggers = [];
 
     /**
+     * Velocity risk service for detecting velocity/structuring patterns.
+     */
+    protected ?VelocityRiskService $velocityRiskService;
+
+    /**
+     * Structuring risk service for detecting transaction aggregation.
+     */
+    protected ?StructuringRiskService $structuringRiskService;
+
+    /**
      * BNM STR filing deadline in working days.
      */
     private const STR_FILING_DEADLINE_DAYS = 1;
