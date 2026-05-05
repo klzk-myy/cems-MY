@@ -467,7 +467,7 @@ class CounterService
 
             // Mark old session as handed over
             $session->update([
-                'status' => CounterSessionStatus::HandedOver,
+                'status' => CounterSessionStatus::PendingHandover,
                 'closed_at' => $now,
                 'closed_by' => $fromUser->id,
             ]);
