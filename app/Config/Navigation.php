@@ -306,14 +306,13 @@ class Navigation
                         'label' => 'Position Limits',
                         'route' => 'reports.position-limit',
                         'icon' => 'limit',
-                        'uri' => '/reports/position-limit',
                     ],
-                    [
-                        'label' => 'Report History',
-                        'route' => 'reports.history',
-                        'icon' => 'history',
-                        'uri' => '/reports/history',
-                    ],
+                    // [
+                    //     'label' => 'Report History',
+                    //     'route' => 'reports.history',
+                    //     'icon' => 'history',
+                    //     'uri' => '/reports/history',
+                    // ],
                 ],
             ],
 

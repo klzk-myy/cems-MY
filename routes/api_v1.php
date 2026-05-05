@@ -317,6 +317,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{counterId}/handover/{handoverId}/acknowledge', [CounterHandoverController::class, 'acknowledge'])
             ->middleware(['role:manager', 'mfa.verified'])
             ->name('api.v1.counters.handover.acknowledge');
+
+        // Counter Close
+        Route::post('/{counterId}/close', [CounterApiController::class, 'close'])
+            ->middleware(['role:teller,manager,admin', 'mfa.verified'])
+            ->name('api.v1.counters.close');
     });
 
     // Branch Closing Workflow API

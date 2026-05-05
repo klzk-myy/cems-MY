@@ -423,7 +423,7 @@
             </a>
         </li>
 
-        <li>
+        {{-- <li>
             <a href="{{ route('reports.compare') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.compare') ? 'bg-gray-800' : '' }}">
                 Compare Reports
             </a>
@@ -433,7 +433,7 @@
             <a href="{{ route('reports.history') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.history') ? 'bg-gray-800' : '' }}">
                 Report History
             </a>
-        </li>
+        </li> --}}
         @endif
 
         @can('role:admin')

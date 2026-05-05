@@ -371,8 +371,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/customer-analysis', [AnalyticsController::class, 'customerAnalysis'])->name('customer-analysis');
         Route::get('/compliance-summary', [AnalyticsController::class, 'complianceSummary'])->name('compliance-summary');
 
-        Route::get('/history', [RegulatoryReportController::class, 'history'])->name('history');
-        Route::get('/compare', [RegulatoryReportController::class, 'compare'])->name('compare');
+        // Route::get('/history', [RegulatoryReportController::class, 'history'])->name('history');
+        // Route::get('/compare', [RegulatoryReportController::class, 'compare'])->name('compare');
     });
 
     Route::middleware(['auth', 'role:manager'])->prefix('audit')->name('audit.')->group(function () {
