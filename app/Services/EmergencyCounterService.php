@@ -135,18 +135,7 @@ class EmergencyCounterService
 
         $variance = [];
         foreach ($tillBalances as $balance) {
-            $expected = (new CounterService(
-                new TellerAllocationService(
-                    app(BranchPoolService::class),
-                    app(MathService::class)
-                ),
-                app(ThresholdService::class)
-            ))->calculateExpectedBalance(
-                $balance->currency_code,
-                $counter->id,
-                $session->session_date->toDateString(),
-                $balance->opening_balance
-            );
+            $expected = $balance->getExpectedBalance();
 
             $actual = $balance->closing_balance ?? $balance->opening_balance;
             $diff = app(MathService::class)->subtract($actual, $expected);

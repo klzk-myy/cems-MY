@@ -122,7 +122,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $this->assertNotNull($handover->acknowledged_at);
 
         $result['session']->refresh();
-        $this->assertEquals(CounterSessionStatus::Open, $result['session']->status);
+        $this->assertEquals(CounterSessionStatus::HandedOver, $result['session']->status);
     }
 
     /** @test */

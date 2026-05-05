@@ -43,7 +43,7 @@ class CounterHandoverService
         }
 
         $handover->counterSession->update([
-            'status' => CounterSessionStatus::Open,
+            'status' => CounterSessionStatus::HandedOver,
             'physical_count_verified' => $verified,
             'handover_notes' => $notes,
         ]);
