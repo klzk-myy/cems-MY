@@ -179,8 +179,7 @@ class CounterController extends Controller
 
     public function status(Counter $counter): JsonResponse
     {
-        $today = now()->toDateString();
-        $status = $this->counterService->getCounterStatus($counter, $today);
+        $status = $this->counterService->getCounterStatus($counter);
 
         return response()->json([
             'success' => true,
