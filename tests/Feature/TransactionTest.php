@@ -299,6 +299,10 @@ class TransactionTest extends TestCase
         $customer = $this->createTestCustomer();
         $counter = $this->setupOpenTill($teller, 'USD');
 
+        // Assign manager to same branch as transaction for approval authorization
+        $manager->branch_id = $counter->branch_id;
+        $manager->save();
+
         // Create a pending transaction
         $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,

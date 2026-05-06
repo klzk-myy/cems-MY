@@ -64,6 +64,10 @@ class CriticalTransactionWorkflowTest extends TestCase
         $this->counter = Counter::factory()->create();
         $this->currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
 
+        // Assign manager to same branch as counter for approval authorization
+        $this->manager->branch_id = $this->counter->branch_id;
+        $this->manager->save();
+
         // Open counter session for teller
         $this->openCounterSession($this->teller);
     }
@@ -400,6 +404,7 @@ class CriticalTransactionWorkflowTest extends TestCase
             'date' => today(),
             'opening_balance' => '10000.00',
             'opened_by' => $user->id,
+            'branch_id' => $this->counter->branch_id, // Ensure branch matches counter
         ]);
 
         TillBalance::factory()->create([
@@ -408,6 +413,7 @@ class CriticalTransactionWorkflowTest extends TestCase
             'date' => today(),
             'opening_balance' => '0',
             'opened_by' => $user->id,
+            'branch_id' => $this->counter->branch_id, // Ensure branch matches counter
         ]);
     }
 

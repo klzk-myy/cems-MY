@@ -111,6 +111,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         Route::get('/create', [TransactionController::class, 'create'])->name('create')
             ->middleware('mfa.verified');
+        Route::post('/', [TransactionController::class, 'store'])->name('store')
+            ->middleware('mfa.verified');
 
         Route::middleware('role:manager')->group(function () {
             Route::get('/batch-upload', [TransactionController::class, 'batchUpload'])->name('batch-upload');
