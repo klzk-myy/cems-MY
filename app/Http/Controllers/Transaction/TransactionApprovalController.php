@@ -19,6 +19,7 @@ use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TransactionApprovalController extends Controller
 {
@@ -77,7 +78,14 @@ class TransactionApprovalController extends Controller
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         } catch (\Exception $e) {
-            return back()->with('error', 'Approval failed: '.$e->getMessage());
+            Log::error('Transaction approval failed', [
+                'transaction_id' => $transaction->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Approval failed due to a system error. Please contact support.');
         }
     }
 

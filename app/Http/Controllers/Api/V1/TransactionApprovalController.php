@@ -14,6 +14,7 @@ use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class TransactionApprovalController extends Controller
@@ -90,9 +91,17 @@ class TransactionApprovalController extends Controller
                 'message' => $e->getMessage(),
             ], 409);
         } catch (\Exception $e) {
+            Log::error('Transaction approval failed (API)', [
+                'transaction_id' => $transaction->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Approval failed: '.$e->getMessage(),
+                'message' => 'Approval failed due to a system error. Please contact support.',
+                'code' => 'INTERNAL_ERROR',
             ], 500);
         }
     }

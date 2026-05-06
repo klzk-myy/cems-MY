@@ -3,6 +3,11 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -26,5 +31,44 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    /**
+     * Render an exception into an HTTP response.
+     *
+     * Sanitizes API error responses to prevent information disclosure.
+     */
+    public function render(Request $request, Throwable $e): Response|JsonResponse|RedirectResponse|\Symfony\Component\HttpFoundation\Response
+    {
+        // Log all unhandled exceptions with full details for debugging
+        Log::error('Unhandled exception', [
+            'exception' => $e,
+            'trace' => $e->getTraceAsString(),
+            'url' => $request->fullUrl(),
+            'method' => $request->method(),
+            'user_id' => auth()->id(),
+        ]);
+
+        // For API requests, return sanitized JSON response
+        if ($request->expectsJson()) {
+            $status = $this->isHttpException($e) ? $e->getStatusCode() : 500;
+
+            // Don't expose internal error details for 500 errors
+            if ($status >= 500) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An internal error occurred. Please try again later.',
+                    'code' => 'INTERNAL_ERROR',
+                ], $status);
+            }
+
+            // For 4xx errors, use the exception message but ensure it's safe
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], $status);
+        }
+
+        return parent::render($request, $e);
     }
 }
