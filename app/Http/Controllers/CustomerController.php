@@ -163,8 +163,8 @@ class CustomerController extends Controller
 
         $query->orderBy($sortBy, $sortDir);
 
-        $query->with(['documents', 'transactions']);
-        $query->withCount(['documents', 'transactions']);
+        // Use withCount for aggregated data only - avoid N+1 by not eager loading full relationships
+        $query->withCount(['documents']);
 
         $customers = $query->paginate(20)->withQueryString();
 
