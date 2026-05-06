@@ -12,6 +12,7 @@ use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -66,12 +67,13 @@ class CustomerController extends Controller
             $customer = $this->customerService->createCustomer($validated, auth()->id());
 
             // Get exchange rate for this customer's potential transactions
-            $exchangeRates = ExchangeRate::all()
+            $exchangeRates = Cache::remember('exchange_rates_for_transactions', 300, fn () => ExchangeRate::all()
                 ->mapWithKeys(fn ($r) => [$r->currency_code => [
                     'buy' => $r->rate_buy,
                     'sell' => $r->rate_sell,
                 ]])
-                ->toArray();
+                ->toArray()
+            );
 
             return response()->json([
                 'success' => true,
