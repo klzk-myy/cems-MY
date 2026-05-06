@@ -40,7 +40,7 @@ class StrController extends Controller
             $query->where('status', $request->status);
         }
 
-        $strReports = $query->orderBy('created_at', 'desc')->paginate(20);
+        $strReports = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
         $stats = [
             'draft' => StrReport::where('status', StrStatus::Draft->value)->count(),

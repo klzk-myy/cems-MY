@@ -128,7 +128,7 @@ class DashboardController extends Controller
         }
 
         // Get paginated flags
-        $flags = $query->orderBy('created_at', 'desc')->paginate(20);
+        $flags = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
         // Calculate STR stats including overdue tracking
         $strStats = [

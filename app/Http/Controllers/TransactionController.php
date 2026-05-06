@@ -64,7 +64,7 @@ class TransactionController extends Controller
             $query->where('branch_id', $user->branch_id);
         }
 
-        $transactions = $query->orderBy('created_at', 'desc')->paginate(50);
+        $transactions = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
 
         return view('pages.transactions.index', compact('transactions'));
     }

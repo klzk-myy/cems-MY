@@ -206,7 +206,7 @@ class CounterController extends Controller
 
         $sessions = $query->orderBy('session_date', 'desc')
             ->orderBy('opened_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)->withQueryString();
 
         $users = User::where('is_active', true)->get();
 

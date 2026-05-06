@@ -32,7 +32,7 @@ class StockTransferController extends Controller
             $query->where('destination_branch_name', $request->destination_branch);
         }
 
-        $transfers = $query->orderBy('created_at', 'desc')->paginate(25);
+        $transfers = $query->orderBy('created_at', 'desc')->paginate(25)->withQueryString();
 
         return view('pages.stock-transfers.index', compact('transfers'));
     }
