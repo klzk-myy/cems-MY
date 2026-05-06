@@ -210,12 +210,18 @@ class ComplianceService
 
         $driver = DB::connection()->getDriverName();
         $operator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
-        $escapeClause = $driver === 'sqlite' ? " ESCAPE '\\'" : " ESCAPE '\\\\'";
 
-        $matches = DB::table('sanction_entries')
-            ->whereRaw("entity_name {$operator} ?{$escapeClause}", [$pattern])
-            ->orWhereRaw("aliases {$operator} ?{$escapeClause}", [$pattern])
-            ->count();
+        // Use parameter binding with explicit ESCAPE clause to prevent SQL injection
+        $query = DB::table('sanction_entries');
+        $query->whereRaw(
+            "entity_name {$operator} ? ESCAPE '\\'",
+            [$pattern]
+        )->orWhereRaw(
+            "aliases {$operator} ? ESCAPE '\\'",
+            [$pattern]
+        );
+
+        $matches = $query->count();
 
         return $matches > 0;
     }
