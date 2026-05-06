@@ -46,6 +46,12 @@ class TransactionApprovalController extends Controller
 
         $transaction = Transaction::findOrFail($transactionId);
 
+        // Enforce branch-based authorization: managers can only approve transactions within their own branch
+        $user = auth()->user();
+        if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
+            throw new AccessDeniedHttpException('You can only approve transactions for your own branch.');
+        }
+
         try {
             $this->approvalService->validateApprovalEligibility($transaction, auth()->id());
 

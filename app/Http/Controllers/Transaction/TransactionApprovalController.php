@@ -48,6 +48,12 @@ class TransactionApprovalController extends Controller
     {
         $this->requireManagerOrAdmin();
 
+        // Enforce branch-based authorization: managers can only approve transactions within their own branch
+        $user = auth()->user();
+        if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
+            abort(403, 'You can only approve transactions for your own branch.');
+        }
+
         try {
             $this->approvalService->validateApprovalEligibility($transaction, auth()->id());
 
