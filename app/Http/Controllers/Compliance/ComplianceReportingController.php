@@ -59,7 +59,13 @@ class ComplianceReportingController extends Controller
 
     public function history(Request $request)
     {
+        $user = auth()->user();
         $filters = $request->only(['report_type', 'status', 'from_date', 'to_date']);
+
+        // Branch segregation: non-admin users only see their branch's report history
+        if ($user && ! $user->isAdmin() && $user->branch_id) {
+            $filters['branch_id'] = $user->branch_id;
+        }
 
         $reports = $this->reportingService->getReportHistory($filters)->paginate(25);
 

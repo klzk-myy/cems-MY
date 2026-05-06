@@ -13,12 +13,19 @@ class CtosController extends Controller
 
     public function index(Request $request)
     {
+        $user = auth()->user();
         $params = array_filter([
             'status' => $request->get('status'),
-            'branch_id' => $request->get('branch_id'),
             'from_date' => $request->get('from_date'),
             'to_date' => $request->get('to_date'),
         ]);
+
+        // Branch segregation: non-admin users can only see their branch's CTOS reports
+        if ($user && ! $user->isAdmin() && $user->branch_id) {
+            $params['branch_id'] = $user->branch_id;
+        } elseif ($request->has('branch_id') && $request->get('branch_id') !== null) {
+            $params['branch_id'] = $request->get('branch_id');
+        }
 
         $url = config('app.url').$this->apiBase;
         if (! empty($params)) {
