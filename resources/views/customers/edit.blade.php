@@ -27,12 +27,14 @@
                         <select name="id_type" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
                             <option value="IC" {{ ($customer->id_type ?? '') === 'IC' ? 'selected' : '' }}>NRIC / IC</option>
                             <option value="PASSPORT" {{ ($customer->id_type ?? '') === 'PASSPORT' ? 'selected' : '' }}>Passport</option>
-                            <option value="MILITARY" {{ ($customer->id_type ?? '') === 'MILITARY' ? 'selected' : '' }}>Military ID</option>
+                            <option value="OTHERS" {{ ($customer->id_type ?? '') === 'Others' ? 'selected' : '' }}>Other ID</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">ID Number *</label>
-                        <input type="text" name="id_number" value="{{ old('id_number', $customer->id_number ?? '') }}" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ID Number (masked)</label>
+                        <div class="px-4 py-2.5 text-sm bg-gray-50 border border-[#e5e5e5] rounded-lg">
+                            {{ $decryptedIdNumber ? substr($decryptedIdNumber, 0, 4).'****'.substr($decryptedIdNumber, -4) : '****-****-****' }}
+                        </div>
                     </div>
                 </div>
 
