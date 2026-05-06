@@ -212,6 +212,30 @@ class Customer extends Model
     }
 
     /**
+     * Get masked ID number for PDPA-compliant display (first 4, last 4).
+     *
+     * Returns a format like "9001****1234" for MyKad numbers,
+     * or "****" if decryption fails or the field is empty.
+     */
+    public function getIdNumberMaskedAttribute(): string
+    {
+        if (! $this->id_number_encrypted || empty($this->id_number_encrypted)) {
+            return '****';
+        }
+
+        try {
+            $decrypted = app(EncryptionService::class)->decrypt($this->id_number_encrypted);
+            if (! $decrypted || strlen($decrypted) < 8) {
+                return '****';
+            }
+
+            return substr($decrypted, 0, 4).'****'.substr($decrypted, -4);
+        } catch (\Exception $e) {
+            return '****';
+        }
+    }
+
+    /**
      * Boot the model and register hooks for blind index.
      */
     protected static function boot()

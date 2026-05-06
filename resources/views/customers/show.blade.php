@@ -36,7 +36,7 @@
                     <div class="space-y-3 text-sm">
                         <div>
                             <span class="text-gray-500">ID</span>
-                            <p class="font-medium">{{ $customer->id_type ?? 'IC' }}: {{ $customer->id_number ?? '701203-14-1234' }}</p>
+                            <p class="font-medium">{{ $customer->id_type ?? 'IC' }}: {{ $customer->id_number_masked ?? '****' }}</p>
                         </div>
                         <div>
                             <span class="text-gray-500">Nationality</span>

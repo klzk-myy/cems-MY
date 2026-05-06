@@ -44,7 +44,7 @@
                                     </div>
                                     <div>
                                         <dt class="text-xs text-gray-500">ID Number</dt>
-                                        <dd class="text-sm font-medium text-gray-900">{{ $str->customer->id_number }}</dd>
+                                        <dd class="text-sm font-medium text-gray-900">{{ $str->customer->id_number_masked }}</dd>
                                     </div>
                                 </dl>
                             @else

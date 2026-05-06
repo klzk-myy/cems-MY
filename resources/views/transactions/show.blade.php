@@ -79,7 +79,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-500 mb-1">ID Number</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['id_number'] ?? 'N/A' }}</p>
+                        <p class="text-sm text-gray-900">{{ $transaction->customer->id_number_masked ?? 'N/A' }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-500 mb-1">CDD Level</label>

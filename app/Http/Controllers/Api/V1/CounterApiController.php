@@ -7,6 +7,7 @@ use App\Models\Counter;
 use App\Services\CounterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class CounterApiController extends Controller
@@ -59,9 +60,11 @@ class CounterApiController extends Controller
                 'session' => $result['session'] ?? $session->fresh(),
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to close counter', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to close counter: '.$e->getMessage(),
+                'message' => 'Operation failed. Please contact support.',
             ], 500);
         }
     }

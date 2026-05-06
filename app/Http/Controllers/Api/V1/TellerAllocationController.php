@@ -9,6 +9,7 @@ use App\Services\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 /**
  * TellerAllocationController API v1
@@ -141,9 +142,11 @@ class TellerAllocationController extends Controller
                 'data' => $allocation,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to approve allocation', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Operation failed. Please contact support.',
             ], 400);
         }
     }
@@ -196,9 +199,11 @@ class TellerAllocationController extends Controller
                 'data' => $allocation,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to reject allocation', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Operation failed. Please contact support.',
             ], 400);
         }
     }
@@ -253,9 +258,11 @@ class TellerAllocationController extends Controller
                 'data' => $allocation,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to modify allocation', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Operation failed. Please contact support.',
             ], 400);
         }
     }
@@ -293,9 +300,11 @@ class TellerAllocationController extends Controller
                 'data' => $allocation,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to return allocation to pool', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Operation failed. Please contact support.',
             ], 400);
         }
     }

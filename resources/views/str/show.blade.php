@@ -7,7 +7,7 @@
                         <h1 class="text-2xl font-semibold text-gray-900">STR: {{ $str->str_number }}</h1>
                         <p class="mt-1 text-sm text-gray-500">
                             @if($str->customer)
-                                {{ $str->customer->name }} ({{ $str->customer->id_number }})
+                                {{ $str->customer->name }} ({{ $str->customer->id_number_masked }})
                             @else
                                 No customer linked
                             @endif
@@ -90,7 +90,7 @@
                                 </div>
                                 <div>
                                     <dt class="text-sm text-gray-500">ID Number</dt>
-                                    <dd class="text-sm font-medium text-gray-900">{{ $str->customer->id_number }}</dd>
+                                    <dd class="text-sm font-medium text-gray-900">{{ $str->customer->id_number_masked }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm text-gray-500">Risk Rating</dt>

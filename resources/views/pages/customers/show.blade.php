@@ -19,7 +19,7 @@
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">ID Number</dt>
-                        <dd>{{ $customer->id_number }}</dd>
+                        <dd>{{ $customer->id_number_masked }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">Date of Birth</dt>

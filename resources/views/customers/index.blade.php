@@ -49,7 +49,7 @@
                     <tr class="border-t hover:bg-gray-50">
                         <td class="px-4 py-3 text-sm">{{ $customer->full_name }}</td>
                         <td class="px-4 py-3 text-sm">{{ $customer->id_type }}</td>
-                        <td class="px-4 py-3 text-sm">{{ $customer->id_number }}</td>
+                        <td class="px-4 py-3 text-sm">{{ $customer->id_number_masked }}</td>
                         <td class="px-4 py-3 text-sm">{{ $customer->nationality }}</td>
                         <td class="px-4 py-3">
                             @if(($customer->risk_level ?? '') === 'Low')

@@ -12,6 +12,7 @@ use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 /**
@@ -88,10 +89,15 @@ class CustomerController extends Controller
                 'exchange_rates' => $exchangeRates,
             ]);
         } catch (\Exception $e) {
+            Log::error('Customer quick create failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create customer: '.$e->getMessage(),
-            ], 422);
+                'message' => 'Failed to create customer. Please contact support.',
+            ], 500);
         }
     }
 
@@ -230,7 +236,12 @@ class CustomerController extends Controller
                 ->with('success', $message);
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to create customer: '.$e->getMessage())
+            Log::error('Customer store failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return back()->with('error', 'Failed to create customer. Please contact support.')
                 ->withInput();
         }
     }
@@ -320,7 +331,12 @@ class CustomerController extends Controller
                 ->with('success', "Customer {$customer->full_name} updated successfully.");
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to update customer: '.$e->getMessage())
+            Log::error('Customer update failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return back()->with('error', 'Failed to update customer. Please contact support.')
                 ->withInput();
         }
     }

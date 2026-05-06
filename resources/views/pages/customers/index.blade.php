@@ -24,7 +24,7 @@
                     <tr class="border-t hover:bg-gray-50">
                         <td class="px-4 py-3">{{ $customer->full_name }}</td>
                         <td class="px-4 py-3">{{ $customer->id_type }}</td>
-                        <td class="px-4 py-3">{{ $customer->id_number }}</td>
+                        <td class="px-4 py-3">{{ $customer->id_number_masked }}</td>
                         <td class="px-4 py-3">{{ $customer->nationality }}</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 rounded text-xs 

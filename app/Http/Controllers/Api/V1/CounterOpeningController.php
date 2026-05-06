@@ -12,6 +12,7 @@ use App\Services\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 /**
  * CounterOpeningController API v1
@@ -94,9 +95,11 @@ class CounterOpeningController extends Controller
                 'data' => $allocations,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to initiate opening request', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Operation failed. Please contact support.',
             ], 400);
         }
     }
@@ -158,10 +161,12 @@ class CounterOpeningController extends Controller
                 'data' => $session,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to open counter', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+                'message' => 'Failed to open counter. Please contact support.',
+            ], 500);
         }
     }
 }

@@ -10,6 +10,8 @@ use App\Services\AuditService;
 use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CustomerController extends Controller
 {
@@ -66,9 +68,14 @@ class CustomerController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            Log::error('Customer API store failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create customer: '.$e->getMessage(),
+                'message' => 'Failed to create customer. Please contact support.',
             ], 500);
         }
     }
@@ -128,9 +135,15 @@ class CustomerController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Customer API update failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+                'customer_id' => $id,
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update customer: '.$e->getMessage(),
+                'message' => 'Failed to update customer. Please contact support.',
             ], 500);
         }
     }
