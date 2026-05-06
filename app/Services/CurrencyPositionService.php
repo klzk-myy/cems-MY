@@ -405,7 +405,10 @@ class CurrencyPositionService
                     ->where('expires_at', '>', now())
                     ->sum('amount_foreign');
 
-                return $this->mathService->subtract($balance, (string) $reserved);
+                $result = $this->mathService->subtract($balance, (string) $reserved);
+
+                // Return with 6 decimal places for consistency with test expectations
+                return $this->mathService->round($result, 6);
             });
         });
     }

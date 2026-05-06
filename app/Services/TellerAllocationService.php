@@ -210,6 +210,11 @@ class TellerAllocationService
             return ['valid' => false, 'reason' => 'Insufficient allocation balance'];
         }
 
+        // For sell transactions, check if there's sufficient balance to cover the sale
+        if (! $isBuy && ! $allocation->hasAvailable($amountMyr)) {
+            return ['valid' => false, 'reason' => "No {$allocation->currency_code} balance available to sell"];
+        }
+
         if (! $allocation->hasDailyLimitRemaining($amountMyr)) {
             return ['valid' => false, 'reason' => 'Daily limit exceeded'];
         }

@@ -87,6 +87,7 @@ class CddLevelDeterminationService
         $triggers = [];
 
         // Enhanced Due Diligence triggers (risk-based per pd-00.md 14C.13)
+        // Large transactions also trigger Enhanced CDD per regulatory requirements
         if ($pepStatus) {
             $triggers[] = 'PEP customer';
         }
@@ -95,6 +96,9 @@ class CddLevelDeterminationService
         }
         if ($customer->risk_rating === 'High') {
             $triggers[] = 'High risk customer';
+        }
+        if ($this->mathService->compare($amount, $this->thresholdService->getLargeTransactionThreshold()) >= 0) {
+            $triggers[] = 'Large amount >= RM '.$this->thresholdService->getLargeTransactionThreshold();
         }
 
         // Store triggers if Enhanced

@@ -151,4 +151,14 @@ class TellerAllocation extends Model
             'closed_at' => now(),
         ]);
     }
+
+    public function reject(User $rejector, ?string $reason = null): void
+    {
+        $this->update([
+            'status' => TellerAllocationStatus::REJECTED,
+            'rejected_by' => $rejector->id,
+            'rejected_at' => now(),
+            'rejection_reason' => $reason,
+        ]);
+    }
 }

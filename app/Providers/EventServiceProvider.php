@@ -20,7 +20,7 @@ use App\Listeners\TriggerSanctionsRescreening;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Event;
@@ -94,7 +94,7 @@ class EventServiceProvider extends ServiceProvider
             ]);
         });
 
-        Queue::failing(function (JobExceptionOccurred $event) {
+        Queue::failing(function (JobFailed $event) {
             Log::error('Queue job failing', [
                 'job' => $event->job->getName(),
                 'id' => $event->job->getJobId(),

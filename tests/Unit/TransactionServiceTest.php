@@ -375,6 +375,7 @@ class TransactionServiceTest extends TestCase
     {
         // Reset till balance to zero for clean test
         $this->tillBalance->update([
+            'opening_balance' => '0',
             'buy_total_foreign' => '0',
             'sell_total_foreign' => '0',
             'foreign_total' => '0', // legacy field still needed for compatibility

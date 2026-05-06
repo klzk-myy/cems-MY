@@ -531,13 +531,22 @@ class TransactionService implements TransactionServiceInterface
         // Sell: increase sell_total_foreign (we are selling foreign currency to customer, stock decreases)
         $buyTotal = $lockedForeign->buy_total_foreign ?? '0';
         $sellTotal = $lockedForeign->sell_total_foreign ?? '0';
+        $foreignTotal = $lockedForeign->foreign_total ?? '0';
 
         if ($type === TransactionType::Buy->value) {
             $newBuyTotal = $this->mathService->add($buyTotal, $amountForeign);
-            $lockedForeign->update(['buy_total_foreign' => $newBuyTotal]);
+            $newForeignTotal = $this->mathService->add($foreignTotal, $amountForeign);
+            $lockedForeign->update([
+                'buy_total_foreign' => $newBuyTotal,
+                'foreign_total' => $newForeignTotal,
+            ]);
         } else {
             $newSellTotal = $this->mathService->add($sellTotal, $amountForeign);
-            $lockedForeign->update(['sell_total_foreign' => $newSellTotal]);
+            $newForeignTotal = $this->mathService->subtract($foreignTotal, $amountForeign);
+            $lockedForeign->update([
+                'sell_total_foreign' => $newSellTotal,
+                'foreign_total' => $newForeignTotal,
+            ]);
         }
 
         // Update MYR balance - always add (cash in on Sell, cash out on Buy is recorded separately)
@@ -824,7 +833,7 @@ class TransactionService implements TransactionServiceInterface
             });
             $this->cacheTagsService->invalidate('dashboard');
 
-            return $transaction;
+            return $result;
         } catch (InsufficientStockException $e) {
             return [
                 'success' => false,
