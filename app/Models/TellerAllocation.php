@@ -123,7 +123,7 @@ class TellerAllocation extends Model
             'approved_at' => now(),
             'allocated_amount' => $allocatedAmount,
             'current_balance' => $allocatedAmount,
-            'daily_limit_myr' => $dailyLimitMyr ?? '0',
+            'daily_limit_myr' => $dailyLimitMyr, // preserves null for "unlimited"
             'status' => TellerAllocationStatus::APPROVED,
         ]);
     }

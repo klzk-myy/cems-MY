@@ -424,10 +424,12 @@ class TransactionService implements TransactionServiceInterface
                 // Update teller allocation if this was a teller transaction
                 if ($allocationForUpdate) {
                     $isBuy = ($data['type'] === TransactionType::Buy->value);
+                    // Buy: money changer buys foreign currency FROM customer → allocation increases
+                    // Sell: money changer sells foreign currency TO customer → allocation decreases
                     if ($isBuy) {
-                        $allocationForUpdate->deduct($amountForeign);
-                    } else {
                         $allocationForUpdate->add($amountForeign);
+                    } else {
+                        $allocationForUpdate->deduct($amountForeign);
                     }
                     $allocationForUpdate->addDailyUsed($amountLocal);
                 }
@@ -759,25 +761,23 @@ class TransactionService implements TransactionServiceInterface
                     );
                 }
 
-                // FIX: Check available balance BEFORE consuming reservation
-                // This prevents consuming reservation when there's insufficient stock
-                $available = $this->positionService->getAvailableBalance(
-                    $lockedTransaction->currency_code,
-                    (string) $lockedTransaction->till_id
-                );
-
-                if ($this->mathService->compare($available, (string) $lockedTransaction->amount_foreign) < 0) {
-                    throw new InsufficientStockException(
-                        $lockedTransaction->currency_code,
-                        (string) $lockedTransaction->amount_foreign,
-                        $available
-                    );
-                }
-
-                // Consume the stock reservation for Sell transactions only
-                // Buy transactions do not consume stock - they add foreign currency to the position
-                $reservation = null;
+                // Check available balance BEFORE consuming reservation (Sell only)
+                // Buy transactions ADD foreign currency to the position — no existing stock required
                 if ($lockedTransaction->type === TransactionType::Sell) {
+                    $available = $this->positionService->getAvailableBalance(
+                        $lockedTransaction->currency_code,
+                        (string) $lockedTransaction->till_id
+                    );
+
+                    if ($this->mathService->compare($available, (string) $lockedTransaction->amount_foreign) < 0) {
+                        throw new InsufficientStockException(
+                            $lockedTransaction->currency_code,
+                            (string) $lockedTransaction->amount_foreign,
+                            $available
+                        );
+                    }
+
+                    // Consume the stock reservation for Sell transactions only
                     $reservation = $this->positionService->consumeStockReservation($lockedTransaction->id);
 
                     if (! $reservation) {

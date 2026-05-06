@@ -12,6 +12,7 @@ use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\JournalEntry;
 use App\Models\StockReservation;
+use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\TransactionCancellationPendingNotification;
@@ -297,14 +298,18 @@ class TransactionCancellationService
                 return false;
             }
 
-            // Use normal transition to Completed status (cancellation rejection workflow completes)
-            $stateMachine = new TransactionStateMachine($transaction);
-            $result = $stateMachine->transitionTo(TransactionStatus::Completed, [
+            // Reject the cancellation by restoring the transaction to its previous status
+            // Rather than assuming Completed, we restore the actual prior status
+            $oldStatus = $transaction->status;
+            $transaction->status = $targetStatus;
+            $transaction->version = $transaction->version + 1;
+            $transaction->transition_history = $this->appendStateHistoryEntry($transaction, $oldStatus, $targetStatus, [
                 'reason' => "Cancellation rejected: {$reason}",
                 'user_id' => $rejector->id,
             ]);
+            $updated = $transaction->save();
 
-            if ($result) {
+            if ($updated) {
                 Log::info('Transaction cancellation rejected', [
                     'transaction_id' => $transaction->id,
                     'rejected_by' => $rejector->id,
@@ -328,7 +333,7 @@ class TransactionCancellationService
                 );
             }
 
-            return $result;
+            return $updated;
         });
     }
 
@@ -398,6 +403,9 @@ class TransactionCancellationService
 
             // Reverse positions
             $this->reversePositions($transaction);
+
+            // Reverse till balance (foreign and MYR totals)
+            $this->reverseTillBalance($transaction);
 
             // Create reversing journal entries
             $this->createReversingJournalEntries($transaction, $requester->id);
@@ -621,6 +629,76 @@ class TransactionCancellationService
     }
 
     /**
+     * Reverse till balance entries for a reversed transaction.
+     * Undoes the original transaction's effect on till_balances.transaction_total (MYR)
+     * and buy_total_foreign/sell_total_foreign/foreign_total (foreign currency).
+     */
+    protected function reverseTillBalance(Transaction $transaction): void
+    {
+        $tillBalance = TillBalance::where('till_id', $transaction->till_id)
+            ->where('currency_code', $transaction->currency_code)
+            ->whereDate('date', today())
+            ->whereNull('closed_at')
+            ->lockForUpdate()
+            ->first();
+
+        if (! $tillBalance) {
+            Log::warning('No open till balance found for reversal', [
+                'transaction_id' => $transaction->id,
+                'till_id' => $transaction->till_id,
+                'currency_code' => $transaction->currency_code,
+            ]);
+
+            return;
+        }
+
+        $isBuy = $transaction->type === TransactionType::Buy;
+
+        // Reverse foreign currency totals (opposite of original transaction)
+        $foreignTotal = $tillBalance->foreign_total ?? '0';
+        if ($isBuy) {
+            // Original Buy increased foreign_total, reversal must decrease it
+            $newForeignTotal = $this->mathService->subtract($foreignTotal, $transaction->amount_foreign);
+            $buyTotal = $tillBalance->buy_total_foreign ?? '0';
+            $newBuyTotal = $this->mathService->subtract($buyTotal, $transaction->amount_foreign);
+            $tillBalance->update([
+                'foreign_total' => $newForeignTotal,
+                'buy_total_foreign' => $newBuyTotal,
+            ]);
+        } else {
+            // Original Sell decreased foreign_total, reversal must increase it
+            $newForeignTotal = $this->mathService->add($foreignTotal, $transaction->amount_foreign);
+            $sellTotal = $tillBalance->sell_total_foreign ?? '0';
+            $newSellTotal = $this->mathService->add($sellTotal, $transaction->amount_foreign);
+            $tillBalance->update([
+                'foreign_total' => $newForeignTotal,
+                'sell_total_foreign' => $newSellTotal,
+            ]);
+        }
+
+        // Reverse MYR till balance (original always added, reversal must subtract)
+        $myrTillBalance = TillBalance::where('till_id', $transaction->till_id)
+            ->where('currency_code', 'MYR')
+            ->whereDate('date', today())
+            ->whereNull('closed_at')
+            ->lockForUpdate()
+            ->first();
+
+        if ($myrTillBalance) {
+            $myrTotal = $myrTillBalance->transaction_total ?? '0';
+            $newMyrTotal = $this->mathService->subtract($myrTotal, $transaction->amount_local);
+            $myrTillBalance->update(['transaction_total' => $newMyrTotal]);
+        }
+
+        Log::info('Till balance reversed for transaction', [
+            'transaction_id' => $transaction->id,
+            'currency_code' => $transaction->currency_code,
+            'amount_foreign' => $transaction->amount_foreign,
+            'amount_local' => $transaction->amount_local,
+        ]);
+    }
+
+    /**
      * Create reversing journal entries for a transaction.
      *
      * Creates a reversal journal entry that swaps debits and credits from the
@@ -813,24 +891,36 @@ class TransactionCancellationService
     {
         $history = $transaction->transition_history ?? [];
 
-        // Find the last status before PendingCancellation
+        // Walk history in reverse to find the entry BEFORE the transaction entered PendingCancellation.
+        // The "from" of the latest entry whose "to" is PendingCancellation is the previous status.
         foreach (array_reverse($history) as $entry) {
             if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
-                continue;
-            }
-
-            // This is the status we were in before PendingCancellation
-            try {
-                return TransactionStatus::from($entry['to']);
-            } catch (\ValueError $e) {
-                // Skip if the status value is not valid
-                continue;
+                // Found the transition that put us INTO PendingCancellation
+                try {
+                    return TransactionStatus::from($entry['from']);
+                } catch (\ValueError $e) {
+                    return null;
+                }
             }
         }
 
-        // Fallback: determine based on allowed transitions from Cancelled
-        // If we can transition from Cancelled to a status, that was likely the previous state
-        // But this is a last resort - normally the history should have it
         return null;
+    }
+
+    /**
+     * Append a state history entry for manual status restoration (bypasses state machine).
+     */
+    protected function appendStateHistoryEntry(Transaction $transaction, TransactionStatus $oldStatus, TransactionStatus $newStatus, array $context): array
+    {
+        $history = $transaction->transition_history ?? [];
+        $history[] = [
+            'from' => $oldStatus->value,
+            'to' => $newStatus->value,
+            'reason' => $context['reason'] ?? null,
+            'user_id' => $context['user_id'] ?? auth()->id(),
+            'timestamp' => now()->toIso8601String(),
+        ];
+
+        return $history;
     }
 }
