@@ -42,12 +42,18 @@ class StrController extends Controller
 
         $strReports = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
+        // Single query replaces 5 separate count() calls
+        $counts = StrReport::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
         $stats = [
-            'draft' => StrReport::where('status', StrStatus::Draft->value)->count(),
-            'pending_review' => StrReport::where('status', StrStatus::PendingReview->value)->count(),
-            'pending_approval' => StrReport::where('status', StrStatus::PendingApproval->value)->count(),
-            'submitted' => StrReport::where('status', StrStatus::Submitted->value)->count(),
-            'acknowledged' => StrReport::where('status', StrStatus::Acknowledged->value)->count(),
+            'draft' => $counts['Draft'] ?? 0,
+            'pending_review' => $counts['PendingReview'] ?? 0,
+            'pending_approval' => $counts['PendingApproval'] ?? 0,
+            'submitted' => $counts['Submitted'] ?? 0,
+            'acknowledged' => $counts['Acknowledged'] ?? 0,
         ];
 
         return view('pages.str.index', compact('strReports', 'stats'));
