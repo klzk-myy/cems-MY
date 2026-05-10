@@ -11,6 +11,7 @@ use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\User;
+use App\Services\AccountingService;
 use App\Services\FiscalYearService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -28,6 +29,8 @@ class AccountingWorkflowTest extends TestCase
     protected ChartOfAccount $cashAccount;
 
     protected ChartOfAccount $revenueAccount;
+
+    protected AccountingService $accountingService;
 
     protected function setUp(): void
     {
@@ -75,17 +78,19 @@ class AccountingWorkflowTest extends TestCase
             'account_type' => 'Revenue',
             'is_active' => true,
         ]);
+
+        $this->accountingService = app(AccountingService::class);
     }
 
     /** @test */
     public function it_can_create_a_journal_entry(): void
     {
         $response = $this->actingAs($this->manager)
-            ->postJson('/accounting/journal', [
+            ->post('/accounting/journal', [
                 'entry_date' => now()->format('Y-m-d'),
                 'description' => 'Test journal entry',
                 'reference_type' => 'Manual',
-                'journal_lines' => [
+                'lines' => [
                     [
                         'account_code' => $this->cashAccount->account_code,
                         'debit' => '1000.00',
@@ -99,19 +104,18 @@ class AccountingWorkflowTest extends TestCase
                 ],
             ]);
 
-        // Accept 201 or 422 (422 may be due to additional validation)
-        $this->assertTrue(in_array($response->status(), [201, 422]),
-            "Expected status 201 or 422, got {$response->status()}");
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
     }
 
     /** @test */
     public function it_validates_debits_equal_credits(): void
     {
         $response = $this->actingAs($this->manager)
-            ->postJson('/accounting/journal', [
+            ->post('/accounting/journal', [
                 'entry_date' => now()->format('Y-m-d'),
                 'description' => 'Imbalanced entry',
-                'journal_lines' => [
+                'lines' => [
                     [
                         'account_code' => $this->cashAccount->account_code,
                         'debit' => '1000.00',
@@ -125,7 +129,7 @@ class AccountingWorkflowTest extends TestCase
                 ],
             ]);
 
-        $response->assertStatus(422);
+        $response->assertSessionHasErrors();
     }
 
     /** @test */
@@ -133,11 +137,11 @@ class AccountingWorkflowTest extends TestCase
     {
         // Journal entries are now posted directly without approval workflow
         $response = $this->actingAs($this->manager)
-            ->postJson('/accounting/journal', [
+            ->post('/accounting/journal', [
                 'entry_date' => now()->format('Y-m-d'),
                 'description' => 'Test entry - should be posted directly',
                 'reference_type' => 'Manual',
-                'journal_lines' => [
+                'lines' => [
                     [
                         'account_code' => $this->cashAccount->account_code,
                         'debit' => '1000.00',
@@ -151,9 +155,8 @@ class AccountingWorkflowTest extends TestCase
                 ],
             ]);
 
-        // Accept 201 (created) or 302 (redirect) or 422 (validation error)
-        $this->assertTrue(in_array($response->status(), [201, 302, 422]),
-            "Expected status 201, 302, or 422, got {$response->status()}");
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
     }
 
     /** @test */
@@ -213,12 +216,11 @@ class AccountingWorkflowTest extends TestCase
 
         $entry = JournalEntry::first();
         $this->assertNotNull($entry);
-        $this->assertEquals('Posted', $entry->status->value);
-        $this->assertNotNull($entry->posted_at);
-        $this->assertNotNull($entry->posted_by);
+        $this->assertEquals('Draft', $entry->status->value);
+        $this->assertNull($entry->posted_at);
+        $this->assertNull($entry->posted_by);
 
-        $ledgerEntries = AccountLedger::where('journal_entry_id', $entry->id)->get();
-        $this->assertCount(2, $ledgerEntries);
+        $this->assertCount(0, AccountLedger::where('journal_entry_id', $entry->id)->get());
     }
 
     /** @test */
@@ -245,6 +247,11 @@ class AccountingWorkflowTest extends TestCase
         $createResponse->assertSessionHasNoErrors();
 
         $originalEntry = JournalEntry::first();
+        $this->assertEquals('Draft', $originalEntry->status->value);
+
+        $this->accountingService->submitForApproval($originalEntry);
+        $this->accountingService->approveEntry($originalEntry);
+        $originalEntry->refresh();
         $this->assertEquals('Posted', $originalEntry->status->value);
 
         $reverseResponse = $this->actingAs($this->manager)

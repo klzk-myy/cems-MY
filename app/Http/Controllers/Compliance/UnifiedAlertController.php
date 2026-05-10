@@ -4,16 +4,13 @@ namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Alert;
+use App\Models\Compliance\ComplianceFinding;
 use App\Models\Customer;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class UnifiedAlertController extends Controller
 {
-    protected string $apiBase = '/api/v1/compliance/findings';
-
     public function index(Request $request)
     {
         $source = $request->get('source', 'all');
@@ -120,51 +117,52 @@ class UnifiedAlertController extends Controller
 
     protected function fetchFindings(?string $source, ?string $priority, ?string $status, ?string $type, ?string $customerSearch, ?string $fromDate, ?string $toDate): array
     {
-        $params = array_filter([
-            'severity' => $priority,
-            'status' => $status ? $this->mapUnifiedStatusToFinding($status) : null,
-            'type' => $type,
-            'date_from' => $fromDate,
-            'date_to' => $toDate,
-        ]);
+        $query = ComplianceFinding::with('subject');
 
-        $url = config('app.url').$this->apiBase;
-        if (! empty($params)) {
-            $url .= '?'.http_build_query($params);
+        if ($priority) {
+            $query->where('severity', strtolower($priority));
+        }
+        if ($status) {
+            $mappedStatus = $this->mapUnifiedStatusToFinding($status);
+            if ($mappedStatus) {
+                $query->where('status', $mappedStatus);
+            }
+        }
+        if ($type) {
+            $query->where('finding_type', $type);
+        }
+        if ($fromDate) {
+            $query->whereDate('generated_at', '>=', $fromDate);
+        }
+        if ($toDate) {
+            $query->whereDate('generated_at', '<=', $toDate);
         }
 
-        try {
-            $response = Http::withToken(session('api_token'))->get($url);
-            $data = $response->successful() ? $response->json()['data'] ?? [] : [];
-        } catch (\Throwable $e) {
-            $data = [];
-        }
-
-        $findings = collect($data['data'] ?? []);
+        $findings = $query->orderBy('generated_at', 'desc')->get();
 
         if ($customerSearch) {
             $customerIds = Customer::where('full_name', 'like', "%{$customerSearch}%")->pluck('id');
-            $findings = $findings->filter(fn ($f) => $f['subject_type'] === 'Customer' && in_array($f['subject_id'], $customerIds->toArray()));
+            $findings = $findings->filter(fn ($f) => $f->subject_type === 'Customer' && in_array($f->subject_id, $customerIds->toArray()));
         }
 
         $items = $findings->map(fn ($finding) => [
-            'id' => 'F-'.$finding['id'],
+            'id' => 'F-'.$finding->id,
             'source' => 'Finding',
-            'priority' => $finding['severity'] ?? 'Low',
-            'priority_label' => $finding['severity'] ?? 'Low',
-            'type' => $finding['finding_type'] ?? 'Unknown',
-            'type_label' => $this->getFindingTypeLabel($finding['finding_type'] ?? ''),
-            'status' => $finding['status'] ?? 'New',
-            'status_label' => $this->getFindingStatusLabel($finding['status'] ?? ''),
-            'customer' => $finding['subject_type'] === 'Customer' ? [
-                'id' => $finding['subject_id'],
-                'name' => $finding['subject_name'] ?? 'Customer #'.$finding['subject_id'],
+            'priority' => $finding->severity?->value ?? 'Low',
+            'priority_label' => $finding->severity?->value ?? 'Low',
+            'type' => $finding->finding_type?->value ?? 'Unknown',
+            'type_label' => $this->getFindingTypeLabel($finding->finding_type?->value ?? ''),
+            'status' => $finding->status?->value ?? 'New',
+            'status_label' => $this->getFindingStatusLabel($finding->status?->value ?? ''),
+            'customer' => $finding->subject_type === 'Customer' ? [
+                'id' => $finding->subject_id,
+                'name' => $finding->subject?->full_name ?? 'Customer #'.$finding->subject_id,
                 'ic' => null,
             ] : null,
             'assigned_to' => null,
-            'description' => Str::limit(isset($finding['details']) ? ($finding['details']['summary'] ?? $finding['details']['description'] ?? '') : '', 100),
-            'date' => Carbon::parse($finding['generated_at'] ?? now()),
-            'url' => "/compliance/findings/{$finding['id']}",
+            'description' => Str::limit(isset($finding->details) ? ($finding->details['summary'] ?? $finding->details['description'] ?? '') : '', 100),
+            'date' => $finding->generated_at ?? now(),
+            'url' => "/compliance/findings/{$finding->id}",
         ])->toArray();
 
         return [

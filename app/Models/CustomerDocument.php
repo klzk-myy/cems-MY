@@ -32,6 +32,8 @@ class CustomerDocument extends Model
 {
     use HasFactory;
 
+    protected $with = ['customer', 'uploader', 'verifier'];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -141,11 +143,6 @@ class CustomerDocument extends Model
         return $query->whereNotNull('expiry_date')
             ->where('expiry_date', '>', now())
             ->where('expiry_date', '<=', now()->addDays(30));
-    }
-
-    public function uploadedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'uploaded_by');
     }
 
     /**

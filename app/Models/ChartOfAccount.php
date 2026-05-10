@@ -43,6 +43,8 @@ class ChartOfAccount extends Model
 
     protected $keyType = 'string';
 
+    protected $with = ['parent', 'costCenter', 'department'];
+
     protected $fillable = [
         'account_code',
         'account_name',

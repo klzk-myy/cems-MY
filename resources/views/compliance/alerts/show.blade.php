@@ -1,13 +1,13 @@
-<x-app-layout title="Alert Details - ALT-2024-001">
+<x-app-layout title="Alert Details - {{ $alert->id }}">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Page Header -->
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">Alert Details</h1>
-                    <p class="mt-1 text-sm text-gray-500">ALT-2024-001</p>
+                    <p class="mt-1 text-sm text-gray-500">{{ $alert->id }}</p>
                 </div>
-                <a href="#" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+                <a href="{{ route('compliance.alerts.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
                     Back to List
                 </a>
             </div>
@@ -18,27 +18,33 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Alert Type</label>
-                    <p class="text-sm text-gray-900">Velocity Alert</p>
+                    <p class="text-sm text-gray-900">{{ $alert->type ?? 'N/A' }}</p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Severity</label>
-                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Critical</span>
+                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">{{ $alert->priority ?? 'medium' }}</span>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Status</label>
-                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Reviewing</span>
+                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">{{ $alert->status?->value ?? 'open' }}</span>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Customer</label>
-                    <p class="text-sm text-gray-900">Ahmad Razali</p>
+                    <p class="text-sm text-gray-900">{{ $alert->customer?->full_name ?? 'N/A' }}</p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Created At</label>
-                    <p class="text-sm text-gray-900">2024-01-15 09:30:00</p>
+                    <p class="text-sm text-gray-900">{{ $alert->created_at?->format('Y-m-d H:i:s') ?? 'N/A' }}</p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Assigned To</label>
-                    <p class="text-sm text-gray-900">John Smith</p>
+                    <p class="text-sm text-gray-900">
+                        @if($alert->assignedTo)
+                            {{ $alert->assignedTo->username }}
+                        @else
+                            <span class="text-gray-400">Unassigned</span>
+                        @endif
+                    </p>
                 </div>
             </div>
         </div>
@@ -46,10 +52,11 @@
         <!-- Description -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Description</h3>
-            <p class="text-sm text-gray-600">Multiple transactions approaching reporting threshold within a 7-day period. Customer has conducted 5 transactions totaling RM 45,000 which may indicate structuring behavior to avoid the RM 50,000 STR threshold.</p>
+            <p class="text-sm text-gray-600">{{ $alert->reason ?? $alert->description ?? 'No description available.' }}</p>
         </div>
 
         <!-- Transaction History -->
+        @if($alert->flaggedTransaction || $alert->transaction)
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Related Transactions</h3>
             <table class="min-w-full divide-y divide-gray-200">
@@ -62,44 +69,40 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
+                    @php
+                    $transaction = $alert->flaggedTransaction?->transaction ?? $alert->transaction;
+                    @endphp
+                    @if($transaction)
                     <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">TXN-2024-001</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-10</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Buy USD</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">RM 8,000</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ $transaction->id ?? 'N/A' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-500">{{ $transaction->created_at?->format('Y-m-d') ?? 'N/A' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ $transaction->type?->value ?? 'N/A' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">RM {{ number_format((float) ($transaction->amount ?? 0), 2) }}</td>
                     </tr>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">TXN-2024-002</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-12</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Sell USD</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">RM 12,000</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">TXN-2024-003</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-14</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Buy EUR</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">RM 25,000</td>
-                    </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
+        @endif
 
         <!-- Actions -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
             <div class="flex flex-wrap gap-3">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                    Resolve Alert
-                </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                    Escalate
-                </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                    Dismiss
-                </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                    Assign to Me
-                </button>
+                <form method="POST" action="{{ route('compliance.alerts.resolve', $alert) }}" class="inline">
+                    @csrf
+                    <input type="hidden" name="resolution" value="Resolved via alert detail page">
+                    <input type="hidden" name="resolution_type" value="legitimate">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                        Resolve Alert
+                    </button>
+                </form>
+                <form method="POST" action="{{ route('compliance.alerts.dismiss', $alert) }}" class="inline">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+                        Dismiss
+                    </button>
+                </form>
             </div>
         </div>
     </div>

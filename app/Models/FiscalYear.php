@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FiscalYearStatus;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -43,6 +44,7 @@ class FiscalYear extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'closed_at' => 'datetime',
+        'status' => FiscalYearStatus::class,
     ];
 
     /**
@@ -66,7 +68,7 @@ class FiscalYear extends Model
      */
     public function isOpen(): bool
     {
-        return $this->status === 'Open';
+        return $this->status === FiscalYearStatus::Open;
     }
 
     /**
@@ -74,6 +76,6 @@ class FiscalYear extends Model
      */
     public function isClosed(): bool
     {
-        return $this->status === 'Closed';
+        return $this->status === FiscalYearStatus::Closed;
     }
 }

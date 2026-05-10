@@ -152,12 +152,11 @@ Request → [Middleware Chain] → Controller
 
 Organized by domain module:
 
-### 1. Transaction Management (7)
+### 1. Transaction Management (6)
 | Controller | Purpose |
 |------------|---------|
 | `TransactionController` | Core transaction CRUD, receipt generation |
 | `TransactionBatchController` | CSV bulk upload |
-| `TransactionReportController` | Customer history exports |
 | `TransactionWizardController` | Multi-step transaction with CDD |
 | `Transaction/TransactionApprovalController` | Manager approval workflow |
 | `Transaction/TransactionCancellationController` | Cancellation request/approval |

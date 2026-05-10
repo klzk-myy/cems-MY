@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\SystemLog;
 use App\Rules\PasswordComplexityRule;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +12,10 @@ use Illuminate\View\View;
 
 class ChangePasswordController extends Controller
 {
+    public function __construct(
+        protected AuditService $auditService
+    ) {}
+
     /**
      * Display the change password form.
      */
@@ -49,12 +53,10 @@ class ChangePasswordController extends Controller
         $user->save();
 
         // Log password change
-        SystemLog::create([
+        $this->auditService->logWithSeverity('password_changed', [
             'user_id' => $user->id,
-            'action' => 'password_changed',
-            'description' => 'User changed their password',
-            'ip_address' => $request->ip(),
-        ]);
+            'new_values' => ['message' => 'User changed their password'],
+        ], 'INFO');
 
         return redirect()->back()->with('status', 'Password updated successfully.');
     }

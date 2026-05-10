@@ -29,9 +29,10 @@ class CustomerApiTest extends TestCase
             ->postJson('/api/v1/customers', [
                 'full_name' => 'John Doe',
                 'id_type' => 'MyKad',
-                'id_number' => '123456789012',
+                'id_number' => '900123-01-2345',
                 'date_of_birth' => '1990-01-01',
                 'nationality' => 'Malaysian',
+                'risk_rating' => 'Low',
             ]);
 
         $response->assertStatus(201);
@@ -58,9 +59,10 @@ class CustomerApiTest extends TestCase
             ->putJson("/api/v1/customers/{$customer->id}", [
                 'full_name' => 'Jane Doe',
                 'id_type' => 'MyKad',
-                'id_number' => '123456789012',
+                'id_number' => '900123-01-2345',
                 'date_of_birth' => '1990-01-01',
                 'nationality' => 'Malaysian',
+                'risk_rating' => 'Low',
             ]);
 
         $response->assertStatus(200);

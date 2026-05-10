@@ -38,7 +38,7 @@ php artisan report:msb2 --date=2026-04-06
 ```
 app/
 ├── Console/Commands/  # 35 Artisan commands
-├── Enums/  # 34 PHP 8.1 enums replacing magic strings
+├── Enums/  # 44 PHP 8.3 enums (10 new in May 2026: CounterStatus, FiscalYearStatus, AccountingPeriodStatus, BranchClosureStatus, TransactionConfirmationStatus, BankReconciliationStatus, SystemAlertLevel, SystemHealthCheckStatus, HighRiskCountryRiskLevel, ReportGeneratedStatus)
 ├── Events/  # 13 Event classes (TransactionCreated, CounterSessionOpened, etc.)
 ├── Exceptions/Domain/  # 43 typed domain exceptions (InsufficientStockException, etc.)
 ├── Http/
@@ -46,11 +46,11 @@ app/
 │   ├── Middleware/  # 21 middleware classes
 │   ├── Requests/  # Form request validation classes
 │   └── Resources/  # API resource transformers
-├── Jobs/  # 9 background jobs
+├── Jobs/  # 23 background jobs (Compliance, Sanctions, Accounting subdirs)
 ├── Jobs/Audit/  # Async jobs (SealAuditHashJob)
-├── Models/  # 60 Eloquent models
+├── Models/  # 62 Eloquent models
 ├── Observers/  # Model observers for event-driven hooks
-└── Services/  # 78 services
+└── Services/  # 83 services
 ```
 
 ### Key Architectural Patterns
@@ -130,12 +130,13 @@ Permissions inherit upward: `Admin` > `ComplianceOfficer` > `Manager` > `Teller`
   - `EnsureMfaVerified` requires re-verification for sensitive operations (15-min session expiry, trusted device bypass)
   - Scope: MFA is enforced on write/approval operations (transaction creation, approvals, admin functions). Non-sensitive read operations (viewing transactions, customers, counters) do not require MFA.
 - IP-based blocking after 10 failed login attempts (5-minute window, 1-hour block duration)
-- Strict rate limiting on sensitive endpoints (login: 5/min, API: 30/min, transactions: 10/min, STR: 3/min, bulk: 1/5min, export: 5/min, sensitive: 3/min)
+- Strict rate limiting on sensitive endpoints (login: disabled for dev convenience, API: 30/min, transactions: 10/min, STR: 3/min, bulk: 1/5min, export: 5/min, sensitive: 3/min)
 - Session timeout (configurable, default 8 hours)
 - Audit log with cryptographic hash chaining (tampering protection)
 - Password complexity requirements (min 12 chars, mixed case, number, special char, max 5 attempts, 15-min lockout)
 - HSTS support (configurable max-age, includeSubDomains, preload)
 - IP whitelist support (exact IPs and CIDR notation)
+- **Route Security**: `/api/rates/history/{currency}` requires `auth` middleware; `/health` has `throttle:60,1`
 
 ### Middleware Stack
 
@@ -254,9 +255,11 @@ Counters (tills) with full lifecycle:
 **CDD Levels** (`CddLevel` enum, per pd-00.md 14C.12):
 
 - `Simplified` - Transaction < RM 3,000
-- `Specific` - RM 3,000 to RM 10,000 (reduced documentation per 14C.12.1)
+- `Specific` - RM 3,000 to RM 9,999
 - `Standard` - ≥ RM 10,000 (full documentation per 14C.12.2)
-- `Enhanced` - Risk-based: PEP, Sanction match, or High risk (per 14C.13)
+- `Enhanced` - Risk-based: PEP, Sanction match, High risk customer, or large transaction ≥ RM 50,000 (per 14C.13)
+
+`CddLevel::determine()` accepts `RiskRating|string` union type internally. Use `RiskRating::High` or the string `'High'` interchangeably.
 
 **CTOS Reporting**: Applies to ALL cash transactions (Buy and Sell) ≥ RM 25,000
 
@@ -324,7 +327,7 @@ Tailwind v4 with CSS-based `@theme` configuration — single source of truth for
 - `tailwind.config.js` deleted — no dual color sources
 - Views use pure Tailwind utilities (no `.card`, `.btn`, `.form-*` component classes)
 - Nav classes in `app.css` use CSS variables (`var(--sidebar-*)`)
-- Livewire installed but not yet in active use
+- Livewire is NOT installed — sidebar and other UI components use Blade templates
 
 **Class mapping reference:**
 

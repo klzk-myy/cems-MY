@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\BankReconciliationStatus;
+use App\Enums\CheckStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,6 +37,8 @@ class BankReconciliation extends Model
         'credit' => 'decimal:2',
         'matched_at' => 'datetime',
         'check_date' => 'date',
+        'status' => BankReconciliationStatus::class,
+        'check_status' => CheckStatus::class,
     ];
 
     public function account(): BelongsTo
@@ -54,12 +58,12 @@ class BankReconciliation extends Model
 
     public function scopeUnmatched($query)
     {
-        return $query->where('status', 'unmatched');
+        return $query->where('status', BankReconciliationStatus::Unmatched->value);
     }
 
     public function scopeExceptions($query)
     {
-        return $query->where('status', 'exception');
+        return $query->where('status', BankReconciliationStatus::Exception->value);
     }
 
     public function getAmount(): float
@@ -74,7 +78,7 @@ class BankReconciliation extends Model
     {
         return $this->check_number !== null
             && $this->check_status !== null
-            && in_array($this->check_status, ['issued', 'presented']);
+            && in_array($this->check_status, [CheckStatus::Issued, CheckStatus::Presented]);
     }
 
     /**
@@ -82,7 +86,7 @@ class BankReconciliation extends Model
      */
     public function isClearedCheck(): bool
     {
-        return $this->check_status === 'cleared';
+        return $this->check_status === CheckStatus::Cleared;
     }
 
     /**
@@ -91,7 +95,7 @@ class BankReconciliation extends Model
     public function scopeOutstandingChecks($query)
     {
         return $query->whereNotNull('check_number')
-            ->whereIn('check_status', ['issued', 'presented']);
+            ->whereIn('check_status', [CheckStatus::Issued->value, CheckStatus::Presented->value]);
     }
 
     /**
@@ -99,7 +103,7 @@ class BankReconciliation extends Model
      */
     public function scopeClearedChecks($query)
     {
-        return $query->where('check_status', 'cleared');
+        return $query->where('check_status', CheckStatus::Cleared->value);
     }
 
     /**
@@ -107,7 +111,7 @@ class BankReconciliation extends Model
      */
     public function markPresented(): void
     {
-        $this->update(['check_status' => 'presented']);
+        $this->update(['check_status' => CheckStatus::Presented->value]);
     }
 
     /**
@@ -115,7 +119,7 @@ class BankReconciliation extends Model
      */
     public function markCleared(): void
     {
-        $this->update(['check_status' => 'cleared']);
+        $this->update(['check_status' => CheckStatus::Cleared->value]);
     }
 
     /**
@@ -124,7 +128,7 @@ class BankReconciliation extends Model
     public function markReturned(?string $reason = null): void
     {
         $this->update([
-            'check_status' => 'returned',
+            'check_status' => CheckStatus::Returned->value,
             'notes' => $this->notes ? $this->notes.'; '.$reason : $reason,
         ]);
     }
@@ -135,7 +139,7 @@ class BankReconciliation extends Model
     public function markStopped(?string $reason = null): void
     {
         $this->update([
-            'check_status' => 'stopped',
+            'check_status' => CheckStatus::Stopped->value,
             'notes' => $this->notes ? $this->notes.'; '.$reason : $reason,
         ]);
     }

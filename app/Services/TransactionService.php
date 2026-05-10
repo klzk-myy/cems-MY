@@ -800,6 +800,23 @@ class TransactionService implements TransactionServiceInterface
                     (string) $lockedTransaction->amount_foreign
                 );
 
+                // Update teller allocation if this was a teller transaction
+                $user = User::find($lockedTransaction->user_id);
+                if ($user && $user->role === UserRole::Teller) {
+                    $allocationForUpdate = $this->tellerAllocationService->getActiveAllocation(
+                        $user,
+                        $lockedTransaction->currency_code
+                    );
+                    if ($allocationForUpdate) {
+                        if ($lockedTransaction->type->isBuy()) {
+                            $allocationForUpdate->add((string) $lockedTransaction->amount_foreign);
+                        } else {
+                            $allocationForUpdate->deduct((string) $lockedTransaction->amount_foreign);
+                        }
+                        $allocationForUpdate->addDailyUsed((string) $lockedTransaction->amount_local);
+                    }
+                }
+
                 // Create double-entry accounting journal entries
                 // For Enhanced CDD transactions, use deferred entry creation (approval triggers it)
                 if ($lockedTransaction->cdd_level === CddLevel::Enhanced) {

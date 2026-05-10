@@ -10,6 +10,8 @@ class ScreeningResult extends Model
 {
     use HasFactory;
 
+    protected $with = ['customer', 'transaction', 'sanctionEntry'];
+
     protected $fillable = [
         'customer_id',
         'transaction_id',

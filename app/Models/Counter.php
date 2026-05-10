@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CounterSessionStatus;
+use App\Enums\CounterStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,7 +21,7 @@ class Counter extends Model
     ];
 
     protected $casts = [
-        'status' => 'string',
+        'status' => CounterStatus::class,
     ];
 
     /**
@@ -39,7 +40,7 @@ class Counter extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', CounterStatus::Active->value);
     }
 
     public function sessions()

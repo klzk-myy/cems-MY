@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TransactionConfirmationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,7 @@ class TransactionConfirmation extends Model
     protected $casts = [
         'confirmed_at' => 'datetime',
         'expires_at' => 'datetime',
+        'status' => TransactionConfirmationStatus::class,
     ];
 
     /**
@@ -63,7 +65,7 @@ class TransactionConfirmation extends Model
      */
     public function isPending(): bool
     {
-        return $this->status === 'pending' && ! $this->isExpired();
+        return $this->status === TransactionConfirmationStatus::Pending && ! $this->isExpired();
     }
 
     /**
@@ -72,7 +74,7 @@ class TransactionConfirmation extends Model
     public function markConfirmed(int $userId, ?string $notes = null): void
     {
         $this->update([
-            'status' => 'confirmed',
+            'status' => TransactionConfirmationStatus::Confirmed->value,
             'confirmed_by' => $userId,
             'confirmed_at' => now(),
             'notes' => $notes,
@@ -85,7 +87,7 @@ class TransactionConfirmation extends Model
     public function markRejected(int $userId, ?string $reason = null): void
     {
         $this->update([
-            'status' => 'rejected',
+            'status' => TransactionConfirmationStatus::Rejected->value,
             'confirmed_by' => $userId,
             'confirmed_at' => now(),
             'notes' => $reason,
@@ -97,7 +99,7 @@ class TransactionConfirmation extends Model
      */
     public function markExpired(): void
     {
-        $this->update(['status' => 'expired']);
+        $this->update(['status' => TransactionConfirmationStatus::Expired->value]);
     }
 
     /**
@@ -105,7 +107,7 @@ class TransactionConfirmation extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', 'pending')
+        return $query->where('status', TransactionConfirmationStatus::Pending->value)
             ->where(function ($q) {
                 $q->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());

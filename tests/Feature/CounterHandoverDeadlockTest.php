@@ -193,7 +193,7 @@ class CounterHandoverDeadlockTest extends TestCase
 
         // Verify the session was properly handed over
         $session->refresh();
-        $this->assertEquals(CounterSessionStatus::HandedOver, $session->status);
+        $this->assertEquals(CounterSessionStatus::PendingHandover, $session->status);
     }
 
     /**
@@ -344,6 +344,6 @@ class CounterHandoverDeadlockTest extends TestCase
 
         // Verify the session was properly handed over
         $session->refresh();
-        $this->assertEquals(CounterSessionStatus::HandedOver, $session->status);
+        $this->assertEquals(CounterSessionStatus::PendingHandover, $session->status);
     }
 }

@@ -35,7 +35,7 @@ class FaultAnalysisTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->eddService = new EddService(new MathService);
+        $this->eddService = new EddService(new MathService, new ComplianceService(new EncryptionService, new MathService));
     }
 
     /**

@@ -11,6 +11,8 @@ class StrReport extends Model
 {
     use HasFactory;
 
+    protected $with = ['customer'];
+
     protected $fillable = [
         'str_no',
         'branch_id',

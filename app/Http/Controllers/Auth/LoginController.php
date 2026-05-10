@@ -3,14 +3,18 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\SystemLog;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
 {
+    public function __construct(
+        protected AuditService $auditService
+    ) {}
+
     public function showLoginForm()
     {
         return view('auth.login');
@@ -36,24 +40,20 @@ class LoginController extends Controller
             $user->update(['last_login_at' => now()]);
 
             // Log successful login
-            SystemLog::create([
+            $this->auditService->logWithSeverity('login', [
                 'user_id' => $user->id,
-                'action' => 'login',
-                'description' => 'User logged in successfully',
-                'ip_address' => $request->ip(),
-            ]);
+                'new_values' => ['message' => 'User logged in successfully'],
+            ], 'INFO');
 
             return redirect()->intended('/dashboard');
         }
 
         // Log failed login attempt
         if ($user) {
-            SystemLog::create([
+            $this->auditService->logWithSeverity('login_failed', [
                 'user_id' => $user->id,
-                'action' => 'login_failed',
-                'description' => 'Failed login attempt',
-                'ip_address' => $request->ip(),
-            ]);
+                'new_values' => ['message' => 'Failed login attempt'],
+            ], 'WARNING');
         }
 
         return back()->withErrors([

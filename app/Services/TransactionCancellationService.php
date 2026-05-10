@@ -47,6 +47,7 @@ class TransactionCancellationService
         protected AccountingService $accountingService,
         protected CurrencyPositionService $positionService,
         protected ComplianceService $complianceService,
+        protected TellerAllocationService $tellerAllocationService,
     ) {}
 
     /**
@@ -206,6 +207,36 @@ class TransactionCancellationService
                 ->where('status', StockReservationStatus::Pending)
                 ->exists();
 
+            // If the transaction was Completed before cancellation, reverse its financial impacts
+            if ($previousStatus->isCompleted()) {
+                // Reverse positions
+                $this->positionService->reversePositions($transaction);
+
+                // Reverse till balance
+                $this->reverseTillBalance($transaction);
+
+                // Reverse teller allocation if applicable
+                $user = User::find($transaction->user_id);
+                if ($user && $user->role === UserRole::Teller) {
+                    $allocation = $this->tellerAllocationService->getActiveAllocation(
+                        $user,
+                        $transaction->currency_code
+                    );
+                    if ($allocation) {
+                        if ($transaction->type->isBuy()) {
+                            $allocation->deduct((string) $transaction->amount_foreign);
+                            $allocation->subtractDailyUsed((string) $transaction->amount_local);
+                        } else {
+                            $allocation->add((string) $transaction->amount_foreign);
+                            $allocation->subtractDailyUsed((string) $transaction->amount_local);
+                        }
+                    }
+                }
+
+                // Create reversing journal entries
+                $this->createReversingJournalEntries($transaction, $approver->id);
+            }
+
             $result = $stateMachine->transitionTo(TransactionStatus::Cancelled, [
                 'reason' => $reason ?? 'Cancellation approved',
                 'user_id' => $approver->id,
@@ -295,7 +326,42 @@ class TransactionCancellationService
                     'transaction_id' => $transaction->id,
                 ]);
 
-                return false;
+                // Fall back to Completed if transition history is missing or corrupted.
+                $targetStatus = TransactionStatus::Completed;
+            }
+
+            // Prevent no-op self-transition (e.g. Processing → Processing is invalid)
+            if ($targetStatus === $transaction->status) {
+                Log::warning('Reject cancellation target status is same as current', [
+                    'transaction_id' => $transaction->id,
+                    'current_status' => $transaction->status->value,
+                ]);
+
+                // Fall back: find the first entry in history whose 'to' is NOT the current status,
+                // appearing after the PendingCancellation entry (walk forward through history)
+                $history = $transaction->transition_history ?? [];
+                $foundPendingCancellation = false;
+                $fallbackStatus = null;
+                foreach ($history as $entry) {
+                    if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
+                        $foundPendingCancellation = true;
+
+                        continue;
+                    }
+                    if ($foundPendingCancellation) {
+                        try {
+                            $candidate = TransactionStatus::from($entry['from']);
+                            // Only accept if it's not the same as current (skip self-transition)
+                            if ($candidate !== $transaction->status) {
+                                $fallbackStatus = $candidate;
+                                break;
+                            }
+                        } catch (\ValueError $e) {
+                            continue;
+                        }
+                    }
+                }
+                $targetStatus = $fallbackStatus ?? TransactionStatus::Completed;
             }
 
             // Reject the cancellation by restoring the transaction to its previous status
@@ -409,6 +475,24 @@ class TransactionCancellationService
 
             // Create reversing journal entries
             $this->createReversingJournalEntries($transaction, $requester->id);
+
+            // Reverse teller allocation if applicable
+            $user = User::find($transaction->user_id);
+            if ($user && $user->role === UserRole::Teller) {
+                $allocation = $this->tellerAllocationService->getActiveAllocation(
+                    $user,
+                    $transaction->currency_code
+                );
+                if ($allocation) {
+                    if ($transaction->type->isBuy()) {
+                        $allocation->deduct((string) $transaction->amount_foreign);
+                        $allocation->subtractDailyUsed((string) $transaction->amount_local);
+                    } else {
+                        $allocation->add((string) $transaction->amount_foreign);
+                        $allocation->subtractDailyUsed((string) $transaction->amount_local);
+                    }
+                }
+            }
 
             // Transition to reversed status
             $stateMachine = new TransactionStateMachine($transaction);

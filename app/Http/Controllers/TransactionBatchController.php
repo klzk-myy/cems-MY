@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TransactionImportStatus;
 use App\Models\TransactionImport;
 use App\Services\AccountingService;
 use App\Services\ComplianceService;
@@ -22,6 +23,7 @@ class TransactionBatchController extends Controller
         protected AccountingService $accountingService,
         protected TransactionMonitoringService $monitoringService,
         protected DocumentStorageService $documentStorageService,
+        protected TransactionImportService $importService,
         protected LoggerInterface $logger
     ) {}
 
@@ -79,7 +81,7 @@ class TransactionBatchController extends Controller
             'filename' => $path,
             'original_filename' => $file->getClientOriginalName(),
             'total_rows' => $rowCount,
-            'status' => 'pending',
+            'status' => TransactionImportStatus::Pending->value,
         ]);
 
         try {

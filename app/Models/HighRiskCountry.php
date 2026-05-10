@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\HighRiskCountryRiskLevel;
 use Illuminate\Database\Eloquent\Model;
 
 class HighRiskCountry extends Model
@@ -22,5 +23,6 @@ class HighRiskCountry extends Model
 
     protected $casts = [
         'list_date' => 'date',
+        'risk_level' => HighRiskCountryRiskLevel::class,
     ];
 }

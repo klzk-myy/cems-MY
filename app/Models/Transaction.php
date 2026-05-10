@@ -49,6 +49,8 @@ class Transaction extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $with = ['customer', 'user', 'branch'];
+
     /**
      * The attributes that are mass assignable.
      *

@@ -10,6 +10,8 @@ class EmergencyClosure extends Model
 {
     use HasFactory;
 
+    protected $with = ['teller', 'acknowledgedBy'];
+
     protected $fillable = [
         'counter_id',
         'session_id',

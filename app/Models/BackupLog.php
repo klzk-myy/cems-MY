@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BackupStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,6 +44,7 @@ class BackupLog extends Model
         'completed_at' => 'datetime',
         'verified_at' => 'datetime',
         'metadata' => 'array',
+        'status' => BackupStatus::class,
     ];
 
     protected $dates = [
@@ -52,7 +54,7 @@ class BackupLog extends Model
     ];
 
     /**
-     * Backup status constants
+     * Backup status constants (deprecated — use BackupStatus enum)
      */
     public const STATUS_PENDING = 'pending';
 
@@ -104,7 +106,7 @@ class BackupLog extends Model
      */
     public function scopeCompleted($query)
     {
-        return $query->where('status', self::STATUS_COMPLETED);
+        return $query->where('status', BackupStatus::Completed->value);
     }
 
     /**
@@ -112,7 +114,7 @@ class BackupLog extends Model
      */
     public function scopeFailed($query)
     {
-        return $query->where('status', self::STATUS_FAILED);
+        return $query->where('status', BackupStatus::Failed->value);
     }
 
     /**
@@ -178,7 +180,7 @@ class BackupLog extends Model
     public function markAsCompleted(string $filePath, int $fileSize, ?string $checksum = null): self
     {
         $this->update([
-            'status' => self::STATUS_COMPLETED,
+            'status' => BackupStatus::Completed,
             'file_path' => $filePath,
             'file_size' => $fileSize,
             'checksum' => $checksum,
@@ -194,7 +196,7 @@ class BackupLog extends Model
     public function markAsFailed(string $errorMessage): self
     {
         $this->update([
-            'status' => self::STATUS_FAILED,
+            'status' => BackupStatus::Failed,
             'error_message' => $errorMessage,
             'completed_at' => now(),
         ]);
@@ -211,7 +213,7 @@ class BackupLog extends Model
             'verification_status' => $success,
             'verified_at' => now(),
             'verification_error' => $error,
-            'status' => $success ? self::STATUS_VERIFIED : self::STATUS_VERIFICATION_FAILED,
+            'status' => $success ? BackupStatus::Verified : BackupStatus::VerificationFailed,
         ]);
 
         return $this;
@@ -222,7 +224,7 @@ class BackupLog extends Model
      */
     public function isSuccessful(): bool
     {
-        return in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_VERIFIED], true);
+        return $this->status->isSuccessful();
     }
 
     /**
@@ -230,7 +232,7 @@ class BackupLog extends Model
      */
     public function isVerified(): bool
     {
-        return $this->verification_status === true && $this->status === self::STATUS_VERIFIED;
+        return $this->verification_status === true && $this->status === BackupStatus::Verified;
     }
 
     /**

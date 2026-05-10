@@ -13,6 +13,8 @@ class StockTransfer extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $with = ['items'];
+
     protected $fillable = [
         'transfer_number',
         'type',
@@ -98,6 +100,36 @@ class StockTransfer extends Model
     public function isCompleted(): bool
     {
         return $this->status === StockTransferStatus::Completed;
+    }
+
+    public function canApproveBranchManager(): bool
+    {
+        return $this->status === StockTransferStatus::Requested;
+    }
+
+    public function canApproveHq(): bool
+    {
+        return $this->status === StockTransferStatus::BranchManagerApproved;
+    }
+
+    public function canDispatch(): bool
+    {
+        return $this->status === StockTransferStatus::HqApproved;
+    }
+
+    public function canReceive(): bool
+    {
+        return $this->status === StockTransferStatus::InTransit;
+    }
+
+    public function canComplete(): bool
+    {
+        return in_array($this->status, [StockTransferStatus::InTransit, StockTransferStatus::PartiallyReceived]);
+    }
+
+    public function canCancel(): bool
+    {
+        return ! $this->isCompleted() && $this->status !== StockTransferStatus::Cancelled;
     }
 
     public function approveByBranchManager(User $user): void

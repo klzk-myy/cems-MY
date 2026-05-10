@@ -62,6 +62,11 @@ class TillBalance extends Model
         return $this->belongsTo(User::class, 'closed_by');
     }
 
+    public function counter(): BelongsTo
+    {
+        return $this->belongsTo(Counter::class, 'till_id');
+    }
+
     /**
      * Calculate the expected balance (opening + transaction activity)
      * For foreign currency: expected = opening_balance + buy_total_foreign - sell_total_foreign

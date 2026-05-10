@@ -4,65 +4,24 @@ namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Services\CustomerScreeningService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ScreeningController extends Controller
 {
-    protected string $apiBase = '/api/v1/screening';
+    public function __construct(
+        protected CustomerScreeningService $screeningService,
+    ) {}
 
     public function show(int $customerId)
     {
         $customer = Customer::findOrFail($customerId);
 
-        try {
-            $statusResponse = Http::withToken(session('api_token'))
-                ->timeout(10)
-                ->get(config('app.url').$this->apiBase.'/customer/'.$customerId.'/status');
+        $status = $this->screeningService->getStatus($customer);
 
-            if ($statusResponse->successful()) {
-                $status = $statusResponse->json()['data'] ?? [];
-            } else {
-                $status = [];
-                Log::warning('ScreeningController: Failed to fetch status', [
-                    'status' => $statusResponse->status(),
-                    'customer_id' => $customerId,
-                    'endpoint' => $this->apiBase.'/customer/'.$customerId.'/status',
-                ]);
-            }
-        } catch (\Exception $e) {
-            $status = [];
-            Log::error('ScreeningController: Exception fetching status', [
-                'message' => $e->getMessage(),
-                'customer_id' => $customerId,
-                'endpoint' => $this->apiBase.'/customer/'.$customerId.'/status',
-            ]);
-        }
-
-        try {
-            $historyResponse = Http::withToken(session('api_token'))
-                ->timeout(10)
-                ->get(config('app.url').$this->apiBase.'/customer/'.$customerId.'/history');
-
-            if ($historyResponse->successful()) {
-                $history = $historyResponse->json()['data'] ?? [];
-            } else {
-                $history = [];
-                Log::warning('ScreeningController: Failed to fetch history', [
-                    'status' => $historyResponse->status(),
-                    'customer_id' => $customerId,
-                    'endpoint' => $this->apiBase.'/customer/'.$customerId.'/history',
-                ]);
-            }
-        } catch (\Exception $e) {
-            $history = [];
-            Log::error('ScreeningController: Exception fetching history', [
-                'message' => $e->getMessage(),
-                'customer_id' => $customerId,
-                'endpoint' => $this->apiBase.'/customer/'.$customerId.'/history',
-            ]);
-        }
+        $history = $this->screeningService->getHistory($customer)
+            ->map(fn ($r) => $r->toArray());
 
         return view('compliance.screening.show', [
             'customer' => $customer,
@@ -76,26 +35,17 @@ class ScreeningController extends Controller
         $customer = Customer::findOrFail($customerId);
 
         try {
-            $response = Http::withToken(session('api_token'))
-                ->timeout(10)
-                ->post(config('app.url').$this->apiBase.'/customer/'.$customerId);
+            $response = $this->screeningService->screenCustomer($customer);
 
-            if ($response->successful()) {
+            if ($response->action === 'clear') {
                 return redirect()->back()->with('success', 'Customer screened successfully');
             }
 
-            Log::warning('ScreeningController: Failed to screen customer', [
-                'status' => $response->status(),
-                'customer_id' => $customerId,
-                'endpoint' => $this->apiBase.'/customer/'.$customerId,
-            ]);
-
-            return redirect()->back()->with('error', $response->json()['message'] ?? 'Failed to screen customer');
+            return redirect()->back()->with('warning', 'Customer screening resulted in: '.$response->action);
         } catch (\Exception $e) {
             Log::error('ScreeningController: Exception screening customer', [
                 'message' => $e->getMessage(),
                 'customer_id' => $customerId,
-                'endpoint' => $this->apiBase.'/customer/'.$customerId,
             ]);
 
             return redirect()->back()->with('error', 'Failed to screen customer');

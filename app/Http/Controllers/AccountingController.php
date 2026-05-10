@@ -266,4 +266,54 @@ class AccountingController extends Controller
         return redirect()->route('accounting.budget')
             ->with('success', 'Budget updated successfully.');
     }
+
+    public function ledger(): View
+    {
+        return view('accounting.reports.ledger');
+    }
+
+    public function ledgerAccount(string $accountCode): View
+    {
+        return view('accounting.reports.ledger-account', compact('accountCode'));
+    }
+
+    public function trialBalance(): View
+    {
+        return view('accounting.reports.trial-balance');
+    }
+
+    public function profitLoss(): View
+    {
+        return view('accounting.reports.profit-loss');
+    }
+
+    public function balanceSheet(): View
+    {
+        return view('accounting.reports.balance-sheet');
+    }
+
+    public function cashFlow(): View
+    {
+        return view('accounting.reports.cash-flow');
+    }
+
+    public function ratios(): View
+    {
+        return view('accounting.reports.ratios');
+    }
+
+    public function fiscalYears(): View
+    {
+        return view('accounting.fiscal-years');
+    }
+
+    public function revaluation(): View
+    {
+        return view('accounting.revaluation');
+    }
+
+    public function revaluationHistory(): View
+    {
+        return view('accounting.revaluation-history');
+    }
 }

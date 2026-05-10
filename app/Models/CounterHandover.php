@@ -9,6 +9,8 @@ class CounterHandover extends Model
 {
     use HasFactory;
 
+    protected $with = ['fromUser', 'toUser', 'supervisor'];
+
     protected $fillable = [
         'counter_session_id',
         'from_user_id',

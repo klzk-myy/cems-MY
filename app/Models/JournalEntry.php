@@ -52,6 +52,8 @@ class JournalEntry extends Model
 {
     use HasFactory;
 
+    protected $with = ['lines', 'creator', 'approver'];
+
     protected $fillable = [
         'period_id',
         'entry_date',
@@ -189,7 +191,7 @@ class JournalEntry extends Model
      */
     public function getTotalDebits(): string
     {
-        $mathService = new MathService;
+        $mathService = app(MathService::class);
         $total = '0';
 
         // Use $this->lines which respects eager loading - no new query if already loaded
@@ -205,7 +207,7 @@ class JournalEntry extends Model
      */
     public function getTotalCredits(): string
     {
-        $mathService = new MathService;
+        $mathService = app(MathService::class);
         $total = '0';
 
         // Use $this->lines which respects eager loading - no new query if already loaded
@@ -221,7 +223,7 @@ class JournalEntry extends Model
      */
     public function isBalanced(): bool
     {
-        $mathService = new MathService;
+        $mathService = app(MathService::class);
 
         return $mathService->compare($this->getTotalDebits(), $this->getTotalCredits()) === 0;
     }

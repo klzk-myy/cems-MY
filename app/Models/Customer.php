@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CddLevel;
+use App\Enums\RiskRating;
 use App\Services\CustomerService;
 use App\Services\EncryptionService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -45,6 +46,8 @@ use Illuminate\Support\Carbon;
 class Customer extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $with = ['documents', 'latestRiskSnapshot'];
 
     /**
      * The attributes that are mass assignable.
@@ -91,6 +94,7 @@ class Customer extends Model
         'risk_assessed_at' => 'datetime',
         'last_transaction_at' => 'datetime',
         'cdd_level' => CddLevel::class,
+        'risk_rating' => RiskRating::class,
     ];
 
     /**
@@ -149,7 +153,14 @@ class Customer extends Model
      */
     public function getRiskLevelAttribute(): string
     {
-        return $this->latestRiskSnapshot?->overall_rating_label ?? $this->risk_rating ?? 'Unknown';
+        $snapshotRating = $this->latestRiskSnapshot?->overall_rating_label;
+        if ($snapshotRating) {
+            return $snapshotRating;
+        }
+
+        return $this->risk_rating instanceof RiskRating
+            ? $this->risk_rating->label()
+            : ($this->risk_rating ?? 'Unknown');
     }
 
     /**

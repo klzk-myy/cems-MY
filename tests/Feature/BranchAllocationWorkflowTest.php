@@ -223,7 +223,7 @@ class BranchAllocationWorkflowTest extends TestCase
 
         $this->assertArrayHasKey('handover', $result);
         $this->assertArrayHasKey('new_session', $result);
-        $this->assertEquals(CounterSessionStatus::HandedOver, $session->fresh()->status);
+        $this->assertEquals(CounterSessionStatus::PendingHandover, $session->fresh()->status);
         $this->assertEquals($this->tellerB->id, $result['new_session']->user_id);
 
         $allocation->refresh();

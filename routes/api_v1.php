@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Compliance\DashboardController;
 use App\Http\Controllers\Api\V1\Compliance\EddController;
 use App\Http\Controllers\Api\V1\Compliance\FindingController;
 use App\Http\Controllers\Api\V1\Compliance\RiskController;
+use App\Http\Controllers\Api\V1\CounterApiController;
 use App\Http\Controllers\Api\V1\CounterHandoverController;
 use App\Http\Controllers\Api\V1\CounterOpeningController;
 use App\Http\Controllers\Api\V1\CustomerController;
@@ -150,14 +151,20 @@ Route::middleware('auth:sanctum')->group(function () {
         // Cases API
         Route::get('/cases', [CaseController::class, 'index'])
             ->middleware('role:compliance');
-        Route::post('/cases', [CaseController::class, 'store']);
+        Route::post('/cases', [CaseController::class, 'store'])
+            ->middleware('role:compliance');
         Route::get('/cases/{id}', [CaseController::class, 'show'])
             ->middleware('role:compliance');
-        Route::patch('/cases/{id}', [CaseController::class, 'update']);
-        Route::post('/cases/{id}/notes', [CaseController::class, 'addNote']);
-        Route::post('/cases/{id}/close', [CaseController::class, 'close']);
-        Route::post('/cases/{id}/escalate', [CaseController::class, 'escalate']);
-        Route::get('/cases/{id}/timeline', [CaseController::class, 'timeline']);
+        Route::patch('/cases/{id}', [CaseController::class, 'update'])
+            ->middleware('role:compliance');
+        Route::post('/cases/{id}/notes', [CaseController::class, 'addNote'])
+            ->middleware('role:compliance');
+        Route::post('/cases/{id}/close', [CaseController::class, 'close'])
+            ->middleware('role:compliance');
+        Route::post('/cases/{id}/escalate', [CaseController::class, 'escalate'])
+            ->middleware('role:compliance');
+        Route::get('/cases/{id}/timeline', [CaseController::class, 'timeline'])
+            ->middleware('role:compliance');
 
         // EDD API - Compliance Officer for management
         Route::get('/edd', [EddController::class, 'index'])
@@ -304,7 +311,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Emergency Counter Close
         Route::post('/{counterId}/emergency-close', [EmergencyCounterController::class, 'initiateClose'])
-            ->middleware(['role:manager,admin', 'mfa.verified'])
+            ->middleware(['role:teller,manager,admin', 'mfa.verified'])
             ->name('api.v1.counters.emergency-close');
         Route::get('/{counterId}/emergency/{closureId}/variance', [EmergencyCounterController::class, 'getVariance'])
             ->middleware(['role:manager,admin', 'mfa.verified'])

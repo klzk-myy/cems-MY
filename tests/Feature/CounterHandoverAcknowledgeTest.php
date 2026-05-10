@@ -101,12 +101,12 @@ class CounterHandoverAcknowledgeTest extends TestCase
     }
 
     /** @test */
-    public function incoming_teller_can_acknowledge_handover(): void
+    public function manager_can_acknowledge_handover(): void
     {
         $result = $this->createPendingHandover();
         $handover = $result['handover'];
 
-        $response = $this->actingAs($this->teller2, 'sanctum')
+        $response = $this->actingAs($this->manager, 'sanctum')
             ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
                 'verified' => true,
                 'notes' => 'Count verified and correct',
@@ -147,7 +147,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
 
         $result['session']->update(['status' => CounterSessionStatus::HandedOver]);
 
-        $response = $this->actingAs($this->teller2, 'sanctum')
+        $response = $this->actingAs($this->manager, 'sanctum')
             ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
                 'verified' => true,
             ]);
@@ -156,12 +156,29 @@ class CounterHandoverAcknowledgeTest extends TestCase
     }
 
     /** @test */
-    public function web_route_teller_can_acknowledge_handover(): void
+    public function web_route_manager_can_acknowledge_handover(): void
     {
-        $result = $this->createPendingHandover();
-        $handover = $result['handover'];
+        // Create handover where to_user_id is the manager
+        $session = CounterSession::factory()->create([
+            'counter_id' => $this->counter->id,
+            'user_id' => $this->teller1->id,
+            'session_date' => now()->toDateString(),
+            'opened_at' => now()->subMinutes(45),
+            'opened_by' => $this->teller1->id,
+            'status' => CounterSessionStatus::PendingHandover,
+        ]);
 
-        $response = $this->actingAs($this->teller2)
+        $handover = CounterHandover::factory()->create([
+            'counter_session_id' => $session->id,
+            'from_user_id' => $this->teller1->id,
+            'to_user_id' => $this->manager->id,
+            'supervisor_id' => $this->manager->id,
+            'handover_time' => now(),
+            'physical_count_verified' => true,
+            'variance_myr' => '0.00',
+        ]);
+
+        $response = $this->actingAs($this->manager)
             ->post("/counters/{$this->counter->code}/handover/acknowledge", [
                 'verified' => true,
                 'notes' => 'Verified via web',
@@ -176,15 +193,28 @@ class CounterHandoverAcknowledgeTest extends TestCase
     /** @test */
     public function web_route_show_acknowledge_form(): void
     {
-        $result = $this->createPendingHandover();
+        // Create handover where to_user_id is the manager
+        $session = CounterSession::factory()->create([
+            'counter_id' => $this->counter->id,
+            'user_id' => $this->teller1->id,
+            'session_date' => now()->toDateString(),
+            'opened_at' => now()->subMinutes(45),
+            'opened_by' => $this->teller1->id,
+            'status' => CounterSessionStatus::PendingHandover,
+        ]);
 
-        $response = $this->actingAs($this->teller2)
+        $handover = CounterHandover::factory()->create([
+            'counter_session_id' => $session->id,
+            'from_user_id' => $this->teller1->id,
+            'to_user_id' => $this->manager->id,
+            'supervisor_id' => $this->manager->id,
+            'handover_time' => now(),
+            'physical_count_verified' => true,
+            'variance_myr' => '0.00',
+        ]);
+
+        $response = $this->actingAs($this->manager)
             ->get("/counters/{$this->counter->code}/handover/acknowledge");
-
-        if ($response->status() === 500) {
-            $content = $response->getContent();
-            echo "\n500 Response: ".substr($content, 0, 500)."\n";
-        }
 
         $response->assertStatus(200);
     }
@@ -195,12 +225,12 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $result = $this->createPendingHandover();
         $handover = $result['handover'];
 
-        $this->actingAs($this->teller2, 'sanctum')
+        $this->actingAs($this->manager, 'sanctum')
             ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
                 'verified' => true,
             ]);
 
-        $response = $this->actingAs($this->teller2, 'sanctum')
+        $response = $this->actingAs($this->manager, 'sanctum')
             ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
                 'verified' => true,
             ]);

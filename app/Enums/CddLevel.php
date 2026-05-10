@@ -25,16 +25,21 @@ enum CddLevel: string
      * @param  string  $amount  Transaction amount in MYR
      * @param  bool  $isPep  Whether customer is a Politically Exposed Person
      * @param  bool  $hasSanctionMatch  Whether customer matches sanctions list
-     * @param  string  $riskRating  Customer risk rating ('Low', 'Medium', 'High')
+     * @param  RiskRating|string  $riskRating  Customer risk rating
      */
     public static function determine(
         string $amount,
         bool $isPep = false,
         bool $hasSanctionMatch = false,
-        string $riskRating = 'Low'
+        RiskRating|string $riskRating = 'Low'
     ): self {
+        // Handle enum or string
+        $riskRatingValue = $riskRating instanceof RiskRating
+            ? $riskRating->value
+            : $riskRating;
+
         // Enhanced Due Diligence triggers (risk-based, not amount-based per pd-00.md 14C.13)
-        if ($isPep || $hasSanctionMatch || $riskRating === 'High') {
+        if ($isPep || $hasSanctionMatch || $riskRatingValue === 'High') {
             return self::Enhanced;
         }
 

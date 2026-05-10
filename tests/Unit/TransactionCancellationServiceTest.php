@@ -25,6 +25,7 @@ class TransactionCancellationServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->createTestBranch();
         $this->cancellationService = app(TransactionCancellationService::class);
     }
 
@@ -32,10 +33,12 @@ class TransactionCancellationServiceTest extends TestCase
     {
         $currencyCode = 'USD';
         $tillId = 'TEST-TILL-'.uniqid();
+        $branch = $this->createTestBranch();
 
         // Create initial position: 5000 USD
         CurrencyPosition::factory()->create([
             'currency_code' => $currencyCode,
+            'branch_id' => $branch->id,
             'till_id' => $tillId,
             'balance' => '5000.00',
             'avg_cost_rate' => '4.50',
@@ -82,10 +85,12 @@ class TransactionCancellationServiceTest extends TestCase
     {
         $currencyCode = 'USD';
         $tillId = 'TEST-TILL-'.uniqid();
+        $branch = $this->createTestBranch();
 
         // Create initial position
         CurrencyPosition::factory()->create([
             'currency_code' => $currencyCode,
+            'branch_id' => $branch->id,
             'till_id' => $tillId,
             'balance' => '3000.00',
             'avg_cost_rate' => '4.50',
@@ -217,42 +222,31 @@ class TransactionCancellationServiceTest extends TestCase
         $this->assertEquals(TransactionStatus::Reversed, $transaction->status);
     }
 
-    public function test_cancellation_rejection_uses_valid_state_transition(): void
+    public function test_cancellation_rejection_restores_previous_status(): void
     {
         // Create a manager who will request cancellation
         $manager = User::factory()->create(['role' => UserRole::Manager]);
 
-        // Create a processing transaction (PendingCancellation can reject back to Completed)
-        // Use factory to ensure all FK constraints are satisfied, then set status and history
+        // Create a completed transaction
         $transaction = Transaction::factory()->create([
             'user_id' => $manager->id,
             'type' => TransactionType::Sell,
             'currency_code' => 'USD',
             'amount_foreign' => '500.00',
             'rate' => '4.50',
-            'status' => TransactionStatus::Completed, // Factory creates Completed
+            'status' => TransactionStatus::Completed,
             'created_at' => now(),
         ]);
 
-        // Manually set to Processing and add history entry (since factory defaults to Completed)
-        $transaction->status = TransactionStatus::Processing;
-        $transaction->transition_history = [
-            ['from' => 'Approved', 'to' => 'Processing', 'timestamp' => now()->toIso8601String()],
-        ];
-        $transaction->save();
-
-        // Request cancellation (goes to PendingCancellation)
+        // Request cancellation (Completed -> PendingCancellation)
         $result = $this->cancellationService->requestCancellation($transaction, $manager, 'Test cancellation request');
         $this->assertTrue($result);
-
-        // Transaction should now be in PendingCancellation status
         $this->assertEquals(TransactionStatus::PendingCancellation, $transaction->status);
 
         // Create another manager to reject the cancellation (segregation of duties)
         $manager2 = User::factory()->create(['role' => UserRole::Manager]);
 
-        // Reject the cancellation - should use normal state transition to Completed
-        // (restoring the previous status before cancellation was requested)
+        // Reject the cancellation - should restore to Completed
         $result = $this->cancellationService->rejectCancellation($transaction, $manager2, 'Rejection reason');
 
         $this->assertTrue($result);
@@ -262,7 +256,7 @@ class TransactionCancellationServiceTest extends TestCase
         $history = $transaction->transition_history;
         $this->assertNotEmpty($history);
 
-        // Find the rejection transition
+        // Find the rejection transition entry
         $rejectionEntry = null;
         foreach (array_reverse($history) as $entry) {
             if ($entry['to'] === 'Completed' && str_contains($entry['reason'] ?? '', 'Cancellation rejected')) {

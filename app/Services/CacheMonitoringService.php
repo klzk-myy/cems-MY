@@ -15,10 +15,20 @@ class CacheMonitoringService
     public function getCacheStats(): array
     {
         return [
+            'driver' => $this->getCacheDriver(),
             'hit_rate' => $this->calculateHitRate(),
             'memory_usage' => $this->getMemoryUsage(),
-            'keys_count' => $this->getKeysCount(),
+            'total_keys' => $this->getKeysCount(),
         ];
+    }
+
+    protected function getCacheDriver(): string
+    {
+        try {
+            return config('cache.default', 'unknown');
+        } catch (\Exception $e) {
+            return 'unknown';
+        }
     }
 
     public function calculateHitRate(): float
@@ -51,22 +61,14 @@ class CacheMonitoringService
         Redis::set(self::LAST_RESET_KEY, time());
     }
 
-    protected function getMemoryUsage(): array
+    protected function getMemoryUsage(): string
     {
         try {
             $info = Redis::info('memory');
 
-            return [
-                'used_memory' => $info['used_memory'] ?? 0,
-                'used_memory_peak' => $info['used_memory_peak'] ?? 0,
-                'used_memory_human' => $info['used_memory_human'] ?? '0B',
-            ];
+            return $info['used_memory_human'] ?? '0B';
         } catch (\Exception $e) {
-            return [
-                'used_memory' => 0,
-                'used_memory_peak' => 0,
-                'used_memory_human' => '0B',
-            ];
+            return 'N/A';
         }
     }
 

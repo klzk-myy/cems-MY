@@ -14,6 +14,8 @@ class Alert extends Model
 {
     use HasFactory;
 
+    protected $with = ['flaggedTransaction', 'assignedTo', 'case'];
+
     protected $fillable = [
         'flagged_transaction_id',
         'customer_id',

@@ -30,6 +30,8 @@ class TransactionError extends Model
 {
     use HasFactory;
 
+    protected $with = ['transaction', 'resolver'];
+
     protected $fillable = [
         'transaction_id',
         'error_type',

@@ -25,6 +25,8 @@ class ComplianceCase extends Model
 {
     use HasFactory;
 
+    protected $with = ['customer', 'assignee'];
+
     protected $fillable = [
         'case_number',
         'case_type',

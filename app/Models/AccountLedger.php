@@ -33,6 +33,8 @@ class AccountLedger extends Model
 
     protected $table = 'account_ledger';
 
+    protected $with = ['account'];
+
     protected $fillable = [
         'account_code',
         'entry_date',
@@ -76,8 +78,6 @@ class AccountLedger extends Model
      */
     public function getNetAmount(): string
     {
-        $mathService = new MathService;
-
-        return $mathService->subtract((string) $this->debit, (string) $this->credit);
+        return app(MathService::class)->subtract((string) $this->debit, (string) $this->credit);
     }
 }

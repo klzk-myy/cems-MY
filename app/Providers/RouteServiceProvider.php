@@ -55,12 +55,12 @@ class RouteServiceProvider extends ServiceProvider
             });
         });
 
-        // Login rate limit: DISABLED for testing
+        // Login rate limit intentionally disabled — enable via config('security.rate_limits.login.enabled', false)
+        // To re-enable: set MFA_ENABLED=true and uncomment below
         // RateLimiter::for('login', function (Request $request) {
         //     return Limit::perMinute(
         //         config('security.rate_limits.login.attempts', 5)
         //     )->by($request->ip())->response(function () use ($request) {
-        //         // Record failed attempt for IP blocking
         //         app(RateLimitService::class)->recordFailedAttempt($request->ip());
         //         app(RateLimitService::class)->logRateLimitHit($request, 'login');
         //
@@ -170,7 +170,6 @@ class RouteServiceProvider extends ServiceProvider
                 ->middleware(['api', 'auth:sanctum'])
                 ->group(base_path('routes/api_v1.php'));
 
-            // TEMPORARILY DISABLED - Livewire removal in progress
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });

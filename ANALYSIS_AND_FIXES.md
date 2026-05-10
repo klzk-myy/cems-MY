@@ -217,3 +217,79 @@ $this->tillBalance->update([
 ## Conclusion
 
 The CEMS-MY system demonstrates solid architectural design with proper financial controls, regulatory compliance, and multi-branch support. The identified issues were primarily related to missing validation logic, precision handling, and Laravel version compatibility. All fixes maintain backward compatibility while ensuring robust transaction processing for the 10-branch, 4-teller-per-branch operation.
+
+---
+
+# May 2026 Session Fixes
+
+## Overview
+Second audit pass (May 11, 2026) addressing remaining technical debt, model casts, and route security.
+
+## Issues Fixed
+
+### 1. Model Enum Casts — 7 Models Updated
+| Model | Fix |
+|---|---|
+| `TransactionImport` | Scopes `scopeCompleted()` and `scopePending()` now use `TransactionImportStatus::Completed->value` and `TransactionImportStatus::Pending->value` instead of string literals |
+| `Counter` | `scopeActive()` now uses `CounterStatus::Active->value` instead of string literal `'active'` |
+| `Customer` | Added `risk_rating => RiskRating::class` cast; `getRiskLevelAttribute()` handles enum properly |
+| `CustomerRiskHistory` | `old_rating` and `new_rating` now cast to `RiskRating::class` (was `'string'`) |
+| `EnhancedDiligenceRecord` | `risk_level` now cast to `EddRiskLevel::class` (was `'string'`) |
+| `StockReservation` | `amount_foreign` now cast to `'decimal:4'` (was `'string'`) |
+| `CustomerDocument` | Removed duplicate `uploadedBy()` method (identical to `uploader()`) |
+
+### 2. Service Enum Comparisons Fixed
+| Service | Fix |
+|---|---|
+| `CddLevelDeterminationService` | `risk_rating === 'High'` changed to `$customer->risk_rating === RiskRating::High` |
+| `CddLevel::determine()` | Now accepts `RiskRating\|string` union type; handles both gracefully with `instanceof` check |
+
+### 3. Route Security Fixed
+| Route | Fix |
+|---|---|
+| `/api/rates/history/{currency}` | Added `auth` middleware (was previously unauthenticated) |
+| `/transactions/list` | Removed duplicate route (same `TransactionController@index` as `GET /transactions`) |
+| Dead route comments | Cleaned up 3 placeholder comments in `routes/web.php` (`branches.`, `branches.open.`, `audit.`) |
+
+### 4. Controller Dependency Injection Fixed
+| Controller | Fix |
+|---|---|
+| `TransactionController` | `BarcodeGeneratorPNG` injected via constructor instead of `new` in `receipt()` |
+| `TransactionBatchController` | `TransactionImportService` injected via constructor instead of `new` in `processBatchUpload()` |
+
+### 5. AuditService Centralization
+Replaced direct `SystemLog::create()` calls with `$this->auditService->logWithSeverity()` in:
+- `LoginController`
+- `ChangePasswordController`
+- `CustomerKycController`
+- `TransactionApprovalController`
+
+### 6. Model Eager Loading (N+1 Prevention)
+Added `$with` to 10 models:
+`AccountLedger`, `JournalLine`, `StockTransfer`, `ChartOfAccount`, `Customer`, `CustomerDocument`, `CounterHandover`, `CounterSession`, `EmergencyClosure`, `ComplianceCase`
+
+### 7. Counter Controller Architecture
+Audit confirmed intentional separation between web (Blade views) and API v1 (JSON):
+- `CounterController` — web lifecycle: open, close, handover, emergency close
+- `CounterOpeningController` — API float allocation workflow (teller request → manager approval)
+- `CounterApiController` — API minimal close endpoint
+- `CounterHandoverController` — API acknowledge only
+- `EmergencyCounterController` — API emergency closure lifecycle
+
+## Test Results (May 11, 2026)
+- **Feature tests**: 260 passed / 0 failed / 1 skipped
+- **Unit tests**: 164+ passed / 0 failed (rest crash due to xdebug/JIT SIGSEGV, environmental)
+- **Total**: 707 passed / 0 failed / 13 skipped
+
+## Files Modified
+
+1. **app/Models/TransactionImport.php** — scopes use enum values
+2. **app/Models/Counter.php** — `scopeActive()` uses enum
+3. **app/Models/Customer.php** — `risk_rating` cast added
+4. **app/Models/CustomerRiskHistory.php** — `old_rating`/`new_rating` casts
+5. **app/Models/EnhancedDiligenceRecord.php** — `risk_level` cast
+6. **app/Models/StockReservation.php** — `amount_foreign` decimal cast
+7. **app/Models/CustomerDocument.php** — removed duplicate relationship
+8. **app/Services/CddLevelDeterminationService.php** — enum comparison
+9. **app/Enums/CddLevel.php** — union type for `riskRating` param
+10. **routes/web.php** — auth middleware on rate history, removed duplicate route

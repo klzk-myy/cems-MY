@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
-use App\Models\SystemLog;
+use App\Services\AuditService;
 use App\Services\DocumentStorageService;
 use App\Services\EncryptionService;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +23,8 @@ class CustomerKycController extends Controller
 {
     public function __construct(
         protected EncryptionService $encryptionService,
-        protected DocumentStorageService $documentStorageService
+        protected DocumentStorageService $documentStorageService,
+        protected AuditService $auditService
     ) {}
 
     /**
@@ -83,9 +84,8 @@ class CustomerKycController extends Controller
         ]);
 
         // Log document upload
-        SystemLog::create([
+        $this->auditService->logWithSeverity('customer_document_uploaded', [
             'user_id' => auth()->id(),
-            'action' => 'customer_document_uploaded',
             'entity_type' => 'CustomerDocument',
             'entity_id' => $document->id,
             'new_values' => [
@@ -93,8 +93,7 @@ class CustomerKycController extends Controller
                 'document_type' => $document->document_type,
                 'file_size' => $document->file_size,
             ],
-            'ip_address' => $request->ip(),
-        ]);
+        ], 'INFO');
 
         return redirect()->route('customers.kyc', $customer)
             ->with('success', 'Document uploaded successfully.');
@@ -122,10 +121,8 @@ class CustomerKycController extends Controller
         ]);
 
         // Log verification
-        SystemLog::create([
+        $this->auditService->logWithSeverity('customer_document_verified', [
             'user_id' => auth()->id(),
-            'action' => 'customer_document_verified',
-            'severity' => 'INFO',
             'entity_type' => 'CustomerDocument',
             'entity_id' => $document->id,
             'new_values' => [
@@ -133,8 +130,7 @@ class CustomerKycController extends Controller
                 'document_type' => $document->document_type,
                 'verified_by' => auth()->id(),
             ],
-            'ip_address' => $request->ip(),
-        ]);
+        ], 'INFO');
 
         return redirect()->route('customers.kyc', $customer)
             ->with('success', 'Document verified successfully.');
@@ -169,17 +165,15 @@ class CustomerKycController extends Controller
         $document->delete();
 
         // Log document deletion
-        SystemLog::create([
+        $this->auditService->logWithSeverity('customer_document_deleted', [
             'user_id' => auth()->id(),
-            'action' => 'customer_document_deleted',
             'entity_type' => 'CustomerDocument',
             'entity_id' => $document->id,
             'old_values' => [
                 'customer_id' => $customer->id,
                 'document_type' => $documentType,
             ],
-            'ip_address' => $request->ip(),
-        ]);
+        ], 'INFO');
 
         return redirect()->route('customers.kyc', $customer)
             ->with('success', 'Document deleted successfully.');

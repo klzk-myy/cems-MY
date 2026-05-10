@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SystemAlertLevel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,6 +24,7 @@ class SystemAlert extends Model
         'acknowledged_at' => 'datetime',
         'metadata' => 'array',
         'created_at' => 'datetime',
+        'level' => SystemAlertLevel::class,
     ];
 
     /**
@@ -39,7 +41,7 @@ class SystemAlert extends Model
      */
     public function scopeInfo($query)
     {
-        return $query->where('level', self::LEVEL_INFO);
+        return $query->where('level', SystemAlertLevel::Info->value);
     }
 
     /**
@@ -47,7 +49,7 @@ class SystemAlert extends Model
      */
     public function scopeWarning($query)
     {
-        return $query->where('level', self::LEVEL_WARNING);
+        return $query->where('level', SystemAlertLevel::Warning->value);
     }
 
     /**
@@ -55,7 +57,7 @@ class SystemAlert extends Model
      */
     public function scopeCritical($query)
     {
-        return $query->where('level', self::LEVEL_CRITICAL);
+        return $query->where('level', SystemAlertLevel::Critical->value);
     }
 
     /**
@@ -79,19 +81,17 @@ class SystemAlert extends Model
      */
     public function scopeMinLevel($query, string $minLevel)
     {
-        $levels = [
-            self::LEVEL_INFO => 1,
-            self::LEVEL_WARNING => 2,
-            self::LEVEL_CRITICAL => 3,
-        ];
+        $level = SystemAlertLevel::tryFrom($minLevel) ?? SystemAlertLevel::Info;
 
-        $minLevelValue = $levels[$minLevel] ?? 1;
-
-        $allowedLevels = array_filter($levels, function ($level) use ($minLevelValue) {
-            return $level >= $minLevelValue;
+        return $query->where(function ($q) use ($level) {
+            $q->where('level', $level->value);
+            if ($level !== SystemAlertLevel::Critical) {
+                $q->orWhere('level', SystemAlertLevel::Critical->value);
+            }
+            if ($level !== SystemAlertLevel::Warning && $level !== SystemAlertLevel::Critical) {
+                $q->orWhere('level', SystemAlertLevel::Warning->value);
+            }
         });
-
-        return $query->whereIn('level', array_keys($allowedLevels));
     }
 
     /**

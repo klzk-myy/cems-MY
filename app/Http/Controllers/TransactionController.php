@@ -15,6 +15,7 @@ use App\Services\AuditService;
 use App\Services\ComplianceService;
 use App\Services\CurrencyPositionService;
 use App\Services\MathService;
+use App\Services\TransactionCancellationService;
 use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Barryvdh\DomPDF\PDF;
@@ -33,7 +34,9 @@ class TransactionController extends Controller
         protected AccountingService $accountingService,
         protected TransactionService $transactionService,
         protected AuditService $auditService,
-        private PDF $pdf
+        protected TransactionCancellationService $cancellationService,
+        private PDF $pdf,
+        private BarcodeGeneratorPNG $barcodeGenerator
     ) {}
 
     /**
@@ -184,6 +187,41 @@ class TransactionController extends Controller
     }
 
     /**
+     * Display cancellation form for a transaction.
+     *
+     * Only managers and admins can access this form. The transaction must be
+     * completed and within the 24-hour cancellation window.
+     */
+    public function showCancel(Transaction $transaction)
+    {
+        $user = auth()->user();
+
+        if (! $user->role->isManager()) {
+            abort(403, 'Only managers and admins can cancel transactions.');
+        }
+
+        if (! $this->cancellationService->canCancel($transaction)) {
+            return back()->with('error', 'This transaction cannot be cancelled.');
+        }
+
+        if (! $this->cancellationService->isWithinCancellationWindow($transaction)) {
+            return back()->with('error', 'This transaction is outside the cancellation window.');
+        }
+
+        if ($transaction->cancelled_at !== null) {
+            return back()->with('error', 'This transaction has already been cancelled.');
+        }
+
+        if ($transaction->status->isReversed()) {
+            return back()->with('error', 'Reversed transactions cannot be cancelled.');
+        }
+
+        $transaction->load(['customer', 'user', 'approver', 'flags']);
+
+        return view('transactions.cancel', compact('transaction'));
+    }
+
+    /**
      * Generate PDF receipt
      */
     public function receipt(Transaction $transaction)
@@ -198,8 +236,7 @@ class TransactionController extends Controller
         $barcodeImage = null;
         $barcodeText = str_pad($transaction->id, 10, '0', STR_PAD_LEFT);
         try {
-            $barcodeGenerator = new BarcodeGeneratorPNG;
-            $barcodeData = $barcodeGenerator->getBarcode($barcodeText, $barcodeGenerator::TYPE_CODE_128);
+            $barcodeData = $this->barcodeGenerator->getBarcode($barcodeText, $this->barcodeGenerator::TYPE_CODE_128);
             $barcodeImage = 'data:image/png;base64,'.base64_encode($barcodeData);
         } catch (\Exception $e) {
             // Graceful fallback if barcode generation fails

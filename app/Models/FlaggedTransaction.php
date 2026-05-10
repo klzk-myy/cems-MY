@@ -11,6 +11,8 @@ class FlaggedTransaction extends Model
 {
     use HasFactory;
 
+    protected $with = ['transaction', 'customer', 'assignedTo', 'reviewer'];
+
     protected $fillable = [
         'transaction_id',
         'flag_type',

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Models\Alert;
+use App\Models\Compliance\ComplianceFinding;
 use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -322,56 +323,16 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('No items found', false);
     }
 
-    public function test_findings_api_is_called_when_source_is_all(): void
-    {
-        Http::fake([
-            config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
-        ]);
-
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
-
-        $this->get('/compliance/unified?source=all');
-        Http::assertSent(
-            fn ($request) => str_contains($request->url(), '/api/v1/compliance/findings')
-        );
-    }
-
-    public function test_findings_api_is_not_called_when_source_is_alert(): void
-    {
-        Http::fake([
-            config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
-        ]);
-
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
-
-        $this->get('/compliance/unified?source=alert');
-        Http::assertNotSent(
-            fn ($request) => str_contains($request->url(), '/api/v1/compliance/findings')
-        );
-    }
-
     public function test_findings_are_fetched_when_source_is_finding(): void
     {
-        Http::fake([
-            config('app.url').'/api/v1/compliance/findings*' => Http::response([
-                'data' => [
-                    'data' => [
-                        [
-                            'id' => 1,
-                            'severity' => 'High',
-                            'finding_type' => 'Velocity_Exceeded',
-                            'status' => 'New',
-                            'subject_type' => 'Customer',
-                            'subject_id' => 1,
-                            'subject_name' => 'Test Customer',
-                            'generated_at' => now()->toIso8601String(),
-                            'details' => ['summary' => 'Test finding'],
-                        ],
-                    ],
-                ],
-            ], 200),
+        $customer = Customer::factory()->create();
+        $finding = ComplianceFinding::factory()->create([
+            'subject_type' => 'Customer',
+            'subject_id' => $customer->id,
+            'severity' => 'High',
+            'finding_type' => 'Velocity_Exceeded',
+            'status' => 'New',
+            'details' => ['summary' => 'Test finding'],
         ]);
 
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
@@ -386,25 +347,13 @@ class UnifiedComplianceAlertsTest extends TestCase
     {
         $customer = Customer::factory()->create();
         Alert::factory()->create(['customer_id' => $customer->id]);
-
-        Http::fake([
-            config('app.url').'/api/v1/compliance/findings*' => Http::response([
-                'data' => [
-                    'data' => [
-                        [
-                            'id' => 999,
-                            'severity' => 'High',
-                            'finding_type' => 'Velocity_Exceeded',
-                            'status' => 'New',
-                            'subject_type' => 'Customer',
-                            'subject_id' => $customer->id,
-                            'subject_name' => $customer->full_name,
-                            'generated_at' => now()->toIso8601String(),
-                            'details' => ['summary' => 'Test finding'],
-                        ],
-                    ],
-                ],
-            ], 200),
+        ComplianceFinding::factory()->create([
+            'subject_type' => 'Customer',
+            'subject_id' => $customer->id,
+            'severity' => 'High',
+            'finding_type' => 'Velocity_Exceeded',
+            'status' => 'New',
+            'details' => ['summary' => 'Test finding'],
         ]);
 
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
@@ -419,35 +368,24 @@ class UnifiedComplianceAlertsTest extends TestCase
 
     public function test_findings_are_sorted_by_date(): void
     {
-        Http::fake([
-            config('app.url').'/api/v1/compliance/findings*' => Http::response([
-                'data' => [
-                    'data' => [
-                        [
-                            'id' => 1,
-                            'severity' => 'High',
-                            'finding_type' => 'Velocity_Exceeded',
-                            'status' => 'New',
-                            'subject_type' => 'Customer',
-                            'subject_id' => 1,
-                            'subject_name' => 'Test Customer',
-                            'generated_at' => now()->subDay()->toIso8601String(),
-                            'details' => ['summary' => 'Older finding'],
-                        ],
-                        [
-                            'id' => 2,
-                            'severity' => 'Critical',
-                            'finding_type' => 'Sanction_Match',
-                            'status' => 'New',
-                            'subject_type' => 'Customer',
-                            'subject_id' => 1,
-                            'subject_name' => 'Test Customer',
-                            'generated_at' => now()->toIso8601String(),
-                            'details' => ['summary' => 'Newer finding'],
-                        ],
-                    ],
-                ],
-            ], 200),
+        $customer = Customer::factory()->create();
+        ComplianceFinding::factory()->create([
+            'subject_type' => 'Customer',
+            'subject_id' => $customer->id,
+            'severity' => 'High',
+            'finding_type' => 'Velocity_Exceeded',
+            'status' => 'New',
+            'details' => ['summary' => 'Older finding'],
+            'generated_at' => now()->subDay(),
+        ]);
+        ComplianceFinding::factory()->create([
+            'subject_type' => 'Customer',
+            'subject_id' => $customer->id,
+            'severity' => 'Critical',
+            'finding_type' => 'Sanction_Match',
+            'status' => 'New',
+            'details' => ['summary' => 'Newer finding'],
+            'generated_at' => now(),
         ]);
 
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);

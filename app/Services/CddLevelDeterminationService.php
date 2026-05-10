@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CddLevel;
+use App\Enums\RiskRating;
 use App\Models\Customer;
 
 /**
@@ -87,18 +88,16 @@ class CddLevelDeterminationService
         $triggers = [];
 
         // Enhanced Due Diligence triggers (risk-based per pd-00.md 14C.13)
-        // Large transactions also trigger Enhanced CDD per regulatory requirements
+        // Enhanced CDD is based on customer risk factors, not transaction amount.
+        // Transaction amount determines Standard/Specific/Simplified, not Enhanced.
         if ($pepStatus) {
             $triggers[] = 'PEP customer';
         }
         if ($sanctionStatus) {
             $triggers[] = 'Sanctions match';
         }
-        if ($customer->risk_rating === 'High') {
+        if ($customer->risk_rating === RiskRating::High) {
             $triggers[] = 'High risk customer';
-        }
-        if ($this->mathService->compare($amount, $this->thresholdService->getLargeTransactionThreshold()) >= 0) {
-            $triggers[] = 'Large amount >= RM '.$this->thresholdService->getLargeTransactionThreshold();
         }
 
         // Store triggers if Enhanced

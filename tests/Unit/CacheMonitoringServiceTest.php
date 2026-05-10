@@ -16,7 +16,7 @@ class CacheMonitoringServiceTest extends TestCase
         $this->assertIsArray($stats);
         $this->assertArrayHasKey('hit_rate', $stats);
         $this->assertArrayHasKey('memory_usage', $stats);
-        $this->assertArrayHasKey('keys_count', $stats);
+        $this->assertArrayHasKey('total_keys', $stats);
     }
 
     public function test_calculate_hit_rate_returns_float()

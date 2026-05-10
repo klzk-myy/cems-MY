@@ -30,6 +30,8 @@ class JournalLine extends Model
 {
     use HasFactory;
 
+    protected $with = ['account'];
+
     protected $fillable = [
         'journal_entry_id',
         'branch_id',
@@ -81,9 +83,7 @@ class JournalLine extends Model
      */
     public function isDebit(): bool
     {
-        $mathService = new MathService;
-
-        return $mathService->compare((string) $this->debit, '0') > 0;
+        return app(MathService::class)->compare((string) $this->debit, '0') > 0;
     }
 
     /**
@@ -95,9 +95,7 @@ class JournalLine extends Model
      */
     public function isCredit(): bool
     {
-        $mathService = new MathService;
-
-        return $mathService->compare((string) $this->credit, '0') > 0;
+        return app(MathService::class)->compare((string) $this->credit, '0') > 0;
     }
 
     /**
@@ -110,7 +108,7 @@ class JournalLine extends Model
      */
     public function getAmount(): string
     {
-        $mathService = new MathService;
+        $mathService = app(MathService::class);
         if ($mathService->compare((string) $this->debit, '0') > 0) {
             return (string) $this->debit;
         }

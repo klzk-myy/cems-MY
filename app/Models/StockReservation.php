@@ -22,7 +22,7 @@ class StockReservation extends Model
     ];
 
     protected $casts = [
-        'amount_foreign' => 'string',
+        'amount_foreign' => 'decimal:4',
         'expires_at' => 'datetime',
         'status' => StockReservationStatus::class,
     ];

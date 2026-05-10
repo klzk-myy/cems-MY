@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AccountingPeriodStatus;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -49,6 +50,7 @@ class AccountingPeriod extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'closed_at' => 'datetime',
+        'status' => AccountingPeriodStatus::class,
     ];
 
     /**
@@ -74,7 +76,7 @@ class AccountingPeriod extends Model
      */
     public function isOpen(): bool
     {
-        return $this->status === 'open';
+        return $this->status === AccountingPeriodStatus::Open;
     }
 
     /**
@@ -84,7 +86,7 @@ class AccountingPeriod extends Model
      */
     public function isClosed(): bool
     {
-        return $this->status === 'closed';
+        return $this->status === AccountingPeriodStatus::Closed;
     }
 
     /**
@@ -95,7 +97,7 @@ class AccountingPeriod extends Model
      */
     public function scopeOpen($query)
     {
-        return $query->where('status', 'open');
+        return $query->where('status', AccountingPeriodStatus::Open->value);
     }
 
     /**

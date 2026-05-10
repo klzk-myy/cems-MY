@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReportGeneratedStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,7 @@ class ReportGenerated extends Model
         'generated_at' => 'datetime',
         'submitted_at' => 'datetime',
         'version' => 'integer',
+        'status' => ReportGeneratedStatus::class,
     ];
 
     public function generatedBy(): BelongsTo
@@ -66,7 +68,7 @@ class ReportGenerated extends Model
     {
         $latest = static::where('report_type', $this->report_type)
             ->where('period_start', $this->period_start)
-            ->where('status', '!=', 'Archived')
+            ->where('status', '!=', ReportGeneratedStatus::Archived->value)
             ->max('version');
 
         return $this->version === $latest;

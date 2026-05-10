@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\BankReconciliationStatus;
 use App\Models\BankReconciliation;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
@@ -74,7 +75,7 @@ class BankReconciliationServiceTest extends TestCase
 
         $reconciliation->refresh();
 
-        $this->assertEquals('matched', $reconciliation->status);
+        $this->assertEquals(BankReconciliationStatus::Matched, $reconciliation->status);
         $this->assertEquals($journalEntry->id, $reconciliation->matched_to_journal_entry_id);
         $this->assertNotNull($reconciliation->matched_at);
     }
@@ -122,7 +123,7 @@ class BankReconciliationServiceTest extends TestCase
 
         $reconciliation->refresh();
 
-        $this->assertEquals('matched', $reconciliation->status);
+        $this->assertEquals(BankReconciliationStatus::Matched, $reconciliation->status);
         $this->assertEquals($journalEntry->id, $reconciliation->matched_to_journal_entry_id);
         $this->assertNotNull($reconciliation->matched_at);
     }
@@ -171,7 +172,7 @@ class BankReconciliationServiceTest extends TestCase
 
         $reconciliation->refresh();
 
-        $this->assertEquals('unmatched', $reconciliation->status);
+        $this->assertEquals(BankReconciliationStatus::Unmatched, $reconciliation->status);
         $this->assertNull($reconciliation->matched_to_journal_entry_id);
     }
 
@@ -217,7 +218,7 @@ class BankReconciliationServiceTest extends TestCase
 
         $reconciliation->refresh();
 
-        $this->assertEquals('unmatched', $reconciliation->status);
+        $this->assertEquals(BankReconciliationStatus::Unmatched, $reconciliation->status);
         $this->assertNull($reconciliation->matched_to_journal_entry_id);
     }
 
@@ -263,7 +264,7 @@ class BankReconciliationServiceTest extends TestCase
 
         $reconciliation->refresh();
 
-        $this->assertEquals('unmatched', $reconciliation->status);
+        $this->assertEquals(BankReconciliationStatus::Unmatched, $reconciliation->status);
         $this->assertNull($reconciliation->matched_to_journal_entry_id);
     }
 }

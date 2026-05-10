@@ -144,8 +144,8 @@ class BudgetServiceTest extends TestCase
 
         $report = $this->budgetService->getBudgetReport($periodCode);
 
-        $this->assertEquals('15000.000000', $report['total_budget']);
-        $this->assertEquals('11000.000000', $report['total_actual']);
+        $this->assertEquals('15000.0000', $report['total_budget']);
+        $this->assertEquals('11000.0000', $report['total_actual']);
     }
 
     public function test_get_accounts_without_budget_returns_expense_accounts(): void

@@ -11,6 +11,8 @@ class TellerAllocation extends Model
 {
     use HasFactory;
 
+    protected $with = ['user', 'branch', 'counter', 'approver'];
+
     protected $fillable = [
         'user_id',
         'branch_id',
@@ -94,16 +96,25 @@ class TellerAllocation extends Model
     public function deduct(float|string $amount): void
     {
         $this->decrement('current_balance', $amount);
+        $this->refresh();
     }
 
     public function add(float|string $amount): void
     {
         $this->increment('current_balance', $amount);
+        $this->refresh();
     }
 
     public function addDailyUsed(float|string $amountMyr): void
     {
         $this->increment('daily_used_myr', $amountMyr);
+        $this->refresh();
+    }
+
+    public function subtractDailyUsed(float|string $amountMyr): void
+    {
+        $this->decrement('daily_used_myr', $amountMyr);
+        $this->refresh();
     }
 
     public function hasDailyLimitRemaining(float|string $amountMyr): bool
@@ -118,14 +129,19 @@ class TellerAllocation extends Model
 
     public function approve(User $approver, float|string $allocatedAmount, float|string|null $dailyLimitMyr = null): void
     {
-        $this->update([
+        $data = [
             'approved_by' => $approver->id,
             'approved_at' => now(),
             'allocated_amount' => $allocatedAmount,
             'current_balance' => $allocatedAmount,
-            'daily_limit_myr' => $dailyLimitMyr, // preserves null for "unlimited"
             'status' => TellerAllocationStatus::APPROVED,
-        ]);
+        ];
+
+        if ($dailyLimitMyr !== null) {
+            $data['daily_limit_myr'] = $dailyLimitMyr;
+        }
+
+        $this->update($data);
     }
 
     public function activate(): void

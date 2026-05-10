@@ -11,13 +11,10 @@ use Symfony\Component\HttpFoundation\Response;
  * EnsureMfaVerified Middleware
  *
  * Requires MFA verification before accessing sensitive operations.
- * Users must complete MFA verification in the current session.
+ * Users must complete MFA verification via session or trusted device.
  */
 class EnsureMfaVerified
 {
-    /**
-     * Handle an incoming request.
-     */
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
@@ -26,8 +23,9 @@ class EnsureMfaVerified
             return redirect()->route('login');
         }
 
-        // If MFA is not globally enabled, skip
         $mfaService = app(MfaService::class);
+
+        // If MFA is not globally enabled, skip
         if (! $mfaService->isGloballyEnabled()) {
             return $next($request);
         }
@@ -42,60 +40,85 @@ class EnsureMfaVerified
             return $next($request);
         }
 
-        // Check if already verified in this session with expiration
-        if ($request->session()->get('mfa_verified', false)) {
-            $verifiedAt = $request->session()->get('mfa_verified_at');
-            $maxAge = config('security.mfa_session_max_age', 900); // 15 minutes default
+        // Check session lifetime first — even MFA cannot extend an expired session
+        if ($this->sessionExists($request)) {
+            $sessionLifetime = config('security.session.lifetime', 480) * 60;
+            $sessionCreatedAt = $this->sessionGet($request, '_session_created_at', now()->timestamp);
+            $sessionElapsed = now()->timestamp - $sessionCreatedAt;
 
-            // Check if verification has expired
-            if ($verifiedAt && now()->timestamp - $verifiedAt <= $maxAge) {
-                return $next($request);
+            if ($sessionElapsed >= $sessionLifetime) {
+                return $this->jsonResponse('Session expired, please re-authenticate', 401);
             }
-
-            // Verification has expired, clear the session
-            $request->session()->forget(['mfa_verified', 'mfa_verified_at']);
         }
 
-        // Check for trusted device (with time-limited verification)
+        // Check session MFA verification
+        $verifiedAt = $this->sessionGet($request, 'mfa_verified_at');
+        $maxAge = config('security.mfa_session_max_age', 900);
+
+        if ($this->sessionGet($request, 'mfa_verified', false)
+            && $verifiedAt
+            && (now()->timestamp - $verifiedAt) <= $maxAge) {
+            return $next($request);
+        }
+
+        // Check trusted device bypass
         $fingerprint = $mfaService->generateDeviceFingerprint();
         if ($mfaService->hasTrustedDevice($user, $fingerprint)) {
-            // Trusted device verification is also time-limited to prevent indefinite extension
-            $maxAge = config('security.mfa_session_max_age', 900); // 15 minutes default
-
-            // Mark session as verified with timestamp
-            $request->session()->put('mfa_verified', true);
-            $request->session()->put('mfa_verified_at', now()->timestamp);
-            // Store trusted device verification for expiry tracking
-            $request->session()->put('mfa_trusted_device_verified', true);
+            $this->sessionPut($request, 'mfa_verified', true);
+            $this->sessionPut($request, 'mfa_verified_at', now()->timestamp);
 
             return $next($request);
         }
 
-        // Prevent MFA re-verification from extending session beyond maximum lifetime
-        $sessionLifetime = config('security.session.lifetime', 480) * 60; // Convert to seconds
-        $sessionCreatedAt = $request->session()->get('_session_created_at', now()->timestamp);
-        $sessionElapsed = now()->timestamp - $sessionCreatedAt;
+        return $this->jsonResponse('MFA verification required', 403);
+    }
 
-        if ($sessionElapsed >= $sessionLifetime) {
-            // Session has already reached maximum lifetime, require full re-auth
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'error' => 'Session expired, please re-authenticate',
-                    'redirect' => route('login'),
-                ], 401);
-            }
+    /**
+     * Return a JSON response for API requests or redirect for web.
+     */
+    protected function jsonResponse(string $message, int $status): Response
+    {
+        return response()->json([
+            'error' => $message,
+            'redirect' => route('mfa.verify'),
+        ], $status);
+    }
 
-            return redirect()->route('login')->with('error', 'Session expired. Please log in again.');
+    /**
+     * Check if the request has a usable session store.
+     */
+    protected function sessionExists(Request $request): bool
+    {
+        try {
+            $request->session()->all();
+
+            return true;
+        } catch (\RuntimeException $e) {
+            return false;
         }
+    }
 
-        // Redirect to MFA verification
-        if ($request->expectsJson()) {
-            return response()->json([
-                'error' => 'MFA verification required',
-                'redirect' => route('mfa.verify'),
-            ], 403);
+    /**
+     * Safely get a value from session, returning default if session unavailable.
+     */
+    protected function sessionGet(Request $request, string $key, mixed $default = null): mixed
+    {
+        try {
+            return $request->session()->get($key, $default);
+        } catch (\RuntimeException $e) {
+            return $default;
         }
+    }
 
-        return redirect()->route('mfa.verify');
+    /**
+     * Safely put a value into session.
+     */
+    protected function sessionPut(Request $request, string $key, mixed $value): void
+    {
+        try {
+            $request->session()->put($key, $value);
+        } catch (\RuntimeException $e) {
+            // Session not available
+        }
     }
 }

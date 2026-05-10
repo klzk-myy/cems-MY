@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,9 @@ class PerformanceTrackingMiddlewareTest extends TestCase
 
     public function test_performance_tracking_middleware_logs_request_performance()
     {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
         Log::shouldReceive('error')->zeroOrMoreTimes();
 
         Log::shouldReceive('info')
@@ -30,6 +34,9 @@ class PerformanceTrackingMiddlewareTest extends TestCase
 
     public function test_performance_tracking_middleware_logs_slow_endpoints_when_threshold_exceeded()
     {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
         Log::shouldReceive('error')->zeroOrMoreTimes();
 
         Log::shouldReceive('info')

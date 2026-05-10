@@ -27,11 +27,11 @@
                         <td class="px-4 py-3">{{ $user->email }}</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 rounded text-xs 
-                                @if($user->role === 'admin') bg-purple-100 text-purple-800
-                                @elseif($user->role === 'manager') bg-blue-100 text-blue-800
-                                @elseif($user->role === 'compliance') bg-yellow-100 text-yellow-800
+                                @if($user->role->value === 'admin') bg-purple-100 text-purple-800
+                                @elseif($user->role->value === 'manager') bg-blue-100 text-blue-800
+                                @elseif($user->role->value === 'compliance_officer') bg-yellow-100 text-yellow-800
                                 @else bg-gray-100 text-gray-800 @endif">
-                                {{ ucfirst($user->role) }}
+                                {{ $user->role->label() }}
                             </span>
                         </td>
                         <td class="px-4 py-3">{{ $user->branch->name ?? 'N/A' }}</td>

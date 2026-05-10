@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;
 use App\Models\Compliance\EddQuestionnaireTemplate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EnhancedDiligenceRecord extends Model
 {
     use HasFactory;
+
+    protected $with = ['customer', 'reviewer', 'template'];
 
     protected $fillable = [
         'flagged_transaction_id',
@@ -45,7 +48,7 @@ class EnhancedDiligenceRecord extends Model
         'questionnaire_responses' => 'array',
         'reviewed_at' => 'datetime',
         'status' => EddStatus::class,
-        'risk_level' => 'string',
+        'risk_level' => EddRiskLevel::class,
     ];
 
     public function flaggedTransaction(): BelongsTo

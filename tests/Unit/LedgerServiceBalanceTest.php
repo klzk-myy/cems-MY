@@ -29,6 +29,10 @@ class LedgerServiceBalanceTest extends TestCase
         foreach ($accountTypes as $type) {
             ChartOfAccount::updateOrCreate(['account_code' => $type['account_code']], $type);
         }
+
+        // Create test branches for ledger entry FK constraints
+        $this->branch1 = $this->createTestBranch(['code' => 'BR1', 'name' => 'Branch 1']);
+        $this->branch2 = $this->createTestBranch(['code' => 'BR2', 'name' => 'Branch 2']);
     }
 
     /** @test */
@@ -88,7 +92,7 @@ class LedgerServiceBalanceTest extends TestCase
         // Create ledger entries for branch 1
         DB::table('account_ledger')->insert([
             'account_code' => '1000',
-            'branch_id' => 1,
+            'branch_id' => $this->branch1->id,
             'entry_date' => $today,
             'journal_entry_id' => $journalEntry->id,
             'running_balance' => '1000.00',
@@ -107,7 +111,7 @@ class LedgerServiceBalanceTest extends TestCase
         // Create ledger entries for branch 2
         DB::table('account_ledger')->insert([
             'account_code' => '1000',
-            'branch_id' => 2,
+            'branch_id' => $this->branch2->id,
             'entry_date' => $today,
             'journal_entry_id' => $journalEntry2->id,
             'running_balance' => '2000.00',
@@ -121,11 +125,11 @@ class LedgerServiceBalanceTest extends TestCase
         $allBranchesCash = collect($allBranches['accounts'])->firstWhere('account_code', '1000');
 
         // Get trial balance for branch 1 only
-        $branch1 = $ledgerService->getTrialBalance($today, 1);
+        $branch1 = $ledgerService->getTrialBalance($today, $this->branch1->id);
         $branch1Cash = collect($branch1['accounts'])->firstWhere('account_code', '1000');
 
         // Get trial balance for branch 2 only
-        $branch2 = $ledgerService->getTrialBalance($today, 2);
+        $branch2 = $ledgerService->getTrialBalance($today, $this->branch2->id);
         $branch2Cash = collect($branch2['accounts'])->firstWhere('account_code', '1000');
 
         // Verify consolidated balance shows combined amount

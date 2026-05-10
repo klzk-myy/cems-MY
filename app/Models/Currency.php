@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasCodeAndName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Currency extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasCodeAndName, HasFactory, SoftDeletes;
 
     protected $primaryKey = 'code';
 

@@ -344,9 +344,15 @@ class RevaluationService
             }
         }
 
-        // If all currencies failed, throw exception
-        if (empty($results) && ! empty($errors)) {
-            throw new \RuntimeException('All revaluations failed: '.implode(', ', array_column($errors, 'error')));
+        // If any revaluations failed, throw exception with summary
+        if (! empty($errors)) {
+            $successfulCurrencies = array_column($results, 'currency_code');
+            $failedCurrencies = array_column($errors, 'currency_code');
+
+            $summary = 'Successful currencies: '.implode(', ', $successfulCurrencies);
+            $summary .= '; Failed currencies: '.implode(', ', $failedCurrencies);
+
+            throw new \RuntimeException($summary);
         }
 
         return [
@@ -357,7 +363,6 @@ class RevaluationService
             'total_loss' => $totalLoss,
             'net_pnl' => $this->mathService->add($totalGain, $totalLoss),
             'report_path' => null,
-            'errors' => $errors,
         ];
     }
 

@@ -470,7 +470,7 @@ class CurrencyPositionService
             ->where('status', StockReservationStatus::Pending)
             ->first();
 
-        if ($reservation === null || $reservation->isExpired()) {
+        if ($reservation === null) {
             return null;
         }
 

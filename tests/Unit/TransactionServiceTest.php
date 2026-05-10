@@ -218,8 +218,9 @@ class TransactionServiceTest extends TestCase
         $this->assertInstanceOf(Transaction::class, $transaction);
         // Transactions >= RM 10,000 (auto_approve threshold) get PendingApproval status
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
-        // Amount 12000 * 4.5 = 54000 MYR >= 50000 = Enhanced CDD (large amount trigger)
-        $this->assertEquals(CddLevel::Enhanced, $transaction->cdd_level);
+        // Amount 12000 * 4.5 = 54000 MYR >= 10000 = Standard CDD
+        // Enhanced CDD is based on customer risk factors (PEP, High risk, Sanction match), not amount
+        $this->assertEquals(CddLevel::Standard, $transaction->cdd_level);
         $this->assertNotNull($transaction->hold_reason);
     }
 

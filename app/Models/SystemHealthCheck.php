@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SystemHealthCheckStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,6 +19,7 @@ class SystemHealthCheck extends Model
 
     protected $casts = [
         'checked_at' => 'datetime',
+        'status' => SystemHealthCheckStatus::class,
     ];
 
     /**
@@ -34,7 +36,7 @@ class SystemHealthCheck extends Model
      */
     public function scopeOk($query)
     {
-        return $query->where('status', self::STATUS_OK);
+        return $query->where('status', SystemHealthCheckStatus::Ok->value);
     }
 
     /**
@@ -42,7 +44,7 @@ class SystemHealthCheck extends Model
      */
     public function scopeWarning($query)
     {
-        return $query->where('status', self::STATUS_WARNING);
+        return $query->where('status', SystemHealthCheckStatus::Warning->value);
     }
 
     /**
@@ -50,7 +52,7 @@ class SystemHealthCheck extends Model
      */
     public function scopeCritical($query)
     {
-        return $query->where('status', self::STATUS_CRITICAL);
+        return $query->where('status', SystemHealthCheckStatus::Critical->value);
     }
 
     /**
@@ -108,20 +110,20 @@ class SystemHealthCheck extends Model
 
         foreach ($latestChecks as $check) {
             if ($check === null) {
-                return self::STATUS_WARNING;
+                return SystemHealthCheckStatus::Warning->value;
             }
-            if ($check->status === self::STATUS_CRITICAL) {
-                return self::STATUS_CRITICAL;
+            if ($check->status === SystemHealthCheckStatus::Critical) {
+                return SystemHealthCheckStatus::Critical->value;
             }
         }
 
         foreach ($latestChecks as $check) {
-            if ($check !== null && $check->status === self::STATUS_WARNING) {
-                return self::STATUS_WARNING;
+            if ($check !== null && $check->status === SystemHealthCheckStatus::Warning) {
+                return SystemHealthCheckStatus::Warning->value;
             }
         }
 
-        return self::STATUS_OK;
+        return SystemHealthCheckStatus::Ok->value;
     }
 
     /**

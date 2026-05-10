@@ -12,6 +12,8 @@ class SanctionEntry extends Model
 
     public $timestamps = false;
 
+    protected $with = ['sanctionList'];
+
     protected $fillable = [
         'list_id',
         'entity_name',

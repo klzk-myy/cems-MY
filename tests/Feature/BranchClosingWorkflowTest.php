@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BranchClosureStatus;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
@@ -93,7 +94,7 @@ class BranchClosingWorkflowTest extends TestCase
         $this->assertNotNull($workflow);
         $this->assertEquals($this->branch->id, $workflow->branch_id);
         $this->assertEquals($this->manager->id, $workflow->initiated_by);
-        $this->assertEquals('initiated', $workflow->status);
+        $this->assertEquals(BranchClosureStatus::Initiated, $workflow->status);
         $this->assertNull($workflow->finalized_at);
     }
 
@@ -131,7 +132,7 @@ class BranchClosingWorkflowTest extends TestCase
         $this->branchClosingService->finalize($workflow, $this->manager);
 
         $workflow->refresh();
-        $this->assertEquals('finalized', $workflow->status);
+        $this->assertEquals(BranchClosureStatus::Finalized, $workflow->status);
         $this->assertNotNull($workflow->finalized_at);
     }
 

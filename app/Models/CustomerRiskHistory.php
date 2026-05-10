@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RiskRating;
 use Illuminate\Database\Eloquent\Model;
 
 class CustomerRiskHistory extends Model
@@ -21,8 +22,8 @@ class CustomerRiskHistory extends Model
     protected $casts = [
         'old_score' => 'integer',
         'new_score' => 'integer',
-        'old_rating' => 'string',
-        'new_rating' => 'string',
+        'old_rating' => RiskRating::class,
+        'new_rating' => RiskRating::class,
     ];
 
     public function customer()

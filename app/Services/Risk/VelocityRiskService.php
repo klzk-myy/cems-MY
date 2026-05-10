@@ -84,6 +84,7 @@ class VelocityRiskService
         $startTime = now()->subHours(24);
         $velocity = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $startTime)
+            ->whereIn('status', [TransactionStatus::Completed, TransactionStatus::Finalized])
             ->selectRaw('CAST(SUM(amount_local) AS CHAR) as total')
             ->value('total') ?? '0';
 

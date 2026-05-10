@@ -249,6 +249,7 @@ class ComplianceService
         $startTime = now()->subHours(24);
         $velocity = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $startTime)
+            ->whereIn('status', [TransactionStatus::Completed, TransactionStatus::Finalized])
             ->selectRaw('CAST(SUM(amount_local) AS CHAR) as total')
             ->value('total') ?? '0';
 
@@ -307,6 +308,7 @@ class ComplianceService
         $oneHourAgo = now()->subHour();
         $smallTransactions = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $oneHourAgo)
+            ->whereIn('status', [TransactionStatus::Completed, TransactionStatus::Finalized])
             ->where('amount_local', '<', $this->thresholdService->getStructuringSubThreshold())
             ->count();
 
@@ -382,7 +384,11 @@ class ComplianceService
         // Use SQL aggregate for sum - more efficient than loading all rows
         $query = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $lookbackPeriod)
-            ->where('status', '!=', TransactionStatus::Cancelled->value);
+            ->whereNotIn('status', [
+                TransactionStatus::Cancelled->value,
+                TransactionStatus::Reversed->value,
+                TransactionStatus::Failed->value,
+            ]);
 
         // Get sum efficiently using SQL
         $existingSum = (string) ($query->sum('amount_local') ?? '0');

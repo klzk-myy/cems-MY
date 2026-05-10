@@ -52,7 +52,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 - **Customer Due Diligence (CDD)**
   - Simplified: Transaction < RM 3,000
   - Specific: RM 3,000 to RM 9,999
-  - Standard: ≥ RM 10,000 OR Enhanced: ≥ RM 50,000 OR PEP OR Sanction match OR High risk
+  - Standard: ≥ RM 10,000 OR Enhanced: ≥ RM 50,000 OR PEP OR Sanction match OR High risk OR Large transaction
 
 - **CTOS Reporting**
   - All cash transactions (Buy and Sell) ≥ RM 25,000
@@ -96,7 +96,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 | Component | Technology |
 |-----------|------------|
 | Framework | Laravel 10.x |
-| Language | PHP 8.1+ |
+| Language | PHP 8.3 |
 | Database | MySQL 8.0 |
 | Cache/Queue | Redis |
 | Queue UI | Laravel Horizon |
@@ -107,7 +107,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 
 ## Requirements
 
-- PHP 8.1+
+- PHP 8.3+
 - MySQL 8.0+
 - Redis 6+
 - Composer 2.x
@@ -260,26 +260,26 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full system architecture do
 ```
 app/
 ├── Console/Commands/        # 35 Artisan CLI commands
-├── Enums/                  # 34 PHP 8.1 enums (UserRole, TransactionStatus, CddLevel, etc.)
+├── Enums/                  # 34 PHP 8.3 enums (UserRole, TransactionStatus, CddLevel, etc.)
 ├── Events/                 # 13 Event classes (TransactionCreated, CounterSessionOpened, etc.)
 ├── Exceptions/Domain/       # 43 typed domain exceptions
 ├── Http/
-│   ├── Controllers/        # 61 controllers (42 web + 19 API)
+│   ├── Controllers/        # 22 root + Api/V1/Compliance controllers
 │   ├── Middleware/          # 21 middleware classes
 │   ├── Requests/            # Form request validation classes
 │   └── Resources/           # API resource transformers
-├── Jobs/                   # 9 background jobs
-├── Models/                 # 60 Eloquent models
+├── Jobs/                   # 23 background jobs (Compliance, Sanctions, Accounting subdirs)
+├── Models/                 # 62 Eloquent models
 ├── Observers/              # Model observers for event-driven hooks
-└── Services/               # 78 services
+└── Services/               # 83 services
 ```
 app/
 ├── Console/Commands/        # 35 Artisan CLI commands
-├── Enums/                  # 34 PHP 8.1 enums (UserRole, TransactionStatus, CddLevel, etc.)
+├── Enums/                  # 34 PHP enums (UserRole, TransactionStatus, CddLevel, etc.)
 ├── Events/                 # 13 Event classes (TransactionCreated, CounterSessionOpened, etc.)
 ├── Exceptions/Domain/       # 43 typed domain exceptions
 ├── Http/
-│   ├── Controllers/        # 50 controllers
+│   ├── Controllers/        # 22 root controllers + Api/V1/Compliance sub-controllers
 │   ├── Middleware/          # 21 middleware classes
 │   ├── Requests/            # Form request validation classes
 │   └── Resources/           # API resource transformers
@@ -311,7 +311,8 @@ app/
 
 | Endpoint | Limit |
 |----------|-------|
-| Login | 5/min |
+| Login | disabled (re-enable via RouteServiceProvider) |
+| `/health` | 60/min |
 | API (general) | 30/min |
 | Transactions | 10/min |
 | STR Submit | 3/min |
@@ -369,8 +370,9 @@ All rate changes are logged to audit trail. Spread and deviation thresholds conf
 | Level | Trigger | Action |
 |-------|---------|--------|
 | **Simplified** | < RM 3,000 | Auto-approve |
-| **Standard** | RM 3,000 - 49,999 | Manager approval if flagged |
-| **Enhanced** | ≥ RM 50,000 OR PEP OR Sanction | Compliance review |
+| **Specific** | RM 3,000 - 9,999 | Auto-approve |
+| **Standard** | ≥ RM 10,000 | Auto-approve if no flags |
+| **Enhanced** | ≥ RM 50,000 OR PEP OR Sanction OR High risk | Compliance review |
 
 ### Transaction Status Workflow
 

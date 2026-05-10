@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Transaction;
 
+use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Controller;
-use App\Models\SystemLog;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Services\AccountingService;
@@ -102,7 +102,7 @@ class TransactionApprovalController extends Controller
 
         // Check if there's already a pending confirmation
         $confirmation = TransactionConfirmation::where('transaction_id', $transaction->id)
-            ->whereIn('status', ['pending', 'confirmed'])
+            ->whereIn('status', [TransactionConfirmationStatus::Pending->value, TransactionConfirmationStatus::Confirmed->value])
             ->first();
 
         if (! $confirmation) {
@@ -111,22 +111,20 @@ class TransactionApprovalController extends Controller
             $confirmation = TransactionConfirmation::create([
                 'transaction_id' => $transaction->id,
                 'user_id' => auth()->id(),
-                'status' => 'pending',
+                'status' => TransactionConfirmationStatus::Pending->value,
                 'confirmation_token' => $confirmationToken,
                 'expires_at' => now()->addMinutes(30),
             ]);
 
-            SystemLog::create([
+            $this->auditService->logWithSeverity('confirmation_requested', [
                 'user_id' => auth()->id(),
-                'action' => 'confirmation_requested',
                 'entity_type' => 'Transaction',
                 'entity_id' => $transaction->id,
                 'new_values' => [
                     'confirmation_id' => $confirmation->id,
                     'amount_local' => $transaction->amount_local,
                 ],
-                'ip_address' => request()->ip(),
-            ]);
+            ], 'INFO');
         }
 
         $transaction->load(['customer', 'user']);
@@ -147,7 +145,7 @@ class TransactionApprovalController extends Controller
         }
 
         $confirmation = TransactionConfirmation::where('transaction_id', $transaction->id)
-            ->where('status', 'pending')
+            ->where('status', TransactionConfirmationStatus::Pending->value)
             ->first();
 
         if (! $confirmation) {
@@ -194,17 +192,15 @@ class TransactionApprovalController extends Controller
 
                 $transaction->refresh();
 
-                SystemLog::create([
+                $this->auditService->logWithSeverity('transaction_confirmed', [
                     'user_id' => auth()->id(),
-                    'action' => 'transaction_confirmed',
                     'entity_type' => 'Transaction',
                     'entity_id' => $transaction->id,
                     'new_values' => [
                         'confirmation_id' => $confirmation->id,
                         'confirmed_by' => auth()->id(),
                     ],
-                    'ip_address' => $request->ip(),
-                ]);
+                ], 'INFO');
 
                 DB::commit();
 
@@ -222,9 +218,8 @@ class TransactionApprovalController extends Controller
                     'cancellation_reason' => 'Rejected during confirmation: '.($validated['notes'] ?? 'No reason provided'),
                 ]);
 
-                SystemLog::create([
+                $this->auditService->logWithSeverity('transaction_rejected', [
                     'user_id' => auth()->id(),
-                    'action' => 'transaction_rejected',
                     'entity_type' => 'Transaction',
                     'entity_id' => $transaction->id,
                     'new_values' => [
@@ -232,8 +227,7 @@ class TransactionApprovalController extends Controller
                         'rejected_by' => auth()->id(),
                         'reason' => $validated['notes'] ?? 'No reason provided',
                     ],
-                    'ip_address' => $request->ip(),
-                ]);
+                ], 'WARNING');
 
                 DB::commit();
 

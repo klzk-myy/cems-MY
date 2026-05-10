@@ -13,6 +13,8 @@ class ComplianceFinding extends Model
 {
     use HasFactory;
 
+    protected $with = ['subject'];
+
     protected $fillable = [
         'finding_type',
         'severity',

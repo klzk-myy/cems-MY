@@ -10,6 +10,8 @@ class CounterSession extends Model
 {
     use HasFactory;
 
+    protected $with = ['user', 'openedByUser', 'closedByUser'];
+
     protected $fillable = [
         'counter_id',
         'user_id',

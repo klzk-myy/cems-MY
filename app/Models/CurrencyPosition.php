@@ -42,6 +42,11 @@ class CurrencyPosition extends Model
         return $this->belongsTo(Branch::class);
     }
 
+    public function counter(): BelongsTo
+    {
+        return $this->belongsTo(Counter::class, 'till_id');
+    }
+
     /**
      * Alias for balance — used by views expecting "quantity".
      */

@@ -12,12 +12,18 @@ class CurrencyPositionServiceCacheTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->createTestBranch();
+    }
+
     public function test_get_available_balance_uses_cache()
     {
         // Create a position
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 1,
+            'till_id' => 'TEST-TILL-001',
             'balance' => '1000.00',
         ]);
 
@@ -36,16 +42,16 @@ class CurrencyPositionServiceCacheTest extends TestCase
     {
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 1,
+            'till_id' => 'TEST-TILL-001',
             'balance' => '1000.00',
         ]);
 
         Cache::shouldReceive('forget')
             ->once()
-            ->with('position:1:USD:available');
+            ->with('position:TEST-TILL-001:USD:available');
 
         $service = app(CurrencyPositionService::class);
         // Call updatePosition with required parameters: amount, rate, type, tillId
-        $service->updatePosition('USD', '500.00', '1.25', 'Buy', 1);
+        $service->updatePosition('USD', '500.00', '1.25', 'Buy', 'TEST-TILL-001');
     }
 }

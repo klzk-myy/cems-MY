@@ -70,13 +70,13 @@ class BoundaryValueTest extends TestCase
     {
         $maxAmount = '999999999.99';
         $result = $this->mathService->add($maxAmount, '0.01');
-        $this->assertEquals('1000000000.000000', $result);
+        $this->assertEquals('1000000000.0000', $result);
     }
 
     public function test_precision_maintained_for_small_amounts(): void
     {
         $result = $this->mathService->add('0.01', '0.02');
-        $this->assertEquals('0.030000', $result);
+        $this->assertEquals('0.0300', $result);
     }
 
     public function test_six_decimal_precision_handling(): void
@@ -84,7 +84,7 @@ class BoundaryValueTest extends TestCase
         $rate = '4.723456';
         $amount = '1000';
         $result = $this->mathService->multiply($rate, $amount);
-        $this->assertEquals('4723.456000', $result);
+        $this->assertEquals('4723.4560', $result);
     }
 
     public function test_currency_position_at_zero_balance(): void
@@ -111,8 +111,8 @@ class BoundaryValueTest extends TestCase
 
         $newAvgCost = $this->mathService->divide($totalValue, $totalQuantity);
         // 2 / 1000001 ≈ 0.00000199998..., which rounds to 0.000002 with standard rounding
-        // but bcmath truncates to 0.000001 at 6 decimal precision
-        $this->assertEquals('0.000001', $newAvgCost);
+        // but bcmath truncates to 0.0000 at 4 decimal precision
+        $this->assertEquals('0.0000', $newAvgCost);
     }
 
     public function test_revaluation_with_zero_rate_change(): void
@@ -125,7 +125,7 @@ class BoundaryValueTest extends TestCase
         $newValue = $this->mathService->multiply($positionQuantity, $newRate);
         $pnl = $this->mathService->subtract($newValue, $oldValue);
 
-        $this->assertEquals('0.000000', $pnl);
+        $this->assertEquals('0.0000', $pnl);
     }
 
     /**

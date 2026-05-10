@@ -248,7 +248,7 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertEquals(StockReservationStatus::Consumed, $result->status);
     }
 
-    public function test_release_rejects_expired_reservation(): void
+    public function test_release_releases_expired_reservation(): void
     {
         $teller = User::factory()->create(['role' => 'teller']);
         Currency::factory()->create(['code' => 'USD']);
@@ -279,10 +279,11 @@ class CurrencyPositionServiceTest extends TestCase
         $positionService = new CurrencyPositionService(new MathService);
         $result = $positionService->releaseStockReservation($transaction->id);
 
-        $this->assertNull($result);
+        // Expired reservations can be released (used by the expire command)
+        $this->assertNotNull($result);
 
-        // Verify reservation was NOT released
+        // Verify reservation WAS released
         $expiredReservation->refresh();
-        $this->assertEquals(StockReservationStatus::Pending, $expiredReservation->status);
+        $this->assertEquals(StockReservationStatus::Released, $expiredReservation->status);
     }
 }

@@ -228,6 +228,10 @@ class AccountingServiceTest extends TestCase
             'Atomic test entry'
         );
 
+        // Submit for approval and then approve to post to ledger
+        $accountingService->submitForApproval($entry);
+        $accountingService->approveEntry($entry, auth()->id());
+
         // All ledger entries should be created or none
         $newCount = AccountLedger::count();
         $expectedNewEntries = 2;
@@ -308,6 +312,10 @@ class AccountingServiceTest extends TestCase
             '2026-01-15',
             $user->id
         );
+
+        // Submit and approve to post to ledger
+        $accountingService->submitForApproval($sellEntry);
+        $accountingService->approveEntry($sellEntry, $user->id);
 
         // Get balances after SELL transaction
         $cashBalanceAfterSell = $accountingService->getAccountBalance('1001', '2026-01-15');

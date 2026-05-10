@@ -97,7 +97,7 @@ class EodReconciliationServiceTest extends TestCase
 
         // Expected closing = opening + buyTotal - sellTotal = 10000 + 5000 - 0 = 15000
         // Since session is unclosed, variance should return expected closing (not 0)
-        $this->assertEquals('15000.000000', $variance);
+        $this->assertEquals('15000.0000', $variance);
     }
 
     public function test_variance_returns_calculated_difference_when_session_closed(): void
@@ -152,7 +152,7 @@ class EodReconciliationServiceTest extends TestCase
         // Expected closing = 10000 + 5000 = 15000
         // Actual closing = 14800
         // Variance = 14800 - 15000 = -200
-        $this->assertEquals('-200.000000', $variance);
+        $this->assertEquals('-200.0000', $variance);
     }
 
     public function test_variance_returns_expected_closing_for_unclosed_session_with_no_transactions(): void
@@ -185,7 +185,7 @@ class EodReconciliationServiceTest extends TestCase
 
         // Expected closing = opening + 0 - 0 = opening = 10000
         // Since session is unclosed, variance should return expected closing
-        $this->assertEquals('10000.000000', $variance);
+        $this->assertEquals('10000.0000', $variance);
     }
 
     public function test_pending_transactions_excluded_from_eod_variance(): void
@@ -258,6 +258,6 @@ class EodReconciliationServiceTest extends TestCase
         // Expected closing = 10000 + 5000 (only completed) - 0 = 15000
         // Actual closing = 15000
         // Variance = 15000 - 15000 = 0 (Pending transaction excluded)
-        $this->assertEquals('0.000000', $variance);
+        $this->assertEquals('0.0000', $variance);
     }
 }

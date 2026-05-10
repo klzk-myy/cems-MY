@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AccountingPeriodStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Models\AccountingPeriod;
@@ -150,7 +151,7 @@ class MonthEndCloseTest extends TestCase
         $this->assertEquals('2026-03', $result['period_code']);
 
         $period->refresh();
-        $this->assertEquals('closed', $period->status);
+        $this->assertEquals(AccountingPeriodStatus::Closed, $period->status);
     }
 
     public function test_get_month_end_status_returns_correct_data(): void
@@ -168,7 +169,7 @@ class MonthEndCloseTest extends TestCase
 
         $this->assertEquals('2026-03-31', $status['date']);
         $this->assertTrue($status['has_period']);
-        $this->assertEquals('open', $status['period_status']);
+        $this->assertEquals(AccountingPeriodStatus::Open, $status['period_status']);
         $this->assertEquals('2026-03', $status['period_code']);
         $this->assertFalse($status['revaluation_run']);
     }
@@ -187,7 +188,7 @@ class MonthEndCloseTest extends TestCase
         $this->service->closePeriod($date);
 
         $period->refresh();
-        $this->assertEquals('closed', $period->status);
+        $this->assertEquals(AccountingPeriodStatus::Closed, $period->status);
         $this->assertNotNull($period->closed_at);
     }
 }

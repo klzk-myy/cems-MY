@@ -6,80 +6,52 @@
             <p class="mt-1 text-sm text-gray-500">Monitor and manage compliance alerts</p>
         </div>
 
-        <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
-            <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                    <option value="">All Severities</option>
-                    <option value="critical">Critical</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                </select>
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                    <option value="">All Status</option>
-                    <option value="open">Open</option>
-                    <option value="reviewing">Reviewing</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="dismissed">Dismissed</option>
-                </select>
-                <input type="date" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                    Filter
-                </button>
-            </div>
-        </div>
-
         <!-- Alerts Table -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+            @if($alerts->isEmpty())
+            <div class="p-6 text-center text-gray-500">
+                No alerts found
+            </div>
+            @else
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Alert ID</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Severity</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned To</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
+                    @foreach($alerts as $alert)
                     <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">ALT-2024-001</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Velocity Alert</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ $alert->id }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ $alert->type ?? 'N/A' }}</td>
                         <td class="px-4 py-3 text-sm">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Critical</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">{{ $alert->priority ?? 'medium' }}</span>
                         </td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Ahmad Razali</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">Multiple transactions approaching reporting threshold</td>
+                        <td class="px-4 py-3 text-sm text-gray-500">{{ $alert->reason ?? $alert->description ?? 'N/A' }}</td>
                         <td class="px-4 py-3 text-sm">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Reviewing</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">{{ $alert->status?->value ?? 'open' }}</span>
                         </td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-15</td>
                         <td class="px-4 py-3 text-sm">
-                            <a href="#" class="text-blue-600 hover:text-blue-800">View</a>
+                            @if($alert->assignedTo)
+                                {{ $alert->assignedTo->username }}
+                            @else
+                                <span class="text-gray-400">Unassigned</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            <a href="{{ route('compliance.alerts.show', $alert) }}" class="text-blue-600 hover:text-blue-800">View</a>
                         </td>
                     </tr>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">ALT-2024-002</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Structuring Alert</td>
-                        <td class="px-4 py-3 text-sm">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-orange-100 text-orange-700">High</span>
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Siti Nurhaliza</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">Potential structuring detected in last 7 days</td>
-                        <td class="px-4 py-3 text-sm">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Resolved</span>
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-14</td>
-                        <td class="px-4 py-3 text-sm">
-                            <a href="#" class="text-blue-600 hover:text-blue-800">View</a>
-                        </td>
-                    </tr>
+                    @endforeach
                 </tbody>
             </table>
+            @endif
         </div>
     </div>
 </x-app-layout>

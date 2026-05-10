@@ -377,12 +377,14 @@ class MfaService
      */
     public function generateDeviceFingerprint(): string
     {
-        $sessionId = request()->session()->getId();
+        try {
+            $sessionId = request()->session()->getId();
+        } catch (\RuntimeException $e) {
+            $sessionId = 'no-session';
+        }
         $userAgent = request()->userAgent() ?? 'unknown';
         $ip = request()->ip() ?? '0.0.0.0';
 
-        // Include session ID to bind fingerprint to specific session
-        // This prevents replay attacks using the same User-Agent/IP combination
         $data = implode('|', [
             $sessionId,
             hash('sha256', $userAgent),

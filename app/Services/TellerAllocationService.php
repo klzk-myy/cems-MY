@@ -210,7 +210,8 @@ class TellerAllocationService
             return ['valid' => false, 'reason' => 'Insufficient allocation balance'];
         }
 
-        // For sell transactions, check if there's sufficient balance to cover the sale
+        // For sell transactions, check if there's sufficient foreign currency balance to cover the sale
+        // The amountMyr parameter here is the foreign currency amount being sold (e.g. USD 1000)
         if (! $isBuy && ! $allocation->hasAvailable($amountMyr)) {
             return ['valid' => false, 'reason' => "No {$allocation->currency_code} balance available to sell"];
         }

@@ -10,6 +10,8 @@ class CtosReport extends Model
 {
     use HasFactory;
 
+    protected $with = ['customer', 'transaction', 'creator'];
+
     protected $fillable = [
         'ctos_number',
         'transaction_id',

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TransactionImportStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -26,6 +27,7 @@ class TransactionImport extends Model
         'errors' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'status' => TransactionImportStatus::class,
     ];
 
     /**
@@ -41,7 +43,7 @@ class TransactionImport extends Model
      */
     public function scopeCompleted($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', TransactionImportStatus::Completed->value);
     }
 
     /**
@@ -49,7 +51,7 @@ class TransactionImport extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', TransactionImportStatus::Pending->value);
     }
 
     /**

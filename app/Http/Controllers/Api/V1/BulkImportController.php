@@ -40,7 +40,7 @@ class BulkImportController extends Controller
         $path = $file->storeAs('imports/customers', "{$jobId}.csv");
 
         // Dispatch job
-        ProcessCustomerImport::dispatch($path, auth()->id(), $jobId);
+        ProcessCustomerImport::dispatch($path, auth()->id(), $jobId, $this->importService);
 
         Log::info('Customer import initiated', [
             'job_id' => $jobId,
