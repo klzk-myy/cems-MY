@@ -71,7 +71,7 @@ class CustomerScreeningServiceTest extends TestCase
             'slug' => 'test-list-3',
         ]);
 
-        $entry = SanctionEntry::factory()->create([
+        $_entry = SanctionEntry::factory()->create([
             'list_id' => $sanctionList->id,
             'entity_name' => 'John Smith',
             'normalized_name' => 'john smith',
@@ -211,7 +211,7 @@ class CustomerScreeningServiceTest extends TestCase
         ]);
 
         // Simulate confirmed sanctions match
-        $result = $this->service->handleConfirmedMatch($customer, 'UNSCR', 'AL_QAEDA');
+        $_result = $this->service->handleConfirmedMatch($customer, 'UNSCR', 'AL_QAEDA');
 
         $customer->refresh();
 
@@ -227,7 +227,7 @@ class CustomerScreeningServiceTest extends TestCase
             'is_active' => false,
         ]);
 
-        $result = $this->service->handleConfirmedMatch($customer, 'DOMESTIC', 'SPECIFIED_ENTITY');
+        $_result = $this->service->handleConfirmedMatch($customer, 'DOMESTIC', 'SPECIFIED_ENTITY');
 
         $customer->refresh();
 

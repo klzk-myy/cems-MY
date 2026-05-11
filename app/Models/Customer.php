@@ -251,7 +251,7 @@ class Customer extends Model
             }
 
             return '****';
-        } catch (\Exception $e) {
+        } catch (\Exception $_e) {
             return '****';
         }
     }
@@ -275,7 +275,7 @@ class Customer extends Model
             }
 
             return substr($decrypted, 0, 4).'****'.substr($decrypted, -4);
-        } catch (\Exception $e) {
+        } catch (\Exception $_e) {
             return '****';
         }
     }

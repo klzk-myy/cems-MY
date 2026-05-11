@@ -193,9 +193,9 @@ class CustomerScreeningService
         ]);
     }
 
-    private function reportPositiveMatch(Customer $customer, string $listType, string $matchedEntity): void
+    private function reportPositiveMatch(Customer $_customer, string $_listType, string $_matchedEntity): void
     {
-        // Submit to BNM FIU and IGP per pd-00.md 27.7.1
+        // Placeholder: Submit to BNM FIU and IGP per pd-00.md 27.7.1
         // Note: SanctionsMatchReported event should be created for compliance reporting
         // event(new \App\Events\SanctionsMatchReported($customer, $listType, $matchedEntity));
     }
