@@ -34,7 +34,7 @@ class CustomerScreeningService
         $this->maxCandidates = (int) config('sanctions.matching.max_candidates', 100);
     }
 
-    public function screenCustomer(Customer $customer, ?string $notes = null): ScreeningResponse
+    public function screenCustomer(Customer $customer): ScreeningResponse
     {
         if ($customer->sanction_hit) {
             $result = $this->createResult(
