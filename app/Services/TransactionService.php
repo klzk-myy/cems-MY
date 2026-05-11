@@ -25,6 +25,7 @@ use App\Models\User;
 use App\Services\Contracts\TransactionServiceInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Transaction Service
@@ -239,6 +240,16 @@ class TransactionService implements TransactionServiceInterface
             }
         }
 
+        // pd-00.md 14C.13.1(c): PEPs must provide BOTH source of funds AND source of wealth
+        if ($customer->pep_status) {
+            if (empty($data['source_of_funds'])) {
+                throw new \InvalidArgumentException('Source of funds is required for PEP customers.');
+            }
+            if (empty($data['source_of_wealth'])) {
+                throw new \InvalidArgumentException('Source of wealth is required for PEP customers per pd-00.md 14C.13.1(c).');
+            }
+        }
+
         // Validate against teller allocation (only for tellers, not manager/admin overrides)
         // Only validate for Buy transactions (teller sells foreign currency and needs allocation)
         // For Sell transactions, no allocation check is needed upfront
@@ -342,9 +353,8 @@ class TransactionService implements TransactionServiceInterface
             // For Sell transactions, acquire position lock FIRST to prevent race conditions
             // where two concurrent transactions could both pass the duplicate check
             // before either acquires the lock
-            $position = null;
             if ($data['type'] === TransactionType::Sell->value) {
-                $position = $this->positionService->getPositionWithLock($data['currency_code'], $data['till_id']);
+                $this->positionService->getPositionWithLock($data['currency_code'], $data['till_id']);
 
                 // Verify sufficient stock for Sell transactions IMMEDIATELY after acquiring lock
                 // This prevents race conditions where another transaction could modify the position
@@ -364,7 +374,7 @@ class TransactionService implements TransactionServiceInterface
                 // For Buy transactions, acquire position lock to prevent race conditions
                 // where concurrent transactions could cause inconsistent position updates.
                 // Unlike Sell, Buy does not require stock validation (we are acquiring currency).
-                $position = $this->positionService->getPositionWithLock($data['currency_code'], $data['till_id']);
+                $this->positionService->getPositionWithLock($data['currency_code'], $data['till_id']);
             }
 
             // Check for duplicate transaction via idempotency key (inside transaction to prevent race)
@@ -413,6 +423,7 @@ class TransactionService implements TransactionServiceInterface
                 'rate' => $rate,
                 'purpose' => $data['purpose'],
                 'source_of_funds' => $data['source_of_funds'],
+                'source_of_wealth' => $data['source_of_wealth'] ?? null,
                 'status' => $status,
                 'hold_reason' => $holdReason,
                 'approved_by' => $approvedBy,

@@ -84,6 +84,11 @@ class StoreTransactionRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'source_of_wealth' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'base_rate' => [
                 'nullable',
                 'string',

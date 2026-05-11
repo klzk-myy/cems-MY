@@ -475,6 +475,7 @@ class TransactionServiceTest extends TestCase
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
+            'source_of_wealth' => 'Family Inheritance', // Required for PEPs per pd-00.md 14C.13.1(c)
             'idempotency_key' => uniqid('test_', true),
         ];
 
@@ -745,5 +746,80 @@ class TransactionServiceTest extends TestCase
 
         // Received 450 MYR for 100 USD (450 = 100 * 4.50)
         $this->assertEquals('450.00', $myrBalance->transaction_total);
+    }
+
+    public function test_pep_transaction_requires_both_source_of_funds_and_source_of_wealth(): void
+    {
+        // Mark customer as PEP
+        $this->customer->update(['pep_status' => true]);
+
+        // Attempt without source_of_wealth - should fail
+        $dataWithoutWealth = [
+            'customer_id' => $this->customer->id,
+            'till_id' => $this->counter->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => $this->currency->code,
+            'amount_foreign' => '100.00',
+            'rate' => '4.500000',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Salary',
+            // Missing source_of_wealth
+            'idempotency_key' => uniqid('test_pep_', true),
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Source of wealth is required for PEP customers');
+
+        $this->transactionService->createTransaction($dataWithoutWealth, $this->teller->id);
+    }
+
+    public function test_pep_transaction_succeeds_with_both_source_of_funds_and_source_of_wealth(): void
+    {
+        // Mark customer as PEP
+        $this->customer->update(['pep_status' => true]);
+
+        $data = [
+            'customer_id' => $this->customer->id,
+            'till_id' => $this->counter->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => $this->currency->code,
+            'amount_foreign' => '100.00',
+            'rate' => '4.500000',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Salary',
+            'source_of_wealth' => 'Investment Portfolio',
+            'idempotency_key' => uniqid('test_pep_', true),
+        ];
+
+        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+
+        $this->assertInstanceOf(Transaction::class, $transaction);
+        $this->assertEquals('Investment Portfolio', $transaction->source_of_wealth);
+        $this->assertEquals('Salary', $transaction->source_of_funds);
+    }
+
+    public function test_non_pep_transaction_requires_only_source_of_funds(): void
+    {
+        // Ensure customer is NOT a PEP
+        $this->customer->update(['pep_status' => false, 'risk_rating' => 'Low']);
+
+        // Should succeed with only source_of_funds (source_of_wealth not required for non-PEPs)
+        $data = [
+            'customer_id' => $this->customer->id,
+            'till_id' => $this->counter->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => $this->currency->code,
+            'amount_foreign' => '100.00',
+            'rate' => '4.500000',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Salary',
+            // No source_of_wealth - should still succeed for non-PEPs
+            'idempotency_key' => uniqid('test_non_pep_', true),
+        ];
+
+        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+
+        $this->assertInstanceOf(Transaction::class, $transaction);
+        $this->assertNull($transaction->source_of_wealth);
     }
 }

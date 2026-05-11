@@ -28,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property string $rate Exchange rate applied
  * @property string|null $purpose Transaction purpose
  * @property string|null $source_of_funds Source of funds
+ * @property string|null $source_of_wealth Source of wealth (required for PEPs per pd-00.md 14C.13.1(c))
  * @property TransactionStatus $status
  * @property string|null $hold_reason Reason for hold status
  * @property int|null $approved_by User ID who approved
@@ -78,6 +79,7 @@ class Transaction extends Model
         'rate_override_approved_at',
         'purpose',
         'source_of_funds',
+        'source_of_wealth',
         'status',
         'hold_reason',
         'approved_by',
