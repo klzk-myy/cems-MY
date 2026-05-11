@@ -46,7 +46,7 @@ class BoundaryValueTest extends TestCase
     {
         $amountMYR = (string) $amount;
 
-        $requiresCtos = bccomp($amountMYR, '10000', 2) >= 0;
+        $requiresCtos = bccomp($amountMYR, '25000', 2) >= 0;
 
         $this->assertEquals($shouldGenerate, $requiresCtos);
     }
@@ -54,9 +54,9 @@ class BoundaryValueTest extends TestCase
     public static function ctosThresholdProvider(): array
     {
         return [
-            'just below CTOS threshold (9999.99)' => [9999.99, false],
-            'exactly at CTOS threshold (10000)' => [10000.00, true],
-            'above CTOS threshold (15000)' => [15000.00, true],
+            'just below CTOS threshold (24999.99)' => [24999.99, false],
+            'exactly at CTOS threshold (25000)' => [25000.00, true],
+            'above CTOS threshold (30000)' => [30000.00, true],
         ];
     }
 
