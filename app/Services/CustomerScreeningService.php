@@ -53,8 +53,7 @@ class CustomerScreeningService
             name: $customer->full_name,
             dob: $customer->date_of_birth?->format('Y-m-d'),
             nationality: $customer->nationality,
-            customerId: $customer->id,
-            notes: $notes
+            customerId: $customer->id
         );
     }
 
@@ -62,8 +61,7 @@ class CustomerScreeningService
         string $name,
         ?string $dob = null,
         ?string $nationality = null,
-        ?int $customerId = null,
-        ?string $notes = null
+        ?int $customerId = null
     ): ScreeningResponse {
         $normalizedName = $this->normalizeName($name);
         $candidates = $this->findCandidates($normalizedName);
@@ -130,8 +128,7 @@ class CustomerScreeningService
             name: $customerName,
             dob: $transaction->customer?->date_of_birth?->format('Y-m-d'),
             nationality: $transaction->customer?->nationality,
-            customerId: $customerId,
-            notes: "Transaction #{$transaction->id}"
+            customerId: $customerId
         );
     }
 
@@ -156,7 +153,7 @@ class CustomerScreeningService
             ->get();
     }
 
-    public function handleConfirmedMatch(Customer $customer, string $listType, string $matchedEntity): array
+    public function handleConfirmedMatch(Customer $customer, string $listType): array
     {
         // Freeze customer's funds and properties per pd-00.md 27.6.1(a)
         $customer->freeze("confirmed_{$listType}_match");
@@ -169,14 +166,12 @@ class CustomerScreeningService
             $this->rejectCustomer($customer, "positive_{$listType}_match");
         }
 
-        // Report positive name match per pd-00.md 27.7.1
-        $this->reportPositiveMatch($customer, $listType, $matchedEntity);
+        // TODO: pd-00.md 27.7.1 - Report positive name match to BNM FIU and IGP
 
         return [
             'action' => 'frozen_blocked_reported',
             'customer_id' => $customer->id,
             'list_type' => $listType,
-            'matched_entity' => $matchedEntity,
         ];
     }
 
@@ -191,13 +186,6 @@ class CustomerScreeningService
             'is_active' => false,
             'rejection_reason' => $reason,
         ]);
-    }
-
-    private function reportPositiveMatch(Customer $customer, string $listType, string $matchedEntity): void
-    {
-        // Placeholder: Submit to BNM FIU and IGP per pd-00.md 27.7.1
-        // TODO: Implement actual reporting to BNM FIU and IGP
-        // event(new \App\Events\SanctionsMatchReported($customer, $listType, $matchedEntity));
     }
 
     public function getStatus(Customer $customer): array
