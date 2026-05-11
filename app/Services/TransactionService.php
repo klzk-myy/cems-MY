@@ -52,6 +52,13 @@ class TransactionService implements TransactionServiceInterface
         protected PepApprovalService $pepApprovalService,
     ) {}
 
+    protected function validateIpAddress(?string $ipAddress): void
+    {
+        if ($ipAddress && ! filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+            throw new InvalidIpAddressException($ipAddress);
+        }
+    }
+
     /**
      * Validate currency code exists in system.
      *
@@ -203,9 +210,7 @@ class TransactionService implements TransactionServiceInterface
         $ipAddress = $ipAddress ?? request()->ip();
 
         // Validate IP address format
-        if ($ipAddress && ! filter_var($ipAddress, FILTER_VALIDATE_IP)) {
-            throw new InvalidIpAddressException($ipAddress);
-        }
+        $this->validateIpAddress($ipAddress);
 
         // Verify till is open for this currency
         $tillBalance = TillBalance::where('till_id', $data['till_id'])
@@ -650,10 +655,7 @@ class TransactionService implements TransactionServiceInterface
     {
         $ipAddress = $ipAddress ?? request()->ip();
 
-        // Validate IP address format
-        if ($ipAddress && ! filter_var($ipAddress, FILTER_VALIDATE_IP)) {
-            throw new \InvalidArgumentException('Invalid IP address format.');
-        }
+        $this->validateIpAddress($ipAddress);
 
         // Validate transaction is in pending approval status
         if ($transaction->status !== TransactionStatus::PendingApproval) {
