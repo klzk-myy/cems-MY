@@ -12,6 +12,7 @@ use App\Models\TillBalance;
 use App\Models\User;
 use App\Services\CounterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**

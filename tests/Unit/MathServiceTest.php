@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\MathService;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -32,7 +33,7 @@ class MathServiceTest extends TestCase
         $this->math = new MathService(2);
     }
 
-    /** @test */
+    #[Test]
     public function test_math_service_scale_matches_database_precision(): void
     {
         // MathService default scale=4 matches DB decimal(18,4) for monetary amounts
@@ -54,35 +55,35 @@ class MathServiceTest extends TestCase
         $this->assertEquals('1500.6912', $sum);
     }
 
-    /** @test */
+    #[Test]
     public function it_adds_two_numbers_with_precision(): void
     {
         $result = $this->math->add('10.50', '5.25');
         $this->assertEquals('15.75', $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_subtracts_two_numbers_with_precision(): void
     {
         $result = $this->math->subtract('100.00', '25.50');
         $this->assertEquals('74.50', $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_multiplies_two_numbers_with_precision(): void
     {
         $result = $this->math->multiply('10.50', '3');
         $this->assertEquals('31.50', $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_divides_two_numbers_with_precision(): void
     {
         $result = $this->math->divide('100.00', '4');
         $this->assertEquals('25.00', $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_exception_for_division_by_zero(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -90,7 +91,7 @@ class MathServiceTest extends TestCase
         $this->math->divide('100.00', '0');
     }
 
-    /** @test */
+    #[Test]
     public function it_compares_two_decimals_correctly(): void
     {
         $this->assertEquals(0, $this->math->compare('10.50', '10.50'));
@@ -98,14 +99,14 @@ class MathServiceTest extends TestCase
         $this->assertEquals(1, $this->math->compare('10.50', '10.49'));
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_large_numbers(): void
     {
         $result = $this->math->add('999999999999.99', '0.01');
         $this->assertEquals('1000000000000.00', $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_weighted_average_cost(): void
     {
         // Old: 1000 USD at 4.50 = 4500 MYR
@@ -115,7 +116,7 @@ class MathServiceTest extends TestCase
         $this->assertEquals('4.53', substr($result, 0, 4));
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_revaluation_pnl(): void
     {
         // 1000 USD * (4.60 - 4.50) = 100 MYR gain
@@ -123,7 +124,7 @@ class MathServiceTest extends TestCase
         $this->assertEquals('100.00', $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_transaction_amount(): void
     {
         // 100 USD * 4.50 = 450 MYR

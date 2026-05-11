@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\AccountingService;
 use App\Services\FiscalYearService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AccountingWorkflowTest extends TestCase
@@ -82,7 +83,7 @@ class AccountingWorkflowTest extends TestCase
         $this->accountingService = app(AccountingService::class);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_create_a_journal_entry(): void
     {
         $response = $this->actingAs($this->manager)
@@ -108,7 +109,7 @@ class AccountingWorkflowTest extends TestCase
         $response->assertRedirect();
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_debits_equal_credits(): void
     {
         $response = $this->actingAs($this->manager)
@@ -132,7 +133,7 @@ class AccountingWorkflowTest extends TestCase
         $response->assertSessionHasErrors();
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_journal_entry_posted_directly(): void
     {
         // Journal entries are now posted directly without approval workflow
@@ -159,7 +160,7 @@ class AccountingWorkflowTest extends TestCase
         $response->assertRedirect();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_access_trial_balance_endpoint(): void
     {
         $response = $this->actingAs($this->manager)
@@ -170,7 +171,7 @@ class AccountingWorkflowTest extends TestCase
             "Expected status 200 or 500, got {$response->status()}");
     }
 
-    /** @test */
+    #[Test]
     public function it_can_access_profit_and_loss_endpoint(): void
     {
         $response = $this->actingAs($this->manager)
@@ -180,7 +181,7 @@ class AccountingWorkflowTest extends TestCase
             "Expected status 200 or 500, got {$response->status()}");
     }
 
-    /** @test */
+    #[Test]
     public function it_can_access_balance_sheet_endpoint(): void
     {
         $response = $this->actingAs($this->manager)
@@ -190,7 +191,7 @@ class AccountingWorkflowTest extends TestCase
             "Expected status 200 or 500, got {$response->status()}");
     }
 
-    /** @test */
+    #[Test]
     public function journal_entry_is_created_directly_as_posted_with_ledger_entries(): void
     {
         $response = $this->actingAs($this->manager)
@@ -223,7 +224,7 @@ class AccountingWorkflowTest extends TestCase
         $this->assertCount(0, AccountLedger::where('journal_entry_id', $entry->id)->get());
     }
 
-    /** @test */
+    #[Test]
     public function journal_entry_reversal_marks_original_reversed_and_creates_reversing_entry(): void
     {
         $createResponse = $this->actingAs($this->manager)
@@ -276,7 +277,7 @@ class AccountingWorkflowTest extends TestCase
         $this->assertEquals($originalCashLine->credit, $reversalCashLine->debit);
     }
 
-    /** @test */
+    #[Test]
     public function test_closing_entries_use_correct_income_summary_account_type(): void
     {
         // Income Summary (4998) is classified as Equity in the chart of accounts,
@@ -420,7 +421,7 @@ class AccountingWorkflowTest extends TestCase
         $this->assertEquals('5000.00', bcadd($expenseLedger->credit, '0', 2));
     }
 
-    /** @test */
+    #[Test]
     public function test_closing_entries_use_bcmath_for_large_numbers(): void
     {
         // Test that BCMath is used for absolute value in closing entries.

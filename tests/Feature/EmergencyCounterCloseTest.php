@@ -10,6 +10,7 @@ use App\Models\CounterSession;
 use App\Models\EmergencyClosure;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class EmergencyCounterCloseTest extends TestCase
@@ -77,7 +78,7 @@ class EmergencyCounterCloseTest extends TestCase
         return $session;
     }
 
-    /** @test */
+    #[Test]
     public function it_can_initiate_emergency_close_via_api(): void
     {
         $session = $this->createOpenSession();
@@ -101,7 +102,7 @@ class EmergencyCounterCloseTest extends TestCase
         $this->assertEquals(CounterSessionStatus::EmergencyClosed, $session->status);
     }
 
-    /** @test */
+    #[Test]
     public function it_enforces_4_hour_cooldown(): void
     {
         $session = $this->createOpenSession();
@@ -125,7 +126,7 @@ class EmergencyCounterCloseTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_enforces_30_minute_session_minimum(): void
     {
         $session = CounterSession::factory()->create([
@@ -148,7 +149,7 @@ class EmergencyCounterCloseTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function manager_can_acknowledge_closure(): void
     {
         $session = $this->createOpenSession();
@@ -171,7 +172,7 @@ class EmergencyCounterCloseTest extends TestCase
         $this->assertNotNull($closure->acknowledged_at);
     }
 
-    /** @test */
+    #[Test]
     public function non_manager_cannot_acknowledge(): void
     {
         $session = $this->createOpenSession();
@@ -190,7 +191,7 @@ class EmergencyCounterCloseTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_variance_data(): void
     {
         $session = $this->createOpenSession();

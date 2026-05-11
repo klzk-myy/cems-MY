@@ -16,6 +16,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionWorkflowTest extends TestCase
@@ -95,7 +96,7 @@ class TransactionWorkflowTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_authentication_to_create_transaction(): void
     {
         $response = $this->postJson('/api/v1/transactions', [
@@ -111,7 +112,7 @@ class TransactionWorkflowTest extends TestCase
         $response->assertStatus(401);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_list_transactions(): void
     {
         // Create a transaction first
@@ -137,7 +138,7 @@ class TransactionWorkflowTest extends TestCase
             "Expected status 200/201/500, got {$response->status()}");
     }
 
-    /** @test */
+    #[Test]
     public function it_can_view_transaction_details(): void
     {
         $transaction = Transaction::factory()->create([
@@ -161,7 +162,7 @@ class TransactionWorkflowTest extends TestCase
             "Expected status 200/404/500, got {$response->status()}");
     }
 
-    /** @test */
+    #[Test]
     public function test_concurrent_sell_transactions_respect_reservation(): void
     {
         $customer = Customer::factory()->create([
@@ -232,7 +233,7 @@ class TransactionWorkflowTest extends TestCase
         $this->transactionService->createTransaction($data2, $this->teller->id);
     }
 
-    /** @test */
+    #[Test]
     public function test_approval_history_reflects_actual_state_transitions(): void
     {
         $customer = Customer::factory()->create([
@@ -324,7 +325,7 @@ class TransactionWorkflowTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function test_transaction_approval_required_at_10000(): void
     {
         $customer = Customer::factory()->create([

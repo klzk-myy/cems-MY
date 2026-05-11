@@ -18,6 +18,7 @@ use App\Services\MathService;
 use App\Services\TellerAllocationService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BranchAllocationWorkflowTest extends TestCase
@@ -108,7 +109,7 @@ class BranchAllocationWorkflowTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function test_full_teller_opening_workflow(): void
     {
         $requestAmount = '50000.0000';
@@ -149,7 +150,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->assertEquals('45000.0000', $this->pool->allocated_balance);
     }
 
-    /** @test */
+    #[Test]
     public function test_eod_return_workflow(): void
     {
         $approvedAmount = '40000.0000';
@@ -187,7 +188,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->assertEquals('0.0000', $this->pool->allocated_balance);
     }
 
-    /** @test */
+    #[Test]
     public function test_handover_workflow(): void
     {
         $approvedAmount = '35000.0000';

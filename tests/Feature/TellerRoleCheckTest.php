@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TellerRoleCheckTest extends TestCase
@@ -28,7 +29,7 @@ class TellerRoleCheckTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function teller_role_check_only_passes_for_tellers(): void
     {
         // Create a teller user
@@ -75,7 +76,7 @@ class TellerRoleCheckTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function admin_cannot_access_teller_only_routes(): void
     {
         // Create an admin user
@@ -99,7 +100,7 @@ class TellerRoleCheckTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function compliance_officer_cannot_access_teller_only_routes(): void
     {
         // Create a compliance officer

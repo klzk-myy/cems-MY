@@ -9,6 +9,7 @@ use App\Models\JournalEntry;
 use App\Services\LedgerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class LedgerServiceBalanceTest extends TestCase
@@ -35,7 +36,7 @@ class LedgerServiceBalanceTest extends TestCase
         $this->branch2 = $this->createTestBranch(['code' => 'BR2', 'name' => 'Branch 2']);
     }
 
-    /** @test */
+    #[Test]
     public function get_trial_balance_uses_efficient_queries()
     {
         $ledgerService = $this->app->make(LedgerService::class);
@@ -65,7 +66,7 @@ class LedgerServiceBalanceTest extends TestCase
         $this->assertNotEmpty($result['accounts']);
     }
 
-    /** @test */
+    #[Test]
     public function trial_balance_filters_by_branch(): void
     {
         $ledgerService = $this->app->make(LedgerService::class);

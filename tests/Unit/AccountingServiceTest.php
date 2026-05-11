@@ -11,6 +11,7 @@ use App\Services\AccountingService;
 use App\Services\AuditService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AccountingServiceTest extends TestCase
@@ -254,7 +255,7 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('1000.0000', $revenueLedger->credit);
     }
 
-    /** @test */
+    #[Test]
     public function test_journal_reversal_produces_correct_economic_effect(): void
     {
         // Create test accounts simulating SELL transaction scenario:

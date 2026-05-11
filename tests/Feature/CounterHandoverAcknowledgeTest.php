@@ -10,6 +10,7 @@ use App\Models\CounterHandover;
 use App\Models\CounterSession;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CounterHandoverAcknowledgeTest extends TestCase
@@ -100,7 +101,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
         return ['session' => $session, 'handover' => $handover];
     }
 
-    /** @test */
+    #[Test]
     public function manager_can_acknowledge_handover(): void
     {
         $result = $this->createPendingHandover();
@@ -125,7 +126,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $this->assertEquals(CounterSessionStatus::HandedOver, $result['session']->status);
     }
 
-    /** @test */
+    #[Test]
     public function wrong_user_cannot_acknowledge_handover(): void
     {
         $result = $this->createPendingHandover();
@@ -139,7 +140,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function cannot_acknowledge_non_pending_handover(): void
     {
         $result = $this->createPendingHandover();
@@ -155,7 +156,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $response->assertStatus(422);
     }
 
-    /** @test */
+    #[Test]
     public function web_route_manager_can_acknowledge_handover(): void
     {
         // Create handover where to_user_id is the manager
@@ -190,7 +191,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $this->assertNotNull($handover->acknowledged_at);
     }
 
-    /** @test */
+    #[Test]
     public function web_route_show_acknowledge_form(): void
     {
         // Create handover where to_user_id is the manager
@@ -219,7 +220,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[Test]
     public function cannot_acknowledge_twice(): void
     {
         $result = $this->createPendingHandover();
@@ -238,7 +239,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $response->assertStatus(422);
     }
 
-    /** @test */
+    #[Test]
     public function test_handover_acknowledge_requires_manager_role(): void
     {
         $result = $this->createPendingHandover();
@@ -269,7 +270,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $this->assertNotNull($handover->acknowledged_at);
     }
 
-    /** @test */
+    #[Test]
     public function test_yellow_variance_requires_acknowledgment(): void
     {
         // Create a handover with yellow_variance flag set to true
