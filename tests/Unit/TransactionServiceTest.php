@@ -425,7 +425,7 @@ class TransactionServiceTest extends TestCase
         // Step 3: Verify expected balance calculation: opening + buys - sells
         // Opening balance was 0, we bought 500 and sold 200, so net = 300 USD
         $expectedBalance = $this->mathService->add('0', $this->mathService->subtract('500.0000', '200.0000'));
-        $this->assertEquals('300.0000', $this->tillBalance->getExpectedBalance());
+        $this->assertEquals($expectedBalance, $this->tillBalance->getExpectedBalance());
     }
 
     public function test_transaction_assigns_correct_cdd_level(): void
@@ -488,7 +488,7 @@ class TransactionServiceTest extends TestCase
     public function test_get_available_balance_excludes_pending_reservations(): void
     {
         // Create a position with 1000 USD
-        $position = CurrencyPosition::factory()->create([
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
             'balance' => '1000.00',
@@ -737,7 +737,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $tillId,
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $this->transactionService->createTransaction($data, $this->teller->id);
 
         // Verify MYR balance was increased (received MYR from foreign currency sale)
         $myrBalance = TillBalance::where('till_id', $tillId)
