@@ -6,6 +6,7 @@ use App\Events\RelatedPartyOwnershipConcern;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
 use App\Models\SanctionEntry;
+use App\Models\SanctionsAnalysis;
 use App\Models\ScreeningResult;
 use App\Models\Transaction;
 use App\ValueObjects\ScreeningMatch;
@@ -371,6 +372,7 @@ class CustomerScreeningService
 
     /**
      * Analyze past transactions of a related party for the last 12 months.
+     * Creates a SanctionsAnalysis record per pd-00.md 27.5.2 requirement.
      */
     private function analyzeRelatedPartyTransactions(Customer $relatedParty): array
     {
@@ -379,11 +381,14 @@ class CustomerScreeningService
             ->where('created_at', '>=', now()->subMonths(12))
             ->get();
 
+        $transactionCount = $transactions->count();
+        $totalAmount = $transactions->sum('amount_myrr');
+
         // Store analysis via customer relation additional_info
         $analysis = [
             'analysis_date' => now()->toIso8601String(),
-            'transaction_count' => $transactions->count(),
-            'total_amount_myrr' => $transactions->sum('amount_myrr'),
+            'transaction_count' => $transactionCount,
+            'total_amount_myrr' => $totalAmount,
             'analysis_type' => 'related_party_due_diligence',
         ];
 
@@ -395,24 +400,47 @@ class CustomerScreeningService
             $relation->update(['additional_info' => $additionalInfo]);
         }
 
+        // Create SanctionsAnalysis record per pd-00.md 27.5.2
+        SanctionsAnalysis::create([
+            'customer_id' => $relatedParty->id,
+            'analysis_type' => 'related_party_due_diligence',
+            'transaction_count' => $transactionCount,
+            'total_amount' => $totalAmount,
+            'analyzed_at' => now(),
+        ]);
+
         return $analysis;
     }
 
     /**
      * Check ownership/control per pd-00.md 27.5.3 beneficial owner definition.
-     * Flags for enhanced monitoring if significant ownership detected.
+     * Flags for enhanced monitoring if significant ownership detected (>25%).
      */
     private function checkOwnershipControl(Customer $customer, Customer $relatedParty): void
     {
-        // Check for significant ownership interest (>25% threshold for beneficial owner)
-        // In this implementation, relation_type of 'beneficial_owner' indicates >25% ownership
-        // This could be enhanced with actual ownership_percentage field if needed
+        // Determine ownership interest
+        // 1. Check if related party has ownership_interest field with actual percentage
+        // 2. Otherwise, relation_type of 'beneficial_owner' indicates >25% ownership per pd-00.md
+        $ownershipInterest = 0.0;
+        $isSignificantOwnership = false;
 
-        // For now, trigger enhanced monitoring for all beneficial owners
-        // The actual ownership percentage check would require additional fields
+        if ($relatedParty->ownership_interest !== null && is_numeric($relatedParty->ownership_interest)) {
+            $ownershipInterest = (float) $relatedParty->ownership_interest;
+            $isSignificantOwnership = $ownershipInterest > 25.0;
+        } elseif ($relatedParty->relation_type === 'beneficial_owner') {
+            // relation_type 'beneficial_owner' per migration indicates >25% ownership
+            $ownershipInterest = 26.0; // Presumed >25% for beneficial owner status
+            $isSignificantOwnership = true;
+        }
+
+        if ($isSignificantOwnership) {
+            // Fire the RelatedPartyOwnershipConcern event per pd-00.md 27.5.3
+            event(new RelatedPartyOwnershipConcern($customer, $relatedParty, $ownershipInterest));
+        }
+
+        // Also flag concerns for frozen/sanctioned related parties
         if ($relatedParty->is_frozen || $relatedParty->sanction_hit) {
-            // Log concern for frozen/sanctioned related parties
-            event(new RelatedPartyOwnershipConcern($customer, $relatedParty, 0.0));
+            event(new RelatedPartyOwnershipConcern($customer, $relatedParty, $ownershipInterest));
         }
     }
 
