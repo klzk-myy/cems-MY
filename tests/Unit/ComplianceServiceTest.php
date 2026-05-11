@@ -179,4 +179,46 @@ class ComplianceServiceTest extends TestCase
 
         Carbon::setTestNow(); // Reset
     }
+
+    public function test_str_filing_deadline_before_cutoff_is_same_day(): void
+    {
+        // Mock time to Tuesday 10am (before 3pm cutoff)
+        Carbon::setTestNow(Carbon::parse('2024-05-07 10:00:00')); // Tuesday
+
+        $service = resolve(ComplianceService::class);
+        $deadline = $service->getStrFilingDeadline();
+
+        $this->assertEquals('2024-05-07', $deadline->toDateString());
+        $this->assertTrue($deadline->isTuesday());
+
+        Carbon::setTestNow(); // Reset
+    }
+
+    public function test_str_filing_deadline_after_cutoff_is_next_working_day(): void
+    {
+        // Mock time to Tuesday 4pm (after 3pm cutoff)
+        Carbon::setTestNow(Carbon::parse('2024-05-07 16:00:00')); // Tuesday
+
+        $service = resolve(ComplianceService::class);
+        $deadline = $service->getStrFilingDeadline();
+
+        $this->assertEquals('2024-05-08', $deadline->toDateString()); // Wednesday
+        $this->assertTrue($deadline->isWednesday());
+
+        Carbon::setTestNow(); // Reset
+    }
+
+    public function test_str_filing_deadline_friday_after_cutoff_is_monday(): void
+    {
+        // Mock time to Friday 4pm (after 3pm cutoff)
+        Carbon::setTestNow(Carbon::parse('2024-05-10 16:00:00')); // Friday
+
+        $service = resolve(ComplianceService::class);
+        $deadline = $service->getStrFilingDeadline();
+
+        $this->assertEquals('2024-05-13', $deadline->toDateString()); // Monday
+        $this->assertTrue($deadline->isMonday());
+
+        Carbon::setTestNow(); // Reset
+    }
 }

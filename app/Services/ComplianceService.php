@@ -79,6 +79,12 @@ class ComplianceService
     private const STR_FILING_DEADLINE_DAYS = 1;
 
     /**
+     * STR filing deadline cutoff hour (3pm).
+     * After this time, deadline becomes next working day.
+     */
+    private const STR_FILING_CUTOFF_HOUR = 15;
+
+    /**
      * Create a new ComplianceService instance.
      *
      * @param  EncryptionService  $encryptionService  Service for data encryption
@@ -449,6 +455,30 @@ class ComplianceService
             'working_days_until_deadline' => self::STR_FILING_DEADLINE_DAYS,
             'suspicion_date' => $suspicion,
         ];
+    }
+
+    /**
+     * Get STR filing deadline based on current time.
+     *
+     * pd-00.md 22.2.6: "within the next working day, from the date the Compliance Officer
+     * establishes the suspicion."
+     *
+     * - If suspicion established before 3pm on a working day, deadline is today EOD
+     * - Otherwise deadline is next working day EOD
+     *
+     * @return Carbon The filing deadline
+     */
+    public function getStrFilingDeadline(): Carbon
+    {
+        $now = now();
+
+        // If before cutoff hour on a weekday, deadline is today EOD
+        if ($now->hour < self::STR_FILING_CUTOFF_HOUR && $now->isWeekday()) {
+            return $now->copy()->endOfDay();
+        }
+
+        // Otherwise deadline is next working day EOD
+        return $now->nextWeekday()->endOfDay();
     }
 
     /**
