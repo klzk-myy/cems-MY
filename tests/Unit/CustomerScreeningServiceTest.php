@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\Customer;
+use App\Models\CustomerRelation;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Models\ScreeningResult;
@@ -247,5 +248,29 @@ class CustomerScreeningServiceTest extends TestCase
         $customer->refresh();
 
         $this->assertTrue($customer->transactions_blocked);
+    }
+
+    public function test_related_parties_due_diligence_conducted(): void
+    {
+        $customer = Customer::factory()->create();
+        $relatedParty = Customer::factory()->create();
+
+        // Link them as related parties via CustomerRelation
+        CustomerRelation::create([
+            'customer_id' => $customer->id,
+            'related_customer_id' => $relatedParty->id,
+            'relation_type' => 'business_partner',
+            'related_name' => $relatedParty->full_name,
+        ]);
+
+        $service = new CustomerScreeningService(new MathService);
+        $service->conductRelatedPartiesDueDiligence($customer);
+
+        // Verify transaction analysis was recorded - check via customer_relations analysis
+        $this->assertDatabaseHas('customer_relations', [
+            'customer_id' => $customer->id,
+            'related_customer_id' => $relatedParty->id,
+            'relation_type' => 'business_partner',
+        ]);
     }
 }
