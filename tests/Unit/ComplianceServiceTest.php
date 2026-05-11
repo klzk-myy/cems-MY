@@ -221,4 +221,17 @@ class ComplianceServiceTest extends TestCase
 
         Carbon::setTestNow(); // Reset
     }
+
+    public function test_str_filing_deadline_friday_before_cutoff_is_same_day(): void
+    {
+        // Mock time to Friday 10am (before 3pm cutoff)
+        Carbon::setTestNow(Carbon::parse('2024-05-10 10:00:00')); // Friday
+
+        $service = resolve(ComplianceService::class);
+        $deadline = $service->getStrFilingDeadline();
+
+        $this->assertEquals('2024-05-10', $deadline->toDateString()); // Friday EOD
+
+        Carbon::setTestNow(); // Reset
+    }
 }
