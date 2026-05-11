@@ -43,8 +43,7 @@ class CustomerScreeningService
                 entryId: null,
                 score: 100.0,
                 action: 'block',
-                matchedFields: ['sanction_hit_flag'],
-                notes: $notes
+                matchedFields: ['sanction_hit_flag']
             );
 
             return ScreeningResponse::fromResult($result);
@@ -110,8 +109,7 @@ class CustomerScreeningService
             entryId: $matches->first()?->entryId,
             score: $highestScore,
             action: $action,
-            matchedFields: $matches->map(fn (ScreeningMatch $m) => $m->matchedFields)->flatten()->toArray(),
-            notes: $notes
+            matchedFields: $matches->map(fn (ScreeningMatch $m) => $m->matchedFields)->flatten()->toArray()
         );
 
         return new ScreeningResponse(
@@ -195,10 +193,10 @@ class CustomerScreeningService
         ]);
     }
 
-    private function reportPositiveMatch(Customer $_customer, string $_listType, string $_matchedEntity): void
+    private function reportPositiveMatch(Customer $customer, string $listType, string $matchedEntity): void
     {
         // Placeholder: Submit to BNM FIU and IGP per pd-00.md 27.7.1
-        // Note: SanctionsMatchReported event should be created for compliance reporting
+        // TODO: Implement actual reporting to BNM FIU and IGP
         // event(new \App\Events\SanctionsMatchReported($customer, $listType, $matchedEntity));
     }
 
@@ -426,7 +424,7 @@ class CustomerScreeningService
         // The actual ownership percentage check would require additional fields
         if ($relatedParty->is_frozen || $relatedParty->sanction_hit) {
             // Log concern for frozen/sanctioned related parties
-            event(new RelatedPartyOwnershipConcern($customer, $relatedParty));
+            event(new RelatedPartyOwnershipConcern($customer, $relatedParty, 0.0));
         }
     }
 
@@ -436,8 +434,7 @@ class CustomerScreeningService
         ?int $entryId,
         float $score,
         string $action,
-        array $matchedFields,
-        ?string $notes = null
+        array $matchedFields
     ): ScreeningResult {
         $matchType = 'levenshtein';
 

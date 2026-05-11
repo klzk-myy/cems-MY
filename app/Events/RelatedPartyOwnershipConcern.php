@@ -14,6 +14,6 @@ class RelatedPartyOwnershipConcern
     public function __construct(
         public Customer $customer,
         public Customer $relatedParty,
-        public ?float $ownershipPercentage = null
+        public float $ownershipInterest,
     ) {}
 }
