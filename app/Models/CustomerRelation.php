@@ -21,12 +21,17 @@ class CustomerRelation extends Model
         'nationality',
         'address',
         'is_pep',
+        'engagement_level',
+        'engagement_notes',
+        'engagement_assessed_at',
         'additional_info',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
         'is_pep' => 'boolean',
+        'engagement_level' => 'string',
+        'engagement_assessed_at' => 'datetime',
         'additional_info' => 'array',
     ];
 
@@ -43,5 +48,14 @@ class CustomerRelation extends Model
     public function isPepRelation(): bool
     {
         return $this->is_pep;
+    }
+
+    public function assessEngagement(string $level, ?string $notes = null): void
+    {
+        $this->update([
+            'engagement_level' => $level,
+            'engagement_notes' => $notes,
+            'engagement_assessed_at' => now(),
+        ]);
     }
 }
