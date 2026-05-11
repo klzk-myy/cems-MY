@@ -161,6 +161,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is a teller.
+     *
+     * @return bool True if user has teller role
+     */
+    public function isTeller(): bool
+    {
+        return $this->role->isTeller();
+    }
+
+    /**
      * Check if MFA is verified for this session.
      */
     public function isMfaVerified(): bool

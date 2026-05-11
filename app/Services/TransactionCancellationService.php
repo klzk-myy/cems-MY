@@ -217,7 +217,7 @@ class TransactionCancellationService
 
                 // Reverse teller allocation if applicable
                 $user = User::find($transaction->user_id);
-                if ($user && $user->role === UserRole::Teller) {
+                if ($user && $user->isTeller()) {
                     $allocation = $this->tellerAllocationService->getActiveAllocation(
                         $user,
                         $transaction->currency_code
@@ -478,7 +478,7 @@ class TransactionCancellationService
 
             // Reverse teller allocation if applicable
             $user = User::find($transaction->user_id);
-            if ($user && $user->role === UserRole::Teller) {
+            if ($user && $user->isTeller()) {
                 $allocation = $this->tellerAllocationService->getActiveAllocation(
                     $user,
                     $transaction->currency_code

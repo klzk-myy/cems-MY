@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
-use App\Enums\UserRole;
 use App\Events\TransactionApproved;
 use App\Events\TransactionCreated;
 use App\Exceptions\Domain\AllocationValidationException;
@@ -260,7 +259,7 @@ class TransactionService implements TransactionServiceInterface
         // For Sell transactions, no allocation check is needed upfront
         $user = User::findOrFail($userId);
         $allocationForUpdate = null;
-        if ($user->role === UserRole::Teller) {
+        if ($user->isTeller()) {
             $isBuy = ($data['type'] === TransactionType::Buy->value);
             if ($isBuy) {
                 $validationResult = $this->tellerAllocationService->validateTransaction(
@@ -833,7 +832,7 @@ class TransactionService implements TransactionServiceInterface
 
                 // Update teller allocation if this was a teller transaction
                 $user = User::find($lockedTransaction->user_id);
-                if ($user && $user->role === UserRole::Teller) {
+                if ($user && $user->isTeller()) {
                     $allocationForUpdate = $this->tellerAllocationService->getActiveAllocation(
                         $user,
                         $lockedTransaction->currency_code
