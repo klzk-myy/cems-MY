@@ -13,6 +13,7 @@ use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\InvalidCurrencyException;
 use App\Exceptions\Domain\InvalidIpAddressException;
+use App\Exceptions\Domain\PepApprovalRequiredException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Models\Currency;
@@ -47,6 +48,7 @@ class TransactionService implements TransactionServiceInterface
         protected ThresholdService $thresholdService,
         protected CacheTagsService $cacheTagsService,
         protected TransactionAccountingService $transactionAccountingService,
+        protected PepApprovalService $pepApprovalService,
     ) {}
 
     /**
@@ -220,6 +222,22 @@ class TransactionService implements TransactionServiceInterface
         $amountForeign = (string) $data['amount_foreign'];
         $rate = (string) $data['rate'];
         $amountLocal = $this->mathService->multiply($amountForeign, $rate);
+
+        // pd-00.md 14C.13.1(d): Check if PEP customer requires head office Senior Management approval
+        // This is pre-transaction approval for establishing/continuing business relationship with PEPs
+        if ($this->pepApprovalService->requiresHeadOfficeApproval($customer)) {
+            // Check if customer already has approved approval
+            if (! $this->pepApprovalService->hasApprovedApproval($customer)) {
+                $pendingApproval = $this->pepApprovalService->requestApproval(
+                    $customer,
+                    $data['type'] ?? 'transaction'
+                );
+
+                throw new PepApprovalRequiredException(
+                    "Senior Management approval required for PEP customer. Approval ID: {$pendingApproval->id}"
+                );
+            }
+        }
 
         // Validate against teller allocation (only for tellers, not manager/admin overrides)
         // Only validate for Buy transactions (teller sells foreign currency and needs allocation)

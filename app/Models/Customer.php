@@ -213,6 +213,22 @@ class Customer extends Model
         return (bool) $this->sanction_hit;
     }
 
+    /**
+     * Check if the customer is higher risk (Medium or High risk rating).
+     *
+     * Used for PEP approval requirements per pd-00.md 14C.13.1(d).
+     */
+    public function isHigherRisk(): bool
+    {
+        if ($this->risk_rating instanceof RiskRating) {
+            return $this->risk_rating === RiskRating::Medium
+                || $this->risk_rating === RiskRating::High;
+        }
+
+        // Handle string fallback
+        return in_array($this->risk_rating, ['Medium', 'High']);
+    }
+
     public function freeze(string $reason): void
     {
         $this->update([
