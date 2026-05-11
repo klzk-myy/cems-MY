@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\UserRole;
 use App\Exceptions\Domain\AccountNotFoundException;
 use App\Exceptions\Domain\FiscalYearClosedException;
 use App\Exceptions\Domain\FiscalYearNotFoundException;
@@ -238,12 +237,7 @@ class FiscalYearService
             return false;
         }
 
-        $role = $user->role;
-        if ($role instanceof UserRole) {
-            return $role === UserRole::Admin || $role === UserRole::Manager;
-        }
-
-        return in_array($role, ['admin', 'manager']);
+        return $user->isAdmin() || $user->isManager();
     }
 
     /**
