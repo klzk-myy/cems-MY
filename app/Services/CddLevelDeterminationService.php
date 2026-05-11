@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CddLevel;
+use App\Enums\PepType;
 use App\Enums\RiskRating;
 use App\Models\Customer;
 
@@ -70,15 +71,20 @@ class CddLevelDeterminationService
      * - Standard: >= RM 10,000
      * - Enhanced: PEP, Sanction match, or High risk (risk-based, not amount-based)
      *
+     * PEP handling per pd-00.md 15.2 and 15.3:
+     * - Foreign PEPs (15.2) always require Enhanced CDD
+     * - Domestic PEPs (15.3) require Enhanced CDD only if higher risk
+     *
      * SECURITY NOTE: This method always uses the customer's actual record values
      * for PEP status and sanctions screening. No override parameters are allowed
      * to prevent bypassing Enhanced CDD requirements.
      *
      * @param  string  $amount  Transaction amount in MYR (as string for precision)
      * @param  Customer  $customer  The customer initiating the transaction
+     * @param  string|null  $pepType  Optional PEP type to distinguish foreign vs domestic PEPs
      * @return CddLevel The determined CDD level (Simplified, Specific, Standard, or Enhanced)
      */
-    public function determineCDDLevel(string $amount, Customer $customer): CddLevel
+    public function determineCDDLevel(string $amount, Customer $customer, ?string $pepType = null): CddLevel
     {
         // Always use customer record - no overrides allowed for security
         $pepStatus = $customer->pep_status ?? false;
@@ -87,10 +93,39 @@ class CddLevelDeterminationService
         // Track Enhanced CDD triggers for audit trail
         $triggers = [];
 
+        // PEP handling per pd-00.md 15.2 and 15.3
+        // Foreign PEPs (15.2) require Enhanced CDD always
+        if ($pepType === PepType::Foreign->value) {
+            $triggers[] = 'Foreign PEP';
+
+            $this->lastCddTriggers = $triggers;
+
+            return CddLevel::Enhanced;
+        }
+
+        // Domestic PEPs (15.3) - risk-based enhanced CDD
+        if ($pepType === PepType::Domestic->value && $this->isHigherRisk($customer)) {
+            $triggers[] = 'Domestic PEP (higher risk)';
+
+            $this->lastCddTriggers = $triggers;
+
+            return CddLevel::Enhanced;
+        }
+
+        // Other PEP status (family member, close associate, etc.) - risk-based
+        if ($pepStatus && $pepType !== null && $this->isHigherRisk($customer)) {
+            $triggers[] = 'PEP associate (higher risk)';
+
+            $this->lastCddTriggers = $triggers;
+
+            return CddLevel::Enhanced;
+        }
+
         // Enhanced Due Diligence triggers (risk-based per pd-00.md 14C.13)
         // Enhanced CDD is based on customer risk factors, not transaction amount.
         // Transaction amount determines Standard/Specific/Simplified, not Enhanced.
-        if ($pepStatus) {
+        if ($pepStatus && $pepType === null) {
+            // Legacy PEP status without type distinction - treat as higher risk
             $triggers[] = 'PEP customer';
         }
         if ($sanctionStatus) {
@@ -118,6 +153,33 @@ class CddLevelDeterminationService
         }
 
         return CddLevel::Simplified;
+    }
+
+    /**
+     * Check if customer is higher risk (for Domestic PEP assessment per pd-00.md 15.3).
+     *
+     * A domestic PEP requires Enhanced CDD only if they are assessed as higher risk.
+     * This considers risk rating, sanctions match, and other risk factors.
+     */
+    protected function isHigherRisk(Customer $customer): bool
+    {
+        // High risk rating is automatically higher risk
+        if ($customer->risk_rating === RiskRating::High) {
+            return true;
+        }
+
+        // Sanction match indicates higher risk
+        if ($this->checkSanctionMatch($customer)) {
+            return true;
+        }
+
+        // Medium risk with PEP association could be higher risk
+        // This could be enhanced with additional risk factors per pd-00.md 15.3.4
+        if ($customer->risk_rating === RiskRating::Medium) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
