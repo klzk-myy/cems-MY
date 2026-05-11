@@ -353,4 +353,61 @@ class CustomerRiskScoringServiceTest extends TestCase
         // Reset Carbon mock
         Carbon::setTestNow();
     }
+
+    public function test_pep_cessation_after_5_years_allows_cessation(): void
+    {
+        $customer = Customer::factory()->create([
+            'pep_role_ended_at' => Carbon::now()->subYears(6),
+            'current_role_domain' => 'private_sector',
+            'former_pep_domain' => 'finance_ministry',
+        ]);
+
+        $result = $this->service->assessPepCessation($customer);
+
+        $this->assertTrue($result->canCessate);
+    }
+
+    public function test_recent_pep_continuing_in_same_domain_cannot_cessate(): void
+    {
+        $customer = Customer::factory()->create([
+            'pep_role_ended_at' => Carbon::now()->subMonths(6),
+            'current_role_domain' => 'finance_ministry',
+            'former_pep_domain' => 'finance_ministry',
+        ]);
+
+        $result = $this->service->assessPepCessation($customer);
+
+        $this->assertFalse($result->canCessate);
+    }
+
+    public function test_pep_cessation_medium_time_since_role(): void
+    {
+        $customer = Customer::factory()->create([
+            'pep_role_ended_at' => Carbon::now()->subYears(3),
+            'current_role_domain' => 'private_sector',
+            'former_pep_domain' => 'finance_ministry',
+        ]);
+
+        $result = $this->service->assessPepCessation($customer);
+
+        // 2-5 years = medium influence, but different domain = no same matters
+        // So cessation should be false (medium is not low)
+        $this->assertFalse($result->canCessate);
+        $this->assertEquals('medium', $result->factors['informal_influence']['level']);
+    }
+
+    public function test_pep_cessation_no_role_ended_date(): void
+    {
+        $customer = Customer::factory()->create([
+            'pep_role_ended_at' => null,
+            'current_role_domain' => 'private_sector',
+            'former_pep_domain' => 'finance_ministry',
+        ]);
+
+        $result = $this->service->assessPepCessation($customer);
+
+        // No end date = recent/high influence
+        $this->assertEquals('high', $result->factors['informal_influence']['level']);
+        $this->assertFalse($result->canCessate);
+    }
 }

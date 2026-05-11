@@ -65,6 +65,9 @@ class Customer extends Model
         'phone',
         'email',
         'pep_status',
+        'pep_role_ended_at',
+        'current_role_domain',
+        'former_pep_domain',
         'sanction_hit',
         'is_pep_associate',
         'risk_score',
@@ -92,6 +95,7 @@ class Customer extends Model
     protected $casts = [
         'date_of_birth' => 'date',
         'pep_status' => 'boolean',
+        'pep_role_ended_at' => 'datetime',
         'sanction_hit' => 'boolean',
         'is_active' => 'boolean',
         'risk_score' => 'integer',
