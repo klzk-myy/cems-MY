@@ -122,35 +122,7 @@ class ComplianceService
      */
     private function checkSanctionMatchInternal(Customer $customer): bool
     {
-        // Check customer's sanction_hit flag directly first
-        if ($customer->sanction_hit ?? false) {
-            return true;
-        }
-
-        if ($this->screeningService !== null) {
-            $result = $this->screeningService->screenCustomer($customer);
-
-            return $result->action !== 'clear';
-        }
-
-        $customerName = $customer->full_name;
-        if (! is_string($customerName) || trim($customerName) === '') {
-            return false;
-        }
-
-        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $customerName);
-        $pattern = '%'.$escaped.'%';
-
-        $driver = DB::connection()->getDriverName();
-        $operator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
-        $escapeClause = $driver === 'sqlite' ? " ESCAPE '\\'" : " ESCAPE '\\\\'";
-
-        $matches = DB::table('sanction_entries')
-            ->whereRaw("entity_name {$operator} ?{$escapeClause}", [$pattern])
-            ->orWhereRaw("aliases {$operator} ?{$escapeClause}", [$pattern])
-            ->count();
-
-        return $matches > 0;
+        return $this->checkSanctionMatch($customer);
     }
 
     /**
