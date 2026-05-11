@@ -4,12 +4,10 @@ namespace App\Console\Commands;
 
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
-use App\Enums\StrStatus;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\DataBreachAlert;
 use App\Models\FlaggedTransaction;
 use App\Models\SanctionEntry;
-use App\Models\StrReport;
 use App\Models\SystemAlert;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
@@ -18,8 +16,6 @@ use App\Notifications\ComplianceCaseAssignedNotification;
 use App\Notifications\DataBreachAlertNotification;
 use App\Notifications\LargeTransactionNotification;
 use App\Notifications\SanctionsMatchNotification;
-use App\Notifications\StrDeadlineApproachingNotification;
-use App\Notifications\StrSubmissionFailedNotification;
 use App\Notifications\SystemHealthAlertNotification;
 use App\Notifications\TransactionFlaggedNotification;
 use Illuminate\Console\Command;
@@ -40,8 +36,6 @@ class TestNotification extends Command
 
     protected array $notificationTypes = [
         'transaction_flagged' => 'Transaction Flagged',
-        'str_deadline' => 'STR Deadline Approaching',
-        'str_failed' => 'STR Submission Failed',
         'case_assigned' => 'Compliance Case Assigned',
         'data_breach' => 'Data Breach Alert',
         'large_transaction' => 'Large Transaction',
@@ -133,8 +127,6 @@ class TestNotification extends Command
     {
         return match ($type) {
             'transaction_flagged' => $this->createTransactionFlaggedNotification(),
-            'str_deadline' => $this->createStrDeadlineNotification(),
-            'str_failed' => $this->createStrFailedNotification(),
             'case_assigned' => $this->createCaseAssignedNotification(),
             'data_breach' => $this->createDataBreachNotification(),
             'large_transaction' => $this->createLargeTransactionNotification(),
@@ -153,30 +145,6 @@ class TestNotification extends Command
                 'flag_reason' => 'Test: Multiple transactions detected',
                 'status' => FlagStatus::Open,
             ])
-        );
-    }
-
-    protected function createStrDeadlineNotification(): StrDeadlineApproachingNotification
-    {
-        return new StrDeadlineApproachingNotification(
-            StrReport::factory()->make([
-                'id' => 999999,
-                'status' => StrStatus::Draft,
-                'filing_deadline' => now()->addDay(),
-            ]),
-            1
-        );
-    }
-
-    protected function createStrFailedNotification(): StrSubmissionFailedNotification
-    {
-        return new StrSubmissionFailedNotification(
-            StrReport::factory()->make([
-                'id' => 999999,
-                'status' => StrStatus::Failed,
-            ]),
-            'Connection timeout',
-            2
         );
     }
 

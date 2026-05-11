@@ -12,7 +12,6 @@ use App\Enums\FlagStatus;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
-use App\Models\StrReport;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -276,14 +275,6 @@ class ComplianceCase extends Model
     {
         return $query->where('sla_deadline', '<', now())
             ->where('status', '!=', ComplianceCaseStatus::Closed->value);
-    }
-
-    /**
-     * Get STR reports linked to this case.
-     */
-    public function strReports(): HasMany
-    {
-        return $this->hasMany(StrReport::class, 'case_id');
     }
 
     /**

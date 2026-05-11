@@ -8,7 +8,6 @@ use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
-use App\Models\StrReport;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
@@ -217,20 +216,6 @@ class ReportSchedulingService
      */
     public function getDeadlineCalendar(): array
     {
-        $today = now();
-        $deadlines = [];
-
-        $strDeadlines = StrReport::whereIn('status', ['draft', 'pending_review', 'pending_approval'])
-            ->whereNotNull('filing_deadline')
-            ->get()
-            ->map(fn ($str) => [
-                'type' => 'str',
-                'reference' => $str->id,
-                'deadline' => $str->filing_deadline->toDateString(),
-                'urgency' => $this->calculateUrgency($str->filing_deadline),
-                'status' => $str->status->value,
-            ]);
-
         $scheduledReports = ReportSchedule::active()
             ->whereNotNull('next_run_at')
             ->get()
@@ -242,7 +227,7 @@ class ReportSchedulingService
                 'report_type' => $schedule->report_type,
             ]);
 
-        return $strDeadlines->merge($scheduledReports)
+        return $scheduledReports
             ->sortBy('deadline')
             ->values()
             ->toArray();
@@ -253,18 +238,12 @@ class ReportSchedulingService
      */
     public function getKpiMetrics(): array
     {
-        $startOfMonth = now()->startOfMonth();
-
-        $completedRuns = ReportRun::where('status', ReportStatus::Completed)->get();
-
         $flagResolutionTime = $this->calculateAvgFlagResolutionTime();
-        $strTimeliness = $this->calculateStrTimeliness();
         $eddCompletionRate = $this->calculateEddCompletionRate();
         $reportsOnSchedule = $this->calculateReportsOnSchedule();
 
         return [
             'flag_resolution_avg_hours' => round($flagResolutionTime, 1),
-            'str_on_time_percent' => round($strTimeliness, 1),
             'edd_completion_rate_percent' => round($eddCompletionRate, 1),
             'reports_on_schedule_percent' => round($reportsOnSchedule, 1),
             'period' => 'Last 30 days',
@@ -315,22 +294,6 @@ class ReportSchedulingService
         }
 
         return ($totalMinutes / $resolvedFlags->count()) / 60;
-    }
-
-    protected function calculateStrTimeliness(): float
-    {
-        $totalStrs = StrReport::where('created_at', '>=', now()->subDays(30))->count();
-
-        if ($totalStrs === 0) {
-            return 100;
-        }
-
-        $onTimeStrs = StrReport::where('created_at', '>=', now()->subDays(30))
-            ->get()
-            ->filter(fn ($str) => $str->filing_deadline && $str->created_at->lte($str->filing_deadline))
-            ->count();
-
-        return ($onTimeStrs / $totalStrs) * 100;
     }
 
     protected function calculateEddCompletionRate(): float

@@ -17,7 +17,6 @@ use App\Jobs\Compliance\CounterfeitAlertJob;
 use App\Jobs\Compliance\CurrencyFlowJob;
 use App\Jobs\Compliance\CustomerLocationAnomalyJob;
 use App\Jobs\Compliance\SanctionsRescreeningJob;
-use App\Jobs\Compliance\StrDeadlineMonitorJob;
 use App\Jobs\Compliance\StructuringMonitorJob;
 use App\Jobs\Compliance\VelocityMonitorJob;
 use App\Jobs\ImportSanctionsJob;
@@ -190,13 +189,6 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/monitor-structuring.log'));
-
-        // STR Deadline Monitor - Daily at 05:00 (STR submission deadline tracking)
-        $schedule->job(new StrDeadlineMonitorJob)
-            ->dailyAt('05:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/monitor-str-deadline.log'));
 
         // Health checks - Every 5 minutes
         $schedule->command('monitor:check --alert')

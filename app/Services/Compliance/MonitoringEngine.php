@@ -7,7 +7,6 @@ use App\Services\Compliance\Monitors\CounterfeitAlertMonitor;
 use App\Services\Compliance\Monitors\CurrencyFlowMonitor;
 use App\Services\Compliance\Monitors\CustomerLocationAnomalyMonitor;
 use App\Services\Compliance\Monitors\SanctionsRescreeningMonitor;
-use App\Services\Compliance\Monitors\StrDeadlineMonitor;
 use App\Services\Compliance\Monitors\StructuringMonitor;
 use App\Services\Compliance\Monitors\VelocityMonitor;
 use App\Services\MathService;
@@ -21,7 +20,6 @@ class MonitoringEngine
     protected array $defaultMonitors = [
         VelocityMonitor::class,
         StructuringMonitor::class,
-        StrDeadlineMonitor::class,
         SanctionsRescreeningMonitor::class,
         CustomerLocationAnomalyMonitor::class,
         CurrencyFlowMonitor::class,

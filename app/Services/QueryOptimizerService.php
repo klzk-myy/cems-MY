@@ -186,7 +186,6 @@ class QueryOptimizerService
             'journal_entries' => 'Consider using with([\'lines\', \'lines.account\'])',
             'account_ledger' => 'Consider using with([\'account\'])',
             'till_balances' => 'Consider using with([\'counter\', \'user\'])',
-            'str_reports' => 'Consider using with([\'transactions\', \'customer\', \'createdBy\'])',
             'stock_transfers' => 'Consider using with([\'fromBranch\', \'toBranch\', \'items\'])',
         ];
 

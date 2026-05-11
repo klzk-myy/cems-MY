@@ -23,7 +23,6 @@ use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SanctionController;
 use App\Http\Controllers\Api\V1\SanctionListController;
 use App\Http\Controllers\Api\V1\ScreeningController;
-use App\Http\Controllers\Api\V1\StrController;
 use App\Http\Controllers\Api\V1\TellerAllocationController;
 use App\Http\Controllers\Api\V1\TransactionApprovalController;
 use App\Http\Controllers\Api\V1\TransactionCancellationController;
@@ -98,16 +97,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/customers/{customer}/history', [CustomerController::class, 'customerHistory']);
     Route::post('/customers/{customer}/kyc', [CustomerController::class, 'uploadDocument'])
         ->middleware('throttle:30,1');
-
-    // STR API - Compliance Officer only
-    Route::get('/str', [StrController::class, 'index'])
-        ->middleware('role:compliance');
-    Route::post('/str', [StrController::class, 'store'])
-        ->middleware('role:compliance');
-    Route::get('/str/{str}', [StrController::class, 'show'])
-        ->middleware('role:compliance');
-    Route::post('/str/{str}/submit', [StrController::class, 'submit'])
-        ->middleware('role:compliance');
 
     // Sanctions API - Admin only for upload
     Route::post('/sanctions/search', [SanctionController::class, 'search']);

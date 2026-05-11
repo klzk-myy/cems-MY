@@ -6,13 +6,11 @@ use App\Enums\ComplianceCaseStatus;
 use App\Enums\EddStatus;
 use App\Enums\FindingSeverity;
 use App\Enums\ReportStatus;
-use App\Enums\StrStatus;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceFinding;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\ReportGenerated;
-use App\Models\StrReport;
 use App\Models\SystemLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -39,13 +37,12 @@ class ComplianceReportingService
     public const QUARTERLY_FILING_DEADLINE_DAYS = 10;
 
     /**
-     * Get dashboard KPIs including case summary, STR status, EDD status, findings, and risk distribution.
+     * Get dashboard KPIs including case summary, EDD status, findings, and risk distribution.
      */
     public function getDashboardKpis(): array
     {
         return [
             'case_summary' => $this->getCaseSummary(),
-            'str_status' => $this->getStrStatusCounts(),
             'edd_status' => $this->getEddStatusCounts(),
             'open_findings_7_days' => $this->getFindingsBySeverityLast7Days(),
             'risk_distribution' => $this->getRiskDistribution(),
@@ -75,49 +72,6 @@ class ComplianceReportingService
             'under_review' => $counts[ComplianceCaseStatus::UnderReview->value] ?? 0,
             'escalated' => $counts[ComplianceCaseStatus::Escalated->value] ?? 0,
             'closed' => $counts[ComplianceCaseStatus::Closed->value] ?? 0,
-        ];
-    }
-
-    /**
-     * Get STR counts by status category.
-     */
-    protected function getStrStatusCounts(): array
-    {
-        $all = StrReport::all();
-
-        // Compare against enum objects since status is cast
-        $pending = $all->whereIn('status', [
-            StrStatus::Draft,
-            StrStatus::PendingReview,
-            StrStatus::PendingApproval,
-        ])->count();
-
-        $today = now()->toDateString();
-        $dueToday = $all->filter(function ($str) use ($today) {
-            $status = $str->status instanceof StrStatus ? $str->status : StrStatus::tryFrom($str->status);
-
-            return $str->filing_deadline &&
-                $str->filing_deadline->toDateString() === $today &&
-                ! in_array($status, [StrStatus::Submitted, StrStatus::Acknowledged]);
-        })->count();
-
-        $overdue = $all->filter(function ($str) {
-            $status = $str->status instanceof StrStatus ? $str->status : StrStatus::tryFrom($str->status);
-
-            return $str->isOverdue() &&
-                ! in_array($status, [StrStatus::Submitted, StrStatus::Acknowledged]);
-        })->count();
-
-        $filed = $all->whereIn('status', [
-            StrStatus::Submitted,
-            StrStatus::Acknowledged,
-        ])->count();
-
-        return [
-            'pending' => $pending,
-            'due_today' => $dueToday,
-            'overdue' => $overdue,
-            'filed' => $filed,
         ];
     }
 

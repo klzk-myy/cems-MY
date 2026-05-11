@@ -145,29 +145,6 @@ class AuditService
     }
 
     /**
-     * Log STR (Suspicious Transaction Report) action for compliance audit trail.
-     *
-     * @param  string  $action  STR action (str_created, str_submitted, str_approved, etc.)
-     * @param  int  $strId  STR Report ID
-     * @param  array  $data  Additional data
-     */
-    public function logStrAction(string $action, int $strId, array $data = []): SystemLog
-    {
-        $severity = $data['severity'] ?? 'WARNING';
-
-        return $this->logWithSeverity(
-            $action,
-            [
-                'entity_type' => 'StrReport',
-                'entity_id' => $strId,
-                'old_values' => $data['old'] ?? [],
-                'new_values' => $data['new'] ?? [],
-            ],
-            $severity
-        );
-    }
-
-    /**
      * Log compliance decision action (flag resolved, EDD decision, etc.).
      *
      * @param  string  $action  Action type
@@ -618,14 +595,13 @@ class AuditService
      * Log API access events.
      *
      * @param  string  $action  API action (api_login_success, api_login_failed,
-     *                          api_str_submitted, api_bulk_import)
+     *                          api_bulk_import)
      * @param  array  $data  API access data
      */
     public function logApiAccessEvent(string $action, array $data = []): SystemLog
     {
         $severity = match ($action) {
             'api_login_failed' => 'WARNING',
-            'api_str_submitted' => 'CRITICAL',
             default => 'INFO',
         };
 

@@ -26,7 +26,6 @@ use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StockCashController;
 use App\Http\Controllers\StockTransferController;
-use App\Http\Controllers\StrController;
 use App\Http\Controllers\TestQueryLogController;
 use App\Http\Controllers\TestResultsController;
 use App\Http\Controllers\Transaction\TransactionApprovalController;
@@ -207,8 +206,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::patch('/compliance/flags/{flaggedTransaction}/assign', [DashboardController::class, 'assignFlag'])->name('compliance.flags.assign');
         Route::patch('/compliance/flags/{flaggedTransaction}/resolve', [DashboardController::class, 'resolveFlag'])->name('compliance.flags.resolve');
 
-        Route::post('/compliance/flags/{flaggedTransaction}/generate-str', [StrController::class, 'generateFromAlert'])->name('compliance.flags.generate-str');
-
         Route::get('/compliance/workspace', [ComplianceWorkspaceController::class, 'index'])->name('compliance.workspace');
 
         Route::prefix('compliance/alerts')->name('compliance.alerts.')->group(function () {
@@ -284,25 +281,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             Route::delete('/schedule/{id}', [ComplianceReportingController::class, 'deleteSchedule'])->name('schedule.delete');
             Route::get('/deadlines', [ComplianceReportingController::class, 'deadlines'])->name('deadlines');
         });
-    });
-
-    Route::middleware('role:compliance')->prefix('str')->name('str.')->group(function () {
-        Route::get('/', [StrController::class, 'index'])->name('index');
-        Route::get('/create', [StrController::class, 'create'])->name('create');
-        Route::post('/', [StrController::class, 'store'])->name('store')
-            ->middleware('throttle:str-submission');
-        Route::get('/{str}', [StrController::class, 'show'])->name('show');
-        Route::get('/{str}/edit', [StrController::class, 'edit'])->name('edit');
-        Route::put('/{str}', [StrController::class, 'update'])->name('update');
-        Route::post('/{str}/submit-review', [StrController::class, 'submitForReview'])->name('submit-review');
-        Route::post('/{str}/submit-approval', [StrController::class, 'submitForApproval'])->name('submit-approval');
-        Route::post('/{str}/track-acknowledgment', [StrController::class, 'trackAcknowledgment'])->name('track-acknowledgment');
-    });
-
-    Route::middleware('role:manager')->prefix('str')->name('str.')->group(function () {
-        Route::post('/{str}/approve', [StrController::class, 'approve'])->name('approve');
-        Route::post('/{str}/submit', [StrController::class, 'submit'])->name('submit')
-            ->middleware(['mfa.verified', 'throttle:str-submission']);
     });
 
     Route::middleware('role:manager')->prefix('accounting')->name('accounting.')->group(function () {

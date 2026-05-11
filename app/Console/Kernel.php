@@ -7,7 +7,6 @@ use App\Jobs\Compliance\CounterfeitAlertJob;
 use App\Jobs\Compliance\CurrencyFlowJob;
 use App\Jobs\Compliance\CustomerLocationAnomalyJob;
 use App\Jobs\Compliance\SanctionsRescreeningJob;
-use App\Jobs\Compliance\StrDeadlineMonitorJob;
 use App\Jobs\Compliance\StructuringMonitorJob;
 use App\Jobs\Compliance\VelocityMonitorJob;
 use App\Jobs\ImportSanctionsJob;
@@ -133,13 +132,6 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/monitor-structuring.log'));
-
-        // STR Deadline Monitor - Daily at 05:00 (STR submission deadline tracking)
-        $schedule->job(new StrDeadlineMonitorJob)
-            ->dailyAt('05:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/monitor-str-deadline.log'));
 
         // ============ SYSTEM MONITORING ============
 

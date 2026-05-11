@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\ReportGenerated;
-use App\Models\StrReport;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\CacheOptimizationService;
@@ -130,22 +129,6 @@ class DashboardController extends Controller
         // Get paginated flags
         $flags = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        // Calculate STR stats including overdue tracking
-        $strStats = [
-            'draft' => StrReport::where('status', 'draft')->count(),
-            'pending_review' => StrReport::where('status', 'pending_review')->count(),
-            'pending_approval' => StrReport::where('status', 'pending_approval')->count(),
-            'submitted' => StrReport::where('status', 'submitted')->count(),
-            'overdue' => StrReport::whereNotNull('filing_deadline')
-                ->where('filing_deadline', '<', now())
-                ->whereIn('status', ['draft', 'pending_review', 'pending_approval'])
-                ->count(),
-            'near_deadline' => StrReport::whereNotNull('filing_deadline')
-                ->whereBetween('filing_deadline', [now(), now()->addDays(2)])
-                ->whereIn('status', ['draft', 'pending_review', 'pending_approval'])
-                ->count(),
-        ];
-
         // Calculate stats
         $stats = [
             'open' => FlaggedTransaction::where('status', 'Open')->count(),
@@ -158,7 +141,7 @@ class DashboardController extends Controller
                 ->count(),
         ];
 
-        return view('pages.compliance.index', compact('flags', 'stats', 'strStats'));
+        return view('pages.compliance.index', compact('flags', 'stats'));
     }
 
     public function assignFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
