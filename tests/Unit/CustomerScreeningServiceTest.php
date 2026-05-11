@@ -202,4 +202,50 @@ class CustomerScreeningServiceTest extends TestCase
 
         $this->assertGreaterThanOrEqual(2, $history->count());
     }
+
+    public function test_confirmed_sanctions_match_triggers_freeze(): void
+    {
+        $customer = Customer::factory()->create([
+            'full_name' => 'Test Customer',
+            'is_active' => true,
+        ]);
+
+        // Simulate confirmed sanctions match
+        $result = $this->service->handleConfirmedMatch($customer, 'UNSCR', 'AL_QAEDA');
+
+        $customer->refresh();
+
+        $this->assertTrue($customer->is_frozen);
+        $this->assertEquals('confirmed_UNSCR_match', $customer->freeze_reason);
+        $this->assertNotNull($customer->frozen_at);
+    }
+
+    public function test_potential_customer_with_positive_match_is_rejected(): void
+    {
+        $customer = Customer::factory()->create([
+            'full_name' => 'Pending Customer',
+            'is_active' => false,
+        ]);
+
+        $result = $this->service->handleConfirmedMatch($customer, 'DOMESTIC', 'SPECIFIED_ENTITY');
+
+        $customer->refresh();
+
+        $this->assertFalse($customer->is_active);
+        $this->assertEquals('positive_DOMESTIC_match', $customer->rejection_reason);
+    }
+
+    public function test_confirmed_match_blocks_transactions(): void
+    {
+        $customer = Customer::factory()->create([
+            'full_name' => 'Test Customer',
+            'is_active' => true,
+        ]);
+
+        $this->service->handleConfirmedMatch($customer, 'UNSCR', 'TEST_ENTITY');
+
+        $customer->refresh();
+
+        $this->assertTrue($customer->transactions_blocked);
+    }
 }

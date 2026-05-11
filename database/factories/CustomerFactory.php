@@ -27,6 +27,12 @@ class CustomerFactory extends Factory
             'risk_rating' => fake()->randomElement(['Low', 'Medium', 'High']),
             'risk_assessed_at' => now(),
             'last_transaction_at' => null,
+            'is_frozen' => false,
+            'freeze_reason' => null,
+            'frozen_at' => null,
+            'transactions_blocked' => false,
+            'rejection_reason' => null,
+            'is_active' => true,
         ];
     }
 }

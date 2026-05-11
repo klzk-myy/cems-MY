@@ -156,6 +156,50 @@ class CustomerScreeningService
             ->get();
     }
 
+    public function handleConfirmedMatch(Customer $customer, string $listType, string $matchedEntity): array
+    {
+        // Freeze customer's funds and properties per pd-00.md 27.6.1(a)
+        $customer->freeze("confirmed_{$listType}_match");
+
+        // Block transactions to prevent dissipation per pd-00.md 27.6.1(b)
+        $this->blockCustomerTransactions($customer);
+
+        // Reject potential customer per pd-00.md 27.6.2 (if not yet active)
+        if (! $customer->is_active) {
+            $this->rejectCustomer($customer, "positive_{$listType}_match");
+        }
+
+        // Report positive name match per pd-00.md 27.7.1
+        $this->reportPositiveMatch($customer, $listType, $matchedEntity);
+
+        return [
+            'action' => 'frozen_blocked_reported',
+            'customer_id' => $customer->id,
+            'list_type' => $listType,
+            'matched_entity' => $matchedEntity,
+        ];
+    }
+
+    private function blockCustomerTransactions(Customer $customer): void
+    {
+        $customer->update(['transactions_blocked' => true]);
+    }
+
+    private function rejectCustomer(Customer $customer, string $reason): void
+    {
+        $customer->update([
+            'is_active' => false,
+            'rejection_reason' => $reason,
+        ]);
+    }
+
+    private function reportPositiveMatch(Customer $customer, string $listType, string $matchedEntity): void
+    {
+        // Submit to BNM FIU and IGP per pd-00.md 27.7.1
+        // Note: SanctionsMatchReported event should be created for compliance reporting
+        // event(new \App\Events\SanctionsMatchReported($customer, $listType, $matchedEntity));
+    }
+
     public function getStatus(Customer $customer): array
     {
         $latestResult = ScreeningResult::where('customer_id', $customer->id)

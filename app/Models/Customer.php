@@ -77,6 +77,11 @@ class Customer extends Model
         'annual_volume_estimate',
         'risk_assessed_at',
         'last_transaction_at',
+        'is_frozen',
+        'freeze_reason',
+        'frozen_at',
+        'transactions_blocked',
+        'rejection_reason',
     ];
 
     /**
@@ -95,6 +100,9 @@ class Customer extends Model
         'last_transaction_at' => 'datetime',
         'cdd_level' => CddLevel::class,
         'risk_rating' => RiskRating::class,
+        'is_frozen' => 'boolean',
+        'frozen_at' => 'datetime',
+        'transactions_blocked' => 'boolean',
     ];
 
     /**
@@ -199,6 +207,32 @@ class Customer extends Model
     public function getIsSanctionedAttribute(): bool
     {
         return (bool) $this->sanction_hit;
+    }
+
+    public function freeze(string $reason): void
+    {
+        $this->update([
+            'is_frozen' => true,
+            'freeze_reason' => $reason,
+            'frozen_at' => now(),
+        ]);
+    }
+
+    public function unfreeze(): void
+    {
+        $this->update([
+            'is_frozen' => false,
+            'freeze_reason' => null,
+            'frozen_at' => null,
+        ]);
+    }
+
+    public function reject(string $reason): void
+    {
+        $this->update([
+            'is_active' => false,
+            'rejection_reason' => $reason,
+        ]);
     }
 
     /**
