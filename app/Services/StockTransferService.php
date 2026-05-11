@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\StockTransferStatus;
-use App\Enums\UserRole;
 use App\Models\Currency;
 use App\Models\StockTransfer;
 use App\Models\User;
@@ -96,7 +95,7 @@ class StockTransferService
 
     public function approveByBranchManager(StockTransfer $transfer): void
     {
-        if ($this->requester->role !== UserRole::Manager && $this->requester->role !== UserRole::Admin) {
+        if (! $this->requester->isManager() && ! $this->requester->isAdmin()) {
             throw new \RuntimeException('Only managers can approve transfers');
         }
 
@@ -109,7 +108,7 @@ class StockTransferService
 
     public function approveByHQ(StockTransfer $transfer): void
     {
-        if ($this->requester->role !== UserRole::Admin) {
+        if (! $this->requester->isAdmin()) {
             throw new \RuntimeException('Only HQ (Admin) can approve transfers');
         }
 
@@ -122,7 +121,7 @@ class StockTransferService
 
     public function dispatch(StockTransfer $transfer): void
     {
-        if ($this->requester->role !== UserRole::Admin) {
+        if (! $this->requester->isAdmin()) {
             throw new \RuntimeException('Only admin can dispatch transfers');
         }
 
@@ -135,7 +134,7 @@ class StockTransferService
 
     public function receiveItems(StockTransfer $transfer, array $items): void
     {
-        if ($this->requester->role !== UserRole::Admin) {
+        if (! $this->requester->isAdmin()) {
             throw new \RuntimeException('Only admin can receive items');
         }
 
@@ -189,7 +188,7 @@ class StockTransferService
 
     public function complete(StockTransfer $transfer): void
     {
-        if ($this->requester->role !== UserRole::Admin) {
+        if (! $this->requester->isAdmin()) {
             throw new \RuntimeException('Only admin can complete transfers');
         }
 
@@ -202,7 +201,7 @@ class StockTransferService
 
     public function cancel(StockTransfer $transfer, string $reason): void
     {
-        if ($this->requester->role !== UserRole::Manager && $this->requester->role !== UserRole::Admin) {
+        if (! $this->requester->isManager() && ! $this->requester->isAdmin()) {
             throw new \RuntimeException('Only managers can cancel transfers');
         }
 
