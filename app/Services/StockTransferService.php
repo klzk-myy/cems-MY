@@ -209,7 +209,7 @@ class StockTransferService
             throw new \RuntimeException('Cannot cancel a completed transfer');
         }
 
-        if ($transfer->status === StockTransferStatus::Cancelled->value) {
+        if ($transfer->status === StockTransferStatus::Cancelled) {
             throw new \RuntimeException('Transfer is already cancelled');
         }
 

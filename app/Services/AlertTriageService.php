@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AlertPriority;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
+use App\Enums\RiskRating;
 use App\Events\AlertCreated;
 use App\Models\Alert;
 use App\Models\Compliance\ComplianceCase;
@@ -79,11 +80,17 @@ class AlertTriageService
         }
 
         if ($customer) {
-            $riskRating = $customer->risk_rating ?? 'low';
-            if (in_array($riskRating, ['high', 'critical'])) {
-                $score += 20;
-            } elseif ($riskRating === 'medium') {
-                $score += 10;
+            $riskRating = $customer->risk_rating;
+            if ($riskRating instanceof RiskRating) {
+                if ($riskRating === RiskRating::High || $riskRating === RiskRating::Medium) {
+                    $score += $riskRating === RiskRating::High ? 20 : 10;
+                }
+            } elseif (is_string($riskRating)) {
+                if (in_array($riskRating, ['high', 'critical'])) {
+                    $score += 20;
+                } elseif ($riskRating === 'medium') {
+                    $score += 10;
+                }
             }
 
             if ($customer->pep_status) {

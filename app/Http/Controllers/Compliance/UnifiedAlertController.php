@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Enums\AlertPriority;
+use App\Enums\FlagStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Alert;
 use App\Models\Compliance\ComplianceFinding;
@@ -25,7 +27,7 @@ class UnifiedAlertController extends Controller
         $stats = ['total' => 0, 'critical' => 0, 'pending' => 0, 'resolved_today' => 0];
 
         if ($source === 'all' || $source === 'alert') {
-            $alertData = $this->fetchAlerts($source === 'all' ? null : $source, $priority, $status, $type, $customerSearch, $fromDate, $toDate);
+            $alertData = $this->fetchAlerts($priority, $status, $type, $customerSearch, $fromDate, $toDate);
             $items = array_merge($items, $alertData['items']);
             $stats['total'] += $alertData['stats']['total'];
             $stats['critical'] += $alertData['stats']['critical'];
@@ -34,7 +36,7 @@ class UnifiedAlertController extends Controller
         }
 
         if ($source === 'all' || $source === 'finding') {
-            $findingData = $this->fetchFindings($source === 'all' ? null : $source, $priority, $status, $type, $customerSearch, $fromDate, $toDate);
+            $findingData = $this->fetchFindings($priority, $status, $type, $customerSearch, $fromDate, $toDate);
             $items = array_merge($items, $findingData['items']);
             $stats['total'] += $findingData['stats']['total'];
             $stats['critical'] += $findingData['stats']['critical'];
@@ -56,7 +58,7 @@ class UnifiedAlertController extends Controller
         return view('compliance.unified.index', compact('items', 'stats', 'pagination', 'request'));
     }
 
-    protected function fetchAlerts(?string $source, ?string $priority, ?string $status, ?string $type, ?string $customerSearch, ?string $fromDate, ?string $toDate): array
+    protected function fetchAlerts(?string $priority, ?string $status, ?string $type, ?string $customerSearch, ?string $fromDate, ?string $toDate): array
     {
         $query = Alert::with(['customer', 'assignedTo', 'flaggedTransaction']);
 
@@ -108,14 +110,14 @@ class UnifiedAlertController extends Controller
             'items' => $items,
             'stats' => [
                 'total' => $alerts->count(),
-                'critical' => $alerts->filter(fn ($a) => $a->priority && $a->priority->value === 'critical')->count(),
-                'pending' => $alerts->filter(fn ($a) => ! in_array($a->status?->value, ['Resolved', 'Rejected', 'Dismissed']))->count(),
-                'resolved_today' => $alerts->filter(fn ($a) => $a->updated_at && $a->updated_at->isToday() && in_array($a->status?->value, ['Resolved']))->count(),
+                'critical' => $alerts->filter(fn ($a) => $a->priority === AlertPriority::Critical)->count(),
+                'pending' => $alerts->filter(fn ($a) => ! in_array($a->status, [FlagStatus::Resolved, FlagStatus::Rejected], true))->count(),
+                'resolved_today' => $alerts->filter(fn ($a) => $a->updated_at && $a->updated_at->isToday() && $a->status === FlagStatus::Resolved)->count(),
             ],
         ];
     }
 
-    protected function fetchFindings(?string $source, ?string $priority, ?string $status, ?string $type, ?string $customerSearch, ?string $fromDate, ?string $toDate): array
+    protected function fetchFindings(?string $priority, ?string $status, ?string $type, ?string $customerSearch, ?string $fromDate, ?string $toDate): array
     {
         $query = ComplianceFinding::with('subject');
 
@@ -204,7 +206,6 @@ class UnifiedAlertController extends Controller
             'Velocity_Exceeded' => 'Velocity Exceeded',
             'Structuring_Pattern' => 'Structuring Pattern',
             'Aggregate_Transaction' => 'Aggregate Transaction',
-            'STR_Deadline' => 'STR Deadline',
             'Sanction_Match' => 'Sanction Match',
             'Location_Anomaly' => 'Location Anomaly',
             'Currency_Flow_Anomaly' => 'Currency Flow Anomaly',

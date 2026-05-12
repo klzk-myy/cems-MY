@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CddLevel;
+use App\Enums\RiskRating;
 use App\Models\Customer;
 use App\Models\SystemLog;
 use App\Services\Compliance\RiskScoringEngine;
@@ -160,7 +161,7 @@ class CustomerService
      */
     public function isHighRisk(Customer $customer): bool
     {
-        return $customer->risk_rating === 'High'
+        return $customer->risk_rating === RiskRating::High
             || $customer->pep_status
             || $customer->sanction_hit;
     }

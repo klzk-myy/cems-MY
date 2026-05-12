@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
+use App\Enums\EntityType;
+use App\Enums\SanctionStatus;
 use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class SanctionsImportService
 {
@@ -188,7 +189,7 @@ class SanctionsImportService
             'nationality' => is_array($nationality) ? ($nationality[0] ?? null) : $nationality,
             'date_of_birth' => $birthDate,
             'details' => json_encode($item),
-            'status' => 'active',
+            'status' => SanctionStatus::Active,
         ];
     }
 
@@ -216,7 +217,7 @@ class SanctionsImportService
                         'nationality' => $entryData['nationality'],
                         'date_of_birth' => $entryData['date_of_birth'],
                         'details' => $entryData['details'],
-                        'status' => 'active',
+                        'status' => SanctionStatus::Active,
                     ]);
                     $this->updated++;
                 } else {
@@ -235,8 +236,8 @@ class SanctionsImportService
         $refsToDeactivate = $existingByRef->keys()->filter(fn ($ref) => ! isset($importedRefs[$ref]));
         foreach ($refsToDeactivate as $ref) {
             $existing = $existingByRef->get($ref);
-            if ($existing->status === 'active') {
-                $existing->update(['status' => 'inactive']);
+            if ($existing->status === SanctionStatus::Active) {
+                $existing->update(['status' => SanctionStatus::Inactive]);
                 $this->deactivated++;
             }
         }
@@ -295,30 +296,37 @@ class SanctionsImportService
         return $name;
     }
 
-    public function mapEntityType(?string $type): string
+    public function mapEntityType(?string $type): EntityType
     {
         if (empty($type)) {
-            return 'Individual';
+            return EntityType::Individual;
         }
 
         $type = strtolower($type);
 
         $personTypes = ['person', 'individual', 'natural person', 'human'];
-        $entityTypes = ['organization', 'entity', 'company', 'corporation', 'vessel', 'aircraft'];
+        $vesselTypes = ['vessel', 'ship', 'boat'];
+        $aircraftTypes = ['aircraft', 'plane', 'airplane'];
 
         foreach ($personTypes as $personType) {
             if (str_contains($type, $personType)) {
-                return 'Individual';
+                return EntityType::Individual;
             }
         }
 
-        foreach ($entityTypes as $entityType) {
-            if (str_contains($type, $entityType)) {
-                return 'Entity';
+        foreach ($vesselTypes as $vesselType) {
+            if (str_contains($type, $vesselType)) {
+                return EntityType::Vessel;
             }
         }
 
-        return 'Individual';
+        foreach ($aircraftTypes as $aircraftType) {
+            if (str_contains($type, $aircraftType)) {
+                return EntityType::Aircraft;
+            }
+        }
+
+        return EntityType::Organization;
     }
 
     protected function resetCounters(): void

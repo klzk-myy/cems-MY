@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AlertPriority;
 use App\Models\Alert;
 
 class NarrativeGenerator
@@ -98,7 +99,7 @@ class NarrativeGenerator
             $indicators[] = '- High risk score of '.$alert->risk_score.' indicates significant concern';
         }
 
-        if ($alert->priority && $alert->priority->value === 'critical') {
+        if ($alert->priority && $alert->priority === AlertPriority::Critical) {
             $indicators[] = '- Critical priority alert requires immediate attention';
         }
 

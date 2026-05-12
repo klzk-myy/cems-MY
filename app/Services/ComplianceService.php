@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
+use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
@@ -72,17 +73,6 @@ class ComplianceService
      * Structuring risk service for detecting transaction aggregation.
      */
     protected ?StructuringRiskService $structuringRiskService;
-
-    /**
-     * BNM STR filing deadline in working days.
-     */
-    private const STR_FILING_DEADLINE_DAYS = 1;
-
-    /**
-     * STR filing deadline cutoff hour (3pm).
-     * After this time, deadline becomes next working day.
-     */
-    private const STR_FILING_CUTOFF_HOUR = 15;
 
     /**
      * Create a new ComplianceService instance.
@@ -328,7 +318,7 @@ class ComplianceService
             $reasons[] = ComplianceFlagType::SanctionMatch->value;
         }
 
-        if ($customer->risk_rating === 'High') {
+        if ($customer->risk_rating === RiskRating::High) {
             $reasons[] = ComplianceFlagType::HighRiskCustomer->value;
         }
 
@@ -389,98 +379,6 @@ class ComplianceService
             'threshold_amount' => $this->thresholdService->getLargeTransactionThreshold(),
             'related_transactions' => $relatedIds,
         ];
-    }
-
-    /**
-     * Calculate STR filing deadline based on suspicion date.
-     *
-     * BNM requires STR to be filed within 3 working days of suspicion arising.
-     * This method calculates the deadline and checks if it's overdue.
-     *
-     * @param  Carbon|string  $suspicionDate  When suspicion first arose
-     * @return array<string, mixed> Deadline info containing:
-     *                              - deadline: Carbon The filing deadline
-     *                              - is_overdue: bool Whether deadline has passed
-     *                              - days_remaining: int Working days remaining
-     *                              - working_days_until_deadline: int Total working days allowed
-     */
-    public function calculateStrDeadline($suspicionDate): array
-    {
-        $suspicion = $suspicionDate instanceof Carbon
-            ? $suspicionDate
-            : Carbon::parse($suspicionDate);
-
-        // Add 3 working days (excluding weekends) - use addWeekdays for Carbon 2.x compatibility
-        $deadline = $suspicion->copy()->addWeekdays(self::STR_FILING_DEADLINE_DAYS);
-
-        $now = now();
-        $isOverdue = $now->isAfter($deadline);
-
-        // Calculate working days remaining (negative if overdue)
-        // For Carbon 2.x, we calculate this manually
-        $daysRemaining = $this->countWorkingDays($now, $deadline);
-
-        return [
-            'deadline' => $deadline,
-            'is_overdue' => $isOverdue,
-            'days_remaining' => $daysRemaining,
-            'working_days_until_deadline' => self::STR_FILING_DEADLINE_DAYS,
-            'suspicion_date' => $suspicion,
-        ];
-    }
-
-    /**
-     * Get STR filing deadline based on current time.
-     *
-     * pd-00.md 22.2.6: "within the next working day, from the date the Compliance Officer
-     * establishes the suspicion."
-     *
-     * - If suspicion established before 3pm on a working day, deadline is today EOD
-     * - Otherwise deadline is next working day EOD
-     *
-     * @return Carbon The filing deadline
-     */
-    public function getStrFilingDeadline(): Carbon
-    {
-        $now = now();
-
-        // If before cutoff hour on a weekday, deadline is today EOD
-        if ($now->hour < self::STR_FILING_CUTOFF_HOUR && $now->isWeekday()) {
-            return $now->copy()->endOfDay();
-        }
-
-        // Otherwise deadline is next working day EOD
-        return $now->nextWeekday()->endOfDay();
-    }
-
-    /**
-     * Count working days between two dates (excluding weekends).
-     */
-    protected function countWorkingDays(Carbon $from, Carbon $to): int
-    {
-        $fromDay = $from->copy()->startOfDay();
-        $toDay = $to->copy()->startOfDay();
-
-        if ($fromDay->equalTo($toDay)) {
-            return $fromDay->isWeekend() ? 0 : 1;
-        }
-
-        if ($fromDay->gt($toDay)) {
-            return -1 * $this->countWorkingDays($toDay, $fromDay);
-        }
-
-        $days = 0;
-        $current = $fromDay->copy();
-
-        // Inclusive range to match BNM “within N working days” expectations and existing fault test.
-        while ($current->lte($toDay)) {
-            if (! $current->isWeekend()) {
-                $days++;
-            }
-            $current->addDay();
-        }
-
-        return $days;
     }
 
     /**

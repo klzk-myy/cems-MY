@@ -73,7 +73,7 @@ class CounterController extends Controller
      */
     public function open(OpenCounterRequest $request, Counter $counter): RedirectResponse
     {
-        $user = Auth::user();
+        $user = auth()->user();
         $openingFloats = $request->input('opening_floats');
 
         try {
@@ -129,7 +129,7 @@ class CounterController extends Controller
     public function close(CloseCounterRequest $request, Counter $counter): RedirectResponse
     {
 
-        $user = Auth::user();
+        $user = auth()->user();
         $closingFloats = $request->input('closing_floats');
         $notes = $request->input('notes');
         $today = now()->toDateString();
@@ -226,7 +226,7 @@ class CounterController extends Controller
         }
 
         $availableUsers = User::where('is_active', true)
-            ->where('id', '!=', Auth::id())
+            ->where('id', '!=', auth()->id())
             ->get();
 
         $supervisors = User::where('is_active', true)
@@ -329,7 +329,7 @@ class CounterController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
-        $user = Auth::user();
+        $user = auth()->user();
 
         try {
             $closure = $this->emergencyCounterService->initiateEmergencyClose(
@@ -366,7 +366,7 @@ class CounterController extends Controller
             abort(404);
         }
 
-        $user = Auth::user();
+        $user = auth()->user();
         $closure = $this->emergencyCounterService->acknowledge($closure, $user);
 
         return redirect()->route('counters.index')
@@ -375,7 +375,7 @@ class CounterController extends Controller
 
     public function showAcknowledgeHandover(Counter $counter): View|RedirectResponse
     {
-        $user = Auth::user();
+        $user = auth()->user();
         $today = now()->toDateString();
 
         $handover = $this->counterHandoverService->findPendingHandover(
@@ -394,7 +394,7 @@ class CounterController extends Controller
 
     public function acknowledgeHandover(Request $request, Counter $counter): RedirectResponse
     {
-        $user = Auth::user();
+        $user = auth()->user();
         $today = now()->toDateString();
 
         $handover = $this->counterHandoverService->findPendingHandover(

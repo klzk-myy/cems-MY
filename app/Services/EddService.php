@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CddLevel;
+use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
@@ -100,7 +101,7 @@ class EddService
         }
 
         // For Enhanced CDD (High risk), also verify all required documents are uploaded
-        if ($record->risk_level === 'High') {
+        if ($record->risk_level === EddRiskLevel::High) {
             $customer = $record->customer;
             if ($customer) {
                 $documentCheck = $this->complianceService->verifyCddDocuments($customer, CddLevel::Enhanced);

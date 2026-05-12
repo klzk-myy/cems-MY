@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\RelationType;
 use App\Events\RelatedPartyOwnershipConcern;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
@@ -427,7 +428,7 @@ class CustomerScreeningService
         if ($relatedParty->ownership_interest !== null && is_numeric($relatedParty->ownership_interest)) {
             $ownershipInterest = (float) $relatedParty->ownership_interest;
             $isSignificantOwnership = $ownershipInterest > 25.0;
-        } elseif ($relatedParty->relation_type === 'beneficial_owner') {
+        } elseif ($relatedParty->relation_type === RelationType::BeneficialOwner) {
             // relation_type 'beneficial_owner' per migration indicates >25% ownership
             $ownershipInterest = 26.0; // Presumed >25% for beneficial owner status
             $isSignificantOwnership = true;

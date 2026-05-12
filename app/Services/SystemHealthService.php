@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\TestResultStatus;
 use App\Models\SystemHealthCheck;
 use App\Models\TestResult;
 use Illuminate\Support\Facades\Cache;
@@ -307,7 +308,7 @@ class SystemHealthService
             $status = SystemHealthCheck::STATUS_OK;
             $message = "Last test run: {$lastRun->pass_rate}% pass rate";
 
-            if ($lastRun->status === 'failed') {
+            if ($lastRun->status === TestResultStatus::Failed) {
                 $status = SystemHealthCheck::STATUS_CRITICAL;
                 $message = "CRITICAL: Last test run failed ({$lastRun->failed} failures)";
             } elseif ($lastRun->pass_rate < 90) {

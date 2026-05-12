@@ -22,11 +22,6 @@ use Illuminate\Support\Facades\DB;
 class ComplianceReportingService
 {
     /**
-     * BNM filing deadline in working days for STR (rolling).
-     */
-    public const STR_FILING_DEADLINE_DAYS = 3;
-
-    /**
      * BNM filing deadline in working days for LCTR/LMCA (monthly).
      */
     public const MONTHLY_FILING_DEADLINE_DAYS = 7;
