@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CddLevel;
+use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Events\TransactionApproved;
@@ -301,7 +302,7 @@ class TransactionService implements TransactionServiceInterface
             if ($this->mathService->compare($amountLocal, $this->thresholdService->getLargeTransactionThreshold()) >= 0) {
                 $triggers[] = 'Large amount >= RM '.$this->thresholdService->getLargeTransactionThreshold();
             }
-            if ($customer->risk_rating === 'High') {
+            if ($customer->risk_rating === RiskRating::High) {
                 $triggers[] = 'High risk customer';
             }
             $cddTriggers = $triggers;
@@ -878,6 +879,7 @@ class TransactionService implements TransactionServiceInterface
                     'transaction' => $lockedTransaction->fresh(),
                 ];
             });
+
             $this->cacheTagsService->invalidate('dashboard');
 
             return $result;

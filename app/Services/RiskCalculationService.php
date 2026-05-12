@@ -162,7 +162,8 @@ class RiskCalculationService
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->sum('amount_local');
 
-        $weekTotalFormatted = number_format((float) $weekTotal, 2, '.', '');
+        // Use sprintf to avoid float-to-string precision issues with number_format
+        $weekTotalFormatted = sprintf('%0.2f', $weekTotal);
         $currentAmountFormatted = $currentAmount ?? '0';
         $total = $this->mathService->add($weekTotalFormatted, $currentAmountFormatted);
 

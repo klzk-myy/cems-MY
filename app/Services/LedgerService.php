@@ -155,8 +155,9 @@ class LedgerService
             ];
             foreach ($trialBalance as $account) {
                 $type = $account['account_type'];
-                if (isset($totalsByType[$type])) {
-                    $totalsByType[$type] = $this->mathService->add($totalsByType[$type], $account['balance']);
+                $typeKey = $type instanceof \BackedEnum ? $type->value : (string) $type;
+                if (isset($totalsByType[$typeKey])) {
+                    $totalsByType[$typeKey] = $this->mathService->add($totalsByType[$typeKey], $account['balance']);
                 }
             }
 

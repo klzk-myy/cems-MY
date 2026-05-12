@@ -8,6 +8,7 @@ use App\Http\Requests\TransactionWizardStep1Request;
 use App\Http\Requests\TransactionWizardStep2Request;
 use App\Http\Requests\TransactionWizardStep3Request;
 use App\Models\Customer;
+use App\Services\MathService;
 use App\Services\TransactionService;
 use App\Services\WizardSessionService;
 use Illuminate\Http\JsonResponse;
@@ -17,7 +18,8 @@ class TransactionWizardController extends Controller
 {
     public function __construct(
         protected TransactionService $transactionService,
-        protected WizardSessionService $wizardSessionService
+        protected WizardSessionService $wizardSessionService,
+        protected MathService $mathService
     ) {}
 
     /**
@@ -29,7 +31,7 @@ class TransactionWizardController extends Controller
         $customer = Customer::find($validated['customer_id']);
 
         // Calculate local amount
-        $amountLocal = bcmul($validated['amount_foreign'], $validated['rate'], 4);
+        $amountLocal = $this->mathService->multiply($validated['amount_foreign'], $validated['rate']);
 
         // Run pre-validation (sanctions, CDD, risk) - consolidated into TransactionService
         $validationResult = $this->transactionService->preValidate(

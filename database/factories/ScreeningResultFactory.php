@@ -21,7 +21,7 @@ class ScreeningResultFactory extends Factory
             'transaction_id' => null,
             'screened_name' => $this->faker->name(),
             'sanction_entry_id' => SanctionEntry::factory(),
-            'match_type' => $this->faker->randomElement(['exact', 'levenshtein', 'soundex', 'metaphone', 'token']),
+            'match_type' => $this->faker->randomElement(['levenshtein', 'soundex', 'metaphone']),
             'match_score' => $this->faker->randomFloat(2, 0.5, 1.0),
             'action_taken' => $this->faker->randomElement(['clear', 'flag', 'block']),
             'result' => $this->faker->randomElement(['clear', 'flag', 'block']),

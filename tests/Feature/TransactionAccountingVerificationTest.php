@@ -469,7 +469,8 @@ class TransactionAccountingVerificationTest extends TestCase
         echo "LEDGER VERIFICATION:\n";
         echo '-'.str_repeat('-', 40)."\n";
         foreach ($this->results['ledger_verification'] as $accountCode => $data) {
-            echo "  Account {$accountCode} ({$data['account_type']}):\n";
+            $accountType = $data['account_type'] instanceof \BackedEnum ? $data['account_type']->value : $data['account_type'];
+            echo "  Account {$accountCode} ({$accountType}):\n";
             echo "    Entries: {$data['entries_count']}\n";
             echo "    Total Debits: {$data['total_debits']}\n";
             echo "    Total Credits: {$data['total_credits']}\n";

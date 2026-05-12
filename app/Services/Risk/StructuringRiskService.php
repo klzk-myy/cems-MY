@@ -32,7 +32,7 @@ class StructuringRiskService
 
         $structuringTransactions = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $window)
-            ->where('amount_local', '<', $subThreshold)
+            ->where('amount_local', '<=', $subThreshold)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->get();
 
@@ -62,7 +62,7 @@ class StructuringRiskService
 
         $count = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subHours($windowHours))
-            ->where('amount_local', '<', $subThreshold)
+            ->where('amount_local', '<=', $subThreshold)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->count();
 
@@ -95,7 +95,7 @@ class StructuringRiskService
 
         return Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subHours($windowHours))
-            ->where('amount_local', '<', $subThreshold)
+            ->where('amount_local', '<=', $subThreshold)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->orderBy('created_at', 'desc')
             ->get();

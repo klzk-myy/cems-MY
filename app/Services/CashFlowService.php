@@ -152,7 +152,7 @@ class CashFlowService
      */
     public function getOperatingCashFlow(string $fromDate, string $toDate, ?int $branchId = null): array
     {
-        $cashReceived = $this->getCashReceivedFromCustomers($fromDate, $toDate, $branchId);
+        $cashReceived = $this->getNetOperatingCashFlow($fromDate, $toDate, $branchId);
         $cashPaidToSuppliers = $this->getCashPaidToSuppliers($fromDate, $toDate, $branchId);
         $cashPaidForSalaries = $this->getCashPaidForSalaries($fromDate, $toDate, $branchId);
         $cashPaidForExpenses = $this->getCashPaidForOtherExpenses($fromDate, $toDate, $branchId);
@@ -254,10 +254,11 @@ class CashFlowService
      */
     public function getOpeningCashBalance(string $asOfDate, ?int $branchId = null): string
     {
+        // Opening balance is the balance at the START of the date (end of previous day)
         $total = '0';
 
         foreach ($this->cashAccounts as $accountCode) {
-            $balance = $this->getAccountBalance($accountCode, $asOfDate, $branchId);
+            $balance = $this->getAccountBalanceUpToDate($accountCode, $asOfDate, $branchId);
             $total = $this->mathService->add($total, $balance);
         }
 
@@ -272,24 +273,32 @@ class CashFlowService
      */
     public function getClosingCashBalance(string $asOfDate, ?int $branchId = null): string
     {
-        return $this->getOpeningCashBalance($asOfDate, $branchId);
+        // Closing balance is the balance at the END of the date
+        // Use the next day's opening balance to get the closing balance for $asOfDate
+        $total = '0';
+
+        foreach ($this->cashAccounts as $accountCode) {
+            $balance = $this->getAccountBalanceOnDate($accountCode, $asOfDate, $branchId);
+            $total = $this->mathService->add($total, $balance);
+        }
+
+        return $total;
     }
 
     /**
-     * Get cash received from customers.
+     * Get net operating cash flow (revenue minus expenses).
      *
      * @param  string  $fromDate  Start date (YYYY-MM-DD)
      * @param  string  $toDate  End date (YYYY-MM-DD)
      * @param  int|null  $branchId  Optional branch ID to filter by
      */
-    protected function getCashReceivedFromCustomers(string $fromDate, string $toDate, ?int $branchId = null): string
+    protected function getNetOperatingCashFlow(string $fromDate, string $toDate, ?int $branchId = null): string
     {
-        // Simplified: Total revenue * estimated cash collection ratio
-        // In a real system, you'd track this more precisely via AR
+        // Simplified: Revenue minus expenses (approximation of net operating cash flow)
+        // In a real system, cash from customers would be tracked more precisely via AR
         $totalRevenue = $this->getTotalForAccounts($this->operatingAccounts['revenue'], $fromDate, $toDate, 'credit', $branchId);
         $totalExpense = $this->getTotalForAccounts($this->operatingAccounts['expense'], $fromDate, $toDate, 'debit', $branchId);
 
-        // Net operating cash flow approximation
         return $this->mathService->subtract($totalRevenue, $totalExpense);
     }
 
@@ -447,6 +456,48 @@ class CashFlowService
      * @param  int|null  $branchId  Optional branch ID to filter by
      */
     protected function getAccountBalance(string $accountCode, string $asOfDate, ?int $branchId = null): string
+    {
+        $query = AccountLedger::where('account_code', $accountCode)
+            ->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);
+
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $lastEntry = $query->orderBy('entry_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        return $lastEntry ? (string) $lastEntry->running_balance : '0';
+    }
+
+    /**
+     * Get account balance up to (and including) a specific date.
+     * Used for opening balance calculation.
+     */
+    protected function getAccountBalanceUpToDate(string $accountCode, string $asOfDate, ?int $branchId = null): string
+    {
+        $query = AccountLedger::where('account_code', $accountCode)
+            ->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);
+
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $lastEntry = $query->orderBy('entry_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        return $lastEntry ? (string) $lastEntry->running_balance : '0';
+    }
+
+    /**
+     * Get account balance on a specific date (closing balance).
+     * Uses the last entry OF or BEFORE that date.
+     */
+    protected function getAccountBalanceOnDate(string $accountCode, string $asOfDate, ?int $branchId = null): string
     {
         $query = AccountLedger::where('account_code', $accountCode)
             ->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);

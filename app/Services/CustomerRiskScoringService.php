@@ -175,7 +175,7 @@ class CustomerRiskScoringService
         return [
             'total_scored_today' => $todaySnapshots->count(),
             'critical_risk' => $todaySnapshots->where('overall_score', '>=', 80)->count(),
-            'high_risk' => $todaySnapshots->whereBetween('overall_score', [60, 79])->count() + $todaySnapshots->where('overall_score', '>=', 80)->count(),
+            'high_risk' => $todaySnapshots->whereBetween('overall_score', [60, 79])->count(),
             'medium_risk' => $todaySnapshots->whereBetween('overall_score', [30, 59])->count(),
             'low_risk' => $todaySnapshots->where('overall_score', '<', 30)->count(),
             'deteriorating_trend' => $todaySnapshots->where('trend', RiskTrend::Deteriorating)->count(),

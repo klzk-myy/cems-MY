@@ -2,12 +2,17 @@
 
 namespace App\Services;
 
+use App\Enums\CheckStatus;
 use App\Models\BankReconciliation;
 use App\Models\JournalEntry;
 use Illuminate\Support\Facades\DB;
 
 class BankReconciliationService
 {
+    public function __construct(
+        protected MathService $mathService
+    ) {}
+
     /**
      * Import bank statement lines
      */
@@ -78,7 +83,7 @@ class BankReconciliationService
     {
         $record = BankReconciliation::findOrFail($reconciliationId);
 
-        if ($record->check_status !== 'issued') {
+        if ($record->check_status !== CheckStatus::Issued) {
             throw new \InvalidArgumentException("Check {$record->check_number} is not in 'issued' status.");
         }
 
@@ -96,7 +101,7 @@ class BankReconciliationService
     {
         $record = BankReconciliation::findOrFail($reconciliationId);
 
-        if (! in_array($record->check_status, ['issued', 'presented'])) {
+        if (! in_array($record->check_status, [CheckStatus::Issued, CheckStatus::Presented])) {
             throw new \InvalidArgumentException("Check {$record->check_number} cannot be cleared from '{$record->check_status}' status.");
         }
 
@@ -115,7 +120,7 @@ class BankReconciliationService
     {
         $record = BankReconciliation::findOrFail($reconciliationId);
 
-        if ($record->check_status === 'cleared') {
+        if ($record->check_status === CheckStatus::Cleared) {
             throw new \InvalidArgumentException("Check {$record->check_number} has already been cleared and cannot be stopped.");
         }
 
@@ -236,13 +241,20 @@ class BankReconciliationService
             }
         }
 
+        $statementBalance = sprintf('%0.2f', $rawReport['statement_balance'] ?? '0');
+        $checks = sprintf('%0.2f', $outstandingChecks->sum(fn ($i) => $i['amount']));
+        $deposits = sprintf('%0.2f', $outstandingDeposits->sum(fn ($i) => abs($i['amount'])));
+
+        $adjustedBalance = $this->mathService->subtract(
+            $this->mathService->add($statementBalance, $checks),
+            $deposits
+        );
+
         return [
             'book_balance' => $rawReport['statement_balance'] ?? 0,
             'outstanding_checks' => $outstandingChecks->sum(fn ($i) => $i['amount']),
             'outstanding_deposits' => $outstandingDeposits->sum(fn ($i) => abs($i['amount'])),
-            'adjusted_balance' => ($rawReport['statement_balance'] ?? 0)
-                + $outstandingChecks->sum(fn ($i) => $i['amount'])
-                - $outstandingDeposits->sum(fn ($i) => abs($i['amount'])),
+            'adjusted_balance' => $adjustedBalance,
             'outstanding_checks_list' => $outstandingChecks->toArray(),
             'outstanding_deposits_list' => $outstandingDeposits->toArray(),
         ];
@@ -262,11 +274,11 @@ class BankReconciliationService
             ->whereNotNull('check_number')
             ->where('check_date', '<=', $asOfDate);
 
-        $issued = (clone $query)->where('check_status', 'issued')->get();
-        $presented = (clone $query)->where('check_status', 'presented')->get();
-        $cleared = (clone $query)->where('check_status', 'cleared')->get();
-        $returned = (clone $query)->where('check_status', 'returned')->get();
-        $stopped = (clone $query)->where('check_status', 'stopped')->get();
+        $issued = (clone $query)->where('check_status', CheckStatus::Issued)->get();
+        $presented = (clone $query)->where('check_status', CheckStatus::Presented)->get();
+        $cleared = (clone $query)->where('check_status', CheckStatus::Cleared)->get();
+        $returned = (clone $query)->where('check_status', CheckStatus::Returned)->get();
+        $stopped = (clone $query)->where('check_status', CheckStatus::Stopped)->get();
 
         return [
             'account_code' => $accountCode,
@@ -310,7 +322,7 @@ class BankReconciliationService
         $asOfDate = $asOfDate ?? today();
         $outstanding = BankReconciliation::where('account_code', $accountCode)
             ->whereNotNull('check_number')
-            ->whereIn('check_status', ['issued', 'presented'])
+            ->whereIn('check_status', [CheckStatus::Issued, CheckStatus::Presented])
             ->where('check_date', '<=', $asOfDate)
             ->get();
 

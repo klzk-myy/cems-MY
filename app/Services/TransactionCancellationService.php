@@ -224,10 +224,12 @@ class TransactionCancellationService
                     );
                     if ($allocation) {
                         if ($transaction->type->isBuy()) {
-                            $allocation->deduct((string) $transaction->amount_foreign);
+                            // Customer sold us foreign currency - we gained it, allocation increases
+                            $allocation->add((string) $transaction->amount_foreign);
                             $allocation->subtractDailyUsed((string) $transaction->amount_local);
                         } else {
-                            $allocation->add((string) $transaction->amount_foreign);
+                            // Customer bought foreign currency from us - we lost it, allocation decreases
+                            $allocation->deduct((string) $transaction->amount_foreign);
                             $allocation->subtractDailyUsed((string) $transaction->amount_local);
                         }
                     }

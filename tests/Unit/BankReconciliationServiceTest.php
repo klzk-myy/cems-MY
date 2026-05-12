@@ -9,6 +9,7 @@ use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\User;
 use App\Services\BankReconciliationService;
+use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -23,7 +24,7 @@ class BankReconciliationServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bankReconciliationService = new BankReconciliationService;
+        $this->bankReconciliationService = new BankReconciliationService(new MathService);
         $this->user = User::create([
             'username' => 'test_user',
             'email' => 'test@example.com',
