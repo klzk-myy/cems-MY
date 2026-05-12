@@ -33,7 +33,6 @@ Contains all Eloquent models representing database entities for the currency exc
 | `RiskScoreSnapshot` | `app/Models/RiskScoreSnapshot.php` | | Customer risk score snapshots |
 | `SanctionList` | `app/Models/SanctionList.php` | | Sanctions list definitions (OFAC, UN, MOHA, EU) |
 | `StockTransfer` | `app/Models/StockTransfer.php` | | Inter-branch stock transfers |
-| `StrReport` | `app/Models/StrReport.php` | | Suspicious Transaction Report for BNM |
 | `SystemLog` | `app/Models/SystemLog.php` | | System audit logs |
 | `TillBalance` | `app/Models/TillBalance.php` | | Till balance tracking (MYR and foreign currency) |
 | `Transaction` | `app/Models/Transaction.php` | `customer()`, `user()`, `branch()`, `currency()`, `flags()` | Core transaction model for buy/sell foreign exchange |
@@ -89,7 +88,6 @@ Business logic services encapsulating complex operations.
 | `RiskCalculationService` | `app/Services/RiskCalculationService.php` | `calculateVelocityRisk()`, `calculateStructuringRisk()`, `getOverallRiskScore()` | Multi-factor risk score calculation |
 | `SanctionsDownloadService` | `app/Services/SanctionsDownloadService.php` | | Sanctions list downloads |
 | `StockTransferService` | `app/Services/StockTransferService.php` | | Inter-branch stock transfers |
-| `StrReportService` | `app/Services/StrReportService.php` | | STR generation and submission |
 | `TellerAllocationService` | `app/Services/TellerAllocationService.php` | | Teller currency allocation management |
 | `TransactionMonitoringService` | `app/Services/TransactionMonitoringService.php` | | Real-time transaction monitoring |
 | `TransactionService` | `app/Services/TransactionService.php` | `preValidate()`, `createTransaction()`, `approveTransaction()` | Core transaction business logic |
@@ -242,10 +240,7 @@ Laravel notification classes for user alerts.
 |-------|-----------|----------|---------|
 | `ComplianceCaseAssignedNotification` | `app/Notifications/ComplianceCaseAssignedNotification.php` | database, broadcast, mail | Alert when case is assigned |
 | `ComplianceFindingNotification` | `app/Notifications/Compliance/ComplianceFindingNotification.php` | | New compliance finding |
-| `StrEscalationNotification` | `app/Notifications/Compliance/StrEscalationNotification.php` | | STR escalation alert |
 | `LargeTransactionNotification` | `app/Notifications/LargeTransactionNotification.php` | | Large transaction alert |
-| `SanctionsMatchNotification` | `app/Notifications/SanctionsMatchNotification.php` | | Sanctions match alert |
-| `StrDeadlineApproachingNotification` | `app/Notifications/StrDeadlineApproachingNotification.php` | | STR deadline warning |
 | `SystemHealthAlertNotification` | `app/Notifications/SystemHealthAlertNotification.php` | | System health alerts |
 | `TransactionApprovedNotification` | `app/Notifications/TransactionApprovedNotification.php` | | Transaction approved |
 | `TransactionFlaggedNotification` | `app/Notifications/TransactionFlaggedNotification.php` | | Transaction flagged |
@@ -279,7 +274,6 @@ Background job processing.
 | `Audit/SealAuditHashJob` | `app/Jobs/Audit/SealAuditHashJob.php` | Audit hash sealing |
 | `Compliance\CounterfeitAlertJob` | `app/Jobs/Compliance/CounterfeitAlertJob.php` | Counterfeit monitoring |
 | `Compliance\CurrencyFlowJob` | `app/Jobs/Compliance/CurrencyFlowJob.php` | Currency flow monitoring |
-| `Compliance\StrDeadlineMonitorJob` | `app/Jobs/Compliance/StrDeadlineMonitorJob.php` | STR deadline monitoring |
 | `Compliance\StructuringMonitorJob` | `app/Jobs/Compliance/StructuringMonitorJob.php` | Structuring detection |
 | `Compliance\VelocityMonitorJob` | `app/Jobs/Compliance/VelocityMonitorJob.php` | Velocity monitoring |
 | `Compliance\SanctionsRescreeningJob` | `app/Jobs/Compliance/SanctionsRescreeningJob.php` | Sanctions rescreening |

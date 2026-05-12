@@ -89,7 +89,6 @@ All monetary calculations use `App\Services\MathService` (BCMath), not floats. N
   - `VelocityMonitor` - Detects velocity/structuring patterns (7-day lookback)
   - `StructuringMonitor` - Transaction aggregation detection
   - `SanctionsRescreeningMonitor` - Monthly rescreening of all customers
-  - `StrDeadlineMonitor` - STR submission deadline tracking
   - `CustomerLocationAnomalyMonitor` - Geographic anomaly detection
   - `CurrencyFlowMonitor` - Currency flow pattern analysis
   - `CounterfeitAlertMonitor` - Counterfeit currency detection
@@ -199,7 +198,6 @@ return [
 | `ComplianceService` | CDD determination and CTOS reporting |
 | `TransactionMonitoringService` | Automated compliance monitoring |
 | `CustomerRiskScoringService` | Customer risk scoring with lock/unlock |
-| `StrReportService` | Suspicious Transaction Report generation |
 | `EddService` | Enhanced Due Diligence workflow |
 | `CaseManagementService` | Compliance case management |
 | `MathService` | BCMath precision calculations |

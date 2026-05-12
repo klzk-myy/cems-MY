@@ -536,7 +536,7 @@ public function health(): JsonResponse
 **Fix:** Implement job idempotency with unique job IDs and deduplication:
 
 ```php
-class GenerateStrReport implements ShouldQueue
+class GenerateReport implements ShouldQueue
 {
     use InteractsWithQueue, Queueable, SerializesModels;
 
@@ -544,7 +544,7 @@ class GenerateStrReport implements ShouldQueue
 
     public function uniqueId(): string
     {
-        return "str_report:{$this->transactionId}:{$this->reportDate}";
+        return "report:{$this->transactionId}:{$this->reportDate}";
     }
 }
 ```

@@ -322,7 +322,6 @@ Business logic layer organized in `app/Services/`:
 | `SanctionsDownloadService` | Sanctions download |
 | `CtosReportService` | CTOS report generation |
 | `CtrReportService` | CTR report generation |
-| `StrReportService` | STR report generation |
 | `KycDocumentExpiryService` | KYC expiry tracking |
 
 ### Accounting Services (8)
@@ -359,7 +358,6 @@ Business logic layer organized in `app/Services/`:
 | `VelocityMonitor` | Transaction velocity |
 | `StructuringMonitor` | Structuring patterns |
 | `SanctionsRescreeningMonitor` | Periodic rescreening |
-| `StrDeadlineMonitor` | STR deadline tracking |
 | `CustomerLocationAnomalyMonitor` | Location anomalies |
 | `CurrencyFlowMonitor` | Currency flow patterns |
 | `CounterfeitAlertMonitor` | Counterfeit detection |
@@ -405,7 +403,6 @@ Business logic layer organized in `app/Services/`:
 ### Utility Services (5)
 | Service | Purpose |
 |---------|---------|
-| `GoAmlXmlGenerator` | GoAML XML output |
 | `TestRunnerService` | Test execution |
 | `WizardSessionService` | Transaction wizard |
 | `PreValidationResult` | Validation helper |
@@ -445,7 +442,6 @@ Business logic layer organized in `app/Services/`:
 | `VelocityMonitor` | Transaction velocity |
 | `StructuringMonitor` | Structuring patterns |
 | `SanctionsRescreeningMonitor` | Periodic rescreening |
-| `StrDeadlineMonitor` | STR deadline tracking |
 | `CustomerLocationAnomalyMonitor` | Location anomalies |
 | `CurrencyFlowMonitor` | Currency flow patterns |
 | `CounterfeitAlertMonitor` | Counterfeit detection |
@@ -488,10 +484,9 @@ Business logic layer organized in `app/Services/`:
 | `BudgetService` | Budget management |
 | `LogRotationService` | Log rotation |
 
-### Utility Services (6)
+### Utility Services (5)
 | Service | Purpose |
 |---------|---------|
-| `GoAmlXmlGenerator` | GoAML XML output |
 | `TestRunnerService` | Test execution |
 | `WizardSessionService` | Transaction wizard |
 | `PreValidationResult` | Validation helper |
@@ -531,7 +526,6 @@ Organized by domain:
 | `SanctionImportLog` | Import history |
 | `ScreeningResult` | Screening results |
 | `HighRiskCountry` | High-risk countries |
-| `StrReport` | Suspicious transaction reports |
 | `CtosReport` | Cash transaction reports |
 | `EnhancedDiligenceRecord` | EDD records |
 | `EddTemplate` | EDD questionnaires |
@@ -770,9 +764,6 @@ Organized by module:
 | `Sanctions/DownloadOfacSanctionsList` | OFAC list |
 | `Sanctions/DownloadUnSanctionsList` | UN list |
 | `ImportSanctionsJob` | Import sanctions |
-| `SubmitStrToGoAmlJob` | Submit STR to goAML |
-| `Compliance/SanctionsRescreeningJob` | Rescreen on new sanctions |
-| `Compliance/StrDeadlineMonitorJob` | Track STR deadlines |
 | `Compliance/StructuringMonitorJob` | Detect structuring |
 | `Compliance/VelocityMonitorJob` | Monitor velocity |
 | `Compliance/CustomerLocationAnomalyJob` | Detect location anomalies |

@@ -65,18 +65,12 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
   - Full audit trail for all rate changes
   - See `buz.opn.brc.md` for business opening workflow documentation
 
-- **STR Generation & Automation**
-  - Suspicious Transaction Report creation and submission
-  - STR deadline tracking via `StrDeadlineMonitor`
-  - Narrative generation and GoAML XML output
-
 - **Automated Monitoring (background jobs)**
   | Monitor | Purpose |
   |---------|---------|
   | `VelocityMonitor` | Detects velocity/structuring patterns (7-day lookback) |
   | `StructuringMonitor` | Transaction aggregation detection |
   | `SanctionsRescreeningMonitor` | Monthly rescreening of all customers |
-  | `StrDeadlineMonitor` | STR submission deadline tracking |
   | `CustomerLocationAnomalyMonitor` | Geographic anomaly detection |
   | `CurrencyFlowMonitor` | Currency flow pattern analysis |
   | `CounterfeitAlertMonitor` | Counterfeit currency detection |
