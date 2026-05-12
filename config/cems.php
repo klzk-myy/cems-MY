@@ -131,19 +131,4 @@ return [
         'contact_phone' => env('BNM_CONTACT_PHONE', ''),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | goAML Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configuration for FIU reporting via goAML system.
-    |
-    */
-    'goaml' => [
-        'enabled' => env('GOAML_ENABLED', false),
-        'endpoint' => env('GOAML_ENDPOINT', ''),
-        'api_key' => env('GOAML_API_KEY', ''),
-        'reporter_name' => env('GOAML_REPORTER_NAME', ''),
-        'branch_code' => env('GOAML_BRANCH_CODE', ''),
-    ],
 ];

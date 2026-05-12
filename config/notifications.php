@@ -87,21 +87,6 @@ return [
             'category' => 'compliance',
             'priority' => 'high',
         ],
-        'str_deadline_approaching' => [
-            'label' => 'STR Deadline Approaching',
-            'description' => 'Sent when STR filing deadline is within 3 days',
-            'default_channels' => ['database', 'broadcast', 'mail'],
-            'category' => 'compliance',
-            'priority' => 'critical',
-        ],
-        'str_submission_failed' => [
-            'label' => 'STR Submission Failed',
-            'description' => 'Sent when STR submission to BNM fails',
-            'default_channels' => ['database', 'broadcast', 'mail', 'sms'],
-            'category' => 'compliance',
-            'priority' => 'critical',
-            'cannot_disable' => ['mail', 'sms'],
-        ],
         'compliance_case_assigned' => [
             'label' => 'Compliance Case Assigned',
             'description' => 'Sent when a compliance case is assigned to an officer',
@@ -212,8 +197,6 @@ return [
     |
     */
     'bnm_compliance' => [
-        // STR must be submitted within 3 working days
-        'str_deadline_days' => 3,
         // Large transaction threshold (RM)
         'large_transaction_threshold' => 50000,
         // Notification retention for audit purposes

@@ -8,7 +8,6 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\ComplianceService;
 use App\Services\MathService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -149,5 +148,4 @@ class ComplianceServiceTest extends TestCase
         $this->assertTrue($result2['threshold_exceeded']);
         $this->assertEquals('50000', $result2['threshold_amount']);
     }
-
-    }
+}

@@ -362,9 +362,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         // Reserved for future BranchOpeningController implementation
     });
 
-    Route::middleware(['auth'])->get('/api/rates/history/{currency}', [DashboardController::class, 'rateHistory'])
-        ->name('api.rates.history');
-
     Route::middleware(['role:admin'])->prefix('test-results')->name('test-results.')->group(function () {
         Route::get('/compare', [TestResultsController::class, 'compare'])->name('compare');
         Route::get('/', [TestResultsController::class, 'index'])->name('index');

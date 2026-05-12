@@ -25,7 +25,7 @@ class SanctionEntryFactory extends Factory
         return [
             'list_id' => SanctionList::factory(),
             'entity_name' => $name,
-            'entity_type' => $this->faker->randomElement(['Individual', 'Entity']),
+            'entity_type' => $this->faker->randomElement(['Individual', 'Organization', 'Vessel', 'Aircraft']),
             'aliases' => json_encode([$this->faker->name(), $this->faker->name()]),
             'nationality' => $this->faker->countryCode(),
             'date_of_birth' => $this->faker->date(),

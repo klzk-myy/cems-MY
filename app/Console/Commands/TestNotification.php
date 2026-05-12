@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Notification;
 class TestNotification extends Command
 {
     protected $signature = 'notifications:test
-                            {type : Notification type to test (transaction_flagged, str_deadline, str_failed, case_assigned, data_breach, large_transaction, sanctions_match, system_health, all)}
+                            {type : Notification type to test (transaction_flagged, case_assigned, data_breach, large_transaction, sanctions_match, system_health, all)}
                             {--user= : User ID to send test notification to}
                             {--channel= : Specific channel to test}
                             {--dry-run : Preview notification without sending}';

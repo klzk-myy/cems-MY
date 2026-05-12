@@ -89,23 +89,6 @@ class RouteServiceProvider extends ServiceProvider
             });
         });
 
-        // STR submission rate limit: 3 per minute per user (reduced from 10)
-        RateLimiter::for('str-submission', function (Request $request) {
-            $key = $request->user()?->id ?? $request->ip();
-
-            return Limit::perMinute(
-                config('security.rate_limits.str.attempts', 3)
-            )->by($key)->response(function () use ($request) {
-                app(RateLimitService::class)->logRateLimitHit($request, 'str');
-
-                return response()->json([
-                    'error' => 'STR submission rate limit exceeded',
-                    'message' => 'Too many STR submission attempts. Please try again later.',
-                    'code' => 'STR_RATE_LIMIT_EXCEEDED',
-                ], 429);
-            });
-        });
-
         // Bulk operations rate limit: 1 per 5 minutes per user
         RateLimiter::for('bulk', function (Request $request) {
             $key = $request->user()?->id ?? $request->ip();

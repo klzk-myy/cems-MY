@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\CustomerRelation;
 use App\Services\AuditService;
 use App\Services\CustomerRelationService;
+use App\Enums\RelationType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -34,7 +35,7 @@ class CustomerRelationServiceTest extends TestCase
         ]);
 
         $this->assertInstanceOf(CustomerRelation::class, $relation);
-        $this->assertEquals('spouse', $relation->relation_type);
+        $this->assertEquals(RelationType::Spouse, $relation->relation_type);
         $this->assertEquals('Jane Doe', $relation->related_name);
         $this->assertTrue($relation->is_pep);
         $this->assertEquals($customer->id, $relation->customer_id);

@@ -35,9 +35,4 @@ return [
         'key' => env('EXCHANGE_RATE_API_KEY'),
     ],
 
-    'goaml' => [
-        'endpoint' => env('GOAML_ENDPOINT'),
-        'api_key' => env('GOAML_API_KEY'),
-    ],
-
 ];

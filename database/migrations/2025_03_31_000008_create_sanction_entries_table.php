@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('list_id')->constrained('sanction_lists');
             $table->string('entity_name', 255);
-            $table->enum('entity_type', ['Individual', 'Entity'])->default('Individual');
+            $table->enum('entity_type', ['Individual', 'Organization', 'Vessel', 'Aircraft'])->default('Individual');
             $table->text('aliases')->nullable();
             $table->string('nationality', 100)->nullable();
             $table->date('date_of_birth')->nullable();
