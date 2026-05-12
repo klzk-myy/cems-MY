@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TestResultStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -40,6 +41,7 @@ class TestResult extends Model
         'completed_at' => 'datetime',
         'failures' => 'array',
         'errors' => 'array',
+        'status' => TestResultStatus::class,
     ];
 
     /**
@@ -47,7 +49,7 @@ class TestResult extends Model
      */
     public function scopePassed($query)
     {
-        return $query->where('status', 'passed');
+        return $query->where('status', TestResultStatus::Passed->value);
     }
 
     /**
@@ -55,7 +57,7 @@ class TestResult extends Model
      */
     public function scopeFailed($query)
     {
-        return $query->where('status', 'failed');
+        return $query->where('status', TestResultStatus::Failed->value);
     }
 
     /**

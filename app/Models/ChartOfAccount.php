@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AccountType;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -60,6 +61,7 @@ class ChartOfAccount extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'allow_journal' => 'boolean',
+        'account_type' => AccountType::class,
     ];
 
     /**

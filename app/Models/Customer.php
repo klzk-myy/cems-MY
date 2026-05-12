@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CddLevel;
+use App\Enums\IdType;
 use App\Enums\RiskRating;
 use App\Services\CustomerService;
 use App\Services\EncryptionService;
@@ -107,6 +108,7 @@ class Customer extends Model
         'is_frozen' => 'boolean',
         'frozen_at' => 'datetime',
         'transactions_blocked' => 'boolean',
+        'id_type' => IdType::class,
     ];
 
     /**

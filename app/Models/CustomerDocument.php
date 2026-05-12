@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DocumentType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -62,6 +63,7 @@ class CustomerDocument extends Model
         'verified_at' => 'datetime',
         'expiry_date' => 'date',
         'file_size' => 'integer',
+        'document_type' => DocumentType::class,
     ];
 
     /**

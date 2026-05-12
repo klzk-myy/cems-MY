@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\ApprovalLevel;
 use App\Enums\ApprovalStatus;
+use App\Enums\TransactionType;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,6 +52,8 @@ class PepApprovalRequest extends Model
         'requested_at' => 'datetime',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
+        'transaction_type' => TransactionType::class,
+        'approval_level' => ApprovalLevel::class,
     ];
 
     /**

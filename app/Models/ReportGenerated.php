@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ReportGeneratedStatus;
+use App\Enums\ReportType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,6 +36,7 @@ class ReportGenerated extends Model
         'submitted_at' => 'datetime',
         'version' => 'integer',
         'status' => ReportGeneratedStatus::class,
+        'report_type' => ReportType::class,
     ];
 
     public function generatedBy(): BelongsTo

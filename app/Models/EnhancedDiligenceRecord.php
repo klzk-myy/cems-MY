@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;
+use App\Enums\EmploymentStatus;
 use App\Models\Compliance\EddQuestionnaireTemplate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -49,6 +50,7 @@ class EnhancedDiligenceRecord extends Model
         'reviewed_at' => 'datetime',
         'status' => EddStatus::class,
         'risk_level' => EddRiskLevel::class,
+        'employment_status' => EmploymentStatus::class,
     ];
 
     public function flaggedTransaction(): BelongsTo

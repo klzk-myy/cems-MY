@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\EntityType;
+use App\Enums\SanctionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +35,8 @@ class SanctionEntry extends Model
     protected $casts = [
         'date_of_birth' => 'date',
         'listing_date' => 'date',
+        'status' => SanctionStatus::class,
+        'entity_type' => EntityType::class,
     ];
 
     public function sanctionList(): BelongsTo

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\CtosStatus;
+use App\Enums\IdType;
+use App\Enums\TransactionType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -40,6 +42,8 @@ class CtosReport extends Model
         'amount_foreign' => 'decimal:4',
         'submitted_at' => 'datetime',
         'status' => CtosStatus::class,
+        'id_type' => IdType::class,
+        'transaction_type' => TransactionType::class,
     ];
 
     public function submittedBy()

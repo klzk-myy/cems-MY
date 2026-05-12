@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\SanctionListType;
+use App\Enums\UpdateStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -37,6 +39,8 @@ class SanctionList extends Model
         'last_updated_at' => 'datetime',
         'last_attempted_at' => 'datetime',
         'entry_count' => 'integer',
+        'list_type' => SanctionListType::class,
+        'update_status' => UpdateStatus::class,
     ];
 
     protected static function boot()

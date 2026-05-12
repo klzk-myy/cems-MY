@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\NotificationType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -63,6 +64,7 @@ class UserNotificationPreference extends Model
         'in_app_enabled' => 'boolean',
         'push_enabled' => 'boolean',
         'custom_settings' => 'array',
+        'notification_type' => NotificationType::class,
     ];
 
     /**
@@ -87,18 +89,6 @@ class UserNotificationPreference extends Model
                 'sms_enabled' => false,
                 'in_app_enabled' => true,
                 'push_enabled' => false,
-            ],
-            'str_deadline_approaching' => [
-                'email_enabled' => true,
-                'sms_enabled' => false,
-                'in_app_enabled' => true,
-                'push_enabled' => true,
-            ],
-            'str_submission_failed' => [
-                'email_enabled' => true,
-                'sms_enabled' => true,
-                'in_app_enabled' => true,
-                'push_enabled' => true,
             ],
             'compliance_case_assigned' => [
                 'email_enabled' => true,
@@ -142,8 +132,6 @@ class UserNotificationPreference extends Model
     {
         return [
             'transaction_flagged' => 'Transaction Flagged',
-            'str_deadline_approaching' => 'STR Deadline Approaching',
-            'str_submission_failed' => 'STR Submission Failed',
             'compliance_case_assigned' => 'Compliance Case Assigned',
             'data_breach_alert' => 'Data Breach Alert',
             'large_transaction' => 'Large Transaction',

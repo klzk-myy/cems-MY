@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RiskRating;
 use App\Enums\RiskTrend;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +38,7 @@ class RiskScoreSnapshot extends Model
         'factors' => 'array',
         'snapshot_date' => 'date',
         'next_screening_date' => 'date',
+        'previous_rating' => RiskRating::class,
     ];
 
     public function customer(): BelongsTo

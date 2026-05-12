@@ -11,17 +11,8 @@ enum ComplianceCaseType: string
 {
     case Investigation = 'Investigation';
     case Edd = 'Edd';
-    case Str = 'Str';
     case SanctionReview = 'SanctionReview';
     case Counterfeit = 'Counterfeit';
-
-    /**
-     * Check if this case type requires a link to an STR.
-     */
-    public function requiresStrLink(): bool
-    {
-        return $this === self::Str;
-    }
 
     /**
      * Check if this case type requires a link to an EDD record.
@@ -39,7 +30,7 @@ enum ComplianceCaseType: string
         return match ($this) {
             self::Investigation => 120,
             self::Edd => 72,
-            self::Str, self::SanctionReview, self::Counterfeit => 24,
+            self::SanctionReview, self::Counterfeit => 24,
         };
     }
 
@@ -51,7 +42,6 @@ enum ComplianceCaseType: string
         return match ($this) {
             self::Investigation => 'Investigation',
             self::Edd => 'Enhanced Due Diligence',
-            self::Str => 'Suspicious Transaction Report',
             self::SanctionReview => 'Sanction Review',
             self::Counterfeit => 'Counterfeit',
         };

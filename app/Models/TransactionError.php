@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ErrorType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -49,6 +50,7 @@ class TransactionError extends Model
         'error_context' => 'array',
         'next_retry_at' => 'datetime',
         'resolved_at' => 'datetime',
+        'error_type' => ErrorType::class,
     ];
 
     /**

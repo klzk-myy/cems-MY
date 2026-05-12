@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\JournalEntryStatus;
+use App\Enums\ReferenceType;
 use App\Services\MathService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -80,6 +81,7 @@ class JournalEntry extends Model
         'reversed_at' => 'datetime',
         'approved_at' => 'datetime',
         'status' => JournalEntryStatus::class,
+        'reference_type' => ReferenceType::class,
     ];
 
     /**

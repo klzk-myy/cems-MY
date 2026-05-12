@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReportType;
 use App\Enums\ReportStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@ class ReportRun extends Model
         'completed_at' => 'datetime',
         'row_count' => 'integer',
         'downloaded_count' => 'integer',
+        'report_type' => ReportType::class,
     ];
 
     public function schedule(): BelongsTo

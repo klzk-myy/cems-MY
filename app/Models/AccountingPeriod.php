@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AccountingPeriodStatus;
+use App\Enums\AccountingPeriodType;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -51,6 +52,7 @@ class AccountingPeriod extends Model
         'end_date' => 'date',
         'closed_at' => 'datetime',
         'status' => AccountingPeriodStatus::class,
+        'period_type' => AccountingPeriodType::class,
     ];
 
     /**

@@ -13,7 +13,6 @@ enum FindingType: string
     case VelocityExceeded = 'Velocity_Exceeded';
     case StructuringPattern = 'Structuring_Pattern';
     case AggregateTransaction = 'Aggregate_Transaction';
-    case StrDeadline = 'STR_Deadline';
     case SanctionMatch = 'Sanction_Match';
     case LocationAnomaly = 'Location_Anomaly';
     case CurrencyFlowAnomaly = 'Currency_Flow_Anomaly';
@@ -29,7 +28,6 @@ enum FindingType: string
             self::VelocityExceeded => 'Velocity Exceeded',
             self::StructuringPattern => 'Structuring Pattern',
             self::AggregateTransaction => 'Aggregate Transaction',
-            self::StrDeadline => 'STR Deadline',
             self::SanctionMatch => 'Sanction Match',
             self::LocationAnomaly => 'Location Anomaly',
             self::CurrencyFlowAnomaly => 'Currency Flow Anomaly',
@@ -46,7 +44,7 @@ enum FindingType: string
         return match ($this) {
             self::SanctionMatch, self::CounterfeitAlert => FindingSeverity::Critical,
             self::VelocityExceeded, self::StructuringPattern => FindingSeverity::High,
-            self::AggregateTransaction, self::StrDeadline => FindingSeverity::Medium,
+            self::AggregateTransaction => FindingSeverity::Medium,
             self::LocationAnomaly, self::CurrencyFlowAnomaly, self::RiskScoreChange => FindingSeverity::Low,
         };
     }
