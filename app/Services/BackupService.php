@@ -253,10 +253,9 @@ class BackupService
                 $this->restoreDatabase($dbFiles[0]);
             }
 
-            // Restore files if needed
-            $sourcePath = $extractPath.'*/'.basename(base_path());
-            // Application files restoration would go here
-            // This is typically done manually or with additional verification
+            // Restore files if needed - manually or with additional verification
+            // Note: Application files restoration requires careful handling
+            // to avoid overwriting custom configurations
 
             // Cleanup
             $this->recursiveDelete($extractPath);

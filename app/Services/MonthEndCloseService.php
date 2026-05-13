@@ -23,37 +23,39 @@ class MonthEndCloseService
 
     public function runMonthEndClosing(Carbon $date, User $initiator): array
     {
-        $results = [];
-
         $checkResult = $this->preFlightChecks($date);
         if (! $checkResult['passed']) {
             throw new MonthEndPreCheckFailedException($checkResult['failures']);
         }
 
-        $results['revaluation'] = $this->revaluationService->runRevaluationWithJournal(
-            $date->toDateString(),
-            $initiator->id
-        );
+        return DB::transaction(function () use ($date, $initiator) {
+            $results = [];
 
-        $results['reports'] = $this->generateReports($date);
+            $results['revaluation'] = $this->revaluationService->runRevaluationWithJournal(
+                $date->toDateString(),
+                $initiator->id
+            );
 
-        $results['period'] = $this->closePeriod($date);
+            $results['reports'] = $this->generateReports($date);
 
-        $this->auditService->log(
-            'month_end_close',
-            $initiator->id,
-            'AccountingPeriod',
-            $results['period']['period_id'] ?? null,
-            [],
-            [
-                'date' => $date->toDateString(),
-                'revaluation' => $results['revaluation'],
-                'reports' => $results['reports'],
-                'period_closed' => $results['period'],
-            ]
-        );
+            $results['period'] = $this->closePeriod($date);
 
-        return $results;
+            $this->auditService->log(
+                'month_end_close',
+                $initiator->id,
+                'AccountingPeriod',
+                $results['period']['period_id'] ?? null,
+                [],
+                [
+                    'date' => $date->toDateString(),
+                    'revaluation' => $results['revaluation'],
+                    'reports' => $results['reports'],
+                    'period_closed' => $results['period'],
+                ]
+            );
+
+            return $results;
+        });
     }
 
     public function preFlightChecks(Carbon $date): array

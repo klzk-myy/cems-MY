@@ -344,17 +344,8 @@ class RevaluationService
             }
         }
 
-        // If any revaluations failed, throw exception with summary
-        if (! empty($errors)) {
-            $successfulCurrencies = array_column($results, 'currency_code');
-            $failedCurrencies = array_column($errors, 'currency_code');
-
-            $summary = 'Successful currencies: '.implode(', ', $successfulCurrencies);
-            $summary .= '; Failed currencies: '.implode(', ', $failedCurrencies);
-
-            throw new \RuntimeException($summary);
-        }
-
+        // Return results including both successes and failures
+        // Caller can decide how to handle partial success
         return [
             'date' => $date,
             'positions_updated' => count($results),
@@ -363,6 +354,8 @@ class RevaluationService
             'total_loss' => $totalLoss,
             'net_pnl' => $this->mathService->add($totalGain, $totalLoss),
             'report_path' => null,
+            'has_failures' => ! empty($errors),
+            'failed_currencies' => $errors,
         ];
     }
 

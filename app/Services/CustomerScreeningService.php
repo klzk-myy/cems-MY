@@ -9,6 +9,7 @@ use App\Models\CustomerRelation;
 use App\Models\SanctionEntry;
 use App\Models\SanctionsAnalysis;
 use App\Models\ScreeningResult;
+use App\Models\SystemAlert;
 use App\Models\Transaction;
 use App\ValueObjects\ScreeningMatch;
 use App\ValueObjects\ScreeningResponse;
@@ -168,7 +169,8 @@ class CustomerScreeningService
             $this->rejectCustomer($customer, "positive_{$listType}_match");
         }
 
-        // TODO: pd-00.md 27.7.1 - Report positive name match to BNM FIU and IGP
+        // pd-00.md 27.7.1 - Report positive name match to BNM FIU and IGP
+        $this->reportToBnmFiu($customer, $listType);
 
         return [
             'action' => 'frozen_blocked_reported',
@@ -187,6 +189,26 @@ class CustomerScreeningService
         $customer->update([
             'is_active' => false,
             'rejection_reason' => $reason,
+        ]);
+    }
+
+    /**
+     * pd-00.md 27.7.1 - Report positive name match to BNM FIU and IGP
+     */
+    private function reportToBnmFiu(Customer $customer, string $listType): void
+    {
+        SystemAlert::create([
+            'level' => SystemAlert::LEVEL_CRITICAL,
+            'message' => "Positive {$listType} match on customer {$customer->full_name} (ID: {$customer->id}) - BNM FIU/IGP reporting required within 24 hours per pd-00.md 27.7.1",
+            'source' => 'sanctions_screening',
+            'metadata' => [
+                'customer_id' => $customer->id,
+                'customer_name' => $customer->full_name,
+                'list_type' => $listType,
+                'action' => 'bnm_fiu_report_required',
+                'report_deadline' => now()->addHours(24)->toIso8601String(),
+                'requires_fiu_report' => true,
+            ],
         ]);
     }
 

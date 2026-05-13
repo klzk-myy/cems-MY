@@ -32,6 +32,14 @@ class MonitoringEngine
 
     protected array $failureLog = [];
 
+    protected int $consecutiveFailures = 0;
+
+    protected const CIRCUIT_BREAKER_THRESHOLD = 3;
+
+    protected const CIRCUIT_BREAKER_RESET_AFTER = 60; // seconds
+
+    protected ?int $circuitBrokenAt = null;
+
     public function __construct(MathService $mathService, ComplianceService $complianceService)
     {
         $this->mathService = $mathService;
@@ -63,18 +71,67 @@ class MonitoringEngine
         return new $monitorClass($this->mathService, $this->complianceService);
     }
 
+    protected function isCircuitBroken(): bool
+    {
+        if ($this->consecutiveFailures < self::CIRCUIT_BREAKER_THRESHOLD) {
+            return false;
+        }
+
+        // Check if we should reset the circuit breaker
+        if ($this->circuitBrokenAt !== null) {
+            $elapsed = time() - $this->circuitBrokenAt;
+            if ($elapsed >= self::CIRCUIT_BREAKER_RESET_AFTER) {
+                // Reset after cooldown period
+                $this->consecutiveFailures = 0;
+                $this->circuitBrokenAt = null;
+                Log::info('MonitoringEngine circuit breaker reset after cooldown');
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function recordFailure(): void
+    {
+        $this->consecutiveFailures++;
+        if ($this->consecutiveFailures >= self::CIRCUIT_BREAKER_THRESHOLD) {
+            $this->circuitBrokenAt = time();
+            Log::critical('MonitoringEngine circuit breaker triggered - too many consecutive monitor failures');
+        }
+    }
+
+    protected function recordSuccess(): void
+    {
+        $this->consecutiveFailures = 0;
+        $this->circuitBrokenAt = null;
+    }
+
     public function runAll(): Collection
     {
         $results = collect();
         $this->failureLog = [];
 
+        // Check circuit breaker before running monitors
+        if ($this->isCircuitBroken()) {
+            Log::warning('MonitoringEngine circuit breaker is open, skipping all monitors', [
+                'consecutive_failures' => $this->consecutiveFailures,
+                'broken_at' => $this->circuitBrokenAt,
+            ]);
+
+            return $results;
+        }
+
         foreach ($this->monitors as $monitorClass) {
             $monitor = $this->getMonitor($monitorClass);
             try {
                 $findings = $monitor->execute();
+                $this->recordSuccess();
                 Log::info("Monitor {$monitorClass} generated ".count($findings).' findings');
                 $results = $results->merge($findings);
             } catch (\Throwable $e) {
+                $this->recordFailure();
                 $this->handleMonitorFailure($monitorClass, $e);
             }
         }

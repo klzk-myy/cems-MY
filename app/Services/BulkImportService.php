@@ -375,15 +375,15 @@ class BulkImportService
         try {
             Transaction::insert($transactions);
         } catch (\Exception $e) {
-            foreach ($transactions as $txn) {
-                $this->errors[] = 'Failed to insert transaction: '.$e->getMessage();
-                $this->stats['failed']++;
-                $this->stats['created']--;
-            }
+            $count = count($transactions);
+            $this->stats['failed'] += $count;
+            // Note: created count is not decremented since these transactions
+            // were never successfully inserted - the count reflects successful inserts only
             Log::error('Transaction batch insert failed', [
                 'error' => $e->getMessage(),
-                'count' => count($transactions),
+                'count' => $count,
             ]);
+            throw $e; // Re-throw so caller can handle transaction rollback
         }
     }
 

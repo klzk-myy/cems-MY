@@ -48,37 +48,37 @@ class TransactionImportService
             throw new \Exception("Could not open file: {$filePath}");
         }
 
-        $header = fgetcsv($handle);
+        try {
+            $header = fgetcsv($handle);
 
-        if (! $header) {
+            if (! $header) {
+                throw new \Exception('CSV file is empty');
+            }
+
+            // Validate header
+            $expectedHeader = ['customer_id', 'type', 'currency_code', 'amount_foreign', 'rate', 'purpose', 'source_of_funds', 'till_id'];
+            $headerLower = array_map('strtolower', $header);
+            if (count(array_diff($expectedHeader, $headerLower)) > 0) {
+                throw new \Exception('Invalid CSV header. Expected columns: '.implode(', ', $expectedHeader));
+            }
+
+            $rowNumber = 1;
+
+            while (($row = fgetcsv($handle)) !== false) {
+                $rowNumber++;
+                $this->processRow($row, $rowNumber);
+            }
+
+            $this->import->update([
+                'status' => count($this->errors) > 0 ? TransactionImportStatus::CompletedWithErrors->value : TransactionImportStatus::Completed->value,
+                'success_count' => $this->successCount,
+                'error_count' => count($this->errors),
+                'errors' => $this->errors,
+                'completed_at' => now(),
+            ]);
+        } finally {
             fclose($handle);
-            throw new \Exception('CSV file is empty');
         }
-
-        // Validate header
-        $expectedHeader = ['customer_id', 'type', 'currency_code', 'amount_foreign', 'rate', 'purpose', 'source_of_funds', 'till_id'];
-        $headerLower = array_map('strtolower', $header);
-        if (count(array_diff($expectedHeader, $headerLower)) > 0) {
-            fclose($handle);
-            throw new \Exception('Invalid CSV header. Expected columns: '.implode(', ', $expectedHeader));
-        }
-
-        $rowNumber = 1;
-
-        while (($row = fgetcsv($handle)) !== false) {
-            $rowNumber++;
-            $this->processRow($row, $rowNumber);
-        }
-
-        fclose($handle);
-
-        $this->import->update([
-            'status' => count($this->errors) > 0 ? TransactionImportStatus::CompletedWithErrors->value : TransactionImportStatus::Completed->value,
-            'success_count' => $this->successCount,
-            'error_count' => count($this->errors),
-            'errors' => $this->errors,
-            'completed_at' => now(),
-        ]);
     }
 
     /**
@@ -221,7 +221,7 @@ class TransactionImportService
                     $this->createAccountingEntries($transaction);
                 }
 
-                // Run compliance monitoring
+                // Run compliance monitoring BEFORE commit (moved before commit)
                 if ($status === TransactionStatus::Completed->value) {
                     $this->monitoringService->monitorTransaction($transaction);
                 }
@@ -230,6 +230,8 @@ class TransactionImportService
 
                 $this->successCount++;
             } catch (\Exception $e) {
+                // Only rollback if transaction wasn't committed
+                // If we reach here after commit, the rollback has no effect but is harmless
                 DB::rollBack();
                 throw $e;
             }

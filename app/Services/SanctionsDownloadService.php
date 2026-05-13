@@ -73,7 +73,23 @@ class SanctionsDownloadService
                 }
 
                 // Save file
-                file_put_contents($filepath, $content);
+                $bytesWritten = file_put_contents($filepath, $content);
+
+                // Verify write was successful
+                if ($bytesWritten === false || $bytesWritten !== strlen($content)) {
+                    // Cleanup corrupted file
+                    if (file_exists($filepath)) {
+                        unlink($filepath);
+                    }
+
+                    return [
+                        'success' => false,
+                        'filepath' => null,
+                        'checksum' => null,
+                        'error' => 'Failed to write file completely',
+                        'format_valid' => true,
+                    ];
+                }
 
                 // Calculate checksum
                 $checksum = hash('sha256', $content);

@@ -888,6 +888,21 @@ class TransactionService implements TransactionServiceInterface
                 'success' => false,
                 'message' => 'Insufficient stock: '.$e->getMessage(),
             ];
+        } catch (StockReservationExpiredException $e) {
+            return [
+                'success' => false,
+                'message' => 'Stock reservation expired: '.$e->getMessage(),
+            ];
+        } catch (\RuntimeException $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Transaction approval failed: '.$e->getMessage(),
+            ];
         }
     }
 

@@ -7,9 +7,11 @@ use App\Enums\TellerAllocationStatus;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Models\Branch;
 use App\Models\BranchClosureWorkflow;
+use App\Models\BranchPool;
 use App\Models\CounterSession;
 use App\Models\TellerAllocation;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class BranchClosingService
 {
@@ -68,10 +70,81 @@ class BranchClosingService
 
     public function settle(BranchClosureWorkflow $workflow, User $settler): void
     {
-        $workflow->update([
-            'status' => 'settled',
-            'settlement_at' => now(),
-        ]);
+        DB::transaction(function () use ($workflow, $settler) {
+            $branch = $workflow->branch;
+
+            // Return all active allocations to branch pool
+            $activeAllocations = TellerAllocation::where('branch_id', $branch->id)
+                ->where('status', TellerAllocationStatus::ACTIVE->value)
+                ->get();
+
+            foreach ($activeAllocations as $allocation) {
+                $tellerAllocationService = app(TellerAllocationService::class);
+                $tellerAllocationService->returnToPool($allocation);
+            }
+
+            // Create settlement journal entries (transfer balances to HQ)
+            $this->createSettlementJournalEntries($branch, $settler);
+
+            // Log the settlement action
+            $auditService = app(AuditService::class);
+            $auditService->log(
+                'branch_settled',
+                $settler->id,
+                'BranchClosureWorkflow',
+                $workflow->id,
+                [],
+                [
+                    'branch_id' => $branch->id,
+                    'branch_code' => $branch->code,
+                    'allocations_returned' => $activeAllocations->count(),
+                    'action' => 'branch_closed_and_settled',
+                ]
+            );
+
+            $workflow->update([
+                'status' => 'settled',
+                'settlement_at' => now(),
+            ]);
+        });
+    }
+
+    /**
+     * Create settlement journal entries for branch closing.
+     * Transfers remaining balances from branch pool to headquarters.
+     */
+    protected function createSettlementJournalEntries(Branch $branch, User $settler): void
+    {
+        // Get all branch pool balances
+        $branchPools = BranchPool::where('branch_id', $branch->id)->get();
+
+        foreach ($branchPools as $pool) {
+            if ($pool->available_balance > 0) {
+                $accountingService = app(AccountingService::class);
+                $lines = [
+                    [
+                        'account_code' => $pool->currency_code === 'MYR' ? '1000' : '1100',
+                        'debit' => '0.00',
+                        'credit' => $pool->available_balance,
+                        'description' => "Branch {$branch->code} pool balance",
+                    ],
+                    [
+                        'account_code' => '9000', // HQ suspense account
+                        'debit' => $pool->available_balance,
+                        'credit' => '0.00',
+                        'description' => "HQ receiving {$pool->currency_code} from branch {$branch->code}",
+                    ],
+                ];
+                $accountingService->createJournalEntry(
+                    $lines,
+                    'BranchSettlement',
+                    null,
+                    "Branch {$branch->code} settlement - {$pool->currency_code} transfer to HQ",
+                    now()->toDateString(),
+                    $settler->id
+                );
+            }
+        }
     }
 
     protected function checkCountersClosed(Branch $branch): bool

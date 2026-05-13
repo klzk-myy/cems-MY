@@ -11,6 +11,7 @@ use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\TellerAllocation;
 use App\Models\User;
+use App\Services\AuditService;
 use App\Services\BranchPoolService;
 use App\Services\CounterOpeningWorkflowService;
 use App\Services\CounterService;
@@ -102,10 +103,12 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->tellerAllocationService = $tellerAllocationService;
         $counterService = new CounterService($tellerAllocationService, new ThresholdService);
         $this->counterService = $counterService;
+        $auditService = resolve(AuditService::class);
         $this->workflowService = new CounterOpeningWorkflowService(
             $branchPoolService,
             $tellerAllocationService,
-            $counterService
+            $counterService,
+            $auditService
         );
     }
 

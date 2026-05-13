@@ -17,6 +17,7 @@ class CounterOpeningWorkflowService
         protected BranchPoolService $branchPoolService,
         protected TellerAllocationService $tellerAllocationService,
         protected CounterService $counterService,
+        protected AuditService $auditService,
     ) {}
 
     public function initiateOpeningRequest(User $teller, Counter $counter, array $requestedAmounts): array
@@ -87,6 +88,22 @@ class CounterOpeningWorkflowService
             foreach ($tellerAllocations as $allocation) {
                 $allocation->update(['counter_id' => $counter->id]);
             }
+
+            // Audit: Manager approval of teller allocation and counter session opening
+            $this->auditService->log(
+                'counter_allocation_approved',
+                $manager->id,
+                'CounterSession',
+                $session->id,
+                [],
+                [
+                    'teller_id' => $teller->id,
+                    'counter_id' => $counter->id,
+                    'approved_amounts' => $approvedAmounts,
+                    'daily_limits' => $dailyLimits,
+                    'action' => 'manager_approved_and_opened',
+                ]
+            );
 
             return $session;
         });
