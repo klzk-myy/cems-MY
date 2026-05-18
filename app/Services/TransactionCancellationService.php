@@ -4,15 +4,10 @@ namespace App\Services;
 
 use App\Enums\StockReservationStatus;
 use App\Enums\TransactionStatus;
-use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionCancelled;
 use App\Exceptions\Domain\SegregationOfDutiesException;
-use App\Models\CurrencyPosition;
-use App\Models\Customer;
-use App\Models\JournalEntry;
 use App\Models\StockReservation;
-use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\TransactionCancellationPendingNotification;
@@ -35,12 +30,6 @@ use Illuminate\Support\Facades\Notification;
  */
 class TransactionCancellationService
 {
-    /**
-     * Create a new TransactionCancellationService instance.
-     *
-     * @param  MathService  $mathService  Math service for precise calculations
-     * @param  AuditService  $auditService  Audit service for logging
-     */
     public function __construct(
         protected MathService $mathService,
         protected AuditService $auditService,
@@ -48,6 +37,8 @@ class TransactionCancellationService
         protected CurrencyPositionService $positionService,
         protected ComplianceService $complianceService,
         protected TellerAllocationService $tellerAllocationService,
+        protected TransactionReversalService $reversalService,
+        protected StockReleaseService $stockReleaseService,
     ) {}
 
     /**
@@ -87,7 +78,6 @@ class TransactionCancellationService
      */
     public function requestCancellation(Transaction $transaction, User $requester, string $reason): bool
     {
-        // Authorization check: must be manager or admin
         if (! $requester->role->isManager()) {
             Log::warning('Non-manager attempted transaction cancellation request', [
                 'transaction_id' => $transaction->id,
@@ -98,7 +88,6 @@ class TransactionCancellationService
             return false;
         }
 
-        // Check if transaction can be cancelled
         if (! $this->canCancel($transaction)) {
             Log::warning('Transaction cannot be cancelled', [
                 'transaction_id' => $transaction->id,
@@ -126,10 +115,8 @@ class TransactionCancellationService
                     'previous_status' => $previousStatus->value,
                 ]);
 
-                // Notify compliance team of pending cancellation
                 $this->notifyPendingCancellation($transaction, $requester, $reason);
 
-                // Audit logging
                 $this->auditService->logTransaction(
                     'cancellation_requested',
                     $transaction->id,
@@ -161,7 +148,6 @@ class TransactionCancellationService
      */
     public function approveCancellation(Transaction $transaction, User $approver, ?string $reason = null): bool
     {
-        // Must be in PendingCancellation status
         if (! $transaction->status->isPendingCancellation()) {
             Log::warning('Cannot approve cancellation - transaction not pending', [
                 'transaction_id' => $transaction->id,
@@ -171,7 +157,6 @@ class TransactionCancellationService
             return false;
         }
 
-        // Authorization check: must be manager, compliance officer, or admin
         if (! $approver->role->isManager() && ! $approver->role->isComplianceOfficer()) {
             Log::warning('Non-authorized user attempted cancellation approval', [
                 'transaction_id' => $transaction->id,
@@ -182,8 +167,6 @@ class TransactionCancellationService
             return false;
         }
 
-        // Segregation of duties check: approver cannot be the same user who requested cancellation
-        // This enforces dual-control as required by BNM AML/CFT regulations
         $cancellationRequest = $this->getLastCancellationRequest($transaction);
         if ($cancellationRequest && ($cancellationRequest['user_id'] ?? null) === $approver->id) {
             Log::warning('Self-approval of cancellation attempted - segregation of duties violation', [
@@ -200,43 +183,15 @@ class TransactionCancellationService
 
             $previousStatus = $transaction->status;
 
-            // Check if this transaction has an active stock reservation
-            // When a transaction is created with PendingApproval status, a stock reservation
-            // is created to prevent overselling. We need to release it on cancellation.
             $hasReservation = StockReservation::where('transaction_id', $transaction->id)
                 ->where('status', StockReservationStatus::Pending)
                 ->exists();
 
-            // If the transaction was Completed before cancellation, reverse its financial impacts
             if ($previousStatus->isCompleted()) {
-                // Reverse positions
-                $this->positionService->reversePositions($transaction);
-
-                // Reverse till balance
-                $this->reverseTillBalance($transaction);
-
-                // Reverse teller allocation if applicable
-                $user = User::find($transaction->user_id);
-                if ($user && $user->isTeller()) {
-                    $allocation = $this->tellerAllocationService->getActiveAllocation(
-                        $user,
-                        $transaction->currency_code
-                    );
-                    if ($allocation) {
-                        if ($transaction->type->isBuy()) {
-                            // Customer sold us foreign currency - we gained it, allocation increases
-                            $allocation->add((string) $transaction->amount_foreign);
-                            $allocation->subtractDailyUsed((string) $transaction->amount_local);
-                        } else {
-                            // Customer bought foreign currency from us - we lost it, allocation decreases
-                            $allocation->deduct((string) $transaction->amount_foreign);
-                            $allocation->subtractDailyUsed((string) $transaction->amount_local);
-                        }
-                    }
-                }
-
-                // Create reversing journal entries
-                $this->createReversingJournalEntries($transaction, $approver->id);
+                $this->reversalService->reversePositions($transaction);
+                $this->reversalService->reverseTillBalance($transaction);
+                $this->reverseTellerAllocation($transaction);
+                $this->reversalService->createReversingJournalEntries($transaction, $approver->id);
             }
 
             $result = $stateMachine->transitionTo(TransactionStatus::Cancelled, [
@@ -246,12 +201,8 @@ class TransactionCancellationService
             ]);
 
             if ($result) {
-                // Release stock reservation if one exists
                 if ($hasReservation) {
-                    $this->positionService->releaseStockReservation($transaction->id);
-                    Log::info('Stock reservation released for cancelled transaction', [
-                        'transaction_id' => $transaction->id,
-                    ]);
+                    $this->stockReleaseService->releaseReservation($transaction);
                 }
                 Log::info('Transaction cancellation approved', [
                     'transaction_id' => $transaction->id,
@@ -259,7 +210,6 @@ class TransactionCancellationService
                     'reason' => $reason,
                 ]);
 
-                // Audit logging
                 $this->auditService->logTransaction(
                     'cancellation_approved',
                     $transaction->id,
@@ -273,7 +223,6 @@ class TransactionCancellationService
                     ]
                 );
 
-                // Dispatch TransactionCancelled event for async listeners
                 Event::dispatch(new TransactionCancelled($transaction, $reason, $approver->id));
             }
 
@@ -294,7 +243,6 @@ class TransactionCancellationService
      */
     public function rejectCancellation(Transaction $transaction, User $rejector, string $reason): bool
     {
-        // Must be in PendingCancellation status
         if (! $transaction->status->isPendingCancellation()) {
             Log::warning('Cannot reject cancellation - transaction not pending', [
                 'transaction_id' => $transaction->id,
@@ -304,7 +252,6 @@ class TransactionCancellationService
             return false;
         }
 
-        // Authorization check: must be manager, compliance officer, or admin
         if (! $rejector->role->isManager() && ! $rejector->role->isComplianceOfficer()) {
             Log::warning('Non-authorized user attempted cancellation rejection', [
                 'transaction_id' => $transaction->id,
@@ -319,8 +266,6 @@ class TransactionCancellationService
             $previousStatus = $transaction->status;
             $previousHistory = $transaction->transition_history ?? [];
 
-            // Determine the target status based on transition history
-            // Find the status before PendingCancellation was applied
             $targetStatus = $this->determinePreviousStatus($transaction);
 
             if (! $targetStatus) {
@@ -328,19 +273,15 @@ class TransactionCancellationService
                     'transaction_id' => $transaction->id,
                 ]);
 
-                // Fall back to Completed if transition history is missing or corrupted.
                 $targetStatus = TransactionStatus::Completed;
             }
 
-            // Prevent no-op self-transition (e.g. Processing → Processing is invalid)
             if ($targetStatus === $transaction->status) {
                 Log::warning('Reject cancellation target status is same as current', [
                     'transaction_id' => $transaction->id,
                     'current_status' => $transaction->status->value,
                 ]);
 
-                // Fall back: find the first entry in history whose 'to' is NOT the current status,
-                // appearing after the PendingCancellation entry (walk forward through history)
                 $history = $transaction->transition_history ?? [];
                 $foundPendingCancellation = false;
                 $fallbackStatus = null;
@@ -353,7 +294,6 @@ class TransactionCancellationService
                     if ($foundPendingCancellation) {
                         try {
                             $candidate = TransactionStatus::from($entry['from']);
-                            // Only accept if it's not the same as current (skip self-transition)
                             if ($candidate !== $transaction->status) {
                                 $fallbackStatus = $candidate;
                                 break;
@@ -366,8 +306,6 @@ class TransactionCancellationService
                 $targetStatus = $fallbackStatus ?? TransactionStatus::Completed;
             }
 
-            // Reject the cancellation by restoring the transaction to its previous status
-            // Rather than assuming Completed, we restore the actual prior status
             $oldStatus = $transaction->status;
             $transaction->status = $targetStatus;
             $transaction->version = $transaction->version + 1;
@@ -386,7 +324,6 @@ class TransactionCancellationService
                     'returned_to_status' => $targetStatus->value,
                 ]);
 
-                // Audit logging
                 $this->auditService->logTransaction(
                     'cancellation_rejected',
                     $transaction->id,
@@ -420,8 +357,7 @@ class TransactionCancellationService
      */
     public function requestReversal(Transaction $transaction, User $requester, string $reason): bool
     {
-        // Check user permissions
-        if (! $this->canUserReverse($requester, $transaction)) {
+        if (! $this->reversalService->canUserReverse($requester, $transaction)) {
             Log::warning('User not authorized to reverse transaction', [
                 'transaction_id' => $transaction->id,
                 'user_id' => $requester->id,
@@ -431,19 +367,17 @@ class TransactionCancellationService
             return false;
         }
 
-        // Check if transaction can be reversed
-        if (! $this->canReverse($transaction)) {
+        if (! $this->reversalService->canReverse($transaction)) {
             Log::warning('Transaction cannot be reversed', [
                 'transaction_id' => $transaction->id,
                 'current_status' => $transaction->status->value,
-                'within_window' => $this->isWithinCancellationWindow($transaction),
+                'within_window' => $this->reversalService->isWithinCancellationWindow($transaction),
             ]);
 
             return false;
         }
 
-        // Verify 24-hour window
-        if (! $this->isWithinCancellationWindow($transaction)) {
+        if (! $this->reversalService->isWithinCancellationWindow($transaction)) {
             Log::warning('Transaction reversal window has expired', [
                 'transaction_id' => $transaction->id,
                 'transaction_created_at' => $transaction->created_at->toIso8601String(),
@@ -453,67 +387,17 @@ class TransactionCancellationService
             return false;
         }
 
-        return DB::transaction(function () use ($transaction, $requester, $reason) {
-            // Segregation of duties check: approver cannot be the same user who requested reversal
-            // This enforces dual-control as required by BNM AML/CFT regulations (pd-00.md 11.2.4(e))
-            if ($transaction->user_id === $requester->id) {
-                Log::warning('Self-reversal attempted - segregation of duties violation', [
-                    'transaction_id' => $transaction->id,
-                    'requester_id' => $requester->id,
-                    'original_transaction_user_id' => $transaction->user_id,
-                ]);
-
-                throw new SegregationOfDutiesException('reverse this transaction');
-            }
-
-            // Create refund transaction (needs separate approver due to segregation of duties)
-            $refundTransaction = $this->createRefundTransaction($transaction, $requester->id);
-
-            // Reverse positions
-            $this->reversePositions($transaction);
-
-            // Reverse till balance (foreign and MYR totals)
-            $this->reverseTillBalance($transaction);
-
-            // Create reversing journal entries
-            $this->createReversingJournalEntries($transaction, $requester->id);
-
-            // Reverse teller allocation if applicable
-            $user = User::find($transaction->user_id);
-            if ($user && $user->isTeller()) {
-                $allocation = $this->tellerAllocationService->getActiveAllocation(
-                    $user,
-                    $transaction->currency_code
-                );
-                if ($allocation) {
-                    if ($transaction->type->isBuy()) {
-                        $allocation->deduct((string) $transaction->amount_foreign);
-                        $allocation->subtractDailyUsed((string) $transaction->amount_local);
-                    } else {
-                        $allocation->add((string) $transaction->amount_foreign);
-                        $allocation->subtractDailyUsed((string) $transaction->amount_local);
-                    }
-                }
-            }
-
-            // Transition to reversed status
-            $stateMachine = new TransactionStateMachine($transaction);
-            $result = $stateMachine->transitionTo(TransactionStatus::Reversed, [
-                'reason' => $reason,
-                'user_id' => $requester->id,
+        if ($transaction->user_id === $requester->id) {
+            Log::warning('Self-reversal attempted - segregation of duties violation', [
+                'transaction_id' => $transaction->id,
+                'requester_id' => $requester->id,
+                'original_transaction_user_id' => $transaction->user_id,
             ]);
 
-            if ($result) {
-                Log::info('Transaction reversal processed', [
-                    'transaction_id' => $transaction->id,
-                    'refund_transaction_id' => $refundTransaction->id,
-                    'reversed_by' => $requester->id,
-                    'reason' => $reason,
-                ]);
-            }
+            throw new SegregationOfDutiesException('reverse this transaction');
+        }
 
-            return $result;
-        });
+        return $this->reversalService->reverse($transaction, $requester, $reason);
     }
 
     /**
@@ -540,384 +424,48 @@ class TransactionCancellationService
         return in_array($transaction->status, $cancellableStatuses, true);
     }
 
-    /**
-     * Check if a transaction can be reversed.
-     *
-     * A transaction can be reversed if it's completed and within the
-     * 24-hour cancellation window. Reversed transactions cannot be reversed again.
-     *
-     * @param  Transaction  $transaction  The transaction to check
-     * @return bool True if the transaction can be reversed
-     */
     public function canReverse(Transaction $transaction): bool
     {
-        // Must be completed
-        if (! $transaction->status->isCompleted()) {
-            return false;
-        }
-
-        // Cannot be already reversed
-        if ($transaction->status->isReversed()) {
-            return false;
-        }
-
-        // Cannot be a refund transaction itself
-        if ($transaction->is_refund) {
-            return false;
-        }
-
-        // Must be within cancellation window
-        return $this->isWithinCancellationWindow($transaction);
+        return $this->reversalService->canReverse($transaction);
     }
 
-    /**
-     * Check if a transaction is within the cancellation window.
-     *
-     * Default window is 24 hours from transaction creation, configurable
-     * via cems.transaction_cancellation_window_hours.
-     *
-     * @param  Transaction  $transaction  The transaction to check
-     * @return bool True if within the cancellation window
-     */
     public function isWithinCancellationWindow(Transaction $transaction): bool
     {
-        $windowHours = config('cems.transaction_cancellation_window_hours', 24);
-
-        return $transaction->created_at->diffInHours(now()) <= $windowHours;
+        return $this->reversalService->isWithinCancellationWindow($transaction);
     }
 
-    /**
-     * Create a refund transaction for a reversed original transaction.
-     *
-     * The refund transaction has opposite type (Buy becomes Sell, Sell becomes Buy),
-     * same amounts, and links back to the original transaction.
-     *
-     * @param  Transaction  $original  The original transaction being reversed
-     * @return Transaction The created refund transaction
-     */
     public function createRefundTransaction(Transaction $original, int $approvedBy): Transaction
     {
-        $oppositeType = $original->type === TransactionType::Buy
-            ? TransactionType::Sell
-            : TransactionType::Buy;
-
-        // Calculate refund amount_local
-        $amountLocal = $this->mathService->multiply(
-            (string) $original->amount_foreign,
-            (string) $original->rate
-        );
-
-        // Determine if refund requires hold (same rules as normal transactions)
-        $customer = Customer::findOrFail($original->customer_id);
-        $holdCheck = $this->complianceService->requiresHold($amountLocal, $customer);
-
-        $status = TransactionStatus::Completed;
-        $holdReason = null;
-        if ($holdCheck['requires_hold']) {
-            $status = TransactionStatus::PendingApproval;
-            $holdReason = implode(', ', $holdCheck['reasons']);
-        }
-
-        // Create refund transaction (approved by the reversal approver if auto-completed)
-        $refund = Transaction::create([
-            'customer_id' => $original->customer_id,
-            'user_id' => $original->user_id, // Original teller
-            'branch_id' => $original->branch_id,
-            'till_id' => $original->till_id,
-            'type' => $oppositeType,
-            'currency_code' => $original->currency_code,
-            'amount_foreign' => $original->amount_foreign,
-            'amount_local' => $amountLocal,
-            'rate' => $original->rate,
-            'purpose' => 'Reversal: '.($original->purpose ?? 'Transaction reversal'),
-            'source_of_funds' => $original->source_of_funds,
-            'status' => $status,
-            'hold_reason' => $holdReason,
-            'cdd_level' => $original->cdd_level,
-            'original_transaction_id' => $original->id,
-            'is_refund' => true,
-            'approved_by' => $status->isCompleted() ? $approvedBy : null,
-            'approved_at' => $status->isCompleted() ? now() : null,
-        ]);
-
-        // Log refund compliance decision
-        $this->auditService->logWithSeverity(
-            'refund_compliance_check',
-            [
-                'user_id' => $approvedBy,
-                'entity_type' => 'Transaction',
-                'entity_id' => $refund->id,
-                'new_values' => [
-                    'original_transaction_id' => $original->id,
-                    'amount_local' => $amountLocal,
-                    'status' => $status->value,
-                    'hold_reason' => $holdReason,
-                    'compliance_reasons' => $holdCheck['reasons'],
-                ],
-            ],
-            'INFO'
-        );
-
-        return $refund;
+        return $this->reversalService->createRefundTransaction($original, $approvedBy);
     }
 
-    /**
-     * Reverse stock/cash positions for a transaction.
-     *
-     * For a Buy transaction, decreases the currency position.
-     * For a Sell transaction, increases the currency position.
-     *
-     * @param  Transaction  $transaction  The transaction to reverse positions for
-     *
-     * @throws \InvalidArgumentException If position update fails
-     */
     public function reversePositions(Transaction $transaction): void
     {
-        $positionService = $this->positionService;
-
-        // Acquire lock before getting position to prevent race conditions
-        $position = CurrencyPosition::where('currency_code', $transaction->currency_code)
-            ->where('till_id', $transaction->till_id)
-            ->lockForUpdate()
-            ->first();
-
-        if (! $position) {
-            Log::warning('No position found for reversal', [
-                'transaction_id' => $transaction->id,
-                'currency_code' => $transaction->currency_code,
-                'till_id' => $transaction->till_id,
-            ]);
-
-            return;
-        }
-
-        // For reversal, we use opposite type
-        // If original was Buy (bought foreign currency), reversal Sell (sell foreign currency back)
-        // If original was Sell (sold foreign currency), reversal Buy (buy foreign currency back)
-        $reversalType = $transaction->type === TransactionType::Buy
-            ? TransactionType::Sell
-            : TransactionType::Buy;
-
-        $positionService->updatePosition(
-            $transaction->currency_code,
-            $transaction->amount_foreign,
-            $transaction->rate,
-            $reversalType->value,
-            $transaction->till_id
-        );
-
-        Log::info('Positions reversed for transaction', [
-            'transaction_id' => $transaction->id,
-            'currency_code' => $transaction->currency_code,
-            'amount_foreign' => $transaction->amount_foreign,
-            'reversal_type' => $reversalType->value,
-        ]);
+        $this->reversalService->reversePositions($transaction);
     }
 
-    /**
-     * Reverse till balance entries for a reversed transaction.
-     * Undoes the original transaction's effect on till_balances.transaction_total (MYR)
-     * and buy_total_foreign/sell_total_foreign/foreign_total (foreign currency).
-     */
-    protected function reverseTillBalance(Transaction $transaction): void
-    {
-        $tillBalance = TillBalance::where('till_id', $transaction->till_id)
-            ->where('currency_code', $transaction->currency_code)
-            ->whereDate('date', today())
-            ->whereNull('closed_at')
-            ->lockForUpdate()
-            ->first();
-
-        if (! $tillBalance) {
-            Log::warning('No open till balance found for reversal', [
-                'transaction_id' => $transaction->id,
-                'till_id' => $transaction->till_id,
-                'currency_code' => $transaction->currency_code,
-            ]);
-
-            return;
-        }
-
-        $isBuy = $transaction->type === TransactionType::Buy;
-
-        // Reverse foreign currency totals (opposite of original transaction)
-        $foreignTotal = $tillBalance->foreign_total ?? '0';
-        if ($isBuy) {
-            // Original Buy increased foreign_total, reversal must decrease it
-            $newForeignTotal = $this->mathService->subtract($foreignTotal, $transaction->amount_foreign);
-            $buyTotal = $tillBalance->buy_total_foreign ?? '0';
-            $newBuyTotal = $this->mathService->subtract($buyTotal, $transaction->amount_foreign);
-            $tillBalance->update([
-                'foreign_total' => $newForeignTotal,
-                'buy_total_foreign' => $newBuyTotal,
-            ]);
-        } else {
-            // Original Sell decreased foreign_total, reversal must increase it
-            $newForeignTotal = $this->mathService->add($foreignTotal, $transaction->amount_foreign);
-            $sellTotal = $tillBalance->sell_total_foreign ?? '0';
-            $newSellTotal = $this->mathService->add($sellTotal, $transaction->amount_foreign);
-            $tillBalance->update([
-                'foreign_total' => $newForeignTotal,
-                'sell_total_foreign' => $newSellTotal,
-            ]);
-        }
-
-        // Reverse MYR till balance (original always added, reversal must subtract)
-        $myrTillBalance = TillBalance::where('till_id', $transaction->till_id)
-            ->where('currency_code', 'MYR')
-            ->whereDate('date', today())
-            ->whereNull('closed_at')
-            ->lockForUpdate()
-            ->first();
-
-        if ($myrTillBalance) {
-            $myrTotal = $myrTillBalance->transaction_total ?? '0';
-            $newMyrTotal = $this->mathService->subtract($myrTotal, $transaction->amount_local);
-            $myrTillBalance->update(['transaction_total' => $newMyrTotal]);
-        }
-
-        Log::info('Till balance reversed for transaction', [
-            'transaction_id' => $transaction->id,
-            'currency_code' => $transaction->currency_code,
-            'amount_foreign' => $transaction->amount_foreign,
-            'amount_local' => $transaction->amount_local,
-        ]);
-    }
-
-    /**
-     * Create reversing journal entries for a transaction.
-     *
-     * Creates a reversal journal entry that swaps debits and credits from the
-     * original transaction's journal entries.
-     *
-     * @param  Transaction  $transaction  The transaction to create reversing entries for
-     * @param  int|null  $reversedBy  User ID performing the reversal
-     */
     public function createReversingJournalEntries(Transaction $transaction, ?int $reversedBy = null): void
     {
-        $accountingService = $this->accountingService;
-        $reversedBy = $reversedBy ?? auth()->id();
-
-        // Find original journal entries for this transaction
-        $originalEntries = JournalEntry::where('reference_type', 'Transaction')
-            ->where('reference_id', $transaction->id)
-            ->where('status', 'Posted')
-            ->get();
-
-        foreach ($originalEntries as $originalEntry) {
-            try {
-                $accountingService->reverseJournalEntry(
-                    $originalEntry,
-                    "Reversal of transaction {$transaction->id}",
-                    $reversedBy
-                );
-
-                Log::info('Reversed journal entry', [
-                    'original_entry_id' => $originalEntry->id,
-                    'transaction_id' => $transaction->id,
-                ]);
-            } catch (\InvalidArgumentException $e) {
-                Log::warning('Failed to reverse journal entry', [
-                    'original_entry_id' => $originalEntry->id,
-                    'transaction_id' => $transaction->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
+        $this->reversalService->createReversingJournalEntries($transaction, $reversedBy);
     }
 
-    /**
-     * Record state history for a transaction.
-     *
-     * Stores the state transition in the transaction's transition_history array
-     * for audit and tracking purposes.
-     *
-     * @param  Transaction  $transaction  The transaction
-     * @param  string  $fromStatus  Previous status
-     * @param  string  $toStatus  New status
-     * @param  array  $context  Additional context data
-     */
-    public function recordStateHistory(
-        Transaction $transaction,
-        string $fromStatus,
-        string $toStatus,
-        array $context
-    ): void {
-        $history = $transaction->transition_history ?? [];
-
-        $history[] = [
-            'from' => $fromStatus,
-            'to' => $toStatus,
-            'reason' => $context['reason'] ?? null,
-            'user_id' => $context['user_id'] ?? auth()->id(),
-            'timestamp' => now()->toIso8601String(),
-            'metadata' => $context,
-        ];
-
-        $transaction->transition_history = $history;
-        $transaction->save();
-
-        Log::debug('Recorded state history', [
-            'transaction_id' => $transaction->id,
-            'from' => $fromStatus,
-            'to' => $toStatus,
-        ]);
-    }
-
-    /**
-     * Get the cancellation window hours from configuration.
-     *
-     * @return int Number of hours in the cancellation window
-     */
     public function getCancellationWindowHours(): int
     {
-        return (int) config('cems.transaction_cancellation_window_hours', 24);
+        return $this->reversalService->getCancellationWindowHours();
     }
 
-    /**
-     * Check if a user can cancel transactions.
-     *
-     * Only managers and admins can cancel transactions.
-     *
-     * @param  User  $user  The user to check
-     * @return bool True if the user can cancel transactions
-     */
     public function canUserCancel(User $user): bool
     {
         return $user->role->isManager();
     }
 
-    /**
-     * Check if a user can reverse transactions.
-     *
-     * Any authenticated user can request reversal of their own transactions,
-     * but managers can reverse any transaction.
-     *
-     * @param  User  $user  The user to check
-     * @param  Transaction  $transaction  The transaction to potentially reverse
-     * @return bool True if the user can reverse the transaction
-     */
     public function canUserReverse(User $user, Transaction $transaction): bool
     {
-        // Managers can reverse any transaction
-        if ($user->role->isManager()) {
-            return true;
-        }
-
-        // Regular users can only reverse their own transactions
-        return $transaction->user_id === $user->id;
+        return $this->reversalService->canUserReverse($user, $transaction);
     }
 
-    /**
-     * Notify compliance team of pending cancellation request.
-     *
-     * @param  Transaction  $transaction  The transaction with pending cancellation
-     * @param  User  $requester  The user who requested cancellation
-     * @param  string  $reason  Reason for cancellation
-     */
     protected function notifyPendingCancellation(Transaction $transaction, User $requester, string $reason): void
     {
-        // Get all compliance officers and admins
         $notifiableUsers = User::whereIn('role', [
             UserRole::ComplianceOfficer->value,
             UserRole::Admin->value,
@@ -957,7 +505,6 @@ class TransactionCancellationService
     {
         $history = $transaction->transition_history ?? [];
 
-        // Find the most recent PendingCancellation transition
         foreach (array_reverse($history) as $entry) {
             if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
                 return $entry;
@@ -967,21 +514,12 @@ class TransactionCancellationService
         return null;
     }
 
-    /**
-     * Determine the previous status before PendingCancellation was applied.
-     *
-     * @param  Transaction  $transaction  The transaction
-     * @return TransactionStatus|null The previous status, or null if not found
-     */
     protected function determinePreviousStatus(Transaction $transaction): ?TransactionStatus
     {
         $history = $transaction->transition_history ?? [];
 
-        // Walk history in reverse to find the entry BEFORE the transaction entered PendingCancellation.
-        // The "from" of the latest entry whose "to" is PendingCancellation is the previous status.
         foreach (array_reverse($history) as $entry) {
             if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
-                // Found the transition that put us INTO PendingCancellation
                 try {
                     return TransactionStatus::from($entry['from']);
                 } catch (\ValueError $e) {
@@ -993,9 +531,6 @@ class TransactionCancellationService
         return null;
     }
 
-    /**
-     * Append a state history entry for manual status restoration (bypasses state machine).
-     */
     protected function appendStateHistoryEntry(Transaction $transaction, TransactionStatus $oldStatus, TransactionStatus $newStatus, array $context): array
     {
         $history = $transaction->transition_history ?? [];
@@ -1008,5 +543,25 @@ class TransactionCancellationService
         ];
 
         return $history;
+    }
+
+    protected function reverseTellerAllocation(Transaction $transaction): void
+    {
+        $user = User::find($transaction->user_id);
+        if ($user && $user->isTeller()) {
+            $allocation = $this->tellerAllocationService->getActiveAllocation(
+                $user,
+                $transaction->currency_code
+            );
+            if ($allocation) {
+                if ($transaction->type->isBuy()) {
+                    $allocation->deduct((string) $transaction->amount_foreign);
+                    $allocation->subtractDailyUsed((string) $transaction->amount_local);
+                } else {
+                    $allocation->add((string) $transaction->amount_foreign);
+                    $allocation->subtractDailyUsed((string) $transaction->amount_local);
+                }
+            }
+        }
     }
 }
