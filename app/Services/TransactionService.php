@@ -16,6 +16,7 @@ use App\Exceptions\Domain\InvalidIpAddressException;
 use App\Exceptions\Domain\PepApprovalRequiredException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
+use App\Http\Traits\ValidatorMethods;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
@@ -27,14 +28,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Transaction Service
- *
- * Handles core transaction creation logic for both web and API controllers.
- * Ensures BCMath precision for all monetary calculations and compliance checks.
- */
 class TransactionService implements TransactionServiceInterface
 {
+    use ValidatorMethods;
+
     public function __construct(
         protected MathService $mathService,
         protected ComplianceService $complianceService,

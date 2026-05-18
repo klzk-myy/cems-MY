@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Http\Traits\ValidatorMethods;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SanctionsDownloadService
 {
+    use ValidatorMethods;
+
     protected string $tempDirectory;
 
     protected int $timeout;
@@ -147,35 +150,6 @@ class SanctionsDownloadService
             'CSV' => $this->validateCsv($content),
             default => true,
         };
-    }
-
-    protected function validateXml(string $content): bool
-    {
-        $previousValue = libxml_use_internal_errors(true);
-        $doc = simplexml_load_string($content);
-        libxml_use_internal_errors($previousValue);
-
-        return $doc !== false;
-    }
-
-    protected function validateJson(string $content): bool
-    {
-        json_decode($content);
-
-        return json_last_error() === JSON_ERROR_NONE;
-    }
-
-    protected function validateCsv(string $content): bool
-    {
-        // Basic CSV validation - check for comma-separated structure
-        $lines = explode("\n", $content);
-        if (count($lines) < 2) {
-            return false;
-        }
-
-        $firstLine = $lines[0];
-
-        return str_contains($firstLine, ',') || str_contains($firstLine, "\t");
     }
 
     /**

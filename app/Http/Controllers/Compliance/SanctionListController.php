@@ -6,13 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
-use App\Services\SanctionsImportService;
+use App\Services\SanctionsOrchestrationService;
 use Illuminate\Http\Request;
 
 class SanctionListController extends Controller
 {
     public function __construct(
-        protected SanctionsImportService $importService,
+        protected SanctionsOrchestrationService $orchestrationService,
     ) {}
 
     public function index()
@@ -257,7 +257,11 @@ class SanctionListController extends Controller
         }
 
         try {
-            $result = $this->importService->import($list, manual: true);
+            $result = $this->orchestrationService->syncSanctionsList($list, true);
+
+            if (! $result['success']) {
+                return redirect()->back()->with('error', $result['error'] ?? 'Import failed');
+            }
 
             return redirect()->back()->with('success', 'Import triggered successfully');
         } catch (\Exception $e) {

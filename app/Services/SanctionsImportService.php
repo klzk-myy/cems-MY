@@ -26,12 +26,18 @@ class SanctionsImportService
 
     public function import(SanctionList $list, bool $manual = false): array
     {
+        $data = $this->fetchSource($list->source_url);
+
+        return $this->importWithData($list, $data, $manual);
+    }
+
+    public function importWithData(SanctionList $list, array $data, bool $manual = false): array
+    {
         $this->resetCounters();
 
         $list->update(['last_attempted_at' => now(), 'update_status' => 'pending']);
 
         try {
-            $data = $this->fetchSource($list->source_url);
             $entries = $this->parseEntries($data, $list);
             $result = $this->syncEntries($entries, $list);
 
