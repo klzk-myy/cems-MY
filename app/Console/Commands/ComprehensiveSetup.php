@@ -7,7 +7,7 @@ use App\Models\BranchPool;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\User;
-use App\Services\ComprehensiveLogService;
+use App\Services\AuditService;
 use App\Services\MathService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +19,7 @@ class ComprehensiveSetup extends Command
 
     protected $description = 'Complete system setup with branches, opening stock, and test transactions';
 
-    protected ComprehensiveLogService $logger;
+    protected AuditService $logger;
 
     protected MathService $mathService;
 
@@ -29,14 +29,18 @@ class ComprehensiveSetup extends Command
 
     public function handle()
     {
-        $this->logger = app(ComprehensiveLogService::class);
+        $this->logger = app(AuditService::class);
         $this->mathService = new MathService;
         $this->branchCount = (int) $this->option('branches');
         $this->transactionsPerBranch = (int) $this->option('transactions');
 
-        $this->logger->log('SETUP', 'STARTED', 'System', null, [
-            'branches' => $this->branchCount,
-            'transactions_per_branch' => $this->transactionsPerBranch,
+        $this->logger->logWithSeverity('setup_started', [
+            'entity_type' => 'System',
+            'entity_id' => null,
+            'new_values' => [
+                'branches' => $this->branchCount,
+                'transactions_per_branch' => $this->transactionsPerBranch,
+            ],
         ], 'INFO');
 
         $this->info('Starting comprehensive setup with logging...');
@@ -56,16 +60,26 @@ class ComprehensiveSetup extends Command
 
             DB::commit();
 
-            $this->logger->log('SETUP', 'COMPLETED', 'System', null, [
-                'branches_created' => count($branches),
-            ], 'SUCCESS');
+            $this->logger->logWithSeverity('setup_completed', [
+                'entity_type' => 'System',
+                'entity_id' => null,
+                'new_values' => [
+                    'branches_created' => count($branches),
+                ],
+            ], 'INFO');
 
             $this->info('Setup completed successfully!');
-            $this->info("Log file: {$this->logger->getLogFile()}");
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->logger->logError('SETUP', $e, ['step' => 'setup_failed']);
+            $this->logger->logWithSeverity('setup_failed', [
+                'entity_type' => 'System',
+                'new_values' => [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ],
+            ], 'ERROR');
             $this->error('Setup failed: '.$e->getMessage());
 
             return 1;
@@ -128,7 +142,10 @@ class ComprehensiveSetup extends Command
             ]
         );
 
-        $this->logger->log('SETUP', 'BASE_DATA_CREATED', 'System', null, [], 'INFO');
+        $this->logger->logWithSeverity('setup_base_data_created', [
+            'entity_type' => 'System',
+            'new_values' => [],
+        ], 'INFO');
     }
 
     protected function createBranches(): array
@@ -147,10 +164,10 @@ class ComprehensiveSetup extends Command
 
             $branches[] = $branch;
 
-            $this->logger->log('BRANCH', 'CREATED', 'Branch', $branch->id, [
+            $this->logger->log('BRANCH_CREATED', null, 'Branch', $branch->id, [], [
                 'code' => $branch->code,
                 'name' => $branch->name,
-            ], 'INFO');
+            ]);
 
             $this->info("  Created branch: {$branch->code} - {$branch->name}");
         }
@@ -175,11 +192,11 @@ class ComprehensiveSetup extends Command
             $pool->available_balance = $newBalance;
             $pool->save();
 
-            $this->logger->log('STOCK', 'INITIALIZED', 'BranchPool', $pool->id, [
+            $this->logger->log('STOCK_INITIALIZED', null, 'BranchPool', $pool->id, [], [
                 'branch_code' => $branch->code,
                 'currency' => $currencyCode,
                 'amount' => $amount,
-            ], 'INFO');
+            ]);
 
             $this->info("    - {$currencyCode}: {$amount}");
         }
@@ -192,9 +209,9 @@ class ComprehensiveSetup extends Command
         // This would normally use AccountingService, but for simplicity we'll skip
         // In real scenario, use: app(AccountingService::class)->createJournalEntry(...)
 
-        $this->logger->log('ACCOUNTING', 'OPENING_BALANCE', 'Branch', $branch->id, [
+        $this->logger->log('OPENING_BALANCE', null, 'Branch', $branch->id, [], [
             'branch_code' => $branch->code,
-        ], 'INFO');
+        ]);
     }
 
     protected function createTestTransactions(Branch $branch): void
@@ -204,8 +221,8 @@ class ComprehensiveSetup extends Command
         // Implementation would go here
         // For now, just log that we're doing it
 
-        $this->logger->log('TRANSACTION', 'BATCH_CREATED', 'Branch', $branch->id, [
+        $this->logger->log('BATCH_CREATED', null, 'Branch', $branch->id, [], [
             'count' => $this->transactionsPerBranch,
-        ], 'INFO');
+        ]);
     }
 }

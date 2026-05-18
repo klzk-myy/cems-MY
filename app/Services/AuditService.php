@@ -746,6 +746,79 @@ class AuditService
         return SystemLog::whereNull('entry_hash')->count();
     }
 
+    public function logProcedureTrigger(string $procedureName, array $parameters = []): SystemLog
+    {
+        return $this->logWithSeverity(
+            'procedure_triggered',
+            [
+                'entity_type' => 'Procedure',
+                'entity_id' => null,
+                'new_values' => [
+                    'procedure_name' => $procedureName,
+                    'parameters' => $parameters,
+                ],
+            ],
+            'INFO'
+        );
+    }
+
+    public function logControllerAction(
+        string $controller,
+        string $action,
+        ?int $userId,
+        array $requestData = [],
+        array $result = []
+    ): SystemLog {
+        return $this->logWithSeverity(
+            $action,
+            [
+                'user_id' => $userId,
+                'entity_type' => $controller,
+                'new_values' => [
+                    'request_data' => $requestData,
+                    'result' => $result,
+                ],
+            ],
+            'INFO'
+        );
+    }
+
+    public function logModelEvent(
+        string $model,
+        string $event,
+        ?int $modelId,
+        array $changes = [],
+        array $original = []
+    ): SystemLog {
+        return $this->logWithSeverity(
+            strtoupper($event),
+            [
+                'entity_type' => $model,
+                'entity_id' => $modelId,
+                'old_values' => $original,
+                'new_values' => $changes,
+            ],
+            'INFO'
+        );
+    }
+
+    public function logTransactionWorkflow(
+        string $step,
+        int $transactionId,
+        string $status,
+        array $context = []
+    ): SystemLog {
+        return $this->logWithSeverity(
+            $step,
+            [
+                'entity_type' => 'Transaction',
+                'entity_id' => $transactionId,
+                'new_values' => $context,
+            ],
+            $status === 'ERROR' ? 'ERROR' : 'INFO'
+        );
+    }
+
     /**
      * Batch insert multiple audit log entries.
      *

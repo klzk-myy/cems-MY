@@ -9,7 +9,12 @@ use Illuminate\Support\Facades\Log;
  * Comprehensive Logging Service
  *
  * Captures all business activities with timestamps for audit and debugging purposes.
+ *
+ * @deprecated Use AuditService instead. This service writes to a separate
+ *             business_activity_logs table and log files, while AuditService
+ *             provides tamper-evident logging via hash chaining to the SystemLog model.
  */
+#[Deprecated(since: '2.0', message: 'Use AuditService instead for tamper-evident audit logging.')]
 class ComprehensiveLogService
 {
     protected string $logFile;
