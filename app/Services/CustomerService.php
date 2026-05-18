@@ -6,6 +6,7 @@ use App\Enums\CddLevel;
 use App\Enums\RiskRating;
 use App\Models\Customer;
 use App\Models\SystemLog;
+use App\Repositories\CustomerRepository;
 use App\Services\Compliance\RiskScoringEngine;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -31,7 +32,8 @@ class CustomerService
         protected CustomerScreeningService $screeningService,
         protected RiskScoringEngine $riskScoringEngine,
         protected AuditService $auditService,
-        protected CacheTagsService $cacheTagsService
+        protected CacheTagsService $cacheTagsService,
+        protected CustomerRepository $customerRepository
     ) {}
 
     /**
@@ -133,7 +135,7 @@ class CustomerService
         return Cache::remember(
             "customer:{$customerId}",
             now()->addMinutes(30),
-            fn () => Customer::find($customerId)
+            fn () => $this->customerRepository->findById($customerId)
         );
     }
 
@@ -193,9 +195,7 @@ class CustomerService
      */
     public function findByIdNumber(string $idNumber): ?Customer
     {
-        $hash = $this->computeBlindIndex($idNumber);
-
-        return Customer::where('id_number_hash', $hash)->first();
+        return $this->customerRepository->findByIdNumber($idNumber);
     }
 
     public function searchCustomers(string $query): array
