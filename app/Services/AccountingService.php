@@ -89,15 +89,17 @@ class AccountingService
                 );
             }
 
-            // Create entry in Draft status - does NOT post to ledger yet
+            // Create entry as Posted and post to ledger directly
             $entry = JournalEntry::create([
                 'entry_date' => $entryDate,
                 'period_id' => $period?->id,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'description' => $description,
-                'status' => JournalEntryStatus::Draft->value,
+                'status' => JournalEntryStatus::Posted->value,
                 'created_by' => $createdBy,
+                'posted_by' => $createdBy,
+                'posted_at' => now(),
             ]);
 
             foreach ($lines as $line) {
@@ -110,6 +112,8 @@ class AccountingService
                 ]);
             }
 
+            $this->updateLedger($entry);
+
             $this->auditService->log(
                 'journal_entry_created',
                 $createdBy,
@@ -120,7 +124,7 @@ class AccountingService
                     'reference_type' => $referenceType,
                     'reference_id' => $referenceId,
                     'description' => $description,
-                    'status' => JournalEntryStatus::Draft->value,
+                    'status' => JournalEntryStatus::Posted->value,
                 ]
             );
 
@@ -138,37 +142,10 @@ class AccountingService
      * @param  int|null  $submittedBy  User ID submitting (default: authenticated user)
      * @return JournalEntry Updated entry
      *
+     * @deprecated Since 2026-05-31 - Direct posting is now used. This method will be removed in v11.
+     *
      * @throws \InvalidArgumentException If entry is not in Draft status
      */
-    public function submitForApproval(JournalEntry $entry, ?int $submittedBy = null): JournalEntry
-    {
-        $submittedBy = $submittedBy ?? auth()->id();
-
-        // Perform the status update inside transaction, then refresh AFTER commit
-        $entry = DB::transaction(function () use ($entry) {
-            if (! $entry->isDraft()) {
-                throw new \InvalidArgumentException('Only draft entries can be submitted for approval');
-            }
-
-            $entry->update([
-                'status' => JournalEntryStatus::Pending->value,
-            ]);
-
-            $this->auditService->logJournalWorkflowEvent('journal_entry_submitted', $entry->id, [
-                'old' => ['status' => 'Draft'],
-                'new' => ['status' => 'Pending'],
-            ]);
-
-            // Return the entry from inside the transaction - the model's attributes are updated
-            // but we need to refresh AFTER the transaction commits to sync with database
-            return $entry;
-        });
-
-        // Refresh AFTER the transaction has committed to get the database state
-        $entry->refresh();
-
-        return $entry;
-    }
 
     /**
      * Approve a journal entry and post it to the ledger.
@@ -181,57 +158,10 @@ class AccountingService
      * @param  string|null  $approvalNotes  Optional approval notes
      * @return JournalEntry Updated entry
      *
+     * @deprecated Since 2026-05-31 - Direct posting is now used. This method will be removed in v11.
+     *
      * @throws \InvalidArgumentException If entry is not in Pending status
      */
-    public function approveEntry(
-        JournalEntry $entry,
-        ?int $approvedBy = null,
-        ?string $approvalNotes = null
-    ): JournalEntry {
-        $approvedBy = $approvedBy ?? auth()->id();
-
-        // The model's status should already be 'Pending' after submitForApproval
-        if (! $entry->isPending()) {
-            throw new \InvalidArgumentException('Only pending entries can be approved');
-        }
-
-        // Re-validate period is still open before posting (could have been closed since submission)
-        if ($entry->period_id) {
-            $period = AccountingPeriod::find($entry->period_id);
-            if ($period && ! $period->isOpen()) {
-                throw new \InvalidArgumentException(
-                    "Cannot approve entry - period {$period->period_code} is closed"
-                );
-            }
-        }
-
-        // Wrap in transaction to ensure atomicity - if updateLedger fails,
-        // the entry status won't be changed to Posted
-        return DB::transaction(function () use ($entry, $approvedBy, $approvalNotes) {
-            $entry->update([
-                'status' => JournalEntryStatus::Posted->value,
-                'approved_by' => $approvedBy,
-                'approved_at' => now(),
-                'approval_notes' => $approvalNotes,
-                'posted_by' => $approvedBy,
-                'posted_at' => now(),
-            ]);
-
-            // Post to the ledger
-            $this->updateLedger($entry);
-
-            $this->auditService->logJournalWorkflowEvent('journal_entry_approved', $entry->id, [
-                'old' => ['status' => 'Pending'],
-                'new' => [
-                    'status' => JournalEntryStatus::Posted->value,
-                    'approved_by' => $approvedBy,
-                    'approval_notes' => $approvalNotes,
-                ],
-            ]);
-
-            return $entry->fresh();
-        });
-    }
 
     /**
      * Reject a journal entry.
@@ -363,9 +293,7 @@ class AccountingService
                 $reversedBy
             );
 
-            // Submit for approval first (Draft -> Pending), then approve (Pending -> Posted)
-            $entry = $this->submitForApproval($entry, $reversedBy);
-            $entry = $this->approveEntry($entry, $reversedBy, "Reversal of entry {$originalEntry->id}");
+            // Reversal entry is posted directly by createJournalEntry
 
             // Update original entry status and create explicit link via reversal_id
             $originalEntry->update([
