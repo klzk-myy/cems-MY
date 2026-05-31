@@ -322,7 +322,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/', [DashboardController::class, 'reports'])->name('index');
 
         Route::get('/msb2', [RegulatoryReportController::class, 'msb2'])->name('msb2');
-        Route::get('/lctr', [RegulatoryReportController::class, 'lctr'])->name('lctr');
         Route::get('/lmca', [RegulatoryReportController::class, 'lmca'])->name('lmca');
         Route::get('/quarterly-lvr', [RegulatoryReportController::class, 'quarterlyLvr'])->name('quarterly-lvr');
         Route::get('/position-limit', [RegulatoryReportController::class, 'positionLimit'])->name('position-limit');

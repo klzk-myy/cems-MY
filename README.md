@@ -80,7 +80,6 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 | Report | Frequency | Command | Description |
 |--------|-----------|---------|-------------|
 | MSB2 | Daily | `report:msb2` | Transaction summary |
-| LCTR | Monthly | `report:lctr` | Large Cash Transaction Report (≥ RM 50,000) |
 | LMCA | Monthly | `report:lmca` | Monthly Large Cash Aggregate |
 | LVR | Quarterly | `report:qlvr` | Large Value Transactions |
 | EOD | Daily | `report:eod` | End-of-Day reconciliation |
@@ -179,7 +178,6 @@ php test-runner.php                       # Run with category filtering
 
 ```bash
 php artisan report:msb2 --date=2026-04-18      # Daily transaction summary
-php artisan report:lctr --month=2026-03        # Monthly large cash transactions
 php artisan report:lmca --month=2026-03       # Monthly LMCA
 php artisan report:qlvr --quarter=2026-Q1     # Quarterly large value
 php artisan report:eod --date=2026-04-18     # End-of-day reconciliation
@@ -221,7 +219,6 @@ php artisan user:create --role=teller --name="John Doe" --email=john@example.com
 |---------|-------------|
 | `compliance:rescreen` | Rescreen all customers against sanctions lists |
 | `report:msb2` | Generate daily MSB(2) report |
-| `report:lctr` | Generate monthly Cash Transaction Report (≥ RM50,000) |
 | `report:lmca` | Generate monthly BNM Form LMCA report |
 | `report:qlvr` | Generate quarterly large value transaction report |
 | `report:eod` | Generate End-of-Day reconciliation report |
@@ -400,7 +397,7 @@ All thresholds are centralized in `config/thresholds.php` and accessed via `Thre
 return [
     'approval' => ['auto_approve' => '10000', 'manager' => '50000'],
     'cdd' => ['specific' => '3000', 'standard' => '10000', 'large_transaction' => '50000'],
-    'reporting' => ['ctos' => '25000', 'ctr' => '25000', 'str' => '50000', 'edd' => '50000', 'lctr' => '25000'],
+    'reporting' => ['ctos' => '25000', 'str' => '50000', 'edd' => '50000'],
     'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3, 'hourly_window' => 1, 'lookup_days' => 7],
     // ...
 ];

@@ -7,7 +7,6 @@
                 <h3 class="font-semibold mb-2">BNM Regulatory Reports</h3>
                 <ul class="space-y-2 mt-4">
                     <li><a href="{{ route('reports.msb2') }}" class="text-blue-600 hover:underline">MSB2 Report</a></li>
-                    <li><a href="{{ route('reports.lctr') }}" class="text-blue-600 hover:underline">LCTR Report</a></li>
                     <li><a href="{{ route('reports.lmca') }}" class="text-blue-600 hover:underline">LMCA Report</a></li>
                     <li><a href="{{ route('reports.quarterly-lvr') }}" class="text-blue-600 hover:underline">Quarterly LVR</a></li>
                     <li><a href="{{ route('reports.position-limit') }}" class="text-blue-600 hover:underline">Position Limit</a></li>

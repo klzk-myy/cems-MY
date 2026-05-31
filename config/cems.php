@@ -49,10 +49,8 @@ return [
     |--------------------------------------------------------------------------
     */
     'thresholds' => [
-        'ctr' => 50000,      // Cash Transaction Report threshold (RM)
         'edd' => 50000,      // Enhanced Due Diligence threshold (RM)
         'str' => 50000,      // Suspicious Transaction Report threshold (RM)
-        'lctr' => 50000,     // Large Cash Transaction Report threshold (RM)
     ],
 
     /*

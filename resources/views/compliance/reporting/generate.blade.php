@@ -32,13 +32,6 @@
                     </div>
                 </label>
                 <label class="flex items-center p-4 border border-[#e5e5e5] rounded-lg cursor-pointer hover:bg-gray-50">
-                    <input type="radio" name="report_type" value="lctr" class="w-4 h-4 text-blue-600">
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-900">LCTR</p>
-                        <p class="text-xs text-gray-500">Large Cash Transaction Report</p>
-                    </div>
-                </label>
-                <label class="flex items-center p-4 border border-[#e5e5e5] rounded-lg cursor-pointer hover:bg-gray-50">
                     <input type="radio" name="report_type" value="edd" class="w-4 h-4 text-blue-600">
                     <div class="ml-3">
                         <p class="text-sm font-medium text-gray-900">EDD</p>

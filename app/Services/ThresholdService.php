@@ -23,10 +23,6 @@ class ThresholdService
 
     public const FALLBACK_CTOS = '25000';
 
-    public const FALLBACK_CTR = '25000';
-
-    public const FALLBACK_LCTR = '25000';
-
     public const FALLBACK_STR = '50000';
 
     public const FALLBACK_EDD = '50000';
@@ -193,11 +189,6 @@ class ThresholdService
         return (string) $this->get('reporting', 'ctos', 'FALLBACK_CTOS');
     }
 
-    public function getCtrThreshold(): string
-    {
-        return (string) $this->get('reporting', 'ctr', 'FALLBACK_CTR');
-    }
-
     public function getStrThreshold(): string
     {
         return (string) $this->get('reporting', 'str', 'FALLBACK_STR');
@@ -207,13 +198,6 @@ class ThresholdService
     {
         return (string) $this->get('reporting', 'edd', 'FALLBACK_EDD');
     }
-
-    public function getLctrThreshold(): string
-    {
-        return (string) $this->get('reporting', 'lctr', 'FALLBACK_LCTR');
-    }
-
-    // Risk scoring thresholds
 
     public function getRiskHighThreshold(): string
     {

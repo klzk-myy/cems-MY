@@ -59,8 +59,7 @@
                             <span class="text-lg font-bold text-gray-700">28</span>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-900">LCTR Report - December 2023</p>
-                            <p class="text-xs text-gray-500">Due: January 28, 2024</p>
+
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
@@ -126,10 +125,7 @@
                     <span class="w-3 h-3 bg-yellow-100 rounded"></span>
                     <span class="text-gray-500">STR Submission</span>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 bg-blue-100 rounded"></span>
-                    <span class="text-gray-500">LCTR Deadline</span>
-                </div>
+
             </div>
         </div>
     </div>

@@ -3,18 +3,6 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | CTR Warning Threshold
-    |--------------------------------------------------------------------------
-    |
-    | Warning threshold for CTR reporting (approaching the main threshold).
-    | The actual CTR threshold is defined in config/thresholds.php.
-    |
-    */
-
-    'ctr_warning_threshold' => env('CTR_WARNING_THRESHOLD', 20000),
-
-    /*
-    |--------------------------------------------------------------------------
     | CTOS (Cash Transaction Reporting to BNM) Settings
     |--------------------------------------------------------------------------
     */

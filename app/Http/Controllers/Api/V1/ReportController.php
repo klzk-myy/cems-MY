@@ -50,13 +50,12 @@ class ReportController extends Controller
     public function export(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'report_type' => 'required|in:lctr,msb2,trial_balance,pl,balance_sheet',
+            'report_type' => 'required|in:msb2,trial_balance,pl,balance_sheet',
             'period' => 'required|string',
             'format' => 'required|in:CSV,PDF,XLSX',
         ]);
 
         $data = match ($validated['report_type']) {
-            'lctr' => $this->reportingService->generateLCTRData($validated['period']),
             'msb2' => $this->reportingService->generateMSB2Data($validated['period']),
             default => ['data' => []],
         };

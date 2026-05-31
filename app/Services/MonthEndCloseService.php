@@ -103,14 +103,6 @@ class MonthEndCloseService
         $month = $date->format('Y-m');
 
         try {
-            $lctrPath = $this->reportingService->generateFormLCTRCsv($month);
-            $reports['lctr'] = ['status' => 'generated', 'path' => $lctrPath];
-        } catch (\Exception $e) {
-            Log::error('LCTR report generation failed', ['error' => $e->getMessage()]);
-            $reports['lctr'] = ['status' => 'failed', 'error' => $e->getMessage()];
-        }
-
-        try {
             $lmcaPath = $this->reportingService->generateFormLMCACsv($month);
             $reports['lmca'] = ['status' => 'generated', 'path' => $lmcaPath];
         } catch (\Exception $e) {

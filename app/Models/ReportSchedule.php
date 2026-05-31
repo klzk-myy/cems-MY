@@ -77,7 +77,6 @@ class ReportSchedule extends Model
     {
         return [
             'msb2' => 'MSB2 Daily Summary',
-            'lctr' => 'LCTR - Large Cash Transaction Report',
             'lmca' => 'LMCA - Monthly Report',
             'qlvr' => 'QLVR - Quarterly Large Value Report',
             'position_limit' => 'Position Limit Report',

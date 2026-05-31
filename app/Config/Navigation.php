@@ -285,12 +285,6 @@ class Navigation
                         'uri' => '/reports/msb2',
                     ],
                     [
-                        'label' => 'LCTR',
-                        'route' => 'reports.lctr',
-                        'icon' => 'large-cash',
-                        'uri' => '/reports/lctr',
-                    ],
-                    [
                         'label' => 'LMCA',
                         'route' => 'reports.lmca',
                         'icon' => 'monthly',

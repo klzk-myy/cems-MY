@@ -235,7 +235,7 @@ Organized by domain module:
 ### 11. Reports & Analytics (5)
 | Controller | Purpose |
 |------------|---------|
-| `Report/RegulatoryReportController` | LCTR, MSB2, LMCA, QLVR |
+| `Report/RegulatoryReportController` | MSB2, LMCA, QLVR |
 | `Report/AnalyticsController` | Trends, profitability analysis |
 | `ReportController` | Report history & downloads |
 | `Api/V1/ReportController` | Report API |
@@ -317,7 +317,7 @@ Business logic layer organized in `app/Services/`:
 | `SanctionsImportService` | Sanctions import |
 | `SanctionsDownloadService` | Sanctions download |
 | `CtosReportService` | CTOS report generation |
-| `CtrReportService` | CTR report generation |
+
 | `KycDocumentExpiryService` | KYC expiry tracking |
 
 ### Accounting Services (8)
@@ -619,7 +619,7 @@ Organized by module:
 | Transactions | 17 | index, show, create, wizard, receipt, cancel, confirm |
 | Accounting | 20 | balance-sheet, profit-loss, trial-balance, cash-flow, journal, ledger |
 | Compliance | 13 | cases, ctos, rules, sanctions |
-| Reports | 12 | lctr, lmca, msb2, eod-reconciliation |
+| Reports | 11 | lmca, msb2, eod-reconciliation |
 | Counters | 8 | open, close, handover, history, emergency |
 | Stock Transfers | 9 | dispatch, receive, approve-bm/hq, complete, cancel |
 | Branches | 8 | index, show, create, edit, opening wizard, closing |
@@ -804,11 +804,10 @@ Organized by module:
 
 ## Console Commands (41 Artisan Commands)
 
-### Financial/Reporting (7)
+### Financial/Reporting (6)
 | Command | Purpose |
 |---------|---------|
 | `report:msb2` | Daily transaction summary |
-| `report:lctr` | Monthly LCTR (≥ RM 50k) |
 | `report:lmca` | Monthly LMCA |
 | `report:qlvr` | Quarterly LVR |
 | `report:eod` | End-of-day reconciliation |

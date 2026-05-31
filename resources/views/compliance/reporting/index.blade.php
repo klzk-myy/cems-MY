@@ -32,17 +32,6 @@
 
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">LCTR</h3>
-                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">Monthly</span>
-                </div>
-                <p class="text-sm text-gray-500 mb-4">Large Cash Transaction Report >= RM 25,000</p>
-                <button class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                    Generate
-                </button>
-            </div>
-
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900">LMCA</h3>
                     <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">Monthly</span>
                 </div>

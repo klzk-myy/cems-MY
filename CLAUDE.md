@@ -170,7 +170,7 @@ return [
     'cdd' => ['specific' => '3000', 'standard' => '10000', 'large_transaction' => '50000'],
     'risk_scoring' => ['high' => '50000', 'medium' => '30000', 'low' => '10000'],
     'alert_triage' => ['critical' => '50000', 'high' => '30000', 'medium' => '10000'],
-    'reporting' => ['ctos' => '25000', 'ctr' => '25000', 'str' => '50000', 'edd' => '50000', 'lctr' => '25000'],
+    'reporting' => ['ctos' => '25000', 'str' => '50000', 'edd' => '50000'],
     'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3, 'hourly_window' => 1, 'lookup_days' => 7],
     'duration' => ['warning_hours' => 24, 'critical_hours' => 48],
     'variance' => ['yellow' => '100.00', 'red' => '500.00'],
@@ -267,7 +267,6 @@ Counters (tills) with full lifecycle:
 
 BNM compliance reports via Artisan commands:
 - `report:msb2` - Daily transaction summary
-- `report:lctr` - Large Cash Transaction Report (≥ RM 25,000) - **Monthly**
 - `report:lmca` - Monthly LMCA
 - `report:qlvr` - Quarterly Large Value
 - `compliance:rescreen` - Monthly sanctions rescreening
@@ -340,7 +339,7 @@ Tailwind v4 with CSS-based `@theme` configuration — single source of truth for
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **cems-my** (9740 symbols, 25164 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **cems-my** (9674 symbols, 24956 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

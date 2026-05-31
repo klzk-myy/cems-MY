@@ -72,14 +72,6 @@ trait Thresholdable
     }
 
     /**
-     * Get CTR threshold (reporting.ctr).
-     */
-    protected static function getCtrThreshold(): string
-    {
-        return self::thresholdService()->getCtrThreshold();
-    }
-
-    /**
      * Get STR threshold (reporting.str).
      */
     protected static function getStrThreshold(): string
@@ -93,14 +85,6 @@ trait Thresholdable
     protected static function getEddThreshold(): string
     {
         return self::thresholdService()->getEddThreshold();
-    }
-
-    /**
-     * Get LCTR threshold (reporting.lctr).
-     */
-    protected static function getLctrThreshold(): string
-    {
-        return self::thresholdService()->getLctrThreshold();
     }
 
     /**

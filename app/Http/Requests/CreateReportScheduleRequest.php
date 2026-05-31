@@ -14,7 +14,7 @@ class CreateReportScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'report_type' => 'required|in:msb2,lctr,lmca,qlvr,position_limit',
+            'report_type' => 'required|in:msb2,lmca,qlvr,position_limit',
             'cron_expression' => 'required|string',
             'parameters' => 'nullable|array',
             'notification_recipients' => 'nullable|array',

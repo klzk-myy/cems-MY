@@ -103,10 +103,6 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:admin');
 
     // Reports API
-    Route::post('/reports/lctr', [RegulatoryReportController::class, 'generateLCTR'])
-        ->name('api.v1.reports.lctr');
-    Route::post('/reports/lctr/status', [RegulatoryReportController::class, 'updateLCTRStatus'])
-        ->name('api.v1.reports.lctr.status');
     Route::post('/reports/msb2', [RegulatoryReportController::class, 'generateMSB2'])
         ->name('api.v1.reports.msb2');
     Route::post('/reports/msb2/status', [RegulatoryReportController::class, 'updateMSB2Status'])

@@ -62,7 +62,6 @@ class ReportSchedulingService
     {
         return match ($type) {
             'msb2' => $this->reportingService->generateMSB2($params['date'] ?? now()->toDateString()),
-            'lctr' => $this->reportingService->generateFormLMCACsv($params['month'] ?? now()->format('Y-m')),
             'lmca' => $this->reportingService->generateFormLMCACsv($params['month'] ?? now()->format('Y-m')),
             'qlvr' => $this->reportingService->generateQuarterlyLargeValueCsv($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
             'position_limit' => $this->reportingService->generatePositionLimitCsv(),
@@ -203,7 +202,6 @@ class ReportSchedulingService
     {
         return match ($type) {
             'msb2' => $this->reportingService->generateMSB2Data($params['date'] ?? now()->toDateString()),
-            'lctr' => $this->reportingService->generateLCTRData($params['month'] ?? now()->format('Y-m')),
             'lmca' => $this->reportingService->generateFormLMCA($params['month'] ?? now()->format('Y-m')),
             'qlvr' => $this->reportingService->generateQuarterlyLargeValueReport($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
             'position_limit' => $this->reportingService->generatePositionLimitReport(),

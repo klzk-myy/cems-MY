@@ -5,10 +5,8 @@ namespace App\Http\Controllers\Report;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreLctrReportRequest;
 use App\Http\Requests\StoreMsb2ReportRequest;
 use App\Models\ReportGenerated;
-use App\Models\Transaction;
 use App\Services\MathService;
 use App\Services\ReportingService;
 use App\Services\ThresholdService;
@@ -28,11 +26,9 @@ class RegulatoryReportController extends Controller
     public function __construct(
         ReportingService $reportingService,
         MathService $mathService,
-        ThresholdService $thresholdService
     ) {
         $this->reportingService = $reportingService;
         $this->mathService = $mathService;
-        $this->thresholdService = $thresholdService;
     }
 
     protected function getQuarterStart(string $quarter): Carbon
@@ -48,89 +44,6 @@ class RegulatoryReportController extends Controller
     protected function getQuarterEnd(string $quarter): Carbon
     {
         return $this->getQuarterStart($quarter)->copy()->addMonths(3)->subDay()->endOfDay();
-    }
-
-    public function lctr(Request $request)
-    {
-        $this->requireManagerOrAdmin();
-
-        // Validate month parameter
-        $validated = $request->validate([
-            'month' => 'nullable|date_format:Y-m',
-        ]);
-
-        $month = $validated['month'] ?? now()->format('Y-m');
-
-        // Check if report already generated
-        $reportGenerated = ReportGenerated::where('report_type', 'LCTR')
-            ->where('period_start', now()->parse($month)->startOfMonth())
-            ->first();
-
-        // Get qualifying transactions (>= RM50,000 and Completed per BNM requirements)
-        $startDate = now()->parse($month)->startOfMonth();
-        $endDate = $startDate->copy()->endOfMonth();
-
-        $transactions = Transaction::where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
-            ->where('status', TransactionStatus::Completed)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->with(['customer', 'user'])
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        // Count pending approval transactions that would qualify
-        $pendingTransactions = Transaction::where('amount_local', '>=', $this->thresholdService->getCtrThreshold())
-            ->where('status', TransactionStatus::PendingApproval)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
-
-        $stats = [
-            'count' => $transactions->count(),
-            'total_amount' => $this->mathService->add('0', (string) $transactions->sum('amount_local')),
-            'unique_customers' => $transactions->pluck('customer_id')->unique()->count(),
-        ];
-
-        return view('reports.lctr', compact('month', 'transactions', 'stats', 'reportGenerated', 'pendingTransactions'));
-    }
-
-    public function lctrGenerate(Request $request)
-    {
-        $this->requireManagerOrAdmin();
-
-        $month = $request->input('month', now()->format('Y-m'));
-        $report = $this->reportingService->generateLCTRData($month);
-
-        $periodStart = now()->parse($month)->startOfMonth();
-        $version = ReportGenerated::where('report_type', 'LCTR')
-            ->where('period_start', $periodStart)
-            ->max('version') + 1;
-
-        ReportGenerated::create([
-            'report_type' => 'LCTR',
-            'period_start' => $periodStart,
-            'period_end' => now()->parse($month)->endOfMonth(),
-            'generated_by' => auth()->id(),
-            'generated_at' => now(),
-            'file_format' => 'CSV',
-            'version' => $version,
-        ]);
-
-        return response()->json($report);
-    }
-
-    public function generateLCTR(StoreLctrReportRequest $request)
-    {
-        $filepath = $this->reportingService->generateLCTR($request->validated('month'));
-
-        return response()->json([
-            'message' => 'LCTR report generated',
-            'filename' => basename($filepath),
-            'download_url' => url('/reports/download/'.basename($filepath)),
-        ]);
-    }
-
-    public function updateLCTRStatus(Request $request)
-    {
-        return $this->updateReportStatus('LCTR', $request);
     }
 
     public function msb2(Request $request)

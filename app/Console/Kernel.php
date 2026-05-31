@@ -58,11 +58,6 @@ class Kernel extends ConsoleKernel
             ->cron('30 0 1 * *')
             ->appendOutputTo(storage_path('logs/report-lmca.log'));
 
-        // LCTR - Cash Transaction Report (for previous month) - 1st of month at 00:45
-        $schedule->command('report:lctr')
-            ->cron('45 0 1 * *')
-            ->appendOutputTo(storage_path('logs/report-lctr.log'));
-
         // Sanctions Rescreening (BNM monthly requirement) - 1st of month at 03:00
         $schedule->command('compliance:rescreen --days=30')
             ->cron('0 3 1 * *')

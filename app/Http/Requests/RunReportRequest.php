@@ -14,7 +14,7 @@ class RunReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'report_type' => 'required|in:msb2,lctr,lmca,qlvr,position_limit',
+            'report_type' => 'required|in:msb2,lmca,qlvr,position_limit',
             'date' => 'nullable|date',
             'month' => 'nullable|date_format:Y-m',
             'quarter' => 'nullable|string',

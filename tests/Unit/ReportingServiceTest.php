@@ -34,12 +34,6 @@ class ReportingServiceTest extends TestCase
         $this->assertInstanceOf(ReportingService::class, $this->service);
     }
 
-    public function test_threshold_service_integration_for_lctr(): void
-    {
-        $ctrThreshold = $this->thresholdService->getCtrThreshold();
-        $this->assertEquals('25000', $ctrThreshold);
-    }
-
     public function test_threshold_service_integration_for_ctos(): void
     {
         $ctosThreshold = $this->thresholdService->getCtosThreshold();
@@ -58,13 +52,6 @@ class ReportingServiceTest extends TestCase
         $this->assertEquals('50000', $eddThreshold);
     }
 
-    public function test_ctr_threshold_is_used_for_large_transaction_reporting(): void
-    {
-        $threshold = $this->thresholdService->getCtrThreshold();
-        $this->assertEquals('25000', $threshold);
-        $this->assertIsString($threshold);
-    }
-
     public function test_ctos_threshold_for_reporting(): void
     {
         $threshold = $this->thresholdService->getCtosThreshold();
@@ -74,17 +61,8 @@ class ReportingServiceTest extends TestCase
 
     public function test_all_reporting_thresholds_return_string(): void
     {
-        $this->assertIsString($this->thresholdService->getCtrThreshold());
         $this->assertIsString($this->thresholdService->getCtosThreshold());
         $this->assertIsString($this->thresholdService->getStrThreshold());
         $this->assertIsString($this->thresholdService->getEddThreshold());
-        $this->assertIsString($this->thresholdService->getLctrThreshold());
-    }
-
-    public function test_lctr_threshold_equals_ctr_threshold(): void
-    {
-        $lctr = $this->thresholdService->getLctrThreshold();
-        $ctr = $this->thresholdService->getCtrThreshold();
-        $this->assertEquals($ctr, $lctr);
     }
 }

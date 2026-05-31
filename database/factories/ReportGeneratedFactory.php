@@ -12,7 +12,7 @@ class ReportGeneratedFactory extends Factory
 
     public function definition(): array
     {
-        $reportTypes = ['LCTR', 'MSB2', 'trial_balance', 'pl', 'balance_sheet'];
+        $reportTypes = ['MSB2', 'trial_balance', 'pl', 'balance_sheet'];
         $reportType = fake()->randomElement($reportTypes);
 
         $periodStart = fake()->dateTimeBetween('-1 year', 'now');

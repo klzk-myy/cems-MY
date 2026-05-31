@@ -20,7 +20,6 @@
                     <option value="">All Report Types</option>
                     <option value="ctos">CTOS</option>
                     <option value="str">STR</option>
-                    <option value="lctr">LCTR</option>
                     <option value="edd">EDD</option>
                 </select>
                 <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
@@ -84,7 +83,6 @@
                     </tr>
                     <tr>
                         <td class="px-4 py-3 text-sm text-gray-900">RPT-2024-003</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">LCTR</td>
                         <td class="px-4 py-3 text-sm text-gray-500">December 2023</td>
                         <td class="px-4 py-3 text-sm text-gray-900">Penang</td>
                         <td class="px-4 py-3 text-sm">

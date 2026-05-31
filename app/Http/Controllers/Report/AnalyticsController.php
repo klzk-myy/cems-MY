@@ -283,11 +283,6 @@ class AnalyticsController extends Controller
             ->groupBy('flag_type')
             ->get();
 
-        // Large transactions (≥RM 50,000)
-        $largeTransactions = Transaction::where('amount_local', '>=', $this->thresholdService->getLctrThreshold())
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
-
         // EDD required count
         $eddCount = Transaction::where('cdd_level', CddLevel::Enhanced)
             ->whereBetween('created_at', [$startDate, $endDate])
@@ -300,7 +295,6 @@ class AnalyticsController extends Controller
 
         return view('reports.compliance-summary', compact(
             'flaggedStats',
-            'largeTransactions',
             'eddCount',
             'suspiciousCount',
             'startDate',

@@ -11,11 +11,7 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Large Transactions (>= RM 50k)</div>
-                <div class="text-2xl font-semibold text-gray-900">{{ number_format($largeTransactions) }}</div>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">EDD Cases</div>
                 <div class="text-2xl font-semibold text-blue-600">{{ number_format($eddCount) }}</div>
@@ -88,10 +84,6 @@
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Large Transactions (>= RM 50k)</span>
-                        <span class="text-sm font-medium text-gray-900">{{ number_format($largeTransactions) }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-500">EDD Cases Processed</span>
                         <span class="text-sm font-medium text-blue-600">{{ number_format($eddCount) }}</span>
                     </div>
@@ -105,41 +97,9 @@
                             <span class="text-lg font-semibold text-gray-900">{{ number_format($flaggedStats['total']) }}</span>
                         </div>
                     </div>
-                    @if($largeTransactions > 0)
-                        <div class="pt-4 border-t border-[#e5e5e5]">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-500">STR Filing Rate</span>
-                                <span class="text-sm font-medium {{ $suspiciousCount > 0 ? 'text-yellow-600' : 'text-green-600' }}">
-                                    {{ $largeTransactions > 0 ? round($suspiciousCount / $largeTransactions * 100, 1) : 0 }}%
-                                </span>
-                            </div>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
 
-        <!-- CTR Threshold Transactions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 class="text-lg font-medium text-gray-900">Large Cash Transaction Summary (>= RM 25,000)</h2>
-            </div>
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Transactions</div>
-                        <div class="text-2xl font-semibold text-gray-900">{{ number_format($largeTransactions) }}</div>
-                    </div>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">CTOS Threshold (RM 25,000)</div>
-                        <div class="text-2xl font-semibold text-gray-900">{{ number_format($flaggedStats['ctos_threshold'] ?? 0) }}</div>
-                    </div>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Compliance Hold</div>
-                        <div class="text-2xl font-semibold text-yellow-600">{{ number_format($flaggedStats['pending_compliance'] ?? 0) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </x-app-layout>

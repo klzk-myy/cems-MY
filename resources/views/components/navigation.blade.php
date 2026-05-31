@@ -326,12 +326,6 @@
         </li>
 
         <li>
-            <a href="{{ route('reports.lctr') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.lctr') ? 'bg-gray-800' : '' }}">
-                LCTR
-            </a>
-        </li>
-
-        <li>
             <a href="{{ route('reports.lmca') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.lmca') ? 'bg-gray-800' : '' }}">
                 LMCA
             </a>
