@@ -4,8 +4,6 @@ namespace App\Providers;
 
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Services\AuditService;
-use App\Services\ComprehensiveLogService;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\TransactionService;
 use Carbon\Carbon;
@@ -34,15 +32,6 @@ class AppServiceProvider extends ServiceProvider
         $this->registerMorphMap();
         $this->registerCarbonMacros();
         $this->registerBladeDirectives();
-        $this->registerDeprecatedAliases();
-    }
-
-    /**
-     * Register deprecated class aliases for backwards compatibility.
-     */
-    protected function registerDeprecatedAliases(): void
-    {
-        $this->app->alias(AuditService::class, ComprehensiveLogService::class);
     }
 
     /**

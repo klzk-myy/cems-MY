@@ -12,14 +12,13 @@ use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\User;
-use App\Services\ComprehensiveLogService;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
-$logger = app(ComprehensiveLogService::class);
 echo "Creating test data...\n";
-$logger->log('TEST_SETUP', 'STARTED', 'System', null, [], 'INFO');
+Log::info('Test setup started');
 
 DB::beginTransaction();
 
@@ -32,7 +31,7 @@ try {
         'role' => 'manager',
         'is_active' => true,
     ]);
-    $logger->log('USER', 'CREATED', 'User', $manager->id, ['role' => 'manager'], 'INFO');
+    Log::info('Manager created', ['user_id' => $manager->id, 'role' => 'manager']);
     echo "  Created manager\n";
 
     $branches = Branch::all();
@@ -48,7 +47,7 @@ try {
             'is_active' => true,
         ]);
         $tellers[$branch->id] = $teller;
-        $logger->log('USER', 'CREATED', 'User', $teller->id, ['branch' => $branch->code], 'INFO');
+        Log::info('Teller created', ['user_id' => $teller->id, 'branch' => $branch->code]);
         echo '  Created teller for '.$branch->code."\n";
     }
 
@@ -68,7 +67,7 @@ try {
             'occupation' => 'Business',
         ]);
         $customers[] = $customer;
-        $logger->log('CUSTOMER', 'CREATED', 'Customer', $customer->id, [], 'INFO');
+        Log::info('Customer created', ['customer_id' => $customer->id]);
     }
     echo '  Created '.count($customers)." customers\n";
 
@@ -100,9 +99,10 @@ try {
                 $position->avg_cost_rate = '4.50';
                 $position->last_valuation_rate = '4.50';
                 $position->save();
-                $logger->log('POSITION', 'INITIALIZED', 'CurrencyPosition', $position->id, [
+                Log::info('Position initialized', [
+                    'position_id' => $position->id,
                     'branch' => $branch->code, 'currency' => $currencyCode,
-                ], 'INFO');
+                ]);
             }
 
             CounterSession::create([
@@ -116,11 +116,11 @@ try {
     }
 
     DB::commit();
-    $logger->log('TEST_SETUP', 'COMPLETED', 'System', null, [
+    Log::info('Test setup completed', [
         'branches' => $branches->count(),
         'tellers' => count($tellers),
         'customers' => count($customers),
-    ], 'SUCCESS');
+    ]);
 
     echo "\nSetup complete!\n";
     echo 'Branches: '.$branches->count()."\n";
@@ -129,6 +129,6 @@ try {
 
 } catch (Exception $e) {
     DB::rollBack();
-    $logger->logError('TEST_SETUP', $e);
+    Log::error('Test setup failed', ['error' => $e->getMessage()]);
     echo 'Failed: '.$e->getMessage()."\n";
 }

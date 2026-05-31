@@ -222,13 +222,8 @@ class TransactionCancellationController extends Controller
         return true;
     }
 
-    /**
-     * Check if transaction is within the cancellation window
-     */
     protected function isWithinCancellationWindow(Transaction $transaction): bool
     {
-        $cancellationWindowHours = config('cems.transaction_cancellation_window_hours', 24);
-
-        return $transaction->created_at->diffInHours(now()) <= $cancellationWindowHours;
+        return $this->cancellationService->isWithinCancellationWindow($transaction);
     }
 }

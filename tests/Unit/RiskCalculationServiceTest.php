@@ -6,6 +6,11 @@ use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\MathService;
+use App\Services\Risk\AmountRiskService;
+use App\Services\Risk\GeographicRiskService;
+use App\Services\Risk\PatternRiskService;
+use App\Services\Risk\StructuringRiskService;
+use App\Services\Risk\VelocityRiskService;
 use App\Services\RiskCalculationService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +32,15 @@ class RiskCalculationServiceTest extends TestCase
 
         $this->mathService = new MathService;
         $this->thresholdService = new ThresholdService;
-        $this->service = new RiskCalculationService($this->mathService, $this->thresholdService);
+        $this->service = new RiskCalculationService(
+            $this->mathService,
+            $this->thresholdService,
+            new VelocityRiskService($this->mathService, $this->thresholdService),
+            new StructuringRiskService($this->mathService, $this->thresholdService),
+            new GeographicRiskService($this->mathService, $this->thresholdService),
+            new AmountRiskService($this->mathService, $this->thresholdService),
+            new PatternRiskService($this->mathService, $this->thresholdService),
+        );
     }
 
     public function test_calculate_velocity_risk_returns_zero_with_no_transactions(): void

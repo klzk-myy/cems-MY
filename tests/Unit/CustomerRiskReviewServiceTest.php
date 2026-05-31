@@ -12,7 +12,11 @@ use App\Services\CustomerRiskScoringService;
 use App\Services\CustomerScreeningService;
 use App\Services\EncryptionService;
 use App\Services\MathService;
+use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
+use App\Services\Risk\PatternRiskService;
+use App\Services\Risk\StructuringRiskService;
+use App\Services\Risk\VelocityRiskService;
 use App\Services\RiskCalculationService;
 use App\Services\ThresholdService;
 use App\ValueObjects\ScreeningResponse;
@@ -39,7 +43,15 @@ class CustomerRiskReviewServiceTest extends TestCase
         $encryptionService = new EncryptionService;
         $complianceService = new ComplianceService($encryptionService, $mathService);
         $auditService = new AuditService;
-        $riskCalculationService = new RiskCalculationService($mathService, $thresholdService);
+        $riskCalculationService = new RiskCalculationService(
+            $mathService,
+            $thresholdService,
+            new VelocityRiskService($mathService, $thresholdService),
+            new StructuringRiskService($mathService, $thresholdService),
+            new GeographicRiskService,
+            new AmountRiskService($mathService, $thresholdService),
+            new PatternRiskService($mathService, $thresholdService),
+        );
         $geographicRiskService = new GeographicRiskService;
 
         $screeningResponse = new ScreeningResponse(

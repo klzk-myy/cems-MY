@@ -11,6 +11,11 @@ use App\Services\CustomerRiskScoringService;
 use App\Services\CustomerScreeningService;
 use App\Services\EncryptionService;
 use App\Services\MathService;
+use App\Services\Risk\AmountRiskService;
+use App\Services\Risk\GeographicRiskService;
+use App\Services\Risk\PatternRiskService;
+use App\Services\Risk\StructuringRiskService;
+use App\Services\Risk\VelocityRiskService;
 use App\Services\RiskCalculationService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,7 +42,15 @@ class CustomerRiskScoringServiceTest extends TestCase
         $encryptionService = new EncryptionService;
         $complianceService = new ComplianceService($encryptionService, $this->mathService);
         $auditService = new AuditService;
-        $riskCalculationService = new RiskCalculationService($this->mathService, $this->thresholdService);
+        $riskCalculationService = new RiskCalculationService(
+            $this->mathService,
+            $this->thresholdService,
+            new VelocityRiskService($this->mathService, $this->thresholdService),
+            new StructuringRiskService($this->mathService, $this->thresholdService),
+            new GeographicRiskService,
+            new AmountRiskService($this->mathService, $this->thresholdService),
+            new PatternRiskService($this->mathService, $this->thresholdService),
+        );
 
         $screeningService = $this->createMock(CustomerScreeningService::class);
 
