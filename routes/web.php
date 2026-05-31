@@ -4,7 +4,7 @@ use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\BranchClosingController;
 use App\Http\Controllers\Compliance\AlertTriageController;
 use App\Http\Controllers\Compliance\CaseManagementController;
-use App\Http\Controllers\Compliance\ComplianceReportingController;
+// Removed:
 use App\Http\Controllers\Compliance\ComplianceWorkspaceController;
 use App\Http\Controllers\Compliance\FindingController;
 use App\Http\Controllers\Compliance\RiskDashboardController;
@@ -259,18 +259,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             Route::post('/{id}/dismiss', [FindingController::class, 'dismiss'])->name('dismiss');
         });
 
-        Route::prefix('compliance/reporting')->name('compliance.reporting.')->group(function () {
-            Route::get('/', [ComplianceReportingController::class, 'index'])->name('index');
-            Route::get('/generate', [ComplianceReportingController::class, 'generate'])->name('generate');
-            Route::post('/run', [ComplianceReportingController::class, 'run'])->name('run');
-            Route::get('/history', [ComplianceReportingController::class, 'history'])->name('history');
-            Route::get('/history/{id}/download', [ComplianceReportingController::class, 'download'])->name('history.download');
-            Route::get('/schedule', [ComplianceReportingController::class, 'schedule'])->name('schedule');
-            Route::post('/schedule', [ComplianceReportingController::class, 'createSchedule'])->name('schedule.create');
-            Route::patch('/schedule/{id}', [ComplianceReportingController::class, 'updateSchedule'])->name('schedule.update');
-            Route::delete('/schedule/{id}', [ComplianceReportingController::class, 'deleteSchedule'])->name('schedule.delete');
-            Route::get('/deadlines', [ComplianceReportingController::class, 'deadlines'])->name('deadlines');
-        });
+        // Removed STR/compliance reporting routes (P0 cleanup)
     });
 
     Route::middleware('role:manager')->prefix('accounting')->name('accounting.')->group(function () {
