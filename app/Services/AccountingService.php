@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AccountType;
 use App\Enums\JournalEntryStatus;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
