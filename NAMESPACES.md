@@ -159,7 +159,6 @@ Business logic services encapsulating complex operations.
 | Class | File Path | Purpose |
 |-------|-----------|---------|
 | `BranchController` | `app/Http/Controllers/Api/V1/BranchController.php` | Branch API |
-| `BulkImportController` | `app/Http/Controllers/Api/V1/BulkImportController.php` | Bulk import API |
 | `CustomerController` | `app/Http/Controllers/Api/V1/CustomerController.php` | Customer API |
 | `RateController` | `app/Http/Controllers/Api/V1/RateController.php` | Rate API |
 | `ReportController` | `app/Http/Controllers/Api/V1/ReportController.php` | Report API |

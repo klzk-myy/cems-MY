@@ -3,7 +3,6 @@
 use App\Http\Controllers\Api\SanctionsWebhookController;
 use App\Http\Controllers\Api\V1\BranchClosingController;
 use App\Http\Controllers\Api\V1\BranchController;
-use App\Http\Controllers\Api\V1\BulkImportController;
 use App\Http\Controllers\Api\V1\Compliance\AlertController;
 use App\Http\Controllers\Api\V1\Compliance\CaseController;
 use App\Http\Controllers\Api\V1\Compliance\CtosReportController;
@@ -217,14 +216,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('branches/{id}', [BranchController::class, 'show']);
     Route::get('branches/{id}/counters', [BranchController::class, 'counters']);
     Route::get('branches/{id}/users', [BranchController::class, 'users']);
-
-    // Bulk Import API - Admin or Manager only (MFA required for BNM compliance)
-    Route::middleware(['role:admin,manager', 'mfa.verified'])->group(function () {
-        Route::post('import/customers', [BulkImportController::class, 'importCustomers']);
-        Route::post('import/transactions', [BulkImportController::class, 'importTransactions']);
-        Route::get('import/status/{jobId}', [BulkImportController::class, 'getStatus']);
-        Route::get('import/errors/{jobId}', [BulkImportController::class, 'getErrors']);
-    });
 
     // Sanctions management endpoints (Admin)
     Route::middleware(['role:admin'])->group(function () {

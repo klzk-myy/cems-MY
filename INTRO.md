@@ -250,7 +250,6 @@ Organized by domain module:
 | `PerformanceMonitoringController` | Cache/performance metrics |
 | `AuditController` | Audit log viewing |
 | `Api/SanctionsWebhookController` | Sanctions webhook receiver |
-| `BulkImportController` | Bulk CSV import |
 
 ### 13. STR (3)
 | Controller | Purpose |
@@ -384,7 +383,6 @@ Business logic layer organized in `app/Services/`:
 | `QueryOptimizerService` | Query optimization |
 | `BackupService` | Backup operations |
 | `ExportService` | Data export |
-| `BulkImportService` | Bulk data import |
 
 ### Support Services (7)
 | Service | Purpose |
@@ -468,7 +466,6 @@ Business logic layer organized in `app/Services/`:
 | `QueryOptimizerService` | Query optimization |
 | `BackupService` | Backup operations |
 | `ExportService` | Data export |
-| `BulkImportService` | Bulk data import |
 
 ### Support Services (7)
 | Service | Purpose |

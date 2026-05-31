@@ -11,7 +11,6 @@ use App\Models\CounterSession;
 use App\Models\EmergencyClosure;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class MfaRequirementTest extends TestCase
@@ -62,44 +61,6 @@ class MfaRequirementTest extends TestCase
             'mfa_verified_at' => now()->timestamp,
             '_session_created_at' => now()->timestamp,
         ];
-    }
-
-    public function test_bulk_imports_require_mfa(): void
-    {
-        $csv = UploadedFile::fake()->create('customers.csv', 100, 'text/csv');
-
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->postJson('/api/v1/import/customers', ['file' => $csv]);
-
-        $response->assertStatus(403)
-            ->assertJson([
-                'error' => 'MFA verification required',
-            ]);
-
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->withSession($this->withMfaSession())
-            ->postJson('/api/v1/import/customers', ['file' => $csv]);
-
-        $this->assertNotEquals(403, $response->status());
-    }
-
-    public function test_bulk_transaction_imports_require_mfa(): void
-    {
-        $csv = UploadedFile::fake()->create('transactions.csv', 100, 'text/csv');
-
-        $response = $this->actingAs($this->manager, 'sanctum')
-            ->postJson('/api/v1/import/transactions', ['file' => $csv]);
-
-        $response->assertStatus(403)
-            ->assertJson([
-                'error' => 'MFA verification required',
-            ]);
-
-        $response = $this->actingAs($this->manager, 'sanctum')
-            ->withSession($this->withMfaSession())
-            ->postJson('/api/v1/import/transactions', ['file' => $csv]);
-
-        $this->assertNotEquals(403, $response->status());
     }
 
     public function test_counter_approve_and_open_requires_mfa(): void
@@ -257,112 +218,5 @@ class MfaRequirementTest extends TestCase
             ]);
 
         $this->assertEquals(200, $response->status());
-    }
-
-    public function test_import_status_requires_mfa(): void
-    {
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->getJson('/api/v1/import/status/test-job-id');
-
-        $response->assertStatus(403)
-            ->assertJson([
-                'error' => 'MFA verification required',
-            ]);
-
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->withSession($this->withMfaSession())
-            ->getJson('/api/v1/import/status/test-job-id');
-
-        $this->assertNotEquals(403, $response->status());
-    }
-
-    public function test_mfa_reverification_does_not_extend_session_beyond_limit(): void
-    {
-        $csv = UploadedFile::fake()->create('customers.csv', 100, 'text/csv');
-        $sessionData = [
-            'mfa_verified' => true,
-            'mfa_verified_at' => now()->timestamp,
-            '_session_created_at' => now()->timestamp - (480 * 60),
-        ];
-
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->withSession($sessionData)
-            ->postJson('/api/v1/import/customers', ['file' => $csv]);
-
-        $response->assertStatus(401)
-            ->assertJson([
-                'error' => 'Session expired, please re-authenticate',
-            ]);
-    }
-
-    public function test_mfa_verification_works_within_session_lifetime(): void
-    {
-        $csv = UploadedFile::fake()->create('customers.csv', 100, 'text/csv');
-        $sessionData = [
-            'mfa_verified' => true,
-            'mfa_verified_at' => now()->timestamp,
-            '_session_created_at' => now()->timestamp - (60 * 60),
-        ];
-
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->withSession($sessionData)
-            ->postJson('/api/v1/import/customers', ['file' => $csv]);
-
-        $this->assertNotEquals(403, $response->status());
-        $this->assertNotEquals(401, $response->status());
-    }
-
-    public function test_trusted_device_reverification_respects_session_lifetime(): void
-    {
-        $csv = UploadedFile::fake()->create('customers.csv', 100, 'text/csv');
-        $sessionData = [
-            'mfa_verified' => true,
-            'mfa_verified_at' => now()->timestamp,
-            'mfa_trusted_device_verified' => true,
-            '_session_created_at' => now()->timestamp - (7 * 60 * 60),
-        ];
-
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->withSession($sessionData)
-            ->postJson('/api/v1/import/customers', ['file' => $csv]);
-
-        $this->assertNotEquals(403, $response->status());
-        $this->assertNotEquals(401, $response->status());
-    }
-
-    public function test_expired_mfa_verification_requires_re_verification(): void
-    {
-        $csv = UploadedFile::fake()->create('customers.csv', 100, 'text/csv');
-        $sessionData = [
-            'mfa_verified' => true,
-            'mfa_verified_at' => now()->timestamp - (16 * 60),
-            '_session_created_at' => now()->timestamp - (60),
-        ];
-
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->withSession($sessionData)
-            ->postJson('/api/v1/import/customers', ['file' => $csv]);
-
-        $response->assertStatus(403)
-            ->assertJson([
-                'error' => 'MFA verification required',
-            ]);
-    }
-
-    public function test_import_errors_requires_mfa(): void
-    {
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->getJson('/api/v1/import/errors/test-job-id');
-
-        $response->assertStatus(403)
-            ->assertJson([
-                'error' => 'MFA verification required',
-            ]);
-
-        $response = $this->actingAs($this->admin, 'sanctum')
-            ->withSession($this->withMfaSession())
-            ->getJson('/api/v1/import/errors/test-job-id');
-
-        $this->assertNotEquals(403, $response->status());
     }
 }
