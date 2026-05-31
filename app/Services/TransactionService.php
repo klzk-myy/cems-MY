@@ -39,7 +39,6 @@ class TransactionService implements TransactionServiceInterface
         protected AccountingService $accountingService,
         protected AuditService $auditService,
         protected TransactionMonitoringService $monitoringService,
-        protected CtosReportService $ctosReportService,
         protected TellerAllocationService $tellerAllocationService,
         protected CustomerScreeningService $screeningService,
         protected HistoricalRiskAnalysisService $historicalRiskAnalysisService,
@@ -485,30 +484,6 @@ class TransactionService implements TransactionServiceInterface
                 ],
                 'INFO'
             );
-
-            // Generate CTOS report if transaction qualifies (>= RM 10,000 cash transaction)
-            if ($this->ctosReportService->qualifiesForCtos($transaction)) {
-                try {
-                    $this->ctosReportService->createFromTransaction($transaction, $userId);
-                } catch (\Exception $e) {
-                    Log::error('CTOS report creation failed', [
-                        'transaction_id' => $transaction->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    $this->auditService->logWithSeverity(
-                        'ctos_report_creation_failed',
-                        [
-                            'entity_type' => 'Transaction',
-                            'entity_id' => $transaction->id,
-                            'new_values' => [
-                                'error' => $e->getMessage(),
-                                'requires_manual_submission' => true,
-                            ],
-                        ],
-                        'WARNING'
-                    );
-                }
-            }
 
             // Dispatch event for async processing
             Event::dispatch(new TransactionCreated($transaction));

@@ -25,26 +25,6 @@
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 flex items-center justify-center bg-blue-100 rounded-lg">
-                            <span class="text-lg font-bold text-blue-700">CTOS</span>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">CTOS Report Generation</p>
-                            <p class="text-xs text-gray-500">15th of every month at 00:00</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Active</span>
-                        <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                            Edit
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
                         <div class="w-12 h-12 flex items-center justify-center bg-green-100 rounded-lg">
                             <span class="text-lg font-bold text-green-700">LMCA</span>
                         </div>

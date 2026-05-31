@@ -48,7 +48,6 @@ class ResetTestDatabase extends Command
             'flagged_transactions',
             'edd_questionnaire_responses',
             'enhanced_diligence_records',
-            'ctos_reports',
             'aml_alerts',
             'alerts',
 

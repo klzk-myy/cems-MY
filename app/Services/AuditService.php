@@ -566,14 +566,13 @@ class AuditService
      * Log report access events.
      *
      * @param  string  $action  Access action (report_customer_history_viewed,
-     *                          report_ctos_exported, report_audit_log_viewed,
-     *                          report_data_export)
+     *                          report_audit_log_viewed, report_data_export)
      * @param  array  $data  Report access data with old/new values
      */
     public function logReportAccessEvent(string $action, array $data = []): SystemLog
     {
         $severity = match ($action) {
-            'report_ctos_exported', 'report_audit_log_viewed',
+            'report_audit_log_viewed',
             'report_data_export' => 'WARNING',
             default => 'INFO',
         };

@@ -41,11 +41,6 @@ class ThresholdServiceTest extends TestCase
         $this->assertEquals('50000', $this->service->getLargeTransactionThreshold());
     }
 
-    public function test_get_ctos_threshold(): void
-    {
-        $this->assertEquals('25000', $this->service->getCtosThreshold());
-    }
-
     public function test_get_str_threshold(): void
     {
         $this->assertEquals('50000', $this->service->getStrThreshold());
@@ -128,7 +123,6 @@ class ThresholdServiceTest extends TestCase
             'getManagerApprovalThreshold',
             'getStandardCddThreshold',
             'getLargeTransactionThreshold',
-            'getCtosThreshold',
             'getStrThreshold',
             'getEddThreshold',
             'getRiskHighThreshold',

@@ -38,25 +38,6 @@ class BoundaryValueTest extends TestCase
         ];
     }
 
-    #[DataProvider('ctosThresholdProvider')]
-    public function test_ctos_threshold(float $amount, bool $shouldGenerate): void
-    {
-        $amountMYR = (string) $amount;
-
-        $requiresCtos = bccomp($amountMYR, '25000', 2) >= 0;
-
-        $this->assertEquals($shouldGenerate, $requiresCtos);
-    }
-
-    public static function ctosThresholdProvider(): array
-    {
-        return [
-            'just below CTOS threshold (24999.99)' => [24999.99, false],
-            'exactly at CTOS threshold (25000)' => [25000.00, true],
-            'above CTOS threshold (30000)' => [30000.00, true],
-        ];
-    }
-
     public function test_negative_amount_validation(): void
     {
         $result = $this->mathService->compare('-100', '0');

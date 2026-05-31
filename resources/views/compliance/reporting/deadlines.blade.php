@@ -23,7 +23,7 @@
                             <span class="text-lg font-bold text-red-700">15</span>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-900">CTOS Report - January 2024</p>
+                            <p class="text-sm font-medium text-gray-900">STR Report - January 2024</p>
                             <p class="text-xs text-gray-500">Due: January 15, 2024</p>
                         </div>
                     </div>
@@ -119,7 +119,7 @@
             <div class="mt-4 flex flex-wrap gap-4 text-xs">
                 <div class="flex items-center gap-2">
                     <span class="w-3 h-3 bg-red-100 rounded"></span>
-                    <span class="text-gray-500">STR/CTOS Deadline</span>
+                    <span class="text-gray-500">STR Deadline</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="w-3 h-3 bg-yellow-100 rounded"></span>

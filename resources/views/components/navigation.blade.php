@@ -232,9 +232,6 @@
         </li>
 
         <li>
-            <a href="{{ route('compliance.ctos.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.ctos.*') ? 'bg-gray-800' : '' }}">
-                CTOS Reports
-            </a>
         </li>
 
         <li>

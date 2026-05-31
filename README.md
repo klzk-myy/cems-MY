@@ -54,10 +54,6 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
   - Specific: RM 3,000 to RM 9,999
   - Standard: ≥ RM 10,000 OR Enhanced: ≥ RM 50,000 OR PEP OR Sanction match OR High risk OR Large transaction
 
-- **CTOS Reporting**
-  - All cash transactions (Buy and Sell) ≥ RM 25,000
-  - Compliance officer sign-off workflow via `POST /api/v1/compliance/ctos/{id}/submit`
-
 - **Rate Management**
   - Daily rate workflow: fetch from API, copy previous, or manual override
   - Configurable spread (default 2%) and max deviation (5%)
@@ -160,7 +156,6 @@ THRESHOLD_MANAGER=50000
 THRESHOLD_CDD_SPECIFIC=3000
 THRESHOLD_CDD_STANDARD=10000
 THRESHOLD_CDD_LARGE=50000
-THRESHOLD_CTOS=25000
 ```
 
 ## Commands
@@ -285,7 +280,7 @@ app/
 |------|-------------|
 | **Teller** | Create transactions, view customers, operate assigned counter |
 | **Manager** | Approve large transactions, manage counters, view reports, handle cancellations |
-| **Compliance Officer** | CDD review, CTOS/STR submission, sanctions management, risk monitoring, alerts triage |
+| **Compliance Officer** | CDD review, STR submission, sanctions management, risk monitoring, alerts triage |
 | **Admin** | System configuration, user management, branch settings |
 
 **Permission Hierarchy:** Admin > ComplianceOfficer > Manager > Teller
@@ -397,7 +392,7 @@ All thresholds are centralized in `config/thresholds.php` and accessed via `Thre
 return [
     'approval' => ['auto_approve' => '10000', 'manager' => '50000'],
     'cdd' => ['specific' => '3000', 'standard' => '10000', 'large_transaction' => '50000'],
-    'reporting' => ['ctos' => '25000', 'str' => '50000', 'edd' => '50000'],
+    'reporting' => ['str' => '50000', 'edd' => '50000'],
     'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3, 'hourly_window' => 1, 'lookup_days' => 7],
     // ...
 ];

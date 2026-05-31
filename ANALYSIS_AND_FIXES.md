@@ -18,7 +18,7 @@ This document summarizes the analysis of the CEMS-MY banking system for a small 
 - Foreign currency exchange transactions (Buy/Sell)
 - Teller allocation management
 - Compliance monitoring (AML/CFT)
-- Automated reporting (CTOS, STR, CTR, etc.)
+- Automated reporting (STR, CTR, etc.)
 - Real-time position tracking
 - Audit logging
 

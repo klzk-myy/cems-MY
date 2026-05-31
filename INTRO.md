@@ -189,7 +189,6 @@ Organized by domain module:
 | `Compliance/UnifiedAlertController` | Unified alerts view |
 | `Compliance/CaseManagementController` | Case lifecycle |
 | `Compliance/SanctionListController` | Sanctions list CRUD |
-| `Compliance/CtosController` | CTOS report management |
 | `Compliance/RiskDashboardController` | Risk scoring dashboard |
 | `Compliance/ScreeningController` | Customer screening status |
 | `Compliance/FindingController` | Compliance findings |
@@ -262,7 +261,6 @@ Organized by domain module:
 | Controller | Purpose |
 |------------|---------|
 | `Api/V1/Compliance/EddController` | EDD API |
-| `Api/V1/Compliance/CtosReportController` | CTOS API |
 | `Api/V1/Compliance/DashboardController` | Compliance KPIs API |
 
 ### 15. Other API (2)
@@ -309,15 +307,13 @@ Business logic layer organized in `app/Services/`:
 ### Compliance Services (11)
 | Service | Purpose |
 |---------|---------|
-| `ComplianceService` | CDD determination, CTOS |
+| `ComplianceService` | CDD determination |
 | `AlertTriageService` | Alert prioritization |
 | `CaseManagementService` | Compliance cases |
 | `ComplianceReportingService` | Compliance reports |
 | `RiskScoringEngine` | Risk scoring engine |
 | `SanctionsImportService` | Sanctions import |
 | `SanctionsDownloadService` | Sanctions download |
-| `CtosReportService` | CTOS report generation |
-
 | `KycDocumentExpiryService` | KYC expiry tracking |
 
 ### Accounting Services (8)
@@ -520,7 +516,6 @@ Organized by domain:
 | `SanctionImportLog` | Import history |
 | `ScreeningResult` | Screening results |
 | `HighRiskCountry` | High-risk countries |
-| `CtosReport` | Cash transaction reports |
 | `EnhancedDiligenceRecord` | EDD records |
 | `EddTemplate` | EDD questionnaires |
 | `ComplianceCase` | Compliance cases |
@@ -618,7 +613,7 @@ Organized by module:
 |--------|-------|---------|
 | Transactions | 17 | index, show, create, wizard, receipt, cancel, confirm |
 | Accounting | 20 | balance-sheet, profit-loss, trial-balance, cash-flow, journal, ledger |
-| Compliance | 13 | cases, ctos, rules, sanctions |
+| Compliance | 12 | cases, rules, sanctions |
 | Reports | 11 | lmca, msb2, eod-reconciliation |
 | Counters | 8 | open, close, handover, history, emergency |
 | Stock Transfers | 9 | dispatch, receive, approve-bm/hq, complete, cancel |
@@ -680,7 +675,6 @@ Organized by module:
 | `AlertPriority` | Critical (4h), High (8h), Medium (24h), Low (72h) |
 | `AmlRuleType` | Velocity, Structuring, AmountThreshold, Frequency, Geographic |
 | `StrStatus` | Draft, PendingReview, PendingApproval, Submitted, Acknowledged, Failed |
-| `CtosStatus` | Draft, Submitted, Acknowledged, Rejected |
 | `RecalculationTrigger` | Manual, Scheduled, EventDriven |
 | `RiskRating` | Low, Medium, High |
 | `RiskTrend` | Improving, Stable, Deteriorating |

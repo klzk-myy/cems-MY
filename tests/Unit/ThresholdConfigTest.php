@@ -41,7 +41,6 @@ class ThresholdConfigTest extends TestCase
 
     public function test_reporting_thresholds_exist(): void
     {
-        $this->assertEquals('25000', config('thresholds.reporting.ctos'));
         $this->assertEquals('50000', config('thresholds.reporting.str'));
         $this->assertEquals('50000', config('thresholds.reporting.edd'));
     }

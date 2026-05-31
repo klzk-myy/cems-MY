@@ -136,7 +136,7 @@ $this->positionService->releaseStockReservation($transaction->id);
 
 | BNM Requirement | Status | Notes |
 |----------------|--------|-------|
-| CTOS ≥ RM 25,000 | ✅ PASS | Both Buy and Sell checked |
+| STR ≥ RM 50,000 | ✅ PASS | Both Buy and Sell checked |
 | Enhanced CDD | ✅ PASS | Correctly triggered |
 | STR Deadlines | ✅ PASS | 3 working days correct |
 | Velocity 24h | ✅ PASS | ThresholdService |

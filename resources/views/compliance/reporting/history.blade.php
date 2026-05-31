@@ -18,7 +18,6 @@
             <div class="flex flex-wrap gap-4">
                 <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
                     <option value="">All Report Types</option>
-                    <option value="ctos">CTOS</option>
                     <option value="str">STR</option>
                     <option value="edd">EDD</option>
                 </select>
@@ -55,7 +54,6 @@
                 <tbody class="divide-y divide-gray-200">
                     <tr>
                         <td class="px-4 py-3 text-sm text-gray-900">RPT-2024-001</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">CTOS</td>
                         <td class="px-4 py-3 text-sm text-gray-500">January 2024</td>
                         <td class="px-4 py-3 text-sm text-gray-900">Kuala Lumpur</td>
                         <td class="px-4 py-3 text-sm">

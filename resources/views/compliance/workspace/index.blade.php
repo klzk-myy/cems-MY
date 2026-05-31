@@ -147,7 +147,6 @@
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-gray-900">Created Report RPT-2024-003</p>
-                        <p class="text-xs text-gray-500">CTOS report for January 2024</p>
                     </div>
                     <span class="text-xs text-gray-400">5 hours ago</span>
                 </div>

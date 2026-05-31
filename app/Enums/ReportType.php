@@ -8,7 +8,6 @@ enum ReportType: string
     case Lmca = 'lmca';
     case Qlvr = 'qlvr';
     case Str = 'str';
-    case Ctos = 'ctos';
     case Edd = 'edd';
 
     public function label(): string
@@ -18,7 +17,6 @@ enum ReportType: string
             self::Lmca => 'LMCA',
             self::Qlvr => 'QLVR',
             self::Str => 'STR',
-            self::Ctos => 'CTOS',
             self::Edd => 'EDD',
         };
     }

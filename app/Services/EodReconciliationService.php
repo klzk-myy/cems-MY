@@ -88,7 +88,7 @@ class EodReconciliationService
             ->get();
 
         $largeTransactions = $transactions->filter(function ($tx) {
-            return BcmathHelper::gte((string) $tx->amount_local, $this->thresholdService->getCtosThreshold());
+            return BcmathHelper::gte((string) $tx->amount_local, '25000');
         });
 
         $flaggedTransactions = FlaggedTransaction::with(['transaction', 'transaction.customer'])
@@ -207,7 +207,7 @@ class EodReconciliationService
 
         // Large transactions (> RM 10k)
         $largeTransactions = $transactions->filter(function ($tx) {
-            return BcmathHelper::gte((string) $tx->amount_local, $this->thresholdService->getCtosThreshold());
+            return BcmathHelper::gte((string) $tx->amount_local, '25000');
         });
 
         // Flagged transactions

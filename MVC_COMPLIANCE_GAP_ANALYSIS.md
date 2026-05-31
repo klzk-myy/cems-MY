@@ -103,7 +103,7 @@ These methods are state queries (not business logic) and are acceptable:
 | CustomerService | Customer lifecycle management |
 | UserService | User management |
 | AccountingService | Double-entry bookkeeping |
-| ComplianceService | CDD, CTOS, sanctions |
+| ComplianceService | CDD, sanctions |
 | CurrencyPositionService | Stock management |
 | ThresholdService | Centralized threshold access |
 

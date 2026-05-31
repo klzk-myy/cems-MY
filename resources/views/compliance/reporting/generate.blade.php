@@ -18,13 +18,6 @@
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Select Report Type</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label class="flex items-center p-4 border border-[#e5e5e5] rounded-lg cursor-pointer hover:bg-gray-50">
-                    <input type="radio" name="report_type" value="ctos" class="w-4 h-4 text-blue-600">
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-900">CTOS</p>
-                        <p class="text-xs text-gray-500">Cash Transaction Summary</p>
-                    </div>
-                </label>
-                <label class="flex items-center p-4 border border-[#e5e5e5] rounded-lg cursor-pointer hover:bg-gray-50">
                     <input type="radio" name="report_type" value="str" class="w-4 h-4 text-blue-600">
                     <div class="ml-3">
                         <p class="text-sm font-medium text-gray-900">STR</p>

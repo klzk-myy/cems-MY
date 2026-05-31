@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\ReportType;
 use App\Enums\ReportStatus;
+use App\Enums\ReportType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

@@ -134,7 +134,6 @@ $customers = Customer::with(['latestRiskSnapshot'])
 - Position tracking
 - Audit logging
 - Approval workflow
-- CTOS report generation
 - Event dispatching
 - Cache invalidation
 ```
@@ -150,7 +149,7 @@ TransactionService (orchestrator)
 ├── PositionUpdater
 ├── AccountingEntryGenerator
 ├── ComplianceChecker
-└── DocumentGenerator (CTOS, STR, etc.)
+└── DocumentGenerator (STR, etc.)
 ```
 
 **Priority:** Refactor within 2 weeks. Extract interfaces first.
@@ -726,7 +725,7 @@ public function viaConnections(): array
 ### Compliance Team
 - [ ] Review segregation of duties matrix
 - [ ] Validate all approval workflows have proper authorization
-- [ ] Test STR/CTOS generation under load
+- [ ] Test STR generation under load
 
 ---
 

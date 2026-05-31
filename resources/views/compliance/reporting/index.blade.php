@@ -10,17 +10,6 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">CTOS</h3>
-                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">Monthly</span>
-                </div>
-                <p class="text-sm text-gray-500 mb-4">Cash Transaction Summary Report for transactions >= RM 25,000</p>
-                <button class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                    Generate
-                </button>
-            </div>
-
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900">STR</h3>
                     <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">As Required</span>
                 </div>
@@ -58,16 +47,6 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">CTOS - January 2024</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01</td>
-                        <td class="px-4 py-3 text-sm">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Submitted</span>
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            <a href="#" class="text-blue-600 hover:text-blue-800">View</a>
-                        </td>
-                    </tr>
                     <tr>
                         <td class="px-4 py-3 text-sm text-gray-900">LCTR - December 2023</td>
                         <td class="px-4 py-3 text-sm text-gray-500">2023-12</td>

@@ -61,7 +61,6 @@ return [
     |--------------------------------------------------------------------------
     */
     'reporting' => [
-        'ctos' => env('THRESHOLD_CTOS', '25000'),
         'str' => env('THRESHOLD_STR', '50000'),
         'edd' => env('THRESHOLD_EDD', '50000'),
     ],

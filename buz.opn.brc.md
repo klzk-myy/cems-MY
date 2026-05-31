@@ -15,7 +15,7 @@ This document describes the workflow for:
 | Task | Command/Action |
 |------|----------------|
 | Configure exchange currencies | `config/currencies.php` - Add MYR, USD, SGD, etc. |
-| Set BNM compliance thresholds | `config/thresholds.php` - Auto-approve (RM 10,000), CTOS (RM 25,000), STR (RM 50,000) |
+| Set BNM compliance thresholds | `config/thresholds.php` - Auto-approve (RM 10,000), STR (RM 50,000) |
 | Configure rate settings | `config/thresholds.php` - spread (0.02 = 2%), max_deviation (0.05 = 5%), precision (4 decimals) |
 | Set up admin users | `php artisan make:user` or seed Admin role |
 
@@ -76,7 +76,7 @@ Default accounts:
 | **Admin** | System configuration, branch management |
 | **Manager** | Approve transactions, override rates, open/close counters |
 | **Teller** | Execute buy/sell transactions |
-| **Compliance Officer** | STR, CTOS, EDD, case management |
+| **Compliance Officer** | STR, EDD, case management |
 
 ### Step 1.6: Initial Capitalization
 

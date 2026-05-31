@@ -34,12 +34,6 @@ class ReportingServiceTest extends TestCase
         $this->assertInstanceOf(ReportingService::class, $this->service);
     }
 
-    public function test_threshold_service_integration_for_ctos(): void
-    {
-        $ctosThreshold = $this->thresholdService->getCtosThreshold();
-        $this->assertEquals('25000', $ctosThreshold);
-    }
-
     public function test_threshold_service_integration_for_str(): void
     {
         $strThreshold = $this->thresholdService->getStrThreshold();
@@ -52,16 +46,8 @@ class ReportingServiceTest extends TestCase
         $this->assertEquals('50000', $eddThreshold);
     }
 
-    public function test_ctos_threshold_for_reporting(): void
-    {
-        $threshold = $this->thresholdService->getCtosThreshold();
-        $this->assertEquals('25000', $threshold);
-        $this->assertIsString($threshold);
-    }
-
     public function test_all_reporting_thresholds_return_string(): void
     {
-        $this->assertIsString($this->thresholdService->getCtosThreshold());
         $this->assertIsString($this->thresholdService->getStrThreshold());
         $this->assertIsString($this->thresholdService->getEddThreshold());
     }

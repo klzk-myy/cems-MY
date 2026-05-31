@@ -5,7 +5,6 @@ use App\Http\Controllers\Api\V1\BranchClosingController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\Compliance\AlertController;
 use App\Http\Controllers\Api\V1\Compliance\CaseController;
-use App\Http\Controllers\Api\V1\Compliance\CtosReportController;
 use App\Http\Controllers\Api\V1\Compliance\DashboardController;
 use App\Http\Controllers\Api\V1\Compliance\EddController;
 use App\Http\Controllers\Api\V1\Compliance\FindingController;
@@ -163,14 +162,6 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('role:compliance');
         Route::post('/edd/{id}/reject', [EddController::class, 'reject'])
             ->middleware('role:compliance');
-
-        // CTOS API - Compliance Officer only
-        Route::get('/ctos', [CtosReportController::class, 'index'])
-            ->middleware('role:compliance');
-        Route::get('/ctos/{id}', [CtosReportController::class, 'show'])
-            ->middleware('role:compliance');
-        Route::post('/ctos/{id}/submit', [CtosReportController::class, 'submit'])
-            ->middleware(['role:compliance', 'mfa.verified']);
 
         // Dashboard API
         Route::get('/dashboard', [DashboardController::class, 'kpis']);

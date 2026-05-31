@@ -21,8 +21,6 @@ class ThresholdService
 
     public const FALLBACK_CDD_LARGE = '50000';
 
-    public const FALLBACK_CTOS = '25000';
-
     public const FALLBACK_STR = '50000';
 
     public const FALLBACK_EDD = '50000';
@@ -183,11 +181,6 @@ class ThresholdService
     }
 
     // Reporting thresholds
-
-    public function getCtosThreshold(): string
-    {
-        return (string) $this->get('reporting', 'ctos', 'FALLBACK_CTOS');
-    }
 
     public function getStrThreshold(): string
     {

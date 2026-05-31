@@ -65,36 +65,31 @@ class TransactionMonitoringServiceTest extends TestCase
     {
         $amount = '50000.00';
 
-        $thresholdService = new ThresholdService;
-        $ctosThreshold = $thresholdService->getCtosThreshold();
-        $this->assertEquals('25000', $ctosThreshold);
+        $threshold = '25000';
 
-        $remainder = bcmod($amount, $ctosThreshold);
+        $remainder = bcmod($amount, $threshold);
         $this->assertEquals('0', $remainder, 'RM 50,000 is divisible by RM 25,000');
 
         $this->assertTrue(
-            bccomp($amount, $ctosThreshold, 2) >= 0,
-            'RM 50,000 exceeds CTOS threshold'
+            bccomp($amount, $threshold, 2) >= 0,
         );
     }
 
     public function test_rm_75000_is_not_flagged_as_round_amount(): void
     {
         $amount = '75000.00';
-        $thresholdService = new ThresholdService;
-        $ctosThreshold = $thresholdService->getCtosThreshold();
+        $threshold = '25000';
 
-        $remainder = bcmod($amount, $ctosThreshold);
+        $remainder = bcmod($amount, $threshold);
         $this->assertEquals('0', $remainder, 'RM 75,000 is divisible by RM 25,000');
     }
 
     public function test_rm_100000_is_not_flagged_as_round_amount(): void
     {
         $amount = '100000.00';
-        $thresholdService = new ThresholdService;
-        $ctosThreshold = $thresholdService->getCtosThreshold();
+        $threshold = '25000';
 
-        $remainder = bcmod($amount, $ctosThreshold);
+        $remainder = bcmod($amount, $threshold);
         $this->assertEquals('0', $remainder, 'RM 100,000 is divisible by RM 25,000');
     }
 

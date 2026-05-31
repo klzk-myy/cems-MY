@@ -458,25 +458,6 @@ class ComplianceService
     }
 
     /**
-     * Check if a transaction requires Cash Transaction Report (CTOS/BNM).
-     *
-     * Cash transactions >= RM 10,000 require reporting to BNM.
-     *
-     * @param  string  $amount  Transaction amount in MYR
-     * @param  string  $transactionType  Buy or Sell
-     * @return bool True if CTOS report is required
-     */
-    public function requiresCtos(string $amount, string $transactionType): bool
-    {
-        // CTOS applies to all cash transactions (both Buy and Sell) >= RM 10,000
-        if (! in_array($transactionType, ['Buy', 'Sell'], true)) {
-            return false;
-        }
-
-        return $this->mathService->compare($amount, $this->thresholdService->getCtosThreshold()) >= 0;
-    }
-
-    /**
      * Get all open flags for a customer requiring attention.
      *
      * @param  int  $customerId  The customer ID

@@ -70,7 +70,6 @@ Business logic services encapsulating complex operations.
 | `ComplianceService` | `app/Services/ComplianceService.php` | `determineCDDLevel()`, `checkSanctionMatch()`, `checkVelocity()`, `checkStructuring()` | Core compliance operations |
 | `CounterHandoverService` | `app/Services/CounterHandoverService.php` | | Counter handover workflow |
 | `CounterService` | `app/Services/CounterService.php` | | Counter/till management |
-| `CtosReportService` | `app/Services/CtosReportService.php` | | Cash Transaction Report generation |
 | `CurrencyPositionService` | `app/Services/CurrencyPositionService.php` | | Currency position tracking |
 | `CustomerRiskScoringService` | `app/Services/CustomerRiskScoringService.php` | | Customer risk score calculations |
 | `CustomerScreeningService` | `app/Services/CustomerScreeningService.php` | | Sanctions list fuzzy matching |
@@ -178,7 +177,6 @@ Business logic services encapsulating complex operations.
 |-------|-----------|---------|
 | `AlertController` | `app/Http/Controllers/Api/V1/Compliance/AlertController.php` | Alert management |
 | `CaseController` | `app/Http/Controllers/Api/V1/Compliance/CaseController.php` | Case management |
-| `CtosReportController` | `app/Http/Controllers/Api/V1/Compliance/CtosReportController.php` | CTOS reports |
 | `DashboardController` | `app/Http/Controllers/Api/V1/Compliance/DashboardController.php` | Compliance dashboard |
 | `EddController` | `app/Http/Controllers/Api/V1/Compliance/EddController.php` | EDD management |
 | `FindingController` | `app/Http/Controllers/Api/V1/Compliance/FindingController.php` | Findings |
@@ -192,7 +190,6 @@ Business logic services encapsulating complex operations.
 | `CaseManagementController` | `app/Http/Controllers/Compliance/CaseManagementController.php` | Case management |
 | `ComplianceReportingController` | `app/Http/Controllers/Compliance/ComplianceReportingController.php` | Compliance reporting |
 | `ComplianceWorkspaceController` | `app/Http/Controllers/Compliance/ComplianceWorkspaceController.php` | Compliance workspace |
-| `CtosController` | `app/Http/Controllers/Compliance/CtosController.php` | CTOS management |
 | `FindingController` | `app/Http/Controllers/Compliance/FindingController.php` | Findings |
 | `RiskDashboardController` | `app/Http/Controllers/Compliance/RiskDashboardController.php` | Risk dashboard |
 | `SanctionListController` | `app/Http/Controllers/Compliance/SanctionListController.php` | Sanction list |

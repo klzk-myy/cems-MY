@@ -84,7 +84,7 @@ All monetary calculations use `App\Services\MathService` (BCMath), not floats. N
 
 - Transactions ≥ RM 10,000 (auto_approve threshold) require manager approval via `PendingApproval` status
 - Transactions ≥ RM 50,000 OR high-risk customers go to `Pending` status (compliance hold)
-- `ComplianceService` runs CDD determination and CTOS reporting (both Buy and Sell)
+- `ComplianceService` runs CDD determination
 - `TransactionMonitoringService` runs automated compliance monitors via background jobs:
   - `VelocityMonitor` - Detects velocity/structuring patterns (7-day lookback)
   - `StructuringMonitor` - Transaction aggregation detection
@@ -94,7 +94,6 @@ All monetary calculations use `App\Services\MathService` (BCMath), not floats. N
   - `CounterfeitAlertMonitor` - Counterfeit currency detection
 - `AlertTriageService` triages and assigns compliance alerts
 - `CustomerRiskScoringService` calculates customer risk scores with lock/unlock capability
-- **CTOS Submission**: `POST /api/v1/compliance/ctos/{id}/submit` - Submit CTOS reports to BNM with compliance officer sign-off
 - All cancellations require manager approval via `PendingCancellation` status (segregation of duties)
 
 **6. Stock Reservation (Concurrency Control)**
@@ -170,7 +169,7 @@ return [
     'cdd' => ['specific' => '3000', 'standard' => '10000', 'large_transaction' => '50000'],
     'risk_scoring' => ['high' => '50000', 'medium' => '30000', 'low' => '10000'],
     'alert_triage' => ['critical' => '50000', 'high' => '30000', 'medium' => '10000'],
-    'reporting' => ['ctos' => '25000', 'str' => '50000', 'edd' => '50000'],
+    'reporting' => ['str' => '50000', 'edd' => '50000'],
     'structuring' => ['sub_threshold' => '3000', 'min_transactions' => 3, 'hourly_window' => 1, 'lookup_days' => 7],
     'duration' => ['warning_hours' => 24, 'critical_hours' => 48],
     'variance' => ['yellow' => '100.00', 'red' => '500.00'],
@@ -180,7 +179,7 @@ return [
 ];
 ```
 
-- All thresholds can be overridden via environment variables (e.g., `THRESHOLD_CTOS=15000`)
+- All thresholds can be overridden via environment variables
 - `ThresholdService` provides type-safe getters with backward-compatible fallbacks
 - `ThresholdAudit` model tracks all threshold changes (category, key, old/new value, changed_by, reason)
 - Enums use `config()` helper directly since they cannot use dependency injection
@@ -195,7 +194,7 @@ return [
 | `CounterService` | Till/counter lifecycle (open, close, handover) |
 | `TransactionService` | Core transaction operations |
 | `CurrencyPositionService` | Stock/position management with reservation system |
-| `ComplianceService` | CDD determination and CTOS reporting |
+| `ComplianceService` | CDD determination |
 | `TransactionMonitoringService` | Automated compliance monitoring |
 | `CustomerRiskScoringService` | Customer risk scoring with lock/unlock |
 | `EddService` | Enhanced Due Diligence workflow |
@@ -258,8 +257,6 @@ Counters (tills) with full lifecycle:
 - `Enhanced` - Risk-based: PEP, Sanction match, High risk customer, or large transaction ≥ RM 50,000 (per 14C.13)
 
 `CddLevel::determine()` accepts `RiskRating|string` union type internally. Use `RiskRating::High` or the string `'High'` interchangeably.
-
-**CTOS Reporting**: Applies to ALL cash transactions (Buy and Sell) ≥ RM 25,000
 
 **Structuring Detection**: 7-day lookback for aggregate transactions (configurable)
 
@@ -339,7 +336,7 @@ Tailwind v4 with CSS-based `@theme` configuration — single source of truth for
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **cems-my** (9674 symbols, 24956 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **cems-my** (9565 symbols, 24700 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

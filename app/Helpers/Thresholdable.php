@@ -64,14 +64,6 @@ trait Thresholdable
     }
 
     /**
-     * Get CTOS threshold (reporting.ctos).
-     */
-    protected static function getCtosThreshold(): string
-    {
-        return self::thresholdService()->getCtosThreshold();
-    }
-
-    /**
      * Get STR threshold (reporting.str).
      */
     protected static function getStrThreshold(): string
