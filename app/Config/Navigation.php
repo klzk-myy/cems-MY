@@ -159,22 +159,10 @@ class Navigation
                         'uri' => '/compliance/risk-dashboard',
                     ],
                     [
-                        'label' => 'STR Studio',
-                        'route' => 'compliance.str-studio.index',
-                        'icon' => 'document-text',
-                        'uri' => '/compliance/str-studio',
-                    ],
-                    [
                         'label' => 'Compliance Reporting',
                         'route' => 'compliance.reporting.index',
                         'icon' => 'chart',
                         'uri' => '/compliance/reporting',
-                    ],
-                    [
-                        'label' => 'STR Reports',
-                        'route' => 'str.index',
-                        'icon' => 'exclamation',
-                        'uri' => '/str',
                     ],
                 ],
             ],

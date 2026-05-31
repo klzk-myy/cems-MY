@@ -16,6 +16,8 @@ class ReportingService
 
     protected MathService $mathService;
 
+    protected const LARGE_VALUE_THRESHOLD = '50000';
+
     public function __construct(
         EncryptionService $encryptionService,
         MathService $mathService
@@ -322,7 +324,7 @@ class ReportingService
 
         $transactions = Transaction::with(['customer', 'user'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('amount_local', '>=', self::CTR_THRESHOLD)
+            ->where('amount_local', '>=', self::LARGE_VALUE_THRESHOLD)
             ->where('status', TransactionStatus::Completed->value)
             ->orderBy('created_at')
             ->get();

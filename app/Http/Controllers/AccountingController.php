@@ -11,6 +11,7 @@ use App\Models\JournalEntry;
 use App\Services\AccountingService;
 use App\Services\BankReconciliationService;
 use App\Services\BudgetService;
+use App\Services\LedgerService;
 use App\Services\MathService;
 use App\Services\PeriodCloseService;
 use Illuminate\Http\RedirectResponse;
@@ -30,18 +31,22 @@ class AccountingController extends Controller
 
     protected BankReconciliationService $bankReconciliationService;
 
+    protected LedgerService $ledgerService;
+
     public function __construct(
         AccountingService $accountingService,
         BudgetService $budgetService,
         MathService $mathService,
         PeriodCloseService $periodCloseService,
-        BankReconciliationService $bankReconciliationService
+        BankReconciliationService $bankReconciliationService,
+        LedgerService $ledgerService
     ) {
         $this->accountingService = $accountingService;
         $this->budgetService = $budgetService;
         $this->mathService = $mathService;
         $this->periodCloseService = $periodCloseService;
         $this->bankReconciliationService = $bankReconciliationService;
+        $this->ledgerService = $ledgerService;
     }
 
     public function index(): View
@@ -267,29 +272,71 @@ class AccountingController extends Controller
             ->with('success', 'Budget updated successfully.');
     }
 
-    public function ledger(): View
+    public function ledger(Request $request): View
     {
-        return view('accounting.reports.ledger');
+        $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
+            'account_code' => 'nullable|string|exists:chart_of_accounts,account_code',
+        ]);
+
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to = $request->input('to', now()->toDateString());
+        $accountCode = $request->input('account_code');
+
+        $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
+
+        $ledger = null;
+        if ($accountCode) {
+            $ledger = $this->ledgerService->getAccountLedger($accountCode, $from, $to);
+        }
+
+        return view('accounting.reports.ledger', compact('ledger', 'accounts', 'from', 'to', 'accountCode'));
     }
 
-    public function ledgerAccount(string $accountCode): View
+    public function ledgerAccount(Request $request, string $accountCode): View
     {
-        return view('accounting.reports.ledger-account', compact('accountCode'));
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to = $request->input('to', now()->toDateString());
+
+        $ledger = $this->ledgerService->getAccountLedger($accountCode, $from, $to);
+
+        return view('accounting.reports.ledger-account', compact('ledger', 'accountCode', 'from', 'to'));
     }
 
-    public function trialBalance(): View
+    public function trialBalance(Request $request): View
     {
-        return view('accounting.reports.trial-balance');
+        $request->validate(['as_of_date' => 'nullable|date']);
+
+        $asOfDate = $request->input('as_of_date', now()->toDateString());
+        $trialBalance = $this->ledgerService->getTrialBalance($asOfDate);
+
+        return view('accounting.reports.trial-balance', compact('trialBalance', 'asOfDate'));
     }
 
-    public function profitLoss(): View
+    public function profitLoss(Request $request): View
     {
-        return view('accounting.reports.profit-loss');
+        $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
+        ]);
+
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to = $request->input('to', now()->toDateString());
+
+        $report = $this->ledgerService->getProfitAndLoss($from, $to);
+
+        return view('accounting.reports.profit-loss', compact('report', 'from', 'to'));
     }
 
-    public function balanceSheet(): View
+    public function balanceSheet(Request $request): View
     {
-        return view('accounting.reports.balance-sheet');
+        $request->validate(['as_of_date' => 'nullable|date']);
+
+        $asOfDate = $request->input('as_of_date', now()->toDateString());
+        $balanceSheet = $this->ledgerService->getBalanceSheet($asOfDate);
+
+        return view('accounting.reports.balance-sheet', compact('balanceSheet', 'asOfDate'));
     }
 
     public function cashFlow(): View

@@ -7,8 +7,6 @@ enum ReportType: string
     case Msb2 = 'msb2';
     case Lmca = 'lmca';
     case Qlvr = 'qlvr';
-    case Str = 'str';
-    case Edd = 'edd';
 
     public function label(): string
     {
@@ -16,8 +14,6 @@ enum ReportType: string
             self::Msb2 => 'MSB2',
             self::Lmca => 'LMCA',
             self::Qlvr => 'QLVR',
-            self::Str => 'STR',
-            self::Edd => 'EDD',
         };
     }
 }

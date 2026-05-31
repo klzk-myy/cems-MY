@@ -77,7 +77,7 @@ class VelocityMonitor extends BaseMonitor
                     'total_amount_in_window' => $amount24h,
                     'window_days' => $this->velocityWindowDays,
                     'threshold' => $this->threshold,
-                    'recommendation' => 'STR recommended if suspicious',
+                    'recommendation' => 'Escalate for review if suspicious',
                 ]
             );
         }

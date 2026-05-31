@@ -76,7 +76,7 @@ class StructuringMonitor extends BaseMonitor
                     'transaction_count' => $transactionCount,
                     'total_amount' => $totalAmount,
                     'threshold' => $this->subThreshold,
-                    'recommendation' => 'STR strongly recommended',
+                    'recommendation' => 'Escalate for review',
                 ]
             );
         }

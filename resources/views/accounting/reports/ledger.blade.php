@@ -1,0 +1,86 @@
+<x-app-layout title="General Ledger">
+    <div class="space-y-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold text-gray-900">General Ledger</h1>
+                <p class="mt-1 text-sm text-gray-500">View account ledger entries</p>
+            </div>
+        </div>
+
+        <form method="GET" class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="grid grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Account</label>
+                    <select name="account_code" class="w-full px-3 py-2 text-sm border border-[#e5e5e5] rounded-lg">
+                        <option value="">Select account...</option>
+                        @foreach ($accounts as $account)
+                            <option value="{{ $account->account_code }}" {{ $accountCode === $account->account_code ? 'selected' : '' }}>
+                                {{ $account->account_code }} - {{ $account->account_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">From</label>
+                    <input type="date" name="from" value="{{ $from }}"
+                           class="w-full px-3 py-2 text-sm border border-[#e5e5e5] rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">To</label>
+                    <input type="date" name="to" value="{{ $to }}"
+                           class="w-full px-3 py-2 text-sm border border-[#e5e5e5] rounded-lg">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                        Search
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        @if ($ledger)
+            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-[#e5e5e5] bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-900">
+                            {{ $ledger['account']->account_code }} - {{ $ledger['account']->account_name }}
+                        </h3>
+                        <span class="text-xs text-gray-500">{{ $ledger['account']->account_type }}</span>
+                    </div>
+                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-500">
+                        <span>Opening: RM {{ number_format((float) ($ledger['opening_balance'] ?? '0'), 2) }}</span>
+                        <span>Closing: RM {{ number_format((float) ($ledger['closing_balance'] ?? '0'), 2) }}</span>
+                    </div>
+                </div>
+                <table class="w-full">
+                    <thead class="border-b border-[#e5e5e5]">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Debit (RM)</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Credit (RM)</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Balance (RM)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#e5e5e5]">
+                        @forelse ($ledger['entries'] as $entry)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3 text-sm font-mono">{{ $entry->entry_date }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-900">{{ $entry->description ?? $entry?->journalEntry?->description ?? '-' }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $entry->debit > 0 ? number_format((float) $entry->debit, 2) : '-' }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $entry->credit > 0 ? number_format((float) $entry->credit, 2) : '-' }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $entry->running_balance, 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="px-4 py-8 text-sm text-center text-gray-500">No entries found</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="bg-white border border-[#e5e5e5] rounded-xl p-12 text-center">
+                <p class="text-sm text-gray-500">Select an account and date range to view ledger entries</p>
+            </div>
+        @endif
+    </div>
+</x-app-layout>

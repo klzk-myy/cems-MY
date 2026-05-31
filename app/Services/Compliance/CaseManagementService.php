@@ -248,8 +248,6 @@ class CaseManagementService
             Alert::where('case_id', $sourceCase->id)
                 ->update(['case_id' => $targetCase->id]);
 
-            $sourceCase->strDrafts()->update(['case_id' => $targetCase->id]);
-
             $sourceCase->update(['status' => ComplianceCaseStatus::Closed]);
 
             $this->recalculateCasePriority($targetCase);
