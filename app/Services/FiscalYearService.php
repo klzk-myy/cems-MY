@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AccountType;
 use App\Exceptions\Domain\AccountNotFoundException;
 use App\Exceptions\Domain\FiscalYearClosedException;
 use App\Exceptions\Domain\FiscalYearNotFoundException;
