@@ -217,11 +217,11 @@ class AccountingWorkflowTest extends TestCase
 
         $entry = JournalEntry::first();
         $this->assertNotNull($entry);
-        $this->assertEquals('Draft', $entry->status->value);
-        $this->assertNull($entry->posted_at);
-        $this->assertNull($entry->posted_by);
+        $this->assertEquals('Posted', $entry->status->value);
+        $this->assertNotNull($entry->posted_at);
+        $this->assertNotNull($entry->posted_by);
 
-        $this->assertCount(0, AccountLedger::where('journal_entry_id', $entry->id)->get());
+        $this->assertCount(2, AccountLedger::where('journal_entry_id', $entry->id)->get());
     }
 
     #[Test]
@@ -248,11 +248,6 @@ class AccountingWorkflowTest extends TestCase
         $createResponse->assertSessionHasNoErrors();
 
         $originalEntry = JournalEntry::first();
-        $this->assertEquals('Draft', $originalEntry->status->value);
-
-        $this->accountingService->submitForApproval($originalEntry);
-        $this->accountingService->approveEntry($originalEntry);
-        $originalEntry->refresh();
         $this->assertEquals('Posted', $originalEntry->status->value);
 
         $reverseResponse = $this->actingAs($this->manager)

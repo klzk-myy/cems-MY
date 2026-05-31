@@ -16,7 +16,6 @@ class BusinessSetupSeeder extends Seeder
         $this->command->info('Phase 1: Core Infrastructure');
         $this->call(UserSeeder::class);
         $this->call(CurrencySeeder::class);
-        $this->call(ChartOfAccountsSeeder::class);
         $this->call(EnhancedChartOfAccountsSeeder::class);
 
         $this->command->info('');

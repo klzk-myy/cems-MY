@@ -9,7 +9,7 @@ use App\Models\User;
 use App\Services\AccountingService;
 use App\Services\BudgetService;
 use App\Services\MathService;
-use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\EnhancedChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
@@ -33,7 +33,7 @@ class BudgetServiceTest extends TestCase
         );
 
         // Seed chart of accounts
-        $this->seed(ChartOfAccountsSeeder::class);
+        $this->seed(EnhancedChartOfAccountsSeeder::class);
     }
 
     public function test_get_budget_report_returns_correct_structure(): void

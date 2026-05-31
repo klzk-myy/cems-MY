@@ -229,9 +229,7 @@ class AccountingServiceTest extends TestCase
             'Atomic test entry'
         );
 
-        // Submit for approval and then approve to post to ledger
-        $accountingService->submitForApproval($entry);
-        $accountingService->approveEntry($entry, auth()->id());
+        // Entry is now directly posted by createJournalEntry
 
         // All ledger entries should be created or none
         $newCount = AccountLedger::count();
@@ -314,9 +312,7 @@ class AccountingServiceTest extends TestCase
             $user->id
         );
 
-        // Submit and approve to post to ledger
-        $accountingService->submitForApproval($sellEntry);
-        $accountingService->approveEntry($sellEntry, $user->id);
+        // Entry is now directly posted by createJournalEntry
 
         // Get balances after SELL transaction
         $cashBalanceAfterSell = $accountingService->getAccountBalance('1001', '2026-01-15');

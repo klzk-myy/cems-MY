@@ -179,8 +179,8 @@ class PeriodCloseService
                 $closedBy
             );
 
-            // Update the entry with period_id
             $entry->update(['period_id' => $period->id]);
+
             $entries[] = $entry;
         }
 

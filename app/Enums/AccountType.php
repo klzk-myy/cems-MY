@@ -22,4 +22,18 @@ enum AccountType: string
             self::OffBalance => 'Off-Balance Sheet',
         };
     }
+
+    public function normalBalance(): string
+    {
+        return match ($this) {
+            self::Asset, self::Expense => 'Debit',
+            self::Liability, self::Equity, self::Revenue => 'Credit',
+            self::OffBalance => 'Debit',
+        };
+    }
+
+    public function isDebitNormal(): bool
+    {
+        return $this->normalBalance() === 'Debit';
+    }
 }

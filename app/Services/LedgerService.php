@@ -251,8 +251,8 @@ class LedgerService
             'entries' => $entries,
             'opening_balance' => $this->getOpeningBalance($accountCode, $fromDate, $branchId),
             'closing_balance' => $this->getClosingBalance($accountCode, $toDate, $branchId),
-            'total_debits' => $entries->sum('debit'),
-            'total_credits' => $entries->sum('credit'),
+            'total_debits' => (string) $entries->sum('debit'),
+            'total_credits' => (string) $entries->sum('credit'),
             'period' => ['from' => $fromDate, 'to' => $toDate],
         ];
     }

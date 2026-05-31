@@ -20,6 +20,7 @@ class EnhancedChartOfAccountsSeeder extends Seeder
         $this->createRevenueAccounts();
         $this->createExpenseAccounts();
         $this->createIncomeSummaryAccounts();
+        $this->createOtherAssets();
     }
 
     private function createCashAccounts(): void
@@ -28,6 +29,7 @@ class EnhancedChartOfAccountsSeeder extends Seeder
         $finCc = CostCenter::where('code', 'FIN-002')->first();
 
         $accounts = [
+            // Existing MYR, USD, EUR, GBP, SGD, JPY, THB, AUD
             ['account_code' => '1000', 'account_name' => 'Cash - MYR', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $opsCc?->id],
             ['account_code' => '1010', 'account_name' => 'Cash - USD', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $opsCc?->id],
             ['account_code' => '1020', 'account_name' => 'Cash - EUR', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $opsCc?->id],
@@ -36,10 +38,28 @@ class EnhancedChartOfAccountsSeeder extends Seeder
             ['account_code' => '1050', 'account_name' => 'Cash - JPY', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $opsCc?->id],
             ['account_code' => '1060', 'account_name' => 'Cash - THB', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $opsCc?->id],
             ['account_code' => '1070', 'account_name' => 'Cash - AUD', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $opsCc?->id],
+
+            // Bank accounts
             ['account_code' => '1100', 'account_name' => 'Bank - Maybank', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $finCc?->id],
             ['account_code' => '1110', 'account_name' => 'Bank - CIMB', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $finCc?->id],
             ['account_code' => '1120', 'account_name' => 'Bank - Public Bank', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $finCc?->id],
             ['account_code' => '1130', 'account_name' => 'Bank - RHB', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $finCc?->id],
+
+            // Add Nostro accounts (from ChartOfAccountsSeeder)
+            ['account_code' => '1110', 'account_name' => 'Nostro USD - Wells Fargo', 'account_type' => 'Asset', 'account_class' => 'Nostro', 'cost_center_id' => $finCc?->id],
+            ['account_code' => '1111', 'account_name' => 'Nostro EUR - Deutsche Bank', 'account_type' => 'Asset', 'account_class' => 'Nostro', 'cost_center_id' => $finCc?->id],
+            ['account_code' => '1112', 'account_name' => 'Nostro GBP - HSBC London', 'account_type' => 'Asset', 'account_class' => 'Nostro', 'cost_center_id' => $finCc?->id],
+            ['account_code' => '1113', 'account_name' => 'Nostro SGD - DBS Singapore', 'account_type' => 'Asset', 'account_class' => 'Nostro', 'cost_center_id' => $finCc?->id],
+            ['account_code' => '1114', 'account_name' => 'Nostro AUD - Westpac', 'account_type' => 'Asset', 'account_class' => 'Nostro', 'cost_center_id' => $finCc?->id],
+            ['account_code' => '1115', 'account_name' => 'Nostro JPY - Mizuho', 'account_type' => 'Asset', 'account_class' => 'Nostro', 'cost_center_id' => $finCc?->id],
+            ['account_code' => '1116', 'account_name' => 'Nostro CHF - UBS Zurich', 'account_type' => 'Asset', 'account_class' => 'Nostro', 'cost_center_id' => $finCc?->id],
+            ['account_code' => '1117', 'account_name' => 'Nostro CAD - RBC Toronto', 'account_type' => 'Asset', 'account_class' => 'Nostro', 'cost_center_id' => $finCc?->id],
+            ['account_code' => '1118', 'account_name' => 'Nostro HKD - HSBC HK', 'account_type' => 'Asset', 'account_class' => 'Nostro', 'cost_center_id' => $finCc?->id],
+
+            // Other cash and liquid assets
+            ['account_code' => '1120', 'account_name' => 'Petty Cash', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $opsCc?->id],
+            ['account_code' => '1130', 'account_name' => 'Cash in Transit', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $opsCc?->id],
+            ['account_code' => '1140', 'account_name' => 'Overnight Deposits', 'account_type' => 'Asset', 'account_class' => 'Cash', 'cost_center_id' => $finCc?->id],
         ];
 
         foreach ($accounts as $account) {
@@ -237,14 +257,31 @@ class EnhancedChartOfAccountsSeeder extends Seeder
 
     private function createIncomeSummaryAccounts(): void
     {
-        $finCc = CostCenter::where('code', 'FIN-001')->first();
-
-        $accounts = [
-            ['account_code' => '4998', 'account_name' => 'Income Summary', 'account_type' => 'Equity', 'account_class' => 'Income Summary', 'cost_center_id' => $finCc?->id],
-            ['account_code' => '4999', 'account_name' => 'Retained Earnings - Current Year', 'account_type' => 'Equity', 'account_class' => 'Retained', 'cost_center_id' => $finCc?->id],
+        $incomeSummary = [
+            ['account_code' => '9999', 'account_name' => 'Income Summary', 'account_type' => 'Equity', 'account_class' => 'Summary', 'cost_center_id' => null],
         ];
 
-        foreach ($accounts as $account) {
+        foreach ($incomeSummary as $account) {
+            ChartOfAccount::firstOrCreate(
+                ['account_code' => $account['account_code']],
+                $account
+            );
+        }
+    }
+
+    private function createOtherAssets(): void
+    {
+        $assets = [
+            ['account_code' => '1200', 'account_name' => 'Fixed Assets - Computer Equipment', 'account_type' => 'Asset', 'account_class' => 'Fixed Asset', 'cost_center_id' => null],
+            ['account_code' => '1201', 'account_name' => 'Fixed Assets - Office Furniture', 'account_type' => 'Asset', 'account_class' => 'Fixed Asset', 'cost_center_id' => null],
+            ['account_code' => '1202', 'account_name' => 'Fixed Assets - Motor Vehicles', 'account_type' => 'Asset', 'account_class' => 'Fixed Asset', 'cost_center_id' => null],
+            ['account_code' => '1210', 'account_name' => 'Accumulated Depreciation - Fixed Assets', 'account_type' => 'Asset', 'account_class' => 'Contra Asset', 'cost_center_id' => null],
+            ['account_code' => '1300', 'account_name' => 'Foreign Currency Inventory', 'account_type' => 'Asset', 'account_class' => 'Inventory', 'cost_center_id' => null],
+            ['account_code' => '1400', 'account_name' => 'Accounts Receivable', 'account_type' => 'Asset', 'account_class' => 'Receivable', 'cost_center_id' => null],
+            ['account_code' => '1410', 'account_name' => 'Interest Receivable', 'account_type' => 'Asset', 'account_class' => 'Receivable', 'cost_center_id' => null],
+        ];
+
+        foreach ($assets as $account) {
             ChartOfAccount::firstOrCreate(
                 ['account_code' => $account['account_code']],
                 $account
