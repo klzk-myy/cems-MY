@@ -150,7 +150,6 @@ Business logic services encapsulating complex operations.
 | `SetupController` | `app/Http/Controllers/SetupController.php` | System setup |
 | `StockCashController` | `app/Http/Controllers/StockCashController.php` | Stock/cash operations |
 | `StockTransferController` | `app/Http/Controllers/StockTransferController.php` | Stock transfers |
-| `StrController` | `app/Http/Controllers/StrController.php` | STR management |
 | `TransactionController` | `app/Http/Controllers/TransactionController.php` | Transaction management |
 | `TransactionBatchController` | `app/Http/Controllers/TransactionBatchController.php` | Batch transactions |
 | `UserController` | `app/Http/Controllers/UserController.php` | User management |
@@ -166,7 +165,6 @@ Business logic services encapsulating complex operations.
 | `ReportController` | `app/Http/Controllers/Api/V1/ReportController.php` | Report API |
 | `SanctionController` | `app/Http/Controllers/Api/V1/SanctionController.php` | Sanction API |
 | `ScreeningController` | `app/Http/Controllers/Api/V1/ScreeningController.php` | Screening API |
-| `StrController` | `app/Http/Controllers/Api/V1/StrController.php` | STR API |
 | `TransactionController` | `app/Http/Controllers/Api/V1/TransactionController.php` | Core transaction API |
 | `CounterHandoverController` | `app/Http/Controllers/Api/V1/CounterHandoverController.php` | Counter handover API |
 | `CounterOpeningController` | `app/Http/Controllers/Api/V1/CounterOpeningController.php` | Counter opening API |
@@ -196,7 +194,6 @@ Business logic services encapsulating complex operations.
 | `ComplianceReportingController` | `app/Http/Controllers/Compliance/ComplianceReportingController.php` | Compliance reporting |
 | `ComplianceWorkspaceController` | `app/Http/Controllers/Compliance/ComplianceWorkspaceController.php` | Compliance workspace |
 | `CtosController` | `app/Http/Controllers/Compliance/CtosController.php` | CTOS management |
-| `EddTemplateController` | `app/Http/Controllers/Compliance/EddTemplateController.php` | EDD templates |
 | `FindingController` | `app/Http/Controllers/Compliance/FindingController.php` | Findings |
 | `RiskDashboardController` | `app/Http/Controllers/Compliance/RiskDashboardController.php` | Risk dashboard |
 | `SanctionListController` | `app/Http/Controllers/Compliance/SanctionListController.php` | Sanction list |

@@ -11,6 +11,7 @@ use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use App\Models\Transaction;
+use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -25,6 +26,7 @@ class CustomerRiskScoringService
         protected ThresholdService $thresholdService,
         protected RiskCalculationService $riskCalculationService,
         protected ?GeographicRiskService $geographicRiskService = null,
+        protected ?AmountRiskService $amountRiskService = null,
     ) {}
 
     /**
@@ -237,17 +239,9 @@ class CustomerRiskScoringService
 
     protected function calculateAmountScore(Collection $transactions, Customer $customer): int
     {
-        $score = 0;
-
-        $maxTransaction = (string) ($transactions->max('amount_local') ?? '0');
-
-        if ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskHighThreshold()) >= 0) {
-            $score += 30;
-        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskMediumThreshold()) >= 0) {
-            $score += 20;
-        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskLowThreshold()) >= 0) {
-            $score += 10;
-        }
+        $score = $this->amountRiskService
+            ? $this->amountRiskService->calculateScore($transactions, $customer)
+            : $this->legacyCalculateAmountScore($transactions);
 
         $monthlyVolume = (string) $transactions->where('created_at', '>=', now()->subDays(30))
             ->sum('amount_local');
@@ -262,6 +256,23 @@ class CustomerRiskScoringService
         }
 
         return min($score, 30);
+    }
+
+    protected function legacyCalculateAmountScore(Collection $transactions): int
+    {
+        $score = 0;
+
+        $maxTransaction = (string) ($transactions->max('amount_local') ?? '0');
+
+        if ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskHighThreshold()) >= 0) {
+            $score += 30;
+        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskMediumThreshold()) >= 0) {
+            $score += 20;
+        } elseif ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskLowThreshold()) >= 0) {
+            $score += 10;
+        }
+
+        return $score;
     }
 
     protected function extractRiskFactors(Customer $customer, array $scores): array

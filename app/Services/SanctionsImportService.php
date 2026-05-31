@@ -4,11 +4,13 @@ namespace App\Services;
 
 use App\Enums\EntityType;
 use App\Enums\SanctionStatus;
+use App\Enums\UpdateStatus;
 use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SanctionsImportService
 {
@@ -35,7 +37,7 @@ class SanctionsImportService
     {
         $this->resetCounters();
 
-        $list->update(['last_attempted_at' => now(), 'update_status' => 'pending']);
+        $list->update(['last_attempted_at' => now(), 'update_status' => UpdateStatus::Pending]);
 
         try {
             $entries = $this->parseEntries($data, $list);
@@ -43,7 +45,7 @@ class SanctionsImportService
 
             $list->update([
                 'last_updated_at' => now(),
-                'update_status' => 'success',
+                'update_status' => UpdateStatus::Success,
                 'last_error_message' => null,
                 'entry_count' => $list->entries()->where('status', 'active')->count(),
             ]);
@@ -56,14 +58,14 @@ class SanctionsImportService
                 'records_updated' => $this->updated,
                 'records_deactivated' => $this->deactivated,
                 'is_manual' => $manual,
-                'status' => 'success',
+                'status' => UpdateStatus::Success->value,
             ]);
 
             return $result;
 
         } catch (\Exception $e) {
             $list->update([
-                'update_status' => 'failed',
+                'update_status' => UpdateStatus::Failed,
                 'last_error_message' => $e->getMessage(),
             ]);
 
@@ -75,7 +77,7 @@ class SanctionsImportService
                 'records_updated' => $this->updated,
                 'records_deactivated' => $this->deactivated,
                 'is_manual' => $manual,
-                'status' => 'failed',
+                'status' => UpdateStatus::Failed->value,
                 'error_message' => $e->getMessage(),
             ]);
 

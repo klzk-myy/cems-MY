@@ -109,27 +109,33 @@ class AnalyticsController extends Controller
         $endDate = $request->input('end_date', now()->subMonth()->endOfMonth()->toDateString());
 
         // Get currency positions with profit/loss
-        $positions = CurrencyPosition::with('currency')
-            ->get()
-            ->map(function ($position) use ($startDate, $endDate) {
-                $stats = $this->calculateCurrencyProfitability(
-                    $position->currency_code,
-                    $startDate,
-                    $endDate
-                );
+        $positionModels = CurrencyPosition::with('currency')
+            ->get();
 
-                return [
-                    'currency' => $position->currency,
-                    'balance' => $position->balance,
-                    'avg_cost_rate' => $position->avg_cost_rate,
-                    'current_rate' => $this->getCurrentRate($position->currency_code),
-                    'unrealized_pnl' => $stats['unrealized_pnl'],
-                    'realized_pnl' => $stats['realized_pnl'],
-                    'total_pnl' => $stats['total_pnl'],
-                    'buy_volume' => $stats['buy_volume'],
-                    'sell_volume' => $stats['sell_volume'],
-                ];
-            });
+        $currencyCodes = $positionModels->pluck('currency_code')->unique();
+        $rates = $this->getCurrentRates($currencyCodes);
+
+        $positions = $positionModels->map(function ($position) use ($startDate, $endDate, $rates) {
+            $currentRate = $rates[$position->currency_code] ?? 0;
+            $stats = $this->calculateCurrencyProfitability(
+                $position,
+                $currentRate,
+                $startDate,
+                $endDate
+            );
+
+            return [
+                'currency' => $position->currency,
+                'balance' => $position->balance,
+                'avg_cost_rate' => $position->avg_cost_rate,
+                'current_rate' => $currentRate,
+                'unrealized_pnl' => $stats['unrealized_pnl'],
+                'realized_pnl' => $stats['realized_pnl'],
+                'total_pnl' => $stats['total_pnl'],
+                'buy_volume' => $stats['buy_volume'],
+                'sell_volume' => $stats['sell_volume'],
+            ];
+        });
 
         // Calculate totals
         $totals = [
@@ -144,60 +150,42 @@ class AnalyticsController extends Controller
     /**
      * Calculate profitability for a currency
      */
-    protected function calculateCurrencyProfitability(string $currencyCode, string $startDate, string $endDate): array
+    protected function calculateCurrencyProfitability(CurrencyPosition $position, float $currentRate, string $startDate, string $endDate): array
     {
-        $position = CurrencyPosition::where('currency_code', $currencyCode)->first();
-
-        if (! $position) {
-            return [
-                'unrealized_pnl' => 0,
-                'realized_pnl' => 0,
-                'total_pnl' => 0,
-                'buy_volume' => 0,
-                'sell_volume' => 0,
-            ];
-        }
-
-        // Current market rate
-        $currentRate = $this->getCurrentRate($currencyCode);
-
-        // Unrealized P&L (on current balance)
         $avgCost = (string) $position->avg_cost_rate;
         $balance = (string) $position->balance;
+        $currencyCode = $position->currency_code;
+
+        // Unrealized P&L (on current balance)
         $unrealizedPnl = $this->mathService->multiply(
             $this->mathService->subtract((string) $currentRate, $avgCost),
             $balance
         );
 
-        // Realized P&L (from sell transactions in period)
+        // Sell transactions in period (used for both realized P&L and volume)
         $sells = Transaction::where('currency_code', $currencyCode)
             ->where('type', TransactionType::Sell)
             ->where('status', TransactionStatus::Completed)
             ->whereBetween('created_at', [$startDate, $endDate])
+            ->select('rate', 'amount_foreign', 'amount_local')
             ->get();
 
         $realizedPnl = '0';
+        $sellVolume = '0';
         foreach ($sells as $sell) {
             $sellRate = (string) $sell->rate;
             $sellAmount = (string) $sell->amount_foreign;
-            // Gain = (sell rate - avg cost) * amount
             $gain = $this->mathService->multiply(
                 $this->mathService->subtract($sellRate, $avgCost),
                 $sellAmount
             );
             $realizedPnl = $this->mathService->add((string) $realizedPnl, $gain);
+            $sellVolume = $this->mathService->add($sellVolume, (string) $sell->amount_local);
         }
 
         // Buy volume in period
         $buyVolume = Transaction::where('currency_code', $currencyCode)
             ->where('type', TransactionType::Buy)
-            ->where('status', TransactionStatus::Completed)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('amount_local');
-
-        // Sell volume in period
-        $sellVolume = Transaction::where('currency_code', $currencyCode)
-            ->where('type', TransactionType::Sell)
             ->where('status', TransactionStatus::Completed)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('amount_local');
@@ -212,7 +200,7 @@ class AnalyticsController extends Controller
     }
 
     /**
-     * Get current exchange rate
+     * Get current exchange rate for a single currency
      */
     protected function getCurrentRate(string $currencyCode): float
     {
@@ -225,6 +213,22 @@ class AnalyticsController extends Controller
     }
 
     /**
+     * Get current exchange rates for multiple currencies (batch)
+     *
+     * @return array<string, float>
+     */
+    protected function getCurrentRates($currencyCodes): array
+    {
+        return ExchangeRate::whereIn('currency_code', $currencyCodes)
+            ->where('is_active', true)
+            ->latest()
+            ->get()
+            ->keyBy('currency_code')
+            ->map(fn ($rate) => (float) $rate->rate)
+            ->toArray();
+    }
+
+    /**
      * Customer transaction analysis
      */
     public function customerAnalysis(Request $request)
@@ -233,6 +237,8 @@ class AnalyticsController extends Controller
 
         $topCustomers = Customer::withCount('transactions')
             ->withSum('transactions', 'amount_local')
+            ->withMin('transactions', 'created_at')
+            ->withMax('transactions', 'created_at')
             ->orderBy('transactions_count', 'desc')
             ->take(50)
             ->get()
@@ -247,8 +253,8 @@ class AnalyticsController extends Controller
                             (string) $customer->transactions_count
                         )
                         : '0',
-                    'first_transaction' => $customer->transactions()->min('created_at'),
-                    'last_transaction' => $customer->transactions()->max('created_at'),
+                    'first_transaction' => $customer->transactions_min_created_at,
+                    'last_transaction' => $customer->transactions_max_created_at,
                     'risk_rating' => $customer->risk_rating,
                 ];
             });

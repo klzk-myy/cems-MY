@@ -81,7 +81,7 @@ class RiskCalculationService
 
         $structuringTransactions = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $window)
-            ->where('amount_local', '<', $subThreshold)
+            ->where('amount_local', '<=', $subThreshold)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->get();
 

@@ -364,8 +364,8 @@ class AccountingService
             );
 
             // Submit for approval first (Draft -> Pending), then approve (Pending -> Posted)
-            $this->submitForApproval($entry, $reversedBy);
-            $this->approveEntry($entry, $reversedBy, "Reversal of entry {$originalEntry->id}");
+            $entry = $this->submitForApproval($entry, $reversedBy);
+            $entry = $this->approveEntry($entry, $reversedBy, "Reversal of entry {$originalEntry->id}");
 
             // Update original entry status and create explicit link via reversal_id
             $originalEntry->update([
@@ -426,7 +426,7 @@ class AccountingService
             throw new \InvalidArgumentException("Account not found: {$accountCode}");
         }
 
-        return in_array($account->account_type, ['Asset', 'Expense']);
+        return in_array($account->account_type->value, ['Asset', 'Expense']);
     }
 
     /**

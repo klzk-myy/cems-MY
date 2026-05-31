@@ -13,6 +13,7 @@ use App\Services\MathService;
 use App\Services\ReportingService;
 use App\Services\ThresholdService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -129,33 +130,7 @@ class RegulatoryReportController extends Controller
 
     public function updateLCTRStatus(Request $request)
     {
-        $this->requireManagerOrAdmin();
-
-        $validated = $request->validate([
-            'month' => 'required|date_format:Y-m',
-            'status' => 'required|in:Submitted',
-        ]);
-
-        $report = ReportGenerated::where('report_type', 'LCTR')
-            ->where('period_start', now()->parse($validated['month'])->startOfMonth())
-            ->first();
-
-        if (! $report) {
-            return response()->json([
-                'message' => 'Report not found. Generate the report first.',
-            ], 404);
-        }
-
-        $report->update([
-            'status' => $validated['status'],
-            'submitted_at' => now(),
-            'submitted_by' => auth()->id(),
-        ]);
-
-        return response()->json([
-            'message' => 'Report status updated successfully',
-            'status' => $report->status,
-        ]);
+        return $this->updateReportStatus('LCTR', $request);
     }
 
     public function msb2(Request $request)
@@ -244,33 +219,7 @@ class RegulatoryReportController extends Controller
 
     public function updateMSB2Status(Request $request)
     {
-        $this->requireManagerOrAdmin();
-
-        $validated = $request->validate([
-            'date' => 'required|date_format:Y-m-d',
-            'status' => 'required|in:Submitted',
-        ]);
-
-        $report = ReportGenerated::where('report_type', 'MSB2')
-            ->whereDate('period_start', $validated['date'])
-            ->first();
-
-        if (! $report) {
-            return response()->json([
-                'message' => 'Report not found. Generate the report first.',
-            ], 404);
-        }
-
-        $report->update([
-            'status' => $validated['status'],
-            'submitted_at' => now(),
-            'submitted_by' => auth()->id(),
-        ]);
-
-        return response()->json([
-            'message' => 'Report status updated successfully',
-            'status' => $report->status,
-        ]);
+        return $this->updateReportStatus('MSB2', $request);
     }
 
     /**
@@ -330,15 +279,29 @@ class RegulatoryReportController extends Controller
      */
     public function updateLMCAStatus(Request $request)
     {
+        return $this->updateReportStatus('LMCA', $request);
+    }
+
+    private function updateReportStatus(string $reportType, Request $request): JsonResponse
+    {
         $this->requireManagerOrAdmin();
 
-        $validated = $request->validate([
-            'month' => 'required|date_format:Y-m',
-            'status' => 'required|in:Submitted',
-        ]);
+        if ($reportType === 'MSB2') {
+            $validated = $request->validate([
+                'date' => 'required|date_format:Y-m-d',
+                'status' => 'required|in:Submitted',
+            ]);
+            $periodStart = now()->parse($validated['date'])->startOfDay();
+        } else {
+            $validated = $request->validate([
+                'month' => 'required|date_format:Y-m',
+                'status' => 'required|in:Submitted',
+            ]);
+            $periodStart = now()->parse($validated['month'])->startOfMonth();
+        }
 
-        $report = ReportGenerated::where('report_type', 'LMCA')
-            ->where('period_start', now()->parse($validated['month'])->startOfMonth())
+        $report = ReportGenerated::where('report_type', $reportType)
+            ->where('period_start', $periodStart)
             ->first();
 
         if (! $report) {

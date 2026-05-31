@@ -89,7 +89,7 @@ class SystemHealthAlertNotification extends Notification implements ShouldQueue
             'is_acknowledged' => $this->systemAlert->isAcknowledged(),
             'acknowledged_by' => $this->systemAlert->acknowledged_by,
             'acknowledged_at' => $this->systemAlert->acknowledged_at?->toIso8601String(),
-            'url' => route('system-alerts.show', $this->systemAlert->id),
+            'url' => null,
         ];
     }
 

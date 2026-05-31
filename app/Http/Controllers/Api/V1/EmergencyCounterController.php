@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Http\Controllers\Controller;
@@ -33,6 +34,10 @@ class EmergencyCounterController extends Controller
         }
 
         $user = Auth::user();
+
+        if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
+            abort(403, 'You do not have permission to access this resource.');
+        }
 
         try {
             $closure = $this->emergencyService->initiateEmergencyClose(
@@ -74,6 +79,12 @@ class EmergencyCounterController extends Controller
             ], 404);
         }
 
+        $user = Auth::user();
+
+        if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
+            abort(403, 'You do not have permission to access this resource.');
+        }
+
         $closure = EmergencyClosure::find($closureId);
         if (! $closure || $closure->counter_id !== $counter->id) {
             return response()->json([
@@ -109,6 +120,10 @@ class EmergencyCounterController extends Controller
         }
 
         $user = Auth::user();
+
+        if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
+            abort(403, 'You do not have permission to access this resource.');
+        }
 
         if (! $user->isManager()) {
             return response()->json([

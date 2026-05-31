@@ -33,11 +33,12 @@ class ProcessTransactionImport implements ShouldQueue
     /**
      * Create a new job instance.
      */
+    protected BulkImportService $importService;
+
     public function __construct(
         public string $filePath,
         public int $userId,
         public string $jobId,
-        public BulkImportService $importService
     ) {
         $this->onQueue('imports');
     }
@@ -47,6 +48,8 @@ class ProcessTransactionImport implements ShouldQueue
      */
     public function handle(BulkImportService $importService): void
     {
+        $this->importService = $importService;
+
         Log::info('Processing transaction import', [
             'job_id' => $this->jobId,
             'file' => $this->filePath,

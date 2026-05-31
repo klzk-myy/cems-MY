@@ -89,7 +89,7 @@ class SanctionsMatchNotification extends Notification implements ShouldQueue
             'match_score' => $this->sanctionEntry->match_score,
             'is_whitelisted' => $this->sanctionEntry->is_whitelisted,
             'match_reason' => $this->matchReason,
-            'url' => route('compliance.sanctions.show', $this->sanctionEntry->id),
+            'url' => route('compliance.sanctions.entries.show', $this->sanctionEntry->id),
         ];
     }
 

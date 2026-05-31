@@ -10,6 +10,7 @@
 /storage/framework/sessions
 .env
 .env.backup
+.env.browser
 .phpunit.result.cache
 .phpunit.cache
 Homestead.json

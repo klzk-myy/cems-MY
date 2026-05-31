@@ -158,7 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // EDD API - Compliance Officer for management
         Route::get('/edd', [EddController::class, 'index'])
             ->middleware('role:compliance');
-        Route::get('/edd/templates', [EddController::class, 'templates']);
+        Route::get('/edd/templates', [EddController::class, 'templates'])
+            ->middleware('role:compliance');
         Route::get('/edd/{id}', [EddController::class, 'show'])
             ->middleware('role:compliance');
         Route::post('/edd/{id}/questionnaire', [EddController::class, 'submitQuestionnaire'])

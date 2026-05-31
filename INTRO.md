@@ -165,8 +165,7 @@ Organized by domain module:
 ### 2. Customer Management (3)
 | Controller | Purpose |
 |------------|---------|
-| `CustomerController` | Customer CRUD, search, KYC upload |
-| `Customer/CustomerKycController` | KYC document verification |
+| `CustomerController` | Customer CRUD, search |
 | `Api/V1/CustomerController` | Customer API |
 
 ### 3. Counter/Till Operations (5)
@@ -193,7 +192,6 @@ Organized by domain module:
 | `Compliance/CtosController` | CTOS report management |
 | `Compliance/RiskDashboardController` | Risk scoring dashboard |
 | `Compliance/ScreeningController` | Customer screening status |
-| `Compliance/EddTemplateController` | EDD questionnaire templates |
 | `Compliance/FindingController` | Compliance findings |
 | `Compliance/ComplianceReportingController` | Report scheduling |
 | `Compliance/ComplianceWorkspaceController` | Compliance dashboard |
@@ -204,7 +202,6 @@ Organized by domain module:
 | `AccountingController` | Journal entries, periods, budget |
 | `RevaluationController` | Currency revaluation |
 | `FiscalYearController` | Fiscal year closing |
-| `MonthEndCloseController` | Month-end workflow |
 | `Api/V1/MonthEndCloseController` | Month-end API |
 | `Api/V1/EodReconciliationController` | EOD reconciliation API |
 

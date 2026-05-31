@@ -2,11 +2,11 @@
 
 namespace Tests\Unit;
 
+use App\Enums\RelationType;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
 use App\Services\AuditService;
 use App\Services\CustomerRelationService;
-use App\Enums\RelationType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

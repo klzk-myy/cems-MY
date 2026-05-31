@@ -46,6 +46,9 @@ class RevaluationService
         $revaluationDate = now()->toDateString();
         $results = [];
 
+        // Pre-fetch all exchange rates in a single API call to avoid N+1 per position
+        $this->rateApiService->fetchLatestRates();
+
         $positions = CurrencyPosition::where('till_id', $tillId)
             ->where('balance', '!=', 0)
             ->get();
@@ -344,8 +347,20 @@ class RevaluationService
             }
         }
 
-        // Return results including both successes and failures
-        // Caller can decide how to handle partial success
+        // Throw RuntimeException with summary if any failures occurred
+        if (! empty($errors)) {
+            $failedCodes = array_map(fn ($e) => $e['currency_code'], $errors);
+            $successfulCodes = array_map(fn ($r) => $r['currency_code'], $results);
+
+            $parts = [];
+            if (! empty($successfulCodes)) {
+                $parts[] = 'Successful currencies: '.implode(', ', $successfulCodes);
+            }
+            $parts[] = 'Failed currencies: '.implode(', ', $failedCodes);
+
+            throw new \RuntimeException(implode("\n", $parts));
+        }
+
         return [
             'date' => $date,
             'positions_updated' => count($results),
@@ -354,8 +369,8 @@ class RevaluationService
             'total_loss' => $totalLoss,
             'net_pnl' => $this->mathService->add($totalGain, $totalLoss),
             'report_path' => null,
-            'has_failures' => ! empty($errors),
-            'failed_currencies' => $errors,
+            'has_failures' => false,
+            'failed_currencies' => [],
         ];
     }
 

@@ -176,11 +176,10 @@ class StockCashController extends Controller
         }
 
         // Calculate expected closing balance based on transactions
-        $netFlow = Transaction::where('till_id', $validated['till_id'])
-            ->where('currency_code', $validated['currency_code'])
-            ->whereDate('created_at', today())
-            ->selectRaw("SUM(CASE WHEN type='Buy' THEN amount_local ELSE -amount_local END) as net")
-            ->value('net') ?? 0;
+        $netFlow = $this->tillService->calculateNetFlow(
+            $validated['till_id'],
+            $validated['currency_code']
+        );
 
         $expectedClosing = $this->mathService->add(
             (string) $tillBalance->opening_balance,

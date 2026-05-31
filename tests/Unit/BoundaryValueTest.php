@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Enums\CddLevel;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class BoundaryValueTest extends TestCase
@@ -19,9 +20,7 @@ class BoundaryValueTest extends TestCase
         $this->mathService = new MathService;
     }
 
-    /**
-     * @dataProvider cddThresholdProvider
-     */
+    #[DataProvider('cddThresholdProvider')]
     public function test_cdd_level_at_thresholds(float $amount, string $expectedLevel): void
     {
         $cddLevel = $this->determineCddLevel((string) $amount, false, false);
@@ -39,9 +38,7 @@ class BoundaryValueTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider ctosThresholdProvider
-     */
+    #[DataProvider('ctosThresholdProvider')]
     public function test_ctos_threshold(float $amount, bool $shouldGenerate): void
     {
         $amountMYR = (string) $amount;

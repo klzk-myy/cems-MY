@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Models\Compliance\ComplianceCase;
-use App\Models\DataBreachAlert;
 use App\Models\FlaggedTransaction;
 use App\Models\SanctionEntry;
 use App\Models\SystemAlert;
@@ -13,7 +12,6 @@ use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Models\User;
 use App\Notifications\ComplianceCaseAssignedNotification;
-use App\Notifications\DataBreachAlertNotification;
 use App\Notifications\LargeTransactionNotification;
 use App\Notifications\SanctionsMatchNotification;
 use App\Notifications\SystemHealthAlertNotification;
@@ -37,7 +35,6 @@ class TestNotification extends Command
     protected array $notificationTypes = [
         'transaction_flagged' => 'Transaction Flagged',
         'case_assigned' => 'Compliance Case Assigned',
-        'data_breach' => 'Data Breach Alert',
         'large_transaction' => 'Large Transaction',
         'sanctions_match' => 'Sanctions Match',
         'system_health' => 'System Health Alert',
@@ -128,7 +125,6 @@ class TestNotification extends Command
         return match ($type) {
             'transaction_flagged' => $this->createTransactionFlaggedNotification(),
             'case_assigned' => $this->createCaseAssignedNotification(),
-            'data_breach' => $this->createDataBreachNotification(),
             'large_transaction' => $this->createLargeTransactionNotification(),
             'sanctions_match' => $this->createSanctionsMatchNotification(),
             'system_health' => $this->createSystemHealthNotification(),
@@ -155,13 +151,6 @@ class TestNotification extends Command
                 'id' => 999999,
                 'case_number' => 'CASE-2024-00001',
             ])
-        );
-    }
-
-    protected function createDataBreachNotification(): DataBreachAlertNotification
-    {
-        return new DataBreachAlertNotification(
-            DataBreachAlert::factory()->make(['id' => 999999])
         );
     }
 

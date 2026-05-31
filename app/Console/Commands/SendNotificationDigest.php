@@ -191,7 +191,6 @@ class SendNotificationDigest extends Command
         return match ($className) {
             'TransactionFlaggedNotification' => 'Transaction Flags',
             'ComplianceCaseAssignedNotification' => 'Case Assignments',
-            'DataBreachAlertNotification' => 'Data Breaches',
             'LargeTransactionNotification' => 'Large Transactions',
             'SanctionsMatchNotification' => 'Sanctions Matches',
             'SystemHealthAlertNotification' => 'System Health',

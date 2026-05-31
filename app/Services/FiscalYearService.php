@@ -454,24 +454,29 @@ class FiscalYearService
     {
         $total = '0';
         $accounts = ChartOfAccount::where('account_type', $accountType)->get();
+        $accountCodes = $accounts->pluck('account_code')->toArray();
+
+        if (empty($accountCodes)) {
+            return $total;
+        }
+
+        $totals = AccountLedger::whereIn('account_code', $accountCodes)
+            ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->selectRaw('account_code, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->groupBy('account_code')
+            ->get()
+            ->keyBy('account_code');
 
         foreach ($accounts as $account) {
+            $ledgerTotals = $totals->get($account->account_code);
             if ($accountType === 'Revenue') {
-                $credits = AccountLedger::where('account_code', $account->account_code)
-                    ->whereBetween('entry_date', [$fromDate, $toDate])
-                    ->sum('credit');
-                $debits = AccountLedger::where('account_code', $account->account_code)
-                    ->whereBetween('entry_date', [$fromDate, $toDate])
-                    ->sum('debit');
-                $balance = $this->mathService->subtract((string) $credits, (string) $debits);
+                $credits = $ledgerTotals ? (string) $ledgerTotals->total_credit : '0';
+                $debits = $ledgerTotals ? (string) $ledgerTotals->total_debit : '0';
+                $balance = $this->mathService->subtract($credits, $debits);
             } else {
-                $debits = AccountLedger::where('account_code', $account->account_code)
-                    ->whereBetween('entry_date', [$fromDate, $toDate])
-                    ->sum('debit');
-                $credits = AccountLedger::where('account_code', $account->account_code)
-                    ->whereBetween('entry_date', [$fromDate, $toDate])
-                    ->sum('credit');
-                $balance = $this->mathService->subtract((string) $debits, (string) $credits);
+                $debits = $ledgerTotals ? (string) $ledgerTotals->total_debit : '0';
+                $credits = $ledgerTotals ? (string) $ledgerTotals->total_credit : '0';
+                $balance = $this->mathService->subtract($debits, $credits);
             }
             $total = $this->mathService->add($total, $balance);
         }

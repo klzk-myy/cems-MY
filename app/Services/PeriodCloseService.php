@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\UnbalancedJournalEntriesException;
 use App\Models\AccountingPeriod;
+use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\SystemLog;
@@ -123,25 +124,23 @@ class PeriodCloseService
     {
         $entries = [];
 
+        $asOfDate = $period->end_date->toDateString();
+
         // Get revenue accounts
         $revenues = ChartOfAccount::where('account_type', 'Revenue')->get();
+        $revenueBalances = $this->getBatchBalances($revenues->pluck('account_code')->toArray(), $asOfDate);
         $totalRevenue = '0';
         foreach ($revenues as $account) {
-            $balance = $this->accountingService->getAccountBalance(
-                $account->account_code,
-                $period->end_date->toDateString()
-            );
+            $balance = $revenueBalances[$account->account_code] ?? '0';
             $totalRevenue = $this->mathService->add($totalRevenue, $balance);
         }
 
         // Get expense accounts
         $expenses = ChartOfAccount::where('account_type', 'Expense')->get();
+        $expenseBalances = $this->getBatchBalances($expenses->pluck('account_code')->toArray(), $asOfDate);
         $totalExpenses = '0';
         foreach ($expenses as $account) {
-            $balance = $this->accountingService->getAccountBalance(
-                $account->account_code,
-                $period->end_date->toDateString()
-            );
+            $balance = $expenseBalances[$account->account_code] ?? '0';
             $totalExpenses = $this->mathService->add($totalExpenses, $balance);
         }
 
@@ -217,5 +216,45 @@ class PeriodCloseService
         }
 
         return $code;
+    }
+
+    /**
+     * Get balances for multiple accounts in a single batch query.
+     *
+     * Retrieves the running balance from the latest ledger entry for each account
+     * using a subquery to find the most recent entry per account code.
+     *
+     * @param  array  $accountCodes  Array of account codes to query
+     * @param  string  $asOfDate  Date for balance calculation (YYYY-MM-DD format)
+     * @return array<string, string> Account code => balance string
+     */
+    protected function getBatchBalances(array $accountCodes, string $asOfDate): array
+    {
+        if (empty($accountCodes)) {
+            return [];
+        }
+
+        $subQuery = AccountLedger::selectRaw('account_code, MAX(id) as max_id')
+            ->whereIn('account_code', $accountCodes)
+            ->whereRaw('DATE(entry_date) <= ?', [$asOfDate])
+            ->groupBy('account_code');
+
+        $maxIds = $subQuery->pluck('max_id', 'account_code');
+
+        if ($maxIds->isEmpty()) {
+            return [];
+        }
+
+        $entries = AccountLedger::whereIn('id', $maxIds->values())
+            ->get()
+            ->keyBy('account_code');
+
+        $balances = [];
+        foreach ($accountCodes as $code) {
+            $entry = $entries->get($code);
+            $balances[$code] = $entry ? (string) $entry->running_balance : '0';
+        }
+
+        return $balances;
     }
 }

@@ -6,7 +6,7 @@ enum UpdateStatus: string
 {
     case NeverRun = 'never_run';
     case Pending = 'pending';
-    case Completed = 'completed';
+    case Success = 'success';
     case Failed = 'failed';
 
     public function label(): string
@@ -14,7 +14,7 @@ enum UpdateStatus: string
         return match ($this) {
             self::NeverRun => 'Never Run',
             self::Pending => 'Pending',
-            self::Completed => 'Completed',
+            self::Success => 'Success',
             self::Failed => 'Failed',
         };
     }

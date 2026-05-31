@@ -100,7 +100,7 @@ class SanctionsOrchestrationServiceTest extends TestCase
         $result = $this->service->syncSanctionsList($list, true);
 
         $this->assertFalse($result['success']);
-        $this->assertEquals('Invalid JSON in downloaded file', $result['error']);
+        $this->assertEquals('Downloaded content is not valid JSON', $result['error']);
     }
 
     public function test_sync_sanctions_list_calls_import_service(): void

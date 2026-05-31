@@ -57,32 +57,8 @@
         <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-2">Counters</li>
 
         <li>
-            <a href="{{ route('counters.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('counters.index') ? 'bg-gray-800' : '' }}">
+            <a href="{{ route('counters.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('counters.*') ? 'bg-gray-800' : '' }}">
                 Counter List
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('counters.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('counters.open') ? 'bg-gray-800' : '' }}">
-                Open Counter
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('counters.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('counters.close') ? 'bg-gray-800' : '' }}">
-                Close Counter
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('counters.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('counters.handover') ? 'bg-gray-800' : '' }}">
-                Handover
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('counters.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('counters.history') ? 'bg-gray-800' : '' }}">
-                History
             </a>
         </li>
 
@@ -123,20 +99,6 @@
         <li>
             <a href="{{ route('stock-transfers.create') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('stock-transfers.create') ? 'bg-gray-800' : '' }}">
                 Create Transfer
-            </a>
-        </li>
-
-        <li class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-2">Customers</li>
-
-        <li>
-            <a href="{{ route('customers.index') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('customers.index') ? 'bg-gray-800' : '' }}">
-                Customer List
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('customers.create') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('customers.create') ? 'bg-gray-800' : '' }}">
-                Create Customer
             </a>
         </li>
 
@@ -266,12 +228,6 @@
         <li>
             <a href="{{ route('compliance.cases.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.cases.*') ? 'bg-gray-800' : '' }}">
                 Cases
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('str.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('str.*') ? 'bg-gray-800' : '' }}">
-                STR
             </a>
         </li>
 
@@ -460,12 +416,6 @@
         </li>
 
         <li>
-            <a href="{{ route('audit.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('audit.*') ? 'bg-gray-800' : '' }}">
-                Audit
-            </a>
-        </li>
-
-        <li>
             <a href="{{ route('setup.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('setup.*') ? 'bg-gray-800' : '' }}">
                 Setup
             </a>
@@ -480,12 +430,6 @@
         <li>
             <a href="{{ route('test-results.statistics') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('test-results.statistics') ? 'bg-gray-800' : '' }}">
                 Test Statistics
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('branches.closing.show', ['branch' => auth()->user()->branch_id ?? 1]) }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('branches.closing.*') ? 'bg-gray-800' : '' }}">
-                Branch Closing
             </a>
         </li>
         @endcan

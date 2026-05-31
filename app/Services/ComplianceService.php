@@ -148,6 +148,24 @@ class ComplianceService
     }
 
     /**
+     * Count working days (Mon-Fri) between two dates, inclusive of both ends.
+     */
+    private function countWorkingDays(Carbon $from, Carbon $to): int
+    {
+        $days = 0;
+        $current = $from->copy();
+
+        while ($current <= $to) {
+            if (! $current->isWeekend()) {
+                $days++;
+            }
+            $current->addDay();
+        }
+
+        return $days;
+    }
+
+    /**
      * Check if customer matches any sanctions list entries.
      *
      * Uses CustomerScreeningService for fuzzy matching when available,

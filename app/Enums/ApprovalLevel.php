@@ -7,6 +7,7 @@ enum ApprovalLevel: string
     case Level1 = 'level1';
     case Level2 = 'level2';
     case Level3 = 'level3';
+    case HeadOfficeSeniorManagement = 'head_office_senior_management';
 
     public function label(): string
     {
@@ -14,6 +15,7 @@ enum ApprovalLevel: string
             self::Level1 => 'Level 1',
             self::Level2 => 'Level 2',
             self::Level3 => 'Level 3',
+            self::HeadOfficeSeniorManagement => 'Head Office Senior Management',
         };
     }
 }

@@ -13,6 +13,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * NOTE: Authorization gap — branch-level access control is not enforced here.
+ * Customers do not have a direct branch_id field. Branch affinity is indirect via
+ * their transactions. Adding branch-scoping here would require joining through
+ * transactions or adding customer->branch_id, both of which need stakeholder approval.
+ */
 class CustomerController extends Controller
 {
     public function __construct(

@@ -312,28 +312,66 @@ class LedgerService
         $revenueData = [];
         $totalRevenue = '0';
 
-        foreach ($revenues as $revenue) {
-            $balance = $this->getAccountActivity($revenue->account_code, $fromDate, $toDate, $branchId);
-            $revenueData[] = [
-                'account_code' => $revenue->account_code,
-                'account_name' => $revenue->account_name,
-                'amount' => $balance,
-            ];
-            $totalRevenue = $this->mathService->add($totalRevenue, $balance);
+        if ($revenues->isNotEmpty()) {
+            $revenueCodes = $revenues->pluck('account_code')->toArray();
+            $revenueQuery = AccountLedger::whereIn('account_code', $revenueCodes)
+                ->whereBetween('entry_date', [$fromDate, $toDate]);
+
+            if ($branchId !== null) {
+                $revenueQuery->where('branch_id', $branchId);
+            }
+
+            $revenueEntries = $revenueQuery
+                ->selectRaw('account_code, SUM(debit) as total_debit, SUM(credit) as total_credit')
+                ->groupBy('account_code')
+                ->get()
+                ->keyBy('account_code');
+
+            foreach ($revenues as $revenue) {
+                $totals = $revenueEntries->get($revenue->account_code);
+                $credits = $totals ? (string) $totals->total_credit : '0';
+                $debits = $totals ? (string) $totals->total_debit : '0';
+                $balance = $this->mathService->subtract($credits, $debits);
+                $revenueData[] = [
+                    'account_code' => $revenue->account_code,
+                    'account_name' => $revenue->account_name,
+                    'amount' => $balance,
+                ];
+                $totalRevenue = $this->mathService->add($totalRevenue, $balance);
+            }
         }
 
         $expenses = ChartOfAccount::where('account_type', 'Expense')->get();
         $expenseData = [];
         $totalExpenses = '0';
 
-        foreach ($expenses as $expense) {
-            $balance = $this->getAccountActivity($expense->account_code, $fromDate, $toDate, $branchId);
-            $expenseData[] = [
-                'account_code' => $expense->account_code,
-                'account_name' => $expense->account_name,
-                'amount' => $balance,
-            ];
-            $totalExpenses = $this->mathService->add($totalExpenses, $balance);
+        if ($expenses->isNotEmpty()) {
+            $expenseCodes = $expenses->pluck('account_code')->toArray();
+            $expenseQuery = AccountLedger::whereIn('account_code', $expenseCodes)
+                ->whereBetween('entry_date', [$fromDate, $toDate]);
+
+            if ($branchId !== null) {
+                $expenseQuery->where('branch_id', $branchId);
+            }
+
+            $expenseEntries = $expenseQuery
+                ->selectRaw('account_code, SUM(debit) as total_debit, SUM(credit) as total_credit')
+                ->groupBy('account_code')
+                ->get()
+                ->keyBy('account_code');
+
+            foreach ($expenses as $expense) {
+                $totals = $expenseEntries->get($expense->account_code);
+                $debits = $totals ? (string) $totals->total_debit : '0';
+                $credits = $totals ? (string) $totals->total_credit : '0';
+                $balance = $this->mathService->subtract($debits, $credits);
+                $expenseData[] = [
+                    'account_code' => $expense->account_code,
+                    'account_name' => $expense->account_name,
+                    'amount' => $balance,
+                ];
+                $totalExpenses = $this->mathService->add($totalExpenses, $balance);
+            }
         }
 
         $netProfit = $this->mathService->subtract($totalRevenue, $totalExpenses);
@@ -409,11 +447,12 @@ class LedgerService
     public function getBalanceSheet(string $asOfDate, ?int $branchId = null): array
     {
         $assets = ChartOfAccount::where('account_type', 'Asset')->get();
+        $assetBalances = $this->getBatchAccountBalances($assets->pluck('account_code')->toArray(), $asOfDate, $branchId);
         $assetData = [];
         $totalAssets = '0';
 
         foreach ($assets as $asset) {
-            $balance = $this->getAccountBalance($asset->account_code, $asOfDate, $branchId);
+            $balance = $assetBalances[$asset->account_code] ?? '0';
             $assetData[] = [
                 'account_code' => $asset->account_code,
                 'account_name' => $asset->account_name,
@@ -423,11 +462,12 @@ class LedgerService
         }
 
         $liabilities = ChartOfAccount::where('account_type', 'Liability')->get();
+        $liabilityBalances = $this->getBatchAccountBalances($liabilities->pluck('account_code')->toArray(), $asOfDate, $branchId);
         $liabilityData = [];
         $totalLiabilities = '0';
 
         foreach ($liabilities as $liability) {
-            $balance = $this->getAccountBalance($liability->account_code, $asOfDate, $branchId);
+            $balance = $liabilityBalances[$liability->account_code] ?? '0';
             $liabilityData[] = [
                 'account_code' => $liability->account_code,
                 'account_name' => $liability->account_name,
@@ -437,11 +477,12 @@ class LedgerService
         }
 
         $equities = ChartOfAccount::where('account_type', 'Equity')->get();
+        $equityBalances = $this->getBatchAccountBalances($equities->pluck('account_code')->toArray(), $asOfDate, $branchId);
         $equityData = [];
         $totalEquity = '0';
 
         foreach ($equities as $equity) {
-            $balance = $this->getAccountBalance($equity->account_code, $asOfDate, $branchId);
+            $balance = $equityBalances[$equity->account_code] ?? '0';
             $equityData[] = [
                 'account_code' => $equity->account_code,
                 'account_name' => $equity->account_name,
@@ -463,6 +504,52 @@ class LedgerService
             'is_balanced' => $this->mathService->compare($totalAssets, $liabilitiesPlusEquity) === 0,
             'as_of_date' => $asOfDate,
         ];
+    }
+
+    /**
+     * Get balances for multiple accounts in a single batch query.
+     *
+     * Retrieves the running balance from the latest ledger entry for each account
+     * using a subquery to find the most recent entry per account code.
+     *
+     * @param  array  $accountCodes  Array of account codes to query
+     * @param  string  $asOfDate  Date for balance calculation (YYYY-MM-DD format)
+     * @param  int|null  $branchId  Optional branch ID to filter by
+     * @return array<string, string> Account code => balance string
+     */
+    protected function getBatchAccountBalances(array $accountCodes, string $asOfDate, ?int $branchId = null): array
+    {
+        if (empty($accountCodes)) {
+            return [];
+        }
+
+        $subQuery = AccountLedger::selectRaw('account_code, MAX(id) as max_id')
+            ->whereIn('account_code', $accountCodes)
+            ->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);
+
+        if ($branchId !== null) {
+            $subQuery->where('branch_id', $branchId);
+        }
+
+        $subQuery->groupBy('account_code');
+
+        $maxIds = $subQuery->pluck('max_id', 'account_code');
+
+        if ($maxIds->isEmpty()) {
+            return [];
+        }
+
+        $entries = AccountLedger::whereIn('id', $maxIds->values())
+            ->get()
+            ->keyBy('account_code');
+
+        $balances = [];
+        foreach ($accountCodes as $code) {
+            $entry = $entries->get($code);
+            $balances[$code] = $entry ? (string) $entry->running_balance : '0';
+        }
+
+        return $balances;
     }
 
     /**

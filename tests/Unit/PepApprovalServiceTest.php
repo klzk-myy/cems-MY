@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\ApprovalLevel;
 use App\Enums\PepType;
 use App\Enums\RiskRating;
 use App\Models\Customer;
@@ -144,7 +145,7 @@ class PepApprovalServiceTest extends TestCase
         $this->assertEquals($customer->id, $request->customer_id);
         $this->assertEquals('new_relationship', $request->transaction_type);
         $this->assertTrue($request->isPending());
-        $this->assertEquals('head_office_senior_management', $request->approval_level);
+        $this->assertEquals(ApprovalLevel::HeadOfficeSeniorManagement, $request->approval_level);
     }
 
     /**

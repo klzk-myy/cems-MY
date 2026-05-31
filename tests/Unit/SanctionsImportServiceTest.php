@@ -2,6 +2,8 @@
 
 namespace Tests\Unit;
 
+use App\Enums\EntityType;
+use App\Enums\SanctionStatus;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Services\MathService;
@@ -64,7 +66,7 @@ class SanctionsImportServiceTest extends TestCase
         $johnDoe = $entries->firstWhere('reference_number', 'us-001');
         $this->assertNotNull($johnDoe);
         $this->assertEquals('John Doe', $johnDoe->entity_name);
-        $this->assertEquals('Individual', $johnDoe->entity_type);
+        $this->assertEquals(EntityType::Individual, $johnDoe->entity_type);
         $this->assertEquals('US', $johnDoe->nationality);
         $this->assertEquals('1990-01-15', $johnDoe->date_of_birth->format('Y-m-d'));
         $this->assertEquals('john doe', $johnDoe->normalized_name);
@@ -73,7 +75,7 @@ class SanctionsImportServiceTest extends TestCase
         $acme = $entries->firstWhere('reference_number', 'us-002');
         $this->assertNotNull($acme);
         $this->assertEquals('Acme Corporation', $acme->entity_name);
-        $this->assertEquals('Entity', $acme->entity_type);
+        $this->assertEquals(EntityType::Organization, $acme->entity_type);
         $this->assertEquals('GB', $acme->nationality);
         $this->assertEquals('acme corporation', $acme->normalized_name);
     }
@@ -167,10 +169,10 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertEquals(1, $result['deactivated']);
 
         $deactivated = SanctionEntry::where('reference_number', 'us-999')->first();
-        $this->assertEquals('inactive', $deactivated->status);
+        $this->assertEquals(SanctionStatus::Inactive, $deactivated->status);
 
         $stillActive = SanctionEntry::where('reference_number', 'us-001')->first();
-        $this->assertEquals('active', $stillActive->status);
+        $this->assertEquals(SanctionStatus::Active, $stillActive->status);
     }
 
     public function test_parse_open_sanctions_entry_handles_array_names(): void
@@ -191,7 +193,7 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertNotNull($result);
         $this->assertEquals('Primary Name', $result['entity_name']);
         $this->assertEquals('primary name', $result['normalized_name']);
-        $this->assertEquals('Individual', $result['entity_type']);
+        $this->assertEquals(EntityType::Individual, $result['entity_type']);
         $this->assertEquals('US', $result['nationality']);
         $this->assertEquals('1985-05-20', $result['date_of_birth']);
     }
@@ -221,14 +223,14 @@ class SanctionsImportServiceTest extends TestCase
 
     public function test_map_entity_type(): void
     {
-        $this->assertEquals('Individual', $this->service->mapEntityType('Person'));
-        $this->assertEquals('Individual', $this->service->mapEntityType('Individual'));
-        $this->assertEquals('Individual', $this->service->mapEntityType('natural person'));
-        $this->assertEquals('Entity', $this->service->mapEntityType('Organization'));
-        $this->assertEquals('Entity', $this->service->mapEntityType('Entity'));
-        $this->assertEquals('Entity', $this->service->mapEntityType('Vessel'));
-        $this->assertEquals('Individual', $this->service->mapEntityType(null));
-        $this->assertEquals('Individual', $this->service->mapEntityType(''));
+        $this->assertEquals(EntityType::Individual, $this->service->mapEntityType('Person'));
+        $this->assertEquals(EntityType::Individual, $this->service->mapEntityType('Individual'));
+        $this->assertEquals(EntityType::Individual, $this->service->mapEntityType('natural person'));
+        $this->assertEquals(EntityType::Organization, $this->service->mapEntityType('Organization'));
+        $this->assertEquals(EntityType::Organization, $this->service->mapEntityType('Entity'));
+        $this->assertEquals(EntityType::Vessel, $this->service->mapEntityType('Vessel'));
+        $this->assertEquals(EntityType::Individual, $this->service->mapEntityType(null));
+        $this->assertEquals(EntityType::Individual, $this->service->mapEntityType(''));
     }
 
     public function test_parse_date(): void

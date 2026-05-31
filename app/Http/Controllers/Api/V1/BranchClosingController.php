@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -20,6 +21,10 @@ class BranchClosingController extends Controller
     {
         $branch = Branch::findOrFail($branchId);
         $user = Auth::user();
+
+        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
+            abort(403, 'You do not have permission to access this branch.');
+        }
 
         $existingWorkflow = $this->branchClosingService->getActiveWorkflow($branch);
         if ($existingWorkflow) {
@@ -43,6 +48,10 @@ class BranchClosingController extends Controller
     {
         $branch = Branch::findOrFail($branchId);
         $user = Auth::user();
+
+        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
+            abort(403, 'You do not have permission to access this branch.');
+        }
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
 
@@ -69,6 +78,10 @@ class BranchClosingController extends Controller
     {
         $branch = Branch::findOrFail($branchId);
         $user = Auth::user();
+
+        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
+            abort(403, 'You do not have permission to access this branch.');
+        }
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
 
@@ -97,6 +110,12 @@ class BranchClosingController extends Controller
 
     public function show(Request $request, int $branchId): JsonResponse
     {
+        $user = Auth::user();
+
+        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
+            abort(403, 'You do not have permission to access this branch.');
+        }
+
         $branch = Branch::findOrFail($branchId);
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);

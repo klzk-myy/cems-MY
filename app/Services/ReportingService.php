@@ -208,12 +208,18 @@ class ReportingService
             ->get();
 
         $currencies = Currency::where('is_active', true)->get();
+        $currencyCodes = $currencies->pluck('code')->toArray();
+
+        $positions = CurrencyPosition::whereIn('currency_code', $currencyCodes)
+            ->get()
+            ->keyBy('currency_code');
+
         $rows = [];
 
         foreach ($currencies as $currency) {
             $buyTxns = $transactions->where('currency_code', $currency->code)->where('type', 'Buy');
             $sellTxns = $transactions->where('currency_code', $currency->code)->where('type', 'Sell');
-            $position = CurrencyPosition::where('currency_code', $currency->code)->first();
+            $position = $positions->get($currency->code);
 
             $rows[] = [
                 'Date' => $date,
@@ -307,24 +313,25 @@ class ReportingService
         $endDate = Carbon::parse($month)->endOfMonth();
 
         $currencies = Currency::where('is_active', true)->get();
+        $currencyCodes = $currencies->pluck('code')->toArray();
         $currencyData = [];
 
+        $allTxns = Transaction::whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('currency_code', $currencyCodes)
+            ->where('status', TransactionStatus::Completed->value)
+            ->get()
+            ->groupBy('currency_code');
+
+        $positions = CurrencyPosition::whereIn('currency_code', $currencyCodes)
+            ->get()
+            ->keyBy('currency_code');
+
         foreach ($currencies as $currency) {
-            $buyTxns = Transaction::whereBetween('created_at', [$startDate, $endDate])
-                ->where('currency_code', $currency->code)
-                ->where('type', 'Buy')
-                ->where('status', TransactionStatus::Completed->value)
-                ->get();
+            $currencyTxns = $allTxns->get($currency->code, collect());
+            $buyTxns = $currencyTxns->where('type', 'Buy');
+            $sellTxns = $currencyTxns->where('type', 'Sell');
 
-            $sellTxns = Transaction::whereBetween('created_at', [$startDate, $endDate])
-                ->where('currency_code', $currency->code)
-                ->where('type', 'Sell')
-                ->where('status', TransactionStatus::Completed->value)
-                ->get();
-
-            $openingPosition = CurrencyPosition::where('currency_code', $currency->code)
-                ->first();
-            $closingPosition = $openingPosition;
+            $openingPosition = $positions->get($currency->code);
 
             $currencyData[] = [
                 'currency_code' => $currency->code,
@@ -336,7 +343,7 @@ class ReportingService
                 'sell_volume' => $sellTxns->sum('amount_foreign'),
                 'sell_value_myr' => $sellTxns->sum('amount_local'),
                 'opening_stock' => $openingPosition ? $openingPosition->balance : '0',
-                'closing_stock' => $closingPosition ? $closingPosition->balance : '0',
+                'closing_stock' => $openingPosition ? $openingPosition->balance : '0',
             ];
         }
 

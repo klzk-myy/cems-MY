@@ -77,7 +77,7 @@ class SanctionsOrchestrationService
                 $this->downloadService->archiveFile($downloadResult['filepath'], $list->list_type->value ?? 'unknown');
             }
 
-            return $result;
+            return array_merge($result, ['success' => true]);
         } catch (\Exception $e) {
             Log::error('Sanctions orchestration: import failed', [
                 'list_id' => $list->id,

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;
 use App\Enums\EddTemplateType;
-use App\Models\Customer;
 use App\Models\EddTemplate;
 use App\Models\EnhancedDiligenceRecord;
 use Illuminate\Support\Collection;

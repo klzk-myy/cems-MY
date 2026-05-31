@@ -56,9 +56,9 @@ Route::get('/', function () {
     return redirect('/login');
 })->name('home');
 
-// Health check endpoint - consider restricting to known IPs in production
+// Health check endpoint
 Route::get('/health', [HealthCheckController::class, 'index'])
-    ->middleware('throttle:60,1')
+    ->middleware(['auth', 'throttle:60,1'])
     ->name('health');
 
 Route::middleware(['auth', 'role:admin'])->get('/test/query-log', [TestQueryLogController::class, 'index']);
@@ -131,9 +131,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm')
             ->middleware('role:manager');
     });
-
-    Route::get('/customers/{customer}/history', [CustomerController::class, 'history'])->name('customers.history');
-    Route::get('/customers/{customer}/history/export', [CustomerController::class, 'exportHistory'])->name('customers.export');
 
     Route::prefix('customers')->name('customers.')->group(function () {
         Route::get('/', [CustomerController::class, 'index'])->name('index');
@@ -336,10 +333,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/compliance-summary', [AnalyticsController::class, 'complianceSummary'])->name('compliance-summary');
     });
 
-    Route::middleware(['auth', 'role:manager'])->prefix('audit')->name('audit.')->group(function () {
-        // Reserved for future AuditController implementation
-    });
-
     Route::middleware(['auth', 'role:admin', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::get('/create', [UserController::class, 'create'])->name('create');
@@ -356,10 +349,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->name('closing.initiate');
         Route::post('/{branch}/closing/finalize', [BranchClosingController::class, 'finalize'])
             ->name('closing.finalize');
-    });
-
-    Route::middleware(['auth', 'role:admin'])->prefix('branches/open')->name('branches.open.')->group(function () {
-        // Reserved for future BranchOpeningController implementation
     });
 
     Route::middleware(['role:admin'])->prefix('test-results')->name('test-results.')->group(function () {
