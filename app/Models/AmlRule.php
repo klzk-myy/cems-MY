@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AmlRuleType;
 use App\Enums\TransactionStatus;
+use App\Services\MathService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -65,6 +66,14 @@ class AmlRule extends Model
         'updated_at' => 'datetime',
         'rule_type' => AmlRuleType::class,
     ];
+
+    protected MathService $mathService;
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->mathService = app(MathService::class);
+    }
 
     /**
      * Get the user who created this rule.
@@ -180,10 +189,9 @@ class AmlRule extends Model
             return true;
         }
 
-        // Check cumulative threshold if specified
         if ($cumulativeThreshold !== null) {
             $cumulativeAmount = $query->sum('amount_local');
-            if (bccomp((string) $cumulativeAmount, (string) $cumulativeThreshold, 4) >= 0) {
+            if ($this->mathService->compare((string) $cumulativeAmount, (string) $cumulativeThreshold) >= 0) {
                 return true;
             }
         }
@@ -216,9 +224,9 @@ class AmlRule extends Model
         }
 
         $recentSum = (string) ($recentTransactions->sum('amount_local') ?? '0');
-        $totalAmount = bcadd($recentSum, (string) $transaction->amount_local, 4);
+        $totalAmount = $this->mathService->add($recentSum, (string) $transaction->amount_local);
 
-        return bccomp($totalAmount, (string) $aggregateThreshold, 4) >= 0;
+        return $this->mathService->compare($totalAmount, (string) $aggregateThreshold) >= 0;
     }
 
     /**
@@ -235,7 +243,7 @@ class AmlRule extends Model
             return false;
         }
 
-        return bccomp((string) $transaction->amount_local, (string) $minAmount, 4) >= 0;
+        return $this->mathService->compare((string) $transaction->amount_local, (string) $minAmount) >= 0;
     }
 
     /**

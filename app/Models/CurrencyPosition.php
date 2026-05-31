@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CurrencyPosition extends Model
 {
     use HasFactory;
+
+    protected MathService $mathService;
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->mathService = app(MathService::class);
+    }
 
     protected $fillable = [
         'currency_code',
@@ -79,16 +88,15 @@ class CurrencyPosition extends Model
     {
         $rate = $this->last_valuation_rate;
 
-        // Fall back to avg_cost_rate if last_valuation_rate is not set
-        if (! $rate || bccomp($rate, '0', 6) === 0) {
+        if (! $rate || $this->mathService->compare($rate, '0') === 0) {
             $rate = $this->avg_cost_rate;
         }
 
-        if (! $rate || bccomp($rate, '0', 6) === 0) {
+        if (! $rate || $this->mathService->compare($rate, '0') === 0) {
             return '0';
         }
 
-        return bcmul($this->balance, $rate, 2);
+        return $this->mathService->multiply($this->balance, $rate);
     }
 
     /**

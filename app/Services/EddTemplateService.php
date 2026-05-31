@@ -12,7 +12,8 @@ use Illuminate\Support\Collection;
 class EddTemplateService
 {
     public function __construct(
-        protected ThresholdService $thresholdService
+        protected ThresholdService $thresholdService,
+        protected MathService $mathService,
     ) {}
 
     /**
@@ -121,7 +122,7 @@ class EddTemplateService
             return EddRiskLevel::Critical;
         }
 
-        if (bccomp((string) ($context['transaction_amount'] ?? 0), $this->thresholdService->getEddThreshold(), 4) >= 0) {
+        if ($this->mathService->compare((string) ($context['transaction_amount'] ?? 0), $this->thresholdService->getEddThreshold()) >= 0) {
             return EddRiskLevel::High;
         }
 
@@ -279,7 +280,7 @@ class EddTemplateService
             return EddTemplate::active()->byType(EddTemplateType::HighRiskCountry)->first();
         }
 
-        if (bccomp((string) ($context['transaction_amount'] ?? 0), $this->thresholdService->getEddThreshold(), 4) >= 0) {
+        if ($this->mathService->compare((string) ($context['transaction_amount'] ?? 0), $this->thresholdService->getEddThreshold()) >= 0) {
             return EddTemplate::active()->byType(EddTemplateType::LargeTransaction)->first();
         }
 

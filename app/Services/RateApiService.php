@@ -259,7 +259,7 @@ class RateApiService
 
         if ($this->mathService->compare($firstRateStr, '0') > 0) {
             $percentChangeRaw = $this->mathService->divide($change, $firstRateStr);
-            $percentChange = bcadd(bcmul($percentChangeRaw, '100', 6), '0', 2);
+            $percentChange = $this->mathService->add($this->mathService->multiply($percentChangeRaw, '100'), '0');
         } else {
             $percentChange = '0';
         }

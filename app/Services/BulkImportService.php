@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Log;
  */
 class BulkImportService
 {
+    protected MathService $mathService;
+
     /**
      * Import errors from the last import operation.
      */
@@ -26,6 +28,11 @@ class BulkImportService
      * Import statistics from the last import operation.
      */
     protected array $stats = [];
+
+    public function __construct(?MathService $mathService = null)
+    {
+        $this->mathService = $mathService ?? new MathService;
+    }
 
     /**
      * Cache key for import status.
@@ -285,12 +292,11 @@ class BulkImportService
         }
 
         // Validate foreign amount is positive
-        if (bccomp($data['amount_foreign'], '0', 2) <= 0) {
+        if ($this->mathService->compare($data['amount_foreign'], '0') <= 0) {
             return "Row {$rowNumber}: amount_foreign must be positive";
         }
 
-        // Validate rate is positive
-        if (bccomp($data['rate'], '0', 4) <= 0) {
+        if ($this->mathService->compare($data['rate'], '0') <= 0) {
             return "Row {$rowNumber}: rate must be positive";
         }
 

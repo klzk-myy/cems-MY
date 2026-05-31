@@ -22,6 +22,7 @@ class AlertTriageService
         protected ComplianceService $complianceService,
         protected TransactionMonitoringService $monitoringService,
         protected ThresholdService $thresholdService,
+        protected MathService $mathService,
     ) {}
 
     /**
@@ -70,11 +71,11 @@ class AlertTriageService
             $highThreshold = $this->thresholdService->getAlertHighThreshold();
             $mediumThreshold = $this->thresholdService->getAlertMediumThreshold();
 
-            if ($criticalThreshold !== null && bccomp($amount, $criticalThreshold, 4) >= 0) {
+            if ($criticalThreshold !== null && $this->mathService->compare($amount, $criticalThreshold) >= 0) {
                 $score += 30;
-            } elseif ($highThreshold !== null && bccomp($amount, $highThreshold, 4) >= 0) {
+            } elseif ($highThreshold !== null && $this->mathService->compare($amount, $highThreshold) >= 0) {
                 $score += 20;
-            } elseif ($mediumThreshold !== null && bccomp($amount, $mediumThreshold, 4) >= 0) {
+            } elseif ($mediumThreshold !== null && $this->mathService->compare($amount, $mediumThreshold) >= 0) {
                 $score += 10;
             }
         }

@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\MathService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 
@@ -339,7 +340,7 @@ class TestTransactionScenarios extends Command
         }
 
         // Calculate MYR amount
-        $myrAmount = bcmul($scenario['foreign_amount'], $scenario['rate'], 2);
+        $myrAmount = app(MathService::class)->multiply($scenario['foreign_amount'], $scenario['rate']);
 
         // Create transaction
         $counter = $this->counters[$scenario['branch']];

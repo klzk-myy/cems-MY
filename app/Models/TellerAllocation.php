@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TellerAllocationStatus;
+use App\Services\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TellerAllocation extends Model
 {
     use HasFactory;
+
+    protected MathService $mathService;
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->mathService = app(MathService::class);
+    }
 
     protected $with = ['user', 'branch', 'counter', 'approver'];
 
@@ -90,7 +99,7 @@ class TellerAllocation extends Model
 
     public function hasAvailable(float|string $amount): bool
     {
-        return bccomp($this->current_balance, (string) $amount, 4) >= 0;
+        return $this->mathService->compare($this->current_balance, (string) $amount) >= 0;
     }
 
     public function deduct(float|string $amount): void
@@ -122,9 +131,9 @@ class TellerAllocation extends Model
         if ($this->daily_limit_myr === null) {
             return true;
         }
-        $remaining = bcsub((string) $this->daily_limit_myr, (string) $this->daily_used_myr, 4);
+        $remaining = $this->mathService->subtract((string) $this->daily_limit_myr, (string) $this->daily_used_myr);
 
-        return bccomp($remaining, (string) $amountMyr, 4) >= 0;
+        return $this->mathService->compare($remaining, (string) $amountMyr) >= 0;
     }
 
     public function approve(User $approver, float|string $allocatedAmount, float|string|null $dailyLimitMyr = null): void

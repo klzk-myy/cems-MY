@@ -247,10 +247,9 @@ class RateManagementService
                 $this->mathService->multiply($mid, '2')
             );
 
-            return bcadd(
+            return $this->mathService->add(
                 $this->mathService->multiply($spread, '100'),
-                '0',
-                2
+                '0'
             );
         }
 

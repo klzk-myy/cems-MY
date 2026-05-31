@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ReportGenerated;
 use App\Services\AccountingService;
+use App\Services\MathService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -44,8 +45,9 @@ class GenerateTrialBalance extends Command
                     number_format((float) $row['debit'], 2),
                     number_format((float) $row['credit'], 2),
                 ]);
-                $totalDebit = bcadd($totalDebit, $row['debit'], 2);
-                $totalCredit = bcadd($totalCredit, $row['credit'], 2);
+                $math = app(MathService::class);
+                $totalDebit = $math->add($totalDebit, $row['debit']);
+                $totalCredit = $math->add($totalCredit, $row['credit']);
             }
 
             // Totals row
