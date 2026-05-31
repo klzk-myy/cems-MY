@@ -351,10 +351,12 @@ class AccountingService
     {
         $account = ChartOfAccount::find($accountCode);
         if (! $account) {
-            throw new \InvalidArgumentException("Account not found: {$accountCode}");
+            throw new AccountNotFoundException($accountCode);
         }
 
-        return in_array($account->account_type->value, ['Asset', 'Expense']);
+        return $account->account_type instanceof AccountType
+            ? $account->account_type->isDebitNormal()
+            : in_array($account->account_type, ['Asset', 'Expense']);
     }
 
     /**

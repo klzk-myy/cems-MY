@@ -22,6 +22,12 @@ return new class extends Migration
             ->whereIn('account_type', ['Liability', 'Equity', 'Revenue'])
             ->whereNull('normal_balance')
             ->update(['normal_balance' => 'Credit']);
+
+        // Set normal_balance for OffBalance accounts
+        DB::table('chart_of_accounts')
+            ->where('account_type', 'OffBalance')
+            ->whereNull('normal_balance')
+            ->update(['normal_balance' => 'Debit']);
     }
 
     public function down(): void
