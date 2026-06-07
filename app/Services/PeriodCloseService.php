@@ -8,7 +8,6 @@ use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
-use App\Models\SystemLog;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -25,15 +24,25 @@ class PeriodCloseService
     protected MathService $mathService;
 
     /**
+     * Audit service for action logging.
+     */
+    protected AuditService $auditService;
+
+    /**
      * Create a new PeriodCloseService instance.
      *
      * @param  AccountingService  $accountingService  Service for journal entry operations
      * @param  MathService  $mathService  Service for high-precision calculations
+     * @param  AuditService  $auditService  Service for action logging
      */
-    public function __construct(AccountingService $accountingService, MathService $mathService)
-    {
+    public function __construct(
+        AccountingService $accountingService,
+        MathService $mathService,
+        AuditService $auditService,
+    ) {
         $this->accountingService = $accountingService;
         $this->mathService = $mathService;
+        $this->auditService = $auditService;
     }
 
     /**
@@ -69,18 +78,17 @@ class PeriodCloseService
             ]);
 
             // Step 4: Log the action
-            SystemLog::create([
-                'user_id' => $closedBy,
-                'action' => 'period_closed',
-                'entity_type' => 'AccountingPeriod',
-                'entity_id' => $period->id,
-                'new_values' => [
+            $this->auditService->log(
+                'period_closed',
+                $closedBy,
+                'AccountingPeriod',
+                $period->id,
+                [],
+                [
                     'period_code' => $period->period_code,
                     'closed_at' => now()->toDateTimeString(),
-                ],
-                'severity' => 'INFO',
-                'ip_address' => request()->ip(),
-            ]);
+                ]
+            );
 
             return [
                 'success' => true,

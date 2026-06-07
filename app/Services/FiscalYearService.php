@@ -15,7 +15,6 @@ use App\Models\ChartOfAccount;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
-use App\Models\SystemLog;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -31,6 +30,7 @@ class FiscalYearService
      * Create a new FiscalYearService instance.
      */
     public function __construct(
+        protected AuditService $auditService,
         protected MathService $mathService,
         protected LedgerService $ledgerService,
     ) {}
@@ -116,17 +116,17 @@ class FiscalYearService
                 'closed_at' => now(),
             ]);
 
-            SystemLog::create([
-                'user_id' => $userId,
-                'action' => 'fiscal_year_closed',
-                'entity_type' => 'FiscalYear',
-                'entity_id' => $year->id,
-                'new_values' => [
+            $this->auditService->log(
+                'fiscal_year_closed',
+                $userId,
+                'FiscalYear',
+                $year->id,
+                [],
+                [
                     'year_code' => $year->year_code,
                     'net_income' => $netIncome,
                 ],
-                'ip_address' => request()->ip(),
-            ]);
+            );
 
             return [
                 'fiscal_year' => $year->fresh(),
@@ -216,14 +216,14 @@ class FiscalYearService
                 ]);
             }
 
-            SystemLog::create([
-                'user_id' => $userId,
-                'action' => 'fiscal_year_opened',
-                'entity_type' => 'FiscalYear',
-                'entity_id' => $year->id,
-                'new_values' => ['year_code' => $year->year_code],
-                'ip_address' => request()->ip(),
-            ]);
+            $this->auditService->log(
+                'fiscal_year_opened',
+                $userId,
+                'FiscalYear',
+                $year->id,
+                [],
+                ['year_code' => $year->year_code]
+            );
 
             return $year;
         });

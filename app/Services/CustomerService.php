@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\CddLevel;
 use App\Enums\RiskRating;
 use App\Models\Customer;
-use App\Models\SystemLog;
 use App\Repositories\CustomerRepository;
 use App\Services\Compliance\RiskScoringEngine;
 use Illuminate\Support\Facades\Cache;
@@ -317,18 +316,18 @@ class CustomerService
             ]);
 
             // Log sanction hit
-            SystemLog::create([
-                'user_id' => auth()->id(),
-                'action' => 'customer_sanction_hit',
-                'severity' => 'WARNING',
-                'entity_type' => 'Customer',
-                'entity_id' => $customer->id,
-                'new_values' => [
-                    'customer_name' => $customer->full_name,
-                    'sanction_matches' => $sanctionMatches,
+            $this->auditService->logWithSeverity(
+                'customer_sanction_hit',
+                [
+                    'entity_type' => 'Customer',
+                    'entity_id' => $customer->id,
+                    'new_values' => [
+                        'customer_name' => $customer->full_name,
+                        'sanction_matches' => $sanctionMatches,
+                    ],
                 ],
-                'ip_address' => request()->ip(),
-            ]);
+                'WARNING'
+            );
         }
     }
 
