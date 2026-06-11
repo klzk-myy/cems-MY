@@ -141,28 +141,10 @@ class Navigation
                         'uri' => '/compliance/edd',
                     ],
                     [
-                        'label' => 'EDD Templates',
-                        'route' => 'compliance.edd-templates.index',
-                        'icon' => 'template',
-                        'uri' => '/compliance/edd-templates',
-                    ],
-                    [
-                        'label' => 'AML Rules',
-                        'route' => 'compliance.rules.index',
-                        'icon' => 'rule',
-                        'uri' => '/compliance/rules',
-                    ],
-                    [
                         'label' => 'Risk Dashboard',
                         'route' => 'compliance.risk-dashboard.index',
                         'icon' => 'trending',
                         'uri' => '/compliance/risk-dashboard',
-                    ],
-                    [
-                        'label' => 'Compliance Reporting',
-                        'route' => 'compliance.reporting.index',
-                        'icon' => 'chart',
-                        'uri' => '/compliance/reporting',
                     ],
                 ],
             ],

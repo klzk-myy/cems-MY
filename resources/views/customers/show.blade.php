@@ -6,9 +6,6 @@
                 <p class="text-gray-500 text-sm mt-1">{{ $customer->full_name ?? 'Customer Name' }}</p>
             </div>
             <div class="flex gap-3">
-                <a href="{{ route('customers.kyc', $customer ?? 1) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                    KYC
-                </a>
                 <a href="{{ route('customers.edit', $customer ?? 1) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
                     Edit
                 </a>

@@ -232,15 +232,6 @@
         </li>
 
         <li>
-        </li>
-
-        <li>
-            <a href="{{ route('compliance.reporting.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.reporting.*') ? 'bg-gray-800' : '' }}">
-                Reporting
-            </a>
-        </li>
-
-        <li>
             <a href="{{ route('compliance.findings.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.findings.*') ? 'bg-gray-800' : '' }}">
                 Findings
             </a>
@@ -297,18 +288,6 @@
         <li>
             <a href="{{ route('compliance.risk-dashboard.trends') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.risk-dashboard.trends') ? 'bg-gray-800' : '' }}">
                 Risk Trends
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('compliance.reporting.deadlines') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.reporting.deadlines') ? 'bg-gray-800' : '' }}">
-                Reporting Deadlines
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('compliance.reporting.schedule') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('compliance.reporting.schedule') ? 'bg-gray-800' : '' }}">
-                Schedule Report
             </a>
         </li>
         @endcan
