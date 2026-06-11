@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
@@ -33,10 +34,10 @@ class ReportingService
         $summary = DB::table('transactions')
             ->select(
                 'currency_code',
-                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume', ['Buy']),
-                DB::raw('SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as buy_count', ['Buy']),
-                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume', ['Sell']),
-                DB::raw('SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as sell_count', ['Sell'])
+                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume', [TransactionType::Buy->value]),
+                DB::raw('SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as buy_count', [TransactionType::Buy->value]),
+                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume', [TransactionType::Sell->value]),
+                DB::raw('SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as sell_count', [TransactionType::Sell->value])
             )
             ->whereDate('created_at', $queryDate)
             ->groupBy('currency_code')
