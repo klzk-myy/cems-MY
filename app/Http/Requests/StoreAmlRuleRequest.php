@@ -3,15 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\AmlRuleType;
-use Illuminate\Foundation\Http\FormRequest;
 
-class StoreAmlRuleRequest extends FormRequest
+class StoreAmlRuleRequest extends AuthorizedFormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     public function rules(): array
     {
         return [

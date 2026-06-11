@@ -3,15 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\AmlRuleType;
-use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateAmlRuleRequest extends FormRequest
+class UpdateAmlRuleRequest extends AuthorizedFormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     public function rules(): array
     {
         $ruleId = $this->route('rule')?->id ?? $this->route('id');
