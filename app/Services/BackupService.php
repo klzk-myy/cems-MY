@@ -81,11 +81,6 @@ class BackupService
 
         } catch (\Exception $e) {
             $log->markAsFailed($e->getMessage());
-            Log::error('Backup failed', [
-                'log_id' => $log->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
             throw $e;
         }
 

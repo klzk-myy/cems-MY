@@ -108,11 +108,6 @@ class SendNotificationJob implements ShouldBeUnique, ShouldQueue
                 'notification' => get_class($this->notification),
             ]);
         } catch (\Exception $e) {
-            Log::error('SendNotificationJob failed', [
-                'notification' => get_class($this->notification),
-                'error' => $e->getMessage(),
-            ]);
-
             throw $e;
         }
     }

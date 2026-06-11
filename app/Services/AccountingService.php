@@ -134,39 +134,6 @@ class AccountingService
     }
 
     /**
-     * Submit a journal entry for approval.
-     *
-     * Changes status from 'Draft' to 'Pending'. Only draft entries
-     * can be submitted for approval.
-     *
-     * @param  JournalEntry  $entry  The entry to submit
-     * @param  int|null  $submittedBy  User ID submitting (default: authenticated user)
-     * @return JournalEntry Updated entry
-     *
-     * @deprecated Since 2026-05-31 - Direct posting is now used. This method will be removed in v11.
-     *
-     * @throws \InvalidArgumentException If entry is not in Draft status
-     */
-
-    /**
-     * Approve a journal entry and post it to the ledger.
-     *
-     * Changes status from 'Pending' to 'Posted', records approval metadata,
-     * and posts the entry to the general ledger.
-     *
-     * @param  JournalEntry  $entry  The entry to approve
-     * @param  int|null  $approvedBy  User ID approving (default: authenticated user)
-     * @param  string|null  $approvalNotes  Optional approval notes
-     * @return JournalEntry Updated entry
-     *
-     * @deprecated Since 2026-05-31 - Direct posting is now used. This method will be removed in v11.
-     *
-     * @throws \InvalidArgumentException If entry is not in Pending status
-     */
-
-    /**
-     * Reject a journal entry.
-     *
      * Changes status from 'Pending' to 'Rejected'. The entry can be
      * edited and resubmitted, or deleted.
      *

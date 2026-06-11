@@ -47,7 +47,7 @@ return [
     |
     */
 
-    'license_number' => env('BNM_LICENSE_NUMBER', 'MSB-XXXXXXXX'),
+    'license_number' => env('BNM_LICENSE_NUMBER'),
 
     /*
     |--------------------------------------------------------------------------

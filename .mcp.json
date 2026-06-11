@@ -12,6 +12,12 @@
             "args": [
                 "playwright-mcp"
             ]
+        },
+        "context7": {
+            "command": "npx",
+            "args": [
+                "context7-mcp"
+            ]
         }
     }
 }

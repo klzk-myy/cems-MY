@@ -31,10 +31,6 @@ class ComplianceScreeningJob implements ShouldQueue
             try {
                 $service->screenCustomer($customer, 'Compliance screening job');
             } catch (\Exception $e) {
-                Log::error('Compliance screening job failed', [
-                    'customer_id' => $this->customerId,
-                    'error' => $e->getMessage(),
-                ]);
                 throw $e;
             }
         }

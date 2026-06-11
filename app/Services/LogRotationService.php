@@ -7,10 +7,18 @@ use Carbon\Carbon;
 
 class LogRotationService
 {
+    protected AuditService $auditService;
+
+    public function __construct(AuditService $auditService)
+    {
+        $this->auditService = $auditService;
+    }
+
     /**
      * Default retention period in days
+     * BNM AML/CFT requires 5-year retention for compliance records
      */
-    protected int $defaultRetentionDays = 90;
+    protected int $defaultRetentionDays = 1825; // 5 years
 
     /**
      * Archive logs older than retention period
@@ -63,19 +71,19 @@ class LogRotationService
         $archivedCount = SystemLog::where('created_at', '<', $cutoffDate)->delete();
 
         // Log the archive action
-        SystemLog::create([
-            'user_id' => null,
-            'action' => 'logs_archived',
-            'severity' => 'INFO',
-            'entity_type' => 'SystemLog',
-            'new_values' => [
+        $this->auditService->log(
+            'logs_archived',
+            null,
+            'SystemLog',
+            null,
+            [],
+            [
                 'archived_count' => $archivedCount,
                 'archive_file' => $archiveFilename,
                 'retention_days' => $retentionDays,
                 'cutoff_date' => $cutoffDate->toDateString(),
-            ],
-            'ip_address' => request()->ip(),
-        ]);
+            ]
+        );
 
         return [
             'archived' => $archivedCount,
@@ -131,9 +139,9 @@ class LogRotationService
     }
 
     /**
-     * Clean up old archive files (older than 2 years)
+     * Clean up old archive files (older than 10 years by default)
      */
-    public function cleanupOldArchives(int $daysToKeep = 730): int
+    public function cleanupOldArchives(int $daysToKeep = 3650): int
     {
         $archiveDir = storage_path('app/archives');
         $cutoffTime = time() - ($daysToKeep * 24 * 60 * 60);

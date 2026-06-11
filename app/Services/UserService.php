@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\UserRole;
-use App\Models\SystemLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -47,18 +46,18 @@ class UserService
         ]);
 
         // Log user creation
-        SystemLog::create([
-            'user_id' => $createdBy,
-            'action' => 'user_created',
-            'entity_type' => 'User',
-            'entity_id' => $user->id,
-            'new_values' => [
+        $this->auditService->log(
+            'user_created',
+            $createdBy,
+            'User',
+            $user->id,
+            [],
+            [
                 'username' => $user->username,
                 'email' => $user->email,
                 'role' => $user->role,
-            ],
-            'ip_address' => request()->ip(),
-        ]);
+            ]
+        );
 
         return $user;
     }
@@ -88,20 +87,19 @@ class UserService
         ]);
 
         // Log user update
-        SystemLog::create([
-            'user_id' => $updatedBy,
-            'action' => 'user_updated',
-            'entity_type' => 'User',
-            'entity_id' => $user->id,
-            'old_values' => $oldValues,
-            'new_values' => [
+        $this->auditService->log(
+            'user_updated',
+            $updatedBy,
+            'User',
+            $user->id,
+            $oldValues,
+            [
                 'username' => $data['username'],
                 'email' => $data['email'],
                 'role' => $data['role'],
                 'is_active' => $data['is_active'],
-            ],
-            'ip_address' => request()->ip(),
-        ]);
+            ]
+        );
 
         return $user->fresh();
     }
@@ -137,14 +135,14 @@ class UserService
         $user->delete();
 
         // Log user deletion
-        SystemLog::create([
-            'user_id' => $deletedBy,
-            'action' => 'user_deleted',
-            'entity_type' => 'User',
-            'entity_id' => $userId,
-            'old_values' => ['username' => $username],
-            'ip_address' => request()->ip(),
-        ]);
+        $this->auditService->log(
+            'user_deleted',
+            $deletedBy,
+            'User',
+            $userId,
+            ['username' => $username],
+            []
+        );
 
         return true;
     }
@@ -164,13 +162,14 @@ class UserService
         ]);
 
         // Log password reset
-        SystemLog::create([
-            'user_id' => $resetBy,
-            'action' => 'password_reset',
-            'entity_type' => 'User',
-            'entity_id' => $user->id,
-            'ip_address' => request()->ip(),
-        ]);
+        $this->auditService->log(
+            'password_reset',
+            $resetBy,
+            'User',
+            $user->id,
+            [],
+            []
+        );
 
         return $user->fresh();
     }
@@ -204,15 +203,14 @@ class UserService
         $user->update(['is_active' => ! $user->is_active]);
 
         // Log status toggle
-        SystemLog::create([
-            'user_id' => $toggledBy,
-            'action' => 'user_status_toggled',
-            'entity_type' => 'User',
-            'entity_id' => $user->id,
-            'old_values' => ['is_active' => $oldStatus],
-            'new_values' => ['is_active' => $user->is_active],
-            'ip_address' => request()->ip(),
-        ]);
+        $this->auditService->log(
+            'user_status_toggled',
+            $toggledBy,
+            'User',
+            $user->id,
+            ['is_active' => $oldStatus],
+            ['is_active' => $user->is_active]
+        );
 
         return $user->fresh();
     }

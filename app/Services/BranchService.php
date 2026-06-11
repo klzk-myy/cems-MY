@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Branch;
-use App\Models\SystemLog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -57,18 +56,18 @@ class BranchService
             'parent_id' => $data['parent_id'] ?? null,
         ]);
 
-        SystemLog::create([
-            'user_id' => $userId,
-            'action' => 'branch_created',
-            'entity_type' => 'Branch',
-            'entity_id' => $branch->id,
-            'new_values' => [
+        $this->auditService->log(
+            'branch_created',
+            $userId,
+            'Branch',
+            $branch->id,
+            [],
+            [
                 'code' => $branch->code,
                 'name' => $branch->name,
                 'type' => $branch->type,
-            ],
-            'ip_address' => $ip,
-        ]);
+            ]
+        );
 
         return $branch;
     }
@@ -105,21 +104,20 @@ class BranchService
             'parent_id' => $data['parent_id'] ?? null,
         ]);
 
-        SystemLog::create([
-            'user_id' => $userId,
-            'action' => 'branch_updated',
-            'entity_type' => 'Branch',
-            'entity_id' => $branch->id,
-            'old_values' => $oldValues,
-            'new_values' => [
+        $this->auditService->log(
+            'branch_updated',
+            $userId,
+            'Branch',
+            $branch->id,
+            $oldValues,
+            [
                 'code' => $branch->code,
                 'name' => $branch->name,
                 'type' => $branch->type,
                 'is_active' => $branch->is_active,
                 'is_main' => $branch->is_main,
-            ],
-            'ip_address' => $ip,
-        ]);
+            ]
+        );
 
         return $branch;
     }
@@ -138,23 +136,22 @@ class BranchService
 
         $branch->update(['is_active' => false]);
 
-        SystemLog::create([
-            'user_id' => $userId,
-            'action' => 'branch_deactivated',
-            'entity_type' => 'Branch',
-            'entity_id' => $branch->id,
-            'old_values' => [
+        $this->auditService->log(
+            'branch_deactivated',
+            $userId,
+            'Branch',
+            $branch->id,
+            [
                 'code' => $branch->code,
                 'name' => $branch->name,
                 'is_active' => true,
             ],
-            'new_values' => [
+            [
                 'code' => $branch->code,
                 'name' => $branch->name,
                 'is_active' => false,
-            ],
-            'ip_address' => $ip,
-        ]);
+            ]
+        );
     }
 
     public function getBranchStats(Branch $branch): array

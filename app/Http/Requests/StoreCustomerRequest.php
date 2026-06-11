@@ -25,6 +25,7 @@ class StoreCustomerRequest extends FormRequest
                         $fail('MyKad ID must be in format XXXXXX-XX-XXXX (e.g., 900123-01-2345)');
                     }
                 },
+
             ],
             'date_of_birth' => 'required|date|before:today',
             'nationality' => 'required|string|max:100',

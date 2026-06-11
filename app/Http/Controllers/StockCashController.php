@@ -7,7 +7,6 @@ use App\Http\Requests\CloseTillRequest;
 use App\Http\Requests\OpenTillRequest;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
-use App\Models\SystemLog;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Services\CurrencyPositionService;
@@ -137,18 +136,18 @@ class StockCashController extends Controller
         ]);
 
         // Log till opening
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'till_opened',
-            'entity_type' => 'TillBalance',
-            'entity_id' => $tillBalance->id,
-            'new_values' => [
+        $this->auditService->log(
+            'till_opened',
+            auth()->id(),
+            'TillBalance',
+            $tillBalance->id,
+            [],
+            [
                 'till_id' => $validated['till_id'],
                 'currency_code' => $validated['currency_code'],
                 'opening_balance' => $validated['opening_balance'],
-            ],
-            'ip_address' => $request->ip(),
-        ]);
+            ]
+        );
 
         return back()->with('success', 'Till opened successfully.');
     }
@@ -199,20 +198,19 @@ class StockCashController extends Controller
         ]);
 
         // Log till closing
-        SystemLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'till_closed',
-            'entity_type' => 'TillBalance',
-            'entity_id' => $tillBalance->id,
-            'old_values' => [
+        $this->auditService->log(
+            'till_closed',
+            auth()->id(),
+            'TillBalance',
+            $tillBalance->id,
+            [
                 'opening_balance' => $tillBalance->opening_balance,
             ],
-            'new_values' => [
+            [
                 'closing_balance' => $validated['closing_balance'],
                 'variance' => $variance,
-            ],
-            'ip_address' => $request->ip(),
-        ]);
+            ]
+        );
 
         return back()->with('success', 'Till closed successfully. Variance: '.number_format((float) $variance, 2));
     }

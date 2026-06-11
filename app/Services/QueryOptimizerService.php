@@ -43,17 +43,20 @@ class QueryOptimizerService
         $this->nPlusOnePatterns = [];
 
         DB::listen(function ($query) {
-            $this->queryLog[] = [
+            $isSlow = $query->time > $this->slowQueryThreshold;
+
+            $queryData = [
                 'sql' => $query->sql,
                 'bindings' => $query->bindings,
                 'time' => $query->time,
-                'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10),
             ];
 
-            // Log slow queries immediately
-            if ($query->time > $this->slowQueryThreshold) {
-                $this->logSlowQuery($query);
+            if ($isSlow) {
+                $queryData['trace'] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 6);
+                $this->logSlowQuery((object) $queryData);
             }
+
+            $this->queryLog[] = $queryData;
         });
     }
 

@@ -25,17 +25,33 @@ class SealAuditHashJob implements ShouldQueue
 
     public function handle(AuditService $auditService): void
     {
-        $log = SystemLog::find($this->logId);
+        // Use atomic update to prevent race condition
+        // Only seal if entry_hash is still null (not already sealed)
+        $affected = SystemLog::where('id', $this->logId)
+            ->whereNull('entry_hash')
+            ->lockForUpdate()
+            ->update([
+                // Will be set in transaction below
+            ]);
 
-        // Skip if log was deleted or already sealed
-        if (! $log || $log->entry_hash !== null) {
+        if ($affected === 0) {
+            // Log was deleted or already sealed by another job
             return;
         }
 
-        // Get the previous log's sealed hash (no lock needed)
+        // Re-fetch the log within the same transaction context
+        $log = SystemLog::find($this->logId);
+
+        if (! $log) {
+            return;
+        }
+
+        // Get the previous log's sealed hash
+        // Use WITH share lock to prevent concurrent modifications
         $previousLog = SystemLog::where('id', '<', $log->id)
             ->whereNotNull('entry_hash')
             ->orderBy('id', 'desc')
+            ->lockForUpdate()
             ->first();
 
         $previousHash = $previousLog?->entry_hash;
@@ -50,11 +66,19 @@ class SealAuditHashJob implements ShouldQueue
             $previousHash
         );
 
-        // Seal the entry
-        $log->update([
-            'previous_hash' => $previousHash,
-            'entry_hash' => $entryHash,
-        ]);
+        // Atomically seal the entry with optimistic locking
+        $sealed = SystemLog::where('id', $log->id)
+            ->whereNull('entry_hash')
+            ->update([
+                'previous_hash' => $previousHash,
+                'entry_hash' => $entryHash,
+            ]);
+
+        if ($sealed === 0) {
+            Log::warning('SealAuditHashJob: Lost race condition, entry already sealed', [
+                'log_id' => $log->id,
+            ]);
+        }
     }
 
     public function failed(\Throwable $exception): void

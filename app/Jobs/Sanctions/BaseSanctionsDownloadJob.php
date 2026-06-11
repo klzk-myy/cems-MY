@@ -99,7 +99,9 @@ abstract class BaseSanctionsDownloadJob implements ShouldQueue
 
                 // Archive the file even if unchanged
                 $downloadService->archiveFile($result['filepath'], $this->sourceKey);
-                @unlink($result['filepath']);
+                if (file_exists($result['filepath'])) {
+                    unlink($result['filepath']);
+                }
 
                 return;
             }
@@ -120,11 +122,12 @@ abstract class BaseSanctionsDownloadJob implements ShouldQueue
                 'auto_updated_by' => config('sanctions.system_user_id', 1),
             ]);
 
-            // Archive the file
             $downloadService->archiveFile($result['filepath'], $this->sourceKey);
-            @unlink($result['filepath']);
+            if (file_exists($result['filepath'])) {
+                unlink($result['filepath']);
+            }
 
-            // Trigger rescreening if new entries found
+            // Trigger rescreening
             if ($importResult['new_entries_detected'] > 0 && config('sanctions.rescreening.enabled', true)) {
                 $this->dispatchRescreeningJob($importResult['new_entries_detected']);
             }

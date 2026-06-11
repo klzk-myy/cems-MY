@@ -79,11 +79,6 @@ class SanctionsOrchestrationService
 
             return array_merge($result, ['success' => true]);
         } catch (\Exception $e) {
-            Log::error('Sanctions orchestration: import failed', [
-                'list_id' => $list->id,
-                'error' => $e->getMessage(),
-            ]);
-
             throw $e;
         }
     }
