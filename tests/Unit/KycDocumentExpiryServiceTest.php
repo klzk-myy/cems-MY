@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Enums\CddLevel;
+use App\Enums\DocumentType;
 use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\Counter;
@@ -278,7 +279,7 @@ class KycDocumentExpiryServiceTest extends TestCase
         $expired = $this->service->getExpiredDocuments($this->customer);
 
         $this->assertCount(1, $expired);
-        $this->assertEquals('MyKad', $expired->first()->document_type);
+        $this->assertEquals(DocumentType::MyKad, $expired->first()->document_type);
     }
 
     public function test_no_grace_for_document_without_expiry_date(): void

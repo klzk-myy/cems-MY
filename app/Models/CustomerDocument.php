@@ -33,7 +33,7 @@ class CustomerDocument extends Model
 {
     use HasFactory;
 
-    protected $with = ['customer', 'uploader', 'verifier'];
+    protected $with = ['uploader', 'verifier'];
 
     /**
      * The attributes that are mass assignable.

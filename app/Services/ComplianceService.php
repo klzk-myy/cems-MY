@@ -502,8 +502,8 @@ class ComplianceService
             CddLevel::Enhanced => ['MyKad', 'Proof_of_Address', 'Passport'],
         };
 
-        $uploadedTypes = $documents->pluck('document_type')->toArray();
-        $verifiedTypes = $documents->filter(fn ($doc) => $doc->isVerified())->pluck('document_type')->toArray();
+        $uploadedTypes = $documents->pluck('document_type')->map(fn ($type) => $type->value ?? $type)->toArray();
+        $verifiedTypes = $documents->filter(fn ($doc) => $doc->isVerified())->pluck('document_type')->map(fn ($type) => $type->value ?? $type)->toArray();
 
         $missingDocuments = array_diff($requiredDocs, $uploadedTypes);
         $unverifiedDocuments = array_diff($uploadedTypes, $verifiedTypes);
