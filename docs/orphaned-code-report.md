@@ -139,6 +139,17 @@ All tables and columns in the schema are referenced somewhere in application cod
 
 ---
 
+## Re-scan Results (2026-06-11)
+
+A follow-up scan was executed to validate findings:
+
+| Layer | Result |
+|-------|--------|
+| Blade components (9) | **False positives** — used via `<x-badge>`, `<x-button>`, `<x-card>`, etc. Confirmed across 60+ views |
+| Orphaned views (11) | **Partially false positives** — `auth.change-password` is rendered via route; `customers.kyc` may be dynamically routed. Remaining views need individual verification |
+| Orphaned services (3) | Still valid — `AmlRuleService`, `CashFlowService`, `PerformanceAlertingService` have zero callers |
+| Orphaned enum (1) | Still valid — `CustomerIdType` has zero references |
+
 ## Action Plan
 
 | Tag | Count | Items |
@@ -160,6 +171,6 @@ All tables and columns in the schema are referenced somewhere in application cod
    - Check git history for when it was last modified
    - Check if any other Blade file includes it via dynamic name (`@include($variable)`)
 
-3. **Review false-positive components** — The 9 components used via `<x-*>` syntax: confirm they're rendered by any parent view
+3. **Update scanner script** — Add `<x-*>` component detection to `scripts/find-orphaned-views.php` to eliminate false positives
 
 4. **Run test suite** after any deletions to confirm nothing breaks

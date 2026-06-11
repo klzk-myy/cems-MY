@@ -61,17 +61,19 @@ CEMS-MY (Currency Exchange Management System) is a Laravel 10.x application for 
 ```
 app/
 ├── Console/
-│   └── Commands/          # 35 Artisan CLI commands
-├── Enums/                 # 34 PHP 8.1 enums
+│   └── Commands/          # 40 Artisan CLI commands
+├── Enums/                 # 63 PHP 8.1 enums
 │   ├── TransactionStatus.php
 │   ├── UserRole.php
 │   ├── StockReservationStatus.php
+│   ├── PepType.php                        # NEW: Foreign/Domestic/Associate PEP types
 │   └── ...
-├── Events/                # 12 Event classes
+├── Events/                # 14 Event classes
 │   ├── TransactionCreated.php
 │   ├── TransactionApproved.php
 │   ├── TransactionCancelled.php
-│   ├── PendingCancellationRequested.php   # NEW: Cancellation workflow
+│   ├── PendingCancellationRequested.php
+│   ├── SanctionsMatchReported.php         # NEW: BNM FIU reporting trigger
 │   └── ...
 ├── Exceptions/
 │   └── Domain/            # 35 typed domain exceptions
@@ -80,15 +82,21 @@ app/
 │   │   ├── Api/V1/        # REST API v1 controllers
 │   │   └── ...            # Web controllers
 │   ├── Middleware/        # 21 middleware classes
-│   ├── Requests/          # Form request validation
+│   ├── Requests/          # 46 Form request validation classes
+│   │   └── AuthorizedFormRequest.php      # NEW: Base class for open auth requests
 │   └── Resources/         # API resource transformers
 ├── Jobs/                  # 19 background jobs
-├── Models/                # 64 Eloquent models
+├── Models/                # 71 Eloquent models
+│   └── Compliance/        # Compliance-specific models
 ├── Observers/             # Model observers
-└── Services/              # 83 services (71 top-level + 12 in Compliance/)
+└── Services/              # 96 services (85 top-level + 11 in Compliance/)
     ├── TransactionCancellationService.php   # Handles cancellation workflow
+    ├── TransactionReversalService.php       # NEW: Extracted reversal logic
     ├── TransactionStateMachine.php          # State transition management
     ├── CurrencyPositionService.php          # Stock/reservation management
+    ├── CustomerScreeningService.php         # Sanctions screening with freeze/block
+    ├── CddLevelDeterminationService.php     # NEW: Extracted CDD level logic
+    ├── PepApprovalService.php               # NEW: Head office PEP approval
     └── ...
 ```
 
@@ -333,11 +341,20 @@ The system enforces this by checking that `$approver->id !== $cancellationReques
 3. **Rate Limiting**: Per-endpoint limits prevent abuse
 4. **IP Blocking**: Automatic block after failed login attempts
 5. **Audit Logging**: All state transitions logged with hash chaining
+6. **Sanctions Freeze**: Confirmed sanctions matches automatically freeze customer accounts and block transactions (pd-00.md 27.6)
+7. **SQL Injection Prevention**: All `DB::raw()` usages use parameter binding; no string concatenation with user input
 
 ## Testing Strategy
+
+**Test count:** 100+ test files (Unit + Feature)
 
 Critical workflows tested in `tests/Feature/CriticalTransactionWorkflowTest.php`:
 - `test_pending_cancellation_cannot_transition_to_approved`
 - `test_stock_reservation_released_on_cancellation`
 - `test_manager_cannot_approve_own_transaction`
 - `test_concurrent_transactions_respect_stock_reservations`
+
+Compliance tests:
+- `CddLevelDeterminationServiceTest` — 12 tests covering PEP, sanctions, risk-based CDD
+- `CustomerScreeningServiceTest` — 15 tests covering freeze, block, reject, sanctions match
+- `PepApprovalServiceTest` — Head office approval workflow for PEPs

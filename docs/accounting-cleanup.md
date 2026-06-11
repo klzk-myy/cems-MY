@@ -121,7 +121,28 @@ If you are running an existing production instance:
 3. Run `php artisan db:seed --class=EnhancedChartOfAccountsSeeder` to ensure a complete chart of accounts. The seeder is idempotent (uses `updateOrCreate`).
 4. No data transformation is required; the core accounting logic now computes correctly.
 
+## Fixes Consolidation (2026-06-11)
+
+A comprehensive fixes audit was executed against all open implementation plans. Results:
+
+| Plan | Tasks | Status |
+|------|-------|--------|
+| G1 — Amount-based Enhanced CDD | Remove amount trigger | Already implemented in `CddLevelDeterminationService` |
+| G2 — STR filing deadline | Next working day logic | N/A — STR module removed in P0 |
+| Sanctions freeze/block/reject | pd-00.md 27.6 | Already implemented in `CustomerScreeningService` |
+| Foreign/Domestic PEP | `PepType` enum | Already implemented |
+| SQL injection | `DB::raw` binding | **Fixed** in `ReportingService` (commit `b36aafe`) |
+| XSS | Controller audit | No vulnerabilities found |
+| N+1 queries | Service audit | No issues found — eager loading correct |
+| Database indexes | `account_ledger`, `journal_entries` | Already migrated (2026-05-31) |
+
+All existing tests continue to pass:
+- `CddLevelDeterminationServiceTest`: 12 passed
+- `CustomerScreeningServiceTest`: 15 passed
+- `ReportingServiceTest`: 4 passed
+
 ## Future Improvements
 
 - Consider removing the fallback string check in `isDebitAccount()` once all deployments complete the enum migration (it's safe but unnecessary).
 - Monitor query performance on large installations; additional composite indexes may be warranted for branch-specific queries.
+- Convert 40+ FormRequests with `authorize(): bool { return true; }` to extend `AuthorizedFormRequest` base class.
