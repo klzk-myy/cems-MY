@@ -200,19 +200,12 @@ class CustomerService
     public function searchCustomers(string $query): array
     {
         $query = trim($query);
-        $escapedQuery = str_replace(['%', '_'], ['\\%', '\\_'], $query);
 
-        $customers = Customer::where('full_name', 'like', "%{$escapedQuery}%")
-            ->orWhere('id_number_encrypted', 'like', "%{$escapedQuery}%")
-            ->where('is_active', true)
-            ->limit(10)
-            ->get();
+        $customers = $this->customerRepository->searchActive($query);
 
         if ($customers->isEmpty()) {
             $idHash = $this->computeBlindIndex($query);
-            $byHash = Customer::where('id_number_hash', $idHash)
-                ->where('is_active', true)
-                ->first();
+            $byHash = $this->customerRepository->findActiveByIdNumberHash($idHash);
             if ($byHash) {
                 $customers = collect([$byHash]);
             }

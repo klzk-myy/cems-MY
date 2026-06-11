@@ -13,6 +13,11 @@ class CustomerRepository
         return Customer::find($customerId);
     }
 
+    public function findByIdOrFail(int $customerId): Customer
+    {
+        return Customer::findOrFail($customerId);
+    }
+
     public function findByIdNumber(string $idNumber): ?Customer
     {
         return Customer::where('id_number_hash', CustomerService::computeBlindIndex($idNumber))->first();
@@ -23,6 +28,24 @@ class CustomerRepository
         return Customer::where('full_name', 'like', "%{$query}%")
             ->orWhere('id_number_hash', 'like', "%{$query}%")
             ->get();
+    }
+
+    public function searchActive(string $query, int $limit = 10): Collection
+    {
+        $escapedQuery = str_replace(['%', '_'], ['\\%', '\\_'], $query);
+
+        return Customer::where('full_name', 'like', "%{$escapedQuery}%")
+            ->orWhere('id_number_encrypted', 'like', "%{$escapedQuery}%")
+            ->where('is_active', true)
+            ->limit($limit)
+            ->get();
+    }
+
+    public function findActiveByIdNumberHash(string $idHash): ?Customer
+    {
+        return Customer::where('id_number_hash', $idHash)
+            ->where('is_active', true)
+            ->first();
     }
 
     public function getByIds(array $customerIds): Collection
