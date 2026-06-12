@@ -11,6 +11,6 @@ $gridClasses = match($cols) {
 };
 @endphp
 
-<div class="grid {{ $gridClasses }} gap-4">
+<div {{ $attributes->merge(['class' => "grid $gridClasses gap-4"]) }}>
     {{ $slot }}
 </div>

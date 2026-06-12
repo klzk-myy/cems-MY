@@ -21,6 +21,6 @@ $sizeClass = match($size) {
 };
 @endphp
 
-<span class="inline-flex rounded {{ $styles }} {{ $sizeClass }} font-medium">
+<span {{ $attributes->merge(['class' => "inline-flex rounded $styles $sizeClass font-medium"]) }}>
     {{ $slot }}
 </span>

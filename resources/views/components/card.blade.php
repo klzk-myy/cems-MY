@@ -3,7 +3,7 @@
     'description' => null
 ])
 
-<div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+<div {{ $attributes->merge(['class' => "bg-white dark:bg-gray-800 border border-[#e5e5e5] dark:border-gray-700 rounded-xl overflow-hidden"]) }}>
     @if($title || $description)
         <div class="px-6 py-4 border-b border-[#e5e5e5]">
             @if($title)

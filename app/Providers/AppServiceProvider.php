@@ -6,9 +6,12 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\TransactionService;
+use App\View\Composers\NavigationComposer;
+use App\View\Composers\UserComposer;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerMorphMap();
         $this->registerCarbonMacros();
         $this->registerBladeDirectives();
+        $this->registerViewComposers();
     }
 
     /**
@@ -111,5 +115,14 @@ class AppServiceProvider extends ServiceProvider
                 default => false,
             };
         });
+    }
+
+    /**
+     * Register view composers for shared data.
+     */
+    protected function registerViewComposers(): void
+    {
+        View::composer('*', NavigationComposer::class);
+        View::composer('*', UserComposer::class);
     }
 }

@@ -36,7 +36,7 @@ $classes = trim("$baseClass $variantClass $sizeClass");
 @endphp
 
 @if($href)
-    <a href="{{ $href }}" class="{{ $classes }}" {{ $disabled ? 'aria-disabled="true"' : '' }}>
+    <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }} {{ $disabled ? 'aria-disabled="true"' : '' }}>
         @if($icon && !$loading)
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon }}" />
@@ -51,7 +51,7 @@ $classes = trim("$baseClass $variantClass $sizeClass");
         {{ $slot }}
     </a>
 @else
-    <button type="{{ $type }}" class="{{ $classes }}" {{ $disabled ? 'disabled' : '' }} {{ $loading ? 'disabled' : '' }}>
+    <button type="{{ $type }}" {{ $attributes->merge(['class' => $classes]) }} {{ $disabled ? 'disabled' : '' }} {{ $loading ? 'disabled' : '' }}>
         @if($icon && !$loading)
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon }}" />

@@ -19,7 +19,7 @@ $valueColorClass = match($color) {
 };
 @endphp
 
-<div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+<div {{ $attributes->merge(['class' => "bg-white dark:bg-gray-800 border border-[#e5e5e5] dark:border-gray-700 rounded-xl p-5"]) }}>
     <div class="flex items-start justify-between">
         <div class="flex-1">
             <p class="text-sm font-medium text-gray-500">{{ $label }}</p>

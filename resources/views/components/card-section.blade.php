@@ -4,8 +4,8 @@
     'actions' => null
 ])
 
-<div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-    <div class="px-6 py-4 border-b border-[#e5e5e5] flex items-start justify-between gap-4">
+<div {{ $attributes->merge(['class' => "bg-white dark:bg-gray-800 border border-[#e5e5e5] dark:border-gray-700 rounded-xl overflow-hidden"]) }}>
+    <div class="px-6 py-4 border-b border-[#e5e5e5] dark:border-gray-700 flex items-start justify-between gap-4">
         <div>
             @if($title)
                 <h3 class="text-lg font-semibold text-gray-900">{{ $title }}</h3>

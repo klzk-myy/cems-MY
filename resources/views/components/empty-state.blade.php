@@ -4,7 +4,7 @@
     <td colspan="{{ $colspan }}" class="px-4 py-12 text-center">
         <div class="flex flex-col items-center gap-3">
             @if($icon)
-                <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-12 h-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $icon }}" />
                 </svg>
             @else

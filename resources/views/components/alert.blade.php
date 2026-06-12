@@ -19,7 +19,7 @@ $icons = [
 
 <div x-data="{ shown: true }" 
      x-show="shown"
-     class="mb-6 border rounded-lg p-4 {{ $styles }}"
+     {{ $attributes->merge(['class' => "mb-6 border rounded-lg p-4 $styles"]) }}
      x-transition>
     <div class="flex gap-3">
         @if(isset($icon) && $icon !== false)
