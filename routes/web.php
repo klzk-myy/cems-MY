@@ -125,17 +125,12 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->middleware(['role:manager', 'mfa.verified']);
         Route::post('/{transaction}/reject', [TransactionApprovalController::class, 'reject'])->name('reject')
             ->middleware(['role:manager', 'mfa.verified']);
-        Route::get('/{transaction}/cancel', [TransactionController::class, 'showCancel'])->name('cancel.show')
-            ->middleware(['role:manager', 'mfa.verified']);
-        // Alias used by transaction detail buttons
         Route::get('/{transaction}/cancel', [TransactionController::class, 'showCancel'])->name('cancel')
             ->middleware(['role:manager', 'mfa.verified']);
         Route::post('/{transaction}/cancel', [TransactionCancellationController::class, 'cancel'])->name('cancel.store')
             ->middleware(['role:manager', 'mfa.verified']);
 
         Route::get('/{transaction}/confirm', [TransactionApprovalController::class, 'showConfirm'])->name('confirm.show')
-            ->middleware('role:manager');
-        Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm')
             ->middleware('role:manager');
         Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm.store')
             ->middleware('role:manager');
