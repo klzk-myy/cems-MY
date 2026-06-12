@@ -26,13 +26,9 @@
                         <td class="px-4 py-3">{{ $user->username }}</td>
                         <td class="px-4 py-3">{{ $user->email }}</td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded text-xs 
-                                @if($user->role->value === 'admin') bg-purple-100 text-purple-800
-                                @elseif($user->role->value === 'manager') bg-blue-100 text-blue-800
-                                @elseif($user->role->value === 'compliance_officer') bg-yellow-100 text-yellow-800
-                                @else bg-gray-100 text-gray-800 @endif">
+                            <x-badge variant="{{ $user->role->value === 'admin' ? 'purple' : ($user->role->value === 'manager' ? 'info' : ($user->role->value === 'compliance_officer' ? 'warning' : 'gray')) }}">
                                 {{ $user->role->label() }}
-                            </span>
+                            </x-badge>
                         </td>
                         <td class="px-4 py-3">{{ $user->branch->name ?? 'N/A' }}</td>
                         <td class="px-4 py-3">
@@ -40,9 +36,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">No users found.</td>
-                    </tr>
+                    <x-empty-state message="No users found." :colspan="6" />
                     @endforelse
                 </tbody>
             </table>

@@ -7,9 +7,7 @@
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 max-w-lg">
             @if(isset($error))
-            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                <p class="text-sm text-red-700">{{ $error }}</p>
-            </div>
+            <x-alert type="error">{{ $error }}</x-alert>
             @endif
 
             <div class="mb-6">
@@ -28,19 +26,10 @@
 
             <form method="POST" action="{{ route('mfa.recovery.verify') }}">
                 @csrf
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Recovery Code</label>
-                    <input type="text" name="recovery_code" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg font-mono tracking-widest" placeholder="XXXX-XXXX-XXXX" required>
-                </div>
+                <x-input type="text" name="recovery_code" label="Recovery Code" class="font-mono tracking-widest" placeholder="XXXX-XXXX-XXXX" required />
+                <x-input type="password" name="password" label="Password" required />
 
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" name="password" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
-                </div>
-
-                <button type="submit" class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626] mb-4">
-                    Verify Recovery Code
-                </button>
+                <x-button type="submit" variant="primary" class="w-full mb-4">Verify Recovery Code</x-button>
             </form>
 
             <div class="text-center">

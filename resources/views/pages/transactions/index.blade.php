@@ -7,20 +7,16 @@
             </a>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-4 mb-6">
-            <form method="GET" class="flex gap-4">
-                <input type="text" name="search" placeholder="Search by reference..." 
-                       class="border rounded px-3 py-2 flex-1" 
-                       value="{{ request('search') }}">
-                <select name="status" class="border rounded px-3 py-2">
-                    <option value="">All Status</option>
-                    @foreach($transactions->pluck('status')->unique() as $status)
-                        <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>{{ $status }}</option>
-                    @endforeach
-                </select>
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">Filter</button>
-            </form>
-        </div>
+        <x-filter-bar method="GET">
+            <x-input type="text" name="search" placeholder="Search by reference..." value="{{ request('search') }}" class="flex-1" />
+            <x-select name="status" placeholder="All Status">
+                <option value="">All Status</option>
+                @foreach($transactions->pluck('status')->unique() as $status)
+                    <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>{{ $status }}</option>
+                @endforeach
+            </x-select>
+            <x-button type="submit" variant="primary">Filter</x-button>
+        </x-filter-bar>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
@@ -43,28 +39,23 @@
                         <td class="px-4 py-3">{{ $transaction->created_at->format('M d, Y H:i') }}</td>
                         <td class="px-4 py-3">{{ $transaction->customer->full_name ?? 'N/A' }}</td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded text-xs {{ $transaction->type === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                            <x-badge variant="{{ $transaction->type === 'Buy' ? 'success' : 'danger' }}">
                                 {{ $transaction->type }}
-                            </span>
+                            </x-badge>
                         </td>
                         <td class="px-4 py-3">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</td>
                         <td class="px-4 py-3">{{ number_format($transaction->rate_used, 4) }}</td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded text-xs 
-                                @if($transaction->status === 'Completed') bg-green-100 text-green-800
-                                @elseif($transaction->status === 'Pending') bg-yellow-100 text-yellow-800
-                                @else bg-gray-100 text-gray-800 @endif">
+                            <x-badge variant="{{ $transaction->status === 'Completed' ? 'success' : ($transaction->status === 'Pending' ? 'warning' : 'gray') }}">
                                 {{ $transaction->status }}
-                            </span>
+                            </x-badge>
                         </td>
                         <td class="px-4 py-3">
                             <a href="{{ route('transactions.show', $transaction) }}" class="text-blue-600 hover:underline">View</a>
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">No transactions found.</td>
-                    </tr>
+                    <x-empty-state message="No transactions found." :colspan="8" />
                     @endforelse
                 </tbody>
             </table>

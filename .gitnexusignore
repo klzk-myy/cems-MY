@@ -1,0 +1,31 @@
+# Laravel Compiled & Cache Files
+storage/framework/views/**
+storage/framework/testing/**
+bootstrap/cache/*.php
+!bootstrap/cache/.gitignore
+
+# Database Files
+database/*.sqlite
+database/database.sqlite
+database/testing.sqlite
+
+# Playwright Artifacts
+.playwright-cli/console-*.log
+.playwright-cli/*.log
+playwright-report/**
+test-results/**
+
+# Superpowers & AI Tool Cache
+.superpowers/**/*.log
+.superpowers/**/state/**
+
+# Compiled PHP
+**/*.compiled.php
+**/*.blade.php.cache
+
+# OS Files
+*.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

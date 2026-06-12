@@ -2,7 +2,7 @@
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-6">Counters</h1>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <x-stat-grid :cols="3" class="mb-6">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Total Counters</div>
                 <div class="text-2xl font-bold">{{ $stats['total'] ?? 0 }}</div>
@@ -15,7 +15,7 @@
                 <div class="text-gray-500 text-sm">Available</div>
                 <div class="text-2xl font-bold text-blue-600">{{ $stats['available'] ?? 0 }}</div>
             </div>
-        </div>
+        </x-stat-grid>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
@@ -32,9 +32,9 @@
                         <td class="px-4 py-3">{{ $counter->name }}</td>
                         <td class="px-4 py-3">
                             @if($counter->sessions->count() > 0)
-                                <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-800">Open</span>
+                                <x-badge variant="success">Open</x-badge>
                             @else
-                                <span class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-800">Available</span>
+                                <x-badge variant="gray">Available</x-badge>
                             @endif
                         </td>
                         <td class="px-4 py-3">
@@ -46,9 +46,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="3" class="px-4 py-8 text-center text-gray-500">No counters found.</td>
-                    </tr>
+                    <x-empty-state message="No counters found." :colspan="3" />
                     @endforelse
                 </tbody>
             </table>

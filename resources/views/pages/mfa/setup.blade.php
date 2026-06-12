@@ -20,14 +20,8 @@
 
             <form method="POST" action="{{ route('mfa.setup.store') }}">
                 @csrf
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Verification Code</label>
-                    <input type="text" name="code" class="w-full border rounded px-3 py-2" 
-                           placeholder="Enter 6-digit code" maxlength="6" required>
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                    Verify & Enable
-                </button>
+                <x-input type="text" name="code" label="Verification Code" placeholder="Enter 6-digit code" maxlength="6" required />
+                <x-button type="submit" variant="primary" class="w-full">Verify & Enable</x-button>
             </form>
         </div>
     </div>

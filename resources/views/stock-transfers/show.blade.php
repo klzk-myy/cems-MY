@@ -25,22 +25,9 @@
                 <div>
                     <dt class="text-sm font-medium text-gray-500">Status</dt>
                     <dd class="mt-1 text-sm">
-                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded
-                            @if($stockTransfer->status->value === 'completed')
-                                bg-green-100 text-green-700
-                            @elseif($stockTransfer->status->value === 'approved_bm')
-                                bg-blue-100 text-blue-700
-                            @elseif($stockTransfer->status->value === 'approved_hq')
-                                bg-indigo-100 text-indigo-700
-                            @elseif($stockTransfer->status->value === 'pending')
-                                bg-yellow-100 text-yellow-700
-                            @elseif($stockTransfer->status->value === 'cancelled')
-                                bg-red-100 text-red-700
-                            @else
-                                bg-gray-100 text-gray-700
-                            @endif">
+                        <x-badge variant="{{ $stockTransfer->status->value === 'completed' ? 'success' : ($stockTransfer->status->value === 'pending' ? 'warning' : ($stockTransfer->status->value === 'cancelled' ? 'danger' : 'info')) }}">
                             {{ ucfirst(str_replace('_', ' ', $stockTransfer->status->value)) }}
-                        </span>
+                        </x-badge>
                     </dd>
                 </div>
                 <div>
@@ -154,24 +141,13 @@
                                     {{ number_format((float) $item->amount, 2) }}
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded
-                                        @if($item->status->value === 'transferred')
-                                            bg-green-100 text-green-700
-                                        @elseif($item->status->value === 'pending')
-                                            bg-yellow-100 text-yellow-700
-                                        @else
-                                            bg-gray-100 text-gray-700
-                                        @endif">
+                                    <x-badge variant="{{ $item->status->value === 'transferred' ? 'success' : ($item->status->value === 'pending' ? 'warning' : 'gray') }}">
                                         {{ ucfirst($item->status->value) }}
-                                    </span>
+                                    </x-badge>
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="3" class="px-4 py-6 text-center text-sm text-gray-500">
-                                    No items in this transfer.
-                                </td>
-                            </tr>
+                            <x-empty-state message="No items in this transfer." :colspan="3" />
                         @endforelse
                     </tbody>
                 </table>
@@ -185,10 +161,7 @@
                 @if($stockTransfer->canApproveBranchManager())
                     <form action="{{ route('stock-transfers.approve-bm', $stockTransfer->id) }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit"
-                                class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700">
-                            Approve (Branch Manager)
-                        </button>
+                        <x-button type="submit" variant="info">Approve (Branch Manager)</x-button>
                     </form>
                 @endif
 
@@ -196,10 +169,7 @@
                 @if($stockTransfer->canApproveHq())
                     <form action="{{ route('stock-transfers.approve-hq', $stockTransfer->id) }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit"
-                                class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
-                            Approve (HQ)
-                        </button>
+                        <x-button type="submit" variant="indigo">Approve (HQ)</x-button>
                     </form>
                 @endif
 
@@ -207,10 +177,7 @@
                 @if($stockTransfer->canDispatch())
                     <form action="{{ route('stock-transfers.dispatch', $stockTransfer->id) }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit"
-                                class="px-4 py-2 text-sm font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-700">
-                            Dispatch
-                        </button>
+                        <x-button type="submit" variant="purple">Dispatch</x-button>
                     </form>
                 @endif
 
@@ -218,10 +185,7 @@
                 @if($stockTransfer->canReceive())
                     <form action="{{ route('stock-transfers.receive', $stockTransfer->id) }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit"
-                                class="px-4 py-2 text-sm font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-700">
-                            Receive
-                        </button>
+                        <x-button type="submit" variant="teal">Receive</x-button>
                     </form>
                 @endif
 
@@ -229,10 +193,7 @@
                 @if($stockTransfer->canComplete())
                     <form action="{{ route('stock-transfers.complete', $stockTransfer->id) }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit"
-                                class="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700">
-                            Complete
-                        </button>
+                        <x-button type="submit" variant="success">Complete</x-button>
                     </form>
                 @endif
 
@@ -241,10 +202,7 @@
                     <form action="{{ route('stock-transfers.cancel', $stockTransfer->id) }}" method="POST" class="inline"
                           onsubmit="return confirm('Are you sure you want to cancel this stock transfer?');">
                         @csrf
-                        <button type="submit"
-                                class="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700">
-                            Cancel
-                        </button>
+                        <x-button type="submit" variant="danger">Cancel</x-button>
                     </form>
                 @endif
             </div>

@@ -28,12 +28,9 @@
                         <td class="px-4 py-3">{{ $transfer->source_branch_id }}</td>
                         <td class="px-4 py-3">{{ $transfer->destination_branch_id }}</td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded text-xs 
-                                @if($transfer->status === 'Completed') bg-green-100 text-green-800
-                                @elseif($transfer->status === 'Pending') bg-yellow-100 text-yellow-800
-                                @else bg-gray-100 text-gray-800 @endif">
+                            <x-badge variant="{{ $transfer->status === 'Completed' ? 'success' : ($transfer->status === 'Pending' ? 'warning' : 'gray') }}">
                                 {{ $transfer->status }}
-                            </span>
+                            </x-badge>
                         </td>
                         <td class="px-4 py-3">{{ $transfer->created_at?->format('M d, Y') }}</td>
                         <td class="px-4 py-3">
@@ -41,9 +38,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">No transfers found.</td>
-                    </tr>
+                    <x-empty-state message="No transfers found." :colspan="6" />
                     @endforelse
                 </tbody>
             </table>

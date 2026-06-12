@@ -16,23 +16,19 @@
                 <div class="mb-6 flex items-center justify-between">
                     <div class="flex items-center gap-4">
                         @if($canSelectBranch)
-                            <select id="branch-select" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                            <x-select name="branch" placeholder="All Branches" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
                                 <option value="">All Branches</option>
-                            </select>
+                            </x-select>
                         @endif
-                        <select id="date-select" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                        <x-select name="date" placeholder="Select Date" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
                             @foreach($availableDates as $date)
                                 <option value="{{ $date }}">{{ $date }}</option>
                             @endforeach
-                        </select>
+                        </x-select>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button id="fetch-rates-btn" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                            Fetch from API
-                        </button>
-                        <button id="copy-previous-btn" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-gray-50">
-                            Copy Previous
-                        </button>
+                        <x-button id="fetch-rates-btn" variant="primary">Fetch from API</x-button>
+                        <x-button id="copy-previous-btn" variant="secondary">Copy Previous</x-button>
                     </div>
                 </div>
 
@@ -65,9 +61,9 @@
                                         {{ number_format((float)($rate['spread'] ?? 0), 2) }}%
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded {{ $rate['source'] === 'manual' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700' }}">
+                                        <x-badge variant="{{ $rate['source'] === 'manual' ? 'warning' : 'success' }}">
                                             {{ ucfirst($rate['source'] ?? 'api') }}
-                                        </span>
+                                        </x-badge>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
                                         {{ $rate['fetched_at'] ? \Carbon\Carbon::parse($rate['fetched_at'])->format('H:i:s') : '-' }}
@@ -79,11 +75,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-500">
-                                        No rates available. Click "Fetch from API" to get current rates.
-                                    </td>
-                                </tr>
+                                <x-empty-state message="No rates available. Click "Fetch from API" to get current rates." :colspan="7" />
                             @endforelse
                         </tbody>
                     </table>
@@ -100,15 +92,15 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Currency</label>
-                        <input type="text" id="override-currency" class="mt-1 w-full px-4 py-2.5 text-sm bg-gray-100 border border-[#e5e5e5] rounded-lg" readonly>
+                        <x-input type="text" id="override-currency" class="mt-1 w-full px-4 py-2.5 text-sm bg-gray-100 border border-[#e5e5e5] rounded-lg" readonly />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Rate Buy</label>
-                        <input type="text" name="rate_buy" id="override-rate-buy" class="mt-1 w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
+                        <x-input type="text" name="rate_buy" id="override-rate-buy" class="mt-1 w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Rate Sell</label>
-                        <input type="text" name="rate_sell" id="override-rate-sell" class="mt-1 w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
+                        <x-input type="text" name="rate_sell" id="override-rate-sell" class="mt-1 w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Reason</label>
@@ -116,12 +108,8 @@
                     </div>
                 </div>
                 <div class="mt-6 flex items-center justify-end gap-3">
-                    <button type="button" id="cancel-override" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-gray-50">
-                        Cancel
-                    </button>
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                        Save Override
-                    </button>
+                    <x-button type="button" id="cancel-override" variant="secondary">Cancel</x-button>
+                    <x-button type="submit" variant="primary">Save Override</x-button>
                 </div>
             </form>
         </div>

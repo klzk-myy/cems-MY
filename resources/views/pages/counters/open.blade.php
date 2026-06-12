@@ -35,9 +35,7 @@
                     </div>
 
                     @if(session('error'))
-                        <div class="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-700">
-                            {{ session('error') }}
-                        </div>
+                        <x-alert type="error">{{ session('error') }}</x-alert>
                     @endif
 
                     <form method="POST" action="{{ route('counters.open', $counter) }}">
@@ -49,12 +47,7 @@
                                 @foreach($currencies as $currency)
                                     <div class="flex items-center gap-4">
                                         <label class="w-20 text-sm font-medium text-gray-700">{{ $currency->code }}</label>
-                                        <input type="text"
-                                            name="opening_floats[{{ $currency->code }}]"
-                                            class="flex-1 w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg @error('opening_floats.' . $currency->code) border-red-500 @enderror"
-                                            placeholder="0.00"
-                                            value="{{ old('opening_floats.' . $currency->code, '0.00') }}"
-                                            inputmode="decimal">
+                                        <x-input type="text" name="opening_floats[{{ $currency->code }}]" class="flex-1 w-full" placeholder="0.00" value="{{ old('opening_floats.' . $currency->code, '0.00') }}" inputmode="decimal" />
                                         @error('opening_floats.' . $currency->code)
                                             <p class="text-sm text-red-600">{{ $message }}</p>
                                         @enderror
@@ -64,12 +57,8 @@
                         </div>
 
                         <div class="flex items-center justify-end gap-4">
-                            <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-gray-50">
-                                Cancel
-                            </a>
-                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                                Open Counter
-                            </button>
+                            <x-button href="{{ route('counters.index') }}" variant="secondary">Cancel</x-button>
+                            <x-button type="submit" variant="primary">Open Counter</x-button>
                         </div>
                     </form>
                 </div>

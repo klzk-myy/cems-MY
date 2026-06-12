@@ -2,7 +2,7 @@
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <x-stat-grid :cols="4" class="mb-8">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                 <div class="text-gray-500 text-sm">Today's Transactions</div>
                 <div class="text-2xl font-bold">{{ $stats['total_transactions'] ?? 0 }}</div>
@@ -28,7 +28,7 @@
                     {{ $stats['flagged'] ?? 0 }}
                 </div>
             </div>
-        </div>
+        </x-stat-grid>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
             <h2 class="text-lg font-semibold mb-4">Recent Transactions</h2>
@@ -52,9 +52,9 @@
                             <td class="py-2">{{ $transaction->created_at->format('H:i') }}</td>
                             <td class="py-2">{{ $transaction->customer->name ?? 'N/A' }}</td>
                             <td class="py-2">
-                                <span class="px-2 py-1 rounded text-xs {{ $transaction->type === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                <x-badge variant="{{ $transaction->type === 'Buy' ? 'success' : 'danger' }}">
                                     {{ $transaction->type }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td class="py-2">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</td>
                             <td class="py-2">{{ number_format($transaction->rate_used, 4) }}</td>

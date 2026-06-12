@@ -2,59 +2,26 @@
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-6">New Transaction</h1>
 
-        <form method="POST" action="{{ route('transactions.store') }}" class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <form method="POST" action="{{ route('transactions.store') }}">
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Transaction Type</label>
-                    <select name="type" class="w-full border rounded px-3 py-2" required>
-                        <option value="Buy">Buy</option>
-                        <option value="Sell">Sell</option>
-                    </select>
-                </div>
+                <x-select name="type" label="Transaction Type" :options="['Buy' => 'Buy', 'Sell' => 'Sell']" required />
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-                    <select name="customer_id" class="w-full border rounded px-3 py-2" required>
-                        @foreach($customers ?? [] as $customer)
-                            <option value="{{ $customer->id }}">{{ $customer->full_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-select name="customer_id" label="Customer" :options="$customers ?? []" required />
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                    <select name="currency_code" class="w-full border rounded px-3 py-2" required>
-                        @foreach($currencies ?? [] as $code => $name)
-                            <option value="{{ $code }}">{{ $name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-select name="currency_code" label="Currency" :options="$currencies ?? []" required />
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Foreign Amount</label>
-                    <input type="number" step="0.01" name="amount_foreign" class="w-full border rounded px-3 py-2" required>
-                </div>
+                <x-input type="number" name="amount_foreign" label="Foreign Amount" step="0.01" required />
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Exchange Rate</label>
-                    <input type="number" step="0.0001" name="rate_used" class="w-full border rounded px-3 py-2" required>
-                </div>
+                <x-input type="number" name="rate_used" label="Exchange Rate" step="0.0001" required />
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Counter</label>
-                    <select name="counter_id" class="w-full border rounded px-3 py-2" required>
-                        @foreach($counters ?? [] as $counter)
-                            <option value="{{ $counter->id }}">{{ $counter->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-select name="counter_id" label="Counter" :options="$counters ?? []" required />
             </div>
 
             <div class="mt-6 flex gap-4">
-                <button type="submit" class="px-6 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">Create Transaction</button>
-                <a href="{{ route('transactions.index') }}" class="px-6 py-2 border rounded hover:bg-gray-50">Cancel</a>
+                <x-button type="submit" variant="primary">Create Transaction</x-button>
+                <x-button href="{{ route('transactions.index') }}" variant="secondary">Cancel</x-button>
             </div>
         </form>
     </div>

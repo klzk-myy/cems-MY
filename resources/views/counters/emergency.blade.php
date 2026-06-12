@@ -6,10 +6,10 @@
         </div>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 max-w-lg">
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <x-alert type="error" :icon="false">
                 <h3 class="font-semibold text-red-800 mb-2">Action Required</h3>
                 <p class="text-sm text-red-700">{{ $message ?? 'An emergency situation requires immediate attention.' }}</p>
-            </div>
+            </x-alert>
 
             @if(isset($counter))
             <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
@@ -41,18 +41,11 @@
                     <textarea name="reason" rows="2" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required placeholder="Describe the emergency..."></textarea>
                 </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Supervisor PIN</label>
-                    <input type="password" name="supervisor_pin" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
-                </div>
+                <x-input type="password" name="supervisor_pin" label="Supervisor PIN" required />
 
                 <div class="flex gap-3">
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700">
-                        Confirm Emergency Action
-                    </button>
-                    <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                        Cancel
-                    </a>
+                    <x-button type="submit" variant="danger">Confirm Emergency Action</x-button>
+                    <x-button href="{{ route('counters.index') }}" variant="secondary">Cancel</x-button>
                 </div>
             </form>
         </div>
