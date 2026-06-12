@@ -4,7 +4,6 @@ use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\BranchClosingController;
 use App\Http\Controllers\Compliance\AlertTriageController;
 use App\Http\Controllers\Compliance\CaseManagementController;
-use App\Http\Controllers\Compliance\ComplianceWorkspaceController;
 use App\Http\Controllers\Compliance\FindingController;
 use App\Http\Controllers\Compliance\RiskDashboardController;
 use App\Http\Controllers\Compliance\SanctionListController;
@@ -224,8 +223,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/compliance/flagged', [DashboardController::class, 'compliance'])->name('compliance.flagged');
         Route::patch('/compliance/flags/{flaggedTransaction}/assign', [DashboardController::class, 'assignFlag'])->name('compliance.flags.assign');
         Route::patch('/compliance/flags/{flaggedTransaction}/resolve', [DashboardController::class, 'resolveFlag'])->name('compliance.flags.resolve');
-
-        Route::get('/compliance/workspace', [ComplianceWorkspaceController::class, 'index'])->name('compliance.workspace');
 
         Route::prefix('compliance/alerts')->name('compliance.alerts.')->group(function () {
             Route::get('/', [AlertTriageController::class, 'index'])->name('index');

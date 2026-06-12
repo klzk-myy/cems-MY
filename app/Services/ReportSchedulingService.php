@@ -123,8 +123,8 @@ class ReportSchedulingService
         $avgDuration = ReportRun::successful()
             ->whereNotNull('completed_at')
             ->whereNotNull('started_at')
-            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, started_at, completed_at)) as avg_duration')
-            ->value('avg_duration');
+            ->get()
+            ->avg(fn ($run) => $run->started_at->diffInSeconds($run->completed_at));
 
         return [
             'total_runs' => $totalRuns,
@@ -218,15 +218,13 @@ class ReportSchedulingService
             ->whereNotNull('next_run_at')
             ->get()
             ->map(fn ($schedule) => [
-                'type' => 'scheduled_report',
-                'reference' => $schedule->id,
-                'deadline' => $schedule->next_run_at->toDateString(),
-                'urgency' => $this->calculateUrgency($schedule->next_run_at),
-                'report_type' => $schedule->report_type,
+                'name' => $schedule->report_type,
+                'due_date' => $schedule->next_run_at,
+                'status' => $schedule->next_run_at->isPast() ? 'overdue' : 'upcoming',
             ]);
 
         return $scheduledReports
-            ->sortBy('deadline')
+            ->sortBy('due_date')
             ->values()
             ->toArray();
     }
@@ -241,10 +239,9 @@ class ReportSchedulingService
         $reportsOnSchedule = $this->calculateReportsOnSchedule();
 
         return [
-            'flag_resolution_avg_hours' => round($flagResolutionTime, 1),
-            'edd_completion_rate_percent' => round($eddCompletionRate, 1),
-            'reports_on_schedule_percent' => round($reportsOnSchedule, 1),
-            'period' => 'Last 30 days',
+            ['value' => round($flagResolutionTime, 1).'h', 'label' => 'Avg Flag Resolution'],
+            ['value' => round($eddCompletionRate, 1).'%', 'label' => 'EDD Completion Rate'],
+            ['value' => round($reportsOnSchedule, 1).'%', 'label' => 'Reports On Schedule'],
         ];
     }
 
@@ -259,21 +256,6 @@ class ReportSchedulingService
         $rowCount = max(0, count($lines) - 1);
 
         return ['row_count' => $rowCount];
-    }
-
-    protected function calculateUrgency(\DateTime $date): string
-    {
-        $diffHours = now()->diffInHours($date, false);
-
-        if ($diffHours < 0) {
-            return 'overdue';
-        } elseif ($diffHours <= 24) {
-            return 'critical';
-        } elseif ($diffHours <= 72) {
-            return 'warning';
-        }
-
-        return 'normal';
     }
 
     protected function calculateAvgFlagResolutionTime(): float

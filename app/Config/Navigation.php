@@ -104,12 +104,6 @@ class Navigation
                         'uri' => '/compliance',
                     ],
                     [
-                        'label' => 'Compliance Workspace',
-                        'route' => 'compliance.workspace',
-                        'icon' => 'clipboard-document-list',
-                        'uri' => '/compliance/workspace',
-                    ],
-                    [
                         'label' => 'Alert Triage',
                         'route' => 'compliance.alerts.index',
                         'icon' => 'exclamation-triangle',
