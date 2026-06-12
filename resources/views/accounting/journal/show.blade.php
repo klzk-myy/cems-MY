@@ -7,7 +7,7 @@
                 <p class="mt-1 text-sm text-gray-500">Entry #{{ $entry['entry_no'] ?? 'JE-0001' }}</p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="{{ route('accounting.journal.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
+                <a href="{{ route('accounting.journal') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
                     Back
                 </a>
                 @if(($entry['status'] ?? 'posted') === 'draft')

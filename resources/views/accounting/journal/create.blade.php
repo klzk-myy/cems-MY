@@ -6,7 +6,7 @@
                 <h1 class="text-2xl font-semibold text-gray-900">Create Journal Entry</h1>
                 <p class="mt-1 text-sm text-gray-500">Create a new double-entry journal entry</p>
             </div>
-            <a href="{{ route('accounting.journal.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
+            <a href="{{ route('accounting.journal') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
                 Back
             </a>
         </div>

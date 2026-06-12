@@ -25,10 +25,6 @@
 
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <h3 class="font-semibold mb-2">Report History</h3>
-                {{-- <ul class="space-y-2 mt-4">
-                    <li><a href="{{ route('reports.history') }}" class="text-blue-600 hover:underline">View History</a></li>
-                    <li><a href="{{ route('reports.compare') }}" class="text-blue-600 hover:underline">Compare Reports</a></li>
-                </ul> --}}
             </div>
         </div>
 

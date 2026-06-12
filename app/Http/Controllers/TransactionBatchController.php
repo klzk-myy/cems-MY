@@ -130,4 +130,40 @@ class TransactionBatchController extends Controller
 
         return response($template, 200, $headers);
     }
+
+    /**
+     * Download import errors as CSV
+     */
+    public function downloadErrors(TransactionImport $import)
+    {
+        if ($import->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized. You can only view your own import results.');
+        }
+
+        $errors = $import->getErrors();
+
+        if (empty($errors)) {
+            return back()->with('info', 'No errors to download for this import.');
+        }
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"import_errors_{$import->id}.csv\"",
+        ];
+
+        $callback = function () use ($errors) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Row', 'Data', 'Error']);
+            foreach ($errors as $rowNumber => $error) {
+                fputcsv($file, [
+                    $rowNumber,
+                    is_array($error['data'] ?? null) ? json_encode($error['data']) : ($error['data'] ?? ''),
+                    $error['message'] ?? 'Unknown error',
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

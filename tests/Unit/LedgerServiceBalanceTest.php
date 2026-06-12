@@ -134,12 +134,12 @@ class LedgerServiceBalanceTest extends TestCase
         $branch2Cash = collect($branch2['accounts'])->firstWhere('account_code', '1000');
 
         // Verify consolidated balance shows combined amount
-        $this->assertEquals('3000.00', $allBranchesCash['balance']);
+        $this->assertEquals('3000.0000', $allBranchesCash['balance']);
 
         // Verify branch 1 shows only its own balance
-        $this->assertEquals('1000.00', $branch1Cash['balance']);
+        $this->assertEquals('1000.0000', $branch1Cash['balance']);
 
         // Verify branch 2 shows only its own balance
-        $this->assertEquals('2000.00', $branch2Cash['balance']);
+        $this->assertEquals('2000.0000', $branch2Cash['balance']);
     }
 }

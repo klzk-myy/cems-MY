@@ -350,4 +350,58 @@ class TransactionTest extends TestCase
             'approved_by' => $manager->id,
         ]);
     }
+
+    public function test_manager_can_reject_transaction(): void
+    {
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $manager = User::factory()->create(['role' => UserRole::Manager]);
+        $customer = $this->createTestCustomer();
+        $counter = $this->setupOpenTill($teller, 'USD');
+
+        $manager->branch_id = $counter->branch_id;
+        $manager->save();
+
+        $transaction = Transaction::factory()->create([
+            'type' => TransactionType::Buy,
+            'currency_code' => 'USD',
+            'amount_foreign' => '12000.00',
+            'rate' => '4.50',
+            'amount_local' => '54000.00',
+            'customer_id' => $customer->id,
+            'user_id' => $teller->id,
+            'branch_id' => $counter->branch_id,
+            'counter_id' => $counter->id,
+            'till_id' => (string) $counter->id,
+            'status' => TransactionStatus::PendingApproval,
+            'cdd_level' => 'Enhanced',
+            'purpose' => 'Business',
+            'source_of_funds' => 'Revenue',
+            'idempotency_key' => uniqid('test_', true),
+            'version' => 0,
+        ]);
+
+        $response = $this->actingAs($manager)->post("/transactions/{$transaction->id}/reject");
+
+        if ($response->isRedirect() && session('error')) {
+            $this->fail('Rejection failed with error: '.session('error'));
+        }
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transaction->id,
+            'status' => TransactionStatus::Rejected,
+        ]);
+    }
+
+    public function test_teller_cannot_reject_transaction(): void
+    {
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $transaction = Transaction::factory()->create([
+            'status' => TransactionStatus::PendingApproval,
+        ]);
+
+        $response = $this->actingAs($teller)->post("/transactions/{$transaction->id}/reject");
+
+        $response->assertStatus(403);
+    }
 }

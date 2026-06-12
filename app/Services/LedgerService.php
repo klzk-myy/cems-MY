@@ -87,34 +87,30 @@ class LedgerService
                 return $this->emptyTrialBalance($asOfDate);
             }
 
-            // Get latest running balance for each account as of the date using window function
-            if ($branchId === null) {
-                // No branch filter: sum running balances across all branches per account
-                $balances = DB::table('account_ledger')
-                    ->select('account_code', DB::raw('SUM(running_balance) as running_balance'))
-                    ->where('entry_date', '<=', $asOfDate)
-                    ->whereIn('account_code', $accountCodes)
-                    ->groupBy('account_code')
-                    ->pluck('running_balance', 'account_code')
-                    ->toArray();
-            } else {
-                // Branch filter: use window function to get latest entry per account per branch
-                $subQuery = DB::table('account_ledger')
-                    ->select(
-                        'account_code',
-                        'running_balance',
-                        DB::raw('ROW_NUMBER() OVER (PARTITION BY account_code ORDER BY entry_date DESC, id DESC) as rn')
-                    )
-                    ->where('entry_date', '<=', $asOfDate)
-                    ->where('branch_id', $branchId)
-                    ->whereIn('account_code', $accountCodes);
+            // Get latest running balance for each account as of the date using window function.
+            // We partition by branch_id as well so the consolidated view correctly sums the
+            // latest per-branch balance instead of summing every historical running_balance.
+            $subQuery = DB::table('account_ledger')
+                ->select(
+                    'account_code',
+                    'branch_id',
+                    'running_balance',
+                    DB::raw('ROW_NUMBER() OVER (PARTITION BY account_code, branch_id ORDER BY entry_date DESC, id DESC) as rn')
+                )
+                ->whereDate('entry_date', '<=', $asOfDate)
+                ->whereIn('account_code', $accountCodes);
 
-                $balances = DB::query()
-                    ->fromSub($subQuery, 'ranked')
-                    ->where('rn', 1)
-                    ->pluck('running_balance', 'account_code')
-                    ->toArray();
+            if ($branchId !== null) {
+                $subQuery->where('branch_id', $branchId);
             }
+
+            $balances = DB::query()
+                ->fromSub($subQuery, 'ranked')
+                ->where('rn', 1)
+                ->select('account_code', DB::raw('SUM(running_balance) as running_balance'))
+                ->groupBy('account_code')
+                ->pluck('running_balance', 'account_code')
+                ->toArray();
 
             $trialBalance = [];
             $totalDebits = '0';

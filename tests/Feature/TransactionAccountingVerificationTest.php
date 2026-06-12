@@ -417,12 +417,21 @@ class TransactionAccountingVerificationTest extends TestCase
             $trialBalance = $this->ledgerService->getTrialBalance($asOfDate);
             $accountInTrialBalance = collect($trialBalance['accounts'])->firstWhere('account_code', $accountCode);
 
+            $trialBalanceBalance = $accountInTrialBalance['balance'] ?? '0';
+
+            // The trial balance must report the same signed balance as the ledger.
+            $this->assertEquals(
+                $currentBalance,
+                $trialBalanceBalance,
+                "Trial balance balance for {$accountCode} must match ledger balance"
+            );
+
             $ledgerValidation[$accountCode] = [
                 'entries_count' => $entries->count(),
                 'total_debits' => $totalDebits,
                 'total_credits' => $totalCredits,
                 'current_balance' => $currentBalance,
-                'trial_balance_balance' => $accountInTrialBalance['balance'] ?? 'N/A',
+                'trial_balance_balance' => $trialBalanceBalance,
                 'account_type' => $account->account_type,
             ];
         }

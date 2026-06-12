@@ -17,6 +17,7 @@ use App\Services\ThresholdService;
 use App\Services\TransactionApprovalService;
 use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
+use App\Services\TransactionStateMachine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -86,6 +87,45 @@ class TransactionApprovalController extends Controller
             ]);
 
             return back()->with('error', 'Approval failed due to a system error. Please contact support.');
+        }
+    }
+
+    /**
+     * Reject a pending transaction.
+     *
+     * Transitions the transaction to Rejected when it is currently pending approval.
+     */
+    public function reject(Request $request, Transaction $transaction)
+    {
+        $this->requireManagerOrAdmin();
+
+        $user = auth()->user();
+        if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
+            abort(403, 'You can only reject transactions for your own branch.');
+        }
+
+        try {
+            $this->approvalService->validateApprovalEligibility($transaction, auth()->id());
+
+            $stateMachine = new TransactionStateMachine($transaction, $this->auditService);
+            if (! $stateMachine->reject($request->input('reason', 'Rejected by manager'))) {
+                return back()->with('error', 'Transaction cannot be rejected from its current status.');
+            }
+
+            return redirect()->route('transactions.show', $transaction)
+                ->with('warning', 'Transaction has been rejected.');
+        } catch (SelfApprovalException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('Transaction rejection failed', [
+                'transaction_id' => $transaction->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Rejection failed due to a system error. Please contact support.');
         }
     }
 

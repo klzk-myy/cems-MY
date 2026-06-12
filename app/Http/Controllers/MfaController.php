@@ -257,4 +257,35 @@ class MfaController extends Controller
     {
         return view('mfa.recovery');
     }
+
+    /**
+     * Verify a recovery code and grant access.
+     */
+    public function recoveryVerify(Request $request)
+    {
+        $request->validate([
+            'recovery_code' => 'required|string|min:6|max:50',
+            'password' => 'required|string',
+        ]);
+
+        $user = auth()->user();
+
+        if (! $user || ! password_verify($request->password, $user->password_hash)) {
+            return back()->withErrors(['password' => 'Invalid password.']);
+        }
+
+        if (! $this->mfaService->verifyRecoveryCode($user, $request->recovery_code)) {
+            $this->auditService->logMfaEvent('mfa_recovery_failed', $user->id);
+
+            return back()->withErrors(['recovery_code' => 'Invalid recovery code.']);
+        }
+
+        $request->session()->put('mfa_verified', true);
+        $request->session()->put('mfa_verified_at', now()->timestamp);
+
+        $this->auditService->logMfaEvent('mfa_recovery_success', $user->id);
+
+        return redirect()->intended('/dashboard')
+            ->with('status', 'Access recovered successfully.');
+    }
 }

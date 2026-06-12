@@ -93,12 +93,18 @@
             <div class="p-6">
                 <div class="flex items-center gap-4 flex-wrap">
                     @if(($transaction['status'] ?? '') === 'Pending')
-                        <a href="{{ route('transactions.approve', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                            Approve
-                        </a>
-                        <a href="{{ route('transactions.reject', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                            Reject
-                        </a>
+                        <form method="POST" action="{{ route('transactions.approve', $transaction['id'] ?? 0) }}" class="contents">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                                Approve
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('transactions.reject', $transaction['id'] ?? 0) }}" class="contents">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+                                Reject
+                            </button>
+                        </form>
                     @endif
                     @if(($transaction['status'] ?? '') === 'PendingCancellation')
                         <a href="{{ route('transactions.approve-cancellation', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700">

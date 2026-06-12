@@ -92,6 +92,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/verify', [MfaController::class, 'verifyStore'])->name('verify.store');
         Route::post('/disable', [MfaController::class, 'disable'])->name('disable');
         Route::get('/recovery', [MfaController::class, 'recovery'])->name('recovery');
+        Route::post('/recovery/verify', [MfaController::class, 'recoveryVerify'])->name('recovery.verify');
         Route::get('/trusted-devices', [MfaController::class, 'trustedDevices'])->name('trusted-devices');
         Route::delete('/trusted-devices/{deviceId}', [MfaController::class, 'removeDevice'])->name('trusted-devices.remove');
     });
@@ -110,17 +111,25 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         Route::middleware('role:manager')->group(function () {
             Route::get('/batch-upload', [TransactionBatchController::class, 'showBatchUpload'])->name('batch-upload');
-            Route::post('/batch-upload', [TransactionBatchController::class, 'processBatchUpload']);
+            Route::post('/batch-upload', [TransactionBatchController::class, 'processBatchUpload'])->name('batch-upload.store');
             Route::get('/import/{import}', [TransactionBatchController::class, 'showImportResults'])->name('batch-upload.show');
-            Route::get('/template', [TransactionBatchController::class, 'downloadTemplate'])->name('template');
+            Route::get('/template', [TransactionBatchController::class, 'downloadTemplate'])->name('batch-upload.template');
+            Route::get('/download-errors/{import}', [TransactionBatchController::class, 'downloadErrors'])
+                ->name('batch-upload.download-errors');
         });
 
         Route::get('/{transaction}', [TransactionController::class, 'show'])->name('show');
         Route::get('/{transaction}/receipt', [TransactionController::class, 'receipt'])->name('receipt');
+        Route::get('/{transaction}/print', [TransactionController::class, 'receipt'])->name('print');
 
         Route::post('/{transaction}/approve', [TransactionApprovalController::class, 'approve'])->name('approve')
             ->middleware(['role:manager', 'mfa.verified']);
+        Route::post('/{transaction}/reject', [TransactionApprovalController::class, 'reject'])->name('reject')
+            ->middleware(['role:manager', 'mfa.verified']);
         Route::get('/{transaction}/cancel', [TransactionController::class, 'showCancel'])->name('cancel.show')
+            ->middleware(['role:manager', 'mfa.verified']);
+        // Alias used by transaction detail buttons
+        Route::get('/{transaction}/cancel', [TransactionController::class, 'showCancel'])->name('cancel')
             ->middleware(['role:manager', 'mfa.verified']);
         Route::post('/{transaction}/cancel', [TransactionCancellationController::class, 'cancel'])->name('cancel.store')
             ->middleware(['role:manager', 'mfa.verified']);
@@ -129,6 +138,19 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->middleware('role:manager');
         Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm')
             ->middleware('role:manager');
+        Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm.store')
+            ->middleware('role:manager');
+
+        Route::middleware(['role:manager', 'mfa.verified'])->group(function () {
+            Route::get('/{transaction}/approve-cancellation', [TransactionCancellationController::class, 'showApproveCancel'])
+                ->name('approve-cancellation');
+            Route::post('/{transaction}/approve-cancellation', [TransactionCancellationController::class, 'approveCancel'])
+                ->name('approve-cancellation.store');
+            Route::get('/{transaction}/reject-cancellation', [TransactionCancellationController::class, 'showRejectCancel'])
+                ->name('reject-cancellation');
+            Route::post('/{transaction}/reject-cancellation', [TransactionCancellationController::class, 'rejectCancel'])
+                ->name('reject-cancellation.store');
+        });
     });
 
     Route::prefix('customers')->name('customers.')->group(function () {
@@ -137,6 +159,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/', [CustomerController::class, 'store'])->name('store');
         Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
         Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
+        Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
     });
 
     Route::prefix('counters')->name('counters.')->group(function () {
@@ -151,6 +174,12 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/{counter}/handover', [CounterController::class, 'handover'])->name('handover');
         Route::get('/{counter}/handover/acknowledge', [CounterController::class, 'showAcknowledgeHandover'])->name('handover.acknowledge.show');
         Route::post('/{counter}/handover/acknowledge', [CounterController::class, 'acknowledgeHandover'])->name('handover.acknowledge');
+
+        Route::get('/{counter}/emergency', [CounterController::class, 'showEmergency'])->name('emergency');
+        Route::post('/{counter}/emergency', [CounterController::class, 'emergency'])->name('emergency.store');
+        Route::post('/{counter}/emergency-close', [CounterController::class, 'emergency'])->name('emergency-close');
+        Route::get('/{counter}/emergency-closure/{closure}', [CounterController::class, 'showEmergencyClosure'])
+            ->name('emergency-closure');
     });
 
     Route::prefix('stock-cash')->name('stock-cash.')->group(function () {
@@ -304,9 +333,15 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/', [DashboardController::class, 'reports'])->name('index');
 
         Route::get('/msb2', [RegulatoryReportController::class, 'msb2'])->name('msb2');
+        Route::post('/msb2/export', [RegulatoryReportController::class, 'msb2Generate'])->name('msb2.export');
         Route::get('/lmca', [RegulatoryReportController::class, 'lmca'])->name('lmca');
+        Route::post('/lmca/export', [RegulatoryReportController::class, 'lmcaGenerate'])->name('lmca.export');
         Route::get('/quarterly-lvr', [RegulatoryReportController::class, 'quarterlyLvr'])->name('quarterly-lvr');
+        Route::post('/quarterly-lvr/export', [RegulatoryReportController::class, 'quarterlyLvrGenerate'])
+            ->name('quarterly-lvr.export');
         Route::get('/position-limit', [RegulatoryReportController::class, 'positionLimit'])->name('position-limit');
+        Route::post('/position-limit/export', [RegulatoryReportController::class, 'positionLimitGenerate'])
+            ->name('position-limit.export');
 
         Route::get('/monthly-trends', [AnalyticsController::class, 'monthlyTrends'])->name('monthly-trends');
         Route::get('/profitability', [AnalyticsController::class, 'profitability'])->name('profitability');
@@ -317,8 +352,10 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     Route::middleware(['auth', 'role:admin', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::get('/create', [UserController::class, 'create'])->name('create');
+        Route::post('/', [UserController::class, 'store'])->name('store');
         Route::get('/{user}', [UserController::class, 'show'])->name('show');
         Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [UserController::class, 'update'])->name('update');
         Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
     });
 
@@ -328,8 +365,18 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->name('closing.show');
         Route::post('/{branch}/closing/initiate', [BranchClosingController::class, 'initiate'])
             ->name('closing.initiate');
+        Route::post('/{branch}/closing/settle', [BranchClosingController::class, 'settle'])
+            ->name('closing.settle');
         Route::post('/{branch}/closing/finalize', [BranchClosingController::class, 'finalize'])
             ->name('closing.finalize');
+    });
+
+    // Alias group for views that use the legacy branch-closing.* route names
+    Route::middleware(['auth', 'role:admin'])->prefix('branch-closing')->name('branch-closing.')->group(function () {
+        Route::get('/{branch}', [BranchClosingController::class, 'show'])->name('show');
+        Route::post('/{branch}/initiate', [BranchClosingController::class, 'initiate'])->name('initiate');
+        Route::post('/{branch}/settle', [BranchClosingController::class, 'settle'])->name('settle');
+        Route::post('/{branch}/finalize', [BranchClosingController::class, 'finalize'])->name('finalize');
     });
 
     Route::middleware(['role:admin'])->prefix('test-results')->name('test-results.')->group(function () {

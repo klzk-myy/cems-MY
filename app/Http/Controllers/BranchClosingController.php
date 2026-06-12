@@ -38,6 +38,20 @@ class BranchClosingController extends Controller
             ->with('success', 'Branch closure workflow initiated.');
     }
 
+    public function settle(Request $request, Branch $branch): RedirectResponse
+    {
+        $workflow = $this->branchClosingService->getActiveWorkflow($branch);
+
+        if (! $workflow) {
+            return redirect()->back()->with('error', 'No active closure workflow found for this branch.');
+        }
+
+        $this->branchClosingService->settle($workflow, auth()->user());
+
+        return redirect()->route('branch-closing.show', $branch)
+            ->with('success', 'Branch settlement completed. Cash and allocations returned to pool.');
+    }
+
     public function finalize(Request $request, Branch $branch): RedirectResponse
     {
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
@@ -49,7 +63,7 @@ class BranchClosingController extends Controller
         try {
             $this->branchClosingService->finalize($workflow, auth()->user());
 
-            return redirect()->route('branches.show', $branch)
+            return redirect()->route('branch-closing.show', $branch)
                 ->with('success', 'Branch closure finalized successfully.');
         } catch (BranchClosingChecklistIncompleteException $e) {
             return redirect()->back()->with('error', $e->getMessage());

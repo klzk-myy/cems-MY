@@ -28,7 +28,7 @@
             <hr class="border-[#e5e5e5] my-6">
 
             <h2 class="text-lg font-semibold mb-4">Closing Balances</h2>
-            <form method="POST" action="{{ route('counters.close.store', $counter ?? 1) }}">
+            <form method="POST" action="{{ route('counters.close', $counter ?? 1) }}">
                 @csrf
 
                 <div class="space-y-4 mb-6">

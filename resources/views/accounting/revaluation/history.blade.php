@@ -6,7 +6,7 @@
                 <h1 class="text-2xl font-semibold text-gray-900">Revaluation History</h1>
                 <p class="mt-1 text-sm text-gray-500">View historical currency revaluation records</p>
             </div>
-            <a href="{{ route('accounting.revaluation.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
+            <a href="{{ route('accounting.revaluation') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
                 Back to Revaluation
             </a>
         </div>

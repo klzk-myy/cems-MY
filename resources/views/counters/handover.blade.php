@@ -28,7 +28,7 @@
             <hr class="border-[#e5e5e5] my-6">
 
             <h2 class="text-lg font-semibold mb-4">Transfer Details</h2>
-            <form method="POST" action="{{ route('counters.handover.store', $counter ?? 1) }}">
+            <form method="POST" action="{{ route('counters.handover', $counter ?? 1) }}">
                 @csrf
 
                 <div class="mb-4">

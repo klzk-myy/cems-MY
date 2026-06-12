@@ -349,17 +349,7 @@
             </a>
         </li>
 
-        {{-- <li>
-            <a href="{{ route('reports.compare') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.compare') ? 'bg-gray-800' : '' }}">
-                Compare Reports
-            </a>
-        </li>
 
-        <li>
-            <a href="{{ route('reports.history') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('reports.history') ? 'bg-gray-800' : '' }}">
-                Report History
-            </a>
-        </li> --}}
         @endif
 
         @can('role:admin')
@@ -376,12 +366,6 @@
         <li>
             <a href="{{ route('users.create') }}" class="flex items-center pl-6 py-2 text-sm hover:bg-gray-800 {{ request()->routeIs('users.create') ? 'bg-gray-800' : '' }}">
                 Create User
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('branches.index') }}" class="flex items-center px-4 py-2 hover:bg-gray-800 {{ request()->routeIs('branches.*') ? 'bg-gray-800' : '' }}">
-                Branches
             </a>
         </li>
 
