@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,7 +19,7 @@ class ComplianceWorkspaceTest extends TestCase
 
     public function test_compliance_workspace_requires_compliance_role(): void
     {
-        $user = User::factory()->create(['role' => 'compliance']);
+        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
         $response = $this->actingAs($user)->get(route('compliance.workspace'));
         $response->assertStatus(200);
@@ -27,7 +28,7 @@ class ComplianceWorkspaceTest extends TestCase
 
     public function test_non_compliance_users_cannot_access_workspace(): void
     {
-        $user = User::factory()->create(['role' => 'teller']);
+        $user = User::factory()->create(['role' => UserRole::Teller]);
 
         $response = $this->actingAs($user)->get(route('compliance.workspace'));
         $response->assertForbidden();
