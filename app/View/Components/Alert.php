@@ -48,7 +48,8 @@ class Alert extends Component
      */
     public function shouldRender(): bool
     {
-        return trim((string) $this->slot) !== '';
+        // Always render - slot check doesn't work in class context
+        return true;
     }
 
     /**

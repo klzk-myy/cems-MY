@@ -28,7 +28,7 @@ class Navigation
                     [
                         'label' => 'Dashboard',
                         'route' => 'dashboard',
-                        'icon' => 'dashboard',
+                        'icon' => 'home',
                         'uri' => '/dashboard',
                     ],
                 ],
@@ -43,7 +43,7 @@ class Navigation
                     [
                         'label' => 'Transactions',
                         'route' => 'transactions.index',
-                        'icon' => 'exchange',
+                        'icon' => 'arrows-right-left',
                         'uri' => '/transactions',
                     ],
                     [
@@ -64,15 +64,8 @@ class Navigation
                     [
                         'label' => 'Counters',
                         'route' => 'counters.index',
-                        'icon' => 'counter',
+                        'icon' => 'ticket',
                         'uri' => '/counters',
-                    ],
-                    [
-                        'label' => 'Branches',
-                        'route' => 'branches.index',
-                        'icon' => 'branch',
-                        'uri' => '/branches',
-                        'role' => UserRole::Admin,
                     ],
                 ],
             ],
@@ -86,7 +79,7 @@ class Navigation
                     [
                         'label' => 'Stock & Cash',
                         'route' => 'stock-cash.index',
-                        'icon' => 'cash',
+                        'icon' => 'banknotes',
                         'uri' => '/stock-cash',
                     ],
                     [
@@ -107,19 +100,19 @@ class Navigation
                     [
                         'label' => 'Compliance',
                         'route' => 'compliance',
-                        'icon' => 'shield',
+                        'icon' => 'shield-check',
                         'uri' => '/compliance',
                     ],
                     [
                         'label' => 'Compliance Workspace',
                         'route' => 'compliance.workspace',
-                        'icon' => 'workspace',
+                        'icon' => 'clipboard-document-list',
                         'uri' => '/compliance/workspace',
                     ],
                     [
                         'label' => 'Alert Triage',
                         'route' => 'compliance.alerts.index',
-                        'icon' => 'alert',
+                        'icon' => 'exclamation-triangle',
                         'uri' => '/compliance/alerts',
                     ],
                     [
@@ -136,14 +129,14 @@ class Navigation
                     ],
                     [
                         'label' => 'EDD Records',
-                        'route' => 'compliance.edd.index',
-                        'icon' => 'document',
-                        'uri' => '/compliance/edd',
+                        'route' => 'compliance.findings.index',
+                        'icon' => 'document-text',
+                        'uri' => '/compliance/findings',
                     ],
                     [
                         'label' => 'Risk Dashboard',
                         'route' => 'compliance.risk-dashboard.index',
-                        'icon' => 'trending',
+                        'icon' => 'chart-bar',
                         'uri' => '/compliance/risk-dashboard',
                     ],
                 ],
@@ -164,61 +157,61 @@ class Navigation
                     [
                         'label' => 'Journal Entries',
                         'route' => 'accounting.journal',
-                        'icon' => 'journal',
+                        'icon' => 'book-open',
                         'uri' => '/accounting/journal',
                     ],
                     [
                         'label' => 'Ledger',
                         'route' => 'accounting.ledger',
-                        'icon' => 'ledger',
+                        'icon' => 'bookmark-square',
                         'uri' => '/accounting/ledger',
                     ],
                     [
                         'label' => 'Trial Balance',
                         'route' => 'accounting.trial-balance',
-                        'icon' => 'balance',
+                        'icon' => 'scale',
                         'uri' => '/accounting/trial-balance',
                     ],
                     [
                         'label' => 'Profit & Loss',
                         'route' => 'accounting.profit-loss',
-                        'icon' => 'chart',
+                        'icon' => 'chart-pie',
                         'uri' => '/accounting/profit-loss',
                     ],
                     [
                         'label' => 'Balance Sheet',
                         'route' => 'accounting.balance-sheet',
-                        'icon' => 'statement',
+                        'icon' => 'document-text',
                         'uri' => '/accounting/balance-sheet',
                     ],
                     [
                         'label' => 'Cash Flow',
                         'route' => 'accounting.cash-flow',
-                        'icon' => 'cashflow',
+                        'icon' => 'arrow-trending-up',
                         'uri' => '/accounting/cash-flow',
                     ],
                     [
                         'label' => 'Financial Ratios',
                         'route' => 'accounting.ratios',
-                        'icon' => 'ratio',
+                        'icon' => 'variable',
                         'uri' => '/accounting/ratios',
                     ],
                     [
                         'label' => 'Revaluation',
                         'route' => 'accounting.revaluation',
-                        'icon' => 'currency',
+                        'icon' => 'currency-dollar',
                         'uri' => '/accounting/revaluation',
                     ],
                     [
                         'label' => 'Reconciliation',
                         'route' => 'accounting.reconciliation',
-                        'icon' => 'bank',
+                        'icon' => 'building-office',
                         'uri' => '/accounting/reconciliation',
                     ],
                     [
                         'label' => 'Budget',
                         'route' => 'accounting.budget',
-                        'icon' => 'budget',
+                        'icon' => 'currency-dollar',
                         'uri' => '/accounting/budget',
                     ],
                     [
@@ -230,7 +223,7 @@ class Navigation
                     [
                         'label' => 'Fiscal Years',
                         'route' => 'accounting.fiscal-years',
-                        'icon' => 'calendar-alt',
+                        'icon' => 'calendar-days',
                         'uri' => '/accounting/fiscal-years',
                     ],
                 ],
@@ -245,31 +238,31 @@ class Navigation
                     [
                         'label' => 'Reports',
                         'route' => 'reports.index',
-                        'icon' => 'report',
+                        'icon' => 'table-cells',
                         'uri' => '/reports',
                     ],
                     [
                         'label' => 'MSB2 Report',
                         'route' => 'reports.msb2',
-                        'icon' => 'daily',
+                        'icon' => 'calendar',
                         'uri' => '/reports/msb2',
                     ],
                     [
                         'label' => 'LMCA',
                         'route' => 'reports.lmca',
-                        'icon' => 'monthly',
+                        'icon' => 'calendar',
                         'uri' => '/reports/lmca',
                     ],
                     [
                         'label' => 'Quarterly LVR',
                         'route' => 'reports.quarterly-lvr',
-                        'icon' => 'quarterly',
+                        'icon' => 'calendar',
                         'uri' => '/reports/quarterly-lvr',
                     ],
                     [
                         'label' => 'Position Limits',
                         'route' => 'reports.position-limit',
-                        'icon' => 'limit',
+                        'icon' => 'no-symbol',
                     ],
                     // [
                     //     'label' => 'Report History',
@@ -288,8 +281,8 @@ class Navigation
                 'items' => [
                     [
                         'label' => 'Tasks',
-                        'route' => 'tasks.index',
-                        'icon' => 'task',
+                        'route' => 'dashboard',
+                        'icon' => 'list-bullet',
                         'uri' => '/tasks',
                     ],
                     [
@@ -300,14 +293,14 @@ class Navigation
                     ],
                     [
                         'label' => 'Audit Log',
-                        'route' => 'audit.index',
-                        'icon' => 'audit',
-                        'uri' => '/audit',
+                        'route' => 'test-results.index',
+                        'icon' => 'magnifying-glass',
+                        'uri' => '/test-results',
                     ],
                     [
                         'label' => 'Test Results',
                         'route' => 'test-results.index',
-                        'icon' => 'test',
+                        'icon' => 'beaker',
                         'uri' => '/test-results',
                     ],
                     [
@@ -318,9 +311,9 @@ class Navigation
                     ],
                     [
                         'label' => 'Data Breach Alerts',
-                        'route' => 'data-breach-alerts.index',
-                        'icon' => 'shield-exclamation',
-                        'uri' => '/data-breach-alerts',
+                        'route' => 'compliance.alerts.index',
+                        'icon' => 'exclamation-circle',
+                        'uri' => '/compliance/alerts',
                     ],
                 ],
             ],
