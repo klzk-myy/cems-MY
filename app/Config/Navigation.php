@@ -341,9 +341,31 @@ class Navigation
             ];
         }
 
-        // Role-based filtering can be added here if needed
-        // For now, all items are shown but may be filtered by route middleware
-        return $navigation;
+        // Filter sections based on role permissions
+        $filtered = [];
+
+        foreach ($navigation as $section => $config) {
+            if (self::sectionAllowed($section, $role)) {
+                $filtered[$section] = $config;
+            }
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * Check if navigation section is allowed for role
+     */
+    private static function sectionAllowed(string $section, UserRole $role): bool
+    {
+        return match ($section) {
+            'main' => true,
+            'operations', 'counter_management', 'stock_management' => $role->isManager(),
+            'compliance' => $role->isComplianceOfficer(),
+            'accounting', 'reports' => $role->isManager(),
+            'system' => $role->isAdmin(),
+            default => true,
+        };
     }
 
     /**
