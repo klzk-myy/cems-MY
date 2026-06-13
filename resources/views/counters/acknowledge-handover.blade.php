@@ -11,19 +11,19 @@
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <span class="text-gray-500">Counter</span>
-                        <p class="font-medium">{{ $counter->name ?? 'Counter 1' }}</p>
+                        <p class="font-medium">{{ $counter?->name ?? 'Unknown Counter' }}</p>
                     </div>
                     <div>
                         <span class="text-gray-500">Handed Over By</span>
-                        <p class="font-medium">{{ $handover->from_user->name ?? 'John Doe' }}</p>
+                        <p class="font-medium">{{ $handover?->from_user?->name ?? 'Unknown User' }}</p>
                     </div>
                     <div>
                         <span class="text-gray-500">Date & Time</span>
-                        <p class="font-medium">{{ $handover->created_at->format('d M Y, h:i A') ?? now()->format('d M Y, h:i A') }}</p>
+                        <p class="font-medium">{{ $handover?->created_at?->format('d M Y, h:i A') ?? now()->format('d M Y, h:i A') }}</p>
                     </div>
                     <div>
                         <span class="text-gray-500">Your Name</span>
-                        <p class="font-medium">{{ $handover->to_user->name ?? auth()->user()->name }}</p>
+                        <p class="font-medium">{{ $handover?->to_user?->name ?? auth()->user()?->name ?? 'Unknown User' }}</p>
                     </div>
                 </div>
             </div>
@@ -34,7 +34,7 @@
                     <table class="w-full text-sm">
                         <tr>
                             <td class="text-gray-500">MYR Cash</td>
-                            <td class="text-right font-medium">{{ number_format($handover->float_amount ?? 5000, 2) }}</td>
+                            <td class="text-right font-medium">{{ number_format($handover?->float_amount ?? 0, 2) }}</td>
                         </tr>
                         @isset($handover->currency_floats)
                         @foreach($handover->currency_floats as $currency => $amount)
@@ -55,7 +55,7 @@
             </div>
             @endisset
 
-            <form method="POST" action="{{ route('counters.handover.acknowledge', $counter ?? 1) }}">
+            <form method="POST" action="{{ route('counters.handover.acknowledge', $counter) }}">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Your PIN</label>
