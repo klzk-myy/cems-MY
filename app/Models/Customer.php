@@ -122,6 +122,16 @@ class Customer extends Model
     }
 
     /**
+     * Get all notes associated with this customer.
+     *
+     * @return HasMany
+     */
+    public function notes()
+    {
+        return $this->hasMany(CustomerNote::class);
+    }
+
+    /**
      * Get all documents associated with this customer.
      *
      * @return HasMany

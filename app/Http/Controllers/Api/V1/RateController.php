@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\OverrideRateRequest;
 use App\Http\Requests\FetchRateRequest;
-use App\Http\Requests\OverrideRateRequest;
+use App\Models\ExchangeRate;
+use App\Models\ExchangeRateHistory;
 use App\Services\RateManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -106,42 +108,21 @@ class RateController extends Controller
      * Override/Manually set rates for a currency.
      * Manager/Admin only.
      */
-    public function override(OverrideRateRequest $request, string $currencyCode): JsonResponse
+    public function apiOverride(OverrideRateRequest $request, string $currencyCode): JsonResponse
     {
-        $user = Auth::user();
-
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can override rates',
-            ], 403);
-        }
-
         $validated = $request->validated();
 
-        $result = $this->rateService->overrideRate(
-            $currencyCode,
-            $validated['rate_buy'],
-            $validated['rate_sell'],
-            $user,
-            $validated['reason'] ?? null
+        $rate = ExchangeRate::updateOrCreate(
+            ['currency_code' => $currencyCode],
+            [
+                'rate_buy' => $validated['rate_buy'],
+                'rate_sell' => $validated['rate_sell'],
+                'source' => 'manual',
+                'fetched_at' => now(),
+            ]
         );
 
-        if (! $result['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => $result['message'],
-            ], 400);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => $result['message'],
-            'old_buy_rate' => $result['old_buy_rate'],
-            'old_sell_rate' => $result['old_sell_rate'],
-            'new_buy_rate' => $result['new_buy_rate'],
-            'new_sell_rate' => $result['new_sell_rate'],
-        ]);
+        return response()->json(['message' => 'Rate override saved.', 'data' => $rate]);
     }
 
     /**

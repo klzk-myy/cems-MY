@@ -133,18 +133,18 @@
                     <div class="space-y-3">
                         @forelse($notes ?? [] as $note)
                         <div class="p-3 bg-gray-50 rounded-lg">
-                            <div class="text-sm">{{ $note->content }}</div>
-                            <div class="text-xs text-gray-500 mt-1">{{ $note->created_at->format('d M Y h:i A') }} - {{ $note->author->name ?? 'System' }}</div>
+                            <div class="text-sm">{{ $note->note }}</div>
+                            <div class="text-xs text-gray-500 mt-1">{{ $note->created_at->format('d M Y h:i A') }} - {{ $note->creator?->name ?? 'System' }}</div>
                         </div>
                         @empty
                         <p class="text-sm text-gray-500">No notes yet.</p>
                         @endforelse
                     </div>
-                    <form class="mt-4">
-                        <textarea rows="2" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg mb-2" placeholder="Add a note..."></textarea>
-                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                            Add Note
-                        </button>
+                    <form method="POST" action="{{ route('customers.notes.store', $customer) }}" class="mt-4">
+                        @csrf
+                        <label for="note" class="sr-only">Add a note</label>
+                        <textarea id="note" name="note" rows="2" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg mb-2" placeholder="Add a note..."></textarea>
+                        <x-button type="submit" variant="primary" size="sm">Add Note</x-button>
                     </form>
                 </div>
             </div>

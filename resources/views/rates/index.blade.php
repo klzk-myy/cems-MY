@@ -88,11 +88,12 @@
     <div id="override-modal" class="hidden fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
         <div class="bg-white rounded-xl p-6 w-full max-w-md">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Override Rate</h3>
-            <form id="override-form">
+            <form id="override-form" method="POST" action="{{ route('rates.override') }}">
+                @csrf
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Currency</label>
-                        <x-input type="text" id="override-currency" class="mt-1 w-full px-4 py-2.5 text-sm bg-gray-100 border border-[#e5e5e5] rounded-lg" readonly />
+                        <x-input type="text" name="currency_code" id="override-currency" class="mt-1 w-full px-4 py-2.5 text-sm bg-gray-100 border border-[#e5e5e5] rounded-lg" readonly />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Rate Buy</label>
@@ -174,31 +175,6 @@
 
         document.getElementById('cancel-override')?.addEventListener('click', function() {
             document.getElementById('override-modal').classList.add('hidden');
-        });
-
-        document.getElementById('override-form')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const currency = document.getElementById('override-currency').value;
-            const rateBuy = document.getElementById('override-rate-buy').value;
-            const rateSell = document.getElementById('override-rate-sell').value;
-            const reason = document.getElementById('override-reason').value;
-
-            try {
-                const response = await fetch(`/api/v1/rates/${currency}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    body: JSON.stringify({ rate_buy: rateBuy, rate_sell: rateSell, reason })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('override-modal').classList.add('hidden');
-                    location.reload();
-                } else {
-                    alert('Failed: ' + data.message);
-                }
-            } catch (e) {
-                alert('Error: ' + e.message);
-            }
         });
     </script>
 </main>

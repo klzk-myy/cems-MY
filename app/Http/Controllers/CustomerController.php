@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CddLevel;
+use App\Http\Requests\StoreCustomerNoteRequest;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
@@ -257,6 +258,11 @@ class CustomerController extends Controller
             $query->orderBy('created_at', 'desc')->limit(10);
         }]);
 
+        $notes = $customer->notes()
+            ->with('creator')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         // Calculate transaction stats
         $transactionStats = [
             'total_transactions' => $customer->transactions()->count(),
@@ -276,8 +282,22 @@ class CustomerController extends Controller
         return view('customers.show', compact(
             'customer',
             'transactionStats',
-            'documentStatus'
+            'documentStatus',
+            'notes'
         ));
+    }
+
+    /**
+     * Store a new note for the specified customer.
+     */
+    public function storeNote(StoreCustomerNoteRequest $request, Customer $customer): RedirectResponse
+    {
+        $customer->notes()->create([
+            'note' => $request->validated('note'),
+            'created_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Note added.');
     }
 
     /**

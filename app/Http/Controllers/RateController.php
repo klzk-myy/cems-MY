@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\ExchangeRateHistory;
 use App\Services\RateManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -92,20 +93,22 @@ class RateController extends Controller
         return response()->json($result, $result['success'] ? 200 : 404);
     }
 
-    public function override(OverrideRateRequest $request, string $currencyCode): JsonResponse
+    public function override(OverrideRateRequest $request): RedirectResponse
     {
         $user = Auth::user();
 
         if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can override rates',
-            ], 403);
+            abort(403, 'Only managers and admins can override rates');
+        }
+
+        $validated = $request->validated();
+        $currencyCode = $request->input('currency_code');
+
+        if (empty($currencyCode)) {
+            return back()->with('error', 'Currency code is required.')->withInput();
         }
 
         $branchId = $this->resolveBranchId($user, $request);
-
-        $validated = $request->validated();
 
         $result = $this->rateService->overrideRate(
             $currencyCode,
@@ -116,7 +119,11 @@ class RateController extends Controller
             $branchId
         );
 
-        return response()->json($result);
+        if (! $result['success']) {
+            return back()->with('error', $result['message'])->withInput();
+        }
+
+        return back()->with('success', $result['message']);
     }
 
     public function history(Request $request, string $currencyCode): JsonResponse

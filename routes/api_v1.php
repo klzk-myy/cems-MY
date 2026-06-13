@@ -235,7 +235,7 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('role:manager,admin');
         Route::post('/copy-previous', [RateController::class, 'copyPrevious'])
             ->middleware('role:manager,admin');
-        Route::put('/{currencyCode}', [RateController::class, 'override'])
+        Route::put('/{currencyCode}', [RateController::class, 'apiOverride'])
             ->middleware('role:manager,admin');
         Route::post('/validate', [RateController::class, 'validateRate']);
     });

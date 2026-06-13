@@ -100,6 +100,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/', [RateController::class, 'index'])->name('index');
     });
 
+    Route::post('/rates/override', [RateController::class, 'override'])->name('rates.override')->middleware('role:manager,admin');
+
     Route::prefix('transactions')->name('transactions.')->group(function () {
         Route::get('/', [TransactionController::class, 'index'])->name('index');
 
@@ -154,6 +156,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
         Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
         Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
+        Route::post('/{customer}/notes', [CustomerController::class, 'storeNote'])->name('notes.store');
     });
 
     Route::prefix('counters')->name('counters.')->group(function () {
