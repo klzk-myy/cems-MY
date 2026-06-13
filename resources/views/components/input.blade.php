@@ -20,7 +20,7 @@
     @endif
     
     <input type="{{ $type }}" 
-           @if($name) name="{{ $name }}" @endif
+           @if($name) name="{{ $name }}" id="{{ $name }}" @endif
            @if($required) required @endif
            @if($disabled) disabled @endif
            @if($readonly) readonly @endif

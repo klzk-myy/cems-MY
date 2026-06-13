@@ -1,70 +1,47 @@
 <x-app-layout title="Create Customer">
     <div class="p-6">
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold">Create New Customer</h1>
-            <p class="text-gray-500 text-sm mt-1">Add a new customer to the system</p>
-        </div>
+        <x-page-header title="Create Customer" description="Add a new customer to the system" class="mb-6" />
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 max-w-2xl">
-            <form method="POST" action="{{ route('customers.store') }}">
+        <x-card class="max-w-2xl">
+            <form method="POST" action="{{ route('customers.store') }}" class="p-6">
                 @csrf
 
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                        <input type="text" name="full_name" value="{{ old('full_name') }}" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" name="email" value="{{ old('email') }}" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <x-input name="full_name" label="Full Name" value="{{ old('full_name') }}" required />
+                    <x-input type="email" name="email" label="Email" value="{{ old('email') }}" />
+
+                    <x-select
+                        name="id_type"
+                        label="ID Type"
+                        :options="['IC' => 'NRIC / IC', 'PASSPORT' => 'Passport', 'MILITARY' => 'Military ID']"
+                        placeholder="-- Select --"
+                        required
+                    />
+                    <x-input name="id_number" label="ID Number" value="{{ old('id_number') }}" required />
+
+                    <x-select
+                        name="nationality"
+                        label="Nationality"
+                        :options="['MY' => 'Malaysian', 'SG' => 'Singaporean', 'US' => 'American', 'GB' => 'British', 'OTHER' => 'Other']"
+                        placeholder="-- Select --"
+                        required
+                    />
+                    <x-input name="phone" label="Phone Number" value="{{ old('phone') }}" />
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">ID Type *</label>
-                        <select name="id_type" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
-                            <option value="">-- Select --</option>
-                            <option value="IC">NRIC / IC</option>
-                            <option value="PASSPORT">Passport</option>
-                            <option value="MILITARY">Military ID</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">ID Number *</label>
-                        <input type="text" name="id_number" value="{{ old('id_number') }}" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
-                    </div>
+                <div class="mt-6">
+                    <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <textarea
+                        id="address"
+                        name="address"
+                        rows="2"
+                        class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black"
+                    >{{ old('address') }}</textarea>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nationality *</label>
-                        <select name="nationality" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
-                            <option value="">-- Select --</option>
-                            <option value="MY">Malaysian</option>
-                            <option value="SG">Singaporean</option>
-                            <option value="US">American</option>
-                            <option value="GB">British</option>
-                            <option value="OTHER">Other</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                        <input type="text" name="phone" value="{{ old('phone') }}" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                    </div>
-                </div>
+                <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth') }}" class="mt-6" />
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <textarea name="address" rows="2" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">{{ old('address') }}</textarea>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                    <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                </div>
-
-                <div class="mb-6">
+                <div class="mt-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Risk Level</label>
                     <div class="flex gap-4">
                         <label class="flex items-center gap-2">
@@ -82,15 +59,11 @@
                     </div>
                 </div>
 
-                <div class="flex gap-3">
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                        Create Customer
-                    </button>
-                    <a href="{{ route('customers.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                        Cancel
-                    </a>
+                <div class="mt-6 flex gap-3">
+                    <x-button type="submit" variant="primary">Create Customer</x-button>
+                    <x-button href="{{ route('customers.index') }}" variant="secondary">Cancel</x-button>
                 </div>
             </form>
-        </div>
+        </x-card>
     </div>
 </x-app-layout>

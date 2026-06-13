@@ -18,7 +18,7 @@
         </label>
     @endif
     
-    <select @if($name) name="{{ $name }}" @endif
+    <select @if($name) name="{{ $name }}" id="{{ $name }}" @endif
             @if($required) required @endif
             @if($disabled) disabled @endif
             {{ $attributes->except(['label', 'name', 'options', 'required', 'disabled', 'placeholder', 'help', 'inline']) }}
