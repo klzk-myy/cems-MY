@@ -11,18 +11,40 @@
             </button>
         </div>
 
+        @php
+            $activeYear = $fiscalYears->first();
+        @endphp
+
         <!-- Active Fiscal Year -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-gray-500">Active Fiscal Year</h3>
-                    <p class="mt-1 text-2xl font-semibold text-gray-900">FY 2026</p>
-                    <p class="mt-1 text-sm text-gray-500">January 1, 2026 - December 31, 2026</p>
+                    <p class="mt-1 text-2xl font-semibold text-gray-900">
+                        {{ $activeYear ? 'FY '.$activeYear->year_code : 'No fiscal years configured' }}
+                    </p>
+                    <p class="mt-1 text-sm text-gray-500">
+                        @if ($activeYear)
+                            {{ $activeYear->start_date?->format('F j, Y') }} - {{ $activeYear->end_date?->format('F j, Y') }}
+                        @endif
+                    </p>
                 </div>
-                <div class="flex items-center gap-3">
-                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span>
-                    <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Close Year</button>
-                </div>
+                @if ($activeYear)
+                    <div class="flex items-center gap-3">
+                        @php
+                            $activeYearStatusColor = match ($activeYear->status?->value) {
+                                'Open' => 'bg-green-100 text-green-700',
+                                'Closed' => 'bg-gray-100 text-gray-700',
+                                'Archived' => 'bg-blue-100 text-blue-700',
+                                default => 'bg-gray-100 text-gray-700',
+                            };
+                        @endphp
+                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $activeYearStatusColor }}">
+                            {{ $activeYear->status?->label() }}
+                        </span>
+                        <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Close Year</button>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -40,42 +62,34 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#e5e5e5]">
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm font-medium text-gray-900">FY 2026</td>
-                        <td class="px-4 py-3 text-sm">2026-01-01</td>
-                        <td class="px-4 py-3 text-sm">2026-12-31</td>
-                        <td class="px-4 py-3 text-center text-sm">12</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">View</button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm font-medium text-gray-900">FY 2025</td>
-                        <td class="px-4 py-3 text-sm">2025-01-01</td>
-                        <td class="px-4 py-3 text-sm">2025-12-31</td>
-                        <td class="px-4 py-3 text-center text-sm">12</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">View</button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm font-medium text-gray-900">FY 2024</td>
-                        <td class="px-4 py-3 text-sm">2024-01-01</td>
-                        <td class="px-4 py-3 text-sm">2024-12-31</td>
-                        <td class="px-4 py-3 text-center text-sm">12</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">View</button>
-                        </td>
-                    </tr>
+                    @forelse ($fiscalYears as $fiscalYear)
+                        @php
+                            $yearStatusColor = match ($fiscalYear->status?->value) {
+                                'Open' => 'bg-green-100 text-green-700',
+                                'Closed' => 'bg-gray-100 text-gray-700',
+                                'Archived' => 'bg-blue-100 text-blue-700',
+                                default => 'bg-gray-100 text-gray-700',
+                            };
+                        @endphp
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">FY {{ $fiscalYear->year_code }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $fiscalYear->start_date?->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $fiscalYear->end_date?->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-center text-sm">{{ $fiscalYear->periods?->count() ?? 0 }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $yearStatusColor }}">
+                                    {{ $fiscalYear->status?->label() }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="text-blue-600 hover:text-blue-800">View</button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-sm text-center text-gray-500">No fiscal years found.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -83,7 +97,9 @@
         <!-- Periods Summary -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <div class="px-4 py-3 border-b border-[#e5e5e5]">
-                <h3 class="text-sm font-medium text-gray-900">Current Periods - FY 2026</h3>
+                <h3 class="text-sm font-medium text-gray-900">
+                    Current Periods{{ $activeYear ? ' - FY '.$activeYear->year_code : '' }}
+                </h3>
             </div>
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-[#e5e5e5]">
@@ -97,66 +113,36 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#e5e5e5]">
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm">P01</td>
-                        <td class="px-4 py-3 text-sm">January</td>
-                        <td class="px-4 py-3 text-sm">2026-01-01</td>
-                        <td class="px-4 py-3 text-sm">2026-01-31</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">View</button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm">P02</td>
-                        <td class="px-4 py-3 text-sm">February</td>
-                        <td class="px-4 py-3 text-sm">2026-02-01</td>
-                        <td class="px-4 py-3 text-sm">2026-02-28</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">View</button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm">P03</td>
-                        <td class="px-4 py-3 text-sm">March</td>
-                        <td class="px-4 py-3 text-sm">2026-03-01</td>
-                        <td class="px-4 py-3 text-sm">2026-03-31</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">View</button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm">P04</td>
-                        <td class="px-4 py-3 text-sm">April</td>
-                        <td class="px-4 py-3 text-sm">2026-04-01</td>
-                        <td class="px-4 py-3 text-sm">2026-04-30</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">Close</button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm">P05</td>
-                        <td class="px-4 py-3 text-sm">May</td>
-                        <td class="px-4 py-3 text-sm">2026-05-01</td>
-                        <td class="px-4 py-3 text-sm">2026-05-31</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">Current</span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">View</button>
-                        </td>
-                    </tr>
+                    @forelse (($activeYear?->periods ?? collect())->sortBy('period_code') as $period)
+                        @php
+                            $periodStatusColor = match ($period->status?->value) {
+                                'open' => 'bg-green-100 text-green-700',
+                                'closed' => 'bg-gray-100 text-gray-700',
+                                default => 'bg-gray-100 text-gray-700',
+                            };
+                            $isCurrent = now()->between($period->start_date, $period->end_date);
+                        @endphp
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm">{{ $period->period_code }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $period->start_date?->format('F') }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $period->start_date?->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $period->end_date?->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $periodStatusColor }}">
+                                    {{ $period->status?->label() }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="text-blue-600 hover:text-blue-800">
+                                    {{ $isCurrent ? 'Close' : 'View' }}
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-sm text-center text-gray-500">No periods found.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

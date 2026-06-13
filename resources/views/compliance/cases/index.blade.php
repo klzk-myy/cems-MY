@@ -53,38 +53,51 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">CASE-2024-001</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Suspicious Transaction Pattern</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Ahmad Razali</td>
-                        <td class="px-4 py-3 text-sm">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Critical</span>
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">In Progress</span>
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-900">John Smith</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-15</td>
-                        <td class="px-4 py-3 text-sm">
-                            <a href="#" class="text-blue-600 hover:text-blue-800">View</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">CASE-2024-002</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">High-Risk Customer Review</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Siti Nurhaliza</td>
-                        <td class="px-4 py-3 text-sm">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-orange-100 text-orange-700">High</span>
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Pending Review</span>
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-900">Jane Doe</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-12</td>
-                        <td class="px-4 py-3 text-sm">
-                            <a href="#" class="text-blue-600 hover:text-blue-800">View</a>
-                        </td>
-                    </tr>
+                    @forelse ($cases as $case)
+                        <tr>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ $case->case_number }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ $case->case_type?->label() }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ $case->customer?->name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                @php
+                                    $priorityColor = match ($case->priority?->value) {
+                                        'Critical' => 'bg-red-100 text-red-700',
+                                        'High' => 'bg-orange-100 text-orange-700',
+                                        'Medium' => 'bg-yellow-100 text-yellow-700',
+                                        'Low' => 'bg-green-100 text-green-700',
+                                        default => 'bg-gray-100 text-gray-700',
+                                    };
+                                @endphp
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $priorityColor }}">
+                                    {{ $case->priority?->label() }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                @php
+                                    $statusColor = match ($case->status?->value) {
+                                        'Open' => 'bg-blue-100 text-blue-700',
+                                        'UnderReview' => 'bg-yellow-100 text-yellow-700',
+                                        'PendingApproval' => 'bg-purple-100 text-purple-700',
+                                        'Closed' => 'bg-green-100 text-green-700',
+                                        'Escalated' => 'bg-red-100 text-red-700',
+                                        default => 'bg-gray-100 text-gray-700',
+                                    };
+                                @endphp
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $statusColor }}">
+                                    {{ $case->status?->label() }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ $case->assignee?->name ?? 'Unassigned' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ $case->created_at?->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <a href="{{ route('compliance.cases.show', $case) }}" class="text-blue-600 hover:text-blue-800">View</a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-4 py-6 text-sm text-center text-gray-500">No cases found.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

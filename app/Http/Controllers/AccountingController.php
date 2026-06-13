@@ -7,6 +7,7 @@ use App\Models\AccountingPeriod;
 use App\Models\BankReconciliation;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
+use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Services\AccountingService;
 use App\Services\BankReconciliationService;
@@ -351,7 +352,11 @@ class AccountingController extends Controller
 
     public function fiscalYears(): View
     {
-        return view('accounting.fiscal-years');
+        $fiscalYears = FiscalYear::with('periods')
+            ->orderBy('year_code', 'desc')
+            ->get();
+
+        return view('accounting.fiscal-years', compact('fiscalYears'));
     }
 
     public function revaluation(): View

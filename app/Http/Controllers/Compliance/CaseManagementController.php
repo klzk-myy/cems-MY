@@ -18,7 +18,7 @@ class CaseManagementController extends Controller
 
     public function index(Request $request)
     {
-        $query = ComplianceCase::with(['customer', 'assignedTo', 'alerts'])
+        $query = ComplianceCase::with(['customer', 'assignee', 'alerts'])
             ->open();
 
         if ($request->has('status')) {
@@ -29,7 +29,7 @@ class CaseManagementController extends Controller
             $query->where('priority', $request->priority);
         }
 
-        $cases = $query->orderByRaw("FIELD(priority, 'critical', 'high', 'medium', 'low')")
+        $cases = $query->orderByRaw("CASE priority WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 WHEN 'Medium' THEN 3 WHEN 'Low' THEN 4 ELSE 5 END")
             ->orderBy('sla_deadline')
             ->paginate(25);
 
@@ -56,7 +56,7 @@ class CaseManagementController extends Controller
 
     public function show(ComplianceCase $case)
     {
-        $case->load(['customer', 'assignedTo', 'openedBy', 'alerts', 'alerts.flaggedTransaction']);
+        $case->load(['customer', 'assignee', 'alerts', 'alerts.flaggedTransaction']);
 
         return view('compliance.cases.show', compact('case'));
     }
