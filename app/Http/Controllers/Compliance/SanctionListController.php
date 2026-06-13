@@ -136,14 +136,18 @@ class SanctionListController extends Controller
         $validated = $request->validate([
             'list_id' => 'required|integer|exists:sanction_lists,id',
             'entity_name' => 'required|string|max:255',
-            'entity_type' => 'required|in:Individual,Entity',
+            'entity_type' => 'required|in:Individual,Organization,Vessel,Aircraft',
             'aliases' => 'nullable|string',
             'nationality' => 'nullable|string|max:100',
             'date_of_birth' => 'nullable|date',
             'reference_number' => 'nullable|string|max:100',
             'listing_date' => 'nullable|date',
-            'details' => 'nullable|array',
+            'details' => 'nullable|string',
         ]);
+
+        $validated['aliases'] = $request->has('aliases')
+            ? array_filter(array_map('trim', explode("\n", $request->input('aliases'))))
+            : null;
 
         SanctionEntry::create([
             'list_id' => $validated['list_id'],
@@ -191,14 +195,18 @@ class SanctionListController extends Controller
         $validated = $request->validate([
             'list_id' => 'required|integer|exists:sanction_lists,id',
             'entity_name' => 'required|string|max:255',
-            'entity_type' => 'required|in:Individual,Entity',
+            'entity_type' => 'required|in:Individual,Organization,Vessel,Aircraft',
             'aliases' => 'nullable|string',
             'nationality' => 'nullable|string|max:100',
             'date_of_birth' => 'nullable|date',
             'reference_number' => 'nullable|string|max:100',
             'listing_date' => 'nullable|date',
-            'details' => 'nullable|array',
+            'details' => 'nullable|string',
         ]);
+
+        $validated['aliases'] = $request->has('aliases')
+            ? array_filter(array_map('trim', explode("\n", $request->input('aliases'))))
+            : null;
 
         $updateData = [
             'list_id' => $validated['list_id'],

@@ -56,11 +56,11 @@ class SanctionEntry extends Model
 
     public function getDetailsAttribute($value)
     {
-        return json_decode($value, true) ?? [];
+        return $value;
     }
 
     public function setDetailsAttribute($value)
     {
-        $this->attributes['details'] = is_array($value) ? json_encode($value) : $value;
+        $this->attributes['details'] = is_string($value) ? $value : null;
     }
 }
