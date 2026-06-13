@@ -1,98 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Sanctions Entry</title>
-</head>
-<body class="bg-gray-50">
+<x-app-layout title="Edit Sanctions Entry">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page Header -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Edit Sanctions Entry</h1>
-                    <p class="mt-1 text-sm text-gray-500">ENTRY-2024-001</p>
-                </div>
-                <a href="#" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                    Cancel
-                </a>
-            </div>
-        </div>
+        <x-page-header title="Edit Sanctions Entry" description="Update sanctions list entry details">
+            <x-slot:actions>
+                <x-button href="{{ route('compliance.sanctions.entries.index') }}" variant="secondary">Cancel</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-        <!-- Form -->
-        <form class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <form method="POST" action="{{ route('compliance.sanctions.entries.update', $sanctionEntry) }}" class="bg-white border border-[#e5e5e5] rounded-xl p-6 mt-8">
+            @csrf
+            @method('PUT')
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Entity Name *</label>
-                    <input type="text" value="John Doe" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">List Source *</label>
-                    <select class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
-                        <option value="">Select Source</option>
-                        <option value="ofac" selected>OFAC SDN</option>
-                        <option value="un">UN Security Council</option>
-                        <option value="eu">EU Sanctions List</option>
-                        <option value="bnm">BNM List</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Entity Type *</label>
-                    <select class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
-                        <option value="">Select Type</option>
-                        <option value="individual" selected>Individual</option>
-                        <option value="organization">Organization</option>
-                        <option value="vessel">Vessel</option>
-                        <option value="aircraft">Aircraft</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Reference Number</label>
-                    <input type="text" value="OFAC-12345" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Nationality</label>
-                    <input type="text" value="United States" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date Listed</label>
-                    <input type="date" value="2024-01-01" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                </div>
+                <x-select name="list_source" label="List Source" :options="['ofac' => 'OFAC SDN', 'un' => 'UN Security Council', 'eu' => 'EU Sanctions List', 'bnm' => 'BNM List', 'other' => 'Other']" selected="{{ old('list_source', $sanctionEntry->list_source) }}" />
+                <x-input name="entity_name" label="Entity Name *" value="{{ old('entity_name', $sanctionEntry->entity_name) }}" required />
+                <x-select name="entity_type" label="Entity Type *" :options="['Individual' => 'Individual', 'Organization' => 'Organization', 'Vessel' => 'Vessel', 'Aircraft' => 'Aircraft']" selected="{{ old('entity_type', $sanctionEntry->entity_type?->value ?? $sanctionEntry->entity_type) }}" required />
+                <x-input name="reference_number" label="Reference Number" value="{{ old('reference_number', $sanctionEntry->reference_number) }}" />
+                <x-input name="nationality" label="Nationality" value="{{ old('nationality', $sanctionEntry->nationality) }}" />
+                <x-input type="date" name="date_listed" label="Date Listed" value="{{ old('date_listed', $sanctionEntry->listing_date?->format('Y-m-d')) }}" />
+                <x-input name="address" label="Address" value="{{ old('address', $sanctionEntry->address) }}" />
+                <x-input name="city" label="City" value="{{ old('city', $sanctionEntry->city) }}" />
+                <x-input name="country" label="Country" value="{{ old('country', $sanctionEntry->country) }}" />
+                <x-input name="postal_code" label="Postal Code" value="{{ old('postal_code', $sanctionEntry->postal_code) }}" />
             </div>
 
             <div class="mb-6">
-                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Aliases</label>
-                <textarea class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" rows="3">Johnny Doe
-J. Doe</textarea>
+                <label for="aliases" class="block text-sm font-medium text-gray-700 mb-2">Aliases</label>
+                <textarea id="aliases" name="aliases" rows="3" placeholder="Enter aliases, one per line" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black">{{ old('aliases', is_array($sanctionEntry->aliases) ? implode("\n", $sanctionEntry->aliases) : $sanctionEntry->aliases) }}</textarea>
             </div>
 
             <div class="mb-6">
-                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Address</label>
-                <input type="text" value="123 Main Street" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg mb-3">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input type="text" value="New York" class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" placeholder="City">
-                    <input type="text" value="United States" class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" placeholder="Country">
-                    <input type="text" value="10001" class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" placeholder="Postal Code">
-                </div>
+                <label for="details" class="block text-sm font-medium text-gray-700 mb-2">Additional Information</label>
+                <textarea id="details" name="details" rows="3" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black">{{ old('details', $sanctionEntry->details) }}</textarea>
             </div>
 
-            <div class="mb-6">
-                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Additional Information</label>
-                <textarea class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" rows="3">Added based on BNM advisory dated 2024-01-01</textarea>
-            </div>
-
-            <!-- Actions -->
             <div class="flex justify-end gap-3">
-                <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
-                    Cancel
-                </button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                    Save Changes
-                </button>
+                <x-button href="{{ route('compliance.sanctions.entries.index') }}" variant="secondary">Cancel</x-button>
+                <x-button type="submit" variant="primary">Save Changes</x-button>
             </div>
         </form>
     </div>
-</body>
-</html>
+</x-app-layout>

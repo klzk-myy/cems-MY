@@ -18,6 +18,7 @@ class SanctionEntry extends Model
 
     protected $fillable = [
         'list_id',
+        'list_source',
         'entity_name',
         'entity_type',
         'aliases',
@@ -26,6 +27,10 @@ class SanctionEntry extends Model
         'reference_number',
         'listing_date',
         'details',
+        'address',
+        'city',
+        'country',
+        'postal_code',
         'normalized_name',
         'soundex_code',
         'metaphone_code',
@@ -35,8 +40,8 @@ class SanctionEntry extends Model
     protected $casts = [
         'date_of_birth' => 'date',
         'listing_date' => 'date',
-        'status' => SanctionStatus::class,
         'entity_type' => EntityType::class,
+        'status' => SanctionStatus::class,
     ];
 
     public function sanctionList(): BelongsTo
@@ -62,5 +67,14 @@ class SanctionEntry extends Model
     public function setDetailsAttribute($value)
     {
         $this->attributes['details'] = is_string($value) ? $value : null;
+    }
+
+    public function setEntityTypeAttribute($value): void
+    {
+        if ($value instanceof EntityType) {
+            $value = $value->value;
+        }
+
+        $this->attributes['entity_type'] = is_string($value) ? ucfirst($value) : $value;
     }
 }

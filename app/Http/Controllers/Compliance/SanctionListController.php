@@ -169,38 +169,29 @@ class SanctionListController extends Controller
             ->with('success', 'Sanction entry created successfully');
     }
 
-    public function editEntry(int $id)
+    public function editEntry(SanctionEntry $entry)
     {
-        $entry = SanctionEntry::find($id);
-
-        if (! $entry) {
-            return redirect()->route('compliance.sanctions.entries.index')
-                ->with('error', 'Sanction entry not found');
-        }
-
-        $lists = SanctionList::orderBy('name')->get(['id', 'name']);
-
-        return view('compliance.sanctions.entries.edit', compact('entry', 'lists'));
+        return view('compliance.sanctions.entries.edit', ['sanctionEntry' => $entry]);
     }
 
-    public function updateEntry(Request $request, int $id)
+    public function updateEntry(Request $request, SanctionEntry $entry)
     {
-        $entry = SanctionEntry::find($id);
-
-        if (! $entry) {
-            return redirect()->route('compliance.sanctions.entries.index')
-                ->with('error', 'Sanction entry not found');
-        }
+        $request->merge([
+            'entity_type' => ucfirst($request->input('entity_type', '')),
+        ]);
 
         $validated = $request->validate([
-            'list_id' => 'required|integer|exists:sanction_lists,id',
             'entity_name' => 'required|string|max:255',
+            'list_source' => 'nullable|string|max:255',
             'entity_type' => 'required|in:Individual,Organization,Vessel,Aircraft',
+            'reference_number' => 'nullable|string|max:255',
+            'nationality' => 'nullable|string|max:255',
+            'date_listed' => 'nullable|date',
             'aliases' => 'nullable|string',
-            'nationality' => 'nullable|string|max:100',
-            'date_of_birth' => 'nullable|date',
-            'reference_number' => 'nullable|string|max:100',
-            'listing_date' => 'nullable|date',
+            'address' => 'nullable|string',
+            'city' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'postal_code' => 'nullable|string|max:255',
             'details' => 'nullable|string',
         ]);
 
@@ -209,26 +200,27 @@ class SanctionListController extends Controller
             : null;
 
         $updateData = [
-            'list_id' => $validated['list_id'],
+            'list_source' => $validated['list_source'] ?? null,
             'entity_name' => $validated['entity_name'],
             'entity_type' => $validated['entity_type'],
             'aliases' => $validated['aliases'] ?? null,
             'nationality' => $validated['nationality'] ?? null,
-            'date_of_birth' => $validated['date_of_birth'] ?? null,
             'reference_number' => $validated['reference_number'] ?? null,
-            'listing_date' => $validated['listing_date'] ?? null,
+            'listing_date' => $validated['date_listed'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'city' => $validated['city'] ?? null,
+            'country' => $validated['country'] ?? null,
+            'postal_code' => $validated['postal_code'] ?? null,
             'details' => $validated['details'] ?? null,
         ];
 
-        if (isset($validated['entity_name'])) {
-            $updateData['normalized_name'] = strtolower(preg_replace('/[^\p{L}\s]/u', '', $validated['entity_name']));
-            $updateData['soundex_code'] = soundex($validated['entity_name']);
-            $updateData['metaphone_code'] = metaphone($validated['entity_name']);
-        }
+        $updateData['normalized_name'] = strtolower(preg_replace('/[^\p{L}\s]/u', '', $validated['entity_name']));
+        $updateData['soundex_code'] = soundex($validated['entity_name']);
+        $updateData['metaphone_code'] = metaphone($validated['entity_name']);
 
         $entry->update($updateData);
 
-        return redirect()->route('compliance.sanctions.entries.show', $id)
+        return redirect()->route('compliance.sanctions.entries.show', $entry)
             ->with('success', 'Sanction entry updated successfully');
     }
 

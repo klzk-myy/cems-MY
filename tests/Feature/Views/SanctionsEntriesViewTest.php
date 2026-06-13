@@ -93,4 +93,104 @@ class SanctionsEntriesViewTest extends TestCase
 
         $response->assertSessionHasErrors('entity_type');
     }
+
+    public function test_edit_form_binds_model_data(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $entry = SanctionEntry::factory()->create([
+            'entity_name' => 'ACME Corp',
+            'list_source' => 'ofac',
+            'entity_type' => 'organization',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('compliance.sanctions.entries.edit', $entry));
+
+        $response->assertStatus(200);
+        $response->assertSee('value="ACME Corp"', false);
+        $response->assertSee('action="'.e(route('compliance.sanctions.entries.update', $entry)).'"', false);
+        $response->assertSee('name="_method" value="PUT"', false);
+    }
+
+    public function test_update_modifies_sanction_entry(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $entry = SanctionEntry::factory()->create([
+            'entity_name' => 'Old Name',
+            'list_source' => 'ofac',
+            'entity_type' => 'organization',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
+            'entity_name' => 'New Name',
+            'list_source' => 'un',
+            'entity_type' => 'individual',
+        ]);
+
+        $response->assertRedirect(route('compliance.sanctions.entries.show', $entry));
+        $entry->refresh();
+        $this->assertEquals('New Name', $entry->entity_name);
+        $this->assertEquals('un', $entry->list_source);
+    }
+
+    public function test_update_succeeds_without_list_source(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $entry = SanctionEntry::factory()->create([
+            'entity_name' => 'Test',
+            'list_source' => 'ofac',
+            'entity_type' => 'organization',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
+            'entity_name' => 'Updated Name',
+            'entity_type' => 'organization',
+        ]);
+
+        $response->assertRedirect();
+        $entry->refresh();
+        $this->assertEquals('Updated Name', $entry->entity_name);
+    }
+
+    public function test_update_rejects_invalid_entity_type(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $entry = SanctionEntry::factory()->create([
+            'entity_name' => 'Test',
+            'list_source' => 'ofac',
+            'entity_type' => 'organization',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
+            'entity_name' => 'Test',
+            'list_source' => 'ofac',
+            'entity_type' => 'invalid',
+        ]);
+
+        $response->assertSessionHasErrors('entity_type');
+    }
+
+    public function test_update_persists_address_fields(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $entry = SanctionEntry::factory()->create([
+            'entity_name' => 'Test',
+            'list_source' => 'ofac',
+            'entity_type' => 'organization',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
+            'entity_name' => 'Test',
+            'list_source' => 'ofac',
+            'entity_type' => 'organization',
+            'address' => '123 Main St',
+            'city' => 'New York',
+            'country' => 'United States',
+            'postal_code' => '10001',
+        ]);
+
+        $response->assertRedirect();
+        $entry->refresh();
+        $this->assertEquals('123 Main St', $entry->address);
+        $this->assertEquals('New York', $entry->city);
+    }
 }
