@@ -31,6 +31,10 @@ mcp.json
 boost.json
 /.worktrees
 /.worktree
+/.kilo
+/.claude
+/load-tests
+/.mcp.json
 /docker
 .env.example
 .env.testing

@@ -18,6 +18,12 @@
             "args": [
                 "context7-mcp"
             ]
+        },
+        "gitnexus": {
+            "command": "gitnexus",
+            "args": [
+                "mcp"
+            ]
         }
     }
 }
