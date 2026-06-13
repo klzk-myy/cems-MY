@@ -91,6 +91,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/disable', [MfaController::class, 'disable'])->name('disable');
         Route::get('/recovery', [MfaController::class, 'recovery'])->name('recovery');
         Route::post('/recovery/verify', [MfaController::class, 'recoveryVerify'])->name('recovery.verify');
+        Route::get('/recovery-codes', [MfaController::class, 'recoveryCodes'])->name('recovery-codes');
         Route::get('/trusted-devices', [MfaController::class, 'trustedDevices'])->name('trusted-devices');
         Route::delete('/trusted-devices/{deviceId}', [MfaController::class, 'removeDevice'])->name('trusted-devices.remove');
     });

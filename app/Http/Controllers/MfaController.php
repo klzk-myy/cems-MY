@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Services\AuditService;
 use App\Services\MfaService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\View\View;
 
 class MfaController extends Controller
 {
@@ -83,6 +85,22 @@ class MfaController extends Controller
         Session::forget('mfa_setup_started_at');
 
         // Show recovery codes (only time they're displayed)
+        return view('pages.mfa.recovery-codes', [
+            'recoveryCodes' => $recoveryCodes,
+        ]);
+    }
+
+    /**
+     * Show MFA recovery codes page.
+     */
+    public function recoveryCodes(): View|RedirectResponse
+    {
+        $recoveryCodes = session('mfa_recovery_codes');
+
+        if (empty($recoveryCodes) || ! is_array($recoveryCodes)) {
+            return redirect()->route('mfa.setup');
+        }
+
         return view('pages.mfa.recovery-codes', [
             'recoveryCodes' => $recoveryCodes,
         ]);

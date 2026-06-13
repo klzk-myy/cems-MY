@@ -1,18 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unified Compliance View</title>
-</head>
-<body class="bg-gray-50">
+<x-app-layout title="Unified Compliance View">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="mb-8">
             <h1 class="text-2xl font-bold text-gray-900">Unified Compliance View</h1>
             <p class="mt-1 text-sm text-gray-500">Comprehensive overview of all compliance activities</p>
         </div>
 
-        <form method="GET" action="/compliance/unified" class="bg-white border border-[#e5e5e5] rounded-xl p-4 mb-6">
+        <form method="GET" action="{{ route('compliance.unified.index') }}" class="bg-white border border-[#e5e5e5] rounded-xl p-4 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
                 <div>
                     <label for="source" class="block text-xs font-medium text-gray-500 uppercase mb-1">Source</label>
@@ -68,7 +61,7 @@
                 <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
                     Apply Filters
                 </button>
-                <a href="/compliance/unified" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300">
+                <a href="{{ route('compliance.unified.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300">
                     Clear
                 </a>
             </div>
@@ -198,5 +191,4 @@
             @endif
         </div>
     </div>
-</body>
-</html>
+</x-app-layout>
