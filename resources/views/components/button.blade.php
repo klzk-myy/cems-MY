@@ -1,4 +1,4 @@
-<@props([
+@props([
     'variant' => 'primary',
     'size' => 'md',
     'href' => null,

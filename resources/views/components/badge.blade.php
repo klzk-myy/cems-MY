@@ -1,4 +1,4 @@
-<@props([
+@props([
     'variant' => 'gray',
     'size' => 'md'
 ])

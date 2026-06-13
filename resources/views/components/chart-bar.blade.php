@@ -1,4 +1,4 @@
-<@props(['value' => 0, 'color' => null, 'minHeight' => 5])
+@props(['value' => 0, 'color' => null, 'minHeight' => 5])
 
 @php
 $height = max($value, $minHeight);

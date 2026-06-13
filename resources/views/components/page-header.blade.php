@@ -1,4 +1,4 @@
-<@props([
+@props([
     'title' => '',
     'actions' => null
 ])

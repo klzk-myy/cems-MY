@@ -1,4 +1,4 @@
-<@props([
+@props([
     'hover' => true,
     'striped' => false
 ])

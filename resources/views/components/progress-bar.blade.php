@@ -1,4 +1,4 @@
-<@props(['value' => 0, 'color' => null, 'max' => 100, 'size' => 'md', 'width' => 'w-20'])
+@props(['value' => 0, 'color' => null, 'max' => 100, 'size' => 'md', 'width' => 'w-20'])
 
 @php
 $percent = min(($value / $max) * 100, 100);
