@@ -35,7 +35,6 @@
             </div>
         </div>
 
-        <!-- Pass Rate Trend Chart Placeholder -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <div class="px-6 py-4 border-b border-[#e5e5e5]">
                 <h2 class="text-lg font-semibold text-gray-900">Pass Rate Trend (Last {{ $days }} Days)</h2>
@@ -90,15 +89,19 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $suiteName }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $suiteData['last_run']->created_at->format('M d, H:i') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if($suiteData['last_run']->status === 'passed')
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Passed</span>
-                                @elseif($suiteData['last_run']->status === 'failed')
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Failed</span>
-                                @elseif($suiteData['last_run']->status === 'error')
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Error</span>
-                                @else
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">{{ ucfirst($suiteData['last_run']->status) }}</span>
-                                @endif
+                                @switch($suiteData['last_run']->status)
+                                    @case(\App\Enums\TestResultStatus::Passed)
+                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Passed</span>
+                                        @break
+                                    @case(\App\Enums\TestResultStatus::Failed)
+                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Failed</span>
+                                        @break
+                                    @case(\App\Enums\TestResultStatus::Error)
+                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Error</span>
+                                        @break
+                                    @default
+                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">{{ $suiteData['last_run']->status->label() }}</span>
+                                @endswitch
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{{ $suiteData['last_run']->tests_passed ?? 0 }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">{{ $suiteData['last_run']->tests_failed ?? 0 }}</td>

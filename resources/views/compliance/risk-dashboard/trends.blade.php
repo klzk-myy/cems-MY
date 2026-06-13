@@ -27,31 +27,21 @@
             </div>
         </div>
 
-        <!-- Trend Charts Placeholder -->
+        <!-- Trend Charts -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">High Risk Customer Trend</h3>
-                <div class="h-48 flex items-center justify-center bg-gray-50 rounded-lg">
-                    <span class="text-gray-500">[Chart Placeholder - 12 High Risk Customers]</span>
-                </div>
-                <div class="mt-4 flex items-center justify-between text-sm">
-                    <span class="text-gray-500">Dec 2023: 8</span>
-                    <span class="text-green-600 font-medium">+50% increase</span>
-                    <span class="text-gray-500">Jan 2024: 12</span>
-                </div>
-            </div>
+            <x-chart-trend
+                title="High Risk Customer Trend"
+                :labels="$highRiskTrend['labels']"
+                :values="$highRiskTrend['values']"
+                color="red"
+            />
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Alert Volume Trend</h3>
-                <div class="h-48 flex items-center justify-center bg-gray-50 rounded-lg">
-                    <span class="text-gray-500">[Chart Placeholder - 45 Alerts This Month]</span>
-                </div>
-                <div class="mt-4 flex items-center justify-between text-sm">
-                    <span class="text-gray-500">Dec 2023: 32</span>
-                    <span class="text-yellow-600 font-medium">+41% increase</span>
-                    <span class="text-gray-500">Jan 2024: 45</span>
-                </div>
-            </div>
+            <x-chart-trend
+                title="Alert Volume Trend"
+                :labels="$alertVolumeTrend['labels']"
+                :values="$alertVolumeTrend['values']"
+                color="yellow"
+            />
         </div>
 
         <!-- Risk Score Distribution Over Time -->
