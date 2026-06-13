@@ -10,7 +10,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Commands](#commands)
-- [Architecture](docs/ARCHITECTURE.md)
+- [Architecture](#architecture)
 - [User Roles](#user-roles)
 - [Security](#security)
 - [Compliance](#compliance)
@@ -241,38 +241,59 @@ php artisan user:create --role=teller --name="John Doe" --email=john@example.com
 
 ## Architecture
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full system architecture documentation.
+**Codebase Statistics (as of latest commit):**
+
+| Component | Count | Key Examples |
+|-----------|-------|--------------|
+| Eloquent Models | 62 | `Customer`, `Transaction`, `SanctionEntry`, `JournalEntry`, `Counter` |
+| Controllers | 34 | `CustomerController`, `TransactionController`, `SanctionListController`, `RateController` |
+| Services | 79 | `ThresholdService`, `RateManagementService`, `CustomerRiskScoringService`, `RevaluationService` |
+| Middleware | 21 | `CheckRole`, `SessionTimeout`, `PerformanceTrackingMiddleware`, `SecurityHeaders` |
+| Artisan Commands | 34 | `report:msb2`, `compliance:rescreen`, `revaluation:run`, `user:create` |
+| Enums | 64 | `UserRole`, `TransactionStatus`, `CddLevel`, `EntityType`, `CounterStatus` |
+
+**Directory Structure:**
 
 ```
 app/
-├── Console/Commands/        # 35 Artisan CLI commands
-├── Enums/                  # 34 PHP 8.3 enums (UserRole, TransactionStatus, CddLevel, etc.)
-├── Events/                 # 13 Event classes (TransactionCreated, CounterSessionOpened, etc.)
-├── Exceptions/Domain/       # 43 typed domain exceptions
+├── Console/Commands/        # 34 Artisan CLI commands (reports, compliance, maintenance)
+├── DTO/                     # Data transfer objects for type-safe data handling
+├── Enums/                   # 64 PHP 8.3 enums (strict typing for roles, statuses, types)
+├── Events/                  # Domain events for event-driven architecture
+├── Exceptions/Domain/       # Typed domain exceptions (business logic errors)
 ├── Http/
-│   ├── Controllers/        # 22 root + Api/V1/Compliance controllers
-│   ├── Middleware/          # 21 middleware classes
+│   ├── Controllers/         # 34 controllers (Web + API v1)
+│   ├── Middleware/          # 21 middleware (auth, roles, security, performance)
 │   ├── Requests/            # Form request validation classes
 │   └── Resources/           # API resource transformers
-├── Jobs/                   # 23 background jobs (Compliance, Sanctions, Accounting subdirs)
-├── Models/                 # 62 Eloquent models
-├── Observers/              # Model observers for event-driven hooks
-└── Services/               # 83 services
+├── Jobs/                    # Queued background jobs (compliance monitors, reports)
+├── Models/                  # 62 Eloquent models with relationships
+├── Observers/               # Model observers for event-driven hooks
+└── Services/                # 79 business logic services
 ```
-app/
-├── Console/Commands/        # 35 Artisan CLI commands
-├── Enums/                  # 34 PHP enums (UserRole, TransactionStatus, CddLevel, etc.)
-├── Events/                 # 13 Event classes (TransactionCreated, CounterSessionOpened, etc.)
-├── Exceptions/Domain/       # 43 typed domain exceptions
-├── Http/
-│   ├── Controllers/        # 22 root controllers + Api/V1/Compliance sub-controllers
-│   ├── Middleware/          # 21 middleware classes
-│   ├── Requests/            # Form request validation classes
-│   └── Resources/           # API resource transformers
-├── Jobs/                   # 23 background jobs
-├── Models/                 # 62 Eloquent models
-├── Observers/              # Model observers for event-driven hooks
-└── Services/               # 83 services
+
+**Key Recent Implementations:**
+
+- **View Consistency Cleanup** (2026-06): Standardized Blade components, fixed broken forms, replaced dummy data with real model bindings across compliance views
+- **Sanctions Entry Management**: Full CRUD for OFAC/UN/EU sanctions lists with address fields and list source tracking
+- **Customer Notes**: Note-taking system for compliance observations with dedicated model and API
+- **Rate Override API**: Secure rate override endpoint with Form Request validation
+- **Shared UI Components**: Reusable `<x-input>`, `<x-select>`, `<x-button>`, `<x-card>`, `<x-page-header>` components with accessibility improvements
+
+**Knowledge Graph Index:**
+
+Codebase is indexed by GitNexus for semantic search, impact analysis, and execution flow tracing:
+
+```bash
+npx gitnexus analyze    # Build/refresh index
+npx gitnexus status     # Check index freshness
+```
+
+See `.gitnexus/` for index data. GitNexus enables:
+- Blast radius analysis before code changes
+- Cross-file symbol reference tracking
+- Execution flow debugging
+- Automated rename refactoring
 
 ## User Roles
 
