@@ -23,11 +23,12 @@ class SanctionListController extends Controller
             ->map(fn ($list) => [
                 'id' => $list->id,
                 'name' => $list->name,
+                'list_type' => $list->list_type?->value ?? (string) $list->list_type,
                 'source_url' => $list->source_url,
                 'source_format' => $list->source_format,
                 'update_frequency' => $list->update_frequency,
                 'last_synced_at' => $list->last_updated_at?->toIso8601String(),
-                'status' => $list->update_status,
+                'status' => $list->update_status?->value ?? (string) $list->update_status,
                 'entries_count' => $list->entries_count,
             ]);
 
@@ -36,7 +37,7 @@ class SanctionListController extends Controller
 
     public function show(int $id)
     {
-        $list = SanctionList::find($id);
+        $list = SanctionList::withCount('entries')->find($id);
 
         if (! $list) {
             return redirect()->route('compliance.sanctions.index')
@@ -74,6 +75,7 @@ class SanctionListController extends Controller
             'id' => $entry->id,
             'entity_name' => $entry->entity_name,
             'entity_type' => $entry->entity_type,
+            'list_source' => $entry->list_source,
             'list' => [
                 'id' => $entry->sanctionList?->id,
                 'name' => $entry->sanctionList?->name,
@@ -121,7 +123,7 @@ class SanctionListController extends Controller
             'listing_date' => $entry->listing_date?->format('Y-m-d'),
         ];
 
-        return view('compliance.sanctions.entries.show', compact('entry'));
+        return view('compliance.sanctions.entries.show', ['sanctionEntry' => $entry]);
     }
 
     public function createEntry()

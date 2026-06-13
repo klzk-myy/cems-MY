@@ -193,4 +193,17 @@ class SanctionsEntriesViewTest extends TestCase
         $this->assertEquals('123 Main St', $entry->address);
         $this->assertEquals('New York', $entry->city);
     }
+
+    public function test_entries_index_does_not_show_hardcoded_dummy_data(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        SanctionEntry::factory()->count(3)->create();
+
+        $response = $this->actingAs($user)->get(route('compliance.sanctions.entries.index'));
+
+        $response->assertStatus(200);
+        $response->assertDontSee('John Doe', false);
+        $response->assertDontSee('OFAC-12345', false);
+        $response->assertDontSee('123 Main Street', false);
+    }
 }

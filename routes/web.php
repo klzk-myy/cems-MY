@@ -257,8 +257,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
         Route::prefix('compliance/sanctions')->name('compliance.sanctions.')->group(function () {
             Route::get('/', [SanctionListController::class, 'index'])->name('index');
-            Route::get('/{list}', [SanctionListController::class, 'show'])->name('show');
-            Route::post('/{list}/import', [SanctionListController::class, 'triggerImport'])->name('import');
             Route::get('/entries', [SanctionListController::class, 'entriesIndex'])->name('entries.index');
             Route::get('/entries/create', [SanctionListController::class, 'createEntry'])->name('entries.create');
             Route::post('/entries', [SanctionListController::class, 'storeEntry'])->name('entries.store');
@@ -266,6 +264,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             Route::get('/entries/{entry}/edit', [SanctionListController::class, 'editEntry'])->name('entries.edit');
             Route::put('/entries/{entry}', [SanctionListController::class, 'updateEntry'])->name('entries.update');
             Route::get('/import-logs', [SanctionListController::class, 'importLogs'])->name('import-logs');
+            Route::get('/{list}', [SanctionListController::class, 'show'])->name('show');
+            Route::post('/{list}/import', [SanctionListController::class, 'triggerImport'])->name('import');
         });
 
         Route::prefix('compliance/screening')->name('compliance.screening.')->group(function () {
