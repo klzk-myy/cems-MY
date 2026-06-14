@@ -1,107 +1,82 @@
 <x-app-layout title="BNM Form LMCA">
-    <div class="p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold">BNM Form LMCA</h1>
-            @if($reportGenerated)
-            <div class="flex items-center gap-3">
-                <button onclick="window.print()" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
-                    Print
-                </button>
+    <div class="p-6 space-y-6">
+        <x-page-header
+            title="BNM Form LMCA"
+            description="Monthly Large Cash Transaction Report"
+            :actions="$reportGenerated"
+        >
+            <x-slot:actions>
+                <x-button variant="secondary" onclick="window.print()">Print</x-button>
                 <form method="POST" action="{{ route('reports.lmca.export', ['month' => $month]) }}">
                     @csrf
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                        Export
-                    </button>
+                    <x-button variant="primary" type="submit">Export</x-button>
                 </form>
-            </div>
-            @endif
-        </div>
+            </x-slot:actions>
+        </x-page-header>
 
-        {{-- Date Selector --}}
-        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
-            <form method="GET" action="{{ route('reports.lmca') }}" class="flex flex-wrap gap-4 items-end">
-                <div>
-                    <label for="month" class="text-sm font-medium text-ink-muted mb-2">Select Month</label>
-                    <input type="month" id="month" name="month" value="{{ $month }}" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
-                </div>
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                    Generate Report
-                </button>
-            </form>
-        </div>
+        <x-filter-bar method="GET" action="{{ route('reports.lmca') }}">
+            <x-input
+                type="month"
+                id="month"
+                name="month"
+                label="Select Month"
+                :value="$month"
+                inline
+            />
+            <x-button variant="primary" type="submit">Generate Report</x-button>
+        </x-filter-bar>
 
-        {{-- Report Content --}}
         @if($reportGenerated && !empty($reportData))
-        <div class="bg-surface border border-border rounded-xl p-6">
-            <div class="border-b border-border pb-4 mb-6">
-                <h2 class="text-lg font-semibold text-ink">Monthly Large Cash Transaction Report</h2>
-                <p class="text-sm text-ink-muted">Reporting Period: {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}</p>
-            </div>
+            <x-stat-grid cols="4">
+                <x-stat-card label="Total Transactions" :value="number_format($reportData['total_transactions'] ?? 0)" />
+                <x-stat-card label="Total Buy Volume" :value="number_format($reportData['total_buy_volume'] ?? 0, 2)" />
+                <x-stat-card label="Total Sell Volume" :value="number_format($reportData['total_sell_volume'] ?? 0, 2)" />
+                <x-stat-card label="Report Status" value="Generated" color="green" />
+            </x-stat-grid>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-canvas-subtle border border-border rounded-lg p-4">
-                    <p class="text-xs text-ink-muted mb-1">Total Transactions</p>
-                    <p class="text-xl font-semibold text-ink">{{ number_format($reportData['total_transactions'] ?? 0) }}</p>
-                </div>
-                <div class="bg-canvas-subtle border border-border rounded-lg p-4">
-                    <p class="text-xs text-ink-muted mb-1">Total Buy Volume</p>
-                    <p class="text-xl font-semibold text-ink">{{ number_format($reportData['total_buy_volume'] ?? 0, 2) }}</p>
-                </div>
-                <div class="bg-canvas-subtle border border-border rounded-lg p-4">
-                    <p class="text-xs text-ink-muted mb-1">Total Sell Volume</p>
-                    <p class="text-xl font-semibold text-ink">{{ number_format($reportData['total_sell_volume'] ?? 0, 2) }}</p>
-                </div>
-                <div class="bg-canvas-subtle border border-border rounded-lg p-4">
-                    <p class="text-xs text-ink-muted mb-1">Report Status</p>
-                    <p class="text-xl font-semibold text-green-600">Generated</p>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-border">
-                            <th class="text-left py-3 px-4 font-medium text-ink-muted">Currency</th>
-                            <th class="text-right py-3 px-4 font-medium text-ink-muted">No. of Transactions</th>
-                            <th class="text-right py-3 px-4 font-medium text-ink-muted">Buy Volume (MYR)</th>
-                            <th class="text-right py-3 px-4 font-medium text-ink-muted">Sell Volume (MYR)</th>
-                            <th class="text-right py-3 px-4 font-medium text-ink-muted">Net Volume (MYR)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <x-card
+                title="Monthly Large Cash Transaction Report"
+                description="Reporting Period: {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}"
+            >
+                <x-table>
+                    <x-slot:thead>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">No. of Transactions</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Volume (MYR)</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Volume (MYR)</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Net Volume (MYR)</th>
+                    </x-slot:thead>
+                    <x-slot:tbody>
                         @forelse($reportData['currency_breakdown'] ?? [] as $currency)
-                        <tr class="border-b border-border hover:bg-canvas-subtle">
-                            <td class="py-3 px-4 text-ink font-medium">{{ $currency['currency'] }}</td>
-                            <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($currency['transaction_count']) }}</td>
-                            <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($currency['buy_volume'], 2) }}</td>
-                            <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($currency['sell_volume'], 2) }}</td>
-                            <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($currency['net_volume'], 2) }}</td>
-                        </tr>
+                            <tr class="hover:bg-canvas-subtle">
+                                <td class="px-4 py-3 text-sm text-ink font-medium">{{ $currency['currency'] }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($currency['transaction_count']) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($currency['buy_volume'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($currency['sell_volume'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($currency['net_volume'], 2) }}</td>
+                            </tr>
                         @empty
-                        <tr>
-                            <td colspan="5" class="py-8 text-center text-ink-muted">No transaction data available</td>
-                        </tr>
+                            <x-empty-state message="No transaction data available" :colspan="5" />
                         @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    </x-slot:tbody>
+                </x-table>
 
-            <div class="mt-6 pt-4 border-t border-border">
-                <p class="text-xs text-ink-muted">
-                    Note: This report includes all cash transactions >= RM 25,000 in MYR equivalent.
-                </p>
-            </div>
-        </div>
+                <div class="px-6 py-4 border-t border-border">
+                    <p class="text-xs text-ink-muted">
+                        Note: This report includes all cash transactions >= RM 25,000 in MYR equivalent.
+                    </p>
+                </div>
+            </x-card>
         @elseif($reportGenerated && empty($reportData))
-        <div class="bg-surface border border-border rounded-xl p-12 text-center">
-            <h3 class="text-lg font-medium text-ink mb-2">No Report Data</h3>
-            <p class="text-sm text-ink-muted">No LMCA transactions found for {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}</p>
-        </div>
+            <x-empty-state
+                title="No Report Data"
+                message="No LMCA transactions found for {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}"
+            />
         @else
-        <div class="bg-surface border border-border rounded-xl p-12 text-center">
-            <h3 class="text-lg font-medium text-ink mb-2">Select a Month</h3>
-            <p class="text-sm text-ink-muted">Choose a month above to generate the LMCA report.</p>
-        </div>
+            <x-empty-state
+                title="Select a Month"
+                message="Choose a month above to generate the LMCA report."
+            />
         @endif
     </div>
 </x-app-layout>
