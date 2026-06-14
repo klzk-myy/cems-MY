@@ -60,21 +60,21 @@
                                     name="is_active"
                                     value="1"
                                     {{ old('is_active', $user->is_active) ? 'checked' : '' }}
-                                    class="w-4 h-4 text-[#0a0a0a] border-border rounded focus:ring-[#0a0a0a]"
+                                    class="w-4 h-4 text-ink border-border rounded focus:ring-primary"
                                 >
-                                <span class="ml-2 text-sm text-gray-700">Active User</span>
+                                <span class="ml-2 text-sm text-ink-muted">Active User</span>
                             </label>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">MFA Status</label>
+                            <label class="block text-sm font-medium text-ink-muted mb-2">MFA Status</label>
                             <div class="mt-2">
                                 @if($user->mfa_enabled)
                                     <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">
                                         Enabled
                                     </span>
                                 @else
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">
+                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">
                                         Disabled
                                     </span>
                                 @endif

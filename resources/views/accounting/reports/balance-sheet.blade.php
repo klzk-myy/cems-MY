@@ -42,7 +42,7 @@
                     <h3 class="text-sm font-semibold text-ink">Assets</h3>
                 </div>
                 <table class="w-full">
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         @forelse ($assets as $asset)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink">{{ $asset['account_code'] }} - {{ $asset['account_name'] }}</td>
@@ -67,7 +67,7 @@
                         <h3 class="text-sm font-semibold text-ink">Liabilities</h3>
                     </div>
                     <table class="w-full">
-                        <tbody class="divide-y divide-[#e5e5e5]">
+                        <tbody class="divide-y divide-border">
                             @forelse ($liabilities as $liability)
                                 <tr class="hover:bg-canvas-subtle">
                                     <td class="px-4 py-3 text-sm text-ink">{{ $liability['account_code'] }} - {{ $liability['account_name'] }}</td>
@@ -91,7 +91,7 @@
                         <h3 class="text-sm font-semibold text-ink">Equity</h3>
                     </div>
                     <table class="w-full">
-                        <tbody class="divide-y divide-[#e5e5e5]">
+                        <tbody class="divide-y divide-border">
                             @forelse ($equity as $eq)
                                 <tr class="hover:bg-canvas-subtle">
                                     <td class="px-4 py-3 text-sm text-ink">{{ $eq['account_code'] }} - {{ $eq['account_name'] }}</td>

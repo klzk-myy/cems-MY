@@ -58,20 +58,20 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b border-border">
-                        <th class="text-left py-3 px-4 font-medium text-gray-700">Currency</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Net Position</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Limit</th>
-                        <th class="text-center py-3 px-4 font-medium text-gray-700">Utilization</th>
-                        <th class="text-center py-3 px-4 font-medium text-gray-700">Status</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Available</th>
+                        <th class="text-left py-3 px-4 font-medium text-ink-muted">Currency</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Net Position</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Limit</th>
+                        <th class="text-center py-3 px-4 font-medium text-ink-muted">Utilization</th>
+                        <th class="text-center py-3 px-4 font-medium text-ink-muted">Status</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Available</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($reportData['positions'] ?? [] as $position)
                     <tr class="border-b border-border hover:bg-canvas-subtle">
                         <td class="py-3 px-4 text-ink font-medium">{{ $position['currency'] }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700">{{ number_format($position['net_position'], 2) }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700">{{ number_format($position['limit'], 2) }}</td>
+                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($position['net_position'], 2) }}</td>
+                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($position['limit'], 2) }}</td>
                         <td class="py-3 px-4 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 <div class="w-20 bg-gray-200 rounded-full h-2">
@@ -89,7 +89,7 @@
                                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">OK</span>
                             @endif
                         </td>
-                        <td class="py-3 px-4 text-right text-gray-700 {{ $position['available'] < 0 ? 'text-red-600 font-medium' : '' }}">
+                        <td class="py-3 px-4 text-right text-ink-muted {{ $position['available'] < 0 ? 'text-red-600 font-medium' : '' }}">
                             {{ number_format($position['available'], 2) }}
                         </td>
                     </tr>

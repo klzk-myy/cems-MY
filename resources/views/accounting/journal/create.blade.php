@@ -40,7 +40,7 @@
                             <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Remove</th>
                         </tr>
                     </thead>
-                    <tbody id="journal-lines" class="divide-y divide-[#e5e5e5]">
+                    <tbody id="journal-lines" class="divide-y divide-border">
                         <tr>
                             <td class="px-4 py-3">
                                 <x-select

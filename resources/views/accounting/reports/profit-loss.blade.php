@@ -27,7 +27,7 @@
                         <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     @forelse ($report['revenues'] ?? [] as $revenue)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm text-ink">{{ $revenue['account_code'] }} - {{ $revenue['account_name'] }}</td>
@@ -57,7 +57,7 @@
                         <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     @forelse ($report['expenses'] ?? [] as $expense)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm text-ink">{{ $expense['account_code'] }} - {{ $expense['account_name'] }}</td>

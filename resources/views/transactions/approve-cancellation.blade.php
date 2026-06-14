@@ -44,7 +44,7 @@
                 <h2 class="text-lg font-medium text-ink">Cancellation Reason</h2>
             </div>
             <div class="p-6">
-                <p class="text-sm text-gray-700">{{ $cancellation['reason'] ?? 'No reason provided' }}</p>
+                <p class="text-sm text-ink-muted">{{ $cancellation['reason'] ?? 'No reason provided' }}</p>
                 <div class="mt-4">
                     <label class="block text-sm font-medium text-ink-muted mb-1">Requested By</label>
                     <p class="text-sm text-ink">{{ $cancellation['requested_by'] ?? 'N/A' }}</p>
@@ -64,7 +64,7 @@
                 <form method="POST" action="{{ route('transactions.approve-cancellation.store', $transaction['id'] ?? 0) }}">
                     @csrf
                     <div class="mb-4">
-                        <label for="approval_notes" class="block text-sm font-medium text-gray-700 mb-2">Approval Notes</label>
+                        <label for="approval_notes" class="block text-sm font-medium text-ink-muted mb-2">Approval Notes</label>
                         <textarea
                             id="approval_notes"
                             name="approval_notes"

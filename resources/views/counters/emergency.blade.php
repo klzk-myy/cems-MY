@@ -37,7 +37,7 @@
                 <input type="hidden" name="action" value="{{ $action ?? 'force_close' }}">
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Reason for Emergency Action</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Reason for Emergency Action</label>
                     <textarea name="reason" rows="2" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required placeholder="Describe the emergency..."></textarea>
                 </div>
 

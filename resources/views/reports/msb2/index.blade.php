@@ -14,7 +14,7 @@
         <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <form method="GET" action="{{ route('reports.msb2') }}" class="flex flex-wrap gap-4 items-end">
                 <div>
-                    <label for="date" class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
+                    <label for="date" class="block text-sm font-medium text-ink-muted mb-2">Select Date</label>
                     <input type="date" id="date" name="date" value="{{ $date }}" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                 </div>
                 <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
@@ -57,23 +57,23 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b border-border">
-                        <th class="text-left py-3 px-4 font-medium text-gray-700">Currency</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Buy Count</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Buy Volume</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Sell Count</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Sell Volume</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Net Volume</th>
+                        <th class="text-left py-3 px-4 font-medium text-ink-muted">Currency</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Buy Count</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Buy Volume</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Sell Count</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Sell Volume</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Net Volume</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($summary as $currency => $data)
                     <tr class="border-b border-border hover:bg-canvas-subtle">
                         <td class="py-3 px-4 text-ink font-medium">{{ $currency }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700">{{ number_format($data['buy_count']) }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700">{{ number_format($data['buy_volume'], 2) }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700">{{ number_format($data['sell_count']) }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700">{{ number_format($data['sell_volume'], 2) }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700 {{ $data['net_volume'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($data['buy_count']) }}</td>
+                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($data['buy_volume'], 2) }}</td>
+                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($data['sell_count']) }}</td>
+                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($data['sell_volume'], 2) }}</td>
+                        <td class="py-3 px-4 text-right text-ink-muted {{ $data['net_volume'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ number_format($data['net_volume'], 2) }}
                         </td>
                     </tr>

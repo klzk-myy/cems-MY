@@ -73,7 +73,7 @@
                                             <p class="mt-1 text-xs text-ink-muted">Verified: {{ $user->mfa_verified_at->format('Y-m-d H:i') }}</p>
                                         @endif
                                     @else
-                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Disabled</span>
+                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">Disabled</span>
                                     @endif
                                 </div>
                             </div>
@@ -115,39 +115,39 @@
                                 @case('teller')
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Can create transactions</span>
+                                        <span class="text-sm text-ink-muted">Can create transactions</span>
                                     </li>
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Rate override limit: +/-0.5%</span>
+                                        <span class="text-sm text-ink-muted">Rate override limit: +/-0.5%</span>
                                     </li>
                                     @break
                                 @case('manager')
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Can create transactions</span>
+                                        <span class="text-sm text-ink-muted">Can create transactions</span>
                                     </li>
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Can approve transactions</span>
+                                        <span class="text-sm text-ink-muted">Can approve transactions</span>
                                     </li>
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Can manage counters</span>
+                                        <span class="text-sm text-ink-muted">Can manage counters</span>
                                     </li>
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Rate override limit: +/-2.0%</span>
+                                        <span class="text-sm text-ink-muted">Rate override limit: +/-2.0%</span>
                                     </li>
                                     @break
                                 @case('compliance_officer')
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Can review flagged transactions</span>
+                                        <span class="text-sm text-ink-muted">Can review flagged transactions</span>
                                     </li>
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Can access compliance reports</span>
+                                        <span class="text-sm text-ink-muted">Can access compliance reports</span>
                                     </li>
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -156,19 +156,19 @@
                                 @case('admin')
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Full system access</span>
+                                        <span class="text-sm text-ink-muted">Full system access</span>
                                     </li>
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Can manage users</span>
+                                        <span class="text-sm text-ink-muted">Can manage users</span>
                                     </li>
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Can manage system settings</span>
+                                        <span class="text-sm text-ink-muted">Can manage system settings</span>
                                     </li>
                                     <li class="flex items-start">
                                         <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span class="text-sm text-gray-700">Unlimited rate override</span>
+                                        <span class="text-sm text-ink-muted">Unlimited rate override</span>
                                     </li>
                                     @break
                             @endswitch
@@ -185,9 +185,9 @@
                         <p class="mt-4 text-xs text-ink-muted">
                             Rate override limit:
                             @if($user->role->rateOverrideLimit() === null)
-                                <span class="font-medium text-gray-700">Unlimited</span>
+                                <span class="font-medium text-ink-muted">Unlimited</span>
                             @else
-                                <span class="font-medium text-gray-700">+/-{{ $user->role->rateOverrideLimit() }}%</span>
+                                <span class="font-medium text-ink-muted">+/-{{ $user->role->rateOverrideLimit() }}%</span>
                             @endif
                         </p>
                     </div>

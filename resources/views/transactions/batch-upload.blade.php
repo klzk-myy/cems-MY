@@ -17,7 +17,7 @@
                     <p class="text-sm text-ink-muted">4. Supported format: CSV</p>
                 </div>
                 <div class="mt-4 p-4 bg-canvas-subtle rounded-lg">
-                    <p class="text-sm font-medium text-gray-700 mb-2">Required Columns:</p>
+                    <p class="text-sm font-medium text-ink-muted mb-2">Required Columns:</p>
                     <p class="text-xs text-ink-muted">type, amount, currency, customer_id, rate, counter_id</p>
                 </div>
             </div>
@@ -31,7 +31,7 @@
                 <form method="POST" action="{{ route('transactions.batch-upload.store') }}" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-6">
-                        <label for="file" class="block text-sm font-medium text-gray-700 mb-2">Transaction File</label>
+                        <label for="file" class="block text-sm font-medium text-ink-muted mb-2">Transaction File</label>
                         <input
                             type="file"
                             id="file"
@@ -45,7 +45,7 @@
                     </div>
 
                     <div class="mb-6">
-                        <label for="branch_id" class="block text-sm font-medium text-gray-700 mb-2">Branch</label>
+                        <label for="branch_id" class="block text-sm font-medium text-ink-muted mb-2">Branch</label>
                         <select
                             id="branch_id"
                             name="branch_id"

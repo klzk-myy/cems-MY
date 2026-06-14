@@ -48,7 +48,7 @@
         <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Risk Score Distribution Over Time</h3>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-border">
                     <thead class="bg-canvas-subtle">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
@@ -58,7 +58,7 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Total</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-border">
                         <tr>
                             <td class="px-4 py-3 text-sm text-ink">January 2024</td>
                             <td class="px-4 py-3 text-sm text-red-600 font-medium">12</td>

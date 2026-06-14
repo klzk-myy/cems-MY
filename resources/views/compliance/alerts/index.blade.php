@@ -13,7 +13,7 @@
                 No alerts found
             </div>
             @else
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-border">
                 <thead class="bg-canvas-subtle">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Alert ID</th>
@@ -25,7 +25,7 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-border">
                     @foreach($alerts as $alert)
                     <tr>
                         <td class="px-4 py-3 text-sm text-ink">{{ $alert->id }}</td>

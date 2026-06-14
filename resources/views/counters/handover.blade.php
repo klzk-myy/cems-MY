@@ -32,7 +32,7 @@
                 @csrf
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Select Operator</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Select Operator</label>
                     <select name="to_user_id" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
                         <option value="">-- Select Operator --</option>
                         @foreach($availableUsers ?? [] as $user)
@@ -42,12 +42,12 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Your PIN to Confirm</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Your PIN to Confirm</label>
                     <input type="password" name="pin" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Notes (Optional)</label>
                     <textarea name="notes" rows="2" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="Any special instructions for the next operator..."></textarea>
                 </div>
 

@@ -33,7 +33,7 @@
                 </div>
 
                 <div class="bg-surface border border-border rounded-xl overflow-hidden">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="min-w-full divide-y divide-border">
                         <thead class="bg-canvas-subtle">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Currency</th>
@@ -45,7 +45,7 @@
                                 <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-surface divide-y divide-gray-200">
+                        <tbody class="bg-surface divide-y divide-border">
                             @forelse($rates as $rate)
                                 <tr class="hover:bg-canvas-subtle">
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -92,19 +92,19 @@
                 @csrf
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Currency</label>
+                        <label class="block text-sm font-medium text-ink-muted">Currency</label>
                         <x-input type="text" name="currency_code" id="override-currency" class="mt-1 w-full px-4 py-2.5 text-sm bg-canvas-subtle border border-border rounded-lg" readonly />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Rate Buy</label>
+                        <label class="block text-sm font-medium text-ink-muted">Rate Buy</label>
                         <x-input type="text" name="rate_buy" id="override-rate-buy" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Rate Sell</label>
+                        <label class="block text-sm font-medium text-ink-muted">Rate Sell</label>
                         <x-input type="text" name="rate_sell" id="override-rate-sell" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Reason</label>
+                        <label class="block text-sm font-medium text-ink-muted">Reason</label>
                         <textarea name="reason" id="override-reason" rows="2" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"></textarea>
                     </div>
                 </div>

@@ -16,7 +16,7 @@
                 <x-select name="currency_id" label="Currency" :options="$currencies ?? []" required placeholder="Select Currency" />
 
                 <div class="mb-6">
-                    <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                    <label for="amount" class="block text-sm font-medium text-ink-muted mb-2">Amount</label>
                     <div class="relative">
                         <x-input type="text" name="amount" id="amount" placeholder="0.00" required class="w-full" />
                     </div>
@@ -26,7 +26,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
+                    <label for="notes" class="block text-sm font-medium text-ink-muted mb-2">Notes (Optional)</label>
                     <textarea name="notes" id="notes" rows="3" placeholder="Add any additional notes or instructions..." class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 resize-none"></textarea>
                     @error('notes')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

@@ -68,7 +68,7 @@
         <!-- Recent Transactions -->
         <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Recent Transactions</h3>
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-border">
                 <thead class="bg-canvas-subtle">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
@@ -77,7 +77,7 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Risk Flag</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-border">
                     <tr>
                         <td class="px-4 py-3 text-sm text-ink-muted">2024-01-15</td>
                         <td class="px-4 py-3 text-sm text-ink">Buy USD</td>

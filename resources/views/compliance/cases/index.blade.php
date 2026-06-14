@@ -39,7 +39,7 @@
 
         <!-- Cases Table -->
         <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-border">
                 <thead class="bg-canvas-subtle">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Case ID</th>
@@ -52,7 +52,7 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-border">
                     @forelse ($cases as $case)
                         <tr>
                             <td class="px-4 py-3 text-sm text-ink">{{ $case->case_number }}</td>
@@ -65,7 +65,7 @@
                                         'High' => 'bg-orange-100 text-orange-700',
                                         'Medium' => 'bg-yellow-100 text-yellow-700',
                                         'Low' => 'bg-green-100 text-green-700',
-                                        default => 'bg-canvas-subtle text-gray-700',
+                                        default => 'bg-canvas-subtle text-ink-muted',
                                     };
                                 @endphp
                                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $priorityColor }}">
@@ -80,7 +80,7 @@
                                         'PendingApproval' => 'bg-purple-100 text-purple-700',
                                         'Closed' => 'bg-green-100 text-green-700',
                                         'Escalated' => 'bg-red-100 text-red-700',
-                                        default => 'bg-canvas-subtle text-gray-700',
+                                        default => 'bg-canvas-subtle text-ink-muted',
                                     };
                                 @endphp
                                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $statusColor }}">

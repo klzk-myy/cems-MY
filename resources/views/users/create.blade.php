@@ -46,9 +46,9 @@
                                     name="is_active"
                                     value="1"
                                     {{ old('is_active', '1') ? 'checked' : '' }}
-                                    class="w-4 h-4 text-[#0a0a0a] border-border rounded focus:ring-[#0a0a0a]"
+                                    class="w-4 h-4 text-ink border-border rounded focus:ring-primary"
                                 >
-                                <span class="ml-2 text-sm text-gray-700">Active User</span>
+                                <span class="ml-2 text-sm text-ink-muted">Active User</span>
                             </label>
                         </div>
 
@@ -59,9 +59,9 @@
                                     name="mfa_enabled"
                                     value="1"
                                     {{ old('mfa_enabled') ? 'checked' : '' }}
-                                    class="w-4 h-4 text-[#0a0a0a] border-border rounded focus:ring-[#0a0a0a]"
+                                    class="w-4 h-4 text-ink border-border rounded focus:ring-primary"
                                 >
-                                <span class="ml-2 text-sm text-gray-700">Enable MFA (Required for all roles)</span>
+                                <span class="ml-2 text-sm text-ink-muted">Enable MFA (Required for all roles)</span>
                             </label>
                         </div>
                     </div>

@@ -23,7 +23,7 @@
         <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <form method="GET" action="{{ route('reports.quarterly-lvr') }}" class="flex flex-wrap gap-4 items-end">
                 <div>
-                    <label for="quarter" class="text-sm font-medium text-gray-700">Select Quarter</label>
+                    <label for="quarter" class="text-sm font-medium text-ink-muted">Select Quarter</label>
                     <select id="quarter" name="quarter" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                         @for($y = date('Y'); $y >= date('Y') - 2; $y--)
                             <option value="{{ $y }}-Q1" {{ $quarter === $y . '-Q1' ? 'selected' : '' }}>{{ $y }} Q1 (Jan - Mar)</option>
@@ -65,19 +65,19 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b border-border">
-                        <th class="text-left py-3 px-4 font-medium text-gray-700">Month</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Transactions</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Volume (MYR)</th>
-                        <th class="text-right py-3 px-4 font-medium text-gray-700">Average (MYR)</th>
+                        <th class="text-left py-3 px-4 font-medium text-ink-muted">Month</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Transactions</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Volume (MYR)</th>
+                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Average (MYR)</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($reportData['monthly_breakdown'] as $month)
                     <tr class="border-b border-border hover:bg-canvas-subtle">
                         <td class="py-3 px-4 text-ink font-medium">{{ $month['label'] }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700">{{ number_format($month['transaction_count']) }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700">{{ number_format($month['volume'], 2) }}</td>
-                        <td class="py-3 px-4 text-right text-gray-700">{{ number_format($month['average'], 2) }}</td>
+                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($month['transaction_count']) }}</td>
+                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($month['volume'], 2) }}</td>
+                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($month['average'], 2) }}</td>
                     </tr>
                     @endforeach
                 </tbody>

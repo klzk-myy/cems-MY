@@ -59,7 +59,7 @@
                             <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wide">Percentage</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         @forelse($flaggedStats['by_type'] as $type => $count)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-6 py-4 text-sm text-ink">{{ $type }}</td>
@@ -93,7 +93,7 @@
                     </div>
                     <div class="pt-4 border-t border-border">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-gray-700">Total Compliance Flags</span>
+                            <span class="text-sm font-medium text-ink-muted">Total Compliance Flags</span>
                             <span class="text-lg font-semibold text-ink">{{ number_format($flaggedStats['total']) }}</span>
                         </div>
                     </div>

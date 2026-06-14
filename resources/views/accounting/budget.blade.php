@@ -64,7 +64,7 @@
                         <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm font-mono">5100-001</td>
                         <td class="px-4 py-3 text-sm">Currency Exchange Revenue</td>

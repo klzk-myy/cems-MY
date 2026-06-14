@@ -11,12 +11,12 @@
             <div class="flex gap-3">
                 @if($previousRun)
                     <a href="{{ route('test-results.compare', [$testResult->id, $previousRun->id]) }}"
-                       class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+                       class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                         Compare with Previous
                     </a>
                 @endif
                 <a href="{{ route('test-results.index') }}"
-                   class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+                   class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                     Back to List
                 </a>
             </div>
@@ -34,7 +34,7 @@
                     @elseif($testResult->status === 'error')
                         <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-yellow-100 text-yellow-700">Error</span>
                     @else
-                        <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-canvas-subtle text-gray-700">{{ ucfirst($testResult->status) }}</span>
+                        <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-canvas-subtle text-ink-muted">{{ ucfirst($testResult->status) }}</span>
                     @endif
                 </p>
             </div>
@@ -66,7 +66,7 @@
                 <div class="px-6 py-4 border-b border-border bg-red-50">
                     <h2 class="text-lg font-semibold text-red-700">Failed Tests ({{ count($testResult->failures) }})</h2>
                 </div>
-                <div class="divide-y divide-[#e5e5e5]">
+                <div class="divide-y divide-border">
                     @foreach($testResult->failures as $index => $failure)
                         <div class="p-6">
                             <div class="flex items-start justify-between">
@@ -92,7 +92,7 @@
                 <div class="px-6 py-4 border-b border-border bg-yellow-50">
                     <h2 class="text-lg font-semibold text-yellow-700">Errors ({{ count($testResult->errors) }})</h2>
                 </div>
-                <div class="divide-y divide-[#e5e5e5]">
+                <div class="divide-y divide-border">
                     @foreach($testResult->errors as $index => $error)
                         <div class="p-6">
                             <div class="flex items-start justify-between">
@@ -167,7 +167,7 @@
                         </p>
                     </div>
                     <a href="{{ route('test-results.show', $previousRun->id) }}"
-                       class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+                       class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                         View Previous Run
                     </a>
                 </div>

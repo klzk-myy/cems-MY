@@ -62,13 +62,13 @@
                             <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Cleared</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm font-mono">CHK-2021</td>
                             <td class="px-4 py-3 text-sm">2026-04-28</td>
                             <td class="px-4 py-3 text-sm text-right">5,000.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-gray-300">
+                                <input type="checkbox" class="h-4 w-4 rounded border-border">
                             </td>
                         </tr>
                         <tr class="hover:bg-canvas-subtle">
@@ -76,7 +76,7 @@
                             <td class="px-4 py-3 text-sm">2026-04-30</td>
                             <td class="px-4 py-3 text-sm text-right">12,500.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-gray-300">
+                                <input type="checkbox" class="h-4 w-4 rounded border-border">
                             </td>
                         </tr>
                         <tr class="hover:bg-canvas-subtle">
@@ -84,7 +84,7 @@
                             <td class="px-4 py-3 text-sm">2026-05-02</td>
                             <td class="px-4 py-3 text-sm text-right">8,250.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-gray-300">
+                                <input type="checkbox" class="h-4 w-4 rounded border-border">
                             </td>
                         </tr>
                     </tbody>
@@ -112,13 +112,13 @@
                             <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Cleared</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm font-mono">DEP-0892</td>
                             <td class="px-4 py-3 text-sm">2026-04-30</td>
                             <td class="px-4 py-3 text-sm text-right">45,000.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-gray-300">
+                                <input type="checkbox" class="h-4 w-4 rounded border-border">
                             </td>
                         </tr>
                         <tr class="hover:bg-canvas-subtle">
@@ -126,7 +126,7 @@
                             <td class="px-4 py-3 text-sm">2026-05-01</td>
                             <td class="px-4 py-3 text-sm text-right">32,500.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-gray-300">
+                                <input type="checkbox" class="h-4 w-4 rounded border-border">
                             </td>
                         </tr>
                     </tbody>
@@ -155,7 +155,7 @@
                         <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Book</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">Bank Fee</td>
                         <td class="px-4 py-3 text-sm">Monthly bank charge - not recorded in books</td>

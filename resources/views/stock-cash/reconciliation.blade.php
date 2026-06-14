@@ -7,7 +7,7 @@
                 <p class="mt-1 text-sm text-ink-muted">Date: {{ $date }} | Till ID: {{ $tillId }}</p>
             </div>
             <a href="{{ url()->previous() }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                 Back
             </a>
         </div>
@@ -54,7 +54,7 @@
                         </span>
                     </div>
                     <div class="flex justify-between items-center border-t border-border pt-3">
-                        <span class="text-sm font-medium text-gray-700">MYR Received</span>
+                        <span class="text-sm font-medium text-ink-muted">MYR Received</span>
                         <span class="text-sm font-semibold text-ink">
                             MYR {{ number_format((float) ($summary['myr_from_buys'] ?? 0), 2) }}
                         </span>
@@ -77,7 +77,7 @@
                         </span>
                     </div>
                     <div class="flex justify-between items-center border-t border-border pt-3">
-                        <span class="text-sm font-medium text-gray-700">MYR Paid Out</span>
+                        <span class="text-sm font-medium text-ink-muted">MYR Paid Out</span>
                         <span class="text-sm font-semibold text-ink">
                             MYR {{ number_format((float) ($summary['myr_to_sells'] ?? 0), 2) }}
                         </span>
@@ -90,7 +90,7 @@
         <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-ink mb-4">Expected vs Actual Closing</h2>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-[#e5e5e5]">
+                <table class="min-w-full divide-y divide-border">
                     <thead>
                         <tr class="bg-canvas-subtle">
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Currency</th>
@@ -100,7 +100,7 @@
                             <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         @forelse($reconciliation['currency_reconciliation'] ?? [] as $currencyRecon)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink">{{ $currencyRecon['currency_code'] }}</td>
@@ -185,7 +185,7 @@
         <div class="bg-surface border border-border rounded-xl p-6">
             <h2 class="text-lg font-medium text-ink mb-4">Transactions</h2>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-[#e5e5e5]">
+                <table class="min-w-full divide-y divide-border">
                     <thead>
                         <tr class="bg-canvas-subtle">
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">ID</th>
@@ -198,7 +198,7 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         @forelse($transactions as $transaction)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink">{{ $transaction->id }}</td>
@@ -232,7 +232,7 @@
                                         @elseif($transaction->status->value === 'pending_approval')
                                             bg-yellow-100 text-yellow-700
                                         @else
-                                            bg-canvas-subtle text-gray-700
+                                            bg-canvas-subtle text-ink-muted
                                         @endif">
                                         {{ ucfirst(str_replace('_', ' ', $transaction->status->value)) }}
                                     </span>

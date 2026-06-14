@@ -61,7 +61,7 @@
                         <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total P&L</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     @forelse($positions as $position)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-6 py-4 text-sm font-medium text-ink">{{ $position['currency'] }}</td>

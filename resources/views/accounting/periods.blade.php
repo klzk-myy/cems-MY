@@ -46,7 +46,7 @@
                         <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">P01</td>
                         <td class="px-4 py-3 text-sm">January 2026</td>
@@ -55,7 +55,7 @@
                         <td class="px-4 py-3 text-sm text-right">125,430.00</td>
                         <td class="px-4 py-3 text-sm text-right">98,210.00</td>
                         <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">Closed</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <button class="text-blue-600 hover:text-blue-800">View</button>
@@ -69,7 +69,7 @@
                         <td class="px-4 py-3 text-sm text-right">132,870.00</td>
                         <td class="px-4 py-3 text-sm text-right">101,450.00</td>
                         <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">Closed</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <button class="text-blue-600 hover:text-blue-800">View</button>
@@ -83,7 +83,7 @@
                         <td class="px-4 py-3 text-sm text-right">141,200.00</td>
                         <td class="px-4 py-3 text-sm text-right">108,900.00</td>
                         <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">Closed</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <button class="text-blue-600 hover:text-blue-800">View</button>
@@ -97,7 +97,7 @@
                         <td class="px-4 py-3 text-sm text-right">138,500.00</td>
                         <td class="px-4 py-3 text-sm text-right">105,750.00</td>
                         <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">Closed</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <button class="text-blue-600 hover:text-blue-800">View</button>

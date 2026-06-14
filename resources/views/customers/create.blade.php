@@ -30,7 +30,7 @@
                 </div>
 
                 <div class="mt-6">
-                    <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <label for="address" class="block text-sm font-medium text-ink-muted mb-2">Address</label>
                     <textarea
                         id="address"
                         name="address"
@@ -42,7 +42,7 @@
                 <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth') }}" class="mt-6" />
 
                 <div class="mt-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Risk Level</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-2">Risk Level</label>
                     <div class="flex gap-4">
                         <label class="flex items-center gap-2">
                             <input type="radio" name="risk_level" value="low" class="text-blue-600">

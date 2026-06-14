@@ -34,9 +34,9 @@
                         @php
                             $activeYearStatusColor = match ($activeYear->status?->value) {
                                 'Open' => 'bg-green-100 text-green-700',
-                                'Closed' => 'bg-canvas-subtle text-gray-700',
+                                'Closed' => 'bg-canvas-subtle text-ink-muted',
                                 'Archived' => 'bg-blue-100 text-blue-700',
-                                default => 'bg-canvas-subtle text-gray-700',
+                                default => 'bg-canvas-subtle text-ink-muted',
                             };
                         @endphp
                         <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $activeYearStatusColor }}">
@@ -61,14 +61,14 @@
                         <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     @forelse ($fiscalYears as $fiscalYear)
                         @php
                             $yearStatusColor = match ($fiscalYear->status?->value) {
                                 'Open' => 'bg-green-100 text-green-700',
-                                'Closed' => 'bg-canvas-subtle text-gray-700',
+                                'Closed' => 'bg-canvas-subtle text-ink-muted',
                                 'Archived' => 'bg-blue-100 text-blue-700',
-                                default => 'bg-canvas-subtle text-gray-700',
+                                default => 'bg-canvas-subtle text-ink-muted',
                             };
                         @endphp
                         <tr class="hover:bg-canvas-subtle">
@@ -112,13 +112,13 @@
                         <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     @forelse (($activeYear?->periods ?? collect())->sortBy('period_code') as $period)
                         @php
                             $periodStatusColor = match ($period->status?->value) {
                                 'open' => 'bg-green-100 text-green-700',
-                                'closed' => 'bg-canvas-subtle text-gray-700',
-                                default => 'bg-canvas-subtle text-gray-700',
+                                'closed' => 'bg-canvas-subtle text-ink-muted',
+                                default => 'bg-canvas-subtle text-ink-muted',
                             };
                             $isCurrent = now()->between($period->start_date, $period->end_date);
                         @endphp

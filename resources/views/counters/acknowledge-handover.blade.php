@@ -29,7 +29,7 @@
             </div>
 
             <div class="mb-6">
-                <h3 class="text-sm font-medium text-gray-700 mb-2">Opening Float</h3>
+                <h3 class="text-sm font-medium text-ink-muted mb-2">Opening Float</h3>
                 <div class="bg-canvas-subtle rounded-lg p-4">
                     <table class="w-full text-sm">
                         <tr>
@@ -50,7 +50,7 @@
 
             @isset($notes)
             <div class="mb-6">
-                <h3 class="text-sm font-medium text-gray-700 mb-2">Notes</h3>
+                <h3 class="text-sm font-medium text-ink-muted mb-2">Notes</h3>
                 <p class="text-sm text-ink-muted bg-canvas-subtle rounded-lg p-3">{{ $notes }}</p>
             </div>
             @endisset
@@ -58,7 +58,7 @@
             <form method="POST" action="{{ route('counters.handover.acknowledge', $counter) }}">
                 @csrf
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Your PIN</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Your PIN</label>
                     <input type="password" name="pin" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
                 </div>
                 <div class="flex gap-3">

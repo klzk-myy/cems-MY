@@ -9,7 +9,7 @@
             <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
                 <div>
                     <label for="source" class="block text-xs font-medium text-ink-muted uppercase mb-1">Source</label>
-                    <select name="source" id="source" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                    <select name="source" id="source" class="w-full rounded-md border-border shadow-sm text-sm">
                         <option value="all" {{ ($request->get('source', 'all') === 'all') ? 'selected' : '' }}>All</option>
                         <option value="alert" {{ ($request->get('source') === 'alert') ? 'selected' : '' }}>Alert</option>
                         <option value="finding" {{ ($request->get('source') === 'finding') ? 'selected' : '' }}>Finding</option>
@@ -17,7 +17,7 @@
                 </div>
                 <div>
                     <label for="priority" class="block text-xs font-medium text-ink-muted uppercase mb-1">Priority</label>
-                    <select name="priority" id="priority" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                    <select name="priority" id="priority" class="w-full rounded-md border-border shadow-sm text-sm">
                         <option value="">All</option>
                         <option value="Critical" {{ ($request->get('priority') === 'Critical') ? 'selected' : '' }}>Critical</option>
                         <option value="High" {{ ($request->get('priority') === 'High') ? 'selected' : '' }}>High</option>
@@ -27,7 +27,7 @@
                 </div>
                 <div>
                     <label for="status" class="block text-xs font-medium text-ink-muted uppercase mb-1">Status</label>
-                    <select name="status" id="status" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                    <select name="status" id="status" class="w-full rounded-md border-border shadow-sm text-sm">
                         <option value="">All</option>
                         <option value="open" {{ ($request->get('status') === 'open') ? 'selected' : '' }}>Open</option>
                         <option value="in_review" {{ ($request->get('status') === 'in_review') ? 'selected' : '' }}>In Review</option>
@@ -37,7 +37,7 @@
                 </div>
                 <div>
                     <label for="type" class="block text-xs font-medium text-ink-muted uppercase mb-1">Type</label>
-                    <select name="type" id="type" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                    <select name="type" id="type" class="w-full rounded-md border-border shadow-sm text-sm">
                         <option value="">All</option>
                         <option value="Velocity_Exceeded" {{ ($request->get('type') === 'Velocity_Exceeded') ? 'selected' : '' }}>Velocity Exceeded</option>
                         <option value="Structuring_Pattern" {{ ($request->get('type') === 'Structuring_Pattern') ? 'selected' : '' }}>Structuring Pattern</option>
@@ -46,22 +46,22 @@
                 </div>
                 <div>
                     <label for="customer" class="block text-xs font-medium text-ink-muted uppercase mb-1">Customer</label>
-                    <input type="text" name="customer" id="customer" value="{{ $request->get('customer') }}" placeholder="Search..." class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                    <input type="text" name="customer" id="customer" value="{{ $request->get('customer') }}" placeholder="Search..." class="w-full rounded-md border-border shadow-sm text-sm">
                 </div>
                 <div>
                     <label for="from_date" class="block text-xs font-medium text-ink-muted uppercase mb-1">From Date</label>
-                    <input type="date" name="from_date" id="from_date" value="{{ $request->get('from_date') }}" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                    <input type="date" name="from_date" id="from_date" value="{{ $request->get('from_date') }}" class="w-full rounded-md border-border shadow-sm text-sm">
                 </div>
                 <div>
                     <label for="to_date" class="block text-xs font-medium text-ink-muted uppercase mb-1">To Date</label>
-                    <input type="date" name="to_date" id="to_date" value="{{ $request->get('to_date') }}" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                    <input type="date" name="to_date" id="to_date" value="{{ $request->get('to_date') }}" class="w-full rounded-md border-border shadow-sm text-sm">
                 </div>
             </div>
             <div class="mt-4 flex gap-2">
                 <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
                     Apply Filters
                 </button>
-                <a href="{{ route('compliance.unified.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300">
+                <a href="{{ route('compliance.unified.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 text-ink-muted text-sm font-medium rounded-md hover:bg-gray-300">
                     Clear
                 </a>
             </div>
@@ -128,7 +128,7 @@
 
         <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Recent Activity</h3>
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-border">
                 <thead class="bg-canvas-subtle">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
@@ -142,7 +142,7 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-border">
                     @forelse($items as $item)
                         <tr class="badge-info">
                             <td class="px-4 py-3 text-sm text-ink">{{ $item['source'] }}</td>
@@ -151,7 +151,7 @@
                                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded
                                     @if($item['priority'] === 'Critical') bg-red-100 text-red-700
                                     @elseif($item['priority'] === 'High') bg-yellow-100 text-yellow-700
-                                    @else bg-canvas-subtle text-gray-700
+                                    @else bg-canvas-subtle text-ink-muted
                                     @endif">
                                     {{ $item['priority_label'] ?? $item['priority'] }}
                                 </span>
@@ -161,7 +161,7 @@
                             <td class="px-4 py-3 text-sm">
                                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded
                                     @if($item['status'] === 'Resolved' || $item['status'] === 'Case_Created') bg-green-100 text-green-700
-                                    @elseif($item['status'] === 'Dismissed' || $item['status'] === 'Rejected') bg-canvas-subtle text-gray-700
+                                    @elseif($item['status'] === 'Dismissed' || $item['status'] === 'Rejected') bg-canvas-subtle text-ink-muted
                                     @else bg-blue-100 text-blue-700
                                     @endif">
                                     {{ $item['status_label'] ?? $item['status'] }}

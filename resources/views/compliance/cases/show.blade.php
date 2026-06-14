@@ -42,7 +42,7 @@
                             'PendingApproval' => 'bg-purple-100 text-purple-700',
                             'Closed' => 'bg-green-100 text-green-700',
                             'Escalated' => 'bg-red-100 text-red-700',
-                            default => 'bg-canvas-subtle text-gray-700',
+                            default => 'bg-canvas-subtle text-ink-muted',
                         };
                     @endphp
                     <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $statusColor }}">

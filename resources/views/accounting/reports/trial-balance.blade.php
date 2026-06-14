@@ -39,7 +39,7 @@
                         <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit (RM)</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     @forelse ($trialBalance['accounts'] as $account)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm font-mono text-ink">{{ $account['account_code'] }}</td>

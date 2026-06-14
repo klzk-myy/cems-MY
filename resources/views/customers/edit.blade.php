@@ -20,7 +20,7 @@
                         required
                     />
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">ID Number (masked)</label>
+                        <label class="block text-sm font-medium text-ink-muted mb-2">ID Number (masked)</label>
                         <div class="px-4 py-2.5 text-sm bg-canvas-subtle border border-border rounded-lg">
                             {{ $decryptedIdNumber ? substr($decryptedIdNumber, 0, 4).'****'.substr($decryptedIdNumber, -4) : '****-****-****' }}
                         </div>
@@ -38,7 +38,7 @@
                 </div>
 
                 <div class="mt-6">
-                    <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <label for="address" class="block text-sm font-medium text-ink-muted mb-2">Address</label>
                     <textarea
                         id="address"
                         name="address"

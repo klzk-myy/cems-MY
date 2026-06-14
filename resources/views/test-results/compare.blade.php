@@ -7,7 +7,7 @@
                 <p class="mt-1 text-sm text-ink-muted">Run #{{ $run1->id }} vs Run #{{ $run2->id }}</p>
             </div>
             <a href="{{ route('test-results.index') }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                 Back to List
             </a>
         </div>
@@ -32,7 +32,7 @@
                         @elseif($run1->status === 'error')
                             <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-yellow-100 text-yellow-700">Error</span>
                         @else
-                            <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-canvas-subtle text-gray-700">{{ ucfirst($run1->status) }}</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-canvas-subtle text-ink-muted">{{ ucfirst($run1->status) }}</span>
                         @endif
                     </div>
                     <div class="flex items-center justify-between">
@@ -57,7 +57,7 @@
                     </div>
                     <div class="pt-4 border-t border-border">
                         <a href="{{ route('test-results.show', $run1->id) }}"
-                           class="text-sm font-medium text-ink hover:text-gray-700">
+                           class="text-sm font-medium text-ink hover:text-ink-muted">
                             View Full Details &rarr;
                         </a>
                     </div>
@@ -82,7 +82,7 @@
                         @elseif($run2->status === 'error')
                             <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-yellow-100 text-yellow-700">Error</span>
                         @else
-                            <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-canvas-subtle text-gray-700">{{ ucfirst($run2->status) }}</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-canvas-subtle text-ink-muted">{{ ucfirst($run2->status) }}</span>
                         @endif
                     </div>
                     <div class="flex items-center justify-between">
@@ -107,7 +107,7 @@
                     </div>
                     <div class="pt-4 border-t border-border">
                         <a href="{{ route('test-results.show', $run2->id) }}"
-                           class="text-sm font-medium text-ink hover:text-gray-700">
+                           class="text-sm font-medium text-ink hover:text-ink-muted">
                             View Full Details &rarr;
                         </a>
                     </div>
@@ -120,7 +120,7 @@
             <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-semibold text-ink">Differences</h2>
             </div>
-            <table class="min-w-full divide-y divide-[#e5e5e5]">
+            <table class="min-w-full divide-y divide-border">
                 <thead class="bg-canvas-subtle">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Metric</th>
@@ -129,7 +129,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Change</th>
                     </tr>
                 </thead>
-                <tbody class="bg-surface divide-y divide-[#e5e5e5]">
+                <tbody class="bg-surface divide-y divide-border">
                     <!-- Total Tests -->
                     <tr class="hover:bg-canvas-subtle">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Total Tests</td>
@@ -256,7 +256,7 @@
                         <div class="px-6 py-4 border-b border-red-200 bg-red-50">
                             <h3 class="text-lg font-semibold text-red-700">Newly Failed Tests ({{ count($newlyFailed) }})</h3>
                         </div>
-                        <ul class="divide-y divide-[#e5e5e5]">
+                        <ul class="divide-y divide-border">
                             @foreach($newlyFailed as $testName)
                                 <li class="px-6 py-3 text-sm text-red-600">{{ $testName }}</li>
                             @endforeach
@@ -270,7 +270,7 @@
                         <div class="px-6 py-4 border-b border-green-200 bg-green-50">
                             <h3 class="text-lg font-semibold text-green-700">Fixed Tests ({{ count($fixedTests) }})</h3>
                         </div>
-                        <ul class="divide-y divide-[#e5e5e5]">
+                        <ul class="divide-y divide-border">
                             @foreach($fixedTests as $testName)
                                 <li class="px-6 py-3 text-sm text-green-600">{{ $testName }}</li>
                             @endforeach

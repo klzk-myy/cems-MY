@@ -62,20 +62,20 @@
                         <h3 class="text-lg font-medium text-ink mb-4">Company Information</h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Business Name</label>
+                                <label class="block text-sm font-medium text-ink-muted">Business Name</label>
                                 <input type="text" name="business_name" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Address</label>
+                                <label class="block text-sm font-medium text-ink-muted">Address</label>
                                 <textarea name="business_address" rows="2" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"></textarea>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Phone</label>
+                                    <label class="block text-sm font-medium text-ink-muted">Phone</label>
                                     <input type="text" name="business_phone" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                                    <label class="block text-sm font-medium text-ink-muted">Email</label>
                                     <input type="email" name="business_email" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                                 </div>
                             </div>
@@ -94,21 +94,21 @@
                         <h3 class="text-lg font-medium text-ink mb-4">Admin User</h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Admin Name</label>
+                                <label class="block text-sm font-medium text-ink-muted">Admin Name</label>
                                 <input type="text" name="admin_name" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Email</label>
+                                <label class="block text-sm font-medium text-ink-muted">Email</label>
                                 <input type="email" name="admin_email" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Password</label>
+                                <label class="block text-sm font-medium text-ink-muted">Password</label>
                                 <input type="password" name="admin_password" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required minlength="12">
                                 <p class="mt-1 text-xs text-ink-muted">Minimum 12 characters with uppercase, lowercase, number and special character.</p>
                             </div>
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 1]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+                            <a href="{{ route('setup.index', ['step' => 1]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                                 Previous
                             </a>
                             <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
@@ -126,14 +126,14 @@
                         <div class="space-y-3">
                             @foreach($currencies as $currency)
                                 <label class="flex items-center gap-3 p-3 bg-canvas-subtle rounded-lg cursor-pointer">
-                                    <input type="checkbox" name="currency_codes[]" value="{{ $currency->code }}" class="w-4 h-4 rounded border-gray-300" checked>
+                                    <input type="checkbox" name="currency_codes[]" value="{{ $currency->code }}" class="w-4 h-4 rounded border-border" checked>
                                     <span class="text-sm font-medium text-ink">{{ $currency->code }}</span>
                                     <span class="text-sm text-ink-muted">{{ $currency->name }}</span>
                                 </label>
                             @endforeach
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 2]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+                            <a href="{{ route('setup.index', ['step' => 2]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                                 Previous
                             </a>
                             <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
@@ -150,7 +150,7 @@
                         <p class="text-sm text-ink-muted mb-4">Configure how rates are fetched and managed.</p>
                         <div class="space-y-4">
                             <label class="flex items-center gap-3 p-4 bg-canvas-subtle rounded-lg cursor-pointer">
-                                <input type="checkbox" name="use_default_rates" value="1" class="w-4 h-4 rounded border-gray-300" checked>
+                                <input type="checkbox" name="use_default_rates" value="1" class="w-4 h-4 rounded border-border" checked>
                                 <div>
                                     <span class="text-sm font-medium text-ink">Use Default Rates</span>
                                     <p class="text-xs text-ink-muted">Seed with standard exchange rates for selected currencies.</p>
@@ -158,7 +158,7 @@
                             </label>
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 3]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+                            <a href="{{ route('setup.index', ['step' => 3]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                                 Previous
                             </a>
                             <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
@@ -175,11 +175,11 @@
                         <p class="text-sm text-ink-muted mb-4">Set your initial currency holdings (opening floats).</p>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">MYR Cash (RM)</label>
+                                <label class="block text-sm font-medium text-ink-muted">MYR Cash (RM)</label>
                                 <input type="text" name="initial_myr_cash" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="0.00" value="0.00" inputmode="decimal">
                             </div>
                             <div class="border-t pt-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Foreign Currency Stock</label>
+                                <label class="block text-sm font-medium text-ink-muted mb-2">Foreign Currency Stock</label>
                                 <div class="grid grid-cols-2 gap-4">
                                     @foreach($currencies->where('code', '!=', 'MYR') as $currency)
                                         <div>
@@ -191,7 +191,7 @@
                             </div>
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 4]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+                            <a href="{{ route('setup.index', ['step' => 4]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                                 Previous
                             </a>
                             <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
@@ -208,11 +208,11 @@
                         <p class="text-sm text-ink-muted mb-4">Set your opening balance for accounting.</p>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Opening Balance (MYR)</label>
+                                <label class="block text-sm font-medium text-ink-muted">Opening Balance (MYR)</label>
                                 <input type="text" name="opening_balance_myr" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="0.00" value="0.00" inputmode="decimal">
                             </div>
                             <div class="border-t pt-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Foreign Currency Opening Balances</label>
+                                <label class="block text-sm font-medium text-ink-muted mb-2">Foreign Currency Opening Balances</label>
                                 <div class="grid grid-cols-2 gap-4">
                                     @foreach($currencies->where('code', '!=', 'MYR') as $currency)
                                         <div>
@@ -224,7 +224,7 @@
                             </div>
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 5]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+                            <a href="{{ route('setup.index', ['step' => 5]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                                 Previous
                             </a>
                             <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">

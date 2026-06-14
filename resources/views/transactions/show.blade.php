@@ -6,7 +6,7 @@
                 <p class="text-sm text-ink-muted mt-1">ID: {{ $transaction['id'] ?? 'N/A' }}</p>
             </div>
             <span class="inline-flex px-3 py-1 text-sm font-medium rounded-full
-                {{ ($transaction['status'] ?? '') === 'Completed' ? 'bg-green-100 text-green-700' : (($transaction['status'] ?? '') === 'Pending' ? 'bg-yellow-100 text-yellow-700' : (($transaction['status'] ?? '') === 'Cancelled' ? 'bg-red-100 text-red-700' : 'bg-canvas-subtle text-gray-700')) }}">
+                {{ ($transaction['status'] ?? '') === 'Completed' ? 'bg-green-100 text-green-700' : (($transaction['status'] ?? '') === 'Pending' ? 'bg-yellow-100 text-yellow-700' : (($transaction['status'] ?? '') === 'Cancelled' ? 'bg-red-100 text-red-700' : 'bg-canvas-subtle text-ink-muted')) }}">
                 {{ $transaction['status'] ?? 'N/A' }}
             </span>
         </div>

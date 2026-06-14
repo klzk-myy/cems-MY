@@ -45,7 +45,7 @@
                         <th class="px-6 py-3 text-center text-xs font-medium text-ink-muted uppercase tracking-wide">Risk Rating</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     @forelse($topCustomers as $index => $customer)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-6 py-4 text-sm text-ink-muted">{{ $index + 1 }}</td>
@@ -69,7 +69,7 @@
                                         <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Low</span>
                                         @break
                                     @default
-                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Unknown</span>
+                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">Unknown</span>
                                 @endswitch
                             </td>
                         </tr>

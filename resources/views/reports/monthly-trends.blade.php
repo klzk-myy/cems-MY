@@ -67,7 +67,7 @@
                         <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase">MoM Change</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     @forelse($monthlyData as $data)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-6 py-4 text-sm text-ink">{{ $data['month'] }}</td>

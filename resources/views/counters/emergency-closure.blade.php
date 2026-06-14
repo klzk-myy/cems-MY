@@ -32,7 +32,7 @@
             <form method="POST" action="{{ route('counters.emergency-close', $counter ?? 1) }}">
                 @csrf
 
-                <h3 class="text-sm font-medium text-gray-700 mb-3">Current Cash Holdings</h3>
+                <h3 class="text-sm font-medium text-ink-muted mb-3">Current Cash Holdings</h3>
                 <div class="bg-canvas-subtle rounded-lg p-4 mb-6">
                     <table class="w-full text-sm">
                         <tr>
@@ -53,12 +53,12 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Reason for Emergency Closure</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Reason for Emergency Closure</label>
                     <textarea name="reason" rows="3" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required></textarea>
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Manager Authorization PIN</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Manager Authorization PIN</label>
                     <input type="password" name="manager_pin" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
                 </div>
 

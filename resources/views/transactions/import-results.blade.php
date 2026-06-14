@@ -70,7 +70,7 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Transaction ID</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         @foreach($results['successful_records'] as $record)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink">{{ $record['row'] ?? 'N/A' }}</td>

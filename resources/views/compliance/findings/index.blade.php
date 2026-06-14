@@ -38,7 +38,7 @@
 
         <!-- Findings Table -->
         <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-border">
                 <thead class="bg-canvas-subtle">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Finding ID</th>
@@ -50,7 +50,7 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-border">
                     <tr>
                         <td class="px-4 py-3 text-sm text-ink">FIND-2024-001</td>
                         <td class="px-4 py-3 text-sm text-ink">Incomplete CDD Documentation</td>

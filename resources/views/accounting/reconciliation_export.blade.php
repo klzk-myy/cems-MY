@@ -13,7 +13,7 @@
             <h3 class="text-sm font-medium text-ink mb-4">Export Options</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Bank Account</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Bank Account</label>
                     <select class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                         <option value="maybank">Maybank Current Account</option>
                         <option value="cimb">CIMB Business Account</option>
@@ -21,11 +21,11 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Reconciliation Date</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Reconciliation Date</label>
                     <input type="date" value="2026-05-01" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Format</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Format</label>
                     <select class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                         <option value="pdf">PDF Document</option>
                         <option value="excel">Excel Spreadsheet</option>
@@ -33,7 +33,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Language</label>
                     <select class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                         <option value="en">English</option>
                         <option value="ms">Bahasa Malaysia</option>
@@ -78,7 +78,7 @@
                                 <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-[#e5e5e5]">
+                        <tbody class="divide-y divide-border">
                             <tr>
                                 <td class="px-4 py-2 text-sm">Outstanding Checks (3 items)</td>
                                 <td class="px-4 py-2 text-sm text-right">-25,750.00</td>

@@ -97,7 +97,7 @@
                             <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         <tr>
                             <td colspan="3" class="px-4 py-2 text-sm font-medium text-ink">Outstanding Checks</td>
                             <td class="px-4 py-2"></td>
@@ -159,7 +159,7 @@
                             <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         <tr>
                             <td class="px-4 py-2 text-sm">Bank Service Charge</td>
                             <td class="px-4 py-2 text-sm text-right">2026-05-01</td>

@@ -7,7 +7,7 @@
                 <p class="mt-1 text-sm text-ink-muted">Last {{ $days }} days performance overview</p>
             </div>
             <a href="{{ route('test-results.index') }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                 Back to Test Runs
             </a>
         </div>
@@ -54,7 +54,7 @@
                                     @endif
                                 </div>
                                 <span class="mt-2 text-xs text-ink-muted">{{ $dataPoint['date'] }}</span>
-                                <span class="text-xs font-medium text-gray-700">{{ $dataPoint['pass_rate'] }}%</span>
+                                <span class="text-xs font-medium text-ink-muted">{{ $dataPoint['pass_rate'] }}%</span>
                             </div>
                         @endforeach
                     </div>
@@ -71,7 +71,7 @@
             <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-semibold text-ink">Latest Results by Suite</h2>
             </div>
-            <table class="min-w-full divide-y divide-[#e5e5e5]">
+            <table class="min-w-full divide-y divide-border">
                 <thead class="bg-canvas-subtle">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Suite</th>
@@ -83,7 +83,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Trend</th>
                     </tr>
                 </thead>
-                <tbody class="bg-surface divide-y divide-[#e5e5e5]">
+                <tbody class="bg-surface divide-y divide-border">
                     @forelse($latestBySuite as $suiteName => $suiteData)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">{{ $suiteName }}</td>
@@ -100,7 +100,7 @@
                                         <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Error</span>
                                         @break
                                     @default
-                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">{{ $suiteData['last_run']->status->label() }}</span>
+                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">{{ $suiteData['last_run']->status->label() }}</span>
                                 @endswitch
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{{ $suiteData['last_run']->tests_passed ?? 0 }}</td>
@@ -151,16 +151,16 @@
                                 <div class="flex items-center gap-3">
                                     @if($status === 'passed')
                                         <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                                        <span class="text-sm text-gray-700">Passed</span>
+                                        <span class="text-sm text-ink-muted">Passed</span>
                                     @elseif($status === 'failed')
                                         <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                                        <span class="text-sm text-gray-700">Failed</span>
+                                        <span class="text-sm text-ink-muted">Failed</span>
                                     @elseif($status === 'error')
                                         <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                                        <span class="text-sm text-gray-700">Error</span>
+                                        <span class="text-sm text-ink-muted">Error</span>
                                     @else
                                         <span class="w-3 h-3 rounded-full bg-canvas-subtle0"></span>
-                                        <span class="text-sm text-gray-700">{{ ucfirst($status) }}</span>
+                                        <span class="text-sm text-ink-muted">{{ ucfirst($status) }}</span>
                                     @endif
                                 </div>
                                 <span class="text-sm font-medium text-ink">{{ number_format($count) }}</span>

@@ -9,7 +9,7 @@
                 </p>
             </div>
             <a href="{{ route('stock-transfers.index') }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                 Back
             </a>
         </div>
@@ -59,7 +59,7 @@
             @if($stockTransfer->notes)
                 <div class="mt-6 pt-6 border-t border-border">
                     <dt class="text-sm font-medium text-ink-muted mb-2">Notes</dt>
-                    <dd class="text-sm text-gray-700">{{ $stockTransfer->notes }}</dd>
+                    <dd class="text-sm text-ink-muted">{{ $stockTransfer->notes }}</dd>
                 </div>
             @endif
         </div>
@@ -123,7 +123,7 @@
         <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-ink mb-4">Transfer Items</h2>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-[#e5e5e5]">
+                <table class="min-w-full divide-y divide-border">
                     <thead>
                         <tr class="bg-canvas-subtle">
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Currency</th>
@@ -131,7 +131,7 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         @forelse($stockTransfer->items as $item)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink">

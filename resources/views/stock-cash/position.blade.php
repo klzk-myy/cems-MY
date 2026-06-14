@@ -61,7 +61,7 @@
         <div class="bg-surface border border-border rounded-xl p-6">
             <h2 class="text-lg font-medium text-ink mb-4">Recent Buy Transactions (Last 50)</h2>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-[#e5e5e5]">
+                <table class="min-w-full divide-y divide-border">
                     <thead>
                         <tr class="bg-canvas-subtle">
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">ID</th>
@@ -74,7 +74,7 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         @forelse($transactions as $transaction)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink">{{ $transaction->id }}</td>
@@ -103,7 +103,7 @@
                                         @elseif($transaction->status->value === 'pending')
                                             bg-orange-100 text-orange-700
                                         @else
-                                            bg-canvas-subtle text-gray-700
+                                            bg-canvas-subtle text-ink-muted
                                         @endif">
                                         {{ ucfirst(str_replace('_', ' ', $transaction->status->value)) }}
                                     </span>

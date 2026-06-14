@@ -62,7 +62,7 @@
                             <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Balance (RM)</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         @forelse ($ledger['entries'] as $entry)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm font-mono">{{ $entry->entry_date }}</td>

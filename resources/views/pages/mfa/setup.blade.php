@@ -13,7 +13,7 @@
 
             @if(isset($secret))
             <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Manual Entry Key</label>
+                <label class="block text-sm font-medium text-ink-muted mb-1">Manual Entry Key</label>
                 <code class="block bg-canvas-subtle p-2 rounded text-sm">{{ $secret }}</code>
             </div>
             @endif

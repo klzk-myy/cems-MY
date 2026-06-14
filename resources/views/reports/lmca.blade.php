@@ -21,7 +21,7 @@
         <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <form method="GET" action="{{ route('reports.lmca') }}" class="flex flex-wrap gap-4 items-end">
                 <div>
-                    <label for="month" class="text-sm font-medium text-gray-700 mb-2">Select Month</label>
+                    <label for="month" class="text-sm font-medium text-ink-muted mb-2">Select Month</label>
                     <input type="month" id="month" name="month" value="{{ $month }}" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                 </div>
                 <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
@@ -61,21 +61,21 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-border">
-                            <th class="text-left py-3 px-4 font-medium text-gray-700">Currency</th>
-                            <th class="text-right py-3 px-4 font-medium text-gray-700">No. of Transactions</th>
-                            <th class="text-right py-3 px-4 font-medium text-gray-700">Buy Volume (MYR)</th>
-                            <th class="text-right py-3 px-4 font-medium text-gray-700">Sell Volume (MYR)</th>
-                            <th class="text-right py-3 px-4 font-medium text-gray-700">Net Volume (MYR)</th>
+                            <th class="text-left py-3 px-4 font-medium text-ink-muted">Currency</th>
+                            <th class="text-right py-3 px-4 font-medium text-ink-muted">No. of Transactions</th>
+                            <th class="text-right py-3 px-4 font-medium text-ink-muted">Buy Volume (MYR)</th>
+                            <th class="text-right py-3 px-4 font-medium text-ink-muted">Sell Volume (MYR)</th>
+                            <th class="text-right py-3 px-4 font-medium text-ink-muted">Net Volume (MYR)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($reportData['currency_breakdown'] ?? [] as $currency)
                         <tr class="border-b border-border hover:bg-canvas-subtle">
                             <td class="py-3 px-4 text-ink font-medium">{{ $currency['currency'] }}</td>
-                            <td class="py-3 px-4 text-right text-gray-700">{{ number_format($currency['transaction_count']) }}</td>
-                            <td class="py-3 px-4 text-right text-gray-700">{{ number_format($currency['buy_volume'], 2) }}</td>
-                            <td class="py-3 px-4 text-right text-gray-700">{{ number_format($currency['sell_volume'], 2) }}</td>
-                            <td class="py-3 px-4 text-right text-gray-700">{{ number_format($currency['net_volume'], 2) }}</td>
+                            <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($currency['transaction_count']) }}</td>
+                            <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($currency['buy_volume'], 2) }}</td>
+                            <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($currency['sell_volume'], 2) }}</td>
+                            <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($currency['net_volume'], 2) }}</td>
                         </tr>
                         @empty
                         <tr>

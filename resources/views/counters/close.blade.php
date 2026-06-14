@@ -33,13 +33,13 @@
 
                 <div class="space-y-4 mb-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">MYR Cash Count</label>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">MYR Cash Count</label>
                         <input type="text" name="myr_cash" value="{{ old('myr_cash', $closingBalance['MYR'] ?? '') }}" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
                     </div>
 
                     @foreach($currencies ?? ['USD', 'SGD', 'THB'] as $currency)
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $currency }} Closing Amount</label>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">{{ $currency }} Closing Amount</label>
                         <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <span class="text-xs text-ink-muted">Count</span>
@@ -59,12 +59,12 @@
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Cash Summary</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Cash Summary</label>
                     <textarea name="summary" rows="3" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="Enter cash counts summary...">{{ old('summary') }}</textarea>
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Notes (Optional)</label>
                     <input type="text" name="notes" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="Any remarks for this session...">
                 </div>
 

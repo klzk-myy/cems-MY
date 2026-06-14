@@ -65,7 +65,7 @@
                         </td>
                         <td class="px-4 py-3">
                             @if($session->closed_at)
-                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">Closed</span>
                             @else
                                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span>
                             @endif

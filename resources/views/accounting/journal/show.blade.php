@@ -56,7 +56,7 @@
                         <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     <tr>
                         <td class="px-4 py-3 text-sm font-mono">1100-001</td>
                         <td class="px-4 py-3 text-sm">Cash MYR</td>

@@ -68,7 +68,7 @@
                         <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Gain/Loss</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                <tbody class="divide-y divide-border">
                     <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">USD</td>
                         <td class="px-4 py-3 text-sm text-right">50,000.00</td>

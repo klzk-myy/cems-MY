@@ -47,7 +47,7 @@
                             <div class="space-y-4" id="opening-floats">
                                 @foreach($currencies as $currency)
                                     <div class="flex items-center gap-4">
-                                        <label class="w-20 text-sm font-medium text-gray-700">{{ $currency->code }}</label>
+                                        <label class="w-20 text-sm font-medium text-ink-muted">{{ $currency->code }}</label>
                                         <x-input type="text" name="opening_floats[{{ $currency->code }}]" class="flex-1 w-full" placeholder="0.00" value="{{ old('opening_floats.' . $currency->code, '0.00') }}" inputmode="decimal" />
                                         @error('opening_floats.' . $currency->code)
                                             <p class="text-sm text-red-600">{{ $message }}</p>

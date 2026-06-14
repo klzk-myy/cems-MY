@@ -7,7 +7,7 @@
                 <p class="mt-1 text-sm text-ink-muted">Report Date: {{ $date }}</p>
             </div>
             <a href="{{ url()->previous() }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
                 Back
             </a>
         </div>
@@ -55,7 +55,7 @@
                             @elseif($balances->status->value === 'open')
                                 bg-blue-100 text-blue-700
                             @else
-                                bg-canvas-subtle text-gray-700
+                                bg-canvas-subtle text-ink-muted
                             @endif">
                             {{ ucfirst($balances->status->value) }}
                         </span>
@@ -68,7 +68,7 @@
         <div class="bg-surface border border-border rounded-xl p-6">
             <h2 class="text-lg font-medium text-ink mb-4">Currency Balances</h2>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-[#e5e5e5]">
+                <table class="min-w-full divide-y divide-border">
                     <thead>
                         <tr class="bg-canvas-subtle">
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Currency</th>
@@ -79,7 +79,7 @@
                             <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Variance</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#e5e5e5]">
+                    <tbody class="divide-y divide-border">
                         @forelse($balances->currencyBalances ?? [] as $currencyBalance)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink">
