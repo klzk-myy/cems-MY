@@ -1,56 +1,55 @@
 <x-app-layout title="Sanctions Entries">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page Header -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-ink">Sanctions Entries</h1>
-                    <p class="mt-1 text-sm text-ink-muted">Manage sanctions list entries</p>
-                </div>
-                <a href="{{ route('compliance.sanctions.entries.create') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <x-page-header
+            title="Sanctions Entries"
+            description="Manage sanctions list entries"
+        >
+            <x-slot:actions>
+                <x-button variant="primary" href="{{ route('compliance.sanctions.entries.create') }}">
                     Add Entry
-                </a>
-            </div>
-        </div>
+                </x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-        <!-- Filters -->
-        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
-            <form method="GET" action="{{ route('compliance.sanctions.entries.index') }}" class="flex flex-wrap gap-4">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name or reference..." class="flex-1 px-4 py-2 text-sm bg-surface border border-border rounded-lg">
-                <select name="list_id" class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
-                    <option value="">All Sources</option>
-                    @foreach ($lists as $list)
-                        <option value="{{ $list->id }}" @selected(request('list_id') == $list->id)>{{ $list->name }}</option>
-                    @endforeach
-                </select>
-                <select name="status" class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
-                    <option value="active" @selected(request('status', 'active') === 'active')>Active</option>
-                    <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
-                    <option value="deleted" @selected(request('status') === 'deleted')>Deleted</option>
-                    <option value="all" @selected(request('status') === 'all')>All</option>
-                </select>
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                    Search
-                </button>
-            </form>
-        </div>
+        <x-filter-bar method="GET">
+            <x-input
+                name="search"
+                type="text"
+                placeholder="Search by name or reference..."
+                :value="request('search')"
+                inline
+                class="flex-1"
+            />
+            <x-select
+                name="list_id"
+                :options="$lists->pluck('name', 'id')"
+                :selected="request('list_id')"
+                placeholder="All Sources"
+                inline
+            />
+            <x-select
+                name="status"
+                :options="['active' => 'Active', 'inactive' => 'Inactive', 'deleted' => 'Deleted', 'all' => 'All']"
+                :selected="request('status', 'active')"
+                placeholder=""
+                inline
+            />
+            <x-button variant="primary" type="submit">Search</x-button>
+        </x-filter-bar>
 
-        <!-- Entries Table -->
-        <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <table class="min-w-full divide-y divide-border">
-                <thead class="bg-canvas-subtle">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entry ID</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entity Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Listed</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <x-card>
+            <x-table>
+                <x-slot:thead>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entry ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entity Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Listed</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                </x-slot:thead>
+                <x-slot:tbody>
                     @forelse ($entries as $entry)
                         <tr>
                             <td class="px-4 py-3 text-sm text-ink">{{ $entry['id'] }}</td>
@@ -59,31 +58,38 @@
                                 {{ $entry['entity_type']?->value ?? ucfirst($entry['entity_type'] ?? 'N/A') }}
                             </td>
                             <td class="px-4 py-3 text-sm">
-                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">
+                                <x-badge variant="info">
                                     {{ strtoupper($entry['list_source'] ?: ($entry['list']['name'] ?? 'N/A')) }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $entry['reference_number'] ?: 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $entry['listing_date'] ?: 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm">
-                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">
+                                <x-badge
+                                    :variant="match (strtolower($entry['status']?->value ?? $entry['status'] ?? '')) {
+                                        'active' => 'success',
+                                        'inactive' => 'gray',
+                                        'deleted' => 'danger',
+                                        default => 'gray',
+                                    }"
+                                >
                                     {{ ucfirst($entry['status']?->value ?? $entry['status'] ?? 'N/A') }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td class="px-4 py-3 text-sm">
-                                <a href="{{ route('compliance.sanctions.entries.show', $entry['id']) }}" class="text-blue-600 hover:text-blue-800 mr-3">View</a>
-                                <a href="{{ route('compliance.sanctions.entries.edit', $entry['id']) }}" class="text-blue-600 hover:text-blue-800">Edit</a>
+                                <x-button variant="ghost" size="sm" href="{{ route('compliance.sanctions.entries.show', $entry['id']) }}">
+                                    View
+                                </x-button>
+                                <x-button variant="ghost" size="sm" href="{{ route('compliance.sanctions.entries.edit', $entry['id']) }}">
+                                    Edit
+                                </x-button>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-sm text-ink-muted">
-                                No entries found.
-                            </td>
-                        </tr>
+                        <x-empty-state message="No entries found" :colspan="8" />
                     @endforelse
-                </tbody>
-            </table>
-        </div>
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
     </div>
 </x-app-layout>

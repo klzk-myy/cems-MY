@@ -1,32 +1,38 @@
 <x-app-layout title="Customer Details">
-    <div class="p-6">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-2xl font-bold">Customer Details</h1>
-                <p class="text-ink-muted text-sm mt-1">{{ $customer->full_name ?? 'Customer Name' }}</p>
-            </div>
-            <div class="flex gap-3">
-                <a href="{{ route('customers.edit', $customer ?? 1) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
+    <div class="p-6 space-y-6">
+        <x-page-header title="Customer Details" :actions="true">
+            {{ $customer->full_name ?? 'Customer Name' }}
+
+            <x-slot:actions>
+                <x-button variant="secondary" href="{{ route('customers.edit', $customer ?? 1) }}">
                     Edit
-                </a>
-            </div>
-        </div>
+                </x-button>
+            </x-slot:actions>
+        </x-page-header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="space-y-6">
-                <div class="bg-surface border border-border rounded-xl p-6">
+                <x-card>
                     <div class="flex items-center gap-4 mb-4">
-                        <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold">
+                        <div class="w-16 h-16 rounded-full bg-canvas-subtle flex items-center justify-center text-xl font-bold">
                             {{ strtoupper(substr($customer->full_name ?? 'A', 0, 1)) }}
                         </div>
                         <div>
                             <h2 class="text-lg font-semibold">{{ $customer->full_name ?? 'Ahmad bin Abu' }}</h2>
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded
-                                @if(($customer->risk_level ?? '') === 'high') bg-red-100 text-red-700
-                                @elseif(($customer->risk_level ?? '') === 'medium') bg-yellow-100 text-yellow-700
-                                @else bg-green-100 text-green-700 @endif">
-                                {{ ucfirst($customer->risk_level ?? 'medium') }} Risk
-                            </span>
+                            @php
+                                $riskLevel = $customer->risk_level ?? 'medium';
+                                if (is_object($riskLevel) && enum_exists(get_class($riskLevel))) {
+                                    $riskLevel = $riskLevel->value;
+                                }
+                                $riskVariant = match (strtolower($riskLevel)) {
+                                    'high' => 'danger',
+                                    'medium' => 'warning',
+                                    default => 'success',
+                                };
+                            @endphp
+                            <x-badge :variant="$riskVariant">
+                                {{ ucfirst($riskLevel) }} Risk
+                            </x-badge>
                         </div>
                     </div>
 
@@ -48,10 +54,9 @@
                             <p class="font-medium">{{ $customer->phone ?? '+60 12-345 6789' }}</p>
                         </div>
                     </div>
-                </div>
+                </x-card>
 
-                <div class="bg-surface border border-border rounded-xl p-6">
-                    <h3 class="text-sm font-semibold mb-3">CDD Status</h3>
+                <x-card title="CDD Status">
                     <div class="space-y-2">
                         <div class="flex justify-between text-sm">
                             <span class="text-ink-muted">Level</span>
@@ -66,78 +71,60 @@
                             <span class="font-medium">{{ $customer->cdd_expiry_at?->format('d M Y') ?? '15 Jan 2025' }}</span>
                         </div>
                     </div>
-                </div>
+                </x-card>
             </div>
 
             <div class="lg:col-span-2 space-y-6">
-                <div class="bg-surface border border-border rounded-xl p-6">
+                <x-card>
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-lg font-semibold">Recent Transactions</h2>
-                        <a href="#" class="text-blue-600 hover:underline text-sm">View All</a>
+                        <x-button variant="ghost" size="sm" href="#">View All</x-button>
                     </div>
 
-                    <table class="w-full">
-                        <thead>
-                            <tr class="text-left text-sm text-ink-muted border-b">
-                                <th class="pb-3">Date</th>
-                                <th class="pb-3">Type</th>
-                                <th class="pb-3">Currency</th>
-                                <th class="pb-3">Amount</th>
-                                <th class="pb-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <x-table>
+                        <x-slot:thead>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Amount</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                        </x-slot:thead>
+                        <x-slot:tbody>
                             @forelse($recentTransactions ?? [] as $transaction)
-                            <tr class="border-b">
-                                <td class="py-3 text-sm">{{ $transaction->created_at->format('d M Y') }}</td>
-                                <td class="py-3 text-sm">{{ $transaction->type }}</td>
-                                <td class="py-3 text-sm">{{ $transaction->currency ?? 'USD' }}</td>
-                                <td class="py-3 text-sm">RM {{ number_format($transaction->amount, 2) }}</td>
-                                <td class="py-3">
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Completed</span>
-                                </td>
-                            </tr>
+                                <tr class="hover:bg-canvas-subtle">
+                                    <td class="px-4 py-3 text-sm">{{ $transaction->created_at->format('d M Y') }}</td>
+                                    <td class="px-4 py-3 text-sm">{{ $transaction->type }}</td>
+                                    <td class="px-4 py-3 text-sm">{{ $transaction->currency ?? 'USD' }}</td>
+                                    <td class="px-4 py-3 text-sm">RM {{ number_format($transaction->amount, 2) }}</td>
+                                    <td class="px-4 py-3">
+                                        <x-badge variant="success">Completed</x-badge>
+                                    </td>
+                                </tr>
                             @empty
-                            <tr>
-                                <td colspan="5" class="py-4 text-center text-ink-muted">No recent transactions.</td>
-                            </tr>
+                                <x-empty-state message="No recent transactions." :colspan="5" />
                             @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                        </x-slot:tbody>
+                    </x-table>
+                </x-card>
 
-                <div class="bg-surface border border-border rounded-xl p-6">
-                    <h2 class="text-lg font-semibold mb-4">Compliance Summary</h2>
-                    <div class="grid grid-cols-4 gap-4">
-                        <div class="text-center p-4 bg-canvas-subtle rounded-lg">
-                            <div class="text-2xl font-bold">{{ $stats['total_transactions'] ?? 24 }}</div>
-                            <div class="text-xs text-ink-muted">Total Txns</div>
-                        </div>
-                        <div class="text-center p-4 bg-canvas-subtle rounded-lg">
-                            <div class="text-2xl font-bold">RM {{ number_format($stats['total_value'] ?? 156750, 2) }}</div>
-                            <div class="text-xs text-ink-muted">Total Value</div>
-                        </div>
-                        <div class="text-center p-4 bg-canvas-subtle rounded-lg">
-                            <div class="text-2xl font-bold">{{ $stats['alerts'] ?? 0 }}</div>
-                            <div class="text-xs text-ink-muted">Alerts</div>
-                        </div>
-                        <div class="text-center p-4 bg-canvas-subtle rounded-lg">
-                            <div class="text-2xl font-bold">{{ $stats['str_filed'] ?? 0 }}</div>
-                            <div class="text-xs text-ink-muted">STRs Filed</div>
-                        </div>
-                    </div>
-                </div>
+                <x-card title="Compliance Summary">
+                    <x-stat-grid cols="4">
+                        <x-stat-card label="Total Txns" :value="$stats['total_transactions'] ?? 24" />
+                        <x-stat-card label="Total Value" value="RM {{ number_format($stats['total_value'] ?? 156750, 2) }}" />
+                        <x-stat-card label="Alerts" :value="$stats['alerts'] ?? 0" />
+                        <x-stat-card label="STRs Filed" :value="$stats['str_filed'] ?? 0" />
+                    </x-stat-grid>
+                </x-card>
 
-                <div class="bg-surface border border-border rounded-xl p-6">
-                    <h2 class="text-lg font-semibold mb-4">Notes</h2>
+                <x-card title="Notes">
                     <div class="space-y-3">
                         @forelse($notes ?? [] as $note)
-                        <div class="p-3 bg-canvas-subtle rounded-lg">
-                            <div class="text-sm">{{ $note->note }}</div>
-                            <div class="text-xs text-ink-muted mt-1">{{ $note->created_at->format('d M Y h:i A') }} - {{ $note->creator?->name ?? 'System' }}</div>
-                        </div>
+                            <div class="p-3 bg-canvas-subtle rounded-lg">
+                                <div class="text-sm">{{ $note->note }}</div>
+                                <div class="text-xs text-ink-muted mt-1">{{ $note->created_at->format('d M Y h:i A') }} - {{ $note->creator?->name ?? 'System' }}</div>
+                            </div>
                         @empty
-                        <p class="text-sm text-ink-muted">No notes yet.</p>
+                            <p class="text-sm text-ink-muted">No notes yet.</p>
                         @endforelse
                     </div>
                     <form method="POST" action="{{ route('customers.notes.store', $customer) }}" class="mt-4">
@@ -146,7 +133,7 @@
                         <textarea id="note" name="note" rows="2" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg mb-2" placeholder="Add a note..."></textarea>
                         <x-button type="submit" variant="primary" size="sm">Add Note</x-button>
                     </form>
-                </div>
+                </x-card>
             </div>
         </div>
     </div>
