@@ -30,14 +30,14 @@
                   text-ink placeholder:text-ink-muted/50
                   focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary
                   disabled:bg-canvas-subtle disabled:text-ink-muted
-                  @error($name ?? '') border-danger @enderror
+                  @if(isset($errors) && $errors->has($name ?? '')) border-danger @endif
                   {{ $attributes->get('class', '') }}">
     
     @if($help)
         <p class="mt-1 text-xs text-ink-muted">{{ $help }}</p>
     @endif
     
-    @if($name)
+    @if($name && isset($errors))
         @error($name)
             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
         @enderror
