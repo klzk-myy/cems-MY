@@ -6,53 +6,53 @@
                 <h1 class="text-2xl font-semibold text-ink">Budget Management</h1>
                 <p class="mt-1 text-sm text-ink-muted">Manage annual budgets and variances</p>
             </div>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                 + Create Budget
             </button>
         </div>
 
         <!-- Budget Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">Total Budget</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">RM 1,250,000.00</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">YTD Actual</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">RM 875,420.50</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">YTD Variance</p>
                 <p class="mt-1 text-2xl font-semibold text-green-600">RM 374,579.50</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">% Used</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">70.0%</p>
             </div>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+        <div class="bg-surface border border-border rounded-xl p-4">
             <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                     <option value="2026">Fiscal Year 2026</option>
                     <option value="2025">Fiscal Year 2025</option>
                 </select>
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Departments</option>
                     <option value="operations">Operations</option>
                     <option value="compliance">Compliance</option>
                     <option value="finance">Finance</option>
                 </select>
-                <input type="text" placeholder="Search accounts..." class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg md:w-64">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Filter</button>
+                <input type="text" placeholder="Search accounts..." class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg md:w-64">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Filter</button>
             </div>
         </div>
 
         <!-- Budget Lines Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-border">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
@@ -121,8 +121,8 @@
         <div class="flex items-center justify-between">
             <p class="text-sm text-ink-muted">Showing 1-4 of 4 accounts</p>
             <div class="flex gap-2">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Previous</button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Next</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border disabled:opacity-50" disabled>Previous</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border disabled:opacity-50" disabled>Next</button>
             </div>
         </div>
     </div>

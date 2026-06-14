@@ -5,8 +5,8 @@
             <p class="text-sm text-ink-muted mt-1">Review and approve transaction cancellation request</p>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Transaction Details</h2>
             </div>
             <div class="p-6">
@@ -39,8 +39,8 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Cancellation Reason</h2>
             </div>
             <div class="p-6">
@@ -56,8 +56,8 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Manager Approval</h2>
             </div>
             <div class="p-6">
@@ -69,20 +69,20 @@
                             id="approval_notes"
                             name="approval_notes"
                             rows="4"
-                            class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg"
+                            class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"
                             placeholder="Enter approval notes (optional)"
                         ></textarea>
                     </div>
                     <div class="flex items-center gap-4">
                         <button
                             type="submit"
-                            class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]"
+                            class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover"
                         >
                             Approve Cancellation
                         </button>
                         <a
                             href="{{ route('transactions.index') }}"
-                            class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle"
+                            class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle"
                         >
                             Cancel
                         </a>

@@ -1,6 +1,6 @@
 <x-app-layout title="Recovery Codes">
     <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-8">
+        <div class="bg-surface border border-border rounded-xl p-8">
             <div class="mb-6 text-center">
                 <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-4">
                     <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -8,13 +8,13 @@
                     </svg>
                 </div>
                 <h2 class="text-xl font-semibold text-ink">MFA Enabled Successfully</h2>
-                <p class="mt-2 text-sm text-gray-600">Save these recovery codes in a safe place. You can use any of them to access your account if you lose your authenticator device.</p>
+                <p class="mt-2 text-sm text-ink-muted">Save these recovery codes in a safe place. You can use any of them to access your account if you lose your authenticator device.</p>
             </div>
 
             <div class="bg-canvas-subtle rounded-lg p-6 mb-6">
                 <div class="grid grid-cols-2 gap-4">
                     @foreach($recoveryCodes as $code)
-                        <div class="font-mono text-sm text-ink bg-white px-3 py-2 rounded border border-gray-200 text-center">
+                        <div class="font-mono text-sm text-ink bg-surface px-3 py-2 rounded border border-border text-center">
                             {{ $code }}
                         </div>
                     @endforeach
@@ -34,7 +34,7 @@
             </div>
 
             <div class="flex items-center justify-center">
-                <a href="{{ route('dashboard') }}" class="px-6 py-2.5 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <a href="{{ route('dashboard') }}" class="px-6 py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Continue to Dashboard
                 </a>
             </div>

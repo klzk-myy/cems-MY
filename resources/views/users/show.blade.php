@@ -6,10 +6,10 @@
                 <p class="text-sm text-ink-muted mt-1">User profile and details</p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="{{ route('users.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <a href="{{ route('users.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Back to List
                 </a>
-                <a href="{{ route('users.edit', $user->id) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <a href="{{ route('users.edit', $user->id) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Edit User
                 </a>
             </div>
@@ -17,8 +17,8 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
-                <div class="bg-white border border-[#e5e5e5] rounded-xl">
-                    <div class="px-6 py-4 border-b border-[#e5e5e5]">
+                <div class="bg-surface border border-border rounded-xl">
+                    <div class="px-6 py-4 border-b border-border">
                         <h2 class="text-lg font-medium text-ink">User Information</h2>
                     </div>
                     <div class="p-6">
@@ -81,8 +81,8 @@
                     </div>
                 </div>
 
-                <div class="bg-white border border-[#e5e5e5] rounded-xl mt-6">
-                    <div class="px-6 py-4 border-b border-[#e5e5e5]">
+                <div class="bg-surface border border-border rounded-xl mt-6">
+                    <div class="px-6 py-4 border-b border-border">
                         <h2 class="text-lg font-medium text-ink">Account Activity</h2>
                     </div>
                     <div class="p-6">
@@ -105,8 +105,8 @@
             </div>
 
             <div>
-                <div class="bg-white border border-[#e5e5e5] rounded-xl">
-                    <div class="px-6 py-4 border-b border-[#e5e5e5]">
+                <div class="bg-surface border border-border rounded-xl">
+                    <div class="px-6 py-4 border-b border-border">
                         <h2 class="text-lg font-medium text-ink">Role Permissions</h2>
                     </div>
                     <div class="p-6">
@@ -176,12 +176,12 @@
                     </div>
                 </div>
 
-                <div class="bg-white border border-[#e5e5e5] rounded-xl mt-6">
-                    <div class="px-6 py-4 border-b border-[#e5e5e5]">
+                <div class="bg-surface border border-border rounded-xl mt-6">
+                    <div class="px-6 py-4 border-b border-border">
                         <h2 class="text-lg font-medium text-ink">Role Description</h2>
                     </div>
                     <div class="p-6">
-                        <p class="text-sm text-gray-600">{{ $user->role->description() }}</p>
+                        <p class="text-sm text-ink-muted">{{ $user->role->description() }}</p>
                         <p class="mt-4 text-xs text-ink-muted">
                             Rate override limit:
                             @if($user->role->rateOverrideLimit() === null)

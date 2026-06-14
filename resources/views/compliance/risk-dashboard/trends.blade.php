@@ -7,21 +7,21 @@
         </div>
 
         <!-- Time Range Filter -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="30">Last 30 Days</option>
                     <option value="90">Last 90 Days</option>
                     <option value="180">Last 6 Months</option>
                     <option value="365">Last Year</option>
                 </select>
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Branches</option>
                     <option value="kl">Kuala Lumpur</option>
                     <option value="penang">Penang</option>
                     <option value="johor">Johor</option>
                 </select>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Apply Filter
                 </button>
             </div>
@@ -45,7 +45,7 @@
         </div>
 
         <!-- Risk Score Distribution Over Time -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Risk Score Distribution Over Time</h3>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -86,7 +86,7 @@
         </div>
 
         <!-- Key Insights -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Key Insights</h3>
             <div class="space-y-3">
                 <div class="flex items-start gap-3 p-3 bg-red-50 rounded-lg">

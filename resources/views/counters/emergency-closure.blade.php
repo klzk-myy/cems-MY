@@ -5,7 +5,7 @@
             <p class="text-ink-muted text-sm mt-1">Force close counter due to emergency situation</p>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 max-w-2xl">
+        <div class="bg-surface border border-border rounded-xl p-6 max-w-2xl">
             <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <div class="flex items-center gap-3">
                     <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,7 +45,7 @@
                             <td class="text-right font-medium">{{ number_format($holdings[$currency] ?? 0, 2) }}</td>
                         </tr>
                         @endforeach
-                        <tr class="border-t border-gray-200">
+                        <tr class="border-t border-border">
                             <td class="font-medium py-2">Total MYR Equivalent</td>
                             <td class="text-right font-semibold">RM {{ number_format($totalMYR ?? 0, 2) }}</td>
                         </tr>
@@ -54,19 +54,19 @@
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Reason for Emergency Closure</label>
-                    <textarea name="reason" rows="3" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required></textarea>
+                    <textarea name="reason" rows="3" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required></textarea>
                 </div>
 
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Manager Authorization PIN</label>
-                    <input type="password" name="manager_pin" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required>
+                    <input type="password" name="manager_pin" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
                 </div>
 
                 <div class="flex gap-3">
                     <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700">
                         Confirm Emergency Closure
                     </button>
-                    <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                    <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                         Back
                     </a>
                 </div>

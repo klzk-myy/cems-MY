@@ -6,7 +6,7 @@
                 <h1 class="text-2xl font-semibold text-ink">Fiscal Years</h1>
                 <p class="mt-1 text-sm text-ink-muted">Manage accounting fiscal years and periods</p>
             </div>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                 + Create Fiscal Year
             </button>
         </div>
@@ -16,7 +16,7 @@
         @endphp
 
         <!-- Active Fiscal Year -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-ink-muted">Active Fiscal Year</h3>
@@ -42,16 +42,16 @@
                         <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $activeYearStatusColor }}">
                             {{ $activeYear->status?->label() }}
                         </span>
-                        <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Close Year</button>
+                        <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Close Year</button>
                     </div>
                 @endif
             </div>
         </div>
 
         <!-- Fiscal Years Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-border">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Fiscal Year</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Start Date</th>
@@ -95,14 +95,14 @@
         </div>
 
         <!-- Periods Summary -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-4 py-3 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-border">
                 <h3 class="text-sm font-medium text-ink">
                     Current Periods{{ $activeYear ? ' - FY '.$activeYear->year_code : '' }}
                 </h3>
             </div>
             <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-border">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Period</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>

@@ -9,7 +9,7 @@
             @endcan
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-surface rounded-lg shadow overflow-hidden">
             <table class="w-full">
                 <thead class="bg-canvas-subtle">
                     <tr class="text-left text-sm text-ink-muted">

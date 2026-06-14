@@ -6,7 +6,7 @@
                 <h1 class="text-2xl font-semibold text-ink">Currency Revaluation</h1>
                 <p class="mt-1 text-sm text-ink-muted">Revalue currency positions based on exchange rates</p>
             </div>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                 Run Revaluation
             </button>
         </div>
@@ -25,25 +25,25 @@
         </div>
 
         <!-- Current Rates -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-sm font-medium text-ink mb-4">Current Exchange Rates</h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="p-4 border border-[#e5e5e5] rounded-lg">
+                <div class="p-4 border border-border rounded-lg">
                     <p class="text-sm text-ink-muted">USD/MYR</p>
                     <p class="mt-1 text-xl font-semibold text-ink">4.7200</p>
                     <p class="text-xs text-green-600">+0.0200 from base</p>
                 </div>
-                <div class="p-4 border border-[#e5e5e5] rounded-lg">
+                <div class="p-4 border border-border rounded-lg">
                     <p class="text-sm text-ink-muted">SGD/MYR</p>
                     <p class="mt-1 text-xl font-semibold text-ink">3.5100</p>
                     <p class="text-xs text-green-600">+0.0150 from base</p>
                 </div>
-                <div class="p-4 border border-[#e5e5e5] rounded-lg">
+                <div class="p-4 border border-border rounded-lg">
                     <p class="text-sm text-ink-muted">GBP/MYR</p>
                     <p class="mt-1 text-xl font-semibold text-ink">5.9500</p>
                     <p class="text-xs text-red-600">-0.0100 from base</p>
                 </div>
-                <div class="p-4 border border-[#e5e5e5] rounded-lg">
+                <div class="p-4 border border-border rounded-lg">
                     <p class="text-sm text-ink-muted">EUR/MYR</p>
                     <p class="mt-1 text-xl font-semibold text-ink">5.1800</p>
                     <p class="text-xs text-green-600">+0.0250 from base</p>
@@ -52,12 +52,12 @@
         </div>
 
         <!-- Revaluation Preview -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-4 py-3 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-border">
                 <h3 class="text-sm font-medium text-ink">Revaluation Preview - May 2026</h3>
             </div>
             <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-border">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
@@ -106,7 +106,7 @@
                         <td class="px-4 py-3 text-sm text-right text-green-600">+375.00</td>
                     </tr>
                 </tbody>
-                <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                <tfoot class="bg-canvas-subtle border-t border-border">
                     <tr>
                         <td colspan="5" class="px-4 py-3 text-sm font-medium text-ink">Total</td>
                         <td class="px-4 py-3 text-sm text-right font-medium">460,950.00</td>
@@ -117,13 +117,13 @@
         </div>
 
         <!-- Previous Revaluation -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-ink">Last Revaluation</h3>
                     <p class="mt-1 text-sm text-ink-muted">April 30, 2026</p>
                 </div>
-                <a href="{{ route('accounting.revaluation.history') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
+                <a href="{{ route('accounting.revaluation.history') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">
                     View History
                 </a>
             </div>
@@ -131,8 +131,8 @@
 
         <!-- Actions -->
         <div class="flex items-center justify-end gap-3">
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Cancel</button>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">Confirm Revaluation</button>
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Cancel</button>
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">Confirm Revaluation</button>
         </div>
     </div>
 </x-app-layout>

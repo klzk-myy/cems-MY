@@ -9,11 +9,11 @@
         </div>
 
         {{-- Filters --}}
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <form method="GET" action="{{ route('reports.monthly-trends') }}" class="flex flex-wrap gap-4 items-end">
                 <div>
                     <label for="year" class="text-xs font-medium text-ink-muted uppercase">Year</label>
-                    <select name="year" id="year" class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                    <select name="year" id="year" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                         @foreach(range(date('Y') - 5, date('Y')) as $y)
                             <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                         @endforeach
@@ -21,14 +21,14 @@
                 </div>
                 <div>
                     <label for="currency" class="text-xs font-medium text-ink-muted uppercase">Currency</label>
-                    <select name="currency" id="currency" class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                    <select name="currency" id="currency" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                         <option value="all">All Currencies</option>
                         @foreach($currencies as $curr)
                             <option value="{{ $curr }}" {{ $currency == $curr ? 'selected' : '' }}>{{ $curr }}</option>
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Apply Filters
                 </button>
             </form>
@@ -37,7 +37,7 @@
         {{-- Trend Summary Cards --}}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             @foreach($trends as $trend)
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+                <div class="bg-surface border border-border rounded-xl p-4">
                     <div class="text-xs font-medium text-ink-muted uppercase mb-1">{{ $trend['month'] }}</div>
                     <div class="text-2xl font-semibold text-ink">{{ number_format($trend['count']) }}</div>
                     <div class="text-sm text-ink-muted mt-1">
@@ -53,8 +53,8 @@
         </div>
 
         {{-- Monthly Data Table --}}
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Monthly Breakdown</h2>
             </div>
             <table class="w-full">
@@ -80,7 +80,7 @@
                                         {{ $data['mom_change'] >= 0 ? '+' : '' }}{{ number_format($data['mom_change'], 1) }}%
                                     </span>
                                 @else
-                                    <span class="text-sm text-gray-400">-</span>
+                                    <span class="text-sm text-ink-muted/50">-</span>
                                 @endif
                             </td>
                         </tr>

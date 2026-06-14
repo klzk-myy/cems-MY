@@ -12,34 +12,34 @@
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">EDD Cases</div>
                 <div class="text-2xl font-semibold text-blue-600">{{ number_format($eddCount) }}</div>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">Suspicious Transactions</div>
                 <div class="text-2xl font-semibold text-red-600">{{ number_format($suspiciousCount) }}</div>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">Total Flagged</div>
                 <div class="text-2xl font-semibold text-ink">{{ number_format($flaggedStats['total']) }}</div>
             </div>
         </div>
 
         <!-- Date Range Filter -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <form method="GET" action="{{ route('reports.compliance-summary') }}" class="flex flex-wrap gap-4 items-end">
                 <div class="flex flex-col gap-2">
                     <label for="start_date" class="text-xs font-medium text-ink-muted uppercase tracking-wide">Start Date</label>
                     <input type="date" name="start_date" id="start_date" value="{{ $startDate }}"
-                        class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                        class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                 </div>
                 <div class="flex flex-col gap-2">
                     <label for="end_date" class="text-xs font-medium text-ink-muted uppercase tracking-wide">End Date</label>
                     <input type="date" name="end_date" id="end_date" value="{{ $endDate }}"
-                        class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                        class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                 </div>
-                <button type="submit" class="px-4 py-2.5 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button type="submit" class="px-4 py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Update Report
                 </button>
             </form>
@@ -47,8 +47,8 @@
 
         <!-- Flagged by Type Breakdown -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-[#e5e5e5]">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-border">
                     <h2 class="text-lg font-medium text-ink">Flagged Transactions by Type</h2>
                 </div>
                 <table class="w-full">
@@ -78,8 +78,8 @@
             </div>
 
             <!-- Compliance Metrics -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-[#e5e5e5]">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-border">
                     <h2 class="text-lg font-medium text-ink">Compliance Metrics</h2>
                 </div>
                 <div class="p-6 space-y-4">
@@ -91,7 +91,7 @@
                         <span class="text-sm text-ink-muted">Suspicious Transaction Reports</span>
                         <span class="text-sm font-medium text-red-600">{{ number_format($suspiciousCount) }}</span>
                     </div>
-                    <div class="pt-4 border-t border-[#e5e5e5]">
+                    <div class="pt-4 border-t border-border">
                         <div class="flex items-center justify-between">
                             <span class="text-sm font-medium text-gray-700">Total Compliance Flags</span>
                             <span class="text-lg font-semibold text-ink">{{ number_format($flaggedStats['total']) }}</span>

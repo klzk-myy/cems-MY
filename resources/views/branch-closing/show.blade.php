@@ -22,7 +22,7 @@
         @endif
 
         @if($workflow)
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+            <div class="bg-surface border border-border rounded-xl p-6 mb-6">
                 <h2 class="text-lg font-medium text-ink mb-4">Workflow Progress</h2>
                 <div class="grid grid-cols-2 gap-6">
                     <div>
@@ -44,7 +44,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+            <div class="bg-surface border border-border rounded-xl p-6 mb-6">
                 <h2 class="text-lg font-medium text-ink mb-4">Checklist</h2>
                 <div class="space-y-4">
                     <div class="flex items-center justify-between p-4 bg-canvas-subtle rounded-lg">
@@ -109,7 +109,7 @@
                 @if($workflow->status === 'initiated')
                     <form method="POST" action="{{ route('branch-closing.settle', $branch) }}">
                         @csrf
-                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                             Mark as Settled
                         </button>
                     </form>
@@ -118,7 +118,7 @@
                 @if($canFinalize)
                     <form method="POST" action="{{ route('branch-closing.finalize', $branch) }}">
                         @csrf
-                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                             Finalize Closure
                         </button>
                     </form>
@@ -127,11 +127,11 @@
                 @endif
             </div>
         @else
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-8 text-center">
-                <p class="text-gray-600 mb-4">No active closure workflow for this branch.</p>
+            <div class="bg-surface border border-border rounded-xl p-8 text-center">
+                <p class="text-ink-muted mb-4">No active closure workflow for this branch.</p>
                 <form method="POST" action="{{ route('branch-closing.initiate', $branch) }}" class="inline">
                     @csrf
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                         Initiate Closure Workflow
                     </button>
                 </form>

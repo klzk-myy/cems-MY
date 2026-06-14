@@ -6,7 +6,7 @@
                 <p class="text-ink-muted text-sm mt-1">{{ $customer->full_name ?? 'Customer Name' }}</p>
             </div>
             <div class="flex gap-3">
-                <a href="{{ route('customers.edit', $customer ?? 1) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <a href="{{ route('customers.edit', $customer ?? 1) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Edit
                 </a>
             </div>
@@ -14,7 +14,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="space-y-6">
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                <div class="bg-surface border border-border rounded-xl p-6">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold">
                             {{ strtoupper(substr($customer->full_name ?? 'A', 0, 1)) }}
@@ -50,7 +50,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                <div class="bg-surface border border-border rounded-xl p-6">
                     <h3 class="text-sm font-semibold mb-3">CDD Status</h3>
                     <div class="space-y-2">
                         <div class="flex justify-between text-sm">
@@ -70,7 +70,7 @@
             </div>
 
             <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                <div class="bg-surface border border-border rounded-xl p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-lg font-semibold">Recent Transactions</h2>
                         <a href="#" class="text-blue-600 hover:underline text-sm">View All</a>
@@ -106,7 +106,7 @@
                     </table>
                 </div>
 
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                <div class="bg-surface border border-border rounded-xl p-6">
                     <h2 class="text-lg font-semibold mb-4">Compliance Summary</h2>
                     <div class="grid grid-cols-4 gap-4">
                         <div class="text-center p-4 bg-canvas-subtle rounded-lg">
@@ -128,7 +128,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                <div class="bg-surface border border-border rounded-xl p-6">
                     <h2 class="text-lg font-semibold mb-4">Notes</h2>
                     <div class="space-y-3">
                         @forelse($notes ?? [] as $note)
@@ -143,7 +143,7 @@
                     <form method="POST" action="{{ route('customers.notes.store', $customer) }}" class="mt-4">
                         @csrf
                         <label for="note" class="sr-only">Add a note</label>
-                        <textarea id="note" name="note" rows="2" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg mb-2" placeholder="Add a note..."></textarea>
+                        <textarea id="note" name="note" rows="2" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg mb-2" placeholder="Add a note..."></textarea>
                         <x-button type="submit" variant="primary" size="sm">Add Note</x-button>
                     </form>
                 </div>

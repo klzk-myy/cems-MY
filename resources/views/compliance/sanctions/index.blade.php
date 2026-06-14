@@ -7,7 +7,7 @@
         </div>
 
         <!-- Lists Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-canvas-subtle">
                     <tr>

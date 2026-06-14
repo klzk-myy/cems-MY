@@ -7,38 +7,38 @@
                     <h1 class="text-2xl font-bold text-ink">Compliance Cases</h1>
                     <p class="mt-1 text-sm text-ink-muted">Manage ongoing compliance investigations</p>
                 </div>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Create Case
                 </button>
             </div>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Priority</option>
                     <option value="critical">Critical</option>
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
                 </select>
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Status</option>
                     <option value="open">Open</option>
                     <option value="in_progress">In Progress</option>
                     <option value="pending_review">Pending Review</option>
                     <option value="closed">Closed</option>
                 </select>
-                <input type="text" placeholder="Search case ID or customer..." class="w-full px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <input type="text" placeholder="Search case ID or customer..." class="w-full px-4 py-2 text-sm bg-surface border border-border rounded-lg">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Search
                 </button>
             </div>
         </div>
 
         <!-- Cases Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-canvas-subtle">
                     <tr>

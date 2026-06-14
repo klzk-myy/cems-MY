@@ -6,7 +6,7 @@
         </div>
 
         <div class="max-w-2xl">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+            <div class="bg-surface border border-border rounded-xl p-6 mb-6">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,8 +20,8 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden mb-6">
-                <div class="p-4 border-b border-[#e5e5e5]">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden mb-6">
+                <div class="p-4 border-b border-border">
                     <h3 class="font-semibold">Your Trusted Devices</h3>
                 </div>
 
@@ -70,7 +70,7 @@
                         <tr>
                             <td colspan="3" class="px-4 py-8 text-center text-ink-muted">
                                 <p>No trusted devices.</p>
-                                <p class="text-sm text-gray-400 mt-1">When you check "Remember this device", it will appear here.</p>
+                                <p class="text-sm text-ink-muted/50 mt-1">When you check "Remember this device", it will appear here.</p>
                             </td>
                         </tr>
                         @endforelse
@@ -79,7 +79,7 @@
             </div>
 
             @if(isset($currentSession))
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="font-semibold mb-4">Current Session</h3>
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>

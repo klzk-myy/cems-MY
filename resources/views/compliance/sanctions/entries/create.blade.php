@@ -6,7 +6,7 @@
             </x-slot:actions>
         </x-page-header>
 
-        <form method="POST" action="{{ route('compliance.sanctions.entries.store') }}" class="bg-white border border-[#e5e5e5] rounded-xl p-6 mt-8">
+        <form method="POST" action="{{ route('compliance.sanctions.entries.store') }}" class="bg-surface border border-border rounded-xl p-6 mt-8">
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -21,12 +21,12 @@
 
             <div class="mb-6">
                 <label for="aliases" class="block text-sm font-medium text-gray-700 mb-2">Aliases</label>
-                <textarea id="aliases" name="aliases" rows="3" placeholder="Enter aliases, one per line" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black">{{ old('aliases') }}</textarea>
+                <textarea id="aliases" name="aliases" rows="3" placeholder="Enter aliases, one per line" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black">{{ old('aliases') }}</textarea>
             </div>
 
             <div class="mb-6">
                 <label for="details" class="block text-sm font-medium text-gray-700 mb-2">Additional Information</label>
-                <textarea id="details" name="details" rows="3" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black">{{ old('details') }}</textarea>
+                <textarea id="details" name="details" rows="3" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black">{{ old('details') }}</textarea>
             </div>
 
             <div class="flex justify-end gap-3">

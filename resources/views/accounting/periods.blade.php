@@ -7,34 +7,34 @@
                 <p class="mt-1 text-sm text-ink-muted">Manage monthly accounting periods</p>
             </div>
             <div class="flex items-center gap-3">
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                     <option value="2026">FY 2026</option>
                     <option value="2025">FY 2025</option>
                 </select>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     + New Period
                 </button>
             </div>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+        <div class="bg-surface border border-border rounded-xl p-4">
             <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Status</option>
                     <option value="open">Open</option>
                     <option value="closed">Closed</option>
                     <option value="archived">Archived</option>
                 </select>
-                <input type="text" placeholder="Search periods..." class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg md:w-64">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Filter</button>
+                <input type="text" placeholder="Search periods..." class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg md:w-64">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Filter</button>
             </div>
         </div>
 
         <!-- Periods Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-border">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Period</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
@@ -132,7 +132,7 @@
                         </td>
                     </tr>
                 </tbody>
-                <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                <tfoot class="bg-canvas-subtle border-t border-border">
                     <tr>
                         <td colspan="4" class="px-4 py-3 text-sm font-medium text-ink">Total YTD</td>
                         <td class="px-4 py-3 text-sm text-right font-medium">633,420.00</td>
@@ -147,8 +147,8 @@
         <div class="flex items-center justify-between">
             <p class="text-sm text-ink-muted">Showing 1-6 of 6 periods</p>
             <div class="flex gap-2">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Previous</button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Next</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border disabled:opacity-50" disabled>Previous</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border disabled:opacity-50" disabled>Next</button>
             </div>
         </div>
     </div>

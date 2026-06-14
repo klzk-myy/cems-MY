@@ -7,36 +7,36 @@
                 <p class="mt-1 text-sm text-ink-muted">Last {{ $days }} days performance overview</p>
             </div>
             <a href="{{ route('test-results.index') }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
                 Back to Test Runs
             </a>
         </div>
 
         <!-- Summary Statistics -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-sm font-medium text-ink-muted">Total Runs</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">{{ number_format($statistics['total_runs']) }}</p>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-sm font-medium text-ink-muted">Total Tests</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">{{ number_format($statistics['total_tests']) }}</p>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-sm font-medium text-ink-muted">Overall Pass Rate</p>
                 <p class="mt-1 text-2xl font-semibold text-green-600">{{ $statistics['overall_pass_rate'] }}%</p>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-sm font-medium text-ink-muted">Avg Duration</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">{{ number_format($statistics['avg_duration'], 2) }}s</p>
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-semibold text-ink">Pass Rate Trend (Last {{ $days }} Days)</h2>
             </div>
             <div class="p-6">
@@ -67,8 +67,8 @@
         </div>
 
         <!-- Latest Results by Suite -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-semibold text-ink">Latest Results by Suite</h2>
             </div>
             <table class="min-w-full divide-y divide-[#e5e5e5]">
@@ -83,11 +83,11 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Trend</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-[#e5e5e5]">
+                <tbody class="bg-surface divide-y divide-[#e5e5e5]">
                     @forelse($latestBySuite as $suiteName => $suiteData)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">{{ $suiteName }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $suiteData['last_run']->created_at->format('M d, H:i') }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">{{ $suiteData['last_run']->created_at->format('M d, H:i') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @switch($suiteData['last_run']->status)
                                     @case(\App\Enums\TestResultStatus::Passed)
@@ -122,7 +122,7 @@
                                         </svg>
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center text-gray-400">
+                                    <span class="inline-flex items-center text-ink-muted/50">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"></path>
                                         </svg>
@@ -142,7 +142,7 @@
         <!-- Statistics Breakdown -->
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <!-- Status Distribution -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="text-lg font-semibold text-ink mb-4">Status Distribution</h3>
                 <div class="space-y-3">
                     @if(!empty($statistics['by_status']))
@@ -173,13 +173,13 @@
             </div>
 
             <!-- Pass Rate by Day -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="text-lg font-semibold text-ink mb-4">Daily Summary</h3>
                 <div class="space-y-3">
                     @if(!empty($statistics['daily_summary']))
                         @foreach($statistics['daily_summary'] as $day)
                             <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                                <span class="text-sm text-gray-600">{{ $day['date'] }}</span>
+                                <span class="text-sm text-ink-muted">{{ $day['date'] }}</span>
                                 <div class="flex items-center gap-4">
                                     <span class="text-xs text-green-600">{{ $day['passed'] }} passed</span>
                                     <span class="text-xs text-red-600">{{ $day['failed'] }} failed</span>

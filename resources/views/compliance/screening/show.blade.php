@@ -7,14 +7,14 @@
                     <h1 class="text-2xl font-bold text-ink">Screening Result</h1>
                     <p class="mt-1 text-sm text-ink-muted">Transaction ID: TXN-2024-001</p>
                 </div>
-                <a href="#" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <a href="#" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Back
                 </a>
             </div>
         </div>
 
         <!-- Transaction Details -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Transaction Details</h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
@@ -53,10 +53,10 @@
         </div>
 
         <!-- Sanctions Screening Result -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Sanctions Screening</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="border border-[#e5e5e5] rounded-lg p-4">
+                <div class="border border-border rounded-lg p-4">
                     <div class="flex items-center justify-between mb-3">
                         <h4 class="font-medium text-ink">Sanctions Check</h4>
                         <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Clear</span>
@@ -81,7 +81,7 @@
                     </div>
                 </div>
 
-                <div class="border border-[#e5e5e5] rounded-lg p-4">
+                <div class="border border-border rounded-lg p-4">
                     <div class="flex items-center justify-between mb-3">
                         <h4 class="font-medium text-ink">AML Screening</h4>
                         <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Review</span>
@@ -109,7 +109,7 @@
         </div>
 
         <!-- Risk Indicators -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Risk Indicators</h3>
             <div class="space-y-4">
                 <div class="flex items-center gap-4 p-3 bg-yellow-50 rounded-lg">
@@ -134,19 +134,19 @@
         </div>
 
         <!-- Actions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Actions</h3>
             <div class="flex flex-wrap gap-3">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Approve Transaction
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Hold for Review
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Create Alert
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     View Customer Profile
                 </button>
                 <button class="px-4 py-2 text-sm font-medium rounded-lg bg-red-50 border border-red-200 text-red-700 hover:bg-red-100">

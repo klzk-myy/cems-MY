@@ -7,8 +7,8 @@
             </div>
             <form method="GET" class="flex items-center gap-3">
                 <input type="date" name="as_of_date" value="{{ $asOfDate }}"
-                       class="px-3 py-2 text-sm border border-[#e5e5e5] rounded-lg">
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                       class="px-3 py-2 text-sm border border-border rounded-lg">
+                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Refresh
                 </button>
             </form>
@@ -37,8 +37,8 @@
         @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-4 py-3 border-b border-[#e5e5e5] bg-canvas-subtle">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-border bg-canvas-subtle">
                     <h3 class="text-sm font-semibold text-ink">Assets</h3>
                 </div>
                 <table class="w-full">
@@ -52,7 +52,7 @@
                             <tr><td colspan="2" class="px-4 py-3 text-sm text-center text-ink-muted">No assets</td></tr>
                         @endforelse
                     </tbody>
-                    <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                    <tfoot class="bg-canvas-subtle border-t border-border">
                         <tr class="font-semibold">
                             <td class="px-4 py-3 text-sm text-ink">Total Assets</td>
                             <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $totalAssets, 2) }}</td>
@@ -62,8 +62,8 @@
             </div>
 
             <div class="space-y-6">
-                <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                    <div class="px-4 py-3 border-b border-[#e5e5e5] bg-canvas-subtle">
+                <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                    <div class="px-4 py-3 border-b border-border bg-canvas-subtle">
                         <h3 class="text-sm font-semibold text-ink">Liabilities</h3>
                     </div>
                     <table class="w-full">
@@ -77,7 +77,7 @@
                                 <tr><td colspan="2" class="px-4 py-3 text-sm text-center text-ink-muted">No liabilities</td></tr>
                             @endforelse
                         </tbody>
-                        <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                        <tfoot class="bg-canvas-subtle border-t border-border">
                             <tr class="font-semibold">
                                 <td class="px-4 py-3 text-sm text-ink">Total Liabilities</td>
                                 <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $totalLiabilities, 2) }}</td>
@@ -86,8 +86,8 @@
                     </table>
                 </div>
 
-                <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                    <div class="px-4 py-3 border-b border-[#e5e5e5] bg-canvas-subtle">
+                <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                    <div class="px-4 py-3 border-b border-border bg-canvas-subtle">
                         <h3 class="text-sm font-semibold text-ink">Equity</h3>
                     </div>
                     <table class="w-full">
@@ -101,7 +101,7 @@
                                 <tr><td colspan="2" class="px-4 py-3 text-sm text-center text-ink-muted">No equity accounts</td></tr>
                             @endforelse
                         </tbody>
-                        <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                        <tfoot class="bg-canvas-subtle border-t border-border">
                             <tr class="font-semibold">
                                 <td class="px-4 py-3 text-sm text-ink">Total Equity</td>
                                 <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $totalEquity, 2) }}</td>
@@ -110,7 +110,7 @@
                     </table>
                 </div>
 
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+                <div class="bg-surface border border-border rounded-xl p-4">
                     <div class="flex items-center justify-between">
                         <p class="text-sm font-medium text-ink">Total Liabilities & Equity</p>
                         <p class="text-lg font-semibold text-ink">RM {{ number_format((float) $totalLiabilitiesEquity, 2) }}</p>

@@ -2,7 +2,7 @@
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-6">Stock & Cash Positions</h1>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-semibold mb-4">Currency Positions</h2>
             <table class="w-full">
                 <thead class="bg-canvas-subtle">
@@ -35,7 +35,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h2 class="text-lg font-semibold mb-4">Today's Till Summary</h2>
                 <dl class="space-y-2">
                     <div class="flex justify-between">
@@ -49,7 +49,7 @@
                 </dl>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h2 class="text-lg font-semibold mb-4">Variance</h2>
                 <dl class="space-y-2">
                     <div class="flex justify-between">

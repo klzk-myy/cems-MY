@@ -9,13 +9,13 @@
                 </p>
             </div>
             <a href="{{ route('stock-transfers.index') }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
                 Back
             </a>
         </div>
 
         <!-- Transfer Details Card -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-ink mb-4">Transfer Details</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
@@ -57,7 +57,7 @@
             </div>
 
             @if($stockTransfer->notes)
-                <div class="mt-6 pt-6 border-t border-[#e5e5e5]">
+                <div class="mt-6 pt-6 border-t border-border">
                     <dt class="text-sm font-medium text-ink-muted mb-2">Notes</dt>
                     <dd class="text-sm text-gray-700">{{ $stockTransfer->notes }}</dd>
                 </div>
@@ -67,7 +67,7 @@
         <!-- Approval Statuses -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <!-- Branch Manager Approval -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="text-md font-medium text-ink mb-4">Branch Manager Approval</h3>
                 <div class="space-y-3">
                     @if($stockTransfer->branchManagerApprovedBy)
@@ -82,7 +82,7 @@
                             {{ $stockTransfer->branch_manager_approved_at?->format('d M Y H:i:s') ?? 'N/A' }}
                         </p>
                     @else
-                        <div class="flex items-center gap-2 text-gray-400">
+                        <div class="flex items-center gap-2 text-ink-muted/50">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
                             </svg>
@@ -93,7 +93,7 @@
             </div>
 
             <!-- HQ Approval -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="text-md font-medium text-ink mb-4">HQ Approval</h3>
                 <div class="space-y-3">
                     @if($stockTransfer->hqApproval)
@@ -108,7 +108,7 @@
                             {{ $stockTransfer->hq_approved_at?->format('d M Y H:i:s') ?? 'N/A' }}
                         </p>
                     @else
-                        <div class="flex items-center gap-2 text-gray-400">
+                        <div class="flex items-center gap-2 text-ink-muted/50">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
                             </svg>
@@ -120,7 +120,7 @@
         </div>
 
         <!-- Transfer Items -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-ink mb-4">Transfer Items</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-[#e5e5e5]">
@@ -155,7 +155,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <div class="flex flex-wrap items-center gap-3">
                 <!-- Approve BM Button -->
                 @if($stockTransfer->canApproveBranchManager())

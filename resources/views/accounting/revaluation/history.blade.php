@@ -6,51 +6,51 @@
                 <h1 class="text-2xl font-semibold text-ink">Revaluation History</h1>
                 <p class="mt-1 text-sm text-ink-muted">View historical currency revaluation records</p>
             </div>
-            <a href="{{ route('accounting.revaluation') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
+            <a href="{{ route('accounting.revaluation') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">
                 Back to Revaluation
             </a>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+        <div class="bg-surface border border-border rounded-xl p-4">
             <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Fiscal Years</option>
                     <option value="2026">FY 2026</option>
                     <option value="2025">FY 2025</option>
                 </select>
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Currencies</option>
                     <option value="USD">USD</option>
                     <option value="SGD">SGD</option>
                     <option value="GBP">GBP</option>
                     <option value="EUR">EUR</option>
                 </select>
-                <input type="text" placeholder="Search..." class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg md:w-64">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Filter</button>
+                <input type="text" placeholder="Search..." class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg md:w-64">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Filter</button>
             </div>
         </div>
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">Total Revaluations</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">12</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">Total Gains YTD</p>
                 <p class="mt-1 text-2xl font-semibold text-green-600">RM 28,450.00</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">Total Losses YTD</p>
                 <p class="mt-1 text-2xl font-semibold text-red-600">RM 12,350.00</p>
             </div>
         </div>
 
         <!-- Revaluation History Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-border">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Period</th>
@@ -155,8 +155,8 @@
         <div class="flex items-center justify-between">
             <p class="text-sm text-ink-muted">Showing 1-7 of 12 records</p>
             <div class="flex gap-2">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Previous</button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Next</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border disabled:opacity-50" disabled>Previous</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Next</button>
             </div>
         </div>
     </div>

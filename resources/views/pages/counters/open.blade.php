@@ -4,10 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Open Counter - {{ $counter->code }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-canvas-subtle">
+<body class="min-h-screen bg-canvas-subtle text-ink">
     <div class="flex min-h-screen flex-col">
-        <header class="bg-white shadow-sm">
+        <header class="bg-surface shadow-sm">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <h1 class="text-2xl font-semibold text-ink">Open Counter: {{ $counter->code }}</h1>
             </div>
@@ -15,7 +16,7 @@
 
         <main class="flex-1">
             <div class="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
-                <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+                <div class="bg-surface border border-border rounded-xl p-6">
                     <div class="mb-6">
                         <h2 class="text-lg font-medium text-ink">Counter Details</h2>
                         <dl class="mt-4 grid grid-cols-2 gap-4">

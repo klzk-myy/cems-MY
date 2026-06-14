@@ -7,37 +7,37 @@
                 <p class="mt-1 text-sm text-ink-muted">Monthly reconciliation summary report</p>
             </div>
             <div class="flex items-center gap-3">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">
                     Print
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Export PDF
                 </button>
             </div>
         </div>
 
         <!-- Report Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+        <div class="bg-surface border border-border rounded-xl p-4">
             <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Bank Accounts</option>
                     <option value="maybank">Maybank Current Account</option>
                     <option value="cimb">CIMB Business Account</option>
                     <option value="rhb">RHB Trading Account</option>
                 </select>
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                     <option value="2026-05">May 2026</option>
                     <option value="2026-04">April 2026</option>
                     <option value="2026-03">March 2026</option>
                 </select>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Generate Report</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Generate Report</button>
             </div>
         </div>
 
         <!-- Report Content -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <!-- Report Header -->
-            <div class="p-6 border-b border-[#e5e5e5]">
+            <div class="p-6 border-b border-border">
                 <div class="text-center">
                     <h2 class="text-xl font-semibold text-ink">Bank Reconciliation Report</h2>
                     <p class="text-sm text-ink-muted mt-1">Maybank Current Account - May 2026</p>
@@ -65,17 +65,17 @@
             </div>
 
             <!-- Balances Section -->
-            <div class="p-6 border-b border-[#e5e5e5]">
+            <div class="p-6 border-b border-border">
                 <h3 class="text-sm font-medium text-ink mb-4">Section 1: Balance Comparison</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="p-4 border border-[#e5e5e5] rounded-lg">
+                    <div class="p-4 border border-border rounded-lg">
                         <div class="flex items-center justify-between mb-2">
                             <p class="text-sm font-medium text-ink">Bank Statement Balance</p>
                             <p class="text-lg font-semibold text-ink">RM 1,250,430.00</p>
                         </div>
                         <p class="text-xs text-ink-muted">As of May 1, 2026</p>
                     </div>
-                    <div class="p-4 border border-[#e5e5e5] rounded-lg">
+                    <div class="p-4 border border-border rounded-lg">
                         <div class="flex items-center justify-between mb-2">
                             <p class="text-sm font-medium text-ink">Book Balance</p>
                             <p class="text-lg font-semibold text-ink">RM 1,248,920.50</p>
@@ -86,10 +86,10 @@
             </div>
 
             <!-- Adjustments Section -->
-            <div class="p-6 border-b border-[#e5e5e5]">
+            <div class="p-6 border-b border-border">
                 <h3 class="text-sm font-medium text-ink mb-4">Section 2: Adjustments to Bank Balance</h3>
                 <table class="w-full">
-                    <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                    <thead class="bg-canvas-subtle border-b border-border">
                         <tr>
                             <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Item</th>
                             <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
@@ -149,10 +149,10 @@
             </div>
 
             <!-- Book Adjustments Section -->
-            <div class="p-6 border-b border-[#e5e5e5]">
+            <div class="p-6 border-b border-border">
                 <h3 class="text-sm font-medium text-ink mb-4">Section 3: Adjustments to Book Balance</h3>
                 <table class="w-full">
-                    <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                    <thead class="bg-canvas-subtle border-b border-border">
                         <tr>
                             <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Item</th>
                             <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Date</th>
@@ -230,7 +230,7 @@
             </div>
 
             <!-- Signature Section -->
-            <div class="p-6 border-t border-[#e5e5e5]">
+            <div class="p-6 border-t border-border">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <p class="text-sm text-ink-muted mb-8">_________________________</p>

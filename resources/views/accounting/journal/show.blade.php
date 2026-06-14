@@ -7,17 +7,17 @@
                 <p class="mt-1 text-sm text-ink-muted">Entry #{{ $entry['entry_no'] ?? 'JE-0001' }}</p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="{{ route('accounting.journal') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
+                <a href="{{ route('accounting.journal') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">
                     Back
                 </a>
                 @if(($entry['status'] ?? 'posted') === 'draft')
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">Edit</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">Edit</button>
                 @endif
             </div>
         </div>
 
         <!-- Entry Details -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
                     <p class="text-sm text-ink-muted">Date</p>
@@ -45,9 +45,9 @@
         </div>
 
         <!-- Journal Lines -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-border">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Code</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Name</th>
@@ -72,7 +72,7 @@
                         <td class="px-4 py-3 text-sm text-right">500.00</td>
                     </tr>
                 </tbody>
-                <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                <tfoot class="bg-canvas-subtle border-t border-border">
                     <tr>
                         <td colspan="3" class="px-4 py-3 text-sm font-medium text-ink">Total</td>
                         <td class="px-4 py-3 text-sm text-right font-medium">500.00</td>
@@ -83,17 +83,17 @@
         </div>
 
         <!-- Audit Trail -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-sm font-medium text-ink mb-4">Audit Trail</h3>
             <div class="space-y-3">
-                <div class="flex items-center justify-between py-2 border-b border-[#e5e5e5]">
+                <div class="flex items-center justify-between py-2 border-b border-border">
                     <div>
                         <p class="text-sm text-ink">Created</p>
                         <p class="text-xs text-ink-muted">Admin User</p>
                     </div>
                     <p class="text-sm text-ink-muted">2026-05-01 09:00:00</p>
                 </div>
-                <div class="flex items-center justify-between py-2 border-b border-[#e5e5e5]">
+                <div class="flex items-center justify-between py-2 border-b border-border">
                     <div>
                         <p class="text-sm text-ink">Posted</p>
                         <p class="text-xs text-ink-muted">Admin User</p>

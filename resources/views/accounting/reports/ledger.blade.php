@@ -7,11 +7,11 @@
             </div>
         </div>
 
-        <form method="GET" class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+        <form method="GET" class="bg-surface border border-border rounded-xl p-4">
             <div class="grid grid-cols-4 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-ink-muted mb-1">Account</label>
-                    <select name="account_code" class="w-full px-3 py-2 text-sm border border-[#e5e5e5] rounded-lg">
+                    <select name="account_code" class="w-full px-3 py-2 text-sm border border-border rounded-lg">
                         <option value="">Select account...</option>
                         @foreach ($accounts as $account)
                             <option value="{{ $account->account_code }}" {{ $accountCode === $account->account_code ? 'selected' : '' }}>
@@ -23,15 +23,15 @@
                 <div>
                     <label class="block text-xs font-medium text-ink-muted mb-1">From</label>
                     <input type="date" name="from" value="{{ $from }}"
-                           class="w-full px-3 py-2 text-sm border border-[#e5e5e5] rounded-lg">
+                           class="w-full px-3 py-2 text-sm border border-border rounded-lg">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted mb-1">To</label>
                     <input type="date" name="to" value="{{ $to }}"
-                           class="w-full px-3 py-2 text-sm border border-[#e5e5e5] rounded-lg">
+                           class="w-full px-3 py-2 text-sm border border-border rounded-lg">
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                         Search
                     </button>
                 </div>
@@ -39,8 +39,8 @@
         </form>
 
         @if ($ledger)
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-4 py-3 border-b border-[#e5e5e5] bg-canvas-subtle">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-border bg-canvas-subtle">
                     <div class="flex items-center justify-between">
                         <h3 class="text-sm font-semibold text-ink">
                             {{ $ledger['account']->account_code }} - {{ $ledger['account']->account_name }}
@@ -53,7 +53,7 @@
                     </div>
                 </div>
                 <table class="w-full">
-                    <thead class="border-b border-[#e5e5e5]">
+                    <thead class="border-b border-border">
                         <tr>
                             <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
                             <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
@@ -78,7 +78,7 @@
                 </table>
             </div>
         @else
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-12 text-center">
+            <div class="bg-surface border border-border rounded-xl p-12 text-center">
                 <p class="text-sm text-ink-muted">Select an account and date range to view ledger entries</p>
             </div>
         @endif

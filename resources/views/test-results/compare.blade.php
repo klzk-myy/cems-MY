@@ -7,7 +7,7 @@
                 <p class="mt-1 text-sm text-ink-muted">Run #{{ $run1->id }} vs Run #{{ $run2->id }}</p>
             </div>
             <a href="{{ route('test-results.index') }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
                 Back to List
             </a>
         </div>
@@ -15,8 +15,8 @@
         <!-- Side-by-Side Summary -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Run 1 Card -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-[#e5e5e5] bg-canvas-subtle">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-border bg-canvas-subtle">
                     <div class="flex items-center justify-between">
                         <h2 class="text-lg font-semibold text-ink">Run #{{ $run1->id }}</h2>
                         <span class="text-sm text-ink-muted">{{ $run1->created_at->format('M d, Y H:i') }}</span>
@@ -55,7 +55,7 @@
                         <span class="text-sm text-ink-muted">Duration</span>
                         <span class="text-sm font-medium text-ink">{{ $run1->duration ? number_format($run1->duration, 2) . 's' : 'N/A' }}</span>
                     </div>
-                    <div class="pt-4 border-t border-[#e5e5e5]">
+                    <div class="pt-4 border-t border-border">
                         <a href="{{ route('test-results.show', $run1->id) }}"
                            class="text-sm font-medium text-ink hover:text-gray-700">
                             View Full Details &rarr;
@@ -65,8 +65,8 @@
             </div>
 
             <!-- Run 2 Card -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-[#e5e5e5] bg-canvas-subtle">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-border bg-canvas-subtle">
                     <div class="flex items-center justify-between">
                         <h2 class="text-lg font-semibold text-ink">Run #{{ $run2->id }}</h2>
                         <span class="text-sm text-ink-muted">{{ $run2->created_at->format('M d, Y H:i') }}</span>
@@ -105,7 +105,7 @@
                         <span class="text-sm text-ink-muted">Duration</span>
                         <span class="text-sm font-medium text-ink">{{ $run2->duration ? number_format($run2->duration, 2) . 's' : 'N/A' }}</span>
                     </div>
-                    <div class="pt-4 border-t border-[#e5e5e5]">
+                    <div class="pt-4 border-t border-border">
                         <a href="{{ route('test-results.show', $run2->id) }}"
                            class="text-sm font-medium text-ink hover:text-gray-700">
                             View Full Details &rarr;
@@ -116,8 +116,8 @@
         </div>
 
         <!-- Comparison Summary -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-semibold text-ink">Differences</h2>
             </div>
             <table class="min-w-full divide-y divide-[#e5e5e5]">
@@ -129,12 +129,12 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Change</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-[#e5e5e5]">
+                <tbody class="bg-surface divide-y divide-[#e5e5e5]">
                     <!-- Total Tests -->
                     <tr class="hover:bg-canvas-subtle">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Total Tests</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ number_format($run1->tests_total ?? 0) }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ number_format($run2->tests_total ?? 0) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">{{ number_format($run1->tests_total ?? 0) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">{{ number_format($run2->tests_total ?? 0) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @php $totalDiff = ($run2->tests_total ?? 0) - ($run1->tests_total ?? 0); @endphp
                             @if($totalDiff > 0)
@@ -197,8 +197,8 @@
                     <!-- Duration -->
                     <tr class="hover:bg-canvas-subtle">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Duration</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $run1->duration ? number_format($run1->duration, 2) . 's' : 'N/A' }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $run2->duration ? number_format($run2->duration, 2) . 's' : 'N/A' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">{{ $run1->duration ? number_format($run1->duration, 2) . 's' : 'N/A' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">{{ $run2->duration ? number_format($run2->duration, 2) . 's' : 'N/A' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($run1->duration && $run2->duration)
                                 @php $durationDiff = $run2->duration - $run1->duration; @endphp
@@ -217,11 +217,11 @@
                     <!-- Pass Rate -->
                     <tr class="hover:bg-canvas-subtle">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Pass Rate</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">
                             @php $rate1 = $run1->tests_total > 0 ? round(($run1->tests_passed / $run1->tests_total) * 100, 1) : 0; @endphp
                             {{ $rate1 }}%
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">
                             @php $rate2 = $run2->tests_total > 0 ? round(($run2->tests_passed / $run2->tests_total) * 100, 1) : 0; @endphp
                             {{ $rate2 }}%
                         </td>
@@ -252,7 +252,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Newly Failed Tests -->
                 @if(!empty($newlyFailed))
-                    <div class="bg-white border border-red-200 rounded-xl overflow-hidden">
+                    <div class="bg-surface border border-red-200 rounded-xl overflow-hidden">
                         <div class="px-6 py-4 border-b border-red-200 bg-red-50">
                             <h3 class="text-lg font-semibold text-red-700">Newly Failed Tests ({{ count($newlyFailed) }})</h3>
                         </div>
@@ -266,7 +266,7 @@
 
                 <!-- Fixed Tests -->
                 @if(!empty($fixedTests))
-                    <div class="bg-white border border-green-200 rounded-xl overflow-hidden">
+                    <div class="bg-surface border border-green-200 rounded-xl overflow-hidden">
                         <div class="px-6 py-4 border-b border-green-200 bg-green-50">
                             <h3 class="text-lg font-semibold text-green-700">Fixed Tests ({{ count($fixedTests) }})</h3>
                         </div>
@@ -282,7 +282,7 @@
 
         <!-- Environment Comparison -->
         @if($run1->branch !== $run2->branch || $run1->commit_hash !== $run2->commit_hash)
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="text-lg font-semibold text-ink mb-4">Environment Differences</h3>
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                     <div>

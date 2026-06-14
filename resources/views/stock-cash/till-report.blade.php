@@ -7,13 +7,13 @@
                 <p class="mt-1 text-sm text-ink-muted">Report Date: {{ $date }}</p>
             </div>
             <a href="{{ url()->previous() }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
                 Back
             </a>
         </div>
 
         <!-- Till Balance Details -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-ink mb-4">Till Balance Details</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
@@ -65,7 +65,7 @@
         </div>
 
         <!-- Currency Balances Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h2 class="text-lg font-medium text-ink mb-4">Currency Balances</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-[#e5e5e5]">

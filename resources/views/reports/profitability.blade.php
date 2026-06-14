@@ -9,19 +9,19 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="text-xs font-medium text-ink-muted uppercase mb-2">Total Realized P&L</div>
                 <div class="text-2xl font-semibold {{ $totals['realized_pnl'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                     {{ $totals['realized_pnl'] >= 0 ? '+' : '' }}{{ number_format($totals['realized_pnl'], 2) }} MYR
                 </div>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="text-xs font-medium text-ink-muted uppercase mb-2">Total Unrealized P&L</div>
                 <div class="text-2xl font-semibold {{ $totals['unrealized_pnl'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                     {{ $totals['unrealized_pnl'] >= 0 ? '+' : '' }}{{ number_format($totals['unrealized_pnl'], 2) }} MYR
                 </div>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="text-xs font-medium text-ink-muted uppercase mb-2">Total P&L</div>
                 <div class="text-2xl font-semibold {{ $totals['total_pnl'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                     {{ $totals['total_pnl'] >= 0 ? '+' : '' }}{{ number_format($totals['total_pnl'], 2) }} MYR
@@ -29,24 +29,24 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <form method="GET" action="{{ route('reports.profitability') }}" class="flex flex-wrap gap-4 items-end">
                 <div>
                     <label for="start_date" class="text-xs font-medium text-ink-muted uppercase">Start Date</label>
-                    <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                    <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                 </div>
                 <div>
                     <label for="end_date" class="text-xs font-medium text-ink-muted uppercase">End Date</label>
-                    <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                    <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                 </div>
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Update Report
                 </button>
             </form>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Position P&L Breakdown</h2>
             </div>
             <table class="w-full">

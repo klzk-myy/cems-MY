@@ -8,7 +8,7 @@
 
         <!-- Risk Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-medium text-ink-muted uppercase">High Risk</p>
@@ -22,7 +22,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-medium text-ink-muted uppercase">Medium Risk</p>
@@ -36,7 +36,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-medium text-ink-muted uppercase">Low Risk</p>
@@ -50,7 +50,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-medium text-ink-muted uppercase">PEP Customers</p>
@@ -67,11 +67,11 @@
 
         <!-- Risk Distribution -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="text-lg font-semibold text-ink mb-4">Risk Distribution</h3>
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">High Risk</span>
+                        <span class="text-sm text-ink-muted">High Risk</span>
                         <div class="flex items-center gap-3">
                             <div class="w-48 bg-gray-200 rounded-full h-3">
                                 <div class="bg-red-600 h-3 rounded-full" style="width: 6%"></div>
@@ -80,7 +80,7 @@
                         </div>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Medium Risk</span>
+                        <span class="text-sm text-ink-muted">Medium Risk</span>
                         <div class="flex items-center gap-3">
                             <div class="w-48 bg-gray-200 rounded-full h-3">
                                 <div class="bg-yellow-500 h-3 rounded-full" style="width: 14%"></div>
@@ -89,7 +89,7 @@
                         </div>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Low Risk</span>
+                        <span class="text-sm text-ink-muted">Low Risk</span>
                         <div class="flex items-center gap-3">
                             <div class="w-48 bg-gray-200 rounded-full h-3">
                                 <div class="bg-green-600 h-3 rounded-full" style="width: 80%"></div>
@@ -100,7 +100,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="text-lg font-semibold text-ink mb-4">High Risk Customers</h3>
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
@@ -129,7 +129,7 @@
         </div>
 
         <!-- Recent Risk Changes -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Recent Risk Score Changes</h3>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-canvas-subtle">

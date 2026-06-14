@@ -7,7 +7,7 @@
         </div>
 
         <!-- Customer Info -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Customer ID</label>
@@ -29,10 +29,10 @@
         </div>
 
         <!-- Risk Factors -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Risk Factors</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="border border-[#e5e5e5] rounded-lg p-4">
+                <div class="border border-border rounded-lg p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm text-ink-muted">Transaction Velocity</span>
                         <span class="text-sm font-medium text-red-700">High Risk</span>
@@ -42,7 +42,7 @@
                     </div>
                     <p class="text-xs text-ink-muted mt-2">RM 125,000 in last 30 days</p>
                 </div>
-                <div class="border border-[#e5e5e5] rounded-lg p-4">
+                <div class="border border-border rounded-lg p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm text-ink-muted">Structuring Risk</span>
                         <span class="text-sm font-medium text-red-700">High Risk</span>
@@ -52,7 +52,7 @@
                     </div>
                     <p class="text-xs text-ink-muted mt-2">5 transactions near threshold</p>
                 </div>
-                <div class="border border-[#e5e5e5] rounded-lg p-4">
+                <div class="border border-border rounded-lg p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm text-ink-muted">PEP Exposure</span>
                         <span class="text-sm font-medium text-yellow-700">Medium</span>
@@ -66,7 +66,7 @@
         </div>
 
         <!-- Recent Transactions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Recent Transactions</h3>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-canvas-subtle">
@@ -107,19 +107,19 @@
         </div>
 
         <!-- Actions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Actions</h3>
             <div class="flex flex-wrap gap-3">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Request EDD
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Lock Account
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     View Full Profile
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Export Report
                 </button>
             </div>

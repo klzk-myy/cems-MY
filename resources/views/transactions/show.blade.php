@@ -11,8 +11,8 @@
             </span>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Transaction Information</h2>
             </div>
             <div class="p-6">
@@ -59,8 +59,8 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Customer Details</h2>
             </div>
             <div class="p-6">
@@ -89,19 +89,19 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl">
+        <div class="bg-surface border border-border rounded-xl">
             <div class="p-6">
                 <div class="flex items-center gap-4 flex-wrap">
                     @if(($transaction['status'] ?? '') === 'Pending')
                         <form method="POST" action="{{ route('transactions.approve', $transaction['id'] ?? 0) }}" class="contents">
                             @csrf
-                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                                 Approve
                             </button>
                         </form>
                         <form method="POST" action="{{ route('transactions.reject', $transaction['id'] ?? 0) }}" class="contents">
                             @csrf
-                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                                 Reject
                             </button>
                         </form>
@@ -115,14 +115,14 @@
                         </a>
                     @endif
                     @if(($transaction['status'] ?? '') === 'Completed')
-                        <a href="{{ route('transactions.cancel', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-red-300 text-red-600 hover:bg-red-50">
+                        <a href="{{ route('transactions.cancel', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-red-300 text-red-600 hover:bg-red-50">
                             Request Cancellation
                         </a>
                     @endif
-                    <a href="{{ route('transactions.print', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                    <a href="{{ route('transactions.print', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                         Print Receipt
                     </a>
-                    <a href="{{ route('transactions.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                    <a href="{{ route('transactions.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                         Back to List
                     </a>
                 </div>

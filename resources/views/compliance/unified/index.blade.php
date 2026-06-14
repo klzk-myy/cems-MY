@@ -5,7 +5,7 @@
             <p class="mt-1 text-sm text-ink-muted">Comprehensive overview of all compliance activities</p>
         </div>
 
-        <form method="GET" action="{{ route('compliance.unified.index') }}" class="bg-white border border-[#e5e5e5] rounded-xl p-4 mb-6">
+        <form method="GET" action="{{ route('compliance.unified.index') }}" class="bg-surface border border-border rounded-xl p-4 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
                 <div>
                     <label for="source" class="block text-xs font-medium text-ink-muted uppercase mb-1">Source</label>
@@ -68,21 +68,21 @@
         </form>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-medium text-ink-muted uppercase">Total Items</p>
                         <p class="text-3xl font-bold text-ink mt-1">{{ $stats['total'] }}</p>
                     </div>
                     <div class="w-12 h-12 bg-canvas-subtle rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 text-ink-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-medium text-ink-muted uppercase">Critical</p>
@@ -96,7 +96,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-medium text-ink-muted uppercase">Pending</p>
@@ -111,7 +111,7 @@
                 <p class="text-xs text-yellow-600 mt-1">Pending/Open</p>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-medium text-ink-muted uppercase">Resolved Today</p>
@@ -126,7 +126,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Recent Activity</h3>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-canvas-subtle">

@@ -7,14 +7,14 @@
                     <h1 class="text-2xl font-bold text-ink">Case Details</h1>
                     <p class="mt-1 text-sm text-ink-muted">{{ $case->case_number }}</p>
                 </div>
-                <a href="{{ route('compliance.cases.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <a href="{{ route('compliance.cases.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Back to List
                 </a>
             </div>
         </div>
 
         <!-- Case Overview -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Overview</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
@@ -65,13 +65,13 @@
         </div>
 
         <!-- Description -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Description</h3>
-            <p class="text-sm text-gray-600">{{ $case->case_summary ?? 'No description provided.' }}</p>
+            <p class="text-sm text-ink-muted">{{ $case->case_summary ?? 'No description provided.' }}</p>
         </div>
 
         <!-- Timeline -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Case Timeline</h3>
             <div class="space-y-4">
                 <div class="flex gap-4">
@@ -99,7 +99,7 @@
         </div>
 
         <!-- Evidence -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Attached Evidence</h3>
             <ul class="space-y-2">
                 <li class="flex items-center gap-2">
@@ -114,19 +114,19 @@
         </div>
 
         <!-- Actions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Actions</h3>
             <div class="flex flex-wrap gap-3">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Update Status
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Add Note
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Attach Evidence
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Close Case
                 </button>
             </div>

@@ -1,6 +1,6 @@
 <x-app-layout title="Exchange Rates">
     <div class="flex min-h-screen flex-col">
-        <header class="bg-white shadow-sm">
+        <header class="bg-surface shadow-sm">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <h1 class="text-2xl font-semibold text-ink">Exchange Rates</h1>
@@ -16,11 +16,11 @@
                 <div class="mb-6 flex items-center justify-between">
                     <div class="flex items-center gap-4">
                         @if($canSelectBranch)
-                            <x-select name="branch" placeholder="All Branches" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                            <x-select name="branch" placeholder="All Branches" class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                                 <option value="">All Branches</option>
                             </x-select>
                         @endif
-                        <x-select name="date" placeholder="Select Date" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                        <x-select name="date" placeholder="Select Date" class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                             @foreach($availableDates as $date)
                                 <option value="{{ $date }}">{{ $date }}</option>
                             @endforeach
@@ -32,7 +32,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+                <div class="bg-surface border border-border rounded-xl overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-canvas-subtle">
                             <tr>
@@ -45,7 +45,7 @@
                                 <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody class="bg-surface divide-y divide-gray-200">
                             @forelse($rates as $rate)
                                 <tr class="hover:bg-canvas-subtle">
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -86,26 +86,26 @@
 
     <!-- Override Modal -->
     <div id="override-modal" class="hidden fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md">
+        <div class="bg-surface rounded-xl p-6 w-full max-w-md">
             <h3 class="text-lg font-medium text-ink mb-4">Override Rate</h3>
             <form id="override-form" method="POST" action="{{ route('rates.override') }}">
                 @csrf
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Currency</label>
-                        <x-input type="text" name="currency_code" id="override-currency" class="mt-1 w-full px-4 py-2.5 text-sm bg-canvas-subtle border border-[#e5e5e5] rounded-lg" readonly />
+                        <x-input type="text" name="currency_code" id="override-currency" class="mt-1 w-full px-4 py-2.5 text-sm bg-canvas-subtle border border-border rounded-lg" readonly />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Rate Buy</label>
-                        <x-input type="text" name="rate_buy" id="override-rate-buy" class="mt-1 w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required />
+                        <x-input type="text" name="rate_buy" id="override-rate-buy" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Rate Sell</label>
-                        <x-input type="text" name="rate_sell" id="override-rate-sell" class="mt-1 w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required />
+                        <x-input type="text" name="rate_sell" id="override-rate-sell" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Reason</label>
-                        <textarea name="reason" id="override-reason" rows="2" class="mt-1 w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg"></textarea>
+                        <textarea name="reason" id="override-reason" rows="2" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"></textarea>
                     </div>
                 </div>
                 <div class="mt-6 flex items-center justify-end gap-3">

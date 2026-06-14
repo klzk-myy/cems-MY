@@ -1,26 +1,20 @@
 <x-app-layout title="Transactions">
-    <div class="p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">Transactions</h1>
-            <a href="{{ route('transactions.create') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                New Transaction
-            </a>
-        </div>
+    <div class="space-y-6">
+        <x-page-header title="Transactions">
+            <x-slot:actions>
+                <x-button href="{{ route('transactions.create') }}" variant="primary">New Transaction</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
         <x-filter-bar method="GET">
-            <x-input type="text" name="search" placeholder="Search by reference..." value="{{ request('search') }}" class="flex-1" />
-            <x-select name="status" placeholder="All Status">
-                <option value="">All Status</option>
-                @foreach($transactions->pluck('status')->unique() as $status)
-                    <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>{{ $status }}</option>
-                @endforeach
-            </x-select>
+            <x-input type="text" name="search" placeholder="Search by reference..." value="{{ request('search') }}" class="flex-1" inline />
+            <x-select name="status" :options="['' => 'All Status'] + $transactions->pluck('status', 'status')->unique()->toArray()" :selected="request('status')" inline />
             <x-button type="submit" variant="primary">Filter</x-button>
         </x-filter-bar>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-canvas-subtle">
+        <x-card>
+            <x-table>
+                <x-slot:thead>
                     <tr class="text-left text-sm text-ink-muted">
                         <th class="px-4 py-3">Reference</th>
                         <th class="px-4 py-3">Date</th>
@@ -31,35 +25,35 @@
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3"></th>
                     </tr>
-                </thead>
-                <tbody>
+                </x-slot:thead>
+                <x-slot:tbody>
                     @forelse($transactions as $transaction)
-                    <tr class="border-t hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 font-mono text-sm">{{ $transaction->reference }}</td>
-                        <td class="px-4 py-3">{{ $transaction->created_at->format('M d, Y H:i') }}</td>
-                        <td class="px-4 py-3">{{ $transaction->customer->full_name ?? 'N/A' }}</td>
-                        <td class="px-4 py-3">
-                            <x-badge variant="{{ $transaction->type === 'Buy' ? 'success' : 'danger' }}">
-                                {{ $transaction->type }}
-                            </x-badge>
-                        </td>
-                        <td class="px-4 py-3">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</td>
-                        <td class="px-4 py-3">{{ number_format($transaction->rate_used, 4) }}</td>
-                        <td class="px-4 py-3">
-                            <x-badge variant="{{ $transaction->status === 'Completed' ? 'success' : ($transaction->status === 'Pending' ? 'warning' : 'gray') }}">
-                                {{ $transaction->status }}
-                            </x-badge>
-                        </td>
-                        <td class="px-4 py-3">
-                            <a href="{{ route('transactions.show', $transaction) }}" class="text-blue-600 hover:underline">View</a>
-                        </td>
-                    </tr>
+                        <tr class="border-t border-border hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 font-mono text-sm">{{ $transaction->reference }}</td>
+                            <td class="px-4 py-3">{{ $transaction->created_at->format('M d, Y H:i') }}</td>
+                            <td class="px-4 py-3">{{ $transaction->customer->full_name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3">
+                                <x-badge variant="{{ $transaction->type === 'Buy' ? 'success' : 'danger' }}">
+                                    {{ $transaction->type }}
+                                </x-badge>
+                            </td>
+                            <td class="px-4 py-3">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</td>
+                            <td class="px-4 py-3">{{ number_format($transaction->rate_used, 4) }}</td>
+                            <td class="px-4 py-3">
+                                <x-badge variant="{{ $transaction->status === 'Completed' ? 'success' : ($transaction->status === 'Pending' ? 'warning' : 'gray') }}">
+                                    {{ $transaction->status }}
+                                </x-badge>
+                            </td>
+                            <td class="px-4 py-3">
+                                <x-button href="{{ route('transactions.show', $transaction) }}" variant="ghost" size="sm">View</x-button>
+                            </td>
+                        </tr>
                     @empty
-                    <x-empty-state message="No transactions found." :colspan="8" />
+                        <x-empty-state message="No transactions found." :colspan="8" />
                     @endforelse
-                </tbody>
-            </table>
-        </div>
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
 
         <div class="mt-4">
             {{ $transactions->withQueryString()->links() }}

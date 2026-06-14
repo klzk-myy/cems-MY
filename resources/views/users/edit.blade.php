@@ -1,6 +1,6 @@
 <x-app-layout title="Edit User">
     <!-- Page Header -->
-    <div class="bg-white border-b border-[#e5e5e5]">
+    <div class="bg-surface border-b border-border">
         <div class="max-w-7xl mx-auto px-6 py-6">
             <x-page-header title="Edit User" description="Update user details and permissions" />
         </div>
@@ -60,7 +60,7 @@
                                     name="is_active"
                                     value="1"
                                     {{ old('is_active', $user->is_active) ? 'checked' : '' }}
-                                    class="w-4 h-4 text-[#0a0a0a] border-[#e5e5e5] rounded focus:ring-[#0a0a0a]"
+                                    class="w-4 h-4 text-[#0a0a0a] border-border rounded focus:ring-[#0a0a0a]"
                                 >
                                 <span class="ml-2 text-sm text-gray-700">Active User</span>
                             </label>
@@ -83,7 +83,7 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-[#e5e5e5] pt-6">
+                    <div class="border-t border-border pt-6">
                         <h4 class="text-sm font-medium text-ink mb-4">Account Information</h4>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
@@ -104,7 +104,7 @@
                     </div>
                 </div>
 
-                <div class="px-6 py-4 border-t border-[#e5e5e5] flex items-center justify-end gap-3">
+                <div class="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
                     <x-button href="{{ route('users.index') }}" variant="secondary">Cancel</x-button>
                     <x-button type="submit" variant="primary">Update User</x-button>
                 </div>

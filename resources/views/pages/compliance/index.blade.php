@@ -3,25 +3,25 @@
         <h1 class="text-2xl font-bold mb-6">Compliance Dashboard</h1>
 
         <x-stat-grid :cols="4" class="mb-6">
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-surface rounded-lg shadow p-4">
                 <div class="text-ink-muted text-sm">Open Flags</div>
                 <div class="text-2xl font-bold text-yellow-600">{{ $stats['open'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-surface rounded-lg shadow p-4">
                 <div class="text-ink-muted text-sm">Under Review</div>
                 <div class="text-2xl font-bold text-blue-600">{{ $stats['under_review'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-surface rounded-lg shadow p-4">
                 <div class="text-ink-muted text-sm">Resolved Today</div>
                 <div class="text-2xl font-bold text-green-600">{{ $stats['resolved_today'] ?? 0 }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="bg-surface rounded-lg shadow p-4">
                 <div class="text-ink-muted text-sm">High Priority</div>
                 <div class="text-2xl font-bold text-red-600">{{ $stats['high_priority'] ?? 0 }}</div>
             </div>
         </x-stat-grid>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-surface rounded-lg shadow overflow-hidden">
             <div class="px-4 py-3 border-b">
                 <h2 class="text-lg font-semibold">Flagged Transactions</h2>
             </div>

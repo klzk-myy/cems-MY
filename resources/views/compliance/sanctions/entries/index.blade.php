@@ -7,36 +7,36 @@
                     <h1 class="text-2xl font-bold text-ink">Sanctions Entries</h1>
                     <p class="mt-1 text-sm text-ink-muted">Manage sanctions list entries</p>
                 </div>
-                <a href="{{ route('compliance.sanctions.entries.create') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <a href="{{ route('compliance.sanctions.entries.create') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Add Entry
                 </a>
             </div>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <form method="GET" action="{{ route('compliance.sanctions.entries.index') }}" class="flex flex-wrap gap-4">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name or reference..." class="flex-1 px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                <select name="list_id" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name or reference..." class="flex-1 px-4 py-2 text-sm bg-surface border border-border rounded-lg">
+                <select name="list_id" class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Sources</option>
                     @foreach ($lists as $list)
                         <option value="{{ $list->id }}" @selected(request('list_id') == $list->id)>{{ $list->name }}</option>
                     @endforeach
                 </select>
-                <select name="status" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select name="status" class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="active" @selected(request('status', 'active') === 'active')>Active</option>
                     <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
                     <option value="deleted" @selected(request('status') === 'deleted')>Deleted</option>
                     <option value="all" @selected(request('status') === 'all')>All</option>
                 </select>
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Search
                 </button>
             </form>
         </div>
 
         <!-- Entries Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-canvas-subtle">
                     <tr>

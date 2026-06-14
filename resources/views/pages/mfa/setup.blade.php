@@ -2,8 +2,8 @@
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-6">Setup Two-Factor Authentication</h1>
 
-        <div class="max-w-lg bg-white rounded-lg shadow p-6">
-            <p class="text-gray-600 mb-4">Two-factor authentication adds an extra layer of security to your account.</p>
+        <div class="max-w-lg bg-surface rounded-lg shadow p-6">
+            <p class="text-ink-muted mb-4">Two-factor authentication adds an extra layer of security to your account.</p>
 
             @if(isset($qrCodeUrl))
             <div class="text-center mb-6">

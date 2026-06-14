@@ -9,23 +9,23 @@
         </div>
 
         {{-- Actions Bar --}}
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <div class="flex flex-wrap gap-4 items-center justify-between">
                 @if($reportGenerated)
                 <div class="flex gap-3">
-                    <button onclick="window.print()" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                    <button onclick="window.print()" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                         Print
                     </button>
                     <form method="POST" action="{{ route('reports.position-limit.export') }}">
                         @csrf
-                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                             Export
                         </button>
                     </form>
                 </div>
                 @endif
                 <form method="GET" action="{{ route('reports.position-limit') }}">
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                         Refresh
                     </button>
                 </form>
@@ -35,29 +35,29 @@
         {{-- Report Content --}}
         @if($reportGenerated && !empty($reportData))
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-xs text-ink-muted mb-1">Total Currencies</p>
                 <p class="text-2xl font-semibold text-ink">{{ number_format($reportData['total_currencies'] ?? count($reportData['positions'] ?? [])) }}</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-xs text-ink-muted mb-1">Within Limits</p>
                 <p class="text-2xl font-semibold text-green-600">{{ number_format($reportData['within_limits'] ?? 0) }}</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-xs text-ink-muted mb-1">Near Limits (80%+)</p>
                 <p class="text-2xl font-semibold text-yellow-600">{{ number_format($reportData['near_limits'] ?? 0) }}</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-xs text-ink-muted mb-1">Exceeds Limits</p>
                 <p class="text-2xl font-semibold text-red-600">{{ number_format($reportData['exceeds_limits'] ?? 0) }}</p>
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-semibold text-ink mb-4">Currency Positions</h2>
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-[#e5e5e5]">
+                    <tr class="border-b border-border">
                         <th class="text-left py-3 px-4 font-medium text-gray-700">Currency</th>
                         <th class="text-right py-3 px-4 font-medium text-gray-700">Net Position</th>
                         <th class="text-right py-3 px-4 font-medium text-gray-700">Limit</th>
@@ -68,7 +68,7 @@
                 </thead>
                 <tbody>
                     @forelse($reportData['positions'] ?? [] as $position)
-                    <tr class="border-b border-[#e5e5e5] hover:bg-canvas-subtle">
+                    <tr class="border-b border-border hover:bg-canvas-subtle">
                         <td class="py-3 px-4 text-ink font-medium">{{ $position['currency'] }}</td>
                         <td class="py-3 px-4 text-right text-gray-700">{{ number_format($position['net_position'], 2) }}</td>
                         <td class="py-3 px-4 text-right text-gray-700">{{ number_format($position['limit'], 2) }}</td>
@@ -103,7 +103,7 @@
         </div>
 
         @if(!empty($reportData['alerts']))
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Limit Alerts</h3>
             <div class="space-y-3">
                 @foreach($reportData['alerts'] as $alert)
@@ -121,12 +121,12 @@
         </div>
         @endif
         @elseif($reportGenerated && empty($reportData))
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-12 text-center">
+        <div class="bg-surface border border-border rounded-xl p-12 text-center">
             <h3 class="text-lg font-medium text-ink mb-2">No Position Data Available</h3>
             <p class="text-sm text-ink-muted">Unable to generate position limit report at this time.</p>
         </div>
         @else
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-12 text-center">
+        <div class="bg-surface border border-border rounded-xl p-12 text-center">
             <h3 class="text-lg font-medium text-ink mb-2">Position Limit Report</h3>
             <p class="text-sm text-ink-muted">Click Refresh to load the current position limit report.</p>
         </div>

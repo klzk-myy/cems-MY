@@ -9,12 +9,12 @@
         </div>
 
         <!-- Export Options -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-sm font-medium text-ink mb-4">Export Options</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Bank Account</label>
-                    <select class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                    <select class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                         <option value="maybank">Maybank Current Account</option>
                         <option value="cimb">CIMB Business Account</option>
                         <option value="rhb">RHB Trading Account</option>
@@ -22,11 +22,11 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Reconciliation Date</label>
-                    <input type="date" value="2026-05-01" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                    <input type="date" value="2026-05-01" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Format</label>
-                    <select class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                    <select class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                         <option value="pdf">PDF Document</option>
                         <option value="excel">Excel Spreadsheet</option>
                         <option value="csv">CSV File</option>
@@ -34,7 +34,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
-                    <select class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                    <select class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                         <option value="en">English</option>
                         <option value="ms">Bahasa Malaysia</option>
                     </select>
@@ -43,13 +43,13 @@
         </div>
 
         <!-- Preview -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-4 py-3 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-border">
                 <h3 class="text-sm font-medium text-ink">Preview</h3>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Header -->
-                <div class="text-center border-b border-[#e5e5e5] pb-4">
+                <div class="text-center border-b border-border pb-4">
                     <h2 class="text-xl font-semibold text-ink">Bank Reconciliation Statement</h2>
                     <p class="text-sm text-ink-muted">Maybank Current Account - May 2026</p>
                 </div>
@@ -72,7 +72,7 @@
                 <div>
                     <h4 class="text-sm font-medium text-ink mb-2">Adjustments</h4>
                     <table class="w-full">
-                        <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                        <thead class="bg-canvas-subtle border-b border-border">
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
                                 <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
@@ -96,7 +96,7 @@
                                 <td class="px-4 py-2 text-sm text-right">125.00</td>
                             </tr>
                         </tbody>
-                        <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                        <tfoot class="bg-canvas-subtle border-t border-border">
                             <tr>
                                 <td class="px-4 py-2 text-sm font-medium">Total Adjustments</td>
                                 <td class="px-4 py-2 text-sm text-right font-medium">51,825.00</td>
@@ -120,11 +120,11 @@
 
         <!-- Actions -->
         <div class="flex items-center justify-end gap-3">
-            <a href="{{ route('accounting.reconciliation') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Cancel</a>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
+            <a href="{{ route('accounting.reconciliation') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Cancel</a>
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">
                 Download PDF
             </button>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                 Export
             </button>
         </div>

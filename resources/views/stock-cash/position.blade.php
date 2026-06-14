@@ -9,7 +9,7 @@
         </div>
 
         <!-- Position Details Card -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-ink mb-4">Position Details</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div>
@@ -58,7 +58,7 @@
         </div>
 
         <!-- Recent Buy Transactions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h2 class="text-lg font-medium text-ink mb-4">Recent Buy Transactions (Last 50)</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-[#e5e5e5]">

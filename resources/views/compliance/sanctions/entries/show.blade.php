@@ -8,10 +8,10 @@
                     <p class="mt-1 text-sm text-ink-muted">Reference: {{ $sanctionEntry->reference_number ?: 'N/A' }}</p>
                 </div>
                 <div class="flex gap-3">
-                    <a href="{{ route('compliance.sanctions.entries.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                    <a href="{{ route('compliance.sanctions.entries.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                         Back to List
                     </a>
-                    <a href="{{ route('compliance.sanctions.entries.edit', $sanctionEntry) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                    <a href="{{ route('compliance.sanctions.entries.edit', $sanctionEntry) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                         Edit
                     </a>
                 </div>
@@ -19,7 +19,7 @@
         </div>
 
         <!-- Entry Details -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-semibold text-ink">Entry Information</h3>
                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">
@@ -61,7 +61,7 @@
         </div>
 
         <!-- Aliases -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Aliases</h3>
             @if (count($sanctionEntry->aliases) > 0)
                 <ul class="space-y-2">
@@ -78,7 +78,7 @@
         </div>
 
         <!-- Address -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Address</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div>
@@ -101,22 +101,22 @@
         </div>
 
         <!-- Additional Information -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Additional Information</h3>
-            <p class="text-sm text-gray-600">{{ $sanctionEntry->details ?: 'No additional information.' }}</p>
+            <p class="text-sm text-ink-muted">{{ $sanctionEntry->details ?: 'No additional information.' }}</p>
         </div>
 
         <!-- Actions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Actions</h3>
             <div class="flex flex-wrap gap-3">
-                <a href="{{ route('compliance.sanctions.entries.edit', $sanctionEntry) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <a href="{{ route('compliance.sanctions.entries.edit', $sanctionEntry) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Edit Entry
                 </a>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     View Related Transactions
                 </button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Export
                 </button>
                 <button class="px-4 py-2 text-sm font-medium rounded-lg bg-red-50 border border-red-200 text-red-700 hover:bg-red-100">

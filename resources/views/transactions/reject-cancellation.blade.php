@@ -5,8 +5,8 @@
             <p class="text-sm text-ink-muted mt-1">Reject transaction cancellation request</p>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Transaction Details</h2>
             </div>
             <div class="p-6">
@@ -39,8 +39,8 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Cancellation Request</h2>
             </div>
             <div class="p-6">
@@ -61,8 +61,8 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Rejection Details</h2>
             </div>
             <div class="p-6">
@@ -77,7 +77,7 @@
                             name="rejection_reason"
                             rows="4"
                             required
-                            class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg"
+                            class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"
                             placeholder="Enter the reason for rejecting this cancellation request"
                         ></textarea>
                         @error('rejection_reason')
@@ -94,7 +94,7 @@
                         </button>
                         <a
                             href="{{ route('transactions.index') }}"
-                            class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle"
+                            class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle"
                         >
                             Cancel
                         </a>
@@ -103,8 +103,8 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Notice</h2>
             </div>
             <div class="p-6">

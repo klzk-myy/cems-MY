@@ -7,14 +7,14 @@
                     <h1 class="text-2xl font-bold text-ink">Alert Details</h1>
                     <p class="mt-1 text-sm text-ink-muted">{{ $alert->id }}</p>
                 </div>
-                <a href="{{ route('compliance.alerts.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <a href="{{ route('compliance.alerts.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Back to List
                 </a>
             </div>
         </div>
 
         <!-- Alert Details Card -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Alert Type</label>
@@ -42,7 +42,7 @@
                         @if($alert->assignedTo)
                             {{ $alert->assignedTo->username }}
                         @else
-                            <span class="text-gray-400">Unassigned</span>
+                            <span class="text-ink-muted/50">Unassigned</span>
                         @endif
                     </p>
                 </div>
@@ -50,14 +50,14 @@
         </div>
 
         <!-- Description -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Description</h3>
-            <p class="text-sm text-gray-600">{{ $alert->reason ?? $alert->description ?? 'No description available.' }}</p>
+            <p class="text-sm text-ink-muted">{{ $alert->reason ?? $alert->description ?? 'No description available.' }}</p>
         </div>
 
         <!-- Transaction History -->
         @if($alert->flaggedTransaction || $alert->transaction)
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Related Transactions</h3>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-canvas-subtle">
@@ -86,20 +86,20 @@
         @endif
 
         <!-- Actions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Actions</h3>
             <div class="flex flex-wrap gap-3">
                 <form method="POST" action="{{ route('compliance.alerts.resolve', $alert) }}" class="inline">
                     @csrf
                     <input type="hidden" name="resolution" value="Resolved via alert detail page">
                     <input type="hidden" name="resolution_type" value="legitimate">
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                         Resolve Alert
                     </button>
                 </form>
                 <form method="POST" action="{{ route('compliance.alerts.dismiss', $alert) }}" class="inline">
                     @csrf
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                         Dismiss
                     </button>
                 </form>

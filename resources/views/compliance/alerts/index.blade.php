@@ -7,7 +7,7 @@
         </div>
 
         <!-- Alerts Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             @if($alerts->isEmpty())
             <div class="p-6 text-center text-ink-muted">
                 No alerts found
@@ -41,7 +41,7 @@
                             @if($alert->assignedTo)
                                 {{ $alert->assignedTo->username }}
                             @else
-                                <span class="text-gray-400">Unassigned</span>
+                                <span class="text-ink-muted/50">Unassigned</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-sm">

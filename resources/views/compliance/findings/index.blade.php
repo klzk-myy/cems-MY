@@ -7,37 +7,37 @@
                     <h1 class="text-2xl font-bold text-ink">Compliance Findings</h1>
                     <p class="mt-1 text-sm text-ink-muted">Audit and compliance findings</p>
                 </div>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Create Finding
                 </button>
             </div>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Severity</option>
                     <option value="critical">Critical</option>
                     <option value="major">Major</option>
                     <option value="minor">Minor</option>
                 </select>
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Status</option>
                     <option value="open">Open</option>
                     <option value="in_progress">In Progress</option>
                     <option value="resolved">Resolved</option>
                     <option value="accepted">Accepted</option>
                 </select>
-                <input type="date" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <input type="date" class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Filter
                 </button>
             </div>
         </div>
 
         <!-- Findings Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-canvas-subtle">
                     <tr>

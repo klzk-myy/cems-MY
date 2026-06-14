@@ -11,12 +11,12 @@
             <div class="flex gap-3">
                 @if($previousRun)
                     <a href="{{ route('test-results.compare', [$testResult->id, $previousRun->id]) }}"
-                       class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
+                       class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
                         Compare with Previous
                     </a>
                 @endif
                 <a href="{{ route('test-results.index') }}"
-                   class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
+                   class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
                     Back to List
                 </a>
             </div>
@@ -24,7 +24,7 @@
 
         <!-- Status Summary Cards -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-sm font-medium text-ink-muted">Status</p>
                 <p class="mt-1">
                     @if($testResult->status === 'passed')
@@ -39,22 +39,22 @@
                 </p>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-sm font-medium text-ink-muted">Total Tests</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">{{ number_format($testResult->tests_total ?? 0) }}</p>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-sm font-medium text-ink-muted">Passed</p>
                 <p class="mt-1 text-2xl font-semibold text-green-600">{{ number_format($testResult->tests_passed ?? 0) }}</p>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-sm font-medium text-ink-muted">Failed</p>
                 <p class="mt-1 text-2xl font-semibold text-red-600">{{ number_format($testResult->tests_failed ?? 0) }}</p>
             </div>
 
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
+            <div class="bg-surface border border-border rounded-xl p-5">
                 <p class="text-sm font-medium text-ink-muted">Duration</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">{{ $testResult->duration ? number_format($testResult->duration, 2) . 's' : 'N/A' }}</p>
             </div>
@@ -62,8 +62,8 @@
 
         <!-- Failure List -->
         @if($testResult->tests_failed > 0 && !empty($testResult->failures))
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-[#e5e5e5] bg-red-50">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-border bg-red-50">
                     <h2 class="text-lg font-semibold text-red-700">Failed Tests ({{ count($testResult->failures) }})</h2>
                 </div>
                 <div class="divide-y divide-[#e5e5e5]">
@@ -88,8 +88,8 @@
 
         <!-- Error List -->
         @if($testResult->tests_errors > 0 && !empty($testResult->errors))
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-[#e5e5e5] bg-yellow-50">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-border bg-yellow-50">
                     <h2 class="text-lg font-semibold text-yellow-700">Errors ({{ count($testResult->errors) }})</h2>
                 </div>
                 <div class="divide-y divide-[#e5e5e5]">
@@ -114,8 +114,8 @@
 
         <!-- Test Output / Logs -->
         @if(!empty($testResult->output))
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-[#e5e5e5]">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-border">
                     <h2 class="text-lg font-semibold text-ink">Test Output</h2>
                 </div>
                 <div class="p-6">
@@ -125,7 +125,7 @@
         @endif
 
         <!-- Metadata -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h2 class="text-lg font-semibold text-ink mb-4">Run Information</h2>
             <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                 <div>
@@ -157,7 +157,7 @@
 
         <!-- Previous Run Comparison Link -->
         @if($previousRun)
-            <div class="bg-canvas-subtle border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-canvas-subtle border border-border rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <h3 class="text-sm font-medium text-ink">Previous Run</h3>
@@ -167,7 +167,7 @@
                         </p>
                     </div>
                     <a href="{{ route('test-results.show', $previousRun->id) }}"
-                       class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
+                       class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
                         View Previous Run
                     </a>
                 </div>

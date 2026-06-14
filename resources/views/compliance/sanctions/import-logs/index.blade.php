@@ -7,37 +7,37 @@
                     <h1 class="text-2xl font-bold text-ink">Sanctions Import Logs</h1>
                     <p class="mt-1 text-sm text-ink-muted">History of sanctions list imports</p>
                 </div>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Import List
                 </button>
             </div>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Sources</option>
                     <option value="ofac">OFAC SDN</option>
                     <option value="un">UN Security Council</option>
                     <option value="eu">EU Sanctions List</option>
                     <option value="bnm">BNM List</option>
                 </select>
-                <select class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
                     <option value="">All Status</option>
                     <option value="completed">Completed</option>
                     <option value="failed">Failed</option>
                     <option value="partial">Partial</option>
                 </select>
-                <input type="date" class="px-4 py-2 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                <input type="date" class="px-4 py-2 text-sm bg-surface border border-border rounded-lg">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                     Filter
                 </button>
             </div>
         </div>
 
         <!-- Import Logs Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-canvas-subtle">
                     <tr>
@@ -111,9 +111,9 @@
                         </td>
                         <td class="px-4 py-3 text-sm text-ink-muted">2024-01-10 02:00:00</td>
                         <td class="px-4 py-3 text-sm text-ink">-</td>
-                        <td class="px-4 py-3 text-sm text-gray-400">-</td>
-                        <td class="px-4 py-3 text-sm text-gray-400">-</td>
-                        <td class="px-4 py-3 text-sm text-gray-400">-</td>
+                        <td class="px-4 py-3 text-sm text-ink-muted/50">-</td>
+                        <td class="px-4 py-3 text-sm text-ink-muted/50">-</td>
+                        <td class="px-4 py-3 text-sm text-ink-muted/50">-</td>
                         <td class="px-4 py-3 text-sm">
                             <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Failed</span>
                         </td>

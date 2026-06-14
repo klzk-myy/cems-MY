@@ -5,7 +5,7 @@
             <p class="text-ink-muted text-sm mt-1">Immediate action required - supervisor approval needed</p>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 max-w-lg">
+        <div class="bg-surface border border-border rounded-xl p-6 max-w-lg">
             <x-alert type="error" :icon="false">
                 <h3 class="font-semibold text-red-800 mb-2">Action Required</h3>
                 <p class="text-sm text-red-700">{{ $message ?? 'An emergency situation requires immediate attention.' }}</p>
@@ -38,7 +38,7 @@
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Reason for Emergency Action</label>
-                    <textarea name="reason" rows="2" class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" required placeholder="Describe the emergency..."></textarea>
+                    <textarea name="reason" rows="2" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required placeholder="Describe the emergency..."></textarea>
                 </div>
 
                 <x-input type="password" name="supervisor_pin" label="Supervisor PIN" required />

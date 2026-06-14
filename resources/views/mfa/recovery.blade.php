@@ -5,7 +5,7 @@
             <p class="text-ink-muted text-sm mt-1">Recover access to your account using recovery codes</p>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 max-w-lg">
+        <div class="bg-surface border border-border rounded-xl p-6 max-w-lg">
             @if(isset($error))
             <x-alert type="error">{{ $error }}</x-alert>
             @endif
@@ -39,7 +39,7 @@
 
             @if(isset($remainingCodes) && $remainingCodes > 0)
             <div class="mt-6 p-4 bg-canvas-subtle rounded-lg">
-                <p class="text-sm text-gray-600">
+                <p class="text-sm text-ink-muted">
                     <strong>{{ $remainingCodes }}</strong> recovery codes remaining. Store them safely.
                 </p>
             </div>

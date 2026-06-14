@@ -7,30 +7,30 @@
 
         <!-- Risk Distribution Summary -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-1">Total Analyzed</div>
                 <div class="text-2xl font-semibold text-ink">{{ number_format($riskDistribution['total']) }}</div>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-1">High Risk</div>
                 <div class="text-2xl font-semibold text-red-600">{{ number_format($riskDistribution['high']) }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ $riskDistribution['total'] > 0 ? round($riskDistribution['high'] / $riskDistribution['total'] * 100, 1) : 0 }}%</div>
+                <div class="text-xs text-ink-muted/50 mt-1">{{ $riskDistribution['total'] > 0 ? round($riskDistribution['high'] / $riskDistribution['total'] * 100, 1) : 0 }}%</div>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-1">Medium Risk</div>
                 <div class="text-2xl font-semibold text-yellow-600">{{ number_format($riskDistribution['medium']) }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ $riskDistribution['total'] > 0 ? round($riskDistribution['medium'] / $riskDistribution['total'] * 100, 1) : 0 }}%</div>
+                <div class="text-xs text-ink-muted/50 mt-1">{{ $riskDistribution['total'] > 0 ? round($riskDistribution['medium'] / $riskDistribution['total'] * 100, 1) : 0 }}%</div>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-1">Low Risk</div>
                 <div class="text-2xl font-semibold text-green-600">{{ number_format($riskDistribution['low']) }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ $riskDistribution['total'] > 0 ? round($riskDistribution['low'] / $riskDistribution['total'] * 100, 1) : 0 }}%</div>
+                <div class="text-xs text-ink-muted/50 mt-1">{{ $riskDistribution['total'] > 0 ? round($riskDistribution['low'] / $riskDistribution['total'] * 100, 1) : 0 }}%</div>
             </div>
         </div>
 
         <!-- Top Customers Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Top 50 Customers</h2>
             </div>
             <table class="w-full">

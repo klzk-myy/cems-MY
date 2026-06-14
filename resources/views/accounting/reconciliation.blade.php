@@ -6,39 +6,39 @@
                 <h1 class="text-2xl font-semibold text-ink">Bank Reconciliation</h1>
                 <p class="mt-1 text-sm text-ink-muted">Reconcile bank statements with accounting records</p>
             </div>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                 + New Reconciliation
             </button>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+        <div class="bg-surface border border-border rounded-xl p-4">
             <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
+                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
                     <option value="maybank">Maybank Current Account</option>
                     <option value="cimb">CIMB Business Account</option>
                     <option value="rhb">RHB Trading Account</option>
                 </select>
-                <input type="date" value="2026-05-01" class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Load</button>
+                <input type="date" value="2026-05-01" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
+                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Load</button>
             </div>
         </div>
 
         <!-- Reconciliation Summary -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">Bank Statement Balance</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">RM 1,250,430.00</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">Book Balance</p>
                 <p class="mt-1 text-2xl font-semibold text-ink">RM 1,248,920.50</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">Difference</p>
                 <p class="mt-1 text-2xl font-semibold text-red-600">RM 1,509.50</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <p class="text-sm text-ink-muted">Status</p>
                 <p class="mt-1">
                     <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">In Progress</span>
@@ -49,12 +49,12 @@
         <!-- Reconciliation Details -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Outstanding Checks -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-4 py-3 border-b border-[#e5e5e5]">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-border">
                     <h3 class="text-sm font-medium text-ink">Outstanding Checks</h3>
                 </div>
                 <table class="w-full">
-                    <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                    <thead class="bg-canvas-subtle border-b border-border">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Check No.</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
@@ -88,7 +88,7 @@
                             </td>
                         </tr>
                     </tbody>
-                    <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                    <tfoot class="bg-canvas-subtle border-t border-border">
                         <tr>
                             <td colspan="2" class="px-4 py-3 text-sm font-medium text-ink">Total Outstanding</td>
                             <td class="px-4 py-3 text-sm text-right font-medium">25,750.00</td>
@@ -99,12 +99,12 @@
             </div>
 
             <!-- Deposits in Transit -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-4 py-3 border-b border-[#e5e5e5]">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-border">
                     <h3 class="text-sm font-medium text-ink">Deposits in Transit</h3>
                 </div>
                 <table class="w-full">
-                    <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                    <thead class="bg-canvas-subtle border-b border-border">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
@@ -130,7 +130,7 @@
                             </td>
                         </tr>
                     </tbody>
-                    <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                    <tfoot class="bg-canvas-subtle border-t border-border">
                         <tr>
                             <td colspan="2" class="px-4 py-3 text-sm font-medium text-ink">Total in Transit</td>
                             <td class="px-4 py-3 text-sm text-right font-medium">77,500.00</td>
@@ -142,12 +142,12 @@
         </div>
 
         <!-- Adjustments -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <div class="px-4 py-3 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-border">
                 <h3 class="text-sm font-medium text-ink">Adjustments Needed</h3>
             </div>
             <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-border">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
@@ -174,9 +174,9 @@
 
         <!-- Actions -->
         <div class="flex items-center justify-end gap-3">
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Cancel</button>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Save Draft</button>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">Complete Reconciliation</button>
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Cancel</button>
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Save Draft</button>
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">Complete Reconciliation</button>
         </div>
     </div>
 </x-app-layout>

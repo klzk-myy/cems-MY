@@ -5,8 +5,8 @@
             <p class="text-sm text-ink-muted mt-1">Request cancellation for transaction</p>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Transaction Details</h2>
             </div>
             <div class="p-6">
@@ -47,8 +47,8 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl mb-6">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Cancellation Request</h2>
             </div>
             <div class="p-6">
@@ -58,16 +58,16 @@
                         <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
                             Reason for Cancellation <span class="text-red-600">*</span>
                         </label>
-                        <textarea id="reason" name="reason" rows="4" required class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg" placeholder="Enter the reason for cancellation"></textarea>
+                        <textarea id="reason" name="reason" rows="4" required class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="Enter the reason for cancellation"></textarea>
                         @error('reason')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
                     <div class="flex items-center gap-4">
-                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                        <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                             Submit Cancellation Request
                         </button>
-                        <a href="{{ route('transactions.show', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                        <a href="{{ route('transactions.show', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                             Back to Transaction
                         </a>
                     </div>
@@ -75,8 +75,8 @@
             </div>
         </div>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl">
-            <div class="px-6 py-4 border-b border-[#e5e5e5]">
+        <div class="bg-surface border border-border rounded-xl">
+            <div class="px-6 py-4 border-b border-border">
                 <h2 class="text-lg font-medium text-ink">Important Notice</h2>
             </div>
             <div class="p-6">

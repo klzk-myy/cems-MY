@@ -8,35 +8,35 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <h3 class="text-xs font-medium text-ink-muted uppercase">Profit Margin</h3>
-                <p class="mt-1 text-2xl font-semibold text-gray-400">-</p>
-                <p class="mt-1 text-xs text-gray-400">Net profit / Total revenue</p>
+                <p class="mt-1 text-2xl font-semibold text-ink-muted/50">-</p>
+                <p class="mt-1 text-xs text-ink-muted/50">Net profit / Total revenue</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <h3 class="text-xs font-medium text-ink-muted uppercase">Current Ratio</h3>
-                <p class="mt-1 text-2xl font-semibold text-gray-400">-</p>
-                <p class="mt-1 text-xs text-gray-400">Current assets / Current liabilities</p>
+                <p class="mt-1 text-2xl font-semibold text-ink-muted/50">-</p>
+                <p class="mt-1 text-xs text-ink-muted/50">Current assets / Current liabilities</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <h3 class="text-xs font-medium text-ink-muted uppercase">Debt to Equity</h3>
-                <p class="mt-1 text-2xl font-semibold text-gray-400">-</p>
-                <p class="mt-1 text-xs text-gray-400">Total liabilities / Total equity</p>
+                <p class="mt-1 text-2xl font-semibold text-ink-muted/50">-</p>
+                <p class="mt-1 text-xs text-ink-muted/50">Total liabilities / Total equity</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <h3 class="text-xs font-medium text-ink-muted uppercase">Return on Equity</h3>
-                <p class="mt-1 text-2xl font-semibold text-gray-400">-</p>
-                <p class="mt-1 text-xs text-gray-400">Net profit / Total equity</p>
+                <p class="mt-1 text-2xl font-semibold text-ink-muted/50">-</p>
+                <p class="mt-1 text-xs text-ink-muted/50">Net profit / Total equity</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <h3 class="text-xs font-medium text-ink-muted uppercase">Asset Turnover</h3>
-                <p class="mt-1 text-2xl font-semibold text-gray-400">-</p>
-                <p class="mt-1 text-xs text-gray-400">Total revenue / Total assets</p>
+                <p class="mt-1 text-2xl font-semibold text-ink-muted/50">-</p>
+                <p class="mt-1 text-xs text-ink-muted/50">Total revenue / Total assets</p>
             </div>
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+            <div class="bg-surface border border-border rounded-xl p-4">
                 <h3 class="text-xs font-medium text-ink-muted uppercase">Expense Ratio</h3>
-                <p class="mt-1 text-2xl font-semibold text-gray-400">-</p>
-                <p class="mt-1 text-xs text-gray-400">Total expenses / Total revenue</p>
+                <p class="mt-1 text-2xl font-semibold text-ink-muted/50">-</p>
+                <p class="mt-1 text-xs text-ink-muted/50">Total expenses / Total revenue</p>
             </div>
         </div>
 

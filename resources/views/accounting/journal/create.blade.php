@@ -27,11 +27,11 @@
             </x-card>
 
             <x-card>
-                <div class="px-4 py-3 border-b border-[#e5e5e5] bg-canvas-subtle">
+                <div class="px-4 py-3 border-b border-border bg-canvas-subtle">
                     <h3 class="text-sm font-medium text-ink">Journal Lines</h3>
                 </div>
                 <table class="w-full">
-                    <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                    <thead class="bg-canvas-subtle border-b border-border">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
@@ -97,7 +97,7 @@
                         </tr>
                     </tbody>
                 </table>
-                <div class="px-4 py-3 border-t border-[#e5e5e5]">
+                <div class="px-4 py-3 border-t border-border">
                     <x-button type="button" id="add-line" variant="secondary">+ Add Line</x-button>
                 </div>
             </x-card>

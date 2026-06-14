@@ -7,13 +7,13 @@
                 <p class="mt-1 text-sm text-ink-muted">Date: {{ $date }} | Till ID: {{ $tillId }}</p>
             </div>
             <a href="{{ url()->previous() }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-gray-700 hover:bg-canvas-subtle">
                 Back
             </a>
         </div>
 
         <!-- Opening Balance Card -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-ink mb-4">Opening Balance</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
@@ -40,7 +40,7 @@
         <!-- Buy/Sell Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <!-- Buy Summary -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="text-lg font-medium text-ink mb-4">Buy Summary</h3>
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
@@ -53,7 +53,7 @@
                             {{ number_format((float) ($summary['fcy_bought'] ?? 0), 2) }}
                         </span>
                     </div>
-                    <div class="flex justify-between items-center border-t border-[#e5e5e5] pt-3">
+                    <div class="flex justify-between items-center border-t border-border pt-3">
                         <span class="text-sm font-medium text-gray-700">MYR Received</span>
                         <span class="text-sm font-semibold text-ink">
                             MYR {{ number_format((float) ($summary['myr_from_buys'] ?? 0), 2) }}
@@ -63,7 +63,7 @@
             </div>
 
             <!-- Sell Summary -->
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div class="bg-surface border border-border rounded-xl p-6">
                 <h3 class="text-lg font-medium text-ink mb-4">Sell Summary</h3>
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
@@ -76,7 +76,7 @@
                             {{ number_format((float) ($summary['fcy_sold'] ?? 0), 2) }}
                         </span>
                     </div>
-                    <div class="flex justify-between items-center border-t border-[#e5e5e5] pt-3">
+                    <div class="flex justify-between items-center border-t border-border pt-3">
                         <span class="text-sm font-medium text-gray-700">MYR Paid Out</span>
                         <span class="text-sm font-semibold text-ink">
                             MYR {{ number_format((float) ($summary['myr_to_sells'] ?? 0), 2) }}
@@ -87,7 +87,7 @@
         </div>
 
         <!-- Expected vs Actual Closing -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-ink mb-4">Expected vs Actual Closing</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-[#e5e5e5]">
@@ -149,7 +149,7 @@
         </div>
 
         <!-- Variance Summary -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-ink mb-4">Variance Summary</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="p-4 bg-canvas-subtle rounded-lg">
@@ -182,7 +182,7 @@
         </div>
 
         <!-- Transactions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h2 class="text-lg font-medium text-ink mb-4">Transactions</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-[#e5e5e5]">

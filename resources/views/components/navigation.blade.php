@@ -41,7 +41,7 @@
                 @endforeach
             @else
                 {{-- Section header --}}
-                <li x-show="!collapsed" class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider mt-4">{{ $config['label'] }}</li>
+                <li x-show="!collapsed" class="px-4 py-2 text-xs text-ink-muted/50 uppercase tracking-wider mt-4">{{ $config['label'] }}</li>
                 
                 {{-- Section items --}}
                 @foreach($config['items'] as $item)
@@ -67,7 +67,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium truncate">{{ $userName ?? ($user->name ?? 'Guest') }}</p>
-                    <p class="text-xs text-gray-400 truncate">{{ $userRole ?? ($user->role->value ?? 'guest') }}</p>
+                    <p class="text-xs text-ink-muted/50 truncate">{{ $userRole ?? ($user->role->value ?? 'guest') }}</p>
                 </div>
             </div>
             

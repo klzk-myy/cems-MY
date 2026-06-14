@@ -7,14 +7,14 @@
                     <h1 class="text-2xl font-bold text-ink">Sanctions List Details</h1>
                     <p class="mt-1 text-sm text-ink-muted">{{ $list->name }}</p>
                 </div>
-                <a href="{{ route('compliance.sanctions.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <a href="{{ route('compliance.sanctions.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     Back to Lists
                 </a>
             </div>
         </div>
 
         <!-- List Details -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
+        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-semibold text-ink">List Information</h3>
                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">
@@ -66,16 +66,16 @@
         </div>
 
         <!-- Actions -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+        <div class="bg-surface border border-border rounded-xl p-6">
             <h3 class="text-lg font-semibold text-ink mb-4">Actions</h3>
             <div class="flex flex-wrap gap-3">
                 <form method="POST" action="{{ route('compliance.sanctions.import', $list) }}">
                     @csrf
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                         Trigger Import
                     </button>
                 </form>
-                <a href="{{ route('compliance.sanctions.entries.index', ['list_id' => $list->id]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
+                <a href="{{ route('compliance.sanctions.entries.index', ['list_id' => $list->id]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
                     View Entries
                 </a>
             </div>

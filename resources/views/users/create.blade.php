@@ -1,6 +1,6 @@
 <x-app-layout title="Create User">
     <!-- Page Header -->
-    <div class="bg-white border-b border-[#e5e5e5]">
+    <div class="bg-surface border-b border-border">
         <div class="max-w-7xl mx-auto px-6 py-6">
             <x-page-header title="Create User" description="Add a new user to the system" />
         </div>
@@ -46,7 +46,7 @@
                                     name="is_active"
                                     value="1"
                                     {{ old('is_active', '1') ? 'checked' : '' }}
-                                    class="w-4 h-4 text-[#0a0a0a] border-[#e5e5e5] rounded focus:ring-[#0a0a0a]"
+                                    class="w-4 h-4 text-[#0a0a0a] border-border rounded focus:ring-[#0a0a0a]"
                                 >
                                 <span class="ml-2 text-sm text-gray-700">Active User</span>
                             </label>
@@ -59,7 +59,7 @@
                                     name="mfa_enabled"
                                     value="1"
                                     {{ old('mfa_enabled') ? 'checked' : '' }}
-                                    class="w-4 h-4 text-[#0a0a0a] border-[#e5e5e5] rounded focus:ring-[#0a0a0a]"
+                                    class="w-4 h-4 text-[#0a0a0a] border-border rounded focus:ring-[#0a0a0a]"
                                 >
                                 <span class="ml-2 text-sm text-gray-700">Enable MFA (Required for all roles)</span>
                             </label>
@@ -67,7 +67,7 @@
                     </div>
                 </div>
 
-                <div class="px-6 py-4 border-t border-[#e5e5e5] flex items-center justify-end gap-3">
+                <div class="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
                     <x-button href="{{ route('users.index') }}" variant="secondary">Cancel</x-button>
                     <x-button type="submit" variant="primary">Create User</x-button>
                 </div>

@@ -8,8 +8,8 @@
             <div class="flex items-center gap-3">
                 <form method="GET" class="flex items-center gap-3">
                     <input type="date" name="as_of_date" value="{{ $asOfDate }}"
-                           class="px-3 py-2 text-sm border border-[#e5e5e5] rounded-lg">
-                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
+                           class="px-3 py-2 text-sm border border-border rounded-lg">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
                         Refresh
                     </button>
                 </form>
@@ -28,9 +28,9 @@
             </div>
         @endif
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-border">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Code</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
@@ -45,8 +45,8 @@
                             <td class="px-4 py-3 text-sm font-mono text-ink">{{ $account['account_code'] }}</td>
                             <td class="px-4 py-3 text-sm text-ink">{{ $account['account_name'] }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $account['account_type'] }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $account['debit'] > 0 ? 'text-ink' : 'text-gray-400' }}">{{ (float) $account['debit'] > 0 ? number_format((float) $account['debit'], 2) : '-' }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $account['credit'] > 0 ? 'text-ink' : 'text-gray-400' }}">{{ (float) $account['credit'] > 0 ? number_format((float) $account['credit'], 2) : '-' }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $account['debit'] > 0 ? 'text-ink' : 'text-ink-muted/50' }}">{{ (float) $account['debit'] > 0 ? number_format((float) $account['debit'], 2) : '-' }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $account['credit'] > 0 ? 'text-ink' : 'text-ink-muted/50' }}">{{ (float) $account['credit'] > 0 ? number_format((float) $account['credit'], 2) : '-' }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -54,7 +54,7 @@
                         </tr>
                     @endforelse
                 </tbody>
-                <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
+                <tfoot class="bg-canvas-subtle border-t border-border">
                     <tr class="font-semibold">
                         <td colspan="3" class="px-4 py-3 text-sm text-ink">Total</td>
                         <td class="px-4 py-3 text-sm text-right font-mono text-ink">{{ number_format((float) $trialBalance['total_debits'], 2) }}</td>
@@ -67,7 +67,7 @@
         <div class="grid grid-cols-3 gap-4">
             @foreach (['Asset', 'Liability', 'Equity', 'Revenue', 'Expense'] as $type)
                 @if (isset($trialBalance['totals_by_type'][$type]))
-                    <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
+                    <div class="bg-surface border border-border rounded-xl p-4">
                         <p class="text-xs font-medium text-ink-muted uppercase">{{ $type }}</p>
                         <p class="mt-1 text-lg font-semibold text-ink">RM {{ number_format((float) $trialBalance['totals_by_type'][$type], 2) }}</p>
                     </div>
