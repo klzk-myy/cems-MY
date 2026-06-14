@@ -9,28 +9,30 @@
 </head>
 <body class="min-h-screen bg-canvas-subtle text-ink flex items-center justify-center">
     <div class="w-full max-w-md p-6">
-        <div class="bg-surface border border-border rounded-xl p-8">
-            <h1 class="text-2xl font-bold text-center mb-6">{{ config('app.name') }}</h1>
+        <x-card>
+            <div class="p-8 space-y-6">
+                <x-page-header title="{{ config('app.name') }}" class="justify-center" />
 
-            <form method="POST" action="{{ route('login') }}">
-                @csrf
+                <form method="POST" action="{{ route('login') }}" class="space-y-4">
+                    @csrf
 
-                @if($errors->any())
-                    <x-alert type="error">
-                        <ul class="list-disc list-inside">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </x-alert>
-                @endif
+                    @if($errors->any())
+                        <x-alert type="error">
+                            <ul class="list-disc list-inside">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </x-alert>
+                    @endif
 
-                <x-input type="text" name="username" label="Username" required value="{{ old('username') }}" />
-                <x-input type="password" name="password" label="Password" required />
+                    <x-input type="text" name="username" label="Username" required value="{{ old('username') }}" inline />
+                    <x-input type="password" name="password" label="Password" required inline />
 
-                <x-button type="submit" variant="primary" class="w-full">Sign In</x-button>
-            </form>
-        </div>
+                    <x-button type="submit" variant="primary" class="w-full">Sign In</x-button>
+                </form>
+            </div>
+        </x-card>
     </div>
 </body>
 </html>

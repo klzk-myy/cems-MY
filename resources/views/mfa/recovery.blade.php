@@ -1,49 +1,38 @@
 <x-app-layout title="MFA Recovery">
-    <div class="p-6">
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold">Account Recovery</h1>
-            <p class="text-ink-muted text-sm mt-1">Recover access to your account using recovery codes</p>
-        </div>
+    <div class="max-w-lg mx-auto p-6 space-y-6">
+        <x-page-header
+            title="Account Recovery"
+            description="Recover access to your account using recovery codes"
+        />
 
-        <div class="bg-surface border border-border rounded-xl p-6 max-w-lg">
-            @if(isset($error))
-            <x-alert type="error">{{ $error }}</x-alert>
-            @endif
+        <x-card title="Use Recovery Code" description="Enter one of your saved recovery codes">
+            <div class="p-6">
+                @if(isset($error))
+                    <x-alert type="error">{{ $error }}</x-alert>
+                @endif
 
-            <div class="mb-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-                        </svg>
+                <form method="POST" action="{{ route('mfa.recovery.verify') }}">
+                    @csrf
+
+                    <div class="space-y-4">
+                        <x-input type="text" name="recovery_code" label="Recovery Code" class="font-mono tracking-widest" placeholder="XXXX-XXXX-XXXX" required inline />
+                        <x-input type="password" name="password" label="Password" required inline />
                     </div>
-                    <div>
-                        <h2 class="font-semibold">Use Recovery Code</h2>
-                        <p class="text-sm text-ink-muted">Enter one of your saved recovery codes</p>
-                    </div>
+
+                    <x-button type="submit" variant="primary" class="w-full mt-6">Verify Recovery Code</x-button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-ink-muted mb-2">Don't have recovery codes?</p>
+                    <a href="{{ route('mfa.setup') }}" class="text-sm text-info-text hover:text-info">Set up new authentication</a>
                 </div>
+
+                @if(isset($remainingCodes) && $remainingCodes > 0)
+                    <x-alert type="info" class="mt-6" :icon="false">
+                        <strong>{{ $remainingCodes }}</strong> recovery codes remaining. Store them safely.
+                    </x-alert>
+                @endif
             </div>
-
-            <form method="POST" action="{{ route('mfa.recovery.verify') }}">
-                @csrf
-                <x-input type="text" name="recovery_code" label="Recovery Code" class="font-mono tracking-widest" placeholder="XXXX-XXXX-XXXX" required />
-                <x-input type="password" name="password" label="Password" required />
-
-                <x-button type="submit" variant="primary" class="w-full mb-4">Verify Recovery Code</x-button>
-            </form>
-
-            <div class="text-center">
-                <p class="text-sm text-ink-muted mb-2">Don't have recovery codes?</p>
-                <a href="{{ route('mfa.setup') }}" class="text-blue-600 hover:underline text-sm">Set up new authentication</a>
-            </div>
-
-            @if(isset($remainingCodes) && $remainingCodes > 0)
-            <div class="mt-6 p-4 bg-canvas-subtle rounded-lg">
-                <p class="text-sm text-ink-muted">
-                    <strong>{{ $remainingCodes }}</strong> recovery codes remaining. Store them safely.
-                </p>
-            </div>
-            @endif
-        </div>
+        </x-card>
     </div>
 </x-app-layout>

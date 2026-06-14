@@ -1,13 +1,10 @@
 <x-app-layout title="Edit User">
-    <!-- Page Header -->
-    <div class="bg-surface border-b border-border">
-        <div class="max-w-7xl mx-auto px-6 py-6">
-            <x-page-header title="Edit User" description="Update user details and permissions" />
-        </div>
-    </div>
+    <div class="max-w-7xl mx-auto space-y-6">
+        <x-page-header
+            title="Edit User"
+            description="Update user details and permissions"
+        />
 
-    <!-- Main Content -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-6">
         <x-card title="User Information" description="Update the user's details below">
             <form method="POST" action="{{ route('users.update', $user->id) }}">
                 @csrf
@@ -15,20 +12,22 @@
 
                 <div class="p-6 space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <x-input name="username" label="Username" value="{{ old('username', $user->username) }}" required autofocus />
-                        <x-input type="email" name="email" label="Email Address" value="{{ old('email', $user->email) }}" required />
+                        <x-input name="username" label="Username" value="{{ old('username', $user->username) }}" required autofocus inline />
+                        <x-input type="email" name="email" label="Email Address" value="{{ old('email', $user->email) }}" required inline />
                         <x-input
                             type="password"
                             name="password"
                             label="Password"
                             placeholder="Leave blank to keep current password"
                             help="Leave blank to keep the current password"
+                            inline
                         />
                         <x-input
                             type="password"
                             name="password_confirmation"
                             label="Confirm Password"
                             placeholder="Confirm new password"
+                            inline
                         />
 
                         <x-select
@@ -43,6 +42,7 @@
                             placeholder="Select a role"
                             selected="{{ old('role', $user->role->value) }}"
                             required
+                            inline
                         />
 
                         <x-select
@@ -51,6 +51,7 @@
                             :options="($branches ?? collect())->pluck('name', 'id')->toArray()"
                             placeholder="Select a branch (optional)"
                             selected="{{ old('branch_id', $user->branch_id) }}"
+                            inline
                         />
 
                         <div class="flex items-center">
@@ -70,13 +71,9 @@
                             <label class="block text-sm font-medium text-ink-muted mb-2">MFA Status</label>
                             <div class="mt-2">
                                 @if($user->mfa_enabled)
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">
-                                        Enabled
-                                    </span>
+                                    <x-badge variant="success">Enabled</x-badge>
                                 @else
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">
-                                        Disabled
-                                    </span>
+                                    <x-badge variant="gray">Disabled</x-badge>
                                 @endif
                                 <p class="mt-1 text-xs text-ink-muted">MFA can be configured by the user in their profile settings</p>
                             </div>
@@ -110,5 +107,5 @@
                 </div>
             </form>
         </x-card>
-    </main>
+    </div>
 </x-app-layout>

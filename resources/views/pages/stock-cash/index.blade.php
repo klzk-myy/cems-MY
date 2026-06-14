@@ -1,65 +1,65 @@
 <x-app-layout title="Stock & Cash">
-    <div class="p-6">
-        <h1 class="text-2xl font-bold mb-6">Stock & Cash Positions</h1>
+    <div class="space-y-6">
+        <x-page-header
+            title="Stock & Cash Positions"
+            description="Overview of currency positions and till summaries"
+        />
 
-        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
-            <h2 class="text-lg font-semibold mb-4">Currency Positions</h2>
-            <table class="w-full">
-                <thead class="bg-canvas-subtle">
-                    <tr class="text-left text-sm text-ink-muted">
-                        <th class="px-4 py-2">Currency</th>
-                        <th class="px-4 py-2">Available</th>
-                        <th class="px-4 py-2">Held</th>
-                        <th class="px-4 py-2">Total</th>
-                        <th class="px-4 py-2">P&L</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <x-card title="Currency Positions">
+            <x-table>
+                <x-slot:thead>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Available</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Held</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Total</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">P&L</th>
+                </x-slot:thead>
+                <x-slot:tbody>
                     @forelse($positions ?? [] as $position)
-                    <tr class="border-t">
-                        <td class="px-4 py-2 font-medium">{{ $position->currency_code }}</td>
-                        <td class="px-4 py-2">{{ number_format($position->available, 2) }}</td>
-                        <td class="px-4 py-2">{{ number_format($position->held, 2) }}</td>
-                        <td class="px-4 py-2">{{ number_format($position->total, 2) }}</td>
-                        <td class="px-4 py-2 {{ $position->pnl >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ number_format($position->pnl, 2) }}
-                        </td>
-                    </tr>
+                        <tr class="hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 text-sm font-medium">{{ $position->currency_code }}</td>
+                            <td class="px-4 py-3 text-sm">{{ number_format($position->available, 2) }}</td>
+                            <td class="px-4 py-3 text-sm">{{ number_format($position->held, 2) }}</td>
+                            <td class="px-4 py-3 text-sm">{{ number_format($position->total, 2) }}</td>
+                            <td class="px-4 py-3 text-sm {{ $position->pnl >= 0 ? 'text-success-text' : 'text-danger-text' }}">
+                                {{ number_format($position->pnl, 2) }}
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="5" class="px-4 py-4 text-center text-ink-muted">No positions found.</td>
-                    </tr>
+                        <x-empty-state message="No positions found." :colspan="5" />
                     @endforelse
-                </tbody>
-            </table>
-        </div>
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-surface border border-border rounded-xl p-6">
-                <h2 class="text-lg font-semibold mb-4">Today's Till Summary</h2>
-                <dl class="space-y-2">
-                    <div class="flex justify-between">
-                        <dt class="text-ink-muted">Open Tills</dt>
-                        <dd class="font-medium">{{ count($openTills ?? []) }}</dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-ink-muted">Closed Tills</dt>
-                        <dd class="font-medium">{{ count($closedTills ?? []) }}</dd>
-                    </div>
-                </dl>
-            </div>
+            <x-card title="Today's Till Summary">
+                <x-card-section>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-ink-muted">Open Tills</dt>
+                            <dd class="font-medium">{{ count($openTills ?? []) }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-ink-muted">Closed Tills</dt>
+                            <dd class="font-medium">{{ count($closedTills ?? []) }}</dd>
+                        </div>
+                    </dl>
+                </x-card-section>
+            </x-card>
 
-            <div class="bg-surface border border-border rounded-xl p-6">
-                <h2 class="text-lg font-semibold mb-4">Variance</h2>
-                <dl class="space-y-2">
-                    <div class="flex justify-between">
-                        <dt class="text-ink-muted">Total Variance</dt>
-                        <dd class="font-medium {{ $totalPnl >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ number_format($totalPnl ?? 0, 2) }} MYR
-                        </dd>
-                    </div>
-                </dl>
-            </div>
+            <x-card title="Variance">
+                <x-card-section>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-ink-muted">Total Variance</dt>
+                            <dd class="font-medium {{ $totalPnl >= 0 ? 'text-success-text' : 'text-danger-text' }}">
+                                {{ number_format($totalPnl ?? 0, 2) }} MYR
+                            </dd>
+                        </div>
+                    </dl>
+                </x-card-section>
+            </x-card>
         </div>
     </div>
 </x-app-layout>

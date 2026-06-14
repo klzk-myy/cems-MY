@@ -1,28 +1,24 @@
 <x-app-layout title="Sanctions Lists">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page Header -->
-        <div class="mb-8">
-            <h1 class="text-2xl font-bold text-ink">Sanctions Lists</h1>
-            <p class="mt-1 text-sm text-ink-muted">Manage and monitor sanctions list sources</p>
-        </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <x-page-header
+            title="Sanctions Lists"
+            description="Manage and monitor sanctions list sources"
+        />
 
-        <!-- Lists Table -->
-        <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <table class="min-w-full divide-y divide-border">
-                <thead class="bg-canvas-subtle">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source URL</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Format</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Update Frequency</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Synced</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entries</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <x-card>
+            <x-table>
+                <x-slot:thead>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source URL</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Format</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Update Frequency</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Synced</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entries</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                </x-slot:thead>
+                <x-slot:tbody>
                     @forelse ($lists as $list)
                         <tr>
                             <td class="px-4 py-3 text-sm text-ink">{{ $list['name'] }}</td>
@@ -40,24 +36,32 @@
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $list['update_frequency'] ?: 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $list['last_synced_at'] ?: 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm">
-                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">
-                                    {{ ucfirst($list['status'] ?? 'N/A') }}
-                                </span>
+                                @php
+                                    $status = $list['status'] ?? '';
+                                    $statusValue = $status instanceof \BackedEnum ? $status->value : (string) $status;
+                                @endphp
+                                <x-badge
+                                    :variant="match (strtolower($statusValue)) {
+                                        'active', 'synced', 'success' => 'success',
+                                        'inactive', 'disabled' => 'gray',
+                                        'error', 'failed' => 'danger',
+                                        'syncing', 'pending' => 'info',
+                                        default => 'success',
+                                    }"
+                                >
+                                    {{ ucfirst($statusValue ?: 'N/A') }}
+                                </x-badge>
                             </td>
                             <td class="px-4 py-3 text-sm text-ink">{{ $list['entries_count'] ?? 0 }}</td>
                             <td class="px-4 py-3 text-sm">
-                                <a href="{{ route('compliance.sanctions.show', $list['id']) }}" class="text-blue-600 hover:text-blue-800">View</a>
+                                <x-button variant="ghost" size="sm" href="{{ route('compliance.sanctions.show', $list['id']) }}">View</x-button>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="9" class="px-4 py-8 text-center text-sm text-ink-muted">
-                                No sanctions lists found.
-                            </td>
-                        </tr>
+                        <x-empty-state message="No sanctions lists found" :colspan="9" />
                     @endforelse
-                </tbody>
-            </table>
-        </div>
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
     </div>
 </x-app-layout>

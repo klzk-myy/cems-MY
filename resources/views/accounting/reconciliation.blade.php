@@ -24,12 +24,7 @@
             <x-stat-card label="Bank Statement Balance" value="RM 1,250,430.00" />
             <x-stat-card label="Book Balance" value="RM 1,248,920.50" />
             <x-stat-card label="Difference" value="RM 1,509.50" color="red" />
-            <x-card class="p-5 flex flex-col justify-center">
-                <p class="text-sm font-medium text-ink-muted">Status</p>
-                <p class="mt-1">
-                    <x-badge variant="warning">In Progress</x-badge>
-                </p>
-            </x-card>
+            <x-stat-card label="Status" value="In Progress" color="yellow" />
         </x-stat-grid>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

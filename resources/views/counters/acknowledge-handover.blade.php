@@ -1,13 +1,12 @@
 <x-app-layout title="Acknowledge Handover">
-    <div class="p-6">
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold">Acknowledge Counter Handover</h1>
-            <p class="text-ink-muted text-sm mt-1">Confirm receipt of counter custody from previous operator</p>
-        </div>
+    <div class="p-6 space-y-6">
+        <x-page-header
+            title="Acknowledge Counter Handover"
+            description="Confirm receipt of counter custody from previous operator"
+        />
 
-        <div class="bg-surface border border-border rounded-xl p-6 max-w-lg">
-            <div class="mb-6">
-                <h2 class="text-lg font-semibold mb-4">Handover Details</h2>
+        <x-card title="Handover Details" class="max-w-lg">
+            <x-card-section>
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <span class="text-ink-muted">Counter</span>
@@ -18,7 +17,7 @@
                         <p class="font-medium">{{ $handover?->from_user?->name ?? 'Unknown User' }}</p>
                     </div>
                     <div>
-                        <span class="text-ink-muted">Date & Time</span>
+                        <span class="text-ink-muted">Date &amp; Time</span>
                         <p class="font-medium">{{ $handover?->created_at?->format('d M Y, h:i A') ?? now()->format('d M Y, h:i A') }}</p>
                     </div>
                     <div>
@@ -26,50 +25,49 @@
                         <p class="font-medium">{{ $handover?->to_user?->name ?? auth()->user()?->name ?? 'Unknown User' }}</p>
                     </div>
                 </div>
-            </div>
+            </x-card-section>
 
-            <div class="mb-6">
-                <h3 class="text-sm font-medium text-ink-muted mb-2">Opening Float</h3>
-                <div class="bg-canvas-subtle rounded-lg p-4">
-                    <table class="w-full text-sm">
+            <x-card-section title="Opening Float">
+                <x-table>
+                    <x-slot:thead>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
+                    </x-slot:thead>
+                    <x-slot:tbody>
                         <tr>
-                            <td class="text-ink-muted">MYR Cash</td>
-                            <td class="text-right font-medium">{{ number_format($handover?->float_amount ?? 0, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">MYR Cash</td>
+                            <td class="px-4 py-3 text-sm text-right font-medium">{{ number_format($handover?->float_amount ?? 0, 2) }}</td>
                         </tr>
                         @isset($handover->currency_floats)
-                        @foreach($handover->currency_floats as $currency => $amount)
-                        <tr>
-                            <td class="text-ink-muted">{{ $currency }}</td>
-                            <td class="text-right font-medium">{{ number_format($amount, 2) }}</td>
-                        </tr>
-                        @endforeach
+                            @foreach($handover->currency_floats as $currency => $amount)
+                                <tr>
+                                    <td class="px-4 py-3 text-sm text-ink-muted">{{ $currency }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-medium">{{ number_format($amount, 2) }}</td>
+                                </tr>
+                            @endforeach
                         @endisset
-                    </table>
-                </div>
-            </div>
+                    </x-slot:tbody>
+                </x-table>
+            </x-card-section>
 
             @isset($notes)
-            <div class="mb-6">
-                <h3 class="text-sm font-medium text-ink-muted mb-2">Notes</h3>
-                <p class="text-sm text-ink-muted bg-canvas-subtle rounded-lg p-3">{{ $notes }}</p>
-            </div>
+                <x-card-section title="Notes">
+                    <p class="text-sm text-ink-muted bg-canvas-subtle rounded-lg p-3">{{ $notes }}</p>
+                </x-card-section>
             @endisset
 
-            <form method="POST" action="{{ route('counters.handover.acknowledge', $counter) }}">
-                @csrf
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Your PIN</label>
-                    <input type="password" name="pin" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
-                </div>
-                <div class="flex gap-3">
-                    <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                        Confirm Receipt
-                    </button>
-                    <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
-                        Cancel
-                    </a>
-                </div>
-            </form>
-        </div>
+            <x-card-section>
+                <form method="POST" action="{{ route('counters.handover.acknowledge', $counter) }}">
+                    @csrf
+                    <div class="mb-4">
+                        <x-input type="password" name="pin" label="Your PIN" required inline />
+                    </div>
+                    <div class="flex gap-3">
+                        <x-button type="submit" variant="primary" class="flex-1">Confirm Receipt</x-button>
+                        <x-button href="{{ route('counters.index') }}" variant="secondary">Cancel</x-button>
+                    </div>
+                </form>
+            </x-card-section>
+        </x-card>
     </div>
 </x-app-layout>

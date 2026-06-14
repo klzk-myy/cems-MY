@@ -1,62 +1,54 @@
 <x-app-layout title="Journal Entry">
     <div class="space-y-6">
-        <!-- Page Header -->
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold text-ink">Journal Entry</h1>
-                <p class="mt-1 text-sm text-ink-muted">Entry #{{ $entry['entry_no'] ?? 'JE-0001' }}</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('accounting.journal') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">
-                    Back
-                </a>
+        <x-page-header title="Journal Entry" description="Entry #{{ $entry['entry_no'] ?? 'JE-0001' }}">
+            <x-slot:actions>
+                <x-button variant="secondary" href="{{ route('accounting.journal') }}">Back</x-button>
                 @if(($entry['status'] ?? 'posted') === 'draft')
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">Edit</button>
+                    <x-button variant="primary">Edit</x-button>
                 @endif
-            </div>
-        </div>
+            </x-slot:actions>
+        </x-page-header>
 
-        <!-- Entry Details -->
-        <div class="bg-surface border border-border rounded-xl p-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div>
-                    <p class="text-sm text-ink-muted">Date</p>
-                    <p class="mt-1 text-sm font-medium text-ink">{{ $entry['date'] ?? '2026-05-01' }}</p>
+        <x-card>
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div>
+                        <p class="text-sm text-ink-muted">Date</p>
+                        <p class="mt-1 text-sm font-medium text-ink">{{ $entry['date'] ?? '2026-05-01' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-ink-muted">Reference</p>
+                        <p class="mt-1 text-sm font-medium text-ink">{{ $entry['reference'] ?? 'JE-0001' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-ink-muted">Status</p>
+                        <p class="mt-1">
+                            <x-badge variant="success">Posted</x-badge>
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-ink-muted">Created By</p>
+                        <p class="mt-1 text-sm font-medium text-ink">{{ $entry['created_by'] ?? 'Admin User' }}</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-sm text-ink-muted">Reference</p>
-                    <p class="mt-1 text-sm font-medium text-ink">{{ $entry['reference'] ?? 'JE-0001' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-ink-muted">Status</p>
-                    <p class="mt-1">
-                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Posted</span>
-                    </p>
-                </div>
-                <div>
-                    <p class="text-sm text-ink-muted">Created By</p>
-                    <p class="mt-1 text-sm font-medium text-ink">{{ $entry['created_by'] ?? 'Admin User' }}</p>
-                </div>
-            </div>
-            <div class="mt-6">
-                <p class="text-sm text-ink-muted">Description</p>
-                <p class="mt-1 text-sm font-medium text-ink">{{ $entry['description'] ?? 'Currency revaluation gain' }}</p>
-            </div>
-        </div>
 
-        <!-- Journal Lines -->
-        <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-border">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Code</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+                <div>
+                    <p class="text-sm text-ink-muted">Description</p>
+                    <p class="mt-1 text-sm font-medium text-ink">{{ $entry['description'] ?? 'Currency revaluation gain' }}</p>
+                </div>
+            </div>
+        </x-card>
+
+        <x-card>
+            <x-table>
+                <x-slot:thead>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Code</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
+                </x-slot:thead>
+                <x-slot:tbody>
                     <tr>
                         <td class="px-4 py-3 text-sm font-mono">1100-001</td>
                         <td class="px-4 py-3 text-sm">Cash MYR</td>
@@ -71,20 +63,16 @@
                         <td class="px-4 py-3 text-sm text-right">0.00</td>
                         <td class="px-4 py-3 text-sm text-right">500.00</td>
                     </tr>
-                </tbody>
-                <tfoot class="bg-canvas-subtle border-t border-border">
-                    <tr>
+                    <tr class="bg-canvas-subtle">
                         <td colspan="3" class="px-4 py-3 text-sm font-medium text-ink">Total</td>
                         <td class="px-4 py-3 text-sm text-right font-medium">500.00</td>
                         <td class="px-4 py-3 text-sm text-right font-medium">500.00</td>
                     </tr>
-                </tfoot>
-            </table>
-        </div>
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
 
-        <!-- Audit Trail -->
-        <div class="bg-surface border border-border rounded-xl p-6">
-            <h3 class="text-sm font-medium text-ink mb-4">Audit Trail</h3>
+        <x-card title="Audit Trail">
             <div class="space-y-3">
                 <div class="flex items-center justify-between py-2 border-b border-border">
                     <div>
@@ -101,6 +89,6 @@
                     <p class="text-sm text-ink-muted">2026-05-01 09:05:00</p>
                 </div>
             </div>
-        </div>
+        </x-card>
     </div>
 </x-app-layout>

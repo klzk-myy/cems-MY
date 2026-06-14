@@ -1,14 +1,14 @@
 <x-app-layout title="Emergency Counter Action">
-    <div class="p-6">
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-red-600">Emergency Counter Action</h1>
-            <p class="text-ink-muted text-sm mt-1">Immediate action required - supervisor approval needed</p>
-        </div>
+    <div class="p-6 space-y-6">
+        <x-page-header
+            title="Emergency Counter Action"
+            description="Immediate action required - supervisor approval needed"
+        />
 
-        <div class="bg-surface border border-border rounded-xl p-6 max-w-lg">
+        <x-card class="max-w-lg p-6">
             <x-alert type="error" :icon="false">
-                <h3 class="font-semibold text-red-800 mb-2">Action Required</h3>
-                <p class="text-sm text-red-700">{{ $message ?? 'An emergency situation requires immediate attention.' }}</p>
+                <h3 class="font-semibold mb-2">Action Required</h3>
+                <p class="text-sm">{{ $message ?? 'An emergency situation requires immediate attention.' }}</p>
             </x-alert>
 
             @if(isset($counter))
@@ -37,8 +37,15 @@
                 <input type="hidden" name="action" value="{{ $action ?? 'force_close' }}">
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Reason for Emergency Action</label>
-                    <textarea name="reason" rows="2" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required placeholder="Describe the emergency..."></textarea>
+                    <label for="reason" class="block text-sm font-medium text-ink-muted mb-1">Reason for Emergency Action</label>
+                    <textarea
+                        id="reason"
+                        name="reason"
+                        rows="2"
+                        class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg text-ink placeholder:text-ink-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                        required
+                        placeholder="Describe the emergency..."
+                    ></textarea>
                 </div>
 
                 <x-input type="password" name="supervisor_pin" label="Supervisor PIN" required />
@@ -48,6 +55,6 @@
                     <x-button href="{{ route('counters.index') }}" variant="secondary">Cancel</x-button>
                 </div>
             </form>
-        </div>
+        </x-card>
     </div>
 </x-app-layout>

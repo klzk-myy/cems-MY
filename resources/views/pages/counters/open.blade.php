@@ -1,70 +1,51 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Open Counter - {{ $counter->code }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="min-h-screen bg-canvas-subtle text-ink">
-    <div class="flex min-h-screen flex-col">
-        <header class="bg-surface shadow-sm">
-            <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                <h1 class="text-2xl font-semibold text-ink">Open Counter: {{ $counter->code }}</h1>
-            </div>
-        </header>
+<x-app-layout title="Open Counter - {{ $counter->code }}">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <x-page-header title="Open Counter: {{ $counter->code }}" />
 
-        <main class="flex-1">
-            <div class="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
-                <div class="bg-surface border border-border rounded-xl p-6">
-                    <div class="mb-6">
-                        <h2 class="text-lg font-medium text-ink">Counter Details</h2>
-                        <dl class="mt-4 grid grid-cols-2 gap-4">
-                            <div>
-                                <dt class="text-sm text-ink-muted">Counter Code</dt>
-                                <dd class="text-sm font-medium text-ink">{{ $counter->code }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm text-ink-muted">Branch</dt>
-                                <dd class="text-sm font-medium text-ink">{{ $counter->branch->name ?? '-' }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm text-ink-muted">Status</dt>
-                                <dd class="text-sm font-medium text-ink">{{ $counter->status }}</dd>
-                            </div>
-                        </dl>
+        <x-card>
+            <x-card-section title="Counter Details">
+                <dl class="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                        <dt class="text-sm text-ink-muted">Counter Code</dt>
+                        <dd class="text-sm font-medium text-ink">{{ $counter->code }}</dd>
                     </div>
+                    <div>
+                        <dt class="text-sm text-ink-muted">Branch</dt>
+                        <dd class="text-sm font-medium text-ink">{{ $counter->branch->name ?? '-' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm text-ink-muted">Status</dt>
+                        <dd class="text-sm font-medium text-ink">{{ $counter->status }}</dd>
+                    </div>
+                </dl>
+            </x-card-section>
 
-                    @if(session('error'))
-                        <x-alert type="error">{{ session('error') }}</x-alert>
-                    @endif
+            @if(session('error'))
+                <x-alert type="error">{{ session('error') }}</x-alert>
+            @endif
 
-                    <form method="POST" action="{{ route('counters.open', $counter) }}">
-                        @csrf
+            <form method="POST" action="{{ route('counters.open', $counter) }}">
+                @csrf
 
-                        <div class="mb-6">
-                            <h3 class="text-sm font-medium text-ink mb-4">Opening Floats</h3>
-                            <div class="space-y-4" id="opening-floats">
-                                @foreach($currencies as $currency)
-                                    <div class="flex items-center gap-4">
-                                        <label class="w-20 text-sm font-medium text-ink-muted">{{ $currency->code }}</label>
-                                        <x-input type="text" name="opening_floats[{{ $currency->code }}]" class="flex-1 w-full" placeholder="0.00" value="{{ old('opening_floats.' . $currency->code, '0.00') }}" inputmode="decimal" />
-                                        @error('opening_floats.' . $currency->code)
-                                            <p class="text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-                                @endforeach
+                <x-card-section title="Opening Floats">
+                    <div class="space-y-4" id="opening-floats">
+                        @foreach($currencies as $currency)
+                            <div class="flex items-center gap-4">
+                                <label class="w-20 text-sm font-medium text-ink-muted">{{ $currency->code }}</label>
+                                <x-input type="text" name="opening_floats[{{ $currency->code }}]" class="flex-1 w-full" placeholder="0.00" value="{{ old('opening_floats.' . $currency->code, '0.00') }}" inputmode="decimal" inline />
+                                @error('opening_floats.' . $currency->code)
+                                    <p class="text-sm text-danger-text">{{ $message }}</p>
+                                @enderror
                             </div>
-                        </div>
+                        @endforeach
+                    </div>
+                </x-card-section>
 
-                        <div class="flex items-center justify-end gap-4">
-                            <x-button href="{{ route('counters.index') }}" variant="secondary">Cancel</x-button>
-                            <x-button type="submit" variant="primary">Open Counter</x-button>
-                        </div>
-                    </form>
+                <div class="flex items-center justify-end gap-4">
+                    <x-button href="{{ route('counters.index') }}" variant="secondary">Cancel</x-button>
+                    <x-button type="submit" variant="primary">Open Counter</x-button>
                 </div>
-            </div>
-        </main>
+            </form>
+        </x-card>
     </div>
-</body>
-</html>
+</x-app-layout>

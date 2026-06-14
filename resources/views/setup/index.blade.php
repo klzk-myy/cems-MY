@@ -54,10 +54,7 @@
                         <h3 class="text-lg font-medium text-ink mb-4">Company Information</h3>
                         <div class="space-y-4">
                             <x-input name="business_name" label="Business Name" inline required />
-                            <div>
-                                <label class="block text-sm font-medium text-ink-muted">Address</label>
-                                <textarea name="business_address" rows="2" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"></textarea>
-                            </div>
+                            <x-input type="textarea" name="business_address" label="Address" rows="2" inline />
                             <div class="grid grid-cols-2 gap-4">
                                 <x-input type="text" name="business_phone" label="Phone" inline />
                                 <x-input type="email" name="business_email" label="Email" inline />
@@ -92,11 +89,14 @@
                         <p class="text-sm text-ink-muted mb-4">Select the currencies your business will trade in.</p>
                         <div class="space-y-3">
                             @foreach($currencies as $currency)
-                                <label class="flex items-center gap-3 p-3 bg-canvas-subtle rounded-lg cursor-pointer">
-                                    <input type="checkbox" name="currency_codes[]" value="{{ $currency->code }}" class="w-4 h-4 rounded border-border" checked>
-                                    <span class="text-sm font-medium text-ink">{{ $currency->code }}</span>
-                                    <span class="text-sm text-ink-muted">{{ $currency->name }}</span>
-                                </label>
+                                <x-input
+                                    type="checkbox"
+                                    name="currency_codes[]"
+                                    value="{{ $currency->code }}"
+                                    label="{{ $currency->code }} - {{ $currency->name }}"
+                                    inline
+                                    checked
+                                />
                             @endforeach
                         </div>
                         <div class="mt-6 flex justify-between">
@@ -112,13 +112,15 @@
                         <h3 class="text-lg font-medium text-ink mb-4">Exchange Rates</h3>
                         <p class="text-sm text-ink-muted mb-4">Configure how rates are fetched and managed.</p>
                         <div class="space-y-4">
-                            <label class="flex items-center gap-3 p-4 bg-canvas-subtle rounded-lg cursor-pointer">
-                                <input type="checkbox" name="use_default_rates" value="1" class="w-4 h-4 rounded border-border" checked>
-                                <div>
-                                    <span class="text-sm font-medium text-ink">Use Default Rates</span>
-                                    <p class="text-xs text-ink-muted">Seed with standard exchange rates for selected currencies.</p>
-                                </div>
-                            </label>
+                            <x-input
+                                type="checkbox"
+                                name="use_default_rates"
+                                value="1"
+                                label="Use Default Rates"
+                                help="Seed with standard exchange rates for selected currencies."
+                                inline
+                                checked
+                            />
                         </div>
                         <div class="mt-6 flex justify-between">
                             <x-button href="{{ route('setup.index', ['step' => 3]) }}" variant="secondary">Previous</x-button>

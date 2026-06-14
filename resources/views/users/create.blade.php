@@ -1,13 +1,7 @@
 <x-app-layout title="Create User">
-    <!-- Page Header -->
-    <div class="bg-surface border-b border-border">
-        <div class="max-w-7xl mx-auto px-6 py-6">
-            <x-page-header title="Create User" description="Add a new user to the system" />
-        </div>
-    </div>
+    <div class="space-y-6">
+        <x-page-header title="Create User" description="Add a new user to the system" />
 
-    <!-- Main Content -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-6">
         <x-card title="User Information" description="Enter the user's details below">
             <form method="POST" action="{{ route('users.store') }}">
                 @csrf
@@ -73,5 +67,5 @@
                 </div>
             </form>
         </x-card>
-    </main>
+    </div>
 </x-app-layout>
