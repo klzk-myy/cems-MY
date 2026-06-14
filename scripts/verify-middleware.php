@@ -34,40 +34,87 @@ $registeredMiddleware = [
     'aliases' => [],
 ];
 
-// Get registered middleware from Kernel
-$kernelContent = file_get_contents('app/Http/Kernel.php');
+// Get registered middleware from Kernel or bootstrap/app.php
+$allRegistered = [];
+if (file_exists('app/Http/Kernel.php')) {
+    $kernelContent = file_get_contents('app/Http/Kernel.php');
 
-// Remove comments to avoid matching commented code
-$kernelContent = preg_replace('/\/\/.*$/m', '', $kernelContent);
-$kernelContent = preg_replace('/\/\*.*?\*\//s', '', $kernelContent);
+    // Remove comments to avoid matching commented code
+    $kernelContent = preg_replace('/\/\/.*$/m', '', $kernelContent);
+    $kernelContent = preg_replace('/\/\*.*?\*\//s', '', $kernelContent);
 
-// Parse global middleware
-preg_match('/protected \$middleware\s*=\s*\[(.*?)\];/s', $kernelContent, $globalMatches);
-if (! empty($globalMatches[1])) {
-    preg_match_all('/([A-Za-z0-9\\\\]+)::class/', $globalMatches[1], $globalClasses);
-    foreach ($globalClasses[1] as $class) {
-        $registeredMiddleware['global'][$class] = $class;
-    }
-}
-
-// Parse middleware groups
-preg_match('/protected \$middlewareGroups\s*=\s*\[(.*?)\];/s', $kernelContent, $groupMatches);
-if (! empty($groupMatches[1])) {
-    preg_match_all('/\'(\w+)\'\s*=>\s*\[(.*?)\]/s', $groupMatches[1], $groupDefs);
-    foreach ($groupDefs[1] as $index => $groupName) {
-        preg_match_all('/([A-Za-z0-9\\\\]+)::class/', $groupDefs[2][$index], $groupClasses);
-        foreach ($groupClasses[1] as $class) {
-            $registeredMiddleware['groups'][$groupName][$class] = $class;
+    // Parse global middleware
+    preg_match('/protected \$middleware\s*=\s*\[(.*?)\];/s', $kernelContent, $globalMatches);
+    if (! empty($globalMatches[1])) {
+        preg_match_all('/([A-Za-z0-9\\\\]+)::class/', $globalMatches[1], $globalClasses);
+        foreach ($globalClasses[1] as $class) {
+            $registeredMiddleware['global'][$class] = $class;
         }
     }
-}
 
-// Parse middleware aliases
-preg_match('/protected \$middlewareAliases\s*=\s*\[(.*?)\];/s', $kernelContent, $aliasMatches);
-if (! empty($aliasMatches[1])) {
-    preg_match_all('/\'([\w\.]+)\'\s*=>\s*([A-Za-z0-9\\\\]+)::class/', $aliasMatches[1], $aliasDefs);
-    foreach ($aliasDefs[1] as $index => $aliasName) {
-        $registeredMiddleware['aliases'][$aliasName] = $aliasDefs[2][$index];
+    // Parse middleware groups
+    preg_match('/protected \$middlewareGroups\s*=\s*\[(.*?)\];/s', $kernelContent, $groupMatches);
+    if (! empty($groupMatches[1])) {
+        preg_match_all('/\'(\w+)\'\s*=>\s*\[(.*?)\]/s', $groupMatches[1], $groupDefs);
+        foreach ($groupDefs[1] as $index => $groupName) {
+            preg_match_all('/([A-Za-z0-9\\\\]+)::class/', $groupDefs[2][$index], $groupClasses);
+            foreach ($groupClasses[1] as $class) {
+                $registeredMiddleware['groups'][$groupName][$class] = $class;
+            }
+        }
+    }
+
+    // Parse middleware aliases
+    preg_match('/protected \$middlewareAliases\s*=\s*\[(.*?)\];/s', $kernelContent, $aliasMatches);
+    if (! empty($aliasMatches[1])) {
+        preg_match_all('/\'([\w\.]+)\'\s*=>\s*([A-Za-z0-9\\\\]+)::class/', $aliasMatches[1], $aliasDefs);
+        foreach ($aliasDefs[1] as $index => $aliasName) {
+            $registeredMiddleware['aliases'][$aliasName] = $aliasDefs[2][$index];
+        }
+    }
+} elseif (file_exists('bootstrap/app.php')) {
+    $bootstrapContent = file_get_contents('bootstrap/app.php');
+
+    // Find all imported middleware classes via "use App\Http\Middleware\<Name>;"
+    preg_match_all('/use\s+App\\\\Http\\\\Middleware\\\\([A-Za-z0-9_]+);/', $bootstrapContent, $useMatches);
+    foreach ($useMatches[1] as $className) {
+        $class = 'App\\Http\\Middleware\\'.$className;
+        $registeredMiddleware['global'][$class] = $class;
+    }
+
+    // Find direct references in the file to App\Http\Middleware\<Name>::class
+    preg_match_all('/App\\\\Http\\\\Middleware\\\\([A-Za-z0-9_]+)::class/', $bootstrapContent, $inlineMatches);
+    foreach ($inlineMatches[1] as $className) {
+        $class = 'App\\Http\\Middleware\\'.$className;
+        $registeredMiddleware['global'][$class] = $class;
+    }
+
+    // Also check if any middleware is referenced in config/sanctum.php
+    if (file_exists('config/sanctum.php')) {
+        $sanctumContent = file_get_contents('config/sanctum.php');
+        preg_match_all('/App\\\\Http\\\\Middleware\\\\([A-Za-z0-9_]+)/', $sanctumContent, $sanctumMatches);
+        foreach ($sanctumMatches[1] as $className) {
+            $class = 'App\\Http\\Middleware\\'.$className;
+            $registeredMiddleware['global'][$class] = $class;
+        }
+        preg_match_all('/use\s+App\\\\Http\\\\Middleware\\\\([A-Za-z0-9_]+);/', $sanctumContent, $sanctumUseMatches);
+        foreach ($sanctumUseMatches[1] as $className) {
+            $class = 'App\\Http\\Middleware\\'.$className;
+            $registeredMiddleware['global'][$class] = $class;
+        }
+    }
+
+    // Add Laravel 11's implicitly handled default middleware files
+    $laravelDefaultMiddlewares = [
+        'EncryptCookies',
+        'PreventRequestsDuringMaintenance',
+        'TrimStrings',
+        'TrustProxies',
+        'VerifyCsrfToken',
+    ];
+    foreach ($laravelDefaultMiddlewares as $defaultM) {
+        $class = 'App\\Http\\Middleware\\'.$defaultM;
+        $registeredMiddleware['global'][$class] = $class;
     }
 }
 

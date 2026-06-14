@@ -164,31 +164,27 @@ class AccountingWorkflowTest extends TestCase
     public function it_can_access_trial_balance_endpoint(): void
     {
         $response = $this->actingAs($this->manager)
-            ->getJson('/accounting/trial-balance');
+            ->get('/accounting/trial-balance');
 
-        // Accept 200 or 500 (500 may happen if no accounting periods exist)
-        $this->assertTrue(in_array($response->status(), [200, 500]),
-            "Expected status 200 or 500, got {$response->status()}");
+        $response->assertStatus(200);
     }
 
     #[Test]
     public function it_can_access_profit_and_loss_endpoint(): void
     {
         $response = $this->actingAs($this->manager)
-            ->getJson('/accounting/profit-loss');
+            ->get('/accounting/profit-loss');
 
-        $this->assertTrue(in_array($response->status(), [200, 500]),
-            "Expected status 200 or 500, got {$response->status()}");
+        $response->assertStatus(200);
     }
 
     #[Test]
     public function it_can_access_balance_sheet_endpoint(): void
     {
         $response = $this->actingAs($this->manager)
-            ->getJson('/accounting/balance-sheet');
+            ->get('/accounting/balance-sheet');
 
-        $this->assertTrue(in_array($response->status(), [200, 500]),
-            "Expected status 200 or 500, got {$response->status()}");
+        $response->assertStatus(200);
     }
 
     #[Test]

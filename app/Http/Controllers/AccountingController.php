@@ -361,11 +361,11 @@ class AccountingController extends Controller
 
     public function revaluation(): View
     {
-        return view('accounting.revaluation');
+        return view('accounting.revaluation.index');
     }
 
     public function revaluationHistory(): View
     {
-        return view('accounting.revaluation-history');
+        return view('accounting.revaluation.history');
     }
 }

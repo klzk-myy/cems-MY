@@ -453,6 +453,7 @@ class LedgerService
                 'account_code' => $asset->account_code,
                 'account_name' => $asset->account_name,
                 'balance' => $balance,
+                'amount' => $balance,
             ];
             $totalAssets = $this->mathService->add($totalAssets, $balance);
         }
@@ -468,6 +469,7 @@ class LedgerService
                 'account_code' => $liability->account_code,
                 'account_name' => $liability->account_name,
                 'balance' => $balance,
+                'amount' => $balance,
             ];
             $totalLiabilities = $this->mathService->add($totalLiabilities, $balance);
         }
@@ -483,6 +485,7 @@ class LedgerService
                 'account_code' => $equity->account_code,
                 'account_name' => $equity->account_name,
                 'balance' => $balance,
+                'amount' => $balance,
             ];
             $totalEquity = $this->mathService->add($totalEquity, $balance);
         }
