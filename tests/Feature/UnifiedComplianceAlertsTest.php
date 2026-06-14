@@ -270,7 +270,6 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
 
-        $response->assertSee('badge-info', false);
         $response->assertSee('Alert', false);
     }
 

@@ -1,80 +1,50 @@
 <x-app-layout title="Budget Management">
     <div class="space-y-6">
-        <!-- Page Header -->
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold text-ink">Budget Management</h1>
-                <p class="mt-1 text-sm text-ink-muted">Manage annual budgets and variances</p>
-            </div>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                + Create Budget
-            </button>
-        </div>
+        <x-page-header title="Budget Management" :actions="true">
+            Manage annual budgets and variances
 
-        <!-- Budget Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-surface border border-border rounded-xl p-4">
-                <p class="text-sm text-ink-muted">Total Budget</p>
-                <p class="mt-1 text-2xl font-semibold text-ink">RM 1,250,000.00</p>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-4">
-                <p class="text-sm text-ink-muted">YTD Actual</p>
-                <p class="mt-1 text-2xl font-semibold text-ink">RM 875,420.50</p>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-4">
-                <p class="text-sm text-ink-muted">YTD Variance</p>
-                <p class="mt-1 text-2xl font-semibold text-green-600">RM 374,579.50</p>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-4">
-                <p class="text-sm text-ink-muted">% Used</p>
-                <p class="mt-1 text-2xl font-semibold text-ink">70.0%</p>
-            </div>
-        </div>
+            <x-slot:actions>
+                <x-button variant="primary" icon="M12 4v16m8-8H4">Create Budget</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-        <!-- Filters -->
-        <div class="bg-surface border border-border rounded-xl p-4">
-            <div class="flex flex-wrap gap-4">
-                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
-                    <option value="2026">Fiscal Year 2026</option>
-                    <option value="2025">Fiscal Year 2025</option>
-                </select>
-                <select class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
-                    <option value="">All Departments</option>
-                    <option value="operations">Operations</option>
-                    <option value="compliance">Compliance</option>
-                    <option value="finance">Finance</option>
-                </select>
-                <input type="text" placeholder="Search accounts..." class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg md:w-64">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border">Filter</button>
-            </div>
-        </div>
+        <x-stat-grid cols="4">
+            <x-stat-card label="Total Budget" value="RM 1,250,000.00" />
+            <x-stat-card label="YTD Actual" value="RM 875,420.50" />
+            <x-stat-card label="YTD Variance" value="RM 374,579.50" color="green" />
+            <x-stat-card label="% Used" value="70.0%" />
+        </x-stat-grid>
 
-        <!-- Budget Lines Table -->
-        <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-canvas-subtle border-b border-border">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Annual Budget</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">YTD Actual</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">YTD Budget</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">% Used</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <x-filter-bar>
+            <x-select name="fiscal_year" :options="['2026' => 'Fiscal Year 2026', '2025' => 'Fiscal Year 2025']" inline />
+            <x-select name="department" :options="['' => 'All Departments', 'operations' => 'Operations', 'compliance' => 'Compliance', 'finance' => 'Finance']" inline />
+            <x-input name="search" type="text" placeholder="Search accounts..." inline class="md:w-64" />
+            <x-button variant="secondary" type="submit">Filter</x-button>
+        </x-filter-bar>
+
+        <x-card>
+            <x-table>
+                <x-slot:thead>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Annual Budget</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">YTD Actual</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">YTD Budget</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">% Used</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
+                </x-slot:thead>
+                <x-slot:tbody>
                     <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm font-mono">5100-001</td>
                         <td class="px-4 py-3 text-sm">Currency Exchange Revenue</td>
                         <td class="px-4 py-3 text-sm text-right">500,000.00</td>
                         <td class="px-4 py-3 text-sm text-right">350,000.00</td>
                         <td class="px-4 py-3 text-sm text-right">291,666.67</td>
-                        <td class="px-4 py-3 text-sm text-right text-green-600">+58,333.33</td>
-                        <td class="px-4 py-3 text-center"><span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">70%</span></td>
+                        <td class="px-4 py-3 text-sm text-right text-success-text">+58,333.33</td>
+                        <td class="px-4 py-3 text-center"><x-badge variant="warning">70%</x-badge></td>
                         <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">Edit</button>
+                            <x-button variant="ghost" size="sm">Edit</x-button>
                         </td>
                     </tr>
                     <tr class="hover:bg-canvas-subtle">
@@ -83,10 +53,10 @@
                         <td class="px-4 py-3 text-sm text-right">400,000.00</td>
                         <td class="px-4 py-3 text-sm text-right">280,000.00</td>
                         <td class="px-4 py-3 text-sm text-right">233,333.33</td>
-                        <td class="px-4 py-3 text-sm text-right text-green-600">+46,666.67</td>
-                        <td class="px-4 py-3 text-center"><span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">70%</span></td>
+                        <td class="px-4 py-3 text-sm text-right text-success-text">+46,666.67</td>
+                        <td class="px-4 py-3 text-center"><x-badge variant="warning">70%</x-badge></td>
                         <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">Edit</button>
+                            <x-button variant="ghost" size="sm">Edit</x-button>
                         </td>
                     </tr>
                     <tr class="hover:bg-canvas-subtle">
@@ -95,10 +65,10 @@
                         <td class="px-4 py-3 text-sm text-right">150,000.00</td>
                         <td class="px-4 py-3 text-sm text-right">107,500.00</td>
                         <td class="px-4 py-3 text-sm text-right">87,500.00</td>
-                        <td class="px-4 py-3 text-sm text-right text-red-600">-20,000.00</td>
-                        <td class="px-4 py-3 text-center"><span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">72%</span></td>
+                        <td class="px-4 py-3 text-sm text-right text-danger-text">-20,000.00</td>
+                        <td class="px-4 py-3 text-center"><x-badge variant="danger">72%</x-badge></td>
                         <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">Edit</button>
+                            <x-button variant="ghost" size="sm">Edit</x-button>
                         </td>
                     </tr>
                     <tr class="hover:bg-canvas-subtle">
@@ -107,22 +77,21 @@
                         <td class="px-4 py-3 text-sm text-right">200,000.00</td>
                         <td class="px-4 py-3 text-sm text-right">137,920.50</td>
                         <td class="px-4 py-3 text-sm text-right">116,666.67</td>
-                        <td class="px-4 py-3 text-sm text-right text-green-600">+21,253.83</td>
-                        <td class="px-4 py-3 text-center"><span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">69%</span></td>
+                        <td class="px-4 py-3 text-sm text-right text-success-text">+21,253.83</td>
+                        <td class="px-4 py-3 text-center"><x-badge variant="warning">69%</x-badge></td>
                         <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800">Edit</button>
+                            <x-button variant="ghost" size="sm">Edit</x-button>
                         </td>
                     </tr>
-                </tbody>
-            </table>
-        </div>
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
 
-        <!-- Pagination -->
         <div class="flex items-center justify-between">
             <p class="text-sm text-ink-muted">Showing 1-4 of 4 accounts</p>
             <div class="flex gap-2">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border disabled:opacity-50" disabled>Previous</button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border disabled:opacity-50" disabled>Next</button>
+                <x-button variant="secondary" size="sm" disabled>Previous</x-button>
+                <x-button variant="secondary" size="sm" disabled>Next</x-button>
             </div>
         </div>
     </div>

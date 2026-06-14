@@ -1,13 +1,11 @@
 <x-app-layout title="Business Setup">
-    <div class="p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold">Business Setup</h1>
-        </div>
+    <div class="p-6 space-y-6">
+        <x-page-header title="Business Setup" />
 
         @if($isSetupComplete)
-            <div class="bg-surface border border-border rounded-xl p-8 text-center max-w-2xl mx-auto">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <x-card class="text-center max-w-2xl mx-auto p-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success-subtle mb-4">
+                    <svg class="w-8 h-8 text-success-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                 </div>
@@ -19,26 +17,22 @@
                     <p>Exchange Rates: Set</p>
                     <p>Branches: Initialized</p>
                 </div>
-                <a href="{{ route('login') }}" class="inline-flex mt-6 px-6 py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                    Go to Login
-                </a>
-            </div>
+                <x-button href="{{ route('login') }}" variant="primary" class="mt-6">Go to Login</x-button>
+            </x-card>
         @else
-            <div class="bg-surface border border-border rounded-xl p-6 max-w-2xl">
+            <x-card class="p-6 max-w-2xl">
                 <div class="mb-6">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-medium text-ink">Step {{ $currentStep }} of 6</span>
                         <span class="text-sm text-ink-muted">{{ $progress }}% Complete</span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-primary h-2 rounded-full transition-all" style="width: {{ $progress }}%"></div>
-                    </div>
+                    <x-progress-bar :value="$progress" color="bg-primary" width="w-full" />
                 </div>
 
                 <div class="step-indicator mb-8 flex justify-between">
                     @for($i = 1; $i <= 6; $i++)
                         <div class="flex flex-col items-center">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium {{ $i <= $currentStep ? 'bg-primary text-white' : 'bg-gray-200 text-ink-muted' }}">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium {{ $i <= $currentStep ? 'bg-primary text-white' : 'bg-canvas-subtle text-ink-muted' }}">
                                 {{ $i }}
                             </div>
                             <span class="text-xs text-ink-muted mt-1">
@@ -50,9 +44,7 @@
                 </div>
 
                 @if(session('error'))
-                    <div class="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-700">
-                        {{ session('error') }}
-                    </div>
+                    <x-alert type="error">{{ session('error') }}</x-alert>
                 @endif
 
                 @switch($currentStep)
@@ -61,29 +53,18 @@
                         @csrf
                         <h3 class="text-lg font-medium text-ink mb-4">Company Information</h3>
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-ink-muted">Business Name</label>
-                                <input type="text" name="business_name" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
-                            </div>
+                            <x-input name="business_name" label="Business Name" inline required />
                             <div>
                                 <label class="block text-sm font-medium text-ink-muted">Address</label>
                                 <textarea name="business_address" rows="2" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"></textarea>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-ink-muted">Phone</label>
-                                    <input type="text" name="business_phone" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-ink-muted">Email</label>
-                                    <input type="email" name="business_email" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
-                                </div>
+                                <x-input type="text" name="business_phone" label="Phone" inline />
+                                <x-input type="email" name="business_email" label="Email" inline />
                             </div>
                         </div>
                         <div class="mt-6 flex justify-end">
-                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                                Next: Admin User
-                            </button>
+                            <x-button type="submit" variant="primary">Next: Admin User</x-button>
                         </div>
                     </form>
                     @break
@@ -93,27 +74,13 @@
                         @csrf
                         <h3 class="text-lg font-medium text-ink mb-4">Admin User</h3>
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-ink-muted">Admin Name</label>
-                                <input type="text" name="admin_name" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-ink-muted">Email</label>
-                                <input type="email" name="admin_email" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-ink-muted">Password</label>
-                                <input type="password" name="admin_password" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required minlength="12">
-                                <p class="mt-1 text-xs text-ink-muted">Minimum 12 characters with uppercase, lowercase, number and special character.</p>
-                            </div>
+                            <x-input name="admin_name" label="Admin Name" inline required />
+                            <x-input type="email" name="admin_email" label="Email" inline required />
+                            <x-input type="password" name="admin_password" label="Password" inline required minlength="12" help="Minimum 12 characters with uppercase, lowercase, number and special character." />
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 1]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
-                                Previous
-                            </a>
-                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                                Next: Currencies
-                            </button>
+                            <x-button href="{{ route('setup.index', ['step' => 1]) }}" variant="secondary">Previous</x-button>
+                            <x-button type="submit" variant="primary">Next: Currencies</x-button>
                         </div>
                     </form>
                     @break
@@ -133,12 +100,8 @@
                             @endforeach
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 2]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
-                                Previous
-                            </a>
-                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                                Next: Exchange Rates
-                            </button>
+                            <x-button href="{{ route('setup.index', ['step' => 2]) }}" variant="secondary">Previous</x-button>
+                            <x-button type="submit" variant="primary">Next: Exchange Rates</x-button>
                         </div>
                     </form>
                     @break
@@ -158,12 +121,8 @@
                             </label>
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 3]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
-                                Previous
-                            </a>
-                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                                Next: Initial Stock
-                            </button>
+                            <x-button href="{{ route('setup.index', ['step' => 3]) }}" variant="secondary">Previous</x-button>
+                            <x-button type="submit" variant="primary">Next: Initial Stock</x-button>
                         </div>
                     </form>
                     @break
@@ -174,29 +133,19 @@
                         <h3 class="text-lg font-medium text-ink mb-4">Initial Stock</h3>
                         <p class="text-sm text-ink-muted mb-4">Set your initial currency holdings (opening floats).</p>
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-ink-muted">MYR Cash (RM)</label>
-                                <input type="text" name="initial_myr_cash" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="0.00" value="0.00" inputmode="decimal">
-                            </div>
-                            <div class="border-t pt-4">
+                            <x-input name="initial_myr_cash" label="MYR Cash (RM)" inline placeholder="0.00" value="0.00" inputmode="decimal" />
+                            <div class="border-t border-border pt-4">
                                 <label class="block text-sm font-medium text-ink-muted mb-2">Foreign Currency Stock</label>
                                 <div class="grid grid-cols-2 gap-4">
                                     @foreach($currencies->where('code', '!=', 'MYR') as $currency)
-                                        <div>
-                                            <label class="block text-xs text-ink-muted">{{ $currency->code }}</label>
-                                            <input type="text" name="initial_stock[{{ $currency->code }}]" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="0.00" value="0.00" inputmode="decimal">
-                                        </div>
+                                        <x-input name="initial_stock[{{ $currency->code }}]" :label="$currency->code" inline placeholder="0.00" value="0.00" inputmode="decimal" />
                                     @endforeach
                                 </div>
                             </div>
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 4]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
-                                Previous
-                            </a>
-                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                                Next: Opening Balance
-                            </button>
+                            <x-button href="{{ route('setup.index', ['step' => 4]) }}" variant="secondary">Previous</x-button>
+                            <x-button type="submit" variant="primary">Next: Opening Balance</x-button>
                         </div>
                     </form>
                     @break
@@ -207,34 +156,24 @@
                         <h3 class="text-lg font-medium text-ink mb-4">Opening Balance</h3>
                         <p class="text-sm text-ink-muted mb-4">Set your opening balance for accounting.</p>
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-ink-muted">Opening Balance (MYR)</label>
-                                <input type="text" name="opening_balance_myr" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="0.00" value="0.00" inputmode="decimal">
-                            </div>
-                            <div class="border-t pt-4">
+                            <x-input name="opening_balance_myr" label="Opening Balance (MYR)" inline placeholder="0.00" value="0.00" inputmode="decimal" />
+                            <div class="border-t border-border pt-4">
                                 <label class="block text-sm font-medium text-ink-muted mb-2">Foreign Currency Opening Balances</label>
                                 <div class="grid grid-cols-2 gap-4">
                                     @foreach($currencies->where('code', '!=', 'MYR') as $currency)
-                                        <div>
-                                            <label class="block text-xs text-ink-muted">{{ $currency->code }}</label>
-                                            <input type="text" name="opening_balance_foreign[{{ $currency->code }}]" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="0.00" value="0.00" inputmode="decimal">
-                                        </div>
+                                        <x-input name="opening_balance_foreign[{{ $currency->code }}]" :label="$currency->code" inline placeholder="0.00" value="0.00" inputmode="decimal" />
                                     @endforeach
                                 </div>
                             </div>
                         </div>
                         <div class="mt-6 flex justify-between">
-                            <a href="{{ route('setup.index', ['step' => 5]) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
-                                Previous
-                            </a>
-                            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                                Complete Setup
-                            </button>
+                            <x-button href="{{ route('setup.index', ['step' => 5]) }}" variant="secondary">Previous</x-button>
+                            <x-button type="submit" variant="primary">Complete Setup</x-button>
                         </div>
                     </form>
                     @break
                 @endswitch
-            </div>
+            </x-card>
         @endif
     </div>
 </x-app-layout>

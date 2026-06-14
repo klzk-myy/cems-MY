@@ -1,58 +1,30 @@
 <x-app-layout title="Test Results">
     <div class="space-y-6">
-        <!-- Header -->
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold text-ink">Test Statistics</h1>
-                <p class="mt-1 text-sm text-ink-muted">Last {{ $days }} days performance overview</p>
-            </div>
-            <a href="{{ route('test-results.index') }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border text-ink-muted hover:bg-canvas-subtle">
-                Back to Test Runs
-            </a>
-        </div>
+        <x-page-header title="Test Statistics" :actions="true">
+            Last {{ $days }} days performance overview
 
-        <!-- Summary Statistics -->
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-sm font-medium text-ink-muted">Total Runs</p>
-                <p class="mt-1 text-2xl font-semibold text-ink">{{ number_format($statistics['total_runs']) }}</p>
-            </div>
+            <x-slot:actions>
+                <x-button href="{{ route('test-results.index') }}" variant="secondary">Back to Test Runs</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-sm font-medium text-ink-muted">Total Tests</p>
-                <p class="mt-1 text-2xl font-semibold text-ink">{{ number_format($statistics['total_tests']) }}</p>
-            </div>
+        <x-stat-grid cols="4">
+            <x-stat-card label="Total Runs" :value="number_format($statistics['total_runs'])" />
+            <x-stat-card label="Total Tests" :value="number_format($statistics['total_tests'])" />
+            <x-stat-card label="Overall Pass Rate" :value="$statistics['overall_pass_rate']" suffix="%" color="green" />
+            <x-stat-card label="Avg Duration" :value="number_format($statistics['avg_duration'], 2)" suffix="s" />
+        </x-stat-grid>
 
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-sm font-medium text-ink-muted">Overall Pass Rate</p>
-                <p class="mt-1 text-2xl font-semibold text-green-600">{{ $statistics['overall_pass_rate'] }}%</p>
-            </div>
-
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-sm font-medium text-ink-muted">Avg Duration</p>
-                <p class="mt-1 text-2xl font-semibold text-ink">{{ number_format($statistics['avg_duration'], 2) }}s</p>
-            </div>
-        </div>
-
-        <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-border">
-                <h2 class="text-lg font-semibold text-ink">Pass Rate Trend (Last {{ $days }} Days)</h2>
-            </div>
+        <x-card title="Pass Rate Trend (Last {{ $days }} Days)">
             <div class="p-6">
                 @if(!empty($trendData) && count($trendData) > 0)
                     <div class="h-64 flex items-end justify-between gap-2">
                         @foreach($trendData as $dataPoint)
                             <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-gray-200 rounded-t relative" style="height: {{ max($dataPoint['pass_rate'], 5) }}%">
-                                    @if($dataPoint['pass_rate'] >= 80)
-                                        <div class="absolute inset-0 bg-green-500 rounded-t"></div>
-                                    @elseif($dataPoint['pass_rate'] >= 50)
-                                        <div class="absolute inset-0 bg-yellow-500 rounded-t"></div>
-                                    @else
-                                        <div class="absolute inset-0 bg-red-500 rounded-t"></div>
-                                    @endif
-                                </div>
+                                <x-chart-bar
+                                    :value="max($dataPoint['pass_rate'], 5)"
+                                    :color="$dataPoint['pass_rate'] >= 80 ? 'green' : ($dataPoint['pass_rate'] >= 50 ? 'yellow' : 'red')"
+                                />
                                 <span class="mt-2 text-xs text-ink-muted">{{ $dataPoint['date'] }}</span>
                                 <span class="text-xs font-medium text-ink-muted">{{ $dataPoint['pass_rate'] }}%</span>
                             </div>
@@ -64,59 +36,53 @@
                     </div>
                 @endif
             </div>
-        </div>
+        </x-card>
 
-        <!-- Latest Results by Suite -->
-        <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-border">
-                <h2 class="text-lg font-semibold text-ink">Latest Results by Suite</h2>
-            </div>
-            <table class="min-w-full divide-y divide-border">
-                <thead class="bg-canvas-subtle">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Suite</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Last Run</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Passed</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Failed</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Pass Rate</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Trend</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-surface divide-y divide-border">
+        <x-card title="Latest Results by Suite">
+            <x-table>
+                <x-slot:thead>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Suite</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Run</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Passed</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Failed</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Pass Rate</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Trend</th>
+                </x-slot:thead>
+                <x-slot:tbody>
                     @forelse($latestBySuite as $suiteName => $suiteData)
                         <tr class="hover:bg-canvas-subtle">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">{{ $suiteName }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">{{ $suiteData['last_run']->created_at->format('M d, H:i') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-4 py-3 text-sm font-medium text-ink">{{ $suiteName }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $suiteData['last_run']->created_at->format('M d, H:i') }}</td>
+                            <td class="px-4 py-3">
                                 @switch($suiteData['last_run']->status)
                                     @case(\App\Enums\TestResultStatus::Passed)
-                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Passed</span>
+                                        <x-badge variant="success">Passed</x-badge>
                                         @break
                                     @case(\App\Enums\TestResultStatus::Failed)
-                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">Failed</span>
+                                        <x-badge variant="danger">Failed</x-badge>
                                         @break
                                     @case(\App\Enums\TestResultStatus::Error)
-                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">Error</span>
+                                        <x-badge variant="warning">Error</x-badge>
                                         @break
                                     @default
-                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-ink-muted">{{ $suiteData['last_run']->status->label() }}</span>
+                                        <x-badge variant="gray">{{ $suiteData['last_run']->status->label() }}</x-badge>
                                 @endswitch
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{{ $suiteData['last_run']->tests_passed ?? 0 }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">{{ $suiteData['last_run']->tests_failed ?? 0 }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {{ $suiteData['pass_rate'] >= 80 ? 'text-green-600' : ($suiteData['pass_rate'] >= 50 ? 'text-yellow-600' : 'text-red-600') }}">
+                            <td class="px-4 py-3 text-sm font-medium text-success-text">{{ $suiteData['last_run']->tests_passed ?? 0 }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-danger-text">{{ $suiteData['last_run']->tests_failed ?? 0 }}</td>
+                            <td class="px-4 py-3 text-sm font-medium {{ $suiteData['pass_rate'] >= 80 ? 'text-success-text' : ($suiteData['pass_rate'] >= 50 ? 'text-warning-text' : 'text-danger-text') }}">
                                 {{ $suiteData['pass_rate'] }}%
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-4 py-3">
                                 @if($suiteData['trend'] === 'up')
-                                    <span class="inline-flex items-center text-green-600">
+                                    <span class="inline-flex items-center text-success-text">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                                         </svg>
                                     </span>
                                 @elseif($suiteData['trend'] === 'down')
-                                    <span class="inline-flex items-center text-red-600">
+                                    <span class="inline-flex items-center text-danger-text">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                                         </svg>
@@ -131,69 +97,66 @@
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-sm text-ink-muted">No suite data available</td>
-                        </tr>
+                        <x-empty-state message="No suite data available" :colspan="7" />
                     @endforelse
-                </tbody>
-            </table>
-        </div>
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
 
-        <!-- Statistics Breakdown -->
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <!-- Status Distribution -->
-            <div class="bg-surface border border-border rounded-xl p-6">
-                <h3 class="text-lg font-semibold text-ink mb-4">Status Distribution</h3>
-                <div class="space-y-3">
-                    @if(!empty($statistics['by_status']))
-                        @foreach($statistics['by_status'] as $status => $count)
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    @if($status === 'passed')
-                                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                                        <span class="text-sm text-ink-muted">Passed</span>
-                                    @elseif($status === 'failed')
-                                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                                        <span class="text-sm text-ink-muted">Failed</span>
-                                    @elseif($status === 'error')
-                                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                                        <span class="text-sm text-ink-muted">Error</span>
-                                    @else
-                                        <span class="w-3 h-3 rounded-full bg-canvas-subtle0"></span>
-                                        <span class="text-sm text-ink-muted">{{ ucfirst($status) }}</span>
-                                    @endif
+            <x-card title="Status Distribution">
+                <div class="p-6">
+                    <div class="space-y-3">
+                        @if(!empty($statistics['by_status']))
+                            @foreach($statistics['by_status'] as $status => $count)
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        @if($status === 'passed')
+                                            <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                                            <span class="text-sm text-ink-muted">Passed</span>
+                                        @elseif($status === 'failed')
+                                            <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                            <span class="text-sm text-ink-muted">Failed</span>
+                                        @elseif($status === 'error')
+                                            <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                                            <span class="text-sm text-ink-muted">Error</span>
+                                        @else
+                                            <span class="w-3 h-3 rounded-full bg-canvas-subtle"></span>
+                                            <span class="text-sm text-ink-muted">{{ ucfirst($status) }}</span>
+                                        @endif
+                                    </div>
+                                    <span class="text-sm font-medium text-ink">{{ number_format($count) }}</span>
                                 </div>
-                                <span class="text-sm font-medium text-ink">{{ number_format($count) }}</span>
-                            </div>
-                        @endforeach
-                    @else
-                        <p class="text-sm text-ink-muted">No status data available</p>
-                    @endif
+                            @endforeach
+                        @else
+                            <p class="text-sm text-ink-muted">No status data available</p>
+                        @endif
+                    </div>
                 </div>
-            </div>
+            </x-card>
 
-            <!-- Pass Rate by Day -->
-            <div class="bg-surface border border-border rounded-xl p-6">
-                <h3 class="text-lg font-semibold text-ink mb-4">Daily Summary</h3>
-                <div class="space-y-3">
-                    @if(!empty($statistics['daily_summary']))
-                        @foreach($statistics['daily_summary'] as $day)
-                            <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                                <span class="text-sm text-ink-muted">{{ $day['date'] }}</span>
-                                <div class="flex items-center gap-4">
-                                    <span class="text-xs text-green-600">{{ $day['passed'] }} passed</span>
-                                    <span class="text-xs text-red-600">{{ $day['failed'] }} failed</span>
-                                    <span class="text-sm font-medium {{ $day['pass_rate'] >= 80 ? 'text-green-600' : ($day['pass_rate'] >= 50 ? 'text-yellow-600' : 'text-red-600') }}">
-                                        {{ $day['pass_rate'] }}%
-                                    </span>
+            <x-card title="Daily Summary">
+                <div class="p-6">
+                    <div class="space-y-3">
+                        @if(!empty($statistics['daily_summary']))
+                            @foreach($statistics['daily_summary'] as $day)
+                                <div class="flex items-center justify-between py-2 border-b border-border last:border-0">
+                                    <span class="text-sm text-ink-muted">{{ $day['date'] }}</span>
+                                    <div class="flex items-center gap-4">
+                                        <span class="text-xs text-success-text">{{ $day['passed'] }} passed</span>
+                                        <span class="text-xs text-danger-text">{{ $day['failed'] }} failed</span>
+                                        <span class="text-sm font-medium {{ $day['pass_rate'] >= 80 ? 'text-success-text' : ($day['pass_rate'] >= 50 ? 'text-warning-text' : 'text-danger-text') }}">
+                                            {{ $day['pass_rate'] }}%
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        @endforeach
-                    @else
-                        <p class="text-sm text-ink-muted">No daily summary available</p>
-                    @endif
+                            @endforeach
+                        @else
+                            <p class="text-sm text-ink-muted">No daily summary available</p>
+                        @endif
+                    </div>
                 </div>
-            </div>
+            </x-card>
         </div>
     </div>
 </x-app-layout>
