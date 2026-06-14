@@ -17,13 +17,13 @@
 
         <x-stat-grid cols="5">
             <x-stat-card label="Status">
-                <x-badge :variant="match ($testResult->status) {
+                <x-badge :variant="match ($testResult->status->value) {
                     'passed' => 'success',
                     'failed' => 'danger',
                     'error' => 'warning',
                     default => 'gray',
                 }">
-                    {{ ucfirst($testResult->status) }}
+                    {{ ucfirst($testResult->status->value) }}
                 </x-badge>
             </x-stat-card>
 
@@ -44,7 +44,7 @@
                         @endif
 
                         @if(!empty($failure['stack_trace']))
-                            <pre class="mt-3 p-3 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto">{{ $failure['stack_trace'] }}</pre>
+                            <pre class="mt-3 p-3 bg-surface-inverted text-canvas rounded-lg text-xs overflow-x-auto">{{ $failure['stack_trace'] }}</pre>
                         @endif
                     </x-card-section>
                 @endforeach
@@ -62,7 +62,7 @@
                         @endif
 
                         @if(!empty($error['stack_trace']))
-                            <pre class="mt-3 p-3 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto">{{ $error['stack_trace'] }}</pre>
+                            <pre class="mt-3 p-3 bg-surface-inverted text-canvas rounded-lg text-xs overflow-x-auto">{{ $error['stack_trace'] }}</pre>
                         @endif
                     </x-card-section>
                 @endforeach
@@ -72,7 +72,7 @@
         @if(!empty($testResult->output))
             <x-card title="Test Output">
                 <x-card-section>
-                    <pre class="p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto">{{ $testResult->output }}</pre>
+                    <pre class="p-4 bg-surface-inverted text-canvas rounded-lg text-xs overflow-x-auto">{{ $testResult->output }}</pre>
                 </x-card-section>
             </x-card>
         @endif

@@ -1,55 +1,44 @@
 <x-app-layout title="Counters">
-    <div class="p-6">
-        <h1 class="text-2xl font-bold mb-6">Counters</h1>
+    <div class="p-6 space-y-6">
+        <x-page-header title="Counters" />
 
-        <x-stat-grid :cols="3" class="mb-6">
-            <div class="bg-surface border border-border rounded-xl p-4">
-                <div class="text-ink-muted text-sm">Total Counters</div>
-                <div class="text-2xl font-bold">{{ $stats['total'] ?? 0 }}</div>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-4">
-                <div class="text-ink-muted text-sm">Open</div>
-                <div class="text-2xl font-bold text-green-600">{{ $stats['open'] ?? 0 }}</div>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-4">
-                <div class="text-ink-muted text-sm">Available</div>
-                <div class="text-2xl font-bold text-blue-600">{{ $stats['available'] ?? 0 }}</div>
-            </div>
+        <x-stat-grid cols="3">
+            <x-stat-card label="Total Counters" :value="$stats['total'] ?? 0" />
+            <x-stat-card label="Open" :value="$stats['open'] ?? 0" color="green" />
+            <x-stat-card label="Available" :value="$stats['available'] ?? 0" color="blue" />
         </x-stat-grid>
 
-        <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-canvas-subtle">
-                    <tr class="text-left text-sm text-ink-muted">
-                        <th class="px-4 py-3">Counter</th>
-                        <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <x-card>
+            <x-table>
+                <x-slot:thead>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Counter</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                </x-slot:thead>
+                <x-slot:tbody>
                     @forelse($counters as $counter)
-                    <tr class="border-t hover:bg-canvas-subtle">
-                        <td class="px-4 py-3">{{ $counter->name }}</td>
-                        <td class="px-4 py-3">
-                            @if($counter->sessions->count() > 0)
-                                <x-badge variant="success">Open</x-badge>
-                            @else
-                                <x-badge variant="gray">Available</x-badge>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            @if($counter->sessions->count() === 0)
-                                <a href="{{ route('counters.open', $counter) }}" class="text-blue-600 hover:underline">Open</a>
-                            @else
-                                <a href="{{ route('counters.history', $counter) }}" class="text-ink-muted hover:underline">History</a>
-                            @endif
-                        </td>
-                    </tr>
+                        <tr class="hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 text-sm">{{ $counter->name }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                @if($counter->sessions->count() > 0)
+                                    <x-badge variant="success">Open</x-badge>
+                                @else
+                                    <x-badge variant="gray">Available</x-badge>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                @if($counter->sessions->count() === 0)
+                                    <x-button variant="ghost" size="sm" href="{{ route('counters.open', $counter) }}">Open</x-button>
+                                @else
+                                    <x-button variant="ghost" size="sm" href="{{ route('counters.history', $counter) }}">History</x-button>
+                                @endif
+                            </td>
+                        </tr>
                     @empty
-                    <x-empty-state message="No counters found." :colspan="3" />
+                        <x-empty-state message="No counters found." :colspan="3" />
                     @endforelse
-                </tbody>
-            </table>
-        </div>
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
     </div>
 </x-app-layout>
