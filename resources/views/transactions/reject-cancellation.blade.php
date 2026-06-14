@@ -2,38 +2,38 @@
     <div class="p-6">
         <div class="mb-6">
             <h1 class="text-2xl font-bold">Reject Cancellation</h1>
-            <p class="text-sm text-gray-500 mt-1">Reject transaction cancellation request</p>
+            <p class="text-sm text-ink-muted mt-1">Reject transaction cancellation request</p>
         </div>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
             <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 class="text-lg font-medium text-gray-900">Transaction Details</h2>
+                <h2 class="text-lg font-medium text-ink">Transaction Details</h2>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Transaction ID</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['id'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Transaction ID</label>
+                        <p class="text-sm text-ink">{{ $transaction['id'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Transaction Type</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['type'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Transaction Type</label>
+                        <p class="text-sm text-ink">{{ $transaction['type'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Amount</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['amount'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Amount</label>
+                        <p class="text-sm text-ink">{{ $transaction['amount'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Currency</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['currency'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Currency</label>
+                        <p class="text-sm text-ink">{{ $transaction['currency'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Customer</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['customer_name'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Customer</label>
+                        <p class="text-sm text-ink">{{ $transaction['customer_name'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Original Date</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['created_at'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Original Date</label>
+                        <p class="text-sm text-ink">{{ $transaction['created_at'] ?? 'N/A' }}</p>
                     </div>
                 </div>
             </div>
@@ -41,21 +41,21 @@
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
             <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 class="text-lg font-medium text-gray-900">Cancellation Request</h2>
+                <h2 class="text-lg font-medium text-ink">Cancellation Request</h2>
             </div>
             <div class="p-6">
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Reason Provided</label>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Reason Provided</label>
                     <p class="text-sm text-gray-700">{{ $cancellation['reason'] ?? 'No reason provided' }}</p>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Requested By</label>
-                        <p class="text-sm text-gray-900">{{ $cancellation['requested_by'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Requested By</label>
+                        <p class="text-sm text-ink">{{ $cancellation['requested_by'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Requested At</label>
-                        <p class="text-sm text-gray-900">{{ $cancellation['requested_at'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Requested At</label>
+                        <p class="text-sm text-ink">{{ $cancellation['requested_at'] ?? 'N/A' }}</p>
                     </div>
                 </div>
             </div>
@@ -63,7 +63,7 @@
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
             <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 class="text-lg font-medium text-gray-900">Rejection Details</h2>
+                <h2 class="text-lg font-medium text-ink">Rejection Details</h2>
             </div>
             <div class="p-6">
                 <form method="POST" action="{{ route('transactions.reject-cancellation.store', $transaction['id'] ?? 0) }}">
@@ -94,7 +94,7 @@
                         </button>
                         <a
                             href="{{ route('transactions.index') }}"
-                            class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50"
+                            class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle"
                         >
                             Cancel
                         </a>
@@ -105,7 +105,7 @@
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl">
             <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 class="text-lg font-medium text-gray-900">Notice</h2>
+                <h2 class="text-lg font-medium text-ink">Notice</h2>
             </div>
             <div class="p-6">
                 <div class="flex items-start gap-3">

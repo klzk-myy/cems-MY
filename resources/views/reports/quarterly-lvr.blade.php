@@ -3,11 +3,11 @@
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold">Quarterly Large Value Report</h1>
-                <p class="text-sm text-gray-500 mt-1">QLVR - Quarterly Large Value Transaction Report</p>
+                <p class="text-sm text-ink-muted mt-1">QLVR - Quarterly Large Value Transaction Report</p>
             </div>
             @if($reportGenerated)
             <div class="flex gap-3">
-                <button onclick="window.print()" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+                <button onclick="window.print()" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
                     Print
                 </button>
                 <form method="POST" action="{{ route('reports.quarterly-lvr.export', ['quarter' => $quarter]) }}">
@@ -42,26 +42,26 @@
         @if($reportGenerated && !empty($reportData))
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
-                <p class="text-xs text-gray-500 mb-1">Total Transactions</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ number_format($reportData['total_transactions'] ?? 0) }}</p>
+                <p class="text-xs text-ink-muted mb-1">Total Transactions</p>
+                <p class="text-2xl font-semibold text-ink">{{ number_format($reportData['total_transactions'] ?? 0) }}</p>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
-                <p class="text-xs text-gray-500 mb-1">Total Volume (MYR)</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ number_format($reportData['total_volume'] ?? 0, 2) }}</p>
+                <p class="text-xs text-ink-muted mb-1">Total Volume (MYR)</p>
+                <p class="text-2xl font-semibold text-ink">{{ number_format($reportData['total_volume'] ?? 0, 2) }}</p>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
-                <p class="text-xs text-gray-500 mb-1">Average Value</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ number_format($reportData['average_value'] ?? 0, 2) }}</p>
+                <p class="text-xs text-ink-muted mb-1">Average Value</p>
+                <p class="text-2xl font-semibold text-ink">{{ number_format($reportData['average_value'] ?? 0, 2) }}</p>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-5">
-                <p class="text-xs text-gray-500 mb-1">Report Status</p>
+                <p class="text-xs text-ink-muted mb-1">Report Status</p>
                 <p class="text-2xl font-semibold text-green-600">Complete</p>
             </div>
         </div>
 
         @if(!empty($reportData['monthly_breakdown']))
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Monthly Breakdown</h3>
+            <h3 class="text-lg font-semibold text-ink mb-4">Monthly Breakdown</h3>
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b border-[#e5e5e5]">
@@ -73,8 +73,8 @@
                 </thead>
                 <tbody>
                     @foreach($reportData['monthly_breakdown'] as $month)
-                    <tr class="border-b border-[#e5e5e5] hover:bg-gray-50">
-                        <td class="py-3 px-4 text-gray-900 font-medium">{{ $month['label'] }}</td>
+                    <tr class="border-b border-[#e5e5e5] hover:bg-canvas-subtle">
+                        <td class="py-3 px-4 text-ink font-medium">{{ $month['label'] }}</td>
                         <td class="py-3 px-4 text-right text-gray-700">{{ number_format($month['transaction_count']) }}</td>
                         <td class="py-3 px-4 text-right text-gray-700">{{ number_format($month['volume'], 2) }}</td>
                         <td class="py-3 px-4 text-right text-gray-700">{{ number_format($month['average'], 2) }}</td>
@@ -86,13 +86,13 @@
         @endif
         @elseif($reportGenerated && empty($reportData))
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-12 text-center">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No Report Data</h3>
-            <p class="text-sm text-gray-500">No high-value transactions found for the selected quarter.</p>
+            <h3 class="text-lg font-medium text-ink mb-2">No Report Data</h3>
+            <p class="text-sm text-ink-muted">No high-value transactions found for the selected quarter.</p>
         </div>
         @else
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-12 text-center">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Select a Quarter</h3>
-            <p class="text-sm text-gray-500">Choose a quarter above to generate the LVR report.</p>
+            <h3 class="text-lg font-medium text-ink mb-2">Select a Quarter</h3>
+            <p class="text-sm text-ink-muted">Choose a quarter above to generate the LVR report.</p>
         </div>
         @endif
     </div>

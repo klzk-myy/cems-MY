@@ -7,14 +7,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                 </div>
-                <h2 class="text-xl font-semibold text-gray-900">MFA Enabled Successfully</h2>
+                <h2 class="text-xl font-semibold text-ink">MFA Enabled Successfully</h2>
                 <p class="mt-2 text-sm text-gray-600">Save these recovery codes in a safe place. You can use any of them to access your account if you lose your authenticator device.</p>
             </div>
 
-            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+            <div class="bg-canvas-subtle rounded-lg p-6 mb-6">
                 <div class="grid grid-cols-2 gap-4">
                     @foreach($recoveryCodes as $code)
-                        <div class="font-mono text-sm text-gray-900 bg-white px-3 py-2 rounded border border-gray-200 text-center">
+                        <div class="font-mono text-sm text-ink bg-white px-3 py-2 rounded border border-gray-200 text-center">
                             {{ $code }}
                         </div>
                     @endforeach

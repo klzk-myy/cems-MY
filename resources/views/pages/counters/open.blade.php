@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Open Counter - {{ $counter->code }}</title>
 </head>
-<body class="min-h-screen bg-gray-50">
+<body class="min-h-screen bg-canvas-subtle">
     <div class="flex min-h-screen flex-col">
         <header class="bg-white shadow-sm">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                <h1 class="text-2xl font-semibold text-gray-900">Open Counter: {{ $counter->code }}</h1>
+                <h1 class="text-2xl font-semibold text-ink">Open Counter: {{ $counter->code }}</h1>
             </div>
         </header>
 
@@ -17,19 +17,19 @@
             <div class="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
                 <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                     <div class="mb-6">
-                        <h2 class="text-lg font-medium text-gray-900">Counter Details</h2>
+                        <h2 class="text-lg font-medium text-ink">Counter Details</h2>
                         <dl class="mt-4 grid grid-cols-2 gap-4">
                             <div>
-                                <dt class="text-sm text-gray-500">Counter Code</dt>
-                                <dd class="text-sm font-medium text-gray-900">{{ $counter->code }}</dd>
+                                <dt class="text-sm text-ink-muted">Counter Code</dt>
+                                <dd class="text-sm font-medium text-ink">{{ $counter->code }}</dd>
                             </div>
                             <div>
-                                <dt class="text-sm text-gray-500">Branch</dt>
-                                <dd class="text-sm font-medium text-gray-900">{{ $counter->branch->name ?? '-' }}</dd>
+                                <dt class="text-sm text-ink-muted">Branch</dt>
+                                <dd class="text-sm font-medium text-ink">{{ $counter->branch->name ?? '-' }}</dd>
                             </div>
                             <div>
-                                <dt class="text-sm text-gray-500">Status</dt>
-                                <dd class="text-sm font-medium text-gray-900">{{ $counter->status }}</dd>
+                                <dt class="text-sm text-ink-muted">Status</dt>
+                                <dd class="text-sm font-medium text-ink">{{ $counter->status }}</dd>
                             </div>
                         </dl>
                     </div>
@@ -42,7 +42,7 @@
                         @csrf
 
                         <div class="mb-6">
-                            <h3 class="text-sm font-medium text-gray-900 mb-4">Opening Floats</h3>
+                            <h3 class="text-sm font-medium text-ink mb-4">Opening Floats</h3>
                             <div class="space-y-4" id="opening-floats">
                                 @foreach($currencies as $currency)
                                     <div class="flex items-center gap-4">

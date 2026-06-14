@@ -3,9 +3,9 @@
         <header class="bg-white shadow-sm">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
-                    <h1 class="text-2xl font-semibold text-gray-900">Exchange Rates</h1>
+                    <h1 class="text-2xl font-semibold text-ink">Exchange Rates</h1>
                     @if($currentBranch)
-                        <span class="text-sm text-gray-500">{{ $currentBranch->name }}</span>
+                        <span class="text-sm text-ink-muted">{{ $currentBranch->name }}</span>
                     @endif
                 </div>
             </div>
@@ -34,30 +34,30 @@
 
                 <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-canvas-subtle">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rate Buy</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rate Sell</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Spread</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Updated</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Currency</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Rate Buy</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Rate Sell</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Spread</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Source</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Updated</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($rates as $rate)
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-canvas-subtle">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm font-medium text-gray-900">{{ $rate['currency_code'] }}</span>
+                                        <span class="text-sm font-medium text-ink">{{ $rate['currency_code'] }}</span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-ink">
                                         {{ number_format((float)$rate['rate_buy'], 4) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-ink">
                                         {{ number_format((float)$rate['rate_sell'], 4) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-ink-muted">
                                         {{ number_format((float)($rate['spread'] ?? 0), 2) }}%
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
@@ -65,7 +65,7 @@
                                             {{ ucfirst($rate['source'] ?? 'api') }}
                                         </x-badge>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-ink-muted">
                                         {{ $rate['fetched_at'] ? \Carbon\Carbon::parse($rate['fetched_at'])->format('H:i:s') : '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
@@ -87,13 +87,13 @@
     <!-- Override Modal -->
     <div id="override-modal" class="hidden fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
         <div class="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Override Rate</h3>
+            <h3 class="text-lg font-medium text-ink mb-4">Override Rate</h3>
             <form id="override-form" method="POST" action="{{ route('rates.override') }}">
                 @csrf
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Currency</label>
-                        <x-input type="text" name="currency_code" id="override-currency" class="mt-1 w-full px-4 py-2.5 text-sm bg-gray-100 border border-[#e5e5e5] rounded-lg" readonly />
+                        <x-input type="text" name="currency_code" id="override-currency" class="mt-1 w-full px-4 py-2.5 text-sm bg-canvas-subtle border border-[#e5e5e5] rounded-lg" readonly />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Rate Buy</label>

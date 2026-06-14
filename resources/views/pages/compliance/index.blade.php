@@ -4,19 +4,19 @@
 
         <x-stat-grid :cols="4" class="mb-6">
             <div class="bg-white rounded-lg shadow p-4">
-                <div class="text-gray-500 text-sm">Open Flags</div>
+                <div class="text-ink-muted text-sm">Open Flags</div>
                 <div class="text-2xl font-bold text-yellow-600">{{ $stats['open'] ?? 0 }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4">
-                <div class="text-gray-500 text-sm">Under Review</div>
+                <div class="text-ink-muted text-sm">Under Review</div>
                 <div class="text-2xl font-bold text-blue-600">{{ $stats['under_review'] ?? 0 }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4">
-                <div class="text-gray-500 text-sm">Resolved Today</div>
+                <div class="text-ink-muted text-sm">Resolved Today</div>
                 <div class="text-2xl font-bold text-green-600">{{ $stats['resolved_today'] ?? 0 }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4">
-                <div class="text-gray-500 text-sm">High Priority</div>
+                <div class="text-ink-muted text-sm">High Priority</div>
                 <div class="text-2xl font-bold text-red-600">{{ $stats['high_priority'] ?? 0 }}</div>
             </div>
         </x-stat-grid>
@@ -26,8 +26,8 @@
                 <h2 class="text-lg font-semibold">Flagged Transactions</h2>
             </div>
             <table class="w-full">
-                <thead class="bg-gray-50">
-                    <tr class="text-left text-sm text-gray-500">
+                <thead class="bg-canvas-subtle">
+                    <tr class="text-left text-sm text-ink-muted">
                         <th class="px-4 py-2">Transaction</th>
                         <th class="px-4 py-2">Flag Type</th>
                         <th class="px-4 py-2">Status</th>
@@ -37,7 +37,7 @@
                 </thead>
                 <tbody>
                     @forelse($flags ?? [] as $flag)
-                    <tr class="border-t hover:bg-gray-50">
+                    <tr class="border-t hover:bg-canvas-subtle">
                         <td class="px-4 py-2 font-mono text-sm">{{ $flag->transaction_id }}</td>
                         <td class="px-4 py-2">{{ $flag->flag_type }}</td>
                         <td class="px-4 py-2">

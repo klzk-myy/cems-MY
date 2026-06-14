@@ -21,7 +21,7 @@
                     />
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">ID Number (masked)</label>
-                        <div class="px-4 py-2.5 text-sm bg-gray-50 border border-[#e5e5e5] rounded-lg">
+                        <div class="px-4 py-2.5 text-sm bg-canvas-subtle border border-[#e5e5e5] rounded-lg">
                             {{ $decryptedIdNumber ? substr($decryptedIdNumber, 0, 4).'****'.substr($decryptedIdNumber, -4) : '****-****-****' }}
                         </div>
                     </div>

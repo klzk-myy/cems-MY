@@ -74,31 +74,31 @@
                                         Enabled
                                     </span>
                                 @else
-                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">
+                                    <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">
                                         Disabled
                                     </span>
                                 @endif
-                                <p class="mt-1 text-xs text-gray-500">MFA can be configured by the user in their profile settings</p>
+                                <p class="mt-1 text-xs text-ink-muted">MFA can be configured by the user in their profile settings</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="border-t border-[#e5e5e5] pt-6">
-                        <h4 class="text-sm font-medium text-gray-900 mb-4">Account Information</h4>
+                        <h4 class="text-sm font-medium text-ink mb-4">Account Information</h4>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <p class="text-xs text-gray-500">Last Login</p>
-                                <p class="mt-1 text-sm text-gray-900">
+                                <p class="text-xs text-ink-muted">Last Login</p>
+                                <p class="mt-1 text-sm text-ink">
                                     {{ $user->last_login_at ? $user->last_login_at->format('Y-m-d H:i:s') : 'Never' }}
                                 </p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500">Created At</p>
-                                <p class="mt-1 text-sm text-gray-900">{{ $user->created_at->format('Y-m-d H:i:s') }}</p>
+                                <p class="text-xs text-ink-muted">Created At</p>
+                                <p class="mt-1 text-sm text-ink">{{ $user->created_at->format('Y-m-d H:i:s') }}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500">Updated At</p>
-                                <p class="mt-1 text-sm text-gray-900">{{ $user->updated_at->format('Y-m-d H:i:s') }}</p>
+                                <p class="text-xs text-ink-muted">Updated At</p>
+                                <p class="mt-1 text-sm text-ink">{{ $user->updated_at->format('Y-m-d H:i:s') }}</p>
                             </div>
                         </div>
                     </div>

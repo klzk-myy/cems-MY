@@ -2,8 +2,8 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Page Header -->
         <div class="mb-8">
-            <h1 class="text-2xl font-bold text-gray-900">Risk Dashboard</h1>
-            <p class="mt-1 text-sm text-gray-500">Customer risk overview and analytics</p>
+            <h1 class="text-2xl font-bold text-ink">Risk Dashboard</h1>
+            <p class="mt-1 text-sm text-ink-muted">Customer risk overview and analytics</p>
         </div>
 
         <!-- Risk Summary Cards -->
@@ -11,7 +11,7 @@
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">High Risk</p>
+                        <p class="text-xs font-medium text-ink-muted uppercase">High Risk</p>
                         <p class="text-3xl font-bold text-red-600 mt-1">12</p>
                     </div>
                     <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
@@ -25,7 +25,7 @@
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Medium Risk</p>
+                        <p class="text-xs font-medium text-ink-muted uppercase">Medium Risk</p>
                         <p class="text-3xl font-bold text-yellow-600 mt-1">28</p>
                     </div>
                     <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -39,7 +39,7 @@
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Low Risk</p>
+                        <p class="text-xs font-medium text-ink-muted uppercase">Low Risk</p>
                         <p class="text-3xl font-bold text-green-600 mt-1">156</p>
                     </div>
                     <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -53,7 +53,7 @@
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">PEP Customers</p>
+                        <p class="text-xs font-medium text-ink-muted uppercase">PEP Customers</p>
                         <p class="text-3xl font-bold text-purple-600 mt-1">8</p>
                     </div>
                     <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -68,7 +68,7 @@
         <!-- Risk Distribution -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Risk Distribution</h3>
+                <h3 class="text-lg font-semibold text-ink mb-4">Risk Distribution</h3>
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-600">High Risk</span>
@@ -76,7 +76,7 @@
                             <div class="w-48 bg-gray-200 rounded-full h-3">
                                 <div class="bg-red-600 h-3 rounded-full" style="width: 6%"></div>
                             </div>
-                            <span class="text-sm font-medium text-gray-900">6%</span>
+                            <span class="text-sm font-medium text-ink">6%</span>
                         </div>
                     </div>
                     <div class="flex items-center justify-between">
@@ -85,7 +85,7 @@
                             <div class="w-48 bg-gray-200 rounded-full h-3">
                                 <div class="bg-yellow-500 h-3 rounded-full" style="width: 14%"></div>
                             </div>
-                            <span class="text-sm font-medium text-gray-900">14%</span>
+                            <span class="text-sm font-medium text-ink">14%</span>
                         </div>
                     </div>
                     <div class="flex items-center justify-between">
@@ -94,33 +94,33 @@
                             <div class="w-48 bg-gray-200 rounded-full h-3">
                                 <div class="bg-green-600 h-3 rounded-full" style="width: 80%"></div>
                             </div>
-                            <span class="text-sm font-medium text-gray-900">80%</span>
+                            <span class="text-sm font-medium text-ink">80%</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">High Risk Customers</h3>
+                <h3 class="text-lg font-semibold text-ink mb-4">High Risk Customers</h3>
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-900">Ahmad Razali</p>
-                            <p class="text-xs text-gray-500">CUST-001</p>
+                            <p class="text-sm font-medium text-ink">Ahmad Razali</p>
+                            <p class="text-xs text-ink-muted">CUST-001</p>
                         </div>
                         <a href="#" class="text-sm text-blue-600 hover:text-blue-800">View</a>
                     </div>
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-900">Siti Nurhaliza</p>
-                            <p class="text-xs text-gray-500">CUST-042</p>
+                            <p class="text-sm font-medium text-ink">Siti Nurhaliza</p>
+                            <p class="text-xs text-ink-muted">CUST-042</p>
                         </div>
                         <a href="#" class="text-sm text-blue-600 hover:text-blue-800">View</a>
                     </div>
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-900">Tan Wei Ming</p>
-                            <p class="text-xs text-gray-500">CUST-108</p>
+                            <p class="text-sm font-medium text-ink">Tan Wei Ming</p>
+                            <p class="text-xs text-ink-muted">CUST-108</p>
                         </div>
                         <a href="#" class="text-sm text-blue-600 hover:text-blue-800">View</a>
                     </div>
@@ -130,31 +130,31 @@
 
         <!-- Recent Risk Changes -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Risk Score Changes</h3>
+            <h3 class="text-lg font-semibold text-ink mb-4">Recent Risk Score Changes</h3>
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-canvas-subtle">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Previous Score</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">New Score</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Change Reason</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Previous Score</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">New Score</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Change Reason</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">Ahmad Razali</td>
+                        <td class="px-4 py-3 text-sm text-ink">Ahmad Razali</td>
                         <td class="px-4 py-3 text-sm text-yellow-600">Medium</td>
                         <td class="px-4 py-3 text-sm text-red-600">High</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">Velocity alert triggered</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-15</td>
+                        <td class="px-4 py-3 text-sm text-ink-muted">Velocity alert triggered</td>
+                        <td class="px-4 py-3 text-sm text-ink-muted">2024-01-15</td>
                     </tr>
                     <tr>
-                        <td class="px-4 py-3 text-sm text-gray-900">Lee Mei Ling</td>
+                        <td class="px-4 py-3 text-sm text-ink">Lee Mei Ling</td>
                         <td class="px-4 py-3 text-sm text-green-600">Low</td>
                         <td class="px-4 py-3 text-sm text-yellow-600">Medium</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">Transaction pattern change</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">2024-01-14</td>
+                        <td class="px-4 py-3 text-sm text-ink-muted">Transaction pattern change</td>
+                        <td class="px-4 py-3 text-sm text-ink-muted">2024-01-14</td>
                     </tr>
                 </tbody>
             </table>

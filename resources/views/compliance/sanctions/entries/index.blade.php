@@ -4,8 +4,8 @@
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Sanctions Entries</h1>
-                    <p class="mt-1 text-sm text-gray-500">Manage sanctions list entries</p>
+                    <h1 class="text-2xl font-bold text-ink">Sanctions Entries</h1>
+                    <p class="mt-1 text-sm text-ink-muted">Manage sanctions list entries</p>
                 </div>
                 <a href="{{ route('compliance.sanctions.entries.create') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                     Add Entry
@@ -38,24 +38,24 @@
         <!-- Entries Table -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-canvas-subtle">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entry ID</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entity Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Listed</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entry ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entity Name</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Listed</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     @forelse ($entries as $entry)
                         <tr>
-                            <td class="px-4 py-3 text-sm text-gray-900">{{ $entry['id'] }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">{{ $entry['entity_name'] }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-500">
+                            <td class="px-4 py-3 text-sm text-ink">{{ $entry['id'] }}</td>
+                            <td class="px-4 py-3 text-sm text-ink">{{ $entry['entity_name'] }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">
                                 {{ $entry['entity_type']?->value ?? ucfirst($entry['entity_type'] ?? 'N/A') }}
                             </td>
                             <td class="px-4 py-3 text-sm">
@@ -63,8 +63,8 @@
                                     {{ strtoupper($entry['list_source'] ?: ($entry['list']['name'] ?? 'N/A')) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-500">{{ $entry['reference_number'] ?: 'N/A' }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-500">{{ $entry['listing_date'] ?: 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $entry['reference_number'] ?: 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $entry['listing_date'] ?: 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm">
                                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">
                                     {{ ucfirst($entry['status']?->value ?? $entry['status'] ?? 'N/A') }}
@@ -77,7 +77,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">
+                            <td colspan="8" class="px-4 py-8 text-center text-sm text-ink-muted">
                                 No entries found.
                             </td>
                         </tr>

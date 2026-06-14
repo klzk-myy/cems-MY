@@ -20,8 +20,8 @@
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50">
-                    <tr class="text-left text-sm text-gray-500">
+                <thead class="bg-canvas-subtle">
+                    <tr class="text-left text-sm text-ink-muted">
                         <th class="px-4 py-3">Reference</th>
                         <th class="px-4 py-3">Date</th>
                         <th class="px-4 py-3">Customer</th>
@@ -34,7 +34,7 @@
                 </thead>
                 <tbody>
                     @forelse($transactions as $transaction)
-                    <tr class="border-t hover:bg-gray-50">
+                    <tr class="border-t hover:bg-canvas-subtle">
                         <td class="px-4 py-3 font-mono text-sm">{{ $transaction->reference }}</td>
                         <td class="px-4 py-3">{{ $transaction->created_at->format('M d, Y H:i') }}</td>
                         <td class="px-4 py-3">{{ $transaction->customer->full_name ?? 'N/A' }}</td>

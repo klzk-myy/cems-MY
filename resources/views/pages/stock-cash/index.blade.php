@@ -5,8 +5,8 @@
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
             <h2 class="text-lg font-semibold mb-4">Currency Positions</h2>
             <table class="w-full">
-                <thead class="bg-gray-50">
-                    <tr class="text-left text-sm text-gray-500">
+                <thead class="bg-canvas-subtle">
+                    <tr class="text-left text-sm text-ink-muted">
                         <th class="px-4 py-2">Currency</th>
                         <th class="px-4 py-2">Available</th>
                         <th class="px-4 py-2">Held</th>
@@ -27,7 +27,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-4 py-4 text-center text-gray-500">No positions found.</td>
+                        <td colspan="5" class="px-4 py-4 text-center text-ink-muted">No positions found.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -39,11 +39,11 @@
                 <h2 class="text-lg font-semibold mb-4">Today's Till Summary</h2>
                 <dl class="space-y-2">
                     <div class="flex justify-between">
-                        <dt class="text-gray-500">Open Tills</dt>
+                        <dt class="text-ink-muted">Open Tills</dt>
                         <dd class="font-medium">{{ count($openTills ?? []) }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-gray-500">Closed Tills</dt>
+                        <dt class="text-ink-muted">Closed Tills</dt>
                         <dd class="font-medium">{{ count($closedTills ?? []) }}</dd>
                     </div>
                 </dl>
@@ -53,7 +53,7 @@
                 <h2 class="text-lg font-semibold mb-4">Variance</h2>
                 <dl class="space-y-2">
                     <div class="flex justify-between">
-                        <dt class="text-gray-500">Total Variance</dt>
+                        <dt class="text-ink-muted">Total Variance</dt>
                         <dd class="font-medium {{ $totalPnl >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ number_format($totalPnl ?? 0, 2) }} MYR
                         </dd>

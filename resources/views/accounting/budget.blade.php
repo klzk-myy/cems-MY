@@ -3,8 +3,8 @@
         <!-- Page Header -->
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Budget Management</h1>
-                <p class="mt-1 text-sm text-gray-500">Manage annual budgets and variances</p>
+                <h1 class="text-2xl font-semibold text-ink">Budget Management</h1>
+                <p class="mt-1 text-sm text-ink-muted">Manage annual budgets and variances</p>
             </div>
             <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                 + Create Budget
@@ -14,20 +14,20 @@
         <!-- Budget Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <p class="text-sm text-gray-500">Total Budget</p>
-                <p class="mt-1 text-2xl font-semibold text-gray-900">RM 1,250,000.00</p>
+                <p class="text-sm text-ink-muted">Total Budget</p>
+                <p class="mt-1 text-2xl font-semibold text-ink">RM 1,250,000.00</p>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <p class="text-sm text-gray-500">YTD Actual</p>
-                <p class="mt-1 text-2xl font-semibold text-gray-900">RM 875,420.50</p>
+                <p class="text-sm text-ink-muted">YTD Actual</p>
+                <p class="mt-1 text-2xl font-semibold text-ink">RM 875,420.50</p>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <p class="text-sm text-gray-500">YTD Variance</p>
+                <p class="text-sm text-ink-muted">YTD Variance</p>
                 <p class="mt-1 text-2xl font-semibold text-green-600">RM 374,579.50</p>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <p class="text-sm text-gray-500">% Used</p>
-                <p class="mt-1 text-2xl font-semibold text-gray-900">70.0%</p>
+                <p class="text-sm text-ink-muted">% Used</p>
+                <p class="mt-1 text-2xl font-semibold text-ink">70.0%</p>
             </div>
         </div>
 
@@ -52,20 +52,20 @@
         <!-- Budget Lines Table -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Annual Budget</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">YTD Actual</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">YTD Budget</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Variance</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">% Used</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Annual Budget</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">YTD Actual</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">YTD Budget</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">% Used</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#e5e5e5]">
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm font-mono">5100-001</td>
                         <td class="px-4 py-3 text-sm">Currency Exchange Revenue</td>
                         <td class="px-4 py-3 text-sm text-right">500,000.00</td>
@@ -77,7 +77,7 @@
                             <button class="text-blue-600 hover:text-blue-800">Edit</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm font-mono">6100-001</td>
                         <td class="px-4 py-3 text-sm">Staff Salaries</td>
                         <td class="px-4 py-3 text-sm text-right">400,000.00</td>
@@ -89,7 +89,7 @@
                             <button class="text-blue-600 hover:text-blue-800">Edit</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm font-mono">6200-001</td>
                         <td class="px-4 py-3 text-sm">Office Rent</td>
                         <td class="px-4 py-3 text-sm text-right">150,000.00</td>
@@ -101,7 +101,7 @@
                             <button class="text-blue-600 hover:text-blue-800">Edit</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm font-mono">6300-001</td>
                         <td class="px-4 py-3 text-sm">Compliance Costs</td>
                         <td class="px-4 py-3 text-sm text-right">200,000.00</td>
@@ -119,7 +119,7 @@
 
         <!-- Pagination -->
         <div class="flex items-center justify-between">
-            <p class="text-sm text-gray-500">Showing 1-4 of 4 accounts</p>
+            <p class="text-sm text-ink-muted">Showing 1-4 of 4 accounts</p>
             <div class="flex gap-2">
                 <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Previous</button>
                 <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Next</button>

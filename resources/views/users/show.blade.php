@@ -3,10 +3,10 @@
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold">{{ $user->username }}</h1>
-                <p class="text-sm text-gray-500 mt-1">User profile and details</p>
+                <p class="text-sm text-ink-muted mt-1">User profile and details</p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="{{ route('users.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+                <a href="{{ route('users.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
                     Back to List
                 </a>
                 <a href="{{ route('users.edit', $user->id) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
@@ -19,20 +19,20 @@
             <div class="lg:col-span-2">
                 <div class="bg-white border border-[#e5e5e5] rounded-xl">
                     <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                        <h2 class="text-lg font-medium text-gray-900">User Information</h2>
+                        <h2 class="text-lg font-medium text-ink">User Information</h2>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wide">Username</p>
-                                <p class="mt-1 text-sm font-medium text-gray-900">{{ $user->username }}</p>
+                                <p class="text-xs text-ink-muted uppercase tracking-wide">Username</p>
+                                <p class="mt-1 text-sm font-medium text-ink">{{ $user->username }}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wide">Email</p>
-                                <p class="mt-1 text-sm font-medium text-gray-900">{{ $user->email }}</p>
+                                <p class="text-xs text-ink-muted uppercase tracking-wide">Email</p>
+                                <p class="mt-1 text-sm font-medium text-ink">{{ $user->email }}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wide">Role</p>
+                                <p class="text-xs text-ink-muted uppercase tracking-wide">Role</p>
                                 <div class="mt-1">
                                     @switch($user->role->value)
                                         @case('teller')
@@ -51,11 +51,11 @@
                                 </div>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wide">Branch</p>
-                                <p class="mt-1 text-sm font-medium text-gray-900">{{ $user->branch?->name ?? 'No branch assigned' }}</p>
+                                <p class="text-xs text-ink-muted uppercase tracking-wide">Branch</p>
+                                <p class="mt-1 text-sm font-medium text-ink">{{ $user->branch?->name ?? 'No branch assigned' }}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wide">Account Status</p>
+                                <p class="text-xs text-ink-muted uppercase tracking-wide">Account Status</p>
                                 <div class="mt-1">
                                     @if($user->is_active)
                                         <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Active</span>
@@ -65,15 +65,15 @@
                                 </div>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wide">MFA</p>
+                                <p class="text-xs text-ink-muted uppercase tracking-wide">MFA</p>
                                 <div class="mt-1">
                                     @if($user->mfa_enabled)
                                         <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Enabled</span>
                                         @if($user->mfa_verified_at)
-                                            <p class="mt-1 text-xs text-gray-500">Verified: {{ $user->mfa_verified_at->format('Y-m-d H:i') }}</p>
+                                            <p class="mt-1 text-xs text-ink-muted">Verified: {{ $user->mfa_verified_at->format('Y-m-d H:i') }}</p>
                                         @endif
                                     @else
-                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Disabled</span>
+                                        <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Disabled</span>
                                     @endif
                                 </div>
                             </div>
@@ -83,21 +83,21 @@
 
                 <div class="bg-white border border-[#e5e5e5] rounded-xl mt-6">
                     <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                        <h2 class="text-lg font-medium text-gray-900">Account Activity</h2>
+                        <h2 class="text-lg font-medium text-ink">Account Activity</h2>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wide">Last Login</p>
-                                <p class="mt-1 text-sm font-medium text-gray-900">{{ $user->last_login_at ? $user->last_login_at->format('Y-m-d H:i:s') : 'Never logged in' }}</p>
+                                <p class="text-xs text-ink-muted uppercase tracking-wide">Last Login</p>
+                                <p class="mt-1 text-sm font-medium text-ink">{{ $user->last_login_at ? $user->last_login_at->format('Y-m-d H:i:s') : 'Never logged in' }}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wide">Created</p>
-                                <p class="mt-1 text-sm font-medium text-gray-900">{{ $user->created_at->format('Y-m-d H:i:s') }}</p>
+                                <p class="text-xs text-ink-muted uppercase tracking-wide">Created</p>
+                                <p class="mt-1 text-sm font-medium text-ink">{{ $user->created_at->format('Y-m-d H:i:s') }}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wide">Last Updated</p>
-                                <p class="mt-1 text-sm font-medium text-gray-900">{{ $user->updated_at->format('Y-m-d H:i:s') }}</p>
+                                <p class="text-xs text-ink-muted uppercase tracking-wide">Last Updated</p>
+                                <p class="mt-1 text-sm font-medium text-ink">{{ $user->updated_at->format('Y-m-d H:i:s') }}</p>
                             </div>
                         </div>
                     </div>
@@ -107,7 +107,7 @@
             <div>
                 <div class="bg-white border border-[#e5e5e5] rounded-xl">
                     <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                        <h2 class="text-lg font-medium text-gray-900">Role Permissions</h2>
+                        <h2 class="text-lg font-medium text-ink">Role Permissions</h2>
                     </div>
                     <div class="p-6">
                         <ul class="space-y-3">
@@ -178,11 +178,11 @@
 
                 <div class="bg-white border border-[#e5e5e5] rounded-xl mt-6">
                     <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                        <h2 class="text-lg font-medium text-gray-900">Role Description</h2>
+                        <h2 class="text-lg font-medium text-ink">Role Description</h2>
                     </div>
                     <div class="p-6">
                         <p class="text-sm text-gray-600">{{ $user->role->description() }}</p>
-                        <p class="mt-4 text-xs text-gray-500">
+                        <p class="mt-4 text-xs text-ink-muted">
                             Rate override limit:
                             @if($user->role->rateOverrideLimit() === null)
                                 <span class="font-medium text-gray-700">Unlimited</span>

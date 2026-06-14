@@ -3,8 +3,8 @@
         <!-- Page Header -->
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Fiscal Years</h1>
-                <p class="mt-1 text-sm text-gray-500">Manage accounting fiscal years and periods</p>
+                <h1 class="text-2xl font-semibold text-ink">Fiscal Years</h1>
+                <p class="mt-1 text-sm text-ink-muted">Manage accounting fiscal years and periods</p>
             </div>
             <button class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                 + Create Fiscal Year
@@ -19,11 +19,11 @@
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-500">Active Fiscal Year</h3>
-                    <p class="mt-1 text-2xl font-semibold text-gray-900">
+                    <h3 class="text-sm font-medium text-ink-muted">Active Fiscal Year</h3>
+                    <p class="mt-1 text-2xl font-semibold text-ink">
                         {{ $activeYear ? 'FY '.$activeYear->year_code : 'No fiscal years configured' }}
                     </p>
-                    <p class="mt-1 text-sm text-gray-500">
+                    <p class="mt-1 text-sm text-ink-muted">
                         @if ($activeYear)
                             {{ $activeYear->start_date?->format('F j, Y') }} - {{ $activeYear->end_date?->format('F j, Y') }}
                         @endif
@@ -34,9 +34,9 @@
                         @php
                             $activeYearStatusColor = match ($activeYear->status?->value) {
                                 'Open' => 'bg-green-100 text-green-700',
-                                'Closed' => 'bg-gray-100 text-gray-700',
+                                'Closed' => 'bg-canvas-subtle text-gray-700',
                                 'Archived' => 'bg-blue-100 text-blue-700',
-                                default => 'bg-gray-100 text-gray-700',
+                                default => 'bg-canvas-subtle text-gray-700',
                             };
                         @endphp
                         <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded {{ $activeYearStatusColor }}">
@@ -51,14 +51,14 @@
         <!-- Fiscal Years Table -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fiscal Year</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Date</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Periods</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Fiscal Year</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Start Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">End Date</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Periods</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#e5e5e5]">
@@ -66,13 +66,13 @@
                         @php
                             $yearStatusColor = match ($fiscalYear->status?->value) {
                                 'Open' => 'bg-green-100 text-green-700',
-                                'Closed' => 'bg-gray-100 text-gray-700',
+                                'Closed' => 'bg-canvas-subtle text-gray-700',
                                 'Archived' => 'bg-blue-100 text-blue-700',
-                                default => 'bg-gray-100 text-gray-700',
+                                default => 'bg-canvas-subtle text-gray-700',
                             };
                         @endphp
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm font-medium text-gray-900">FY {{ $fiscalYear->year_code }}</td>
+                        <tr class="hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 text-sm font-medium text-ink">FY {{ $fiscalYear->year_code }}</td>
                             <td class="px-4 py-3 text-sm">{{ $fiscalYear->start_date?->format('Y-m-d') }}</td>
                             <td class="px-4 py-3 text-sm">{{ $fiscalYear->end_date?->format('Y-m-d') }}</td>
                             <td class="px-4 py-3 text-center text-sm">{{ $fiscalYear->periods?->count() ?? 0 }}</td>
@@ -87,7 +87,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-sm text-center text-gray-500">No fiscal years found.</td>
+                            <td colspan="6" class="px-4 py-6 text-sm text-center text-ink-muted">No fiscal years found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -97,19 +97,19 @@
         <!-- Periods Summary -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <div class="px-4 py-3 border-b border-[#e5e5e5]">
-                <h3 class="text-sm font-medium text-gray-900">
+                <h3 class="text-sm font-medium text-ink">
                     Current Periods{{ $activeYear ? ' - FY '.$activeYear->year_code : '' }}
                 </h3>
             </div>
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Date</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Period</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Start Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">End Date</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#e5e5e5]">
@@ -117,12 +117,12 @@
                         @php
                             $periodStatusColor = match ($period->status?->value) {
                                 'open' => 'bg-green-100 text-green-700',
-                                'closed' => 'bg-gray-100 text-gray-700',
-                                default => 'bg-gray-100 text-gray-700',
+                                'closed' => 'bg-canvas-subtle text-gray-700',
+                                default => 'bg-canvas-subtle text-gray-700',
                             };
                             $isCurrent = now()->between($period->start_date, $period->end_date);
                         @endphp
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm">{{ $period->period_code }}</td>
                             <td class="px-4 py-3 text-sm">{{ $period->start_date?->format('F') }}</td>
                             <td class="px-4 py-3 text-sm">{{ $period->start_date?->format('Y-m-d') }}</td>
@@ -140,7 +140,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-sm text-center text-gray-500">No periods found.</td>
+                            <td colspan="6" class="px-4 py-6 text-sm text-center text-ink-muted">No periods found.</td>
                         </tr>
                     @endforelse
                 </tbody>

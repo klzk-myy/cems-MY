@@ -2,8 +2,8 @@
     <div class="space-y-6">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Trial Balance</h1>
-                <p class="mt-1 text-sm text-gray-500">As of {{ $asOfDate }}</p>
+                <h1 class="text-2xl font-semibold text-ink">Trial Balance</h1>
+                <p class="mt-1 text-sm text-ink-muted">As of {{ $asOfDate }}</p>
             </div>
             <div class="flex items-center gap-3">
                 <form method="GET" class="flex items-center gap-3">
@@ -30,35 +30,35 @@
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Debit (RM)</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Credit (RM)</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Code</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit (RM)</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit (RM)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#e5e5e5]">
                     @forelse ($trialBalance['accounts'] as $account)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm font-mono text-gray-900">{{ $account['account_code'] }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">{{ $account['account_name'] }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-500">{{ $account['account_type'] }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $account['debit'] > 0 ? 'text-gray-900' : 'text-gray-400' }}">{{ (float) $account['debit'] > 0 ? number_format((float) $account['debit'], 2) : '-' }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $account['credit'] > 0 ? 'text-gray-900' : 'text-gray-400' }}">{{ (float) $account['credit'] > 0 ? number_format((float) $account['credit'], 2) : '-' }}</td>
+                        <tr class="hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 text-sm font-mono text-ink">{{ $account['account_code'] }}</td>
+                            <td class="px-4 py-3 text-sm text-ink">{{ $account['account_name'] }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $account['account_type'] }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $account['debit'] > 0 ? 'text-ink' : 'text-gray-400' }}">{{ (float) $account['debit'] > 0 ? number_format((float) $account['debit'], 2) : '-' }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $account['credit'] > 0 ? 'text-ink' : 'text-gray-400' }}">{{ (float) $account['credit'] > 0 ? number_format((float) $account['credit'], 2) : '-' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-8 text-sm text-center text-gray-500">No accounts found</td>
+                            <td colspan="5" class="px-4 py-8 text-sm text-center text-ink-muted">No accounts found</td>
                         </tr>
                     @endforelse
                 </tbody>
-                <tfoot class="bg-gray-50 border-t border-[#e5e5e5]">
+                <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
                     <tr class="font-semibold">
-                        <td colspan="3" class="px-4 py-3 text-sm text-gray-900">Total</td>
-                        <td class="px-4 py-3 text-sm text-right font-mono text-gray-900">{{ number_format((float) $trialBalance['total_debits'], 2) }}</td>
-                        <td class="px-4 py-3 text-sm text-right font-mono text-gray-900">{{ number_format((float) $trialBalance['total_credits'], 2) }}</td>
+                        <td colspan="3" class="px-4 py-3 text-sm text-ink">Total</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono text-ink">{{ number_format((float) $trialBalance['total_debits'], 2) }}</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono text-ink">{{ number_format((float) $trialBalance['total_credits'], 2) }}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -68,8 +68,8 @@
             @foreach (['Asset', 'Liability', 'Equity', 'Revenue', 'Expense'] as $type)
                 @if (isset($trialBalance['totals_by_type'][$type]))
                     <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                        <p class="text-xs font-medium text-gray-500 uppercase">{{ $type }}</p>
-                        <p class="mt-1 text-lg font-semibold text-gray-900">RM {{ number_format((float) $trialBalance['totals_by_type'][$type], 2) }}</p>
+                        <p class="text-xs font-medium text-ink-muted uppercase">{{ $type }}</p>
+                        <p class="mt-1 text-lg font-semibold text-ink">RM {{ number_format((float) $trialBalance['totals_by_type'][$type], 2) }}</p>
                     </div>
                 @endif
             @endforeach

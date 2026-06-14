@@ -2,7 +2,7 @@
     <div class="p-6">
         <div class="mb-6">
             <h1 class="text-2xl font-bold">Trusted Devices</h1>
-            <p class="text-gray-500 text-sm mt-1">Manage devices that remember your MFA verification</p>
+            <p class="text-ink-muted text-sm mt-1">Manage devices that remember your MFA verification</p>
         </div>
 
         <div class="max-w-2xl">
@@ -15,7 +15,7 @@
                     </div>
                     <div>
                         <h2 class="font-semibold">About Trusted Devices</h2>
-                        <p class="text-sm text-gray-500">When you verify MFA on a trusted device, you won't be asked for a code on your next login.</p>
+                        <p class="text-sm text-ink-muted">When you verify MFA on a trusted device, you won't be asked for a code on your next login.</p>
                     </div>
                 </div>
             </div>
@@ -27,7 +27,7 @@
 
                 <table class="w-full">
                     <thead>
-                        <tr class="text-left text-sm text-gray-500 bg-gray-50">
+                        <tr class="text-left text-sm text-ink-muted bg-canvas-subtle">
                             <th class="px-4 py-3">Device</th>
                             <th class="px-4 py-3">Last Used</th>
                             <th class="px-4 py-3">Actions</th>
@@ -38,24 +38,24 @@
                         <tr class="border-t">
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center">
+                                    <div class="w-8 h-8 rounded bg-canvas-subtle flex items-center justify-center">
                                         @if($device->is_mobile)
-                                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4 text-ink-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                                             </svg>
                                         @else
-                                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4 text-ink-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                             </svg>
                                         @endif
                                     </div>
                                     <div>
                                         <div class="text-sm font-medium">{{ $device->name ?? 'Unknown Device' }}</div>
-                                        <div class="text-xs text-gray-500">{{ $device->browser ?? 'Chrome on Windows' }}</div>
+                                        <div class="text-xs text-ink-muted">{{ $device->browser ?? 'Chrome on Windows' }}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-500">
+                            <td class="px-4 py-3 text-sm text-ink-muted">
                                 {{ $device->last_used_at?->diffForHumans() ?? 'Just now' }}
                             </td>
                             <td class="px-4 py-3">
@@ -68,7 +68,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="3" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="3" class="px-4 py-8 text-center text-ink-muted">
                                 <p>No trusted devices.</p>
                                 <p class="text-sm text-gray-400 mt-1">When you check "Remember this device", it will appear here.</p>
                             </td>
@@ -83,19 +83,19 @@
                 <h3 class="font-semibold mb-4">Current Session</h3>
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                        <span class="text-gray-500">Device</span>
+                        <span class="text-ink-muted">Device</span>
                         <p class="font-medium">{{ $currentSession->user_agent ?? 'Chrome on Windows' }}</p>
                     </div>
                     <div>
-                        <span class="text-gray-500">IP Address</span>
+                        <span class="text-ink-muted">IP Address</span>
                         <p class="font-medium">{{ $currentSession->ip_address ?? '192.168.1.100' }}</p>
                     </div>
                     <div>
-                        <span class="text-gray-500">Verified At</span>
+                        <span class="text-ink-muted">Verified At</span>
                         <p class="font-medium">{{ $currentSession->verified_at?->format('d M Y, h:i A') ?? now()->format('d M Y, h:i A') }}</p>
                     </div>
                     <div>
-                        <span class="text-gray-500">Expires</span>
+                        <span class="text-ink-muted">Expires</span>
                         <p class="font-medium">{{ $currentSession->expires_at?->format('d M Y, h:i A') ?? now()->addMinutes(15)->format('d M Y, h:i A') }}</p>
                     </div>
                 </div>

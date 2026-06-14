@@ -9,8 +9,8 @@
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50">
-                    <tr class="text-left text-sm text-gray-500">
+                <thead class="bg-canvas-subtle">
+                    <tr class="text-left text-sm text-ink-muted">
                         <th class="px-4 py-3">Name</th>
                         <th class="px-4 py-3">Username</th>
                         <th class="px-4 py-3">Email</th>
@@ -21,7 +21,7 @@
                 </thead>
                 <tbody>
                     @forelse($users ?? [] as $user)
-                    <tr class="border-t hover:bg-gray-50">
+                    <tr class="border-t hover:bg-canvas-subtle">
                         <td class="px-4 py-3">{{ $user->name }}</td>
                         <td class="px-4 py-3">{{ $user->username }}</td>
                         <td class="px-4 py-3">{{ $user->email }}</td>

@@ -3,10 +3,10 @@
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-2xl font-bold">Customer Details</h1>
-                <p class="text-gray-500 text-sm mt-1">{{ $customer->full_name ?? 'Customer Name' }}</p>
+                <p class="text-ink-muted text-sm mt-1">{{ $customer->full_name ?? 'Customer Name' }}</p>
             </div>
             <div class="flex gap-3">
-                <a href="{{ route('customers.edit', $customer ?? 1) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+                <a href="{{ route('customers.edit', $customer ?? 1) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
                     Edit
                 </a>
             </div>
@@ -32,19 +32,19 @@
 
                     <div class="space-y-3 text-sm">
                         <div>
-                            <span class="text-gray-500">ID</span>
+                            <span class="text-ink-muted">ID</span>
                             <p class="font-medium">{{ $customer->id_type ?? 'IC' }}: {{ $customer->id_number_masked ?? '****' }}</p>
                         </div>
                         <div>
-                            <span class="text-gray-500">Nationality</span>
+                            <span class="text-ink-muted">Nationality</span>
                             <p class="font-medium">{{ $customer->nationality ?? 'Malaysian' }}</p>
                         </div>
                         <div>
-                            <span class="text-gray-500">Email</span>
+                            <span class="text-ink-muted">Email</span>
                             <p class="font-medium">{{ $customer->email ?? 'ahmad@example.com' }}</p>
                         </div>
                         <div>
-                            <span class="text-gray-500">Phone</span>
+                            <span class="text-ink-muted">Phone</span>
                             <p class="font-medium">{{ $customer->phone ?? '+60 12-345 6789' }}</p>
                         </div>
                     </div>
@@ -54,15 +54,15 @@
                     <h3 class="text-sm font-semibold mb-3">CDD Status</h3>
                     <div class="space-y-2">
                         <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Level</span>
+                            <span class="text-ink-muted">Level</span>
                             <span class="font-medium">{{ $customer->cdd_level ?? 'Standard' }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Last Verified</span>
+                            <span class="text-ink-muted">Last Verified</span>
                             <span class="font-medium">{{ $customer->cdd_verified_at?->format('d M Y') ?? '15 Jan 2024' }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Next Review</span>
+                            <span class="text-ink-muted">Next Review</span>
                             <span class="font-medium">{{ $customer->cdd_expiry_at?->format('d M Y') ?? '15 Jan 2025' }}</span>
                         </div>
                     </div>
@@ -78,7 +78,7 @@
 
                     <table class="w-full">
                         <thead>
-                            <tr class="text-left text-sm text-gray-500 border-b">
+                            <tr class="text-left text-sm text-ink-muted border-b">
                                 <th class="pb-3">Date</th>
                                 <th class="pb-3">Type</th>
                                 <th class="pb-3">Currency</th>
@@ -99,7 +99,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="py-4 text-center text-gray-500">No recent transactions.</td>
+                                <td colspan="5" class="py-4 text-center text-ink-muted">No recent transactions.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -109,21 +109,21 @@
                 <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
                     <h2 class="text-lg font-semibold mb-4">Compliance Summary</h2>
                     <div class="grid grid-cols-4 gap-4">
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-canvas-subtle rounded-lg">
                             <div class="text-2xl font-bold">{{ $stats['total_transactions'] ?? 24 }}</div>
-                            <div class="text-xs text-gray-500">Total Txns</div>
+                            <div class="text-xs text-ink-muted">Total Txns</div>
                         </div>
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-canvas-subtle rounded-lg">
                             <div class="text-2xl font-bold">RM {{ number_format($stats['total_value'] ?? 156750, 2) }}</div>
-                            <div class="text-xs text-gray-500">Total Value</div>
+                            <div class="text-xs text-ink-muted">Total Value</div>
                         </div>
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-canvas-subtle rounded-lg">
                             <div class="text-2xl font-bold">{{ $stats['alerts'] ?? 0 }}</div>
-                            <div class="text-xs text-gray-500">Alerts</div>
+                            <div class="text-xs text-ink-muted">Alerts</div>
                         </div>
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-canvas-subtle rounded-lg">
                             <div class="text-2xl font-bold">{{ $stats['str_filed'] ?? 0 }}</div>
-                            <div class="text-xs text-gray-500">STRs Filed</div>
+                            <div class="text-xs text-ink-muted">STRs Filed</div>
                         </div>
                     </div>
                 </div>
@@ -132,12 +132,12 @@
                     <h2 class="text-lg font-semibold mb-4">Notes</h2>
                     <div class="space-y-3">
                         @forelse($notes ?? [] as $note)
-                        <div class="p-3 bg-gray-50 rounded-lg">
+                        <div class="p-3 bg-canvas-subtle rounded-lg">
                             <div class="text-sm">{{ $note->note }}</div>
-                            <div class="text-xs text-gray-500 mt-1">{{ $note->created_at->format('d M Y h:i A') }} - {{ $note->creator?->name ?? 'System' }}</div>
+                            <div class="text-xs text-ink-muted mt-1">{{ $note->created_at->format('d M Y h:i A') }} - {{ $note->creator?->name ?? 'System' }}</div>
                         </div>
                         @empty
-                        <p class="text-sm text-gray-500">No notes yet.</p>
+                        <p class="text-sm text-ink-muted">No notes yet.</p>
                         @endforelse
                     </div>
                     <form method="POST" action="{{ route('customers.notes.store', $customer) }}" class="mt-4">

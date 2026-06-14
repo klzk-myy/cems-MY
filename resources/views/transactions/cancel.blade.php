@@ -2,46 +2,46 @@
     <div class="p-6">
         <div class="mb-6">
             <h1 class="text-2xl font-bold">Cancel Transaction</h1>
-            <p class="text-sm text-gray-500 mt-1">Request cancellation for transaction</p>
+            <p class="text-sm text-ink-muted mt-1">Request cancellation for transaction</p>
         </div>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
             <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 class="text-lg font-medium text-gray-900">Transaction Details</h2>
+                <h2 class="text-lg font-medium text-ink">Transaction Details</h2>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Transaction ID</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['id'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Transaction ID</label>
+                        <p class="text-sm text-ink">{{ $transaction['id'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Transaction Type</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['type'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Transaction Type</label>
+                        <p class="text-sm text-ink">{{ $transaction['type'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Amount</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['amount'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Amount</label>
+                        <p class="text-sm text-ink">{{ $transaction['amount'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Currency</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['currency'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Currency</label>
+                        <p class="text-sm text-ink">{{ $transaction['currency'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Customer</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['customer_name'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Customer</label>
+                        <p class="text-sm text-ink">{{ $transaction['customer_name'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Rate</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['rate'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Rate</label>
+                        <p class="text-sm text-ink">{{ $transaction['rate'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Counter</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['counter_id'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Counter</label>
+                        <p class="text-sm text-ink">{{ $transaction['counter_id'] ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-500 mb-1">Original Date</label>
-                        <p class="text-sm text-gray-900">{{ $transaction['created_at'] ?? 'N/A' }}</p>
+                        <label class="block text-sm font-medium text-ink-muted mb-1">Original Date</label>
+                        <p class="text-sm text-ink">{{ $transaction['created_at'] ?? 'N/A' }}</p>
                     </div>
                 </div>
             </div>
@@ -49,7 +49,7 @@
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl mb-6">
             <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 class="text-lg font-medium text-gray-900">Cancellation Request</h2>
+                <h2 class="text-lg font-medium text-ink">Cancellation Request</h2>
             </div>
             <div class="p-6">
                 <form method="POST" action="{{ route('transactions.cancel.store', $transaction['id'] ?? 0) }}">
@@ -67,7 +67,7 @@
                         <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                             Submit Cancellation Request
                         </button>
-                        <a href="{{ route('transactions.show', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+                        <a href="{{ route('transactions.show', $transaction['id'] ?? 0) }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
                             Back to Transaction
                         </a>
                     </div>
@@ -77,7 +77,7 @@
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl">
             <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 class="text-lg font-medium text-gray-900">Important Notice</h2>
+                <h2 class="text-lg font-medium text-ink">Important Notice</h2>
             </div>
             <div class="p-6">
                 <div class="flex items-start gap-3">
@@ -86,7 +86,7 @@
                     </svg>
                     <div>
                         <p class="text-sm text-gray-700">Cancellation requests require manager approval.</p>
-                        <p class="text-sm text-gray-500 mt-1">You will be notified once the request has been processed.</p>
+                        <p class="text-sm text-ink-muted mt-1">You will be notified once the request has been processed.</p>
                     </div>
                 </div>
             </div>

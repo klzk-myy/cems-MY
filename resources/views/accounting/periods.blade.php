@@ -3,8 +3,8 @@
         <!-- Page Header -->
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Accounting Periods</h1>
-                <p class="mt-1 text-sm text-gray-500">Manage monthly accounting periods</p>
+                <h1 class="text-2xl font-semibold text-ink">Accounting Periods</h1>
+                <p class="mt-1 text-sm text-ink-muted">Manage monthly accounting periods</p>
             </div>
             <div class="flex items-center gap-3">
                 <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
@@ -34,20 +34,20 @@
         <!-- Periods Table -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Date</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Expenses</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Period</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Start Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">End Date</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Revenue</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Expenses</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#e5e5e5]">
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">P01</td>
                         <td class="px-4 py-3 text-sm">January 2026</td>
                         <td class="px-4 py-3 text-sm">2026-01-01</td>
@@ -55,13 +55,13 @@
                         <td class="px-4 py-3 text-sm text-right">125,430.00</td>
                         <td class="px-4 py-3 text-sm text-right">98,210.00</td>
                         <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">P02</td>
                         <td class="px-4 py-3 text-sm">February 2026</td>
                         <td class="px-4 py-3 text-sm">2026-02-01</td>
@@ -69,13 +69,13 @@
                         <td class="px-4 py-3 text-sm text-right">132,870.00</td>
                         <td class="px-4 py-3 text-sm text-right">101,450.00</td>
                         <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">P03</td>
                         <td class="px-4 py-3 text-sm">March 2026</td>
                         <td class="px-4 py-3 text-sm">2026-03-01</td>
@@ -83,13 +83,13 @@
                         <td class="px-4 py-3 text-sm text-right">141,200.00</td>
                         <td class="px-4 py-3 text-sm text-right">108,900.00</td>
                         <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">P04</td>
                         <td class="px-4 py-3 text-sm">April 2026</td>
                         <td class="px-4 py-3 text-sm">2026-04-01</td>
@@ -97,13 +97,13 @@
                         <td class="px-4 py-3 text-sm text-right">138,500.00</td>
                         <td class="px-4 py-3 text-sm text-right">105,750.00</td>
                         <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">P05</td>
                         <td class="px-4 py-3 text-sm">May 2026</td>
                         <td class="px-4 py-3 text-sm">2026-05-01</td>
@@ -117,7 +117,7 @@
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">P06</td>
                         <td class="px-4 py-3 text-sm">June 2026</td>
                         <td class="px-4 py-3 text-sm">2026-06-01</td>
@@ -132,9 +132,9 @@
                         </td>
                     </tr>
                 </tbody>
-                <tfoot class="bg-gray-50 border-t border-[#e5e5e5]">
+                <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
                     <tr>
-                        <td colspan="4" class="px-4 py-3 text-sm font-medium text-gray-900">Total YTD</td>
+                        <td colspan="4" class="px-4 py-3 text-sm font-medium text-ink">Total YTD</td>
                         <td class="px-4 py-3 text-sm text-right font-medium">633,420.00</td>
                         <td class="px-4 py-3 text-sm text-right font-medium">493,210.00</td>
                         <td colspan="2"></td>
@@ -145,7 +145,7 @@
 
         <!-- Pagination -->
         <div class="flex items-center justify-between">
-            <p class="text-sm text-gray-500">Showing 1-6 of 6 periods</p>
+            <p class="text-sm text-ink-muted">Showing 1-6 of 6 periods</p>
             <div class="flex gap-2">
                 <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Previous</button>
                 <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Next</button>

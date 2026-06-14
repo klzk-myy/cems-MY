@@ -2,7 +2,7 @@
     <div class="p-6">
         <div class="mb-6">
             <h1 class="text-2xl font-bold">Account Recovery</h1>
-            <p class="text-gray-500 text-sm mt-1">Recover access to your account using recovery codes</p>
+            <p class="text-ink-muted text-sm mt-1">Recover access to your account using recovery codes</p>
         </div>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 max-w-lg">
@@ -19,7 +19,7 @@
                     </div>
                     <div>
                         <h2 class="font-semibold">Use Recovery Code</h2>
-                        <p class="text-sm text-gray-500">Enter one of your saved recovery codes</p>
+                        <p class="text-sm text-ink-muted">Enter one of your saved recovery codes</p>
                     </div>
                 </div>
             </div>
@@ -33,12 +33,12 @@
             </form>
 
             <div class="text-center">
-                <p class="text-sm text-gray-500 mb-2">Don't have recovery codes?</p>
+                <p class="text-sm text-ink-muted mb-2">Don't have recovery codes?</p>
                 <a href="{{ route('mfa.setup') }}" class="text-blue-600 hover:underline text-sm">Set up new authentication</a>
             </div>
 
             @if(isset($remainingCodes) && $remainingCodes > 0)
-            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+            <div class="mt-6 p-4 bg-canvas-subtle rounded-lg">
                 <p class="text-sm text-gray-600">
                     <strong>{{ $remainingCodes }}</strong> recovery codes remaining. Store them safely.
                 </p>

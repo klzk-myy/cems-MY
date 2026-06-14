@@ -2,8 +2,8 @@
 <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-2xl font-semibold text-gray-900">Create Stock Transfer</h1>
-            <p class="mt-1 text-sm text-gray-500">Request a new stock transfer between branches</p>
+            <h1 class="text-2xl font-semibold text-ink">Create Stock Transfer</h1>
+            <p class="mt-1 text-sm text-ink-muted">Request a new stock transfer between branches</p>
         </div>
 
         <!-- Form Card -->

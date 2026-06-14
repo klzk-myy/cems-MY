@@ -2,8 +2,8 @@
     <div class="space-y-6">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Balance Sheet</h1>
-                <p class="mt-1 text-sm text-gray-500">As of {{ $asOfDate }}</p>
+                <h1 class="text-2xl font-semibold text-ink">Balance Sheet</h1>
+                <p class="mt-1 text-sm text-ink-muted">As of {{ $asOfDate }}</p>
             </div>
             <form method="GET" class="flex items-center gap-3">
                 <input type="date" name="as_of_date" value="{{ $asOfDate }}"
@@ -38,23 +38,23 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-4 py-3 border-b border-[#e5e5e5] bg-gray-50">
-                    <h3 class="text-sm font-semibold text-gray-900">Assets</h3>
+                <div class="px-4 py-3 border-b border-[#e5e5e5] bg-canvas-subtle">
+                    <h3 class="text-sm font-semibold text-ink">Assets</h3>
                 </div>
                 <table class="w-full">
                     <tbody class="divide-y divide-[#e5e5e5]">
                         @forelse ($assets as $asset)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 text-sm text-gray-900">{{ $asset['account_code'] }} - {{ $asset['account_name'] }}</td>
+                            <tr class="hover:bg-canvas-subtle">
+                                <td class="px-4 py-3 text-sm text-ink">{{ $asset['account_code'] }} - {{ $asset['account_name'] }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $asset['amount'], 2) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="2" class="px-4 py-3 text-sm text-center text-gray-500">No assets</td></tr>
+                            <tr><td colspan="2" class="px-4 py-3 text-sm text-center text-ink-muted">No assets</td></tr>
                         @endforelse
                     </tbody>
-                    <tfoot class="bg-gray-50 border-t border-[#e5e5e5]">
+                    <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
                         <tr class="font-semibold">
-                            <td class="px-4 py-3 text-sm text-gray-900">Total Assets</td>
+                            <td class="px-4 py-3 text-sm text-ink">Total Assets</td>
                             <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $totalAssets, 2) }}</td>
                         </tr>
                     </tfoot>
@@ -63,23 +63,23 @@
 
             <div class="space-y-6">
                 <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                    <div class="px-4 py-3 border-b border-[#e5e5e5] bg-gray-50">
-                        <h3 class="text-sm font-semibold text-gray-900">Liabilities</h3>
+                    <div class="px-4 py-3 border-b border-[#e5e5e5] bg-canvas-subtle">
+                        <h3 class="text-sm font-semibold text-ink">Liabilities</h3>
                     </div>
                     <table class="w-full">
                         <tbody class="divide-y divide-[#e5e5e5]">
                             @forelse ($liabilities as $liability)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 text-sm text-gray-900">{{ $liability['account_code'] }} - {{ $liability['account_name'] }}</td>
+                                <tr class="hover:bg-canvas-subtle">
+                                    <td class="px-4 py-3 text-sm text-ink">{{ $liability['account_code'] }} - {{ $liability['account_name'] }}</td>
                                     <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $liability['amount'], 2) }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="2" class="px-4 py-3 text-sm text-center text-gray-500">No liabilities</td></tr>
+                                <tr><td colspan="2" class="px-4 py-3 text-sm text-center text-ink-muted">No liabilities</td></tr>
                             @endforelse
                         </tbody>
-                        <tfoot class="bg-gray-50 border-t border-[#e5e5e5]">
+                        <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
                             <tr class="font-semibold">
-                                <td class="px-4 py-3 text-sm text-gray-900">Total Liabilities</td>
+                                <td class="px-4 py-3 text-sm text-ink">Total Liabilities</td>
                                 <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $totalLiabilities, 2) }}</td>
                             </tr>
                         </tfoot>
@@ -87,23 +87,23 @@
                 </div>
 
                 <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                    <div class="px-4 py-3 border-b border-[#e5e5e5] bg-gray-50">
-                        <h3 class="text-sm font-semibold text-gray-900">Equity</h3>
+                    <div class="px-4 py-3 border-b border-[#e5e5e5] bg-canvas-subtle">
+                        <h3 class="text-sm font-semibold text-ink">Equity</h3>
                     </div>
                     <table class="w-full">
                         <tbody class="divide-y divide-[#e5e5e5]">
                             @forelse ($equity as $eq)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 text-sm text-gray-900">{{ $eq['account_code'] }} - {{ $eq['account_name'] }}</td>
+                                <tr class="hover:bg-canvas-subtle">
+                                    <td class="px-4 py-3 text-sm text-ink">{{ $eq['account_code'] }} - {{ $eq['account_name'] }}</td>
                                     <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $eq['amount'], 2) }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="2" class="px-4 py-3 text-sm text-center text-gray-500">No equity accounts</td></tr>
+                                <tr><td colspan="2" class="px-4 py-3 text-sm text-center text-ink-muted">No equity accounts</td></tr>
                             @endforelse
                         </tbody>
-                        <tfoot class="bg-gray-50 border-t border-[#e5e5e5]">
+                        <tfoot class="bg-canvas-subtle border-t border-[#e5e5e5]">
                             <tr class="font-semibold">
-                                <td class="px-4 py-3 text-sm text-gray-900">Total Equity</td>
+                                <td class="px-4 py-3 text-sm text-ink">Total Equity</td>
                                 <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $totalEquity, 2) }}</td>
                             </tr>
                         </tfoot>
@@ -112,8 +112,8 @@
 
                 <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
                     <div class="flex items-center justify-between">
-                        <p class="text-sm font-medium text-gray-900">Total Liabilities & Equity</p>
-                        <p class="text-lg font-semibold text-gray-900">RM {{ number_format((float) $totalLiabilitiesEquity, 2) }}</p>
+                        <p class="text-sm font-medium text-ink">Total Liabilities & Equity</p>
+                        <p class="text-lg font-semibold text-ink">RM {{ number_format((float) $totalLiabilitiesEquity, 2) }}</p>
                     </div>
                 </div>
             </div>

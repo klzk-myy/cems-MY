@@ -3,8 +3,8 @@
         <!-- Page Header -->
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Reconciliation Report</h1>
-                <p class="mt-1 text-sm text-gray-500">Monthly reconciliation summary report</p>
+                <h1 class="text-2xl font-semibold text-ink">Reconciliation Report</h1>
+                <p class="mt-1 text-sm text-ink-muted">Monthly reconciliation summary report</p>
             </div>
             <div class="flex items-center gap-3">
                 <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
@@ -39,24 +39,24 @@
             <!-- Report Header -->
             <div class="p-6 border-b border-[#e5e5e5]">
                 <div class="text-center">
-                    <h2 class="text-xl font-semibold text-gray-900">Bank Reconciliation Report</h2>
-                    <p class="text-sm text-gray-500 mt-1">Maybank Current Account - May 2026</p>
+                    <h2 class="text-xl font-semibold text-ink">Bank Reconciliation Report</h2>
+                    <p class="text-sm text-ink-muted mt-1">Maybank Current Account - May 2026</p>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                     <div>
-                        <p class="text-sm text-gray-500">Report Date</p>
-                        <p class="mt-1 text-sm font-medium text-gray-900">2026-05-03</p>
+                        <p class="text-sm text-ink-muted">Report Date</p>
+                        <p class="mt-1 text-sm font-medium text-ink">2026-05-03</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500">Prepared By</p>
-                        <p class="mt-1 text-sm font-medium text-gray-900">Admin User</p>
+                        <p class="text-sm text-ink-muted">Prepared By</p>
+                        <p class="mt-1 text-sm font-medium text-ink">Admin User</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500">Approved By</p>
-                        <p class="mt-1 text-sm font-medium text-gray-900">-</p>
+                        <p class="text-sm text-ink-muted">Approved By</p>
+                        <p class="mt-1 text-sm font-medium text-ink">-</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500">Status</p>
+                        <p class="text-sm text-ink-muted">Status</p>
                         <p class="mt-1">
                             <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700">In Progress</span>
                         </p>
@@ -66,40 +66,40 @@
 
             <!-- Balances Section -->
             <div class="p-6 border-b border-[#e5e5e5]">
-                <h3 class="text-sm font-medium text-gray-900 mb-4">Section 1: Balance Comparison</h3>
+                <h3 class="text-sm font-medium text-ink mb-4">Section 1: Balance Comparison</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="p-4 border border-[#e5e5e5] rounded-lg">
                         <div class="flex items-center justify-between mb-2">
-                            <p class="text-sm font-medium text-gray-900">Bank Statement Balance</p>
-                            <p class="text-lg font-semibold text-gray-900">RM 1,250,430.00</p>
+                            <p class="text-sm font-medium text-ink">Bank Statement Balance</p>
+                            <p class="text-lg font-semibold text-ink">RM 1,250,430.00</p>
                         </div>
-                        <p class="text-xs text-gray-500">As of May 1, 2026</p>
+                        <p class="text-xs text-ink-muted">As of May 1, 2026</p>
                     </div>
                     <div class="p-4 border border-[#e5e5e5] rounded-lg">
                         <div class="flex items-center justify-between mb-2">
-                            <p class="text-sm font-medium text-gray-900">Book Balance</p>
-                            <p class="text-lg font-semibold text-gray-900">RM 1,248,920.50</p>
+                            <p class="text-sm font-medium text-ink">Book Balance</p>
+                            <p class="text-lg font-semibold text-ink">RM 1,248,920.50</p>
                         </div>
-                        <p class="text-xs text-gray-500">As of May 1, 2026</p>
+                        <p class="text-xs text-ink-muted">As of May 1, 2026</p>
                     </div>
                 </div>
             </div>
 
             <!-- Adjustments Section -->
             <div class="p-6 border-b border-[#e5e5e5]">
-                <h3 class="text-sm font-medium text-gray-900 mb-4">Section 2: Adjustments to Bank Balance</h3>
+                <h3 class="text-sm font-medium text-ink mb-4">Section 2: Adjustments to Bank Balance</h3>
                 <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+                    <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
                         <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Date</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount (RM)</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Item</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Date</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#e5e5e5]">
                         <tr>
-                            <td colspan="3" class="px-4 py-2 text-sm font-medium text-gray-900">Outstanding Checks</td>
+                            <td colspan="3" class="px-4 py-2 text-sm font-medium text-ink">Outstanding Checks</td>
                             <td class="px-4 py-2"></td>
                         </tr>
                         <tr>
@@ -120,12 +120,12 @@
                             <td class="px-4 py-2 text-sm text-right">2026-05-02</td>
                             <td class="px-4 py-2 text-sm text-right">-8,250.00</td>
                         </tr>
-                        <tr class="bg-gray-50">
-                            <td colspan="3" class="px-4 py-2 text-sm font-medium text-gray-900">Total Outstanding Checks</td>
+                        <tr class="bg-canvas-subtle">
+                            <td colspan="3" class="px-4 py-2 text-sm font-medium text-ink">Total Outstanding Checks</td>
                             <td class="px-4 py-2 text-sm text-right font-medium">-25,750.00</td>
                         </tr>
                         <tr>
-                            <td colspan="3" class="px-4 py-2 text-sm font-medium text-gray-900 pt-4">Deposits in Transit</td>
+                            <td colspan="3" class="px-4 py-2 text-sm font-medium text-ink pt-4">Deposits in Transit</td>
                             <td class="px-4 py-2"></td>
                         </tr>
                         <tr>
@@ -140,8 +140,8 @@
                             <td class="px-4 py-2 text-sm text-right">2026-05-01</td>
                             <td class="px-4 py-2 text-sm text-right">32,500.00</td>
                         </tr>
-                        <tr class="bg-gray-50">
-                            <td colspan="3" class="px-4 py-2 text-sm font-medium text-gray-900">Total Deposits in Transit</td>
+                        <tr class="bg-canvas-subtle">
+                            <td colspan="3" class="px-4 py-2 text-sm font-medium text-ink">Total Deposits in Transit</td>
                             <td class="px-4 py-2 text-sm text-right font-medium">77,500.00</td>
                         </tr>
                     </tbody>
@@ -150,13 +150,13 @@
 
             <!-- Book Adjustments Section -->
             <div class="p-6 border-b border-[#e5e5e5]">
-                <h3 class="text-sm font-medium text-gray-900 mb-4">Section 3: Adjustments to Book Balance</h3>
+                <h3 class="text-sm font-medium text-ink mb-4">Section 3: Adjustments to Book Balance</h3>
                 <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+                    <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
                         <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Date</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount (RM)</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Item</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Date</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#e5e5e5]">
@@ -170,8 +170,8 @@
                             <td class="px-4 py-2 text-sm text-right">2026-05-01</td>
                             <td class="px-4 py-2 text-sm text-right">125.00</td>
                         </tr>
-                        <tr class="bg-gray-50">
-                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Total Book Adjustments</td>
+                        <tr class="bg-canvas-subtle">
+                            <td class="px-4 py-2 text-sm font-medium text-ink">Total Book Adjustments</td>
                             <td class="px-4 py-2"></td>
                             <td class="px-4 py-2 text-sm text-right font-medium">75.00</td>
                         </tr>
@@ -181,24 +181,24 @@
 
             <!-- Final Reconciliation -->
             <div class="p-6">
-                <h3 class="text-sm font-medium text-gray-900 mb-4">Section 4: Final Reconciliation</h3>
+                <h3 class="text-sm font-medium text-ink mb-4">Section 4: Final Reconciliation</h3>
                 <div class="bg-green-50 border border-green-200 rounded-lg p-6">
                     <div class="space-y-2">
                         <div class="flex items-center justify-between">
-                            <p class="text-sm text-gray-900">Bank Statement Balance</p>
-                            <p class="text-sm font-medium text-gray-900">RM 1,250,430.00</p>
+                            <p class="text-sm text-ink">Bank Statement Balance</p>
+                            <p class="text-sm font-medium text-ink">RM 1,250,430.00</p>
                         </div>
                         <div class="flex items-center justify-between">
-                            <p class="text-sm text-gray-900 pl-4">Less: Outstanding Checks</p>
-                            <p class="text-sm font-medium text-gray-900">-RM 25,750.00</p>
+                            <p class="text-sm text-ink pl-4">Less: Outstanding Checks</p>
+                            <p class="text-sm font-medium text-ink">-RM 25,750.00</p>
                         </div>
                         <div class="flex items-center justify-between">
-                            <p class="text-sm text-gray-900 pl-4">Add: Deposits in Transit</p>
-                            <p class="text-sm font-medium text-gray-900">RM 77,500.00</p>
+                            <p class="text-sm text-ink pl-4">Add: Deposits in Transit</p>
+                            <p class="text-sm font-medium text-ink">RM 77,500.00</p>
                         </div>
                         <div class="flex items-center justify-between border-t border-green-300 pt-2">
-                            <p class="text-sm font-semibold text-gray-900">Adjusted Bank Balance</p>
-                            <p class="text-sm font-semibold text-gray-900">RM 1,302,180.00</p>
+                            <p class="text-sm font-semibold text-ink">Adjusted Bank Balance</p>
+                            <p class="text-sm font-semibold text-ink">RM 1,302,180.00</p>
                         </div>
                     </div>
                 </div>
@@ -206,16 +206,16 @@
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-4">
                     <div class="space-y-2">
                         <div class="flex items-center justify-between">
-                            <p class="text-sm text-gray-900">Book Balance</p>
-                            <p class="text-sm font-medium text-gray-900">RM 1,248,920.50</p>
+                            <p class="text-sm text-ink">Book Balance</p>
+                            <p class="text-sm font-medium text-ink">RM 1,248,920.50</p>
                         </div>
                         <div class="flex items-center justify-between">
-                            <p class="text-sm text-gray-900 pl-4">Add: Bank Adjustments</p>
-                            <p class="text-sm font-medium text-gray-900">RM 75.00</p>
+                            <p class="text-sm text-ink pl-4">Add: Bank Adjustments</p>
+                            <p class="text-sm font-medium text-ink">RM 75.00</p>
                         </div>
                         <div class="flex items-center justify-between border-t border-blue-300 pt-2">
-                            <p class="text-sm font-semibold text-gray-900">Adjusted Book Balance</p>
-                            <p class="text-sm font-semibold text-gray-900">RM 1,248,995.50</p>
+                            <p class="text-sm font-semibold text-ink">Adjusted Book Balance</p>
+                            <p class="text-sm font-semibold text-ink">RM 1,248,995.50</p>
                         </div>
                     </div>
                 </div>
@@ -233,22 +233,22 @@
             <div class="p-6 border-t border-[#e5e5e5]">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                        <p class="text-sm text-gray-500 mb-8">_________________________</p>
-                        <p class="text-sm font-medium text-gray-900">Prepared By</p>
-                        <p class="text-xs text-gray-500">Admin User</p>
-                        <p class="text-xs text-gray-500">Date: _____________</p>
+                        <p class="text-sm text-ink-muted mb-8">_________________________</p>
+                        <p class="text-sm font-medium text-ink">Prepared By</p>
+                        <p class="text-xs text-ink-muted">Admin User</p>
+                        <p class="text-xs text-ink-muted">Date: _____________</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500 mb-8">_________________________</p>
-                        <p class="text-sm font-medium text-gray-900">Reviewed By</p>
-                        <p class="text-xs text-gray-500">Manager Name</p>
-                        <p class="text-xs text-gray-500">Date: _____________</p>
+                        <p class="text-sm text-ink-muted mb-8">_________________________</p>
+                        <p class="text-sm font-medium text-ink">Reviewed By</p>
+                        <p class="text-xs text-ink-muted">Manager Name</p>
+                        <p class="text-xs text-ink-muted">Date: _____________</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500 mb-8">_________________________</p>
-                        <p class="text-sm font-medium text-gray-900">Approved By</p>
-                        <p class="text-xs text-gray-500">Compliance Officer</p>
-                        <p class="text-xs text-gray-500">Date: _____________</p>
+                        <p class="text-sm text-ink-muted mb-8">_________________________</p>
+                        <p class="text-sm font-medium text-ink">Approved By</p>
+                        <p class="text-xs text-ink-muted">Compliance Officer</p>
+                        <p class="text-xs text-ink-muted">Date: _____________</p>
                     </div>
                 </div>
             </div>

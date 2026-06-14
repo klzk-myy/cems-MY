@@ -7,7 +7,7 @@
     <title>Login - {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gray-100 flex items-center justify-center">
+<body class="min-h-screen bg-canvas-subtle flex items-center justify-center">
     <div class="w-full max-w-md p-6">
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-8">
             <h1 class="text-2xl font-bold text-center mb-6">{{ config('app.name') }}</h1>

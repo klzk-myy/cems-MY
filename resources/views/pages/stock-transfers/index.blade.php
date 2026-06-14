@@ -11,8 +11,8 @@
 
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50">
-                    <tr class="text-left text-sm text-gray-500">
+                <thead class="bg-canvas-subtle">
+                    <tr class="text-left text-sm text-ink-muted">
                         <th class="px-4 py-3">Reference</th>
                         <th class="px-4 py-3">From</th>
                         <th class="px-4 py-3">To</th>
@@ -23,7 +23,7 @@
                 </thead>
                 <tbody>
                     @forelse($transfers ?? [] as $transfer)
-                    <tr class="border-t hover:bg-gray-50">
+                    <tr class="border-t hover:bg-canvas-subtle">
                         <td class="px-4 py-3 font-mono text-sm">{{ $transfer->reference }}</td>
                         <td class="px-4 py-3">{{ $transfer->source_branch_id }}</td>
                         <td class="px-4 py-3">{{ $transfer->destination_branch_id }}</td>

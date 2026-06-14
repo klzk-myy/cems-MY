@@ -3,32 +3,32 @@
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-2xl font-bold">Counter History</h1>
-                <p class="text-gray-500 text-sm mt-1">{{ $counter->name ?? 'Counter 1' }} - Session records and transactions</p>
+                <p class="text-ink-muted text-sm mt-1">{{ $counter->name ?? 'Counter 1' }} - Session records and transactions</p>
             </div>
-            <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+            <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
                 Back to Counters
             </a>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Total Sessions</div>
+                <div class="text-ink-muted text-sm">Total Sessions</div>
                 <div class="text-2xl font-bold">{{ $stats['total_sessions'] ?? 0 }}</div>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Total Transactions</div>
+                <div class="text-ink-muted text-sm">Total Transactions</div>
                 <div class="text-2xl font-bold">{{ $stats['total_transactions'] ?? 0 }}</div>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Total Value</div>
+                <div class="text-ink-muted text-sm">Total Value</div>
                 <div class="text-2xl font-bold">RM {{ number_format($stats['total_value'] ?? 0, 2) }}</div>
             </div>
         </div>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50">
-                    <tr class="text-left text-sm text-gray-500">
+                <thead class="bg-canvas-subtle">
+                    <tr class="text-left text-sm text-ink-muted">
                         <th class="px-4 py-3">Date</th>
                         <th class="px-4 py-3">Operator</th>
                         <th class="px-4 py-3">Type</th>
@@ -40,7 +40,7 @@
                 </thead>
                 <tbody>
                     @forelse($sessions ?? [] as $session)
-                    <tr class="border-t hover:bg-gray-50">
+                    <tr class="border-t hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">
                             {{ $session->opened_at->format('d M Y, h:i A') }}
                         </td>
@@ -65,7 +65,7 @@
                         </td>
                         <td class="px-4 py-3">
                             @if($session->closed_at)
-                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">Closed</span>
+                                <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-canvas-subtle text-gray-700">Closed</span>
                             @else
                                 <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Open</span>
                             @endif
@@ -73,7 +73,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">No session history found.</td>
+                        <td colspan="7" class="px-4 py-8 text-center text-ink-muted">No session history found.</td>
                     </tr>
                     @endforelse
                 </tbody>

@@ -4,23 +4,23 @@
 
         <x-stat-grid :cols="3" class="mb-6">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Total Counters</div>
+                <div class="text-ink-muted text-sm">Total Counters</div>
                 <div class="text-2xl font-bold">{{ $stats['total'] ?? 0 }}</div>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Open</div>
+                <div class="text-ink-muted text-sm">Open</div>
                 <div class="text-2xl font-bold text-green-600">{{ $stats['open'] ?? 0 }}</div>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Available</div>
+                <div class="text-ink-muted text-sm">Available</div>
                 <div class="text-2xl font-bold text-blue-600">{{ $stats['available'] ?? 0 }}</div>
             </div>
         </x-stat-grid>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50">
-                    <tr class="text-left text-sm text-gray-500">
+                <thead class="bg-canvas-subtle">
+                    <tr class="text-left text-sm text-ink-muted">
                         <th class="px-4 py-3">Counter</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Actions</th>
@@ -28,7 +28,7 @@
                 </thead>
                 <tbody>
                     @forelse($counters as $counter)
-                    <tr class="border-t hover:bg-gray-50">
+                    <tr class="border-t hover:bg-canvas-subtle">
                         <td class="px-4 py-3">{{ $counter->name }}</td>
                         <td class="px-4 py-3">
                             @if($counter->sessions->count() > 0)

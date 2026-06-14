@@ -2,8 +2,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Page Header -->
         <div class="mb-8">
-            <h1 class="text-2xl font-bold text-gray-900">Risk Trends</h1>
-            <p class="mt-1 text-sm text-gray-500">Historical risk metrics and analysis</p>
+            <h1 class="text-2xl font-bold text-ink">Risk Trends</h1>
+            <p class="mt-1 text-sm text-ink-muted">Historical risk metrics and analysis</p>
         </div>
 
         <!-- Time Range Filter -->
@@ -46,39 +46,39 @@
 
         <!-- Risk Score Distribution Over Time -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Risk Score Distribution Over Time</h3>
+            <h3 class="text-lg font-semibold text-ink mb-4">Risk Score Distribution Over Time</h3>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-canvas-subtle">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">High Risk</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Medium Risk</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Low Risk</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">High Risk</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Medium Risk</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Low Risk</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Total</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         <tr>
-                            <td class="px-4 py-3 text-sm text-gray-900">January 2024</td>
+                            <td class="px-4 py-3 text-sm text-ink">January 2024</td>
                             <td class="px-4 py-3 text-sm text-red-600 font-medium">12</td>
                             <td class="px-4 py-3 text-sm text-yellow-600">28</td>
                             <td class="px-4 py-3 text-sm text-green-600">156</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">196</td>
+                            <td class="px-4 py-3 text-sm text-ink">196</td>
                         </tr>
                         <tr>
-                            <td class="px-4 py-3 text-sm text-gray-900">December 2023</td>
+                            <td class="px-4 py-3 text-sm text-ink">December 2023</td>
                             <td class="px-4 py-3 text-sm text-red-600 font-medium">8</td>
                             <td class="px-4 py-3 text-sm text-yellow-600">24</td>
                             <td class="px-4 py-3 text-sm text-green-600">148</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">180</td>
+                            <td class="px-4 py-3 text-sm text-ink">180</td>
                         </tr>
                         <tr>
-                            <td class="px-4 py-3 text-sm text-gray-900">November 2023</td>
+                            <td class="px-4 py-3 text-sm text-ink">November 2023</td>
                             <td class="px-4 py-3 text-sm text-red-600 font-medium">6</td>
                             <td class="px-4 py-3 text-sm text-yellow-600">22</td>
                             <td class="px-4 py-3 text-sm text-green-600">142</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">170</td>
+                            <td class="px-4 py-3 text-sm text-ink">170</td>
                         </tr>
                     </tbody>
                 </table>
@@ -87,7 +87,7 @@
 
         <!-- Key Insights -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Key Insights</h3>
+            <h3 class="text-lg font-semibold text-ink mb-4">Key Insights</h3>
             <div class="space-y-3">
                 <div class="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
                     <svg class="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

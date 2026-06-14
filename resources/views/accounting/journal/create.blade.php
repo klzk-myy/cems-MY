@@ -27,17 +27,17 @@
             </x-card>
 
             <x-card>
-                <div class="px-4 py-3 border-b border-[#e5e5e5] bg-gray-50">
-                    <h3 class="text-sm font-medium text-gray-900">Journal Lines</h3>
+                <div class="px-4 py-3 border-b border-[#e5e5e5] bg-canvas-subtle">
+                    <h3 class="text-sm font-medium text-ink">Journal Lines</h3>
                 </div>
                 <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+                    <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Debit</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Credit</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Remove</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Remove</th>
                         </tr>
                     </thead>
                     <tbody id="journal-lines" class="divide-y divide-[#e5e5e5]">
@@ -105,15 +105,15 @@
             <x-card class="p-4">
                 <div class="flex justify-end gap-8">
                     <div class="text-right">
-                        <p class="text-sm text-gray-500">Total Debit</p>
+                        <p class="text-sm text-ink-muted">Total Debit</p>
                         <p class="text-lg font-semibold" id="total-debit">0.00</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm text-gray-500">Total Credit</p>
+                        <p class="text-sm text-ink-muted">Total Credit</p>
                         <p class="text-lg font-semibold" id="total-credit">0.00</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm text-gray-500">Difference</p>
+                        <p class="text-sm text-ink-muted">Difference</p>
                         <p class="text-lg font-semibold" id="difference">0.00</p>
                     </div>
                 </div>

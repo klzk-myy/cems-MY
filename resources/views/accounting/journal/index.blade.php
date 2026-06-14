@@ -1,77 +1,60 @@
 <x-app-layout title="Journal Entries">
     <div class="space-y-6">
-        <!-- Page Header -->
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Journal Entries</h1>
-                <p class="mt-1 text-sm text-gray-500">Manage double-entry journal entries</p>
-            </div>
-            <a href="{{ route('accounting.journal.create') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
-                + New Entry
-            </a>
-        </div>
+        <x-page-header title="Journal Entries" description="Manage double-entry journal entries">
+            <x-slot:actions>
+                <x-button href="{{ route('accounting.journal.create') }}" variant="primary">+ New Entry</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-        <!-- Filters -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-            <div class="flex flex-wrap gap-4">
-                <input type="text" placeholder="Search entries..." class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg md:w-64">
-                <select class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                    <option value="">All Status</option>
-                    <option value="draft">Draft</option>
-                    <option value="pending">Pending</option>
-                    <option value="posted">Posted</option>
-                </select>
-                <input type="date" class="px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Filter</button>
-            </div>
-        </div>
+        <x-filter-bar method="GET">
+            <x-input name="search" placeholder="Search entries..." inline />
+            <x-select name="status" :options="['' => 'All Status', 'draft' => 'Draft', 'pending' => 'Pending', 'posted' => 'Posted']" inline />
+            <x-input type="date" name="date" inline />
+            <x-button type="submit" variant="secondary">Filter</x-button>
+        </x-filter-bar>
 
-        <!-- Journal Entries Table -->
-        <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+        <x-card>
+            <x-table>
+                <x-slot:thead>
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entry No.</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Debit</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Credit</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entry No.</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
-                </thead>
-                <tbody class="divide-y divide-[#e5e5e5]">
+                </x-slot:thead>
+                <x-slot:tbody>
                     @forelse($entries ?? [] as $entry)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm">{{ $entry['date'] ?? '2026-05-01' }}</td>
-                        <td class="px-4 py-3 text-sm font-mono">{{ $entry['entry_no'] ?? 'JE-0001' }}</td>
-                        <td class="px-4 py-3 text-sm">{{ $entry['description'] ?? 'Currency revaluation gain' }}</td>
-                        <td class="px-4 py-3 text-sm">{{ $entry['account'] ?? '7100-001' }}</td>
-                        <td class="px-4 py-3 text-sm text-right">{{ $entry['debit'] ?? '0.00' }}</td>
-                        <td class="px-4 py-3 text-sm text-right">{{ $entry['credit'] ?? '0.00' }}</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">Posted</span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <a href="{{ route('accounting.journal.show', $entry['id'] ?? 1) }}" class="text-blue-600 hover:text-blue-800">View</a>
-                        </td>
-                    </tr>
+                        <tr class="border-t border-border hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 text-sm">{{ $entry['date'] ?? '2026-05-01' }}</td>
+                            <td class="px-4 py-3 text-sm font-mono">{{ $entry['entry_no'] ?? 'JE-0001' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $entry['description'] ?? 'Currency revaluation gain' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $entry['account'] ?? '7100-001' }}</td>
+                            <td class="px-4 py-3 text-sm text-right">{{ $entry['debit'] ?? '0.00' }}</td>
+                            <td class="px-4 py-3 text-sm text-right">{{ $entry['credit'] ?? '0.00' }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <x-badge variant="success">Posted</x-badge>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <x-button href="{{ route('accounting.journal.show', $entry['id'] ?? 1) }}" variant="ghost" size="sm">View</x-button>
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">No journal entries found</td>
-                    </tr>
+                        <x-empty-state message="No journal entries found" :colspan="8" />
                     @endforelse
-                </tbody>
-            </table>
-        </div>
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
 
-        <!-- Pagination -->
         <div class="flex items-center justify-between">
-            <p class="text-sm text-gray-500">Showing 1-10 of 0 entries</p>
+            <p class="text-sm text-ink-muted">Showing 1-10 of 0 entries</p>
             <div class="flex gap-2">
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Previous</button>
-                <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Next</button>
+                <x-button variant="secondary" disabled>Previous</x-button>
+                <x-button variant="secondary" disabled>Next</x-button>
             </div>
         </div>
     </div>

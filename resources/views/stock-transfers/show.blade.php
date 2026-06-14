@@ -3,27 +3,27 @@
         <!-- Header -->
         <div class="mb-8 flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Stock Transfer #{{ $stockTransfer->id }}</h1>
-                <p class="mt-1 text-sm text-gray-500">
+                <h1 class="text-2xl font-semibold text-ink">Stock Transfer #{{ $stockTransfer->id }}</h1>
+                <p class="mt-1 text-sm text-ink-muted">
                     {{ $stockTransfer->sourceBranch->code ?? 'N/A' }} &rarr; {{ $stockTransfer->destinationBranch->code ?? 'N/A' }}
                 </p>
             </div>
             <a href="{{ route('stock-transfers.index') }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-gray-50">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
                 Back
             </a>
         </div>
 
         <!-- Transfer Details Card -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Transfer Details</h2>
+            <h2 class="text-lg font-medium text-ink mb-4">Transfer Details</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
-                    <dt class="text-sm font-medium text-gray-500">Transfer Number</dt>
-                    <dd class="mt-1 text-sm text-gray-900">#{{ $stockTransfer->id }}</dd>
+                    <dt class="text-sm font-medium text-ink-muted">Transfer Number</dt>
+                    <dd class="mt-1 text-sm text-ink">#{{ $stockTransfer->id }}</dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-gray-500">Status</dt>
+                    <dt class="text-sm font-medium text-ink-muted">Status</dt>
                     <dd class="mt-1 text-sm">
                         <x-badge variant="{{ $stockTransfer->status->value === 'completed' ? 'success' : ($stockTransfer->status->value === 'pending' ? 'warning' : ($stockTransfer->status->value === 'cancelled' ? 'danger' : 'info')) }}">
                             {{ ucfirst(str_replace('_', ' ', $stockTransfer->status->value)) }}
@@ -31,26 +31,26 @@
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-gray-500">Source Branch</dt>
-                    <dd class="mt-1 text-sm text-gray-900">
+                    <dt class="text-sm font-medium text-ink-muted">Source Branch</dt>
+                    <dd class="mt-1 text-sm text-ink">
                         {{ $stockTransfer->sourceBranch->code ?? 'N/A' }} - {{ $stockTransfer->sourceBranch->name ?? 'N/A' }}
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-gray-500">Destination Branch</dt>
-                    <dd class="mt-1 text-sm text-gray-900">
+                    <dt class="text-sm font-medium text-ink-muted">Destination Branch</dt>
+                    <dd class="mt-1 text-sm text-ink">
                         {{ $stockTransfer->destinationBranch->code ?? 'N/A' }} - {{ $stockTransfer->destinationBranch->name ?? 'N/A' }}
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-gray-500">Requested By</dt>
-                    <dd class="mt-1 text-sm text-gray-900">
+                    <dt class="text-sm font-medium text-ink-muted">Requested By</dt>
+                    <dd class="mt-1 text-sm text-ink">
                         {{ $stockTransfer->requestedBy->name ?? 'N/A' }}
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-gray-500">Request Date</dt>
-                    <dd class="mt-1 text-sm text-gray-900">
+                    <dt class="text-sm font-medium text-ink-muted">Request Date</dt>
+                    <dd class="mt-1 text-sm text-ink">
                         {{ $stockTransfer->created_at->format('d M Y H:i:s') }}
                     </dd>
                 </div>
@@ -58,7 +58,7 @@
 
             @if($stockTransfer->notes)
                 <div class="mt-6 pt-6 border-t border-[#e5e5e5]">
-                    <dt class="text-sm font-medium text-gray-500 mb-2">Notes</dt>
+                    <dt class="text-sm font-medium text-ink-muted mb-2">Notes</dt>
                     <dd class="text-sm text-gray-700">{{ $stockTransfer->notes }}</dd>
                 </div>
             @endif
@@ -68,7 +68,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <!-- Branch Manager Approval -->
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <h3 class="text-md font-medium text-gray-900 mb-4">Branch Manager Approval</h3>
+                <h3 class="text-md font-medium text-ink mb-4">Branch Manager Approval</h3>
                 <div class="space-y-3">
                     @if($stockTransfer->branchManagerApprovedBy)
                         <div class="flex items-center gap-2 text-green-700">
@@ -77,8 +77,8 @@
                             </svg>
                             <span class="text-sm font-medium">Approved</span>
                         </div>
-                        <p class="text-sm text-gray-500">By: {{ $stockTransfer->branchManagerApprovedBy->name ?? 'N/A' }}</p>
-                        <p class="text-sm text-gray-500">
+                        <p class="text-sm text-ink-muted">By: {{ $stockTransfer->branchManagerApprovedBy->name ?? 'N/A' }}</p>
+                        <p class="text-sm text-ink-muted">
                             {{ $stockTransfer->branch_manager_approved_at?->format('d M Y H:i:s') ?? 'N/A' }}
                         </p>
                     @else
@@ -94,7 +94,7 @@
 
             <!-- HQ Approval -->
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <h3 class="text-md font-medium text-gray-900 mb-4">HQ Approval</h3>
+                <h3 class="text-md font-medium text-ink mb-4">HQ Approval</h3>
                 <div class="space-y-3">
                     @if($stockTransfer->hqApproval)
                         <div class="flex items-center gap-2 text-green-700">
@@ -103,8 +103,8 @@
                             </svg>
                             <span class="text-sm font-medium">Approved</span>
                         </div>
-                        <p class="text-sm text-gray-500">By: {{ $stockTransfer->hqApproval->name ?? 'N/A' }}</p>
-                        <p class="text-sm text-gray-500">
+                        <p class="text-sm text-ink-muted">By: {{ $stockTransfer->hqApproval->name ?? 'N/A' }}</p>
+                        <p class="text-sm text-ink-muted">
                             {{ $stockTransfer->hq_approved_at?->format('d M Y H:i:s') ?? 'N/A' }}
                         </p>
                     @else
@@ -121,23 +121,23 @@
 
         <!-- Transfer Items -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Transfer Items</h2>
+            <h2 class="text-lg font-medium text-ink mb-4">Transfer Items</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-[#e5e5e5]">
                     <thead>
-                        <tr class="bg-gray-50">
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <tr class="bg-canvas-subtle">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Currency</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Amount</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#e5e5e5]">
                         @forelse($stockTransfer->items as $item)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 text-sm text-gray-900">
+                            <tr class="hover:bg-canvas-subtle">
+                                <td class="px-4 py-3 text-sm text-ink">
                                     {{ $item->currency->code ?? 'N/A' }} - {{ $item->currency->name ?? 'N/A' }}
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-900 text-right">
+                                <td class="px-4 py-3 text-sm text-ink text-right">
                                     {{ number_format((float) $item->amount, 2) }}
                                 </td>
                                 <td class="px-4 py-3 text-sm">

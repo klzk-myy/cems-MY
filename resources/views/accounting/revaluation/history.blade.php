@@ -3,8 +3,8 @@
         <!-- Page Header -->
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Revaluation History</h1>
-                <p class="mt-1 text-sm text-gray-500">View historical currency revaluation records</p>
+                <h1 class="text-2xl font-semibold text-ink">Revaluation History</h1>
+                <p class="mt-1 text-sm text-ink-muted">View historical currency revaluation records</p>
             </div>
             <a href="{{ route('accounting.revaluation') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">
                 Back to Revaluation
@@ -34,15 +34,15 @@
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <p class="text-sm text-gray-500">Total Revaluations</p>
-                <p class="mt-1 text-2xl font-semibold text-gray-900">12</p>
+                <p class="text-sm text-ink-muted">Total Revaluations</p>
+                <p class="mt-1 text-2xl font-semibold text-ink">12</p>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <p class="text-sm text-gray-500">Total Gains YTD</p>
+                <p class="text-sm text-ink-muted">Total Gains YTD</p>
                 <p class="mt-1 text-2xl font-semibold text-green-600">RM 28,450.00</p>
             </div>
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <p class="text-sm text-gray-500">Total Losses YTD</p>
+                <p class="text-sm text-ink-muted">Total Losses YTD</p>
                 <p class="mt-1 text-2xl font-semibold text-red-600">RM 12,350.00</p>
             </div>
         </div>
@@ -50,20 +50,20 @@
         <!-- Revaluation History Table -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-[#e5e5e5]">
+                <thead class="bg-canvas-subtle border-b border-[#e5e5e5]">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Currency</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Position</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Base Rate</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">End Rate</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Gain/Loss</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Period</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Base Rate</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">End Rate</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Gain/Loss</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#e5e5e5]">
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">2026-04-30</td>
                         <td class="px-4 py-3 text-sm">P04</td>
                         <td class="px-4 py-3 text-sm">USD</td>
@@ -75,7 +75,7 @@
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">2026-04-30</td>
                         <td class="px-4 py-3 text-sm">P04</td>
                         <td class="px-4 py-3 text-sm">SGD</td>
@@ -87,7 +87,7 @@
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">2026-04-30</td>
                         <td class="px-4 py-3 text-sm">P04</td>
                         <td class="px-4 py-3 text-sm">GBP</td>
@@ -99,7 +99,7 @@
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">2026-03-31</td>
                         <td class="px-4 py-3 text-sm">P03</td>
                         <td class="px-4 py-3 text-sm">USD</td>
@@ -111,7 +111,7 @@
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">2026-03-31</td>
                         <td class="px-4 py-3 text-sm">P03</td>
                         <td class="px-4 py-3 text-sm">EUR</td>
@@ -123,7 +123,7 @@
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">2026-02-28</td>
                         <td class="px-4 py-3 text-sm">P02</td>
                         <td class="px-4 py-3 text-sm">SGD</td>
@@ -135,7 +135,7 @@
                             <button class="text-blue-600 hover:text-blue-800">View</button>
                         </td>
                     </tr>
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-canvas-subtle">
                         <td class="px-4 py-3 text-sm">2026-01-31</td>
                         <td class="px-4 py-3 text-sm">P01</td>
                         <td class="px-4 py-3 text-sm">USD</td>
@@ -153,7 +153,7 @@
 
         <!-- Pagination -->
         <div class="flex items-center justify-between">
-            <p class="text-sm text-gray-500">Showing 1-7 of 12 records</p>
+            <p class="text-sm text-ink-muted">Showing 1-7 of 12 records</p>
             <div class="flex gap-2">
                 <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] disabled:opacity-50" disabled>Previous</button>
                 <button class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]">Next</button>

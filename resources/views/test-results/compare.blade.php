@@ -3,11 +3,11 @@
         <!-- Header -->
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Compare Test Runs</h1>
-                <p class="mt-1 text-sm text-gray-500">Run #{{ $run1->id }} vs Run #{{ $run2->id }}</p>
+                <h1 class="text-2xl font-semibold text-ink">Compare Test Runs</h1>
+                <p class="mt-1 text-sm text-ink-muted">Run #{{ $run1->id }} vs Run #{{ $run2->id }}</p>
             </div>
             <a href="{{ route('test-results.index') }}"
-               class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-gray-50">
+               class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] text-gray-700 hover:bg-canvas-subtle">
                 Back to List
             </a>
         </div>
@@ -16,15 +16,15 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Run 1 Card -->
             <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-[#e5e5e5] bg-gray-50">
+                <div class="px-6 py-4 border-b border-[#e5e5e5] bg-canvas-subtle">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-gray-900">Run #{{ $run1->id }}</h2>
-                        <span class="text-sm text-gray-500">{{ $run1->created_at->format('M d, Y H:i') }}</span>
+                        <h2 class="text-lg font-semibold text-ink">Run #{{ $run1->id }}</h2>
+                        <span class="text-sm text-ink-muted">{{ $run1->created_at->format('M d, Y H:i') }}</span>
                     </div>
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Status</span>
+                        <span class="text-sm text-ink-muted">Status</span>
                         @if($run1->status === 'passed')
                             <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-green-100 text-green-700">Passed</span>
                         @elseif($run1->status === 'failed')
@@ -32,32 +32,32 @@
                         @elseif($run1->status === 'error')
                             <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-yellow-100 text-yellow-700">Error</span>
                         @else
-                            <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-gray-100 text-gray-700">{{ ucfirst($run1->status) }}</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-canvas-subtle text-gray-700">{{ ucfirst($run1->status) }}</span>
                         @endif
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Total Tests</span>
-                        <span class="text-sm font-medium text-gray-900">{{ number_format($run1->tests_total ?? 0) }}</span>
+                        <span class="text-sm text-ink-muted">Total Tests</span>
+                        <span class="text-sm font-medium text-ink">{{ number_format($run1->tests_total ?? 0) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Passed</span>
+                        <span class="text-sm text-ink-muted">Passed</span>
                         <span class="text-sm font-medium text-green-600">{{ number_format($run1->tests_passed ?? 0) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Failed</span>
+                        <span class="text-sm text-ink-muted">Failed</span>
                         <span class="text-sm font-medium text-red-600">{{ number_format($run1->tests_failed ?? 0) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Errors</span>
+                        <span class="text-sm text-ink-muted">Errors</span>
                         <span class="text-sm font-medium text-yellow-600">{{ number_format($run1->tests_errors ?? 0) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Duration</span>
-                        <span class="text-sm font-medium text-gray-900">{{ $run1->duration ? number_format($run1->duration, 2) . 's' : 'N/A' }}</span>
+                        <span class="text-sm text-ink-muted">Duration</span>
+                        <span class="text-sm font-medium text-ink">{{ $run1->duration ? number_format($run1->duration, 2) . 's' : 'N/A' }}</span>
                     </div>
                     <div class="pt-4 border-t border-[#e5e5e5]">
                         <a href="{{ route('test-results.show', $run1->id) }}"
-                           class="text-sm font-medium text-gray-900 hover:text-gray-700">
+                           class="text-sm font-medium text-ink hover:text-gray-700">
                             View Full Details &rarr;
                         </a>
                     </div>
@@ -66,15 +66,15 @@
 
             <!-- Run 2 Card -->
             <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-[#e5e5e5] bg-gray-50">
+                <div class="px-6 py-4 border-b border-[#e5e5e5] bg-canvas-subtle">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-gray-900">Run #{{ $run2->id }}</h2>
-                        <span class="text-sm text-gray-500">{{ $run2->created_at->format('M d, Y H:i') }}</span>
+                        <h2 class="text-lg font-semibold text-ink">Run #{{ $run2->id }}</h2>
+                        <span class="text-sm text-ink-muted">{{ $run2->created_at->format('M d, Y H:i') }}</span>
                     </div>
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Status</span>
+                        <span class="text-sm text-ink-muted">Status</span>
                         @if($run2->status === 'passed')
                             <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-green-100 text-green-700">Passed</span>
                         @elseif($run2->status === 'failed')
@@ -82,32 +82,32 @@
                         @elseif($run2->status === 'error')
                             <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-yellow-100 text-yellow-700">Error</span>
                         @else
-                            <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-gray-100 text-gray-700">{{ ucfirst($run2->status) }}</span>
+                            <span class="inline-flex px-2.5 py-0.5 text-sm font-medium rounded bg-canvas-subtle text-gray-700">{{ ucfirst($run2->status) }}</span>
                         @endif
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Total Tests</span>
-                        <span class="text-sm font-medium text-gray-900">{{ number_format($run2->tests_total ?? 0) }}</span>
+                        <span class="text-sm text-ink-muted">Total Tests</span>
+                        <span class="text-sm font-medium text-ink">{{ number_format($run2->tests_total ?? 0) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Passed</span>
+                        <span class="text-sm text-ink-muted">Passed</span>
                         <span class="text-sm font-medium text-green-600">{{ number_format($run2->tests_passed ?? 0) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Failed</span>
+                        <span class="text-sm text-ink-muted">Failed</span>
                         <span class="text-sm font-medium text-red-600">{{ number_format($run2->tests_failed ?? 0) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Errors</span>
+                        <span class="text-sm text-ink-muted">Errors</span>
                         <span class="text-sm font-medium text-yellow-600">{{ number_format($run2->tests_errors ?? 0) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Duration</span>
-                        <span class="text-sm font-medium text-gray-900">{{ $run2->duration ? number_format($run2->duration, 2) . 's' : 'N/A' }}</span>
+                        <span class="text-sm text-ink-muted">Duration</span>
+                        <span class="text-sm font-medium text-ink">{{ $run2->duration ? number_format($run2->duration, 2) . 's' : 'N/A' }}</span>
                     </div>
                     <div class="pt-4 border-t border-[#e5e5e5]">
                         <a href="{{ route('test-results.show', $run2->id) }}"
-                           class="text-sm font-medium text-gray-900 hover:text-gray-700">
+                           class="text-sm font-medium text-ink hover:text-gray-700">
                             View Full Details &rarr;
                         </a>
                     </div>
@@ -118,21 +118,21 @@
         <!-- Comparison Summary -->
         <div class="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden">
             <div class="px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 class="text-lg font-semibold text-gray-900">Differences</h2>
+                <h2 class="text-lg font-semibold text-ink">Differences</h2>
             </div>
             <table class="min-w-full divide-y divide-[#e5e5e5]">
-                <thead class="bg-gray-50">
+                <thead class="bg-canvas-subtle">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metric</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Run #{{ $run1->id }}</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Run #{{ $run2->id }}</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Metric</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Run #{{ $run1->id }}</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Run #{{ $run2->id }}</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Change</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-[#e5e5e5]">
                     <!-- Total Tests -->
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Total Tests</td>
+                    <tr class="hover:bg-canvas-subtle">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Total Tests</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ number_format($run1->tests_total ?? 0) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ number_format($run2->tests_total ?? 0) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -142,13 +142,13 @@
                             @elseif($totalDiff < 0)
                                 <span class="text-sm font-medium text-red-600">{{ number_format($totalDiff) }}</span>
                             @else
-                                <span class="text-sm text-gray-500">0</span>
+                                <span class="text-sm text-ink-muted">0</span>
                             @endif
                         </td>
                     </tr>
                     <!-- Passed -->
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Passed</td>
+                    <tr class="hover:bg-canvas-subtle">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Passed</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{{ number_format($run1->tests_passed ?? 0) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{{ number_format($run2->tests_passed ?? 0) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -158,13 +158,13 @@
                             @elseif($passedDiff < 0)
                                 <span class="text-sm font-medium text-red-600">{{ number_format($passedDiff) }}</span>
                             @else
-                                <span class="text-sm text-gray-500">0</span>
+                                <span class="text-sm text-ink-muted">0</span>
                             @endif
                         </td>
                     </tr>
                     <!-- Failed -->
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Failed</td>
+                    <tr class="hover:bg-canvas-subtle">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Failed</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">{{ number_format($run1->tests_failed ?? 0) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">{{ number_format($run2->tests_failed ?? 0) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -174,13 +174,13 @@
                             @elseif($failedDiff < 0)
                                 <span class="text-sm font-medium text-green-600">{{ number_format($failedDiff) }}</span>
                             @else
-                                <span class="text-sm text-gray-500">0</span>
+                                <span class="text-sm text-ink-muted">0</span>
                             @endif
                         </td>
                     </tr>
                     <!-- Errors -->
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Errors</td>
+                    <tr class="hover:bg-canvas-subtle">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Errors</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-600 font-medium">{{ number_format($run1->tests_errors ?? 0) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-600 font-medium">{{ number_format($run2->tests_errors ?? 0) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -190,13 +190,13 @@
                             @elseif($errorDiff < 0)
                                 <span class="text-sm font-medium text-green-600">{{ number_format($errorDiff) }}</span>
                             @else
-                                <span class="text-sm text-gray-500">0</span>
+                                <span class="text-sm text-ink-muted">0</span>
                             @endif
                         </td>
                     </tr>
                     <!-- Duration -->
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Duration</td>
+                    <tr class="hover:bg-canvas-subtle">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Duration</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $run1->duration ? number_format($run1->duration, 2) . 's' : 'N/A' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $run2->duration ? number_format($run2->duration, 2) . 's' : 'N/A' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -207,16 +207,16 @@
                                 @elseif($durationDiff < 0)
                                     <span class="text-sm font-medium text-green-600">{{ number_format($durationDiff, 2) }}s</span>
                                 @else
-                                    <span class="text-sm text-gray-500">0s</span>
+                                    <span class="text-sm text-ink-muted">0s</span>
                                 @endif
                             @else
-                                <span class="text-sm text-gray-500">N/A</span>
+                                <span class="text-sm text-ink-muted">N/A</span>
                             @endif
                         </td>
                     </tr>
                     <!-- Pass Rate -->
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Pass Rate</td>
+                    <tr class="hover:bg-canvas-subtle">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">Pass Rate</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                             @php $rate1 = $run1->tests_total > 0 ? round(($run1->tests_passed / $run1->tests_total) * 100, 1) : 0; @endphp
                             {{ $rate1 }}%
@@ -232,7 +232,7 @@
                             @elseif($rateDiff < 0)
                                 <span class="text-sm font-medium text-red-600">{{ $rateDiff }}%</span>
                             @else
-                                <span class="text-sm text-gray-500">0%</span>
+                                <span class="text-sm text-ink-muted">0%</span>
                             @endif
                         </td>
                     </tr>
@@ -283,23 +283,23 @@
         <!-- Environment Comparison -->
         @if($run1->branch !== $run2->branch || $run1->commit_hash !== $run2->commit_hash)
             <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Environment Differences</h3>
+                <h3 class="text-lg font-semibold text-ink mb-4">Environment Differences</h3>
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                     <div>
-                        <dt class="text-sm font-medium text-gray-500">Branch (Run #{{ $run1->id }})</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $run1->branch ?? 'N/A' }}</dd>
+                        <dt class="text-sm font-medium text-ink-muted">Branch (Run #{{ $run1->id }})</dt>
+                        <dd class="mt-1 text-sm text-ink">{{ $run1->branch ?? 'N/A' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm font-medium text-gray-500">Branch (Run #{{ $run2->id }})</dt>
-                        <dd class="mt-1 text-sm text-gray-900 {{ $run1->branch !== $run2->branch ? 'text-yellow-600 font-medium' : '' }}">{{ $run2->branch ?? 'N/A' }}</dd>
+                        <dt class="text-sm font-medium text-ink-muted">Branch (Run #{{ $run2->id }})</dt>
+                        <dd class="mt-1 text-sm text-ink {{ $run1->branch !== $run2->branch ? 'text-yellow-600 font-medium' : '' }}">{{ $run2->branch ?? 'N/A' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm font-medium text-gray-500">Commit (Run #{{ $run1->id }})</dt>
-                        <dd class="mt-1 text-sm text-gray-900 font-mono">{{ $run1->commit_hash ? substr($run1->commit_hash, 0, 8) : 'N/A' }}</dd>
+                        <dt class="text-sm font-medium text-ink-muted">Commit (Run #{{ $run1->id }})</dt>
+                        <dd class="mt-1 text-sm text-ink font-mono">{{ $run1->commit_hash ? substr($run1->commit_hash, 0, 8) : 'N/A' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm font-medium text-gray-500">Commit (Run #{{ $run2->id }})</dt>
-                        <dd class="mt-1 text-sm text-gray-900 font-mono {{ $run1->commit_hash !== $run2->commit_hash ? 'text-yellow-600 font-medium' : '' }}">{{ $run2->commit_hash ? substr($run2->commit_hash, 0, 8) : 'N/A' }}</dd>
+                        <dt class="text-sm font-medium text-ink-muted">Commit (Run #{{ $run2->id }})</dt>
+                        <dd class="mt-1 text-sm text-ink font-mono {{ $run1->commit_hash !== $run2->commit_hash ? 'text-yellow-600 font-medium' : '' }}">{{ $run2->commit_hash ? substr($run2->commit_hash, 0, 8) : 'N/A' }}</dd>
                     </div>
                 </dl>
             </div>

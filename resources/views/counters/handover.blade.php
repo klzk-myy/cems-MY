@@ -2,25 +2,25 @@
     <div class="p-6">
         <div class="mb-6">
             <h1 class="text-2xl font-bold">Counter Handover</h1>
-            <p class="text-gray-500 text-sm mt-1">Transfer counter custody to another operator</p>
+            <p class="text-ink-muted text-sm mt-1">Transfer counter custody to another operator</p>
         </div>
 
         <div class="bg-white border border-[#e5e5e5] rounded-xl p-6 max-w-lg">
             <div class="grid grid-cols-2 gap-6 mb-6">
                 <div>
-                    <span class="text-gray-500 text-sm">Counter</span>
+                    <span class="text-ink-muted text-sm">Counter</span>
                     <p class="font-semibold text-lg">{{ $counter->name ?? 'Counter 1' }}</p>
                 </div>
                 <div>
-                    <span class="text-gray-500 text-sm">Current Operator</span>
+                    <span class="text-ink-muted text-sm">Current Operator</span>
                     <p class="font-semibold text-lg">{{ auth()->user()->name }}</p>
                 </div>
                 <div>
-                    <span class="text-gray-500 text-sm">Session Started</span>
+                    <span class="text-ink-muted text-sm">Session Started</span>
                     <p class="font-medium">{{ $session->opened_at->format('d M Y, h:i A') ?? now()->format('d M Y, h:i A') }}</p>
                 </div>
                 <div>
-                    <span class="text-gray-500 text-sm">Current Float</span>
+                    <span class="text-ink-muted text-sm">Current Float</span>
                     <p class="font-medium">RM {{ number_format($session->opening_float ?? 5000, 2) }}</p>
                 </div>
             </div>
@@ -61,7 +61,7 @@
                     <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">
                         Initiate Handover
                     </button>
-                    <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-gray-50">
+                    <a href="{{ route('counters.index') }}" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5] hover:bg-canvas-subtle">
                         Cancel
                     </a>
                 </div>

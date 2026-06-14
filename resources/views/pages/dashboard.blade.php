@@ -1,68 +1,45 @@
 <x-app-layout title="Dashboard">
-    <div class="p-6">
-        <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+    <div class="space-y-6">
+        <x-page-header title="Dashboard" />
 
         <x-stat-grid :cols="4" class="mb-8">
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Today's Transactions</div>
-                <div class="text-2xl font-bold">{{ $stats['total_transactions'] ?? 0 }}</div>
-            </div>
-
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Buy Volume</div>
-                <div class="text-2xl font-bold text-green-600">
-                    {{ number_format($stats['buy_volume'] ?? 0, 2) }}
-                </div>
-            </div>
-
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Sell Volume</div>
-                <div class="text-2xl font-bold text-red-600">
-                    {{ number_format($stats['sell_volume'] ?? 0, 2) }}
-                </div>
-            </div>
-
-            <div class="bg-white border border-[#e5e5e5] rounded-xl p-4">
-                <div class="text-gray-500 text-sm">Open Flags</div>
-                <div class="text-2xl font-bold text-yellow-600">
-                    {{ $stats['flagged'] ?? 0 }}
-                </div>
-            </div>
+            <x-stat-card label="Today's Transactions" :value="$stats['total_transactions'] ?? 0" />
+            <x-stat-card label="Buy Volume" :value="number_format($stats['buy_volume'] ?? 0, 2)" color="green" />
+            <x-stat-card label="Sell Volume" :value="number_format($stats['sell_volume'] ?? 0, 2)" color="red" />
+            <x-stat-card label="Open Flags" :value="$stats['flagged'] ?? 0" color="yellow" />
         </x-stat-grid>
 
-        <div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-            <h2 class="text-lg font-semibold mb-4">Recent Transactions</h2>
-
+        <x-card title="Recent Transactions">
             @if($recent_transactions->isEmpty())
-                <p class="text-gray-500">No transactions today.</p>
+                <p class="p-6 text-ink-muted">No transactions today.</p>
             @else
-                <table class="w-full">
-                    <thead>
-                        <tr class="text-left text-gray-500 text-sm">
-                            <th class="pb-2">Time</th>
-                            <th class="pb-2">Customer</th>
-                            <th class="pb-2">Type</th>
-                            <th class="pb-2">Amount</th>
-                            <th class="pb-2">Rate</th>
+                <x-table>
+                    <x-slot:thead>
+                        <tr class="text-left text-ink-muted text-sm">
+                            <th class="px-4 py-3">Time</th>
+                            <th class="px-4 py-3">Customer</th>
+                            <th class="px-4 py-3">Type</th>
+                            <th class="px-4 py-3">Amount</th>
+                            <th class="px-4 py-3">Rate</th>
                         </tr>
-                    </thead>
-                    <tbody>
+                    </x-slot:thead>
+                    <x-slot:tbody>
                         @foreach($recent_transactions as $transaction)
-                        <tr class="border-t">
-                            <td class="py-2">{{ $transaction->created_at->format('H:i') }}</td>
-                            <td class="py-2">{{ $transaction->customer->name ?? 'N/A' }}</td>
-                            <td class="py-2">
-                                <x-badge variant="{{ $transaction->type === 'Buy' ? 'success' : 'danger' }}">
-                                    {{ $transaction->type }}
-                                </x-badge>
-                            </td>
-                            <td class="py-2">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</td>
-                            <td class="py-2">{{ number_format($transaction->rate_used, 4) }}</td>
-                        </tr>
+                            <tr class="border-t border-border">
+                                <td class="px-4 py-3">{{ $transaction->created_at->format('H:i') }}</td>
+                                <td class="px-4 py-3">{{ $transaction->customer->name ?? 'N/A' }}</td>
+                                <td class="px-4 py-3">
+                                    <x-badge variant="{{ $transaction->type === 'Buy' ? 'success' : 'danger' }}">
+                                        {{ $transaction->type }}
+                                    </x-badge>
+                                </td>
+                                <td class="px-4 py-3">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</td>
+                                <td class="px-4 py-3">{{ number_format($transaction->rate_used, 4) }}</td>
+                            </tr>
                         @endforeach
-                    </tbody>
-                </table>
+                    </x-slot:tbody>
+                </x-table>
             @endif
-        </div>
+        </x-card>
     </div>
 </x-app-layout>
