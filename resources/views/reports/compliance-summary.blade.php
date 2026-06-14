@@ -1,65 +1,36 @@
 <x-app-layout title="Compliance Summary Report">
-    <div class="p-6">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h1 class="text-2xl font-bold">Compliance Summary Report</h1>
-                <p class="text-sm text-ink-muted mt-1">AML/CFT compliance overview and flagged transactions</p>
-            </div>
-            <div class="flex items-center gap-4 text-sm text-ink-muted">
-                <span>{{ \Carbon\Carbon::parse($startDate)->format('M d, Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('M d, Y') }}</span>
-            </div>
-        </div>
+    <div class="p-6 space-y-6">
+        <x-page-header title="Compliance Summary Report" description="AML/CFT compliance overview and flagged transactions" :actions="true">
+            <x-slot:actions>
+                <span class="text-sm text-ink-muted">
+                    {{ \Carbon\Carbon::parse($startDate)->format('M d, Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('M d, Y') }}
+                </span>
+            </x-slot:actions>
+        </x-page-header>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-surface border border-border rounded-xl p-6">
-                <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">EDD Cases</div>
-                <div class="text-2xl font-semibold text-blue-600">{{ number_format($eddCount) }}</div>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-6">
-                <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">Suspicious Transactions</div>
-                <div class="text-2xl font-semibold text-red-600">{{ number_format($suspiciousCount) }}</div>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-6">
-                <div class="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">Total Flagged</div>
-                <div class="text-2xl font-semibold text-ink">{{ number_format($flaggedStats['total']) }}</div>
-            </div>
-        </div>
+        <x-stat-grid cols="3">
+            <x-stat-card label="EDD Cases" :value="number_format($eddCount)" color="blue" />
+            <x-stat-card label="Suspicious Transactions" :value="number_format($suspiciousCount)" color="red" />
+            <x-stat-card label="Total Flagged" :value="number_format($flaggedStats['total'])" />
+        </x-stat-grid>
 
-        <!-- Date Range Filter -->
-        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
+        <x-card>
             <form method="GET" action="{{ route('reports.compliance-summary') }}" class="flex flex-wrap gap-4 items-end">
-                <div class="flex flex-col gap-2">
-                    <label for="start_date" class="text-xs font-medium text-ink-muted uppercase tracking-wide">Start Date</label>
-                    <input type="date" name="start_date" id="start_date" value="{{ $startDate }}"
-                        class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
-                </div>
-                <div class="flex flex-col gap-2">
-                    <label for="end_date" class="text-xs font-medium text-ink-muted uppercase tracking-wide">End Date</label>
-                    <input type="date" name="end_date" id="end_date" value="{{ $endDate }}"
-                        class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
-                </div>
-                <button type="submit" class="px-4 py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                    Update Report
-                </button>
+                <x-input name="start_date" id="start_date" type="date" label="Start Date" :value="$startDate" inline />
+                <x-input name="end_date" id="end_date" type="date" label="End Date" :value="$endDate" inline />
+                <x-button variant="primary" type="submit">Update Report</x-button>
             </form>
-        </div>
+        </x-card>
 
-        <!-- Flagged by Type Breakdown -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div class="bg-surface border border-border rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-border">
-                    <h2 class="text-lg font-medium text-ink">Flagged Transactions by Type</h2>
-                </div>
-                <table class="w-full">
-                    <thead class="bg-canvas-subtle">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wide">Flag Type</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wide">Count</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wide">Percentage</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <x-card title="Flagged Transactions by Type">
+                <x-table>
+                    <x-slot:thead>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wide">Flag Type</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wide">Count</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wide">Percentage</th>
+                    </x-slot:thead>
+                    <x-slot:tbody>
                         @forelse($flaggedStats['by_type'] as $type => $count)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-6 py-4 text-sm text-ink">{{ $type }}</td>
@@ -69,19 +40,13 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="3" class="px-6 py-4 text-center text-ink-muted">No flagged transactions</td>
-                            </tr>
+                            <x-empty-state message="No flagged transactions" :colspan="3" />
                         @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    </x-slot:tbody>
+                </x-table>
+            </x-card>
 
-            <!-- Compliance Metrics -->
-            <div class="bg-surface border border-border rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-border">
-                    <h2 class="text-lg font-medium text-ink">Compliance Metrics</h2>
-                </div>
+            <x-card title="Compliance Metrics">
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-ink-muted">EDD Cases Processed</span>
@@ -89,7 +54,7 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-ink-muted">Suspicious Transaction Reports</span>
-                        <span class="text-sm font-medium text-red-600">{{ number_format($suspiciousCount) }}</span>
+                        <span class="text-sm font-medium text-danger-text">{{ number_format($suspiciousCount) }}</span>
                     </div>
                     <div class="pt-4 border-t border-border">
                         <div class="flex items-center justify-between">
@@ -98,8 +63,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </x-card>
         </div>
-
     </div>
 </x-app-layout>

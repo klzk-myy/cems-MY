@@ -1,122 +1,102 @@
 <x-app-layout title="MSB2 Daily Transaction Summary">
-    <div class="p-6">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h1 class="text-2xl font-bold">MSB2 Daily Transaction Summary</h1>
-                <p class="text-sm text-ink-muted mt-1">Daily Summary of Money Service Business Transactions</p>
-            </div>
+    <div class="space-y-6">
+        <x-page-header
+            title="MSB2 Daily Transaction Summary"
+            description="Daily Summary of Money Service Business Transactions"
+        >
             @if($isToday)
-            <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">Today</span>
+                <x-slot:actions>
+                    <x-badge variant="success">Today</x-badge>
+                </x-slot:actions>
             @endif
-        </div>
+        </x-page-header>
 
         {{-- Date Selector --}}
-        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
-            <form method="GET" action="{{ route('reports.msb2') }}" class="flex flex-wrap gap-4 items-end">
-                <div>
-                    <label for="date" class="block text-sm font-medium text-ink-muted mb-2">Select Date</label>
-                    <input type="date" id="date" name="date" value="{{ $date }}" class="px-4 py-2.5 text-sm bg-surface border border-border rounded-lg">
-                </div>
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                    View Report
-                </button>
-            </form>
-            @if($nextBusinessDay)
-            <p class="text-sm text-ink-muted mt-4 pt-4 border-t border-border">
-                Next Business Day: <span class="font-medium text-ink">{{ \Carbon\Carbon::parse($nextBusinessDay)->format('d M Y (l)') }}</span>
-            </p>
-            @endif
-        </div>
+        <x-card>
+            <div class="p-6 space-y-4">
+                <form method="GET" action="{{ route('reports.msb2') }}" class="flex flex-wrap gap-4 items-end">
+                    <x-input
+                        type="date"
+                        id="date"
+                        name="date"
+                        label="Select Date"
+                        :value="$date"
+                        inline
+                    />
+                    <x-button type="submit" variant="primary">View Report</x-button>
+                </form>
+
+                @if($nextBusinessDay)
+                    <p class="text-sm text-ink-muted pt-4 border-t border-border">
+                        Next Business Day: <span class="font-medium text-ink">{{ \Carbon\Carbon::parse($nextBusinessDay)->format('d M Y (l)') }}</span>
+                    </p>
+                @endif
+            </div>
+        </x-card>
 
         {{-- Report Content --}}
         @if($reportGenerated)
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-xs text-ink-muted mb-1">Total Transactions</p>
-                <p class="text-2xl font-semibold text-ink">{{ number_format($stats['total_transactions'] ?? 0) }}</p>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-xs text-ink-muted mb-1">Total Buy Volume</p>
-                <p class="text-2xl font-semibold text-ink">MYR {{ number_format($stats['total_buy_volume'] ?? 0, 2) }}</p>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-xs text-ink-muted mb-1">Total Sell Volume</p>
-                <p class="text-2xl font-semibold text-ink">MYR {{ number_format($stats['total_sell_volume'] ?? 0, 2) }}</p>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-xs text-ink-muted mb-1">Net Position</p>
-                <p class="text-2xl font-semibold {{ ($stats['net_position'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                    MYR {{ number_format($stats['net_position'] ?? 0, 2) }}
-                </p>
-            </div>
-        </div>
+            <x-stat-grid cols="4">
+                <x-stat-card label="Total Transactions" :value="number_format($stats['total_transactions'] ?? 0)" />
+                <x-stat-card label="Total Buy Volume" :value="'MYR ' . number_format($stats['total_buy_volume'] ?? 0, 2)" />
+                <x-stat-card label="Total Sell Volume" :value="'MYR ' . number_format($stats['total_sell_volume'] ?? 0, 2)" />
+                <x-stat-card
+                    label="Net Position"
+                    :value="'MYR ' . number_format($stats['net_position'] ?? 0, 2)"
+                    :color="($stats['net_position'] ?? 0) >= 0 ? 'green' : 'red'"
+                />
+            </x-stat-grid>
 
-        <div class="bg-surface border border-border rounded-xl p-6 mb-6">
-            <h2 class="text-lg font-semibold text-ink mb-4">Currency Breakdown</h2>
-            <p class="text-sm text-ink-muted mb-4">for {{ \Carbon\Carbon::parse($date)->format('d M Y') }}</p>
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-border">
-                        <th class="text-left py-3 px-4 font-medium text-ink-muted">Currency</th>
-                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Buy Count</th>
-                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Buy Volume</th>
-                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Sell Count</th>
-                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Sell Volume</th>
-                        <th class="text-right py-3 px-4 font-medium text-ink-muted">Net Volume</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($summary as $currency => $data)
-                    <tr class="border-b border-border hover:bg-canvas-subtle">
-                        <td class="py-3 px-4 text-ink font-medium">{{ $currency }}</td>
-                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($data['buy_count']) }}</td>
-                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($data['buy_volume'], 2) }}</td>
-                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($data['sell_count']) }}</td>
-                        <td class="py-3 px-4 text-right text-ink-muted">{{ number_format($data['sell_volume'], 2) }}</td>
-                        <td class="py-3 px-4 text-right text-ink-muted {{ $data['net_volume'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ number_format($data['net_volume'], 2) }}
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="py-8 text-center text-ink-muted">No transaction data available</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+            <x-card title="Currency Breakdown" description="for {{ \Carbon\Carbon::parse($date)->format('d M Y') }}">
+                <x-table>
+                    <x-slot:thead>
+                        <th class="text-left px-4 py-3 text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th class="text-right px-4 py-3 text-xs font-medium text-ink-muted uppercase">Buy Count</th>
+                        <th class="text-right px-4 py-3 text-xs font-medium text-ink-muted uppercase">Buy Volume</th>
+                        <th class="text-right px-4 py-3 text-xs font-medium text-ink-muted uppercase">Sell Count</th>
+                        <th class="text-right px-4 py-3 text-xs font-medium text-ink-muted uppercase">Sell Volume</th>
+                        <th class="text-right px-4 py-3 text-xs font-medium text-ink-muted uppercase">Net Volume</th>
+                    </x-slot:thead>
+                    <x-slot:tbody>
+                        @forelse($summary as $currency => $data)
+                            <tr class="hover:bg-canvas-subtle">
+                                <td class="px-4 py-3 text-sm font-medium text-ink">{{ $currency }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($data['buy_count']) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($data['buy_volume'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($data['sell_count']) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($data['sell_volume'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right {{ $data['net_volume'] >= 0 ? 'text-success-text' : 'text-danger-text' }}">
+                                    {{ number_format($data['net_volume'], 2) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <x-empty-state message="No transaction data available" :colspan="6" />
+                        @endforelse
+                    </x-slot:tbody>
+                </x-table>
+            </x-card>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-xs text-ink-muted mb-1">Average Transaction Value</p>
-                <p class="text-lg font-semibold text-ink">MYR {{ number_format($stats['avg_transaction_value'] ?? 0, 2) }}</p>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-xs text-ink-muted mb-1">Pending Approval</p>
-                <p class="text-lg font-semibold text-ink">{{ number_format($stats['pending_approval'] ?? 0) }}</p>
-            </div>
-            <div class="bg-surface border border-border rounded-xl p-5">
-                <p class="text-xs text-ink-muted mb-1">Report Status</p>
-                <p class="text-lg font-semibold text-green-600">Complete</p>
-            </div>
-        </div>
+            <x-stat-grid cols="3">
+                <x-stat-card label="Average Transaction Value" :value="'MYR ' . number_format($stats['avg_transaction_value'] ?? 0, 2)" />
+                <x-stat-card label="Pending Approval" :value="number_format($stats['pending_approval'] ?? 0)" />
+                <x-stat-card label="Report Status" value="Complete" color="green" />
+            </x-stat-grid>
 
-        <div class="flex justify-end gap-3">
-            <button onclick="window.print()" class="px-4 py-2 text-sm font-medium rounded-lg bg-surface border border-border hover:bg-canvas-subtle">
-                Print Report
-            </button>
-            <form method="POST" action="{{ route('reports.msb2.export', ['date' => $date]) }}">
-                @csrf
-                <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover">
-                    Export Report
-                </button>
-            </form>
-        </div>
+            <div class="flex justify-end gap-3">
+                <x-button variant="secondary" type="button" onclick="window.print()">Print Report</x-button>
+                <form method="POST" action="{{ route('reports.msb2.export', ['date' => $date]) }}">
+                    @csrf
+                    <x-button type="submit" variant="primary">Export Report</x-button>
+                </form>
+            </div>
         @else
-        <div class="bg-surface border border-border rounded-xl p-12 text-center">
-            <h3 class="text-lg font-medium text-ink mb-2">Select a Date</h3>
-            <p class="text-sm text-ink-muted">Choose a date above to view the MSB2 daily transaction summary.</p>
-        </div>
+            <x-card title="Select a Date">
+                <x-table>
+                    <x-slot:tbody>
+                        <x-empty-state message="Choose a date above to view the MSB2 daily transaction summary." :colspan="1" />
+                    </x-slot:tbody>
+                </x-table>
+            </x-card>
         @endif
     </div>
 </x-app-layout>
