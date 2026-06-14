@@ -17,8 +17,8 @@ $change = $firstValue > 0 ? round((($lastValue - $firstValue) / $firstValue) * 1
 $changeLabel = $change >= 0 ? 'increase' : 'decrease';
 @endphp
 
-<div class="bg-white border border-[#e5e5e5] rounded-xl p-6">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $title }}</h3>
+<div {{ $attributes->merge(['class' => 'bg-surface border border-border rounded-xl p-6']) }}>
+    <h3 class="text-lg font-semibold text-ink mb-4">{{ $title }}</h3>
     <div class="h-48 flex items-end justify-between gap-2">
         @foreach($labels as $index => $label)
             @php
@@ -27,17 +27,17 @@ $changeLabel = $change >= 0 ? 'increase' : 'decrease';
                 $barHeight = min(($value / $maxValue) * 100, 100);
             @endphp
             <div class="flex-1 flex flex-col items-center justify-end h-full">
-                <span class="text-xs font-medium text-gray-700 mb-1">{{ $value }}</span>
+                <span class="text-xs font-medium text-ink-muted mb-1">{{ $value }}</span>
                 <svg class="w-full" style="height: {{ $barHeight }}%;" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <rect x="15" y="0" width="70" height="100" rx="4" class="{{ $colorClass }}"></rect>
                 </svg>
-                <span class="mt-2 text-xs text-gray-500">{{ $label }}</span>
+                <span class="mt-2 text-xs text-ink-muted">{{ $label }}</span>
             </div>
         @endforeach
     </div>
     <div class="mt-4 flex items-center justify-between text-sm">
-        <span class="text-gray-500">{{ $labels[0] ?? '' }}: {{ $firstValue }}</span>
+        <span class="text-ink-muted">{{ $labels[0] ?? '' }}: {{ $firstValue }}</span>
         <span class="{{ $textClass }} font-medium">{{ $change >= 0 ? '+' : '' }}{{ $change }}% {{ $changeLabel }}</span>
-        <span class="text-gray-500">{{ $labels[count($labels) - 1] ?? '' }}: {{ $lastValue }}</span>
+        <span class="text-ink-muted">{{ $labels[count($labels) - 1] ?? '' }}: {{ $lastValue }}</span>
     </div>
 </div>

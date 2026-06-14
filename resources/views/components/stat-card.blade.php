@@ -15,14 +15,14 @@ $valueColorClass = match($color) {
     'yellow' => 'text-yellow-600',
     'purple' => 'text-purple-600',
     'green' => 'text-green-600',
-    default => is_numeric($value) && $value >= 80 ? 'text-green-600' : (is_numeric($value) && $value >= 50 ? 'text-yellow-600' : 'text-gray-900'),
+    default => is_numeric($value) && $value >= 80 ? 'text-green-600' : (is_numeric($value) && $value >= 50 ? 'text-yellow-600' : 'text-ink'),
 };
 @endphp
 
-<div {{ $attributes->merge(['class' => "bg-white dark:bg-gray-800 border border-[#e5e5e5] dark:border-gray-700 rounded-xl p-5"]) }}>
+<div {{ $attributes->merge(['class' => "bg-surface border border-border rounded-xl p-5"]) }}>
     <div class="flex items-start justify-between">
         <div class="flex-1">
-            <p class="text-sm font-medium text-gray-500">{{ $label }}</p>
+            <p class="text-sm font-medium text-ink-muted">{{ $label }}</p>
             <p class="mt-1 text-2xl font-semibold {{ $valueColorClass }}">
                 @if($prefix)<span class="text-lg">{{ $prefix }}</span>@endif
                 {{ $value }}

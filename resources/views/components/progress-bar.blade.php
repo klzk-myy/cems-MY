@@ -11,6 +11,6 @@ $sizeClass = match($size) {
 };
 @endphp
 
-<div class="{{ $width }} bg-gray-200 rounded-full overflow-hidden">
+<div {{ $attributes->merge(['class' => "$width bg-canvas-subtle rounded-full overflow-hidden"]) }}>
     <div class="{{ $colorClass }} {{ $sizeClass }} rounded-full transition-all duration-300" style="width: {{ $percent }}%"></div>
 </div>

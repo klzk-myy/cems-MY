@@ -2,11 +2,11 @@
 
 @php
 $styles = match($type) {
-    'success' => 'bg-green-50 border-green-200 text-green-700',
-    'error' => 'bg-red-50 border-red-200 text-red-700',
-    'warning' => 'bg-yellow-50 border-yellow-200 text-yellow-700',
-    'info' => 'bg-blue-50 border-blue-200 text-blue-700',
-    default => 'bg-gray-50 border-gray-200 text-gray-700',
+    'success' => 'bg-success-subtle border-success-border text-success-text',
+    'error' => 'bg-danger-subtle border-danger-border text-danger-text',
+    'warning' => 'bg-warning-subtle border-warning-border text-warning-text',
+    'info' => 'bg-info-subtle border-info-border text-info-text',
+    default => 'bg-canvas-subtle border-border text-ink-muted',
 };
 
 $icons = [
@@ -37,7 +37,7 @@ $icons = [
         
         @if($dismissible)
             <button @click="shown = false" 
-                    class="flex-shrink-0 -mr-1 -mt-1 p-1 rounded hover:bg-black/5">
+                    class="flex-shrink-0 -mr-1 -mt-1 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>

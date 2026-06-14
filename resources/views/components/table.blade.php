@@ -3,13 +3,13 @@
     'striped' => false
 ])
 
-<table class="min-w-full divide-y divide-[#e5e5e5]">
-    <thead class="bg-gray-50">
+<table {{ $attributes->merge(['class' => 'min-w-full divide-y divide-border']) }}>
+    <thead class="bg-canvas-subtle">
         <tr>
             {{ $thead }}
         </tr>
     </thead>
-    <tbody class="bg-white divide-y divide-[#e5e5e5]">
+    <tbody class="bg-surface divide-y divide-border">
         {{ $tbody }}
     </tbody>
 </table>

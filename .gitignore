@@ -55,3 +55,10 @@ opencode.json
   FIXES_SUMMARY.md
   setup-step2-snapshot.md
 /storage/framework/views
+/docs
+
+# Root markdown files: only README.md is tracked
+/*.md
+!README.md
+/browser-test.sh
+/run-tests.sh

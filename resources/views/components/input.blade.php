@@ -13,7 +13,7 @@
 <div class="{{ $inline ? '' : 'mb-4' }}">
     @if($label)
         <label for="{{ $name ?? $attributes->whereStartsWith('id')->first() }}" 
-               class="block text-sm font-medium text-gray-700 mb-2">
+               class="block text-sm font-medium text-ink-muted mb-2">
             {{ $label }}
             @if($required) <span class="text-red-500">*</span> @endif
         </label>
@@ -26,14 +26,15 @@
            @if($readonly) readonly @endif
            @if($placeholder) placeholder="{{ $placeholder }}" @endif
            {{ $attributes->except(['label', 'name', 'type', 'required', 'disabled', 'readonly', 'placeholder', 'help', 'inline']) }}
-           class="w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg 
-                  focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black
-                  disabled:bg-gray-50 disabled:text-gray-500
-                  @error($name ?? '') border-red-500 @enderror
+           class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg 
+                  text-ink placeholder:text-ink-muted/50
+                  focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary
+                  disabled:bg-canvas-subtle disabled:text-ink-muted
+                  @error($name ?? '') border-danger @enderror
                   {{ $attributes->get('class', '') }}">
     
     @if($help)
-        <p class="mt-1 text-xs text-gray-500">{{ $help }}</p>
+        <p class="mt-1 text-xs text-ink-muted">{{ $help }}</p>
     @endif
     
     @if($name)
