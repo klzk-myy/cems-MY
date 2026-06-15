@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use App\Enums\TestResultStatus;
+use App\Models\Bases\SystemModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class TestResult extends Model
+class TestResult extends SystemModel
 {
     use HasFactory;
 
@@ -61,14 +61,6 @@ class TestResult extends Model
     }
 
     /**
-     * Scope for latest runs first
-     */
-    public function scopeLatest($query)
-    {
-        return $query->orderBy('created_at', 'desc');
-    }
-
-    /**
      * Scope for specific test suite
      */
     public function scopeSuite($query, string $suite)
@@ -108,7 +100,9 @@ class TestResult extends Model
      */
     public function getStatusBadgeClassAttribute(): string
     {
-        return match ($this->status) {
+        $statusValue = $this->status instanceof TestResultStatus ? $this->status->value : $this->status;
+
+        return match ($statusValue) {
             'passed' => 'status-active',
             'failed' => 'status-flagged',
             'error' => 'status-error',
@@ -122,7 +116,9 @@ class TestResult extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
+        $statusValue = $this->status instanceof TestResultStatus ? $this->status->value : $this->status;
+
+        return match ($statusValue) {
             'passed' => 'Passed',
             'failed' => 'Failed',
             'error' => 'Error',

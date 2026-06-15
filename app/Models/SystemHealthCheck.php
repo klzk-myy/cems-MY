@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use App\Enums\SystemHealthCheckStatus;
+use App\Models\Bases\SystemModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class SystemHealthCheck extends Model
+class SystemHealthCheck extends SystemModel
 {
     use HasFactory;
 
@@ -21,6 +21,14 @@ class SystemHealthCheck extends Model
         'checked_at' => 'datetime',
         'status' => SystemHealthCheckStatus::class,
     ];
+
+    /**
+     * Override time scope column to use checked_at instead of created_at.
+     */
+    protected function initializeHasTimeScopes(): void
+    {
+        $this->timeScopeColumn = 'checked_at';
+    }
 
     /**
      * Status constants
@@ -53,14 +61,6 @@ class SystemHealthCheck extends Model
     public function scopeCritical($query)
     {
         return $query->where('status', SystemHealthCheckStatus::Critical->value);
-    }
-
-    /**
-     * Scope for latest checks first
-     */
-    public function scopeLatest($query)
-    {
-        return $query->orderBy('checked_at', 'desc');
     }
 
     /**
@@ -144,7 +144,9 @@ class SystemHealthCheck extends Model
      */
     public function getStatusBadgeClassAttribute(): string
     {
-        return match ($this->status) {
+        $statusValue = $this->status instanceof SystemHealthCheckStatus ? $this->status->value : $this->status;
+
+        return match ($statusValue) {
             self::STATUS_OK => 'status-active',
             self::STATUS_WARNING => 'status-pending',
             self::STATUS_CRITICAL => 'status-flagged',

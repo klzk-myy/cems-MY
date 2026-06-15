@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use App\Enums\SystemAlertLevel;
+use App\Models\Bases\SystemModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class SystemAlert extends Model
+class SystemAlert extends SystemModel
 {
     use HasFactory;
 
@@ -95,30 +95,6 @@ class SystemAlert extends Model
     }
 
     /**
-     * Scope for latest alerts first
-     */
-    public function scopeLatest($query)
-    {
-        return $query->orderBy('created_at', 'desc');
-    }
-
-    /**
-     * Scope for alerts from today
-     */
-    public function scopeToday($query)
-    {
-        return $query->whereDate('created_at', today());
-    }
-
-    /**
-     * Scope for alerts within date range
-     */
-    public function scopeBetweenDates($query, string $from, string $to)
-    {
-        return $query->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59']);
-    }
-
-    /**
      * Acknowledge the alert
      */
     public function acknowledge(int $userId): void
@@ -163,7 +139,9 @@ class SystemAlert extends Model
      */
     public function getStatusBadgeClassAttribute(): string
     {
-        return match ($this->level) {
+        $levelValue = $this->level instanceof SystemAlertLevel ? $this->level->value : $this->level;
+
+        return match ($levelValue) {
             self::LEVEL_CRITICAL => 'status-flagged',
             self::LEVEL_WARNING => 'status-pending',
             self::LEVEL_INFO => 'status-active',
@@ -176,7 +154,9 @@ class SystemAlert extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->level) {
+        $levelValue = $this->level instanceof SystemAlertLevel ? $this->level->value : $this->level;
+
+        return match ($levelValue) {
             self::LEVEL_CRITICAL => 'Critical',
             self::LEVEL_WARNING => 'Warning',
             self::LEVEL_INFO => 'Info',
