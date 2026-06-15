@@ -4,10 +4,11 @@ namespace App\Models;
 
 use App\Enums\JournalEntryStatus;
 use App\Enums\ReferenceType;
+use App\Models\Bases\AccountingModel;
+use App\Models\Traits\HasCreator;
 use App\Services\MathService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -49,8 +50,9 @@ use Illuminate\Support\Carbon;
  * @property-read CostCenter|null $costCenter
  * @property-read Department|null $department
  */
-class JournalEntry extends Model
+class JournalEntry extends AccountingModel
 {
+    use HasCreator;
     use HasFactory;
 
     protected $with = ['lines', 'creator', 'approver'];
@@ -67,7 +69,6 @@ class JournalEntry extends Model
         'reversed_by',
         'reversed_at',
         'entry_number',
-        'created_by',
         'approved_by',
         'approved_at',
         'approval_notes',
@@ -106,14 +107,6 @@ class JournalEntry extends Model
     public function reversedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reversed_by');
-    }
-
-    /**
-     * Get the user who created this journal entry.
-     */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
+use App\Models\Bases\AccountingModel;
 use App\Services\MathService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -27,7 +28,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read ChartOfAccount $account The chart of account associated with this ledger entry
  * @property-read JournalEntry $journalEntry The journal entry associated with this ledger entry
  */
-class AccountLedger extends Model
+class AccountLedger extends AccountingModel
 {
     use HasFactory;
 
@@ -39,7 +40,6 @@ class AccountLedger extends Model
         'account_code',
         'entry_date',
         'journal_entry_id',
-        'branch_id',
         'debit',
         'credit',
         'running_balance',
@@ -47,9 +47,9 @@ class AccountLedger extends Model
 
     protected $casts = [
         'entry_date' => 'date',
-        'debit' => 'decimal:4',
-        'credit' => 'decimal:4',
-        'running_balance' => 'decimal:4',
+        'debit' => MoneyCast::class,
+        'credit' => MoneyCast::class,
+        'running_balance' => MoneyCast::class,
     ];
 
     /**

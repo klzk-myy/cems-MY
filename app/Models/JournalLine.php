@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
+use App\Models\Bases\AccountingModel;
 use App\Services\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -26,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property-read JournalEntry $journalEntry The parent journal entry
  * @property-read ChartOfAccount $account The chart of account for this line
  */
-class JournalLine extends Model
+class JournalLine extends AccountingModel
 {
     use HasFactory;
 
@@ -34,7 +35,6 @@ class JournalLine extends Model
 
     protected $fillable = [
         'journal_entry_id',
-        'branch_id',
         'account_code',
         'debit',
         'credit',
@@ -42,8 +42,8 @@ class JournalLine extends Model
     ];
 
     protected $casts = [
-        'debit' => 'decimal:4',
-        'credit' => 'decimal:4',
+        'debit' => MoneyCast::class,
+        'credit' => MoneyCast::class,
     ];
 
     /**
@@ -54,14 +54,6 @@ class JournalLine extends Model
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
-    }
-
-    /**
-     * Get the branch associated with this journal line.
-     */
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
     }
 
     /**
