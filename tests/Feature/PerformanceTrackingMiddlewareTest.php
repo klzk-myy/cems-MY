@@ -13,6 +13,12 @@ class PerformanceTrackingMiddlewareTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['database.logging' => false]);
+    }
+
     public function test_performance_tracking_middleware_logs_request_performance()
     {
         $user = User::factory()->create();
