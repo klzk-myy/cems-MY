@@ -5,12 +5,12 @@ namespace App\Models;
 use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;
 use App\Enums\EmploymentStatus;
+use App\Models\Bases\ComplianceModel;
 use App\Models\Compliance\EddQuestionnaireTemplate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class EnhancedDiligenceRecord extends Model
+class EnhancedDiligenceRecord extends ComplianceModel
 {
     use HasFactory;
 
@@ -18,10 +18,8 @@ class EnhancedDiligenceRecord extends Model
 
     protected $fillable = [
         'flagged_transaction_id',
-        'customer_id',
         'edd_reference',
         'edd_template_id',
-        'status',
         'risk_level',
         'source_of_funds',
         'source_of_funds_description',
@@ -58,14 +56,39 @@ class EnhancedDiligenceRecord extends Model
         return $this->belongsTo(FlaggedTransaction::class);
     }
 
-    public function customer(): BelongsTo
-    {
-        return $this->belongsTo(Customer::class);
-    }
-
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Get the statuses considered active for this model.
+     *
+     * @return array<int, EddStatus>
+     */
+    protected function activeStatusValues(): array
+    {
+        return [
+            EddStatus::Incomplete,
+            EddStatus::PendingQuestionnaire,
+            EddStatus::QuestionnaireSubmitted,
+            EddStatus::PendingReview,
+        ];
+    }
+
+    /**
+     * Get the statuses considered open for this model.
+     *
+     * @return array<int, EddStatus>
+     */
+    protected function openStatusValues(): array
+    {
+        return [
+            EddStatus::Incomplete,
+            EddStatus::PendingQuestionnaire,
+            EddStatus::QuestionnaireSubmitted,
+            EddStatus::PendingReview,
+        ];
     }
 
     public function template(): BelongsTo

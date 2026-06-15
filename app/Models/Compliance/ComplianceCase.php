@@ -10,17 +10,16 @@ use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
 use App\Enums\FlagStatus;
 use App\Models\Alert;
-use App\Models\Customer;
+use App\Models\Bases\ComplianceModel;
 use App\Models\FlaggedTransaction;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class ComplianceCase extends Model
+class ComplianceCase extends ComplianceModel
 {
     use HasFactory;
 
@@ -29,10 +28,8 @@ class ComplianceCase extends Model
     protected $fillable = [
         'case_number',
         'case_type',
-        'status',
         'severity',
         'priority',
-        'customer_id',
         'primary_flag_id',
         'primary_finding_id',
         'assigned_to',
@@ -173,14 +170,6 @@ class ComplianceCase extends Model
     }
 
     /**
-     * Get the customer associated with this case.
-     */
-    public function customer(): BelongsTo
-    {
-        return $this->belongsTo(Customer::class);
-    }
-
-    /**
      * Get the primary flagged transaction.
      */
     public function primaryFlag(): BelongsTo
@@ -237,11 +226,33 @@ class ComplianceCase extends Model
     }
 
     /**
-     * Scope: Filter open cases.
+     * Get the statuses considered active for this model.
+     *
+     * @return array<int, ComplianceCaseStatus>
      */
-    public function scopeOpen($query)
+    protected function activeStatusValues(): array
     {
-        return $query->where('status', '!=', ComplianceCaseStatus::Closed->value);
+        return [
+            ComplianceCaseStatus::Open,
+            ComplianceCaseStatus::UnderReview,
+            ComplianceCaseStatus::PendingApproval,
+            ComplianceCaseStatus::Escalated,
+        ];
+    }
+
+    /**
+     * Get the statuses considered open for this model.
+     *
+     * @return array<int, ComplianceCaseStatus>
+     */
+    protected function openStatusValues(): array
+    {
+        return [
+            ComplianceCaseStatus::Open,
+            ComplianceCaseStatus::UnderReview,
+            ComplianceCaseStatus::PendingApproval,
+            ComplianceCaseStatus::Escalated,
+        ];
     }
 
     /**
@@ -250,14 +261,6 @@ class ComplianceCase extends Model
     public function scopeUnderReview($query)
     {
         return $query->where('status', ComplianceCaseStatus::UnderReview->value);
-    }
-
-    /**
-     * Scope: Filter active cases (not closed).
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('status', '!=', ComplianceCaseStatus::Closed->value);
     }
 
     /**

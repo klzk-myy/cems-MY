@@ -5,13 +5,15 @@ namespace App\Models\Compliance;
 use App\Enums\FindingSeverity;
 use App\Enums\FindingStatus;
 use App\Enums\FindingType;
+use App\Models\BaseModel;
+use App\Models\Traits\HasStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class ComplianceFinding extends Model
+class ComplianceFinding extends BaseModel
 {
     use HasFactory;
+    use HasStatus;
 
     protected $with = ['subject'];
 
@@ -21,7 +23,6 @@ class ComplianceFinding extends Model
         'subject_type',
         'subject_id',
         'details',
-        'status',
         'generated_at',
     ];
 
@@ -39,6 +40,34 @@ class ComplianceFinding extends Model
     public function subject(): MorphTo
     {
         return $this->morphTo('subject', 'subject_type', 'subject_id');
+    }
+
+    /**
+     * Get the statuses considered active for this model.
+     *
+     * @return array<int, FindingStatus>
+     */
+    protected function activeStatusValues(): array
+    {
+        return [
+            FindingStatus::New,
+            FindingStatus::Reviewed,
+            FindingStatus::CaseCreated,
+        ];
+    }
+
+    /**
+     * Get the statuses considered open for this model.
+     *
+     * @return array<int, FindingStatus>
+     */
+    protected function openStatusValues(): array
+    {
+        return [
+            FindingStatus::New,
+            FindingStatus::Reviewed,
+            FindingStatus::CaseCreated,
+        ];
     }
 
     /**
