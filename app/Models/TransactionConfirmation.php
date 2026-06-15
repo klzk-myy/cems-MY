@@ -3,23 +3,25 @@
 namespace App\Models;
 
 use App\Enums\TransactionConfirmationStatus;
+use App\Models\Traits\BelongsToUser;
+use App\Models\Traits\HasNotes;
+use App\Models\Traits\HasStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TransactionConfirmation extends Model
 {
-    use HasFactory;
+    use BelongsToUser, HasFactory, HasNotes, HasStatus;
+
+    protected string $statusColumn = 'status';
 
     protected $fillable = [
         'transaction_id',
-        'user_id',
         'confirmed_by',
         'confirmed_at',
-        'status',
         'confirmation_token',
         'expires_at',
-        'notes',
     ];
 
     protected $casts = [
@@ -27,6 +29,16 @@ class TransactionConfirmation extends Model
         'expires_at' => 'datetime',
         'status' => TransactionConfirmationStatus::class,
     ];
+
+    protected function activeStatusValues(): array
+    {
+        return [TransactionConfirmationStatus::Confirmed->value];
+    }
+
+    protected function openStatusValues(): array
+    {
+        return [TransactionConfirmationStatus::Pending->value];
+    }
 
     /**
      * Get the transaction being confirmed.
@@ -41,7 +53,7 @@ class TransactionConfirmation extends Model
      */
     public function requester(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->user();
     }
 
     /**

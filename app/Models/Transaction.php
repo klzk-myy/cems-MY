@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Bases\TransactionModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -46,7 +46,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $rejection_reason Reason for rejected status
  * @property string|null $reversal_reason Reason for reversed status
  */
-class Transaction extends Model
+class Transaction extends TransactionModel
 {
     use HasFactory, SoftDeletes;
 
@@ -62,13 +62,9 @@ class Transaction extends Model
      * calling create()/update() with these fields.
      */
     protected $fillable = [
-        'customer_id',
-        'user_id',
-        'branch_id',
         'counter_id',
         'till_id',
         'type',
-        'currency_code',
         'counterparty_country',
         'amount_local',
         'amount_foreign',
@@ -80,10 +76,7 @@ class Transaction extends Model
         'purpose',
         'source_of_funds',
         'source_of_wealth',
-        'status',
         'hold_reason',
-        'approved_by',
-        'approved_at',
         'cdd_level',
         'cancelled_at',
         'cancelled_by',
@@ -116,7 +109,6 @@ class Transaction extends Model
         'type' => \App\Enums\TransactionType::class,
         'status' => \App\Enums\TransactionStatus::class,
         'cdd_level' => \App\Enums\CddLevel::class,
-        'approved_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'rate_override_approved_at' => 'datetime',
         'transition_history' => 'array',
@@ -124,52 +116,25 @@ class Transaction extends Model
         'has_deferred_accounting' => 'boolean',
     ];
 
-    /**
-     * Get the customer associated with this transaction.
-     *
-     * @return BelongsTo
-     */
-    public function customer()
+    protected function activeStatusValues(): array
     {
-        return $this->belongsTo(Customer::class);
+        return [
+            \App\Enums\TransactionStatus::Approved->value,
+            \App\Enums\TransactionStatus::Processing->value,
+            \App\Enums\TransactionStatus::Completed->value,
+            \App\Enums\TransactionStatus::Finalized->value,
+        ];
     }
 
-    /**
-     * Get the user who created this transaction.
-     *
-     * @return BelongsTo
-     */
-    public function user()
+    protected function openStatusValues(): array
     {
-        return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Get the branch associated with this transaction.
-     */
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
-    }
-
-    /**
-     * Get the user who approved this transaction.
-     *
-     * @return BelongsTo
-     */
-    public function approver()
-    {
-        return $this->belongsTo(User::class, 'approved_by');
-    }
-
-    /**
-     * Get the currency associated with this transaction.
-     *
-     * @return BelongsTo
-     */
-    public function currency()
-    {
-        return $this->belongsTo(Currency::class, 'currency_code');
+        return [
+            \App\Enums\TransactionStatus::Draft->value,
+            \App\Enums\TransactionStatus::PendingApproval->value,
+            \App\Enums\TransactionStatus::Pending->value,
+            \App\Enums\TransactionStatus::OnHold->value,
+            \App\Enums\TransactionStatus::PendingCancellation->value,
+        ];
     }
 
     /**
