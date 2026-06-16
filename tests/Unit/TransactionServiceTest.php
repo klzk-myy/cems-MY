@@ -689,7 +689,7 @@ class TransactionServiceTest extends TestCase
             ->first();
 
         // Paid 450 MYR for 100 USD (450 = 100 * 4.50)
-        $this->assertEquals('450.00', $myrBalance->transaction_total);
+        $this->assertEquals('450.0000', $myrBalance->transaction_total);
     }
 
     public function test_myr_till_balance_updated_on_sell_transaction(): void
@@ -745,7 +745,7 @@ class TransactionServiceTest extends TestCase
             ->first();
 
         // Received 450 MYR for 100 USD (450 = 100 * 4.50)
-        $this->assertEquals('450.00', $myrBalance->transaction_total);
+        $this->assertEquals('450.0000', $myrBalance->transaction_total);
     }
 
     public function test_pep_transaction_requires_both_source_of_funds_and_source_of_wealth(): void

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Services\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -32,9 +33,13 @@ class TillBalance extends Model
     ];
 
     protected $casts = [
-        'opening_balance' => 'decimal:4',
-        'closing_balance' => 'decimal:4',
-        'variance' => 'decimal:4',
+        'opening_balance' => MoneyCast::class,
+        'closing_balance' => MoneyCast::class,
+        'variance' => MoneyCast::class,
+        'foreign_total' => MoneyCast::class,
+        'transaction_total' => MoneyCast::class,
+        'buy_total_foreign' => MoneyCast::class,
+        'sell_total_foreign' => MoneyCast::class,
         'date' => 'date',
         'closed_at' => 'datetime',
     ];
