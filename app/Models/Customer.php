@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Enums\CddLevel;
 use App\Enums\IdType;
 use App\Enums\RiskRating;
@@ -100,7 +101,7 @@ class Customer extends Model
         'sanction_hit' => 'boolean',
         'is_active' => 'boolean',
         'risk_score' => 'integer',
-        'annual_volume_estimate' => 'decimal:4',
+        'annual_volume_estimate' => MoneyCast::class,
         'risk_assessed_at' => 'datetime',
         'last_transaction_at' => 'datetime',
         'cdd_level' => CddLevel::class,

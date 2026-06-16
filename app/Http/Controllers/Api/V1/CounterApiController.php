@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Counter\CloseCounterRequest;
 use App\Models\Counter;
 use App\Services\CounterService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 
 class CounterApiController extends Controller
 {
@@ -16,21 +15,9 @@ class CounterApiController extends Controller
         private CounterService $counterService
     ) {}
 
-    public function close(Request $request, string $counterId): JsonResponse
+    public function close(CloseCounterRequest $request, string $counterId): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'closing_floats' => 'required|array',
-            'closing_floats.*' => 'numeric|min:0',
-            'notes' => 'nullable|string|max:500',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+        $validated = $request->validated();
 
         $counter = Counter::findOrFail($counterId);
 
@@ -50,8 +37,8 @@ class CounterApiController extends Controller
             $result = $this->counterService->closeSession(
                 $session,
                 $request->user(),
-                $request->input('closing_floats'),
-                $request->input('notes')
+                $validated['closing_floats'],
+                $validated['notes'] ?? null
             );
 
             return response()->json([

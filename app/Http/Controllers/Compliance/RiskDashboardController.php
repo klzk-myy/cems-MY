@@ -8,9 +8,11 @@ use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use App\Services\CustomerRiskScoringService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class RiskDashboardController extends Controller
 {
@@ -18,7 +20,7 @@ class RiskDashboardController extends Controller
         protected CustomerRiskScoringService $riskScoringService
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $threshold = $request->get('threshold', 60);
 
@@ -34,14 +36,14 @@ class RiskDashboardController extends Controller
         return view('compliance.risk-dashboard.index', compact('customers', 'summary', 'threshold'));
     }
 
-    public function customer(Customer $customer)
+    public function customer(Customer $customer): View
     {
         $trends = $this->riskScoringService->getRiskTrend($customer->id, 6);
 
         return view('compliance.risk-dashboard.customer', compact('customer', 'trends'));
     }
 
-    public function trends()
+    public function trends(): View
     {
         $needsRescreening = $this->riskScoringService->getCustomersNeedingRescreening();
         $highRiskTrend = $this->getHighRiskCustomerTrend();
@@ -54,7 +56,7 @@ class RiskDashboardController extends Controller
         ));
     }
 
-    public function rescreen(Request $request)
+    public function rescreen(Request $request): RedirectResponse
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',

@@ -11,8 +11,12 @@ use App\Services\DocumentStorageService;
 use App\Services\MathService;
 use App\Services\TransactionImportService;
 use App\Services\TransactionMonitoringService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\View\View;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TransactionBatchController extends Controller
 {
@@ -30,7 +34,7 @@ class TransactionBatchController extends Controller
     /**
      * Show batch upload form
      */
-    public function showBatchUpload()
+    public function showBatchUpload(): View
     {
         $recentImports = TransactionImport::where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
@@ -43,7 +47,7 @@ class TransactionBatchController extends Controller
     /**
      * Process batch upload
      */
-    public function processBatchUpload(Request $request)
+    public function processBatchUpload(Request $request): RedirectResponse
     {
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt|max:2048',
@@ -104,7 +108,7 @@ class TransactionBatchController extends Controller
     /**
      * Show import results
      */
-    public function showImportResults(TransactionImport $import)
+    public function showImportResults(TransactionImport $import): View
     {
         // Authorization check - only owner can view (managers can only view their own imports)
         if ($import->user_id !== auth()->id()) {
@@ -117,7 +121,7 @@ class TransactionBatchController extends Controller
     /**
      * Download CSV template
      */
-    public function downloadTemplate()
+    public function downloadTemplate(): Response
     {
         $headers = [
             'Content-Type' => 'text/csv',
@@ -134,7 +138,7 @@ class TransactionBatchController extends Controller
     /**
      * Download import errors as CSV
      */
-    public function downloadErrors(TransactionImport $import)
+    public function downloadErrors(TransactionImport $import): RedirectResponse|StreamedResponse
     {
         if ($import->user_id !== auth()->id()) {
             abort(403, 'Unauthorized. You can only view your own import results.');

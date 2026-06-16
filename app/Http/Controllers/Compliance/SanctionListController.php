@@ -7,7 +7,9 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use App\Services\SanctionsOrchestrationService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class SanctionListController extends Controller
 {
@@ -15,7 +17,7 @@ class SanctionListController extends Controller
         protected SanctionsOrchestrationService $orchestrationService,
     ) {}
 
-    public function index()
+    public function index(): View
     {
         $lists = SanctionList::withCount('entries')
             ->orderBy('name')
@@ -35,7 +37,7 @@ class SanctionListController extends Controller
         return view('compliance.sanctions.index', compact('lists'));
     }
 
-    public function show(int $id)
+    public function show(int $id): View|RedirectResponse
     {
         $list = SanctionList::withCount('entries')->find($id);
 
@@ -58,7 +60,7 @@ class SanctionListController extends Controller
         return view('compliance.sanctions.show', compact('list'));
     }
 
-    public function entriesIndex(Request $request)
+    public function entriesIndex(Request $request): View
     {
         $perPage = $request->get('per_page', 50);
         $status = $request->get('status', 'active');
@@ -99,7 +101,7 @@ class SanctionListController extends Controller
         return view('compliance.sanctions.entries.index', compact('entries', 'pagination', 'lists'));
     }
 
-    public function showEntry(int $id)
+    public function showEntry(int $id): View|RedirectResponse
     {
         $entry = SanctionEntry::with('sanctionList')->find($id);
 
@@ -126,14 +128,14 @@ class SanctionListController extends Controller
         return view('compliance.sanctions.entries.show', ['sanctionEntry' => $entry]);
     }
 
-    public function createEntry()
+    public function createEntry(): View
     {
         $lists = SanctionList::orderBy('name')->get(['id', 'name']);
 
         return view('compliance.sanctions.entries.create', compact('lists'));
     }
 
-    public function storeEntry(Request $request)
+    public function storeEntry(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'list_id' => 'required|integer|exists:sanction_lists,id',
@@ -171,12 +173,12 @@ class SanctionListController extends Controller
             ->with('success', 'Sanction entry created successfully');
     }
 
-    public function editEntry(SanctionEntry $entry)
+    public function editEntry(SanctionEntry $entry): View
     {
         return view('compliance.sanctions.entries.edit', ['sanctionEntry' => $entry]);
     }
 
-    public function updateEntry(Request $request, SanctionEntry $entry)
+    public function updateEntry(Request $request, SanctionEntry $entry): RedirectResponse
     {
         $request->merge([
             'entity_type' => ucfirst($request->input('entity_type', '')),
@@ -226,7 +228,7 @@ class SanctionListController extends Controller
             ->with('success', 'Sanction entry updated successfully');
     }
 
-    public function importLogs()
+    public function importLogs(): View
     {
         $logs = SanctionImportLog::with('sanctionList')
             ->orderBy('imported_at', 'desc')
@@ -250,7 +252,7 @@ class SanctionListController extends Controller
         return view('compliance.sanctions.import-logs.index', compact('logs'));
     }
 
-    public function triggerImport(int $listId)
+    public function triggerImport(int $listId): RedirectResponse
     {
         $list = SanctionList::find($listId);
 

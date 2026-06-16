@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\TransactionCollection;
+use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +20,7 @@ class TransactionController extends Controller
     /**
      * Display a paginated list of transactions.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): TransactionCollection
     {
         $perPage = $request->get('per_page', 20);
         $query = Transaction::with(['customer', 'user']);
@@ -31,16 +33,7 @@ class TransactionController extends Controller
 
         $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $transactions->items(),
-            'meta' => [
-                'current_page' => $transactions->currentPage(),
-                'last_page' => $transactions->lastPage(),
-                'per_page' => $transactions->perPage(),
-                'total' => $transactions->total(),
-            ],
-        ]);
+        return (new TransactionCollection($transactions))->additional(['success' => true]);
     }
 
     /**
@@ -70,11 +63,10 @@ class TransactionController extends Controller
             // Reload with relationships
             $transaction->load(['customer', 'user', 'approver']);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaction created successfully.',
-                'data' => $transaction,
-            ], 201);
+            return (new TransactionResource($transaction))
+                ->additional(['success' => true, 'message' => 'Transaction created successfully.'])
+                ->response($request)
+                ->setStatusCode(201);
 
         } catch (\InvalidArgumentException $e) {
             return response()->json([
@@ -93,14 +85,11 @@ class TransactionController extends Controller
     /**
      * Display a single transaction.
      */
-    public function show(int $id): JsonResponse
+    public function show(int $id): TransactionResource
     {
         $transaction = Transaction::with(['customer', 'user', 'approver', 'flags'])
             ->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $transaction,
-        ]);
+        return (new TransactionResource($transaction))->additional(['success' => true]);
     }
 }

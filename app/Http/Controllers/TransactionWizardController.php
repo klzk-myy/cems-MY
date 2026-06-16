@@ -12,6 +12,7 @@ use App\Services\MathService;
 use App\Services\TransactionService;
 use App\Services\WizardSessionService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TransactionWizardController extends Controller
@@ -249,7 +250,7 @@ class TransactionWizardController extends Controller
         };
     }
 
-    private function processDocuments($request): array
+    private function processDocuments(Request $request): array
     {
         $documents = [];
 

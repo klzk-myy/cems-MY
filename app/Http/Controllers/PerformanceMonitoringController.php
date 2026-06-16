@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\CacheMonitoringService;
 use App\Services\QueryLoggingService;
+use Illuminate\View\View;
 
 class PerformanceMonitoringController extends Controller
 {
@@ -12,7 +13,7 @@ class PerformanceMonitoringController extends Controller
         protected QueryLoggingService $queryLoggingService
     ) {}
 
-    public function index()
+    public function index(): View
     {
         $querySummary = $this->queryLoggingService->getQuerySummary();
 

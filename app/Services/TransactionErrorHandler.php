@@ -202,10 +202,21 @@ class TransactionErrorHandler
     /**
      * Get the latest unresolved error for a transaction.
      *
+     * Uses the eager-loaded collection when available to avoid extra queries,
+     * falling back to the relationship query builder otherwise.
+     *
      * @param  Transaction  $transaction  The transaction
+     * @return TransactionError|null The latest unresolved error, or null if none exists
      */
     protected function getLatestError(Transaction $transaction): ?TransactionError
     {
+        if ($transaction->relationLoaded('transactionErrors')) {
+            return $transaction->transactionErrors
+                ->whereNull('resolved_at')
+                ->sortByDesc('created_at')
+                ->first();
+        }
+
         return $transaction->transactionErrors()
             ->whereNull('resolved_at')
             ->orderBy('created_at', 'desc')

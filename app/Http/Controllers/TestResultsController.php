@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Enums\TestResultStatus;
 use App\Models\TestResult;
 use App\Services\TestRunnerService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\View\View;
 
 class TestResultsController extends Controller
 {
@@ -20,7 +23,7 @@ class TestResultsController extends Controller
     /**
      * Display list of all test runs
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = TestResult::latest();
 
@@ -44,7 +47,7 @@ class TestResultsController extends Controller
     /**
      * Display detailed view of a test run
      */
-    public function show(TestResult $testResult)
+    public function show(TestResult $testResult): View
     {
         $previousRun = TestResult::where('test_suite', $testResult->test_suite)
             ->where('id', '<', $testResult->id)
@@ -57,7 +60,7 @@ class TestResultsController extends Controller
     /**
      * Run tests and save results
      */
-    public function run(Request $request)
+    public function run(Request $request): RedirectResponse
     {
         $suite = $request->input('suite', 'full');
         $options = $request->input('options', []);
@@ -83,7 +86,7 @@ class TestResultsController extends Controller
     /**
      * Display test statistics dashboard
      */
-    public function statistics(Request $request)
+    public function statistics(Request $request): View
     {
         $days = $request->input('days', 30);
         $since = now()->subDays($days);
@@ -192,7 +195,7 @@ class TestResultsController extends Controller
     /**
      * Compare two test runs
      */
-    public function compare(Request $request)
+    public function compare(Request $request): View
     {
         $run1 = TestResult::findOrFail($request->input('run1'));
         $run2 = TestResult::findOrFail($request->input('run2'));
@@ -203,7 +206,7 @@ class TestResultsController extends Controller
     /**
      * Delete old test results
      */
-    public function cleanup(Request $request)
+    public function cleanup(Request $request): RedirectResponse
     {
         $days = $request->input('days', 90);
 
@@ -217,7 +220,7 @@ class TestResultsController extends Controller
     /**
      * Get test output as JSON (for AJAX requests)
      */
-    public function output(TestResult $testResult)
+    public function output(TestResult $testResult): JsonResponse
     {
         return response()->json([
             'output' => $testResult->output,
@@ -229,7 +232,7 @@ class TestResultsController extends Controller
     /**
      * Get latest test status (for dashboard widget)
      */
-    public function latestStatus()
+    public function latestStatus(): JsonResponse
     {
         $latest = TestResult::latest()->first();
 

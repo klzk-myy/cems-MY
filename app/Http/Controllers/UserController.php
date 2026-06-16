@@ -27,10 +27,8 @@ class UserController extends Controller
 
     /**
      * Display a paginated listing of all users.
-     *
-     * @return View
      */
-    public function index()
+    public function index(): View
     {
         $this->requireAdmin();
         $users = User::paginate(20)->withQueryString();
@@ -42,10 +40,8 @@ class UserController extends Controller
      * Show the form for creating a new user.
      *
      * Displays role options and form for user creation.
-     *
-     * @return View
      */
-    public function create()
+    public function create(): View
     {
         $this->requireAdmin();
         $roles = [
@@ -60,10 +56,8 @@ class UserController extends Controller
 
     /**
      * Store a newly created user in the database.
-     *
-     * @return RedirectResponse
      */
-    public function store(StoreUserRequest $request)
+    public function store(StoreUserRequest $request): RedirectResponse
     {
         $this->requireAdmin();
 
@@ -75,10 +69,8 @@ class UserController extends Controller
 
     /**
      * Display the specified user's details.
-     *
-     * @return View
      */
-    public function show(User $user)
+    public function show(User $user): View
     {
         $this->requireAdmin();
 
@@ -87,10 +79,8 @@ class UserController extends Controller
 
     /**
      * Show the form for editing a user.
-     *
-     * @return View
      */
-    public function edit(User $user)
+    public function edit(User $user): View
     {
         $this->requireAdmin();
         $roles = [
@@ -105,10 +95,8 @@ class UserController extends Controller
 
     /**
      * Update the specified user in the database.
-     *
-     * @return RedirectResponse
      */
-    public function update(UpdateUserRequest $request, User $user)
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $this->requireAdmin();
 
@@ -120,10 +108,8 @@ class UserController extends Controller
 
     /**
      * Remove the specified user
-     *
-     * @return RedirectResponse
      */
-    public function destroy(Request $request, User $user)
+    public function destroy(Request $request, User $user): RedirectResponse
     {
         $this->requireAdmin();
 
@@ -140,10 +126,8 @@ class UserController extends Controller
 
     /**
      * Reset user password
-     *
-     * @return RedirectResponse
      */
-    public function resetPassword(Request $request, User $user)
+    public function resetPassword(Request $request, User $user): RedirectResponse
     {
         $this->requireAdmin();
         $validated = $request->validate([
@@ -164,10 +148,8 @@ class UserController extends Controller
 
     /**
      * Toggle user active status
-     *
-     * @return RedirectResponse
      */
-    public function toggleActive(Request $request, User $user)
+    public function toggleActive(Request $request, User $user): RedirectResponse
     {
         $this->requireAdmin();
 

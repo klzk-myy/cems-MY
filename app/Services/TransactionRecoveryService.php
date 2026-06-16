@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\TransactionStatus;
 use App\Jobs\ProcessTransactionRetry;
 use App\Models\Transaction;
+use App\Models\TransactionError;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -86,10 +87,7 @@ class TransactionRecoveryService
         $stateMachine->forceStatus(TransactionStatus::Failed, $dlqReason);
 
         // Store DLQ metadata in error record if exists
-        $latestError = $transaction->transactionErrors()
-            ->whereNull('resolved_at')
-            ->orderBy('created_at', 'desc')
-            ->first();
+        $latestError = $this->latestUnresolvedError($transaction);
 
         if ($latestError) {
             $latestError->resolution_notes = 'Moved to DLQ - max retries exceeded';
@@ -112,7 +110,9 @@ class TransactionRecoveryService
      */
     public function getTransactionsNeedingRecovery(): Collection
     {
-        return Transaction::where('status', TransactionStatus::Failed)
+        return Transaction::query()
+            ->with('transactionErrors')
+            ->where('status', TransactionStatus::Failed)
             ->whereHas('transactionErrors', function ($query) {
                 $query->whereNull('resolved_at');
             })
@@ -162,10 +162,7 @@ class TransactionRecoveryService
         $stateMachine->transitionTo(TransactionStatus::PendingApproval);
 
         // Reset error retry count for new attempt
-        $latestError = $transaction->transactionErrors()
-            ->whereNull('resolved_at')
-            ->orderBy('created_at', 'desc')
-            ->first();
+        $latestError = $this->latestUnresolvedError($transaction);
 
         if ($latestError) {
             $latestError->retry_count = 0;
@@ -201,12 +198,33 @@ class TransactionRecoveryService
      */
     protected function getNextRetryTime(Transaction $transaction): ?Carbon
     {
-        $latestError = $transaction->transactionErrors()
+        $latestError = $this->latestUnresolvedError($transaction);
+
+        return $latestError?->next_retry_at;
+    }
+
+    /**
+     * Get the latest unresolved error for a transaction.
+     *
+     * Uses the eager-loaded collection when available to avoid extra queries,
+     * falling back to the relationship query builder otherwise.
+     *
+     * @param  Transaction  $transaction  The transaction
+     * @return TransactionError|null The latest unresolved error, or null if none exists
+     */
+    private function latestUnresolvedError(Transaction $transaction): ?TransactionError
+    {
+        if ($transaction->relationLoaded('transactionErrors')) {
+            return $transaction->transactionErrors
+                ->whereNull('resolved_at')
+                ->sortByDesc('created_at')
+                ->first();
+        }
+
+        return $transaction->transactionErrors()
             ->whereNull('resolved_at')
             ->orderBy('created_at', 'desc')
             ->first();
-
-        return $latestError?->next_retry_at;
     }
 
     /**

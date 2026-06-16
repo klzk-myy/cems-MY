@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
+use App\Http\Resources\Api\V1\CustomerCollection;
+use App\Http\Resources\Api\V1\CustomerResource;
+use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Models\Customer;
+use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -26,7 +29,7 @@ class CustomerController extends Controller
         protected AuditService $auditService,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): CustomerCollection
     {
         $query = Customer::query();
 
@@ -50,10 +53,7 @@ class CustomerController extends Controller
         $perPage = $request->get('per_page', 20);
         $customers = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $customers,
-        ]);
+        return (new CustomerCollection($customers))->additional(['success' => true]);
     }
 
     /**
@@ -67,11 +67,10 @@ class CustomerController extends Controller
         try {
             $customer = $this->customerService->createCustomer($validated, auth()->id());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Customer created successfully.',
-                'data' => $customer->load(['documents', 'transactions']),
-            ], 201);
+            return (new CustomerResource($customer->load(['documents', 'transactions'])))
+                ->additional(['success' => true, 'message' => 'Customer created successfully.'])
+                ->response($request)
+                ->setStatusCode(201);
 
         } catch (\Exception $e) {
             Log::error('Customer API store failed', [
@@ -89,7 +88,7 @@ class CustomerController extends Controller
     /**
      * Display a specific customer.
      */
-    public function show(int $id): JsonResponse
+    public function show(int $id): JsonResponse|CustomerResource
     {
         $customer = Customer::with(['documents', 'transactions' => function ($query) {
             $query->orderBy('created_at', 'desc')->limit(10);
@@ -102,9 +101,9 @@ class CustomerController extends Controller
             ], 404);
         }
 
-        $stats = DB::table('transactions')
-            ->where('customer_id', $id)
+        $stats = Transaction::query()
             ->selectRaw('COUNT(*) as total_transactions, SUM(amount_local) as total_volume, AVG(amount_local) as avg_transaction')
+            ->where('customer_id', $id)
             ->first();
 
         $transactionStats = [
@@ -114,9 +113,8 @@ class CustomerController extends Controller
             'last_transaction' => $customer->last_transaction_at,
         ];
 
-        return response()->json([
+        return (new CustomerResource($customer))->additional([
             'success' => true,
-            'data' => $customer,
             'transaction_stats' => $transactionStats,
         ]);
     }
@@ -134,11 +132,9 @@ class CustomerController extends Controller
         try {
             $customer = $this->customerService->updateCustomer($customer, $validated, auth()->id());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Customer updated successfully.',
-                'data' => $customer->fresh(),
-            ]);
+            return (new CustomerResource($customer->fresh()))
+                ->additional(['success' => true, 'message' => 'Customer updated successfully.'])
+                ->response($request);
 
         } catch (\Exception $e) {
             Log::error('Customer API update failed', [
@@ -194,7 +190,7 @@ class CustomerController extends Controller
     /**
      * Get customer transaction history.
      */
-    public function customerHistory(int $id): JsonResponse
+    public function customerHistory(int $id): TransactionCollection
     {
         $customer = Customer::findOrFail($id);
 
@@ -202,10 +198,7 @@ class CustomerController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(50);
 
-        return response()->json([
-            'success' => true,
-            'data' => $transactions,
-        ]);
+        return (new TransactionCollection($transactions))->additional(['success' => true]);
     }
 
     /**

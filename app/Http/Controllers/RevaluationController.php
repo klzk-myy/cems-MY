@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\CurrencyPosition;
 use App\Models\RevaluationEntry;
 use App\Services\RevaluationService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class RevaluationController extends Controller
 {
@@ -16,7 +18,7 @@ class RevaluationController extends Controller
         $this->revaluationService = $revaluationService;
     }
 
-    public function index()
+    public function index(): View
     {
         $this->requireManagerOrAdmin();
 
@@ -26,7 +28,7 @@ class RevaluationController extends Controller
         return view('accounting.revaluation.index', compact('positions', 'status'));
     }
 
-    public function run(Request $request)
+    public function run(Request $request): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -41,7 +43,7 @@ class RevaluationController extends Controller
         }
     }
 
-    public function history(Request $request)
+    public function history(Request $request): View
     {
         $this->requireManagerOrAdmin();
 

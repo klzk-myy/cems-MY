@@ -240,7 +240,7 @@ class AlertTriageService
     protected function getOverdueCount(): int
     {
         // Compute overdue in database based on SLA hours per priority
-        return DB::table('alerts')
+        return Alert::query()
             ->whereNull('case_id')
             ->where(function ($query) {
                 $query->where(function ($q) {

@@ -9,7 +9,9 @@ use App\Http\Requests\DismissAlertRequest;
 use App\Http\Requests\ResolveAlertRequest;
 use App\Models\Alert;
 use App\Services\AlertTriageService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class AlertTriageController extends Controller
 {
@@ -17,7 +19,7 @@ class AlertTriageController extends Controller
         protected AlertTriageService $alertTriageService
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = Alert::with(['customer', 'flaggedTransaction', 'assignedTo'])
             ->whereNull('case_id');
@@ -43,28 +45,28 @@ class AlertTriageController extends Controller
         return view('compliance.alerts.index', compact('alerts', 'summary'));
     }
 
-    public function show(Alert $alert)
+    public function show(Alert $alert): View
     {
         $alert->load(['customer', 'flaggedTransaction', 'flaggedTransaction.transaction', 'assignedTo', 'case']);
 
         return view('compliance.alerts.show', compact('alert'));
     }
 
-    public function assign(AssignAlertRequest $request, Alert $alert)
+    public function assign(AssignAlertRequest $request, Alert $alert): RedirectResponse
     {
         $this->alertTriageService->assignToOfficer($alert, $request->assignee_id);
 
         return redirect()->back()->with('success', 'Alert assigned successfully');
     }
 
-    public function resolve(ResolveAlertRequest $request, Alert $alert)
+    public function resolve(ResolveAlertRequest $request, Alert $alert): RedirectResponse
     {
         $this->alertTriageService->resolveAlert($alert, auth()->id(), $request->resolution);
 
         return redirect()->route('compliance.alerts.index')->with('success', 'Alert resolved successfully');
     }
 
-    public function dismiss(DismissAlertRequest $request, Alert $alert)
+    public function dismiss(DismissAlertRequest $request, Alert $alert): RedirectResponse
     {
         if ($alert->status === FlagStatus::Resolved || $alert->status === FlagStatus::Rejected) {
             abort(403, 'Cannot dismiss an already resolved or rejected alert.');

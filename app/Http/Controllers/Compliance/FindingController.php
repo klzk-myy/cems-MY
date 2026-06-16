@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Compliance;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DismissFindingRequest;
 use App\Models\Compliance\ComplianceFinding;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class FindingController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = ComplianceFinding::query();
 
@@ -78,7 +80,7 @@ class FindingController extends Controller
         return view('compliance.findings.index', compact('findings', 'stats', 'pagination'));
     }
 
-    public function show(int $id)
+    public function show(int $id): View|RedirectResponse
     {
         $finding = ComplianceFinding::with('subject')->find($id);
 
@@ -101,7 +103,7 @@ class FindingController extends Controller
         return view('compliance.findings.show', compact('finding'));
     }
 
-    public function dismiss(DismissFindingRequest $request, int $id)
+    public function dismiss(DismissFindingRequest $request, int $id): RedirectResponse
     {
         $finding = ComplianceFinding::find($id);
 

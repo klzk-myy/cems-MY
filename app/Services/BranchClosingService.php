@@ -74,7 +74,9 @@ class BranchClosingService
             $branch = $workflow->branch;
 
             // Return all active allocations to branch pool
-            $activeAllocations = TellerAllocation::where('branch_id', $branch->id)
+            $activeAllocations = TellerAllocation::query()
+                ->with(['counter', 'user', 'branch'])
+                ->where('branch_id', $branch->id)
                 ->where('status', TellerAllocationStatus::ACTIVE->value)
                 ->get();
 

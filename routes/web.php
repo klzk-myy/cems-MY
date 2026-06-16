@@ -14,6 +14,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\PerformanceMonitoringController;
 use App\Http\Controllers\RateController;
@@ -30,28 +31,9 @@ use App\Http\Controllers\Transaction\TransactionCancellationController;
 use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
-use App\Models\Branch;
-use App\Models\Currency;
-use App\Models\ExchangeRate;
-use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    $isSetupComplete = User::exists() &&
-                       Currency::exists() &&
-                       ExchangeRate::exists() &&
-                       Branch::exists();
-
-    if (! $isSetupComplete) {
-        return redirect('/setup');
-    }
-
-    if (auth()->check()) {
-        return redirect('/dashboard');
-    }
-
-    return redirect('/login');
-})->name('home');
+Route::get('/', HomeController::class)->name('home');
 
 // Health check endpoint
 Route::get('/health', [HealthCheckController::class, 'index'])

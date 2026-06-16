@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class RegulatoryReportController extends Controller
 {
@@ -46,7 +47,7 @@ class RegulatoryReportController extends Controller
         return $this->getQuarterStart($quarter)->copy()->addMonths(3)->subDay()->endOfDay();
     }
 
-    public function msb2(Request $request)
+    public function msb2(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -100,7 +101,7 @@ class RegulatoryReportController extends Controller
         return view('reports.msb2.index', compact('date', 'summary', 'stats', 'reportGenerated', 'nextBusinessDay', 'isToday'));
     }
 
-    public function msb2Generate(Request $request)
+    public function msb2Generate(Request $request): JsonResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -119,7 +120,7 @@ class RegulatoryReportController extends Controller
         return response()->json($report);
     }
 
-    public function generateMSB2(StoreMsb2ReportRequest $request)
+    public function generateMSB2(StoreMsb2ReportRequest $request): JsonResponse
     {
         $filepath = $this->reportingService->generateMSB2($request->validated('date'));
 
@@ -130,7 +131,7 @@ class RegulatoryReportController extends Controller
         ]);
     }
 
-    public function updateMSB2Status(Request $request)
+    public function updateMSB2Status(Request $request): JsonResponse
     {
         return $this->updateReportStatus('MSB2', $request);
     }
@@ -138,7 +139,7 @@ class RegulatoryReportController extends Controller
     /**
      * BNM Form LMCA - Monthly regulatory report
      */
-    public function lmca(Request $request)
+    public function lmca(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -160,7 +161,7 @@ class RegulatoryReportController extends Controller
     /**
      * Generate BNM Form LMCA CSV
      */
-    public function lmcaGenerate(Request $request)
+    public function lmcaGenerate(Request $request): JsonResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -190,7 +191,7 @@ class RegulatoryReportController extends Controller
     /**
      * Update LMCA report status (mark as submitted)
      */
-    public function updateLMCAStatus(Request $request)
+    public function updateLMCAStatus(Request $request): JsonResponse
     {
         return $this->updateReportStatus('LMCA', $request);
     }
@@ -238,7 +239,7 @@ class RegulatoryReportController extends Controller
     /**
      * Quarterly Large Value Report
      */
-    public function quarterlyLvr(Request $request)
+    public function quarterlyLvr(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -260,7 +261,7 @@ class RegulatoryReportController extends Controller
     /**
      * Generate Quarterly Large Value Report CSV
      */
-    public function quarterlyLvrGenerate(Request $request)
+    public function quarterlyLvrGenerate(Request $request): JsonResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -290,7 +291,7 @@ class RegulatoryReportController extends Controller
     /**
      * Position Limit Report
      */
-    public function positionLimit(Request $request)
+    public function positionLimit(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -306,7 +307,7 @@ class RegulatoryReportController extends Controller
     /**
      * Generate Position Limit Report CSV
      */
-    public function positionLimitGenerate(Request $request)
+    public function positionLimitGenerate(Request $request): JsonResponse
     {
         $this->requireManagerOrAdmin();
 
