@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Mfa\DisableMfaRequest;
+use App\Http\Requests\Mfa\SetupMfaRequest;
+use App\Http\Requests\Mfa\VerifyMfaRequest;
+use App\Http\Requests\Mfa\VerifyRecoveryCodeRequest;
 use App\Services\AuditService;
 use App\Services\MfaService;
 use Illuminate\Http\RedirectResponse;
@@ -45,11 +49,9 @@ class MfaController extends Controller
     /**
      * Process MFA setup - verify initial code and enable MFA.
      */
-    public function setupStore(Request $request): View|RedirectResponse
+    public function setupStore(SetupMfaRequest $request): View|RedirectResponse
     {
-        $request->validate([
-            'code' => 'required|digits:6',
-        ]);
+        $validated = $request->validated();
 
         $user = auth()->user();
         $pendingSecret = Session::pull('mfa_pending_secret');
@@ -60,7 +62,7 @@ class MfaController extends Controller
         }
 
         // Verify the code
-        if (! $this->mfaService->verifyCode($pendingSecret, $request->code)) {
+        if (! $this->mfaService->verifyCode($pendingSecret, $validated['code'])) {
             // Re-generate secret and start over
             Session::forget('mfa_setup_started_at');
 
@@ -141,11 +143,9 @@ class MfaController extends Controller
     /**
      * Process MFA verification.
      */
-    public function verifyStore(Request $request): RedirectResponse
+    public function verifyStore(VerifyMfaRequest $request): RedirectResponse
     {
-        $request->validate([
-            'code' => 'required|string|min:6|max:10', // 6 for TOTP, 10 for recovery code
-        ]);
+        $validated = $request->validated();
 
         $user = auth()->user();
         $secret = $this->mfaService->getSecret($user);
@@ -156,11 +156,11 @@ class MfaController extends Controller
         }
 
         // Try TOTP code first
-        $valid = $this->mfaService->verifyCode($secret, $request->code);
+        $valid = $this->mfaService->verifyCode($secret, $validated['code']);
 
         // If invalid, try recovery code
         if (! $valid) {
-            $valid = $this->mfaService->verifyRecoveryCode($user, $request->code);
+            $valid = $this->mfaService->verifyRecoveryCode($user, $validated['code']);
         }
 
         if (! $valid) {
@@ -195,11 +195,9 @@ class MfaController extends Controller
     /**
      * Disable MFA (requires current verification).
      */
-    public function disable(Request $request): RedirectResponse
+    public function disable(DisableMfaRequest $request): RedirectResponse
     {
-        $request->validate([
-            'code' => 'required|digits:6',
-        ]);
+        $validated = $request->validated();
 
         $user = auth()->user();
         $secret = $this->mfaService->getSecret($user);
@@ -209,10 +207,10 @@ class MfaController extends Controller
         }
 
         // Verify before disabling
-        $valid = $this->mfaService->verifyCode($secret, $request->code);
+        $valid = $this->mfaService->verifyCode($secret, $validated['code']);
 
         if (! $valid) {
-            $valid = $this->mfaService->verifyRecoveryCode($user, $request->code);
+            $valid = $this->mfaService->verifyRecoveryCode($user, $validated['code']);
         }
 
         if (! $valid) {
@@ -279,20 +277,17 @@ class MfaController extends Controller
     /**
      * Verify a recovery code and grant access.
      */
-    public function recoveryVerify(Request $request): RedirectResponse
+    public function recoveryVerify(VerifyRecoveryCodeRequest $request): RedirectResponse
     {
-        $request->validate([
-            'recovery_code' => 'required|string|min:6|max:50',
-            'password' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         $user = auth()->user();
 
-        if (! $user || ! password_verify($request->password, $user->password_hash)) {
+        if (! $user || ! password_verify($validated['password'], $user->password_hash)) {
             return back()->withErrors(['password' => 'Invalid password.']);
         }
 
-        if (! $this->mfaService->verifyRecoveryCode($user, $request->recovery_code)) {
+        if (! $this->mfaService->verifyRecoveryCode($user, $validated['recovery_code'])) {
             $this->auditService->logMfaEvent('mfa_recovery_failed', $user->id);
 
             return back()->withErrors(['recovery_code' => 'Invalid recovery code.']);
