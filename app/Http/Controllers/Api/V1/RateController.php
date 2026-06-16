@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\OverrideRateRequest;
+use App\Http\Requests\Api\V1\Rate\CheckRateSetRequest;
+use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
+use App\Http\Requests\Api\V1\Rate\ValidateRateRequest;
 use App\Http\Requests\FetchRateRequest;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
@@ -129,7 +132,7 @@ class RateController extends Controller
      * Copy previous day's rates as today's rates.
      * Manager/Admin only.
      */
-    public function copyPrevious(Request $request): JsonResponse
+    public function copyPrevious(CopyPreviousRateRequest $request): JsonResponse
     {
         $user = Auth::user();
 
@@ -140,9 +143,7 @@ class RateController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'date' => 'nullable|date|before_or_equal:today',
-        ]);
+        $validated = $request->validated();
 
         $targetDate = $validated['date'] ?? now()->subDay()->toDateString();
 
@@ -194,12 +195,9 @@ class RateController extends Controller
     /**
      * Check if all required rates are set.
      */
-    public function checkSet(Request $request): JsonResponse
+    public function checkSet(CheckRateSetRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'currencies' => 'required|array|min:1',
-            'currencies.*' => 'string|size:3',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->rateService->areAllRatesSet($validated['currencies']);
 
@@ -213,13 +211,9 @@ class RateController extends Controller
     /**
      * Validate a submitted rate against current market rate.
      */
-    public function validateRate(Request $request): JsonResponse
+    public function validateRate(ValidateRateRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'rate' => 'required|numeric|min:0.0001',
-            'currency_code' => 'required|string|size:3',
-            'type' => 'required|in:buy,sell',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->rateService->validateTransactionRate(
             $validated['rate'],
