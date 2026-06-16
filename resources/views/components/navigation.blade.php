@@ -34,7 +34,7 @@
                         <a href="{{ route($item['route']) }}" 
                            class="flex items-center {{ $collapsed ? 'justify-center px-3' : 'px-4' }} py-2 hover:bg-gray-800 {{ request()->routeIs($item['route']) ? 'bg-gray-800' : '' }}"
                            title="{{ $collapsed ? $item['label'] : '' }}">
-                            <x-dynamic-component :component="'heroicon-o-' . ($item['icon'] ?? 'circle')" class="w-5 h-5 flex-shrink-0" />
+                            <x-dynamic-component :component="'heroicon-o-' . ($item['icon'] ?? 'circle')" class="w-5 h-5 shrink-0" />
                             <span x-show="!collapsed" class="ml-3">{{ $item['label'] }}</span>
                         </a>
                     </li>
@@ -49,7 +49,7 @@
                         <a href="{{ route($item['route']) }}" 
                            class="flex items-center {{ $collapsed ? 'justify-center px-3' : 'pl-6' }} py-2 text-sm hover:bg-gray-800 {{ request()->routeIs($item['route'] . '*') ? 'bg-gray-800' : '' }}"
                            title="{{ $collapsed ? $item['label'] : '' }}">
-                            <x-dynamic-component :component="'heroicon-o-' . ($item['icon'] ?? 'circle')" class="w-5 h-5 flex-shrink-0" />
+                            <x-dynamic-component :component="'heroicon-o-' . ($item['icon'] ?? 'circle')" class="w-5 h-5 shrink-0" />
                             <span x-show="!collapsed" class="ml-3">{{ $item['label'] }}</span>
                         </a>
                     </li>
