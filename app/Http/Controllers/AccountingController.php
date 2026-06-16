@@ -2,7 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreJournalEntryRequest;
+use App\Http\Requests\Accounting\BalanceSheetRequest;
+use App\Http\Requests\Accounting\ClosePeriodRequest;
+use App\Http\Requests\Accounting\ExportReconciliationRequest;
+use App\Http\Requests\Accounting\ImportBankStatementRequest;
+use App\Http\Requests\Accounting\LedgerRequest;
+use App\Http\Requests\Accounting\MarkReconciliationExceptionRequest;
+use App\Http\Requests\Accounting\ProfitLossRequest;
+use App\Http\Requests\Accounting\ReconciliationReportRequest;
+use App\Http\Requests\Accounting\ReverseJournalEntryRequest;
+use App\Http\Requests\Accounting\StoreBudgetRequest;
+use App\Http\Requests\Accounting\StoreJournalEntryRequest;
+use App\Http\Requests\Accounting\TrialBalanceRequest;
+use App\Http\Requests\Accounting\UpdateBudgetRequest;
 use App\Models\AccountingPeriod;
 use App\Models\BankReconciliation;
 use App\Models\Budget;
@@ -99,15 +111,13 @@ class AccountingController extends Controller
         return view('accounting.journal.show', compact('entry'));
     }
 
-    public function reverse(Request $request, JournalEntry $entry): RedirectResponse
+    public function reverse(ReverseJournalEntryRequest $request, JournalEntry $entry): RedirectResponse
     {
         if ($entry->isReversed()) {
             return back()->with('error', 'Entry is already reversed.');
         }
 
-        $validated = $request->validate([
-            'reason' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         try {
             $reversal = $this->accountingService->reverseJournalEntry(
@@ -130,7 +140,7 @@ class AccountingController extends Controller
         return view('accounting.periods', compact('periods'));
     }
 
-    public function closePeriod(Request $request, AccountingPeriod $period): RedirectResponse
+    public function closePeriod(ClosePeriodRequest $request, AccountingPeriod $period): RedirectResponse
     {
         try {
             $result = $this->periodCloseService->closePeriod($period, auth()->id());
@@ -169,17 +179,9 @@ class AccountingController extends Controller
         return view('accounting.reconciliation', compact('report', 'cashAccounts'));
     }
 
-    public function importBankStatement(Request $request): RedirectResponse
+    public function importBankStatement(ImportBankStatementRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'account_code' => 'required|string|exists:chart_of_accounts,account_code',
-            'lines' => 'required|array|min:1',
-            'lines.*.date' => 'required|date',
-            'lines.*.reference' => 'nullable|string|max:255',
-            'lines.*.description' => 'required|string|max:500',
-            'lines.*.debit' => 'nullable|numeric|min=0',
-            'lines.*.credit' => 'nullable|numeric|min=0',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->bankReconciliationService->importStatement(
             $validated['account_code'],
@@ -191,11 +193,9 @@ class AccountingController extends Controller
             ->with('success', "Imported {$result['imported']} lines. {$result['unmatched']} unmatched.");
     }
 
-    public function markAsException(Request $request, BankReconciliation $reconciliation): RedirectResponse
+    public function markAsException(MarkReconciliationExceptionRequest $request, BankReconciliation $reconciliation): RedirectResponse
     {
-        $validated = $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $this->bankReconciliationService->markAsException($reconciliation->id, $validated['reason'], auth()->id());
 
@@ -203,13 +203,9 @@ class AccountingController extends Controller
             ->with('success', 'Item marked as exception.');
     }
 
-    public function reconciliationReport(Request $request): View
+    public function reconciliationReport(ReconciliationReportRequest $request): View
     {
-        $validated = $request->validate([
-            'account_code' => 'required|string|exists:chart_of_accounts,account_code',
-            'from' => 'required|date',
-            'to' => 'required|date',
-        ]);
+        $validated = $request->validated();
 
         $report = $this->bankReconciliationService->getReconciliationReport(
             $validated['account_code'],
@@ -220,13 +216,9 @@ class AccountingController extends Controller
         return view('accounting.reconciliation_report', compact('report'));
     }
 
-    public function exportReconciliation(Request $request): View
+    public function exportReconciliation(ExportReconciliationRequest $request): View
     {
-        $validated = $request->validate([
-            'account_code' => 'required|string|exists:chart_of_accounts,account_code',
-            'from' => 'required|date',
-            'to' => 'required|date',
-        ]);
+        $validated = $request->validated();
 
         $report = $this->bankReconciliationService->getReconciliationReport(
             $validated['account_code'],
@@ -237,14 +229,9 @@ class AccountingController extends Controller
         return view('accounting.reconciliation_export', compact('report'));
     }
 
-    public function storeBudget(Request $request): RedirectResponse
+    public function storeBudget(StoreBudgetRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'period_code' => 'required|string',
-            'budgets' => 'required|array|min:1',
-            'budgets.*.account_code' => 'required|string|exists:chart_of_accounts,account_code',
-            'budgets.*.amount' => 'required|numeric|min=0',
-        ]);
+        $validated = $request->validated();
 
         foreach ($validated['budgets'] as $budgetData) {
             $this->budgetService->setBudget(
@@ -259,11 +246,9 @@ class AccountingController extends Controller
             ->with('success', 'Budget saved successfully.');
     }
 
-    public function updateBudget(Request $request, Budget $budget): RedirectResponse
+    public function updateBudget(UpdateBudgetRequest $request, Budget $budget): RedirectResponse
     {
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min=0',
-        ]);
+        $validated = $request->validated();
 
         $budget->update([
             'budget_amount' => $validated['amount'],
@@ -273,17 +258,13 @@ class AccountingController extends Controller
             ->with('success', 'Budget updated successfully.');
     }
 
-    public function ledger(Request $request): View
+    public function ledger(LedgerRequest $request): View
     {
-        $request->validate([
-            'from' => 'nullable|date',
-            'to' => 'nullable|date',
-            'account_code' => 'nullable|string|exists:chart_of_accounts,account_code',
-        ]);
+        $validated = $request->validated();
 
-        $from = $request->input('from', now()->startOfMonth()->toDateString());
-        $to = $request->input('to', now()->toDateString());
-        $accountCode = $request->input('account_code');
+        $from = $validated['from'] ?? now()->startOfMonth()->toDateString();
+        $to = $validated['to'] ?? now()->toDateString();
+        $accountCode = $validated['account_code'] ?? null;
 
         $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
 
@@ -305,36 +286,33 @@ class AccountingController extends Controller
         return view('accounting.reports.ledger-account', compact('ledger', 'accountCode', 'from', 'to'));
     }
 
-    public function trialBalance(Request $request): View
+    public function trialBalance(TrialBalanceRequest $request): View
     {
-        $request->validate(['as_of_date' => 'nullable|date']);
+        $validated = $request->validated();
 
-        $asOfDate = $request->input('as_of_date', now()->toDateString());
+        $asOfDate = $validated['as_of_date'] ?? now()->toDateString();
         $trialBalance = $this->ledgerService->getTrialBalance($asOfDate);
 
         return view('accounting.reports.trial-balance', compact('trialBalance', 'asOfDate'));
     }
 
-    public function profitLoss(Request $request): View
+    public function profitLoss(ProfitLossRequest $request): View
     {
-        $request->validate([
-            'from' => 'nullable|date',
-            'to' => 'nullable|date',
-        ]);
+        $validated = $request->validated();
 
-        $from = $request->input('from', now()->startOfMonth()->toDateString());
-        $to = $request->input('to', now()->toDateString());
+        $from = $validated['from'] ?? now()->startOfMonth()->toDateString();
+        $to = $validated['to'] ?? now()->toDateString();
 
         $report = $this->ledgerService->getProfitAndLoss($from, $to);
 
         return view('accounting.reports.profit-loss', compact('report', 'from', 'to'));
     }
 
-    public function balanceSheet(Request $request): View
+    public function balanceSheet(BalanceSheetRequest $request): View
     {
-        $request->validate(['as_of_date' => 'nullable|date']);
+        $validated = $request->validated();
 
-        $asOfDate = $request->input('as_of_date', now()->toDateString());
+        $asOfDate = $validated['as_of_date'] ?? now()->toDateString();
         $balanceSheet = $this->ledgerService->getBalanceSheet($asOfDate);
 
         return view('accounting.reports.balance-sheet', compact('balanceSheet', 'asOfDate'));

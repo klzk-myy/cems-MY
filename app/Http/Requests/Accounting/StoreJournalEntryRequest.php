@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Accounting;
+
+use App\Http\Requests\AuthorizedFormRequest;
 
 class StoreJournalEntryRequest extends AuthorizedFormRequest
 {
