@@ -289,15 +289,15 @@ Follow the same pattern as Task 2.1/2.2. Replace inline validation in `setupStor
 - Modify: `app/Http/Controllers/Api/V1/CounterApiController.php`
 - Modify: `app/Http/Controllers/Api/V1/RateController.php`
 
-- [ ] **Step 1: Replace `Validator::make` in `CounterApiController`**
+- [x] **Step 1: Replace `Validator::make` in `CounterApiController`**
 
 Create `CloseCounterRequest` with the rules from `CounterApiController.php:21`. Type-hint the controller method and use `$request->validated()`.
 
-- [ ] **Step 2: Replace inline validation in `RateController`**
+- [x] **Step 2: Replace inline validation in `RateController`**
 
 Create the three Rate request classes. Replace the validation blocks at lines 143, 199, and 218 with the corresponding request classes.
 
-- [ ] **Step 3: Run tests and Pint**
+- [x] **Step 3: Run tests and Pint**
 
 ```bash
 APP_ENV=testing php artisan test --compact
@@ -306,7 +306,7 @@ vendor/bin/pint --dirty --format agent
 
 Expected: all tests pass, Pint passes.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/Http/Requests app/Http/Controllers
@@ -328,7 +328,7 @@ git commit -m "refactor: move inline validation into Form Request classes"
 - Create: `app/Http/Resources/Api/V1/Compliance/CaseResource.php`
 - Create: `app/Http/Resources/Api/V1/Compliance/CaseCollection.php`
 
-- [ ] **Step 1: Create `UserResource`**
+- [x] **Step 1: Create `UserResource`**
 
 ```php
 <?php
@@ -353,7 +353,7 @@ class UserResource extends JsonResource
 }
 ```
 
-- [ ] **Step 2: Create `TransactionResource`**
+- [x] **Step 2: Create `TransactionResource`**
 
 ```php
 <?php
@@ -382,7 +382,7 @@ class TransactionResource extends JsonResource
 }
 ```
 
-- [ ] **Step 3: Create `TransactionCollection`**
+- [x] **Step 3: Create `TransactionCollection`**
 
 ```php
 <?php
@@ -403,7 +403,7 @@ class TransactionCollection extends ResourceCollection
 }
 ```
 
-- [ ] **Step 4: Create `CustomerResource`, `CustomerCollection`, `Compliance/CaseResource`, `Compliance/CaseCollection`**
+- [x] **Step 4: Create `CustomerResource`, `CustomerCollection`, `Compliance/CaseResource`, `Compliance/CaseCollection`**
 
 Follow the same pattern. Include only the fields currently returned by the corresponding controllers.
 
@@ -415,7 +415,7 @@ Follow the same pattern. Include only the fields currently returned by the corre
 - Modify: `app/Http/Controllers/Api/V1/CustomerController.php`
 - Modify: `app/Http/Controllers/Api/V1/Compliance/CaseController.php`
 
-- [ ] **Step 1: Replace closure `/user` route**
+- [x] **Step 1: Replace closure `/user` route**
 
 Create `app/Http/Controllers/Api/V1/CurrentUserController.php`:
 
@@ -445,7 +445,7 @@ use App\Http\Controllers\Api\V1\CurrentUserController;
 Route::middleware('auth:sanctum')->get('/user', CurrentUserController::class)->name('api.v1.user');
 ```
 
-- [ ] **Step 2: Update `Api/V1/TransactionController`**
+- [x] **Step 2: Update `Api/V1/TransactionController`**
 
 Replace raw model returns with resources:
 
@@ -466,7 +466,7 @@ public function show(Transaction $transaction): TransactionResource
 }
 ```
 
-- [ ] **Step 3: Update `Api/V1/CustomerController`**
+- [x] **Step 3: Update `Api/V1/CustomerController`**
 
 ```php
 use App\Http\Resources\Api\V1\CustomerResource;
@@ -485,7 +485,7 @@ public function show(Customer $customer): CustomerResource
 }
 ```
 
-- [ ] **Step 4: Update `Api/V1/Compliance/CaseController`**
+- [x] **Step 4: Update `Api/V1/Compliance/CaseController`**
 
 ```php
 use App\Http\Resources\Api\V1\Compliance\CaseResource;
@@ -499,7 +499,7 @@ public function index(Request $request): CaseCollection
 }
 ```
 
-- [ ] **Step 5: Run API feature tests and Pint**
+- [x] **Step 5: Run API feature tests and Pint**
 
 ```bash
 APP_ENV=testing php artisan test --compact tests/Feature/Api
@@ -508,7 +508,7 @@ vendor/bin/pint --dirty --format agent
 
 Expected: API tests pass, Pint passes.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Resources app/Http/Controllers/Api routes/api_v1.php

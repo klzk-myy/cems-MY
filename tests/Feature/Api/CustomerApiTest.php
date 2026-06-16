@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Customer;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Services\CustomerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +24,10 @@ class CustomerApiTest extends TestCase
                 }),
                 1
             )
-            ->andReturn(Customer::factory()->make(['id' => 1]));
+            ->andReturn(Customer::factory()->make([
+                'id' => 1,
+                'full_name' => 'John Doe',
+            ]));
 
         $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
             ->postJson('/api/v1/customers', [
@@ -35,7 +39,11 @@ class CustomerApiTest extends TestCase
                 'risk_rating' => 'Low',
             ]);
 
-        $response->assertStatus(201);
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Customer created successfully.')
+            ->assertJsonPath('data.id', 1)
+            ->assertJsonPath('data.full_name', 'John Doe');
     }
 
     public function test_update_delegates_to_customer_service()
@@ -65,6 +73,62 @@ class CustomerApiTest extends TestCase
                 'risk_rating' => 'Low',
             ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Customer updated successfully.')
+            ->assertJsonPath('data.id', $customer->id);
+    }
+
+    public function test_show_returns_customer_with_transaction_stats_and_loaded_relations()
+    {
+        $customer = Customer::factory()->create();
+        Transaction::factory()->count(2)->create([
+            'customer_id' => $customer->id,
+            'amount_local' => 100.00,
+        ]);
+
+        $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->getJson("/api/v1/customers/{$customer->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.id', $customer->id)
+            ->assertJsonPath('data.full_name', $customer->full_name)
+            ->assertJsonPath('transaction_stats.total_transactions', 2)
+            ->assertJsonPath('transaction_stats.total_volume', 200)
+            ->assertJsonCount(0, 'data.documents')
+            ->assertJsonCount(2, 'data.transactions');
+    }
+
+    public function test_show_returns_404_for_missing_customer()
+    {
+        $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->getJson('/api/v1/customers/999999');
+
+        $response->assertStatus(404)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Customer not found.');
+    }
+
+    public function test_customer_history_returns_transaction_collection()
+    {
+        $customer = Customer::factory()->create();
+        $olderTransaction = Transaction::factory()->create([
+            'customer_id' => $customer->id,
+            'created_at' => now()->subDay(),
+        ]);
+        $newerTransaction = Transaction::factory()->create([
+            'customer_id' => $customer->id,
+            'created_at' => now(),
+        ]);
+
+        $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->getJson("/api/v1/customers/{$customer->id}/history");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.id', $newerTransaction->id)
+            ->assertJsonPath('data.1.id', $olderTransaction->id);
     }
 }

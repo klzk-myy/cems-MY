@@ -9,6 +9,7 @@ use App\Enums\FindingSeverity;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCaseRequest;
 use App\Http\Requests\UpdateCaseRequest;
+use App\Http\Resources\Api\V1\Compliance\CaseCollection;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceFinding;
 use App\Services\Compliance\CaseManagementService;
@@ -24,7 +25,7 @@ class CaseController extends Controller
     /**
      * List cases with filtering.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): CaseCollection
     {
         $query = ComplianceCase::with(['customer', 'assignee']);
 
@@ -44,10 +45,7 @@ class CaseController extends Controller
         $perPage = $request->get('per_page', 20);
         $cases = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $cases,
-        ]);
+        return (new CaseCollection($cases))->additional(['success' => true]);
     }
 
     /**
