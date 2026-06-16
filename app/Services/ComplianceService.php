@@ -9,11 +9,11 @@ use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Models\FlaggedTransaction;
+use App\Models\SanctionEntry;
 use App\Models\Transaction;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Compliance Service
@@ -194,20 +194,20 @@ class ComplianceService
         $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $customerName);
         $pattern = '%'.$escaped.'%';
 
-        $driver = DB::connection()->getDriverName();
+        // Use parameter binding with explicit ESCAPE clause to prevent SQL injection
+        $query = SanctionEntry::query();
+        $driver = $query->getConnection()->getDriverName();
         $operator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
 
-        // Use parameter binding with explicit ESCAPE clause to prevent SQL injection
-        $query = DB::table('sanction_entries');
-        $query->whereRaw(
-            "entity_name {$operator} ? ESCAPE '\\'",
-            [$pattern]
-        )->orWhereRaw(
-            "aliases {$operator} ? ESCAPE '\\'",
-            [$pattern]
-        );
-
-        $matches = $query->count();
+        $matches = $query
+            ->whereRaw(
+                "entity_name {$operator} ? ESCAPE '\\'",
+                [$pattern]
+            )->orWhereRaw(
+                "aliases {$operator} ? ESCAPE '\\'",
+                [$pattern]
+            )
+            ->count();
 
         return $matches > 0;
     }

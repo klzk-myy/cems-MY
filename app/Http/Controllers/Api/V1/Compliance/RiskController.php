@@ -7,7 +7,6 @@ use App\Models\Compliance\CustomerRiskProfile;
 use App\Services\Compliance\RiskScoringEngine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class RiskController extends Controller
 {
@@ -137,20 +136,18 @@ class RiskController extends Controller
      */
     public function portfolio(): JsonResponse
     {
-        $all = DB::table('customer_risk_profiles')
-            ->select('risk_tier', DB::raw('COUNT(*) as count'))
+        $distribution = CustomerRiskProfile::query()
+            ->selectRaw('risk_tier, COUNT(*) as count')
             ->groupBy('risk_tier')
-            ->get();
-        $byTier = [];
-        foreach ($all as $row) {
-            $byTier[$row->risk_tier] = (int) $row->count;
-        }
+            ->pluck('count', 'risk_tier')
+            ->map(fn ($count) => (int) $count)
+            ->all();
 
         return response()->json([
             'success' => true,
             'data' => [
-                'total' => (int) DB::table('customer_risk_profiles')->count(),
-                'by_tier' => $byTier,
+                'total' => CustomerRiskProfile::query()->count(),
+                'by_tier' => $distribution,
             ],
         ]);
     }

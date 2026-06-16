@@ -9,11 +9,11 @@ use App\Http\Resources\Api\V1\CustomerCollection;
 use App\Http\Resources\Api\V1\CustomerResource;
 use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Models\Customer;
+use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -101,9 +101,9 @@ class CustomerController extends Controller
             ], 404);
         }
 
-        $stats = DB::table('transactions')
-            ->where('customer_id', $id)
+        $stats = Transaction::query()
             ->selectRaw('COUNT(*) as total_transactions, SUM(amount_local) as total_volume, AVG(amount_local) as avg_transaction')
+            ->where('customer_id', $id)
             ->first();
 
         $transactionStats = [
