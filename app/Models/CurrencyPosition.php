@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Services\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,10 +32,10 @@ class CurrencyPosition extends Model
     ];
 
     protected $casts = [
-        'balance' => 'decimal:4',
-        'avg_cost_rate' => 'decimal:4',
-        'last_valuation_rate' => 'decimal:4',
-        'unrealized_pnl' => 'decimal:4',
+        'balance' => MoneyCast::class,
+        'avg_cost_rate' => MoneyCast::class.':6',
+        'last_valuation_rate' => MoneyCast::class.':6',
+        'unrealized_pnl' => MoneyCast::class,
         'last_valuation_at' => 'datetime',
     ];
 

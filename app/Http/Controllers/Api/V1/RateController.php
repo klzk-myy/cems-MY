@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\OverrideRateRequest;
-use App\Http\Requests\Api\V1\Rate\StoreRateRequest;
-use App\Http\Requests\Api\V1\Rate\UpdateRateRequest;
+use App\Http\Requests\Api\V1\Rate\CheckRateSetRequest;
+use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
 use App\Http\Requests\Api\V1\Rate\ValidateRateRequest;
 use App\Http\Requests\FetchRateRequest;
 use App\Models\ExchangeRate;
@@ -132,7 +132,7 @@ class RateController extends Controller
      * Copy previous day's rates as today's rates.
      * Manager/Admin only.
      */
-    public function copyPrevious(StoreRateRequest $request): JsonResponse
+    public function copyPrevious(CopyPreviousRateRequest $request): JsonResponse
     {
         $user = Auth::user();
 
@@ -195,7 +195,7 @@ class RateController extends Controller
     /**
      * Check if all required rates are set.
      */
-    public function checkSet(UpdateRateRequest $request): JsonResponse
+    public function checkSet(CheckRateSetRequest $request): JsonResponse
     {
         $validated = $request->validated();
 

@@ -258,6 +258,10 @@ class CustomerController extends Controller
             $query->orderBy('created_at', 'desc')->limit(10);
         }]);
 
+        $customer->loadCount(['transactions', 'documents']);
+        $customer->loadSum('transactions', 'amount_local');
+        $customer->loadAvg('transactions', 'amount_local');
+
         $notes = $customer->notes()
             ->with('creator')
             ->orderBy('created_at', 'desc')
@@ -265,18 +269,18 @@ class CustomerController extends Controller
 
         // Calculate transaction stats
         $transactionStats = [
-            'total_transactions' => $customer->transactions()->count(),
-            'total_volume' => $customer->transactions()->sum('amount_local'),
-            'avg_transaction' => $customer->transactions()->avg('amount_local') ?? 0,
+            'total_transactions' => $customer->transactions_count,
+            'total_volume' => $customer->transactions_sum_amount_local,
+            'avg_transaction' => $customer->transactions_avg_amount_local ?? 0,
             'last_transaction' => $customer->last_transaction_at,
         ];
 
-        // Get document status
+        // Get document status from the already-loaded collection
         $documentStatus = [
-            'total' => $customer->documents()->count(),
-            'verified' => $customer->documents()->verified()->count(),
-            'pending' => $customer->documents()->unverified()->count(),
-            'expired' => $customer->documents()->expired()->count(),
+            'total' => $customer->documents_count,
+            'verified' => $customer->documents->filter->isVerified()->count(),
+            'pending' => $customer->documents->whereNull('verified_by')->whereNull('verified_at')->count(),
+            'expired' => $customer->documents->whereNotNull('expiry_date')->where('expiry_date', '<', now())->count(),
         ];
 
         return view('customers.show', compact(

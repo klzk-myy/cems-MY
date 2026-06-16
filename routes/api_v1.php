@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Compliance\RiskController;
 use App\Http\Controllers\Api\V1\CounterApiController;
 use App\Http\Controllers\Api\V1\CounterHandoverController;
 use App\Http\Controllers\Api\V1\CounterOpeningController;
+use App\Http\Controllers\Api\V1\CurrentUserController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EmergencyCounterController;
 use App\Http\Controllers\Api\V1\EodReconciliationController;
@@ -27,7 +28,6 @@ use App\Http\Controllers\Api\V1\TransactionCancellationController;
 use App\Http\Controllers\Api\V1\TransactionController;
 use App\Http\Controllers\Report\RegulatoryReportController;
 use App\Http\Controllers\TransactionWizardController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -41,9 +41,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+Route::middleware('auth:sanctum')->get('/user', CurrentUserController::class)->name('api.v1.user');
 
 // Sanctions Webhook (for external list providers to trigger immediate updates)
 // Token-based authentication, not session/cookie based auth

@@ -6,6 +6,7 @@ use App\Enums\JournalEntryStatus;
 use App\Http\Requests\SetupRequest;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
+use App\Models\BranchPool;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
@@ -443,13 +444,11 @@ class SetupController extends Controller
         if ($branch && isset($stockData['initial_stock'])) {
             foreach ($stockData['initial_stock'] as $currencyCode => $amount) {
                 if ($amount > 0) {
-                    DB::table('branch_pools')->insert([
+                    BranchPool::create([
                         'branch_id' => $branch->id,
                         'currency_code' => $currencyCode,
                         'available_balance' => (string) $amount,
                         'allocated_balance' => '0.00',
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
                 }
             }

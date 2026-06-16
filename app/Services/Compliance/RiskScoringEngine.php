@@ -9,6 +9,7 @@ use App\Models\Compliance\CustomerBehavioralBaseline;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\EnhancedDiligenceRecord;
+use App\Models\HighRiskCountry;
 use App\Models\Transaction;
 use App\Services\MathService;
 use App\Services\RiskCalculationService;
@@ -201,7 +202,7 @@ class RiskScoringEngine
         }
 
         // Check high risk countries table
-        $isHighRisk = DB::table('high_risk_countries')
+        $isHighRisk = HighRiskCountry::query()
             ->where('country_code', $country)
             ->exists();
 

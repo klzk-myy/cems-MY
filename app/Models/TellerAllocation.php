@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Enums\TellerAllocationStatus;
 use App\Services\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -44,11 +45,11 @@ class TellerAllocation extends Model
     ];
 
     protected $casts = [
-        'allocated_amount' => 'decimal:4',
-        'current_balance' => 'decimal:4',
-        'requested_amount' => 'decimal:4',
-        'daily_limit_myr' => 'decimal:4',
-        'daily_used_myr' => 'decimal:4',
+        'allocated_amount' => MoneyCast::class,
+        'current_balance' => MoneyCast::class,
+        'requested_amount' => MoneyCast::class,
+        'daily_limit_myr' => MoneyCast::class,
+        'daily_used_myr' => MoneyCast::class,
         'status' => TellerAllocationStatus::class,
         'session_date' => 'date',
         'approved_at' => 'datetime',

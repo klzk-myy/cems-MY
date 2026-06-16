@@ -495,7 +495,9 @@ class CounterService
             ]);
 
             // Transfer teller allocations
-            $activeAllocations = TellerAllocation::where('user_id', $fromUser->id)
+            $activeAllocations = TellerAllocation::query()
+                ->with(['counter', 'user', 'branch'])
+                ->where('user_id', $fromUser->id)
                 ->where('status', TellerAllocationStatus::ACTIVE->value)
                 ->whereDate('session_date', $today)
                 ->get();

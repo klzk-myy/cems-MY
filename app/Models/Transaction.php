@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Models\Bases\TransactionModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -101,10 +102,10 @@ class Transaction extends TransactionModel
      * @var array<string, string>
      */
     protected $casts = [
-        'amount_local' => 'decimal:4',
-        'amount_foreign' => 'decimal:4',
-        'rate' => 'decimal:6',
-        'base_rate' => 'decimal:6',
+        'amount_local' => MoneyCast::class,
+        'amount_foreign' => MoneyCast::class,
+        'rate' => MoneyCast::class.':6',
+        'base_rate' => MoneyCast::class.':6',
         'rate_override' => 'boolean',
         'type' => \App\Enums\TransactionType::class,
         'status' => \App\Enums\TransactionStatus::class,

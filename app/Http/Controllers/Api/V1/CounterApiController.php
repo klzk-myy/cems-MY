@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\Counter\StoreCounterRequest;
+use App\Http\Requests\Api\V1\Counter\CloseCounterRequest;
 use App\Models\Counter;
 use App\Services\CounterService;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +15,7 @@ class CounterApiController extends Controller
         private CounterService $counterService
     ) {}
 
-    public function close(StoreCounterRequest $request, string $counterId): JsonResponse
+    public function close(CloseCounterRequest $request, string $counterId): JsonResponse
     {
         $validated = $request->validated();
 
