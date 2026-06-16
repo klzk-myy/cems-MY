@@ -84,8 +84,8 @@ class HasTimeScopesTest extends TestCase
 
     public function test_scope_between_dates_filters_correctly(): void
     {
-        $from = Carbon::now()->subDays(2);
-        $to = Carbon::now()->subDays(1);
+        $from = Carbon::now()->subDays(3)->startOfDay();
+        $to = Carbon::now()->subDays(1)->endOfDay();
 
         $inside = new class extends BaseModel
         {
@@ -93,7 +93,7 @@ class HasTimeScopesTest extends TestCase
 
             protected $table = 'time_scopes_owners';
         };
-        $inside->created_at = Carbon::now()->subDays(1)->addHour();
+        $inside->created_at = Carbon::now()->subDays(2)->midDay();
         $inside->save();
 
         $outside1 = new class extends BaseModel
@@ -102,7 +102,7 @@ class HasTimeScopesTest extends TestCase
 
             protected $table = 'time_scopes_owners';
         };
-        $outside1->created_at = Carbon::now()->subDays(3);
+        $outside1->created_at = Carbon::now()->subDays(4);
         $outside1->save();
 
         $outside2 = new class extends BaseModel
