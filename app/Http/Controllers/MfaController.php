@@ -21,21 +21,22 @@ class MfaController extends Controller
     ) {}
 
     /**
-     * Show MFA setup page.
+     * Show the MFA setup page.
+     *
+     * Users who already have MFA enabled are redirected to the verification
+     * page. A new TOTP secret is generated and stored temporarily in the
+     * session until the initial code is verified.
      */
     public function setup(): View|RedirectResponse
     {
         $user = auth()->user();
 
-        // If MFA already enabled, redirect to verify or dashboard
         if ($user->mfa_enabled) {
             return redirect()->route('mfa.verify');
         }
 
-        // Generate new secret
         $secretData = $this->mfaService->generateSecret();
 
-        // Store temporary secret for verification
         Session::put('mfa_pending_secret', $secretData['secret']);
         Session::put('mfa_setup_started_at', now()->timestamp);
 
@@ -47,7 +48,7 @@ class MfaController extends Controller
     }
 
     /**
-     * Process MFA setup - verify initial code and enable MFA.
+     * Process MFA setup and enable MFA after verifying the initial code.
      */
     public function setupStore(SetupMfaRequest $request): View|RedirectResponse
     {
@@ -61,39 +62,35 @@ class MfaController extends Controller
                 ->withErrors(['code' => 'Session expired. Please start MFA setup again.']);
         }
 
-        // Verify the code
         if (! $this->mfaService->verifyCode($pendingSecret, $validated['code'])) {
-            // Re-generate secret and start over
             Session::forget('mfa_setup_started_at');
 
             return redirect()->route('mfa.setup')
                 ->withErrors(['code' => 'Invalid verification code. Please try again.']);
         }
 
-        // Store the secret (encrypted)
         $this->mfaService->storeSecret($user, $pendingSecret);
 
-        // Generate recovery codes
         $recoveryCodes = $this->mfaService->generateRecoveryCodes($user);
 
-        // Enable MFA
         $this->mfaService->enableMfa($user);
 
         $this->auditService->logMfaEvent('mfa_setup_completed', $user->id, [
             'new' => ['method' => 'totp'],
         ]);
 
-        // Clear setup session
         Session::forget('mfa_setup_started_at');
 
-        // Show recovery codes (only time they're displayed)
         return view('pages.mfa.recovery-codes', [
             'recoveryCodes' => $recoveryCodes,
         ]);
     }
 
     /**
-     * Show MFA recovery codes page.
+     * Show the MFA recovery codes page.
+     *
+     * Recovery codes are only displayed immediately after setup. Users arriving
+     * without codes in the session are redirected to the setup page.
      */
     public function recoveryCodes(): View|RedirectResponse
     {
@@ -109,26 +106,25 @@ class MfaController extends Controller
     }
 
     /**
-     * Show MFA verification page.
+     * Show the MFA verification page.
+     *
+     * Users without MFA enabled are redirected to setup. Already-verified
+     * sessions and trusted devices are redirected to the intended destination.
      */
     public function verify(Request $request): View|RedirectResponse
     {
         $user = auth()->user();
 
-        // If MFA not enabled, redirect to setup
         if (! $user->mfa_enabled) {
             return redirect()->route('mfa.setup');
         }
 
-        // Check if already verified in this session
         if ($request->session()->get('mfa_verified', false)) {
             return redirect()->intended('/dashboard');
         }
 
-        // Check for trusted device
         $fingerprint = $this->mfaService->generateDeviceFingerprint();
         if ($this->mfaService->hasTrustedDevice($user, $fingerprint)) {
-            // Mark session as verified and redirect
             $request->session()->put('mfa_verified', true);
             $request->session()->put('mfa_verified_at', now()->timestamp);
 
@@ -142,6 +138,9 @@ class MfaController extends Controller
 
     /**
      * Process MFA verification.
+     *
+     * Accepts either a valid TOTP code or a recovery code. When the user opts
+     * to remember the device, a trusted-device record is created.
      */
     public function verifyStore(VerifyMfaRequest $request): RedirectResponse
     {
@@ -155,10 +154,8 @@ class MfaController extends Controller
                 ->withErrors(['code' => 'MFA secret not found. Please set up MFA again.']);
         }
 
-        // Try TOTP code first
         $valid = $this->mfaService->verifyCode($secret, $validated['code']);
 
-        // If invalid, try recovery code
         if (! $valid) {
             $valid = $this->mfaService->verifyRecoveryCode($user, $validated['code']);
         }
@@ -171,13 +168,11 @@ class MfaController extends Controller
             return back()->withErrors(['code' => 'Invalid code. Please try again.']);
         }
 
-        // Mark session as verified
         $request->session()->put('mfa_verified', true);
         $request->session()->put('mfa_verified_at', now()->timestamp);
 
         $this->auditService->logMfaEvent('mfa_verification_success', $user->id);
 
-        // Remember device if checkbox checked
         if ($request->boolean('remember_device')) {
             $fingerprint = $this->mfaService->generateDeviceFingerprint();
             $days = config('cems.mfa.remember_days', 30);
@@ -193,7 +188,9 @@ class MfaController extends Controller
     }
 
     /**
-     * Disable MFA (requires current verification).
+     * Disable MFA after verifying the current TOTP code or recovery code.
+     *
+     * All trusted devices are removed and the MFA session is cleared.
      */
     public function disable(DisableMfaRequest $request): RedirectResponse
     {
@@ -206,7 +203,6 @@ class MfaController extends Controller
             return back()->withErrors(['code' => 'MFA secret not found.']);
         }
 
-        // Verify before disabling
         $valid = $this->mfaService->verifyCode($secret, $validated['code']);
 
         if (! $valid) {
@@ -217,15 +213,12 @@ class MfaController extends Controller
             return back()->withErrors(['code' => 'Invalid code. Cannot disable MFA.']);
         }
 
-        // Remove all trusted devices
         $this->mfaService->removeAllTrustedDevices($user);
 
-        // Disable MFA
         $this->mfaService->disableMfa($user);
 
         $this->auditService->logMfaEvent('mfa_disable_completed', $user->id);
 
-        // Clear MFA session
         $request->session()->forget('mfa_verified');
         $request->session()->forget('mfa_verified_at');
 
@@ -234,7 +227,7 @@ class MfaController extends Controller
     }
 
     /**
-     * Show trusted devices management page.
+     * Show the trusted devices management page.
      */
     public function trustedDevices(): View
     {
@@ -267,7 +260,7 @@ class MfaController extends Controller
     }
 
     /**
-     * Show recovery code entry page.
+     * Show the recovery code entry page.
      */
     public function recovery(): View
     {
@@ -275,7 +268,7 @@ class MfaController extends Controller
     }
 
     /**
-     * Verify a recovery code and grant access.
+     * Verify a recovery code and password to grant access.
      */
     public function recoveryVerify(VerifyRecoveryCodeRequest $request): RedirectResponse
     {

@@ -11,6 +11,7 @@ use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\AccountingService;
 use App\Services\AuditService;
 use App\Services\ComplianceService;
@@ -43,7 +44,9 @@ class TransactionController extends Controller
     ) {}
 
     /**
-     * Display list of transactions
+     * Display a paginated list of transactions.
+     *
+     * Non-admin users can only see transactions for their own branch.
      */
     public function index(IndexTransactionRequest $request): View
     {
@@ -60,7 +63,6 @@ class TransactionController extends Controller
                 return $q->where('customer_id', $customerId);
             });
 
-        // Branch segregation: non-admin users can only see their branch's transactions
         $user = auth()->user();
         if ($user && $user->branch_id !== null) {
             $query->where('branch_id', $user->branch_id);
@@ -72,7 +74,9 @@ class TransactionController extends Controller
     }
 
     /**
-     * Show form to create new transaction
+     * Show the form to create a new transaction.
+     *
+     * Non-admin users can only select tills at their own branch.
      */
     public function create(): View
     {
@@ -81,10 +85,8 @@ class TransactionController extends Controller
         $branches = Branch::all();
         $counters = Counter::where('status', 'active')->get();
 
-        // Get suggested rate for default currency
         $suggested_rate = null;
 
-        // Branch segregation: non-admin users can only see tills at their branch
         $tillQuery = TillBalance::where('date', today())
             ->whereNull('closed_at')
             ->with('currency');
@@ -99,16 +101,16 @@ class TransactionController extends Controller
     }
 
     /**
-     * Store new transaction
+     * Store a new transaction.
+     *
+     * The till ID is derived from the selected counter for backward compatibility.
+     * XSS protection is handled by Blade's automatic escaping on output.
      */
     public function store(StoreTransactionRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
-        // Derive till_id from counter (backward compatibility)
         $validated['till_id'] = (string) $validated['counter_id'];
-
-        // Note: XSS protection is handled by Blade's automatic escaping on output
 
         try {
             $transaction = $this->transactionService->createTransaction(
@@ -117,7 +119,6 @@ class TransactionController extends Controller
                 $request->ip()
             );
 
-            // Audit logging for successful transaction creation
             $this->auditService->logTransaction('transaction_created', $transaction->id, [
                 'new' => [
                     'type' => $transaction->type->value,
@@ -141,7 +142,6 @@ class TransactionController extends Controller
                 ->with('success', 'Transaction completed successfully. Receipt #'.$transaction->id);
 
         } catch (\InvalidArgumentException $e) {
-            // These are expected validation/business rule exceptions (like duplicate, insufficient stock)
             return back()->with('error', $e->getMessage())->withInput();
         } catch (\Exception $e) {
             Log::error('Transaction creation failed', [
@@ -159,13 +159,12 @@ class TransactionController extends Controller
                 'ERROR'
             );
 
-            // Return generic message to user to avoid information disclosure
             return back()->with('error', 'Transaction failed. Please contact support if the problem persists.')->withInput();
         }
     }
 
     /**
-     * Display single transaction
+     * Display a single transaction.
      */
     public function show(Transaction $transaction): View
     {
@@ -175,15 +174,82 @@ class TransactionController extends Controller
     }
 
     /**
-     * Display cancellation form for a transaction.
+     * Display the cancellation form for a transaction.
      *
-     * Only managers and admins can access this form. The transaction must be
-     * completed and within the 24-hour cancellation window.
+     * Only managers and admins can cancel transactions. The transaction must be
+     * eligible for cancellation, within the cancellation window, not already
+     * cancelled, and not reversed.
      */
     public function showCancel(Transaction $transaction): View|RedirectResponse
     {
         $user = auth()->user();
 
+        if ($response = $this->ensureCanShowCancel($transaction, $user)) {
+            return $response;
+        }
+
+        $transaction->load(['customer', 'user', 'approver', 'flags']);
+
+        return view('transactions.cancel', compact('transaction'));
+    }
+
+    /**
+     * Generate a PDF receipt for a completed transaction.
+     *
+     * Receipts can only be generated for completed transactions.
+     */
+    public function receipt(Transaction $transaction): RedirectResponse|Response
+    {
+        if ($response = $this->ensureCanGenerateReceipt($transaction)) {
+            return $response;
+        }
+
+        $transaction->load(['customer', 'user', 'approver']);
+
+        $barcodeImage = null;
+        $barcodeText = str_pad($transaction->id, 10, '0', STR_PAD_LEFT);
+        try {
+            $barcodeData = $this->barcodeGenerator->getBarcode($barcodeText, $this->barcodeGenerator::TYPE_CODE_128);
+            $barcodeImage = 'data:image/png;base64,'.base64_encode($barcodeData);
+        } catch (\Exception $e) {
+            $barcodeImage = null;
+        }
+
+        $qrCodeImage = null;
+        try {
+            $qrCodeData = QrCode::format('png')
+                ->size(150)
+                ->generate(json_encode([
+                    'id' => $transaction->id,
+                    'amount' => $transaction->amount_local,
+                    'currency' => $transaction->currency_code,
+                    'date' => $transaction->created_at->toIso8601String(),
+                    'customer_id' => $transaction->customer_id,
+                    'type' => $transaction->type->value,
+                    'verify' => url('/verify/transaction/'.$transaction->id),
+                ]));
+            $qrCodeImage = 'data:image/png;base64,'.base64_encode($qrCodeData);
+        } catch (\Exception $e) {
+            $qrCodeImage = null;
+        }
+
+        $pdf = $this->pdf;
+        $pdf->loadView('transactions.receipt', compact('transaction', 'barcodeImage', 'qrCodeImage', 'barcodeText'));
+        $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait');
+        $filename = 'receipt_'.str_pad($transaction->id, 8, '0', STR_PAD_LEFT).'.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Ensure the transaction can be shown for cancellation.
+     *
+     * Only managers and admins may access the cancellation form. The transaction
+     * must be eligible for cancellation, within the window, not already
+     * cancelled, and not reversed.
+     */
+    private function ensureCanShowCancel(Transaction $transaction, User $user): ?RedirectResponse
+    {
         if (! $user->role->isManager()) {
             abort(403, 'Only managers and admins can cancel transactions.');
         }
@@ -204,58 +270,20 @@ class TransactionController extends Controller
             return back()->with('error', 'Reversed transactions cannot be cancelled.');
         }
 
-        $transaction->load(['customer', 'user', 'approver', 'flags']);
-
-        return view('transactions.cancel', compact('transaction'));
+        return null;
     }
 
     /**
-     * Generate PDF receipt
+     * Ensure a receipt can be generated for the transaction.
+     *
+     * Receipts are only generated for completed transactions.
      */
-    public function receipt(Transaction $transaction): RedirectResponse|Response
+    private function ensureCanGenerateReceipt(Transaction $transaction): ?RedirectResponse
     {
         if (! $transaction->status->isCompleted()) {
             return back()->with('error', 'Receipts can only be generated for completed transactions.');
         }
 
-        $transaction->load(['customer', 'user', 'approver']);
-
-        // Generate barcode (Code128) for transaction reference number
-        $barcodeImage = null;
-        $barcodeText = str_pad($transaction->id, 10, '0', STR_PAD_LEFT);
-        try {
-            $barcodeData = $this->barcodeGenerator->getBarcode($barcodeText, $this->barcodeGenerator::TYPE_CODE_128);
-            $barcodeImage = 'data:image/png;base64,'.base64_encode($barcodeData);
-        } catch (\Exception $e) {
-            // Graceful fallback if barcode generation fails
-            $barcodeImage = null;
-        }
-
-        // Generate QR code with transaction verification data
-        $qrCodeImage = null;
-        try {
-            $qrCodeData = QrCode::format('png')
-                ->size(150)
-                ->generate(json_encode([
-                    'id' => $transaction->id,
-                    'amount' => $transaction->amount_local,
-                    'currency' => $transaction->currency_code,
-                    'date' => $transaction->created_at->toIso8601String(),
-                    'customer_id' => $transaction->customer_id,
-                    'type' => $transaction->type->value,
-                    'verify' => url('/verify/transaction/'.$transaction->id),
-                ]));
-            $qrCodeImage = 'data:image/png;base64,'.base64_encode($qrCodeData);
-        } catch (\Exception $e) {
-            // Graceful fallback if QR code generation fails
-            $qrCodeImage = null;
-        }
-
-        $pdf = $this->pdf;
-        $pdf->loadView('transactions.receipt', compact('transaction', 'barcodeImage', 'qrCodeImage', 'barcodeText'));
-        $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait');
-        $filename = 'receipt_'.str_pad($transaction->id, 8, '0', STR_PAD_LEFT).'.pdf';
-
-        return $pdf->download($filename);
+        return null;
     }
 }

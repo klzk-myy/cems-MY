@@ -22,8 +22,8 @@ class TransactionCancellationController extends Controller
      *
      * POST /api/transactions/{id}/request-cancellation
      *
-     * Transitions transaction to PendingCancellation status.
-     * Requires manager or admin role.
+     * Transitions the transaction to PendingCancellation status. Only managers
+     * and admins may request a cancellation.
      */
     public function requestCancellation(ApiCancelTransactionRequest $request, int $transactionId): JsonResponse
     {
@@ -72,8 +72,8 @@ class TransactionCancellationController extends Controller
      *
      * POST /api/transactions/{id}/approve-cancellation
      *
-     * Transitions transaction to Cancelled status.
-     * Requires manager, compliance officer, or admin role.
+     * Transitions the transaction to Cancelled status. Managers, compliance
+     * officers, and admins may approve a cancellation.
      */
     public function approveCancellation(ApproveCancelRequest $request, int $transactionId): JsonResponse
     {
@@ -122,8 +122,8 @@ class TransactionCancellationController extends Controller
      *
      * POST /api/transactions/{id}/reject-cancellation
      *
-     * Returns transaction to its previous status (InProgress, Completed, etc.).
-     * Requires manager, compliance officer, or admin role.
+     * Returns the transaction to its previous status. Managers, compliance
+     * officers, and admins may reject a cancellation.
      */
     public function rejectCancellation(RejectCancelRequest $request, int $transactionId): JsonResponse
     {
@@ -171,7 +171,9 @@ class TransactionCancellationController extends Controller
     }
 
     /**
-     * Check if user can request cancellation
+     * Determine whether the user is allowed to request a cancellation.
+     *
+     * Only managers and admins may request a cancellation.
      */
     protected function canRequestCancellation(User $user, Transaction $transaction): bool
     {
@@ -179,50 +181,52 @@ class TransactionCancellationController extends Controller
     }
 
     /**
-     * Check if user can approve cancellation (approve or reject)
+     * Determine whether the user is allowed to approve or reject a cancellation.
+     *
+     * Managers, compliance officers, and admins may approve or reject.
      */
     protected function canApproveCancellation(User $user, Transaction $transaction): bool
     {
-        // Manager, compliance officer, or admin
         return $user->isAdmin() || $user->isManager() || $user->isComplianceOfficer();
     }
 
     /**
-     * Check if transaction can be cancelled (or reversed if completed)
+     * Determine whether the transaction can be cancelled or reversed.
+     *
+     * Finalized, cancelled, reversed, and refund transactions cannot be
+     * cancelled. Completed transactions may only be reversed within the
+     * cancellation window.
      */
     protected function canBeCancelled(Transaction $transaction): bool
     {
         $status = $transaction->status;
 
-        // Already in a final state that cannot be changed
         if ($status->isFinalized()) {
             return false;
         }
 
-        // Already cancelled or reversed cannot be cancelled again
         if ($status->isCancelled() || $status->isReversed()) {
             return false;
         }
 
-        // Already cancelled (indicated by cancelled_at being set even if status hasn't updated)
         if ($transaction->cancelled_at !== null) {
             return false;
         }
 
-        // Cannot cancel a refund transaction
         if ($transaction->is_refund) {
             return false;
         }
 
-        // Completed transactions can be reversed (within time window)
         if ($status->isCompleted()) {
             return $this->isWithinCancellationWindow($transaction);
         }
 
-        // All other non-final states can be cancelled
         return true;
     }
 
+    /**
+     * Determine whether the completed transaction is still within the cancellation window.
+     */
     protected function isWithinCancellationWindow(Transaction $transaction): bool
     {
         return $this->cancellationService->isWithinCancellationWindow($transaction);

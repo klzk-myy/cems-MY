@@ -8,6 +8,7 @@ use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
+use App\Models\User;
 use App\Services\AccountingService;
 use App\Services\AuditService;
 use App\Services\ComplianceService;
@@ -39,24 +40,17 @@ class TransactionApprovalController extends Controller
     ) {}
 
     /**
-     * Approve pending transaction
+     * Approve a pending transaction for the teller's branch.
      *
-     * This method delegates to TransactionService::approveTransaction() which handles:
-     * - Status transition from Pending to Completed
-     * - Position and till balance updates
-     * - Double-entry accounting journal entries
-     * - AML/Compliance monitoring before approval
-     * - Audit logging
+     * Only managers and admins may approve transactions. Managers are restricted
+     * to transactions within their own branch. The approval delegates to the
+     * approval service, which handles status transitions, balance updates,
+     * accounting entries, compliance monitoring, and audit logging.
      */
     public function approve(Request $request, Transaction $transaction): RedirectResponse
     {
         $this->requireManagerOrAdmin();
-
-        // Enforce branch-based authorization: managers can only approve transactions within their own branch
-        $user = auth()->user();
-        if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
-            abort(403, 'You can only approve transactions for your own branch.');
-        }
+        $this->ensureCanApproveForBranch($transaction, auth()->user(), 'approve');
 
         try {
             $this->approvalService->validateApprovalEligibility($transaction, auth()->id());
@@ -93,18 +87,15 @@ class TransactionApprovalController extends Controller
     }
 
     /**
-     * Reject a pending transaction.
+     * Reject a pending transaction for the teller's branch.
      *
-     * Transitions the transaction to Rejected when it is currently pending approval.
+     * Only managers and admins may reject transactions. Managers are restricted
+     * to transactions within their own branch.
      */
     public function reject(Request $request, Transaction $transaction): RedirectResponse
     {
         $this->requireManagerOrAdmin();
-
-        $user = auth()->user();
-        if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
-            abort(403, 'You can only reject transactions for your own branch.');
-        }
+        $this->ensureCanApproveForBranch($transaction, auth()->user(), 'reject');
 
         try {
             $this->approvalService->validateApprovalEligibility($transaction, auth()->id());
@@ -132,23 +123,23 @@ class TransactionApprovalController extends Controller
     }
 
     /**
-     * Show confirmation page for large transactions (>= RM 50,000)
+     * Show the confirmation page for large transactions.
+     *
+     * Transactions with an amount greater than or equal to the configured
+     * threshold require manager confirmation before final approval.
      */
     public function showConfirm(Transaction $transaction): View|RedirectResponse
     {
-        // Check if transaction requires confirmation (>= RM 50,000)
         if (! $this->requiresConfirmation($transaction)) {
             return redirect()->route('transactions.show', $transaction)
                 ->with('error', 'This transaction does not require confirmation.');
         }
 
-        // Check if there's already a pending confirmation
         $confirmation = TransactionConfirmation::where('transaction_id', $transaction->id)
             ->whereIn('status', [TransactionConfirmationStatus::Pending->value, TransactionConfirmationStatus::Confirmed->value])
             ->first();
 
         if (! $confirmation) {
-            // Create a new confirmation request
             $confirmationToken = bin2hex(random_bytes(32));
             $confirmation = TransactionConfirmation::create([
                 'transaction_id' => $transaction->id,
@@ -175,7 +166,10 @@ class TransactionApprovalController extends Controller
     }
 
     /**
-     * Process transaction confirmation (manager approves large transaction)
+     * Process transaction confirmation for a large transaction.
+     *
+     * Managers confirm or reject large transactions. Self-confirmation is
+     * prohibited to maintain segregation of duties for AML/CFT compliance.
      */
     public function confirm(Request $request, Transaction $transaction): RedirectResponse
     {
@@ -195,10 +189,8 @@ class TransactionApprovalController extends Controller
                 ->with('error', 'No pending confirmation found.');
         }
 
-        // Prevent self-confirmation (segregation of duties - AML/CFT compliance)
-        if ($transaction->user_id === auth()->id()) {
-            return redirect()->route('transactions.show', $transaction)
-                ->with('error', 'You cannot confirm your own transaction. Segregation of duties requires a different approver.');
+        if ($response = $this->ensureNotSelfConfirmation($transaction)) {
+            return $response;
         }
 
         if ($confirmation->isExpired()) {
@@ -218,8 +210,6 @@ class TransactionApprovalController extends Controller
             if ($validated['confirmation_action'] === 'confirm') {
                 $confirmation->markConfirmed(auth()->id(), $validated['notes'] ?? null);
 
-                // Set transaction to PendingApproval and create approval task
-                // (Legacy: this was for Pending/OnHold transactions; now all go directly to PendingApproval)
                 $updated = Transaction::where('id', $transaction->id)
                     ->where('status', TransactionStatus::PendingApproval)
                     ->update([
@@ -250,7 +240,6 @@ class TransactionApprovalController extends Controller
                     ->with('success', 'Transaction confirmed and pending final approval.');
 
             } else {
-                // Reject the transaction
                 $confirmation->markRejected(auth()->id(), $validated['notes'] ?? null);
 
                 $transaction->update([
@@ -285,12 +274,43 @@ class TransactionApprovalController extends Controller
     }
 
     /**
-     * Check if transaction requires manager confirmation (>= RM 50,000)
+     * Check if the transaction requires manager confirmation.
+     *
+     * Confirmation is required when the local amount is greater than or equal
+     * to the configured structured-transaction threshold.
      */
     protected function requiresConfirmation(Transaction $transaction): bool
     {
         $threshold = $this->thresholdService->getStrThreshold();
 
         return $this->mathService->compare($transaction->amount_local, $threshold) >= 0;
+    }
+
+    /**
+     * Ensure the authenticated user is allowed to manage the transaction branch.
+     *
+     * Managers can only approve or reject transactions within their own branch.
+     * Admins are exempt from this restriction.
+     */
+    private function ensureCanApproveForBranch(Transaction $transaction, User $user, string $action = 'manage'): void
+    {
+        if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
+            abort(403, "You can only {$action} transactions for your own branch.");
+        }
+    }
+
+    /**
+     * Ensure the user is not confirming a transaction they created.
+     *
+     * Segregation of duties requires a different approver for AML/CFT compliance.
+     */
+    private function ensureNotSelfConfirmation(Transaction $transaction): ?RedirectResponse
+    {
+        if ($transaction->user_id === auth()->id()) {
+            return redirect()->route('transactions.show', $transaction)
+                ->with('error', 'You cannot confirm your own transaction. Segregation of duties requires a different approver.');
+        }
+
+        return null;
     }
 }

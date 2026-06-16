@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\ReportGenerated;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\AuditService;
 use App\Services\CacheOptimizationService;
 use App\Services\CacheTagsService;
@@ -42,9 +43,13 @@ class DashboardController extends Controller
         $this->cacheTagsService = $cacheTagsService;
     }
 
+    /**
+     * Display the dashboard with cached daily statistics.
+     *
+     * Statistics are cached to reduce database load and refreshed every minute.
+     */
     public function index(): View
     {
-        // Use caching for all statistics to reduce database load
         $stats = [
             'total_transactions' => $this->cacheOptimizationService->remember(
                 'dashboard.transactions.total',
@@ -101,36 +106,32 @@ class DashboardController extends Controller
             }
         );
 
-        // Store cache statistics for testing/monitoring
         $this->cacheOptimizationService->putStats(now()->addSeconds(60));
 
         return view('pages.dashboard', compact('stats', 'recent_transactions'));
     }
 
+    /**
+     * Display the compliance dashboard.
+     *
+     * Only Compliance Officers and Admins can access this page.
+     */
     public function compliance(Request $request): View
     {
-        // Only Compliance Officers and Admins can access
-        if (! auth()->user()->isComplianceOfficer()) {
-            abort(403, 'Unauthorized. Compliance Officer access required.');
-        }
+        $this->ensureComplianceOfficerAccess(auth()->user(), 'Unauthorized. Compliance Officer access required.');
 
-        // Build query with filters
         $query = FlaggedTransaction::with(['transaction.customer', 'assignedTo', 'reviewer']);
 
-        // Apply status filter
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
-        // Apply flag_type filter
         if ($request->filled('flag_type') && $request->flag_type !== 'all') {
             $query->where('flag_type', $request->flag_type);
         }
 
-        // Get paginated flags
         $flags = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        // Calculate stats
         $stats = [
             'open' => FlaggedTransaction::where('status', 'Open')->count(),
             'under_review' => FlaggedTransaction::where('status', 'Under_Review')->count(),
@@ -145,11 +146,14 @@ class DashboardController extends Controller
         return view('pages.compliance.index', compact('flags', 'stats'));
     }
 
+    /**
+     * Assign a flagged transaction to the current user for review.
+     *
+     * Only Compliance Officers and Admins can assign flags.
+     */
     public function assignFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
-        if (! auth()->user()->isComplianceOfficer()) {
-            abort(403);
-        }
+        $this->ensureComplianceOfficerAccess(auth()->user());
 
         $oldStatus = $flaggedTransaction->status;
         $oldAssignedTo = $flaggedTransaction->assigned_to;
@@ -159,10 +163,8 @@ class DashboardController extends Controller
             'status' => 'Under_Review',
         ]);
 
-        // Invalidate dashboard cache
         $this->cacheTagsService->invalidate('dashboard');
 
-        // Audit log
         $this->auditService->logWithSeverity(
             'compliance_flag_assigned',
             [
@@ -185,11 +187,14 @@ class DashboardController extends Controller
         return back()->with('success', 'Flag assigned to you for review.');
     }
 
+    /**
+     * Mark a flagged transaction as resolved.
+     *
+     * Only Compliance Officers and Admins can resolve flags.
+     */
     public function resolveFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
-        if (! auth()->user()->isComplianceOfficer()) {
-            abort(403);
-        }
+        $this->ensureComplianceOfficerAccess(auth()->user());
 
         $oldStatus = $flaggedTransaction->status;
 
@@ -199,10 +204,8 @@ class DashboardController extends Controller
             'resolved_at' => now(),
         ]);
 
-        // Invalidate dashboard cache
         $this->cacheTagsService->invalidate('dashboard');
 
-        // Audit log
         $this->auditService->logWithSeverity(
             'compliance_flag_resolved',
             [
@@ -225,12 +228,14 @@ class DashboardController extends Controller
         return back()->with('success', 'Flag marked as resolved.');
     }
 
+    /**
+     * Display the accounting dashboard.
+     *
+     * Only Managers and Admins can access this page.
+     */
     public function accounting(): View
     {
-        // Only Managers and Admins can access
-        if (! auth()->user()->isManager()) {
-            abort(403, 'Unauthorized. Manager access required.');
-        }
+        $this->ensureManagerAccess(auth()->user());
 
         $positions = $this->currencyPositionService->getAllPositions();
         $totalPnl = $this->currencyPositionService->getTotalPnl();
@@ -238,12 +243,14 @@ class DashboardController extends Controller
         return view('pages.accounting.index', compact('positions', 'totalPnl'));
     }
 
+    /**
+     * Display the reports dashboard.
+     *
+     * Only Managers, Compliance Officers and Admins can access this page.
+     */
     public function reports(): View
     {
-        // Only Managers, Compliance Officers and Admins can access
-        if (! auth()->user()->role->canViewReports()) {
-            abort(403, 'Unauthorized. Manager or Compliance Officer access required.');
-        }
+        $this->ensureCanViewReports(auth()->user());
 
         $recentReports = ReportGenerated::with('generatedBy')
             ->orderBy('generated_at', 'desc')
@@ -254,7 +261,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get exchange rate history for Chart.js
+     * Get exchange rate history for Chart.js.
      */
     public function rateHistory(string $currencyCode): JsonResponse
     {
@@ -266,5 +273,37 @@ class DashboardController extends Controller
             'rates' => array_column($trend['data'], 'rate'),
             'trend' => $trend['trend'],
         ]);
+    }
+
+    /**
+     * Ensure the user is a Compliance Officer or Admin.
+     */
+    private function ensureComplianceOfficerAccess(User $user, string $message = ''): void
+    {
+        if (! $user->isComplianceOfficer()) {
+            abort(403, $message);
+        }
+    }
+
+    /**
+     * Ensure the user is a Manager or Admin.
+     */
+    private function ensureManagerAccess(User $user): void
+    {
+        if (! $user->isManager()) {
+            abort(403, 'Unauthorized. Manager access required.');
+        }
+    }
+
+    /**
+     * Ensure the user is allowed to view reports.
+     *
+     * Managers, Compliance Officers, and Admins may view reports.
+     */
+    private function ensureCanViewReports(User $user): void
+    {
+        if (! $user->role->canViewReports()) {
+            abort(403, 'Unauthorized. Manager or Compliance Officer access required.');
+        }
     }
 }
