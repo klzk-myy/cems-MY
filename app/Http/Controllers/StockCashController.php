@@ -12,7 +12,9 @@ use App\Models\Transaction;
 use App\Services\CurrencyPositionService;
 use App\Services\MathService;
 use App\Services\TillService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class StockCashController extends Controller
 {
@@ -32,7 +34,7 @@ class StockCashController extends Controller
     /**
      * Display stock and cash management dashboard
      */
-    public function index()
+    public function index(): View
     {
         $this->requireManagerOrAdmin();
         // Get current positions
@@ -110,7 +112,7 @@ class StockCashController extends Controller
     /**
      * Open a till
      */
-    public function openTill(OpenTillRequest $request)
+    public function openTill(OpenTillRequest $request): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -155,7 +157,7 @@ class StockCashController extends Controller
     /**
      * Close a till
      */
-    public function closeTill(CloseTillRequest $request)
+    public function closeTill(CloseTillRequest $request): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -218,7 +220,7 @@ class StockCashController extends Controller
     /**
      * Show currency position details
      */
-    public function showPosition(CurrencyPosition $position)
+    public function showPosition(CurrencyPosition $position): View
     {
         $this->requireManagerOrAdmin();
         $position->load('currency');
@@ -236,7 +238,7 @@ class StockCashController extends Controller
     /**
      * Get till report
      */
-    public function tillReport(Request $request)
+    public function tillReport(Request $request): View|RedirectResponse
     {
         $this->requireManagerOrAdmin();
         $validated = $request->validate([
@@ -261,7 +263,7 @@ class StockCashController extends Controller
     /**
      * Generate till reconciliation report
      */
-    public function reconciliationReport(Request $request)
+    public function reconciliationReport(Request $request): View|RedirectResponse
     {
         $this->requireManagerOrAdmin();
 

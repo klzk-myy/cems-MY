@@ -18,9 +18,11 @@ use App\Services\TransactionApprovalService;
 use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use App\Services\TransactionStateMachine;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class TransactionApprovalController extends Controller
 {
@@ -46,7 +48,7 @@ class TransactionApprovalController extends Controller
      * - AML/Compliance monitoring before approval
      * - Audit logging
      */
-    public function approve(Request $request, Transaction $transaction)
+    public function approve(Request $request, Transaction $transaction): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -95,7 +97,7 @@ class TransactionApprovalController extends Controller
      *
      * Transitions the transaction to Rejected when it is currently pending approval.
      */
-    public function reject(Request $request, Transaction $transaction)
+    public function reject(Request $request, Transaction $transaction): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -132,7 +134,7 @@ class TransactionApprovalController extends Controller
     /**
      * Show confirmation page for large transactions (>= RM 50,000)
      */
-    public function showConfirm(Transaction $transaction)
+    public function showConfirm(Transaction $transaction): View|RedirectResponse
     {
         // Check if transaction requires confirmation (>= RM 50,000)
         if (! $this->requiresConfirmation($transaction)) {
@@ -175,7 +177,7 @@ class TransactionApprovalController extends Controller
     /**
      * Process transaction confirmation (manager approves large transaction)
      */
-    public function confirm(Request $request, Transaction $transaction)
+    public function confirm(Request $request, Transaction $transaction): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 

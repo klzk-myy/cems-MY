@@ -17,6 +17,7 @@ use App\Services\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class AnalyticsController extends Controller
 {
@@ -33,7 +34,7 @@ class AnalyticsController extends Controller
     /**
      * Monthly transaction trends
      */
-    public function monthlyTrends(Request $request)
+    public function monthlyTrends(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -71,7 +72,7 @@ class AnalyticsController extends Controller
     /**
      * Calculate month-over-month trends
      */
-    protected function calculateTrends($data): array
+    protected function calculateTrends(array $data): array
     {
         $trends = [];
         $previousVolume = null;
@@ -101,7 +102,7 @@ class AnalyticsController extends Controller
     /**
      * Profitability analysis by currency
      */
-    public function profitability(Request $request)
+    public function profitability(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -217,7 +218,7 @@ class AnalyticsController extends Controller
      *
      * @return array<string, float>
      */
-    protected function getCurrentRates($currencyCodes): array
+    protected function getCurrentRates(array $currencyCodes): array
     {
         return ExchangeRate::whereIn('currency_code', $currencyCodes)
             ->where('is_active', true)
@@ -231,7 +232,7 @@ class AnalyticsController extends Controller
     /**
      * Customer transaction analysis
      */
-    public function customerAnalysis(Request $request)
+    public function customerAnalysis(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -270,7 +271,7 @@ class AnalyticsController extends Controller
     /**
      * Compliance summary report
      */
-    public function complianceSummary(Request $request)
+    public function complianceSummary(Request $request): View
     {
         $this->requireManagerOrAdmin();
 

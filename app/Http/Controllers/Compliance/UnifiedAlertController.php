@@ -10,10 +10,11 @@ use App\Models\Compliance\ComplianceFinding;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class UnifiedAlertController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $source = $request->get('source', 'all');
         $priority = $request->get('priority');

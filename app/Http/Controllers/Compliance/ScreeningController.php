@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Compliance;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Services\CustomerScreeningService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class ScreeningController extends Controller
 {
@@ -14,7 +16,7 @@ class ScreeningController extends Controller
         protected CustomerScreeningService $screeningService,
     ) {}
 
-    public function show(int $customerId)
+    public function show(int $customerId): View
     {
         $customer = Customer::findOrFail($customerId);
 
@@ -30,7 +32,7 @@ class ScreeningController extends Controller
         ]);
     }
 
-    public function screen(Request $request, int $customerId)
+    public function screen(Request $request, int $customerId): RedirectResponse
     {
         $customer = Customer::findOrFail($customerId);
 

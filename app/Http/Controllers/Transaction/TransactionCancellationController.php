@@ -7,7 +7,10 @@ use App\Http\Requests\ApproveCancelRequest;
 use App\Http\Requests\CancelTransactionRequest;
 use App\Http\Requests\RejectCancelRequest;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\TransactionCancellationService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class TransactionCancellationController extends Controller
 {
@@ -18,7 +21,7 @@ class TransactionCancellationController extends Controller
     /**
      * Show cancellation confirmation form
      */
-    public function showCancel(Transaction $transaction)
+    public function showCancel(Transaction $transaction): View|RedirectResponse
     {
         if (! $this->canCancel(auth()->user(), $transaction)) {
             abort(403, 'Unauthorized to cancel this transaction.');
@@ -37,7 +40,7 @@ class TransactionCancellationController extends Controller
      * Requests cancellation of a transaction, transitioning it to PendingCancellation
      * status where a supervisor must approve the cancellation.
      */
-    public function cancel(CancelTransactionRequest $request, Transaction $transaction)
+    public function cancel(CancelTransactionRequest $request, Transaction $transaction): RedirectResponse
     {
         if (! $this->canCancel(auth()->user(), $transaction)) {
             abort(403, 'Unauthorized to cancel this transaction.');
@@ -71,7 +74,7 @@ class TransactionCancellationController extends Controller
     /**
      * Show approve cancellation form
      */
-    public function showApproveCancel(Transaction $transaction)
+    public function showApproveCancel(Transaction $transaction): View|RedirectResponse
     {
         if (! $this->canApproveOrReject(auth()->user())) {
             abort(403, 'Unauthorized to approve cancellations.');
@@ -87,7 +90,7 @@ class TransactionCancellationController extends Controller
     /**
      * Approve a pending cancellation request.
      */
-    public function approveCancel(ApproveCancelRequest $request, Transaction $transaction)
+    public function approveCancel(ApproveCancelRequest $request, Transaction $transaction): RedirectResponse
     {
         if (! $this->canApproveOrReject(auth()->user())) {
             abort(403, 'Unauthorized to approve cancellations.');
@@ -121,7 +124,7 @@ class TransactionCancellationController extends Controller
     /**
      * Show reject cancellation form
      */
-    public function showRejectCancel(Transaction $transaction)
+    public function showRejectCancel(Transaction $transaction): View|RedirectResponse
     {
         if (! $this->canApproveOrReject(auth()->user())) {
             abort(403, 'Unauthorized to reject cancellations.');
@@ -137,7 +140,7 @@ class TransactionCancellationController extends Controller
     /**
      * Reject a pending cancellation request.
      */
-    public function rejectCancel(RejectCancelRequest $request, Transaction $transaction)
+    public function rejectCancel(RejectCancelRequest $request, Transaction $transaction): RedirectResponse
     {
         if (! $this->canApproveOrReject(auth()->user())) {
             abort(403, 'Unauthorized to reject cancellations.');
@@ -175,7 +178,7 @@ class TransactionCancellationController extends Controller
      * This enforces segregation of duties - no user should be able to
      * cancel their own transactions without supervisory approval.
      */
-    protected function canCancel($user, Transaction $transaction): bool
+    protected function canCancel(User $user, Transaction $transaction): bool
     {
         if ($user->isAdmin() || $user->isManager()) {
             return true;
@@ -187,7 +190,7 @@ class TransactionCancellationController extends Controller
     /**
      * Check if user can approve or reject a cancellation.
      */
-    protected function canApproveOrReject($user): bool
+    protected function canApproveOrReject(User $user): bool
     {
         return $user->isAdmin() || $user->isManager() || $user->isComplianceOfficer();
     }

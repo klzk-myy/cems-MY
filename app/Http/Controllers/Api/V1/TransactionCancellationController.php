@@ -7,6 +7,7 @@ use App\Http\Requests\ApiCancelTransactionRequest;
 use App\Http\Requests\ApproveCancelRequest;
 use App\Http\Requests\RejectCancelRequest;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\TransactionCancellationService;
 use Illuminate\Http\JsonResponse;
 
@@ -172,7 +173,7 @@ class TransactionCancellationController extends Controller
     /**
      * Check if user can request cancellation
      */
-    protected function canRequestCancellation($user, Transaction $transaction): bool
+    protected function canRequestCancellation(User $user, Transaction $transaction): bool
     {
         return $user->isAdmin() || $user->isManager();
     }
@@ -180,7 +181,7 @@ class TransactionCancellationController extends Controller
     /**
      * Check if user can approve cancellation (approve or reject)
      */
-    protected function canApproveCancellation($user, Transaction $transaction): bool
+    protected function canApproveCancellation(User $user, Transaction $transaction): bool
     {
         // Manager, compliance officer, or admin
         return $user->isAdmin() || $user->isManager() || $user->isComplianceOfficer();

@@ -19,7 +19,7 @@ class MfaController extends Controller
     /**
      * Show MFA setup page.
      */
-    public function setup()
+    public function setup(): View|RedirectResponse
     {
         $user = auth()->user();
 
@@ -45,7 +45,7 @@ class MfaController extends Controller
     /**
      * Process MFA setup - verify initial code and enable MFA.
      */
-    public function setupStore(Request $request)
+    public function setupStore(Request $request): View|RedirectResponse
     {
         $request->validate([
             'code' => 'required|digits:6',
@@ -109,7 +109,7 @@ class MfaController extends Controller
     /**
      * Show MFA verification page.
      */
-    public function verify(Request $request)
+    public function verify(Request $request): View|RedirectResponse
     {
         $user = auth()->user();
 
@@ -141,7 +141,7 @@ class MfaController extends Controller
     /**
      * Process MFA verification.
      */
-    public function verifyStore(Request $request)
+    public function verifyStore(Request $request): RedirectResponse
     {
         $request->validate([
             'code' => 'required|string|min:6|max:10', // 6 for TOTP, 10 for recovery code
@@ -195,7 +195,7 @@ class MfaController extends Controller
     /**
      * Disable MFA (requires current verification).
      */
-    public function disable(Request $request)
+    public function disable(Request $request): RedirectResponse
     {
         $request->validate([
             'code' => 'required|digits:6',
@@ -238,7 +238,7 @@ class MfaController extends Controller
     /**
      * Show trusted devices management page.
      */
-    public function trustedDevices()
+    public function trustedDevices(): View
     {
         $user = auth()->user();
         $devices = $this->mfaService->getTrustedDevices($user);
@@ -251,7 +251,7 @@ class MfaController extends Controller
     /**
      * Remove a trusted device.
      */
-    public function removeDevice(Request $request, $deviceId)
+    public function removeDevice(Request $request, int $deviceId): RedirectResponse
     {
         $user = auth()->user();
 
@@ -271,7 +271,7 @@ class MfaController extends Controller
     /**
      * Show recovery code entry page.
      */
-    public function recovery()
+    public function recovery(): View
     {
         return view('mfa.recovery');
     }
@@ -279,7 +279,7 @@ class MfaController extends Controller
     /**
      * Verify a recovery code and grant access.
      */
-    public function recoveryVerify(Request $request)
+    public function recoveryVerify(Request $request): RedirectResponse
     {
         $request->validate([
             'recovery_code' => 'required|string|min:6|max:50',

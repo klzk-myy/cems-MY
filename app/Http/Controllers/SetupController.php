@@ -15,10 +15,13 @@ use App\Models\JournalLine;
 use App\Models\User;
 use App\Services\SetupService;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\View\View;
 
 class SetupController extends Controller
 {
@@ -26,7 +29,7 @@ class SetupController extends Controller
         protected SetupService $setupService,
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $isSetupComplete = $this->isSetupComplete();
 
@@ -48,14 +51,14 @@ class SetupController extends Controller
         ]);
     }
 
-    public function wizard(Request $request)
+    public function wizard(Request $request): RedirectResponse
     {
         $step = $request->get('step', $this->getCurrentStep());
 
         return redirect()->route('setup.index', ['step' => $step]);
     }
 
-    public function quickSetup(SetupRequest $request)
+    public function quickSetup(SetupRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
@@ -87,7 +90,7 @@ class SetupController extends Controller
         }
     }
 
-    public function step1CompanyInfo(SetupRequest $request)
+    public function step1CompanyInfo(SetupRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -96,7 +99,7 @@ class SetupController extends Controller
         return redirect()->route('setup.wizard', ['step' => 2]);
     }
 
-    public function step2AdminUser(SetupRequest $request)
+    public function step2AdminUser(SetupRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -105,7 +108,7 @@ class SetupController extends Controller
         return redirect()->route('setup.wizard', ['step' => 3]);
     }
 
-    public function step3Currencies(SetupRequest $request)
+    public function step3Currencies(SetupRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -114,7 +117,7 @@ class SetupController extends Controller
         return redirect()->route('setup.wizard', ['step' => 4]);
     }
 
-    public function step4ExchangeRates(SetupRequest $request)
+    public function step4ExchangeRates(SetupRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -123,7 +126,7 @@ class SetupController extends Controller
         return redirect()->route('setup.wizard', ['step' => 5]);
     }
 
-    public function step5InitialStock(SetupRequest $request)
+    public function step5InitialStock(SetupRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -141,7 +144,7 @@ class SetupController extends Controller
         return redirect()->route('setup.wizard', ['step' => 6]);
     }
 
-    public function step6OpeningBalance(SetupRequest $request)
+    public function step6OpeningBalance(SetupRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -150,7 +153,7 @@ class SetupController extends Controller
         return redirect()->route('setup.wizard', ['step' => 7]);
     }
 
-    public function completeSetup(Request $request)
+    public function completeSetup(Request $request): JsonResponse
     {
         $setupData = session('setup', []);
 
@@ -178,7 +181,7 @@ class SetupController extends Controller
         }
     }
 
-    public function checkStatus()
+    public function checkStatus(): JsonResponse
     {
         return response()->json([
             'is_complete' => $this->isSetupComplete(),
@@ -188,7 +191,7 @@ class SetupController extends Controller
         ]);
     }
 
-    public function resetSetup(Application $app)
+    public function resetSetup(Application $app): JsonResponse
     {
         if ($app->environment('production')) {
             return response()->json([

@@ -11,6 +11,7 @@ use App\Services\CacheOptimizationService;
 use App\Services\CacheTagsService;
 use App\Services\CurrencyPositionService;
 use App\Services\RateApiService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -255,7 +256,7 @@ class DashboardController extends Controller
     /**
      * Get exchange rate history for Chart.js
      */
-    public function rateHistory(string $currencyCode)
+    public function rateHistory(string $currencyCode): JsonResponse
     {
         $trend = $this->rateApiService->getRateTrend($currencyCode, 30);
 

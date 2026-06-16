@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreFiscalYearRequest;
 use App\Models\FiscalYear;
 use App\Services\FiscalYearService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class FiscalYearController extends Controller
 {
@@ -20,7 +22,7 @@ class FiscalYearController extends Controller
     /**
      * Display list of fiscal years.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $this->requireManagerOrAdmin();
 
@@ -38,7 +40,7 @@ class FiscalYearController extends Controller
     /**
      * Create a new fiscal year.
      */
-    public function store(StoreFiscalYearRequest $request)
+    public function store(StoreFiscalYearRequest $request): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -60,7 +62,7 @@ class FiscalYearController extends Controller
     /**
      * Close a fiscal year.
      */
-    public function close(FiscalYear $year, Request $request)
+    public function close(FiscalYear $year, Request $request): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -87,7 +89,7 @@ class FiscalYearController extends Controller
     /**
      * Get year-end report for a fiscal year.
      */
-    public function report(string $yearCode)
+    public function report(string $yearCode): View|RedirectResponse
     {
         $this->requireManagerOrAdmin();
 

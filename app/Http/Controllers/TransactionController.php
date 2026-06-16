@@ -19,8 +19,11 @@ use App\Services\TransactionCancellationService;
 use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Barryvdh\DomPDF\PDF;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -42,7 +45,7 @@ class TransactionController extends Controller
     /**
      * Display list of transactions
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $validated = $request->validate([
             'search' => 'nullable|string|max:100',
@@ -75,7 +78,7 @@ class TransactionController extends Controller
     /**
      * Show form to create new transaction
      */
-    public function create()
+    public function create(): View
     {
         $currencies = Currency::where('is_active', true)->get()->pluck('name', 'code');
         $customers = Customer::all();
@@ -102,7 +105,7 @@ class TransactionController extends Controller
     /**
      * Store new transaction
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
@@ -179,7 +182,7 @@ class TransactionController extends Controller
     /**
      * Display single transaction
      */
-    public function show(Transaction $transaction)
+    public function show(Transaction $transaction): View
     {
         $transaction->load(['customer', 'user', 'approver', 'flags']);
 
@@ -192,7 +195,7 @@ class TransactionController extends Controller
      * Only managers and admins can access this form. The transaction must be
      * completed and within the 24-hour cancellation window.
      */
-    public function showCancel(Transaction $transaction)
+    public function showCancel(Transaction $transaction): View|RedirectResponse
     {
         $user = auth()->user();
 
@@ -224,7 +227,7 @@ class TransactionController extends Controller
     /**
      * Generate PDF receipt
      */
-    public function receipt(Transaction $transaction)
+    public function receipt(Transaction $transaction): RedirectResponse|Response
     {
         if (! $transaction->status->isCompleted()) {
             return back()->with('error', 'Receipts can only be generated for completed transactions.');

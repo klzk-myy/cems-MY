@@ -7,7 +7,9 @@ use App\Http\Requests\StoreStockTransferRequest;
 use App\Models\StockTransfer;
 use App\Services\AuditService;
 use App\Services\StockTransferService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class StockTransferController extends Controller
 {
@@ -16,7 +18,7 @@ class StockTransferController extends Controller
         protected StockTransferService $stockTransferService,
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = StockTransfer::with(['items', 'requestedBy']);
 
@@ -37,12 +39,12 @@ class StockTransferController extends Controller
         return view('pages.stock-transfers.index', compact('transfers'));
     }
 
-    public function create()
+    public function create(): View
     {
         return view('stock-transfers.create');
     }
 
-    public function store(StoreStockTransferRequest $request)
+    public function store(StoreStockTransferRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -61,14 +63,14 @@ class StockTransferController extends Controller
             ->with('success', 'Transfer request created');
     }
 
-    public function show(StockTransfer $stockTransfer)
+    public function show(StockTransfer $stockTransfer): View
     {
         $stockTransfer->load(['items', 'requestedBy', 'branchManagerApprovedBy', 'hqApprovedBy']);
 
         return view('stock-transfers.show', compact('stockTransfer'));
     }
 
-    public function approveBm(ApproveStockTransferRequest $request, StockTransfer $stockTransfer)
+    public function approveBm(ApproveStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
     {
         $this->stockTransferService->approveByBranchManager($stockTransfer);
 
@@ -79,7 +81,7 @@ class StockTransferController extends Controller
         return redirect()->back()->with('success', 'Transfer approved by branch manager');
     }
 
-    public function approveHq(ApproveStockTransferRequest $request, StockTransfer $stockTransfer)
+    public function approveHq(ApproveStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
     {
         $this->stockTransferService->approveByHQ($stockTransfer);
 
@@ -90,7 +92,7 @@ class StockTransferController extends Controller
         return redirect()->back()->with('success', 'Transfer approved by HQ');
     }
 
-    public function dispatch(StockTransfer $stockTransfer)
+    public function dispatch(StockTransfer $stockTransfer): RedirectResponse
     {
         $this->stockTransferService->dispatch($stockTransfer);
 
@@ -99,7 +101,7 @@ class StockTransferController extends Controller
         return redirect()->back()->with('success', 'Transfer dispatched');
     }
 
-    public function receive(Request $request, StockTransfer $stockTransfer)
+    public function receive(Request $request, StockTransfer $stockTransfer): RedirectResponse
     {
         $request->validate([
             'items' => 'required|array',
@@ -116,7 +118,7 @@ class StockTransferController extends Controller
         return redirect()->back()->with('success', 'Items received');
     }
 
-    public function complete(StockTransfer $stockTransfer)
+    public function complete(StockTransfer $stockTransfer): RedirectResponse
     {
         $this->stockTransferService->complete($stockTransfer);
 
@@ -125,7 +127,7 @@ class StockTransferController extends Controller
         return redirect()->back()->with('success', 'Transfer completed');
     }
 
-    public function cancel(Request $request, StockTransfer $stockTransfer)
+    public function cancel(Request $request, StockTransfer $stockTransfer): RedirectResponse
     {
         $request->validate([
             'reason' => 'required|string|max:500',

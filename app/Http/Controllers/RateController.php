@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\OverrideRateRequest;
 use App\Models\Branch;
 use App\Models\ExchangeRateHistory;
+use App\Models\User;
 use App\Services\RateManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -150,7 +151,7 @@ class RateController extends Controller
         ]);
     }
 
-    protected function resolveBranchId($user, Request $request): ?int
+    protected function resolveBranchId(User $user, Request $request): ?int
     {
         if ($user->role->isAdmin() && $request->has('branch_id')) {
             return (int) $request->get('branch_id');

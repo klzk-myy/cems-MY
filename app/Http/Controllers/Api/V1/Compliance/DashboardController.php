@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Compliance\ComplianceReportingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Controller for compliance dashboard API endpoints.
@@ -85,7 +86,7 @@ class DashboardController extends Controller
     /**
      * Export audit trail as CSV.
      */
-    public function auditTrailExport(Request $request)
+    public function auditTrailExport(Request $request): StreamedResponse
     {
         $filters = $request->validate([
             'from_date' => 'nullable|date',
