@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TransactionStatus;
-use App\Enums\TransactionType;
+use App\Http\Requests\IndexTransactionRequest;
+use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Currency;
@@ -20,7 +21,6 @@ use App\Services\TransactionMonitoringService;
 use App\Services\TransactionService;
 use Barryvdh\DomPDF\PDF;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -45,13 +45,9 @@ class TransactionController extends Controller
     /**
      * Display list of transactions
      */
-    public function index(Request $request): View
+    public function index(IndexTransactionRequest $request): View
     {
-        $validated = $request->validate([
-            'search' => 'nullable|string|max:100',
-            'status' => 'nullable|string|in:'.implode(',', array_map(fn ($case) => $case->value, TransactionStatus::cases())),
-            'customer_id' => 'nullable|integer|exists:customers,id',
-        ]);
+        $validated = $request->validated();
 
         $query = Transaction::with(['customer', 'currency', 'user', 'branch'])
             ->when($validated['search'] ?? null, function ($q, string $search) {
@@ -105,20 +101,9 @@ class TransactionController extends Controller
     /**
      * Store new transaction
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreTransactionRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'type' => ['required', 'in:'.TransactionType::Buy->value.','.TransactionType::Sell->value],
-            'currency_code' => 'required|exists:currencies,code',
-            'amount_foreign' => 'required|numeric|min:0.01|max:9999999999.9999',
-            'rate' => 'required|numeric|min:0.0001|max:999999',
-            'purpose' => 'required|string|max:255',
-            'source_of_funds' => 'required|string|max:255',
-            'branch_id' => 'required|exists:branches,id',
-            'counter_id' => 'required|exists:counters,id',
-            'idempotency_key' => 'required|string|max:100|unique:transactions,idempotency_key',
-        ]);
+        $validated = $request->validated();
 
         // Derive till_id from counter (backward compatibility)
         $validated['till_id'] = (string) $validated['counter_id'];
