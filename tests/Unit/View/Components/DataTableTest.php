@@ -54,4 +54,15 @@ class DataTableTest extends TestCase
 
         $this->assertNotNull($view);
     }
+
+    public function test_datatable_can_hide_actions_column(): void
+    {
+        $component = new DataTable(
+            data: null,
+            columns: [['key' => 'name', 'label' => 'Name']],
+            hasActions: false
+        );
+
+        $this->assertEquals(1, $component->getColumnCount());
+    }
 }

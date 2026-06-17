@@ -15,6 +15,7 @@ class DataTable extends Component
         public bool $sortable = true,
         public bool $searchable = true,
         public string $emptyMessage = 'No records found',
+        public bool $hasActions = true,
     ) {}
 
     /**
@@ -30,7 +31,7 @@ class DataTable extends Component
      */
     public function getColumnCount(): int
     {
-        return count($this->columns) + 1; // +1 for actions column
+        return count($this->columns) + ($this->hasActions ? 1 : 0);
     }
 
     /**

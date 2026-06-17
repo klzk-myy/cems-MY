@@ -1,4 +1,4 @@
-@props(['data' => null, 'columns' => [], 'hasData' => false, 'columnCount' => 1])
+@props(['data' => null, 'columns' => [], 'hasData' => false, 'columnCount' => 1, 'hasActions' => true])
 
 <div {{ $attributes->merge(['class' => 'bg-surface border border-border rounded-xl overflow-hidden']) }}>
     @if($searchable ?? true)
@@ -21,7 +21,9 @@
                         @endif
                     </th>
                 @endforeach
-                <th class="px-4 py-3 text-right">Actions</th>
+                @if($hasActions)
+                    <th class="px-4 py-3 text-right">Actions</th>
+                @endif
             </tr>
         </thead>
         <tbody class="bg-surface divide-y divide-border">
