@@ -109,13 +109,13 @@
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     @if($status === 'passed')
-                                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                                        <span class="w-3 h-3 rounded-full bg-success"></span>
                                         <span class="text-sm text-ink-muted">Passed</span>
                                     @elseif($status === 'failed')
-                                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                        <span class="w-3 h-3 rounded-full bg-danger"></span>
                                         <span class="text-sm text-ink-muted">Failed</span>
                                     @elseif($status === 'error')
-                                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                                        <span class="w-3 h-3 rounded-full bg-warning"></span>
                                         <span class="text-sm text-ink-muted">Error</span>
                                     @else
                                         <span class="w-3 h-3 rounded-full bg-canvas-subtle"></span>
