@@ -2,14 +2,14 @@
 
 @php
 $colorClass = match ($color) {
-    'yellow' => 'fill-yellow-500',
-    'green' => 'fill-green-500',
-    default => 'fill-red-500',
+    'green' => 'fill-success',
+    'yellow' => 'fill-warning',
+    default => 'fill-danger',
 };
 $textClass = match ($color) {
-    'yellow' => 'text-yellow-600',
-    'green' => 'text-green-600',
-    default => 'text-red-600',
+    'green' => 'text-success',
+    'yellow' => 'text-warning',
+    default => 'text-danger',
 };
 $firstValue = $values[0] ?? 0;
 $lastValue = $values[count($values) - 1] ?? 0;
