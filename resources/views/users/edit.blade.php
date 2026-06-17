@@ -54,18 +54,11 @@
                             inline
                         />
 
-                        <div class="flex items-center">
-                            <label class="flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    name="is_active"
-                                    value="1"
-                                    {{ old('is_active', $user->is_active) ? 'checked' : '' }}
-                                    class="w-4 h-4 text-ink border-border rounded focus:ring-primary"
-                                >
-                                <span class="ml-2 text-sm text-ink-muted">Active User</span>
-                            </label>
-                        </div>
+                        <x-checkbox
+                            name="is_active"
+                            label="Active"
+                            :checked="old('is_active', $user->is_active)"
+                        />
 
                         <div>
                             <label class="block text-sm font-medium text-ink-muted mb-2">MFA Status</label>

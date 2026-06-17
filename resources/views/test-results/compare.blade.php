@@ -11,13 +11,7 @@
         <!-- Side-by-Side Summary -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Run 1 Card -->
-            <x-card>
-                <div class="px-6 py-4 border-b border-border bg-canvas-subtle">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-ink">Run #{{ $run1->id }}</h2>
-                        <span class="text-sm text-ink-muted">{{ $run1->created_at->format('M d, Y H:i') }}</span>
-                    </div>
-                </div>
+            <x-card title="Run #{{ $run1->id }}" description="{{ $run1->created_at->format('M d, Y H:i') }}">
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-ink-muted">Status</span>
@@ -58,13 +52,7 @@
             </x-card>
 
             <!-- Run 2 Card -->
-            <x-card>
-                <div class="px-6 py-4 border-b border-border bg-canvas-subtle">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-ink">Run #{{ $run2->id }}</h2>
-                        <span class="text-sm text-ink-muted">{{ $run2->created_at->format('M d, Y H:i') }}</span>
-                    </div>
-                </div>
+            <x-card title="Run #{{ $run2->id }}" description="{{ $run2->created_at->format('M d, Y H:i') }}">
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-ink-muted">Status</span>

@@ -33,31 +33,17 @@
                             placeholder="Select a branch (optional)"
                         />
 
-                        <div class="flex items-center">
-                            <label class="flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    name="is_active"
-                                    value="1"
-                                    {{ old('is_active', '1') ? 'checked' : '' }}
-                                    class="w-4 h-4 text-ink border-border rounded focus:ring-primary"
-                                >
-                                <span class="ml-2 text-sm text-ink-muted">Active User</span>
-                            </label>
-                        </div>
+                        <x-checkbox
+                            name="is_active"
+                            label="Active User"
+                            :checked="old('is_active', true)"
+                        />
 
-                        <div class="flex items-center">
-                            <label class="flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    name="mfa_enabled"
-                                    value="1"
-                                    {{ old('mfa_enabled') ? 'checked' : '' }}
-                                    class="w-4 h-4 text-ink border-border rounded focus:ring-primary"
-                                >
-                                <span class="ml-2 text-sm text-ink-muted">Enable MFA (Required for all roles)</span>
-                            </label>
-                        </div>
+                        <x-checkbox
+                            name="mfa_enabled"
+                            label="Enable MFA (Required for all roles)"
+                            :checked="old('mfa_enabled')"
+                        />
                     </div>
                 </div>
 

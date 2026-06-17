@@ -45,23 +45,12 @@
 
                     <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth') }}" />
 
-                    <div>
-                        <label class="block text-sm font-medium text-ink-muted mb-2">Risk Level</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2">
-                                <input type="radio" name="risk_level" value="low" class="w-4 h-4 text-primary border-border focus:ring-primary">
-                                <span class="text-sm text-ink">Low</span>
-                            </label>
-                            <label class="flex items-center gap-2">
-                                <input type="radio" name="risk_level" value="medium" class="w-4 h-4 text-primary border-border focus:ring-primary">
-                                <span class="text-sm text-ink">Medium</span>
-                            </label>
-                            <label class="flex items-center gap-2">
-                                <input type="radio" name="risk_level" value="high" class="w-4 h-4 text-primary border-border focus:ring-primary">
-                                <span class="text-sm text-ink">High</span>
-                            </label>
-                        </div>
-                    </div>
+                    <x-radio-group
+                        name="risk_level"
+                        label="Risk Level"
+                        :options="['low' => 'Low', 'medium' => 'Medium', 'high' => 'High']"
+                        :selected="old('risk_level')"
+                    />
                 </div>
 
                 <div class="px-6 py-4 border-t border-border flex items-center justify-end gap-3">

@@ -89,13 +89,11 @@
                         <p class="text-sm text-ink-muted mb-4">Select the currencies your business will trade in.</p>
                         <div class="space-y-3">
                             @foreach($currencies as $currency)
-                                <x-input
-                                    type="checkbox"
+                                <x-checkbox
                                     name="currency_codes[]"
                                     value="{{ $currency->code }}"
                                     label="{{ $currency->code }} - {{ $currency->name }}"
-                                    inline
-                                    checked
+                                    :checked="true"
                                 />
                             @endforeach
                         </div>
@@ -112,14 +110,11 @@
                         <h3 class="text-lg font-medium text-ink mb-4">Exchange Rates</h3>
                         <p class="text-sm text-ink-muted mb-4">Configure how rates are fetched and managed.</p>
                         <div class="space-y-4">
-                            <x-input
-                                type="checkbox"
+                            <x-checkbox
                                 name="use_default_rates"
-                                value="1"
                                 label="Use Default Rates"
                                 help="Seed with standard exchange rates for selected currencies."
-                                inline
-                                checked
+                                :checked="true"
                             />
                         </div>
                         <div class="mt-6 flex justify-between">
