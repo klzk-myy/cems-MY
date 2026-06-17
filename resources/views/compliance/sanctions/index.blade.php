@@ -25,7 +25,7 @@
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $list['list_type'] ?? 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm">
                                 @if ($list['source_url'])
-                                    <a href="{{ $list['source_url'] }}" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-800">
+                                    <a href="{{ $list['source_url'] }}" target="_blank" rel="noopener" class="text-info hover:text-info-hover">
                                         {{ Str::limit($list['source_url'], 40) }}
                                     </a>
                                 @else
