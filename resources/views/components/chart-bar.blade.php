@@ -2,7 +2,7 @@
 
 @php
 $height = max($value, $minHeight);
-$colorClass = $color ?? ($value >= 80 ? 'bg-green-500' : ($value >= 50 ? 'bg-yellow-500' : 'bg-red-500'));
+$colorClass = $color ?? ($value >= 80 ? 'bg-success' : ($value >= 50 ? 'bg-warning' : 'bg-danger'));
 @endphp
 
 <div {{ $attributes->merge(['class' => 'w-full rounded-t relative']) }} style="height: {{ $height }}%">

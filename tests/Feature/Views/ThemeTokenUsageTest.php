@@ -72,6 +72,9 @@ class ThemeTokenUsageTest extends TestCase
             'progress-bar-danger' => ['components.progress-bar', ['value' => 100], ['bg-danger']],
             'chart-trend' => ['components.chart-trend', ['title' => 'X', 'labels' => [], 'values' => []], ['bg-surface', 'border-border', 'text-ink']],
             'navigation-tokens' => ['components.navigation', [], ['bg-sidebar', 'text-sidebar-text']],
+            'chart-bar-success' => ['components.chart-bar', ['value' => 80], ['bg-success']],
+            'chart-bar-warning' => ['components.chart-bar', ['value' => 65], ['bg-warning']],
+            'chart-bar-danger' => ['components.chart-bar', ['value' => 30], ['bg-danger']],
         ];
     }
 
