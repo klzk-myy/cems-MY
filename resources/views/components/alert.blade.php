@@ -1,7 +1,9 @@
 @props(['type' => 'info', 'title' => null, 'dismissible' => false])
 
 @php
-$styles = match($type) {
+$resolvedType = $type === 'danger' ? 'error' : $type;
+
+$styles = match($resolvedType) {
     'success' => 'bg-success-subtle border-success-border text-success-text',
     'error' => 'bg-danger-subtle border-danger-border text-danger-text',
     'warning' => 'bg-warning-subtle border-warning-border text-warning-text',
@@ -17,28 +19,28 @@ $icons = [
 ];
 @endphp
 
-<div x-data="{ shown: true }" 
+<div x-data="{ shown: true }"
      x-show="shown"
      {{ $attributes->merge(['class' => "mb-6 border rounded-lg p-4 $styles"]) }}
      x-transition>
     <div class="flex gap-3">
-        @if(isset($icon) && $icon !== false)
+        @if(($icon ?? true) !== false)
             <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icons[$type] }}" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icons[$resolvedType] ?? $icons['info'] }}" />
             </svg>
         @endif
-        
+
         <div class="flex-1">
             @if($title)
                 <p class="font-medium mb-1">{{ $title }}</p>
             @endif
             <div class="text-sm">{{ $slot }}</div>
         </div>
-        
+
         @if($dismissible)
-            <button @click="shown = false" 
+            <button @click="shown = false"
                     class="shrink-0 -mr-1 -mt-1 p-1 rounded hover:bg-black/5 dark:hover:bg-surface/10">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>

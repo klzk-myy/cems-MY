@@ -2,48 +2,43 @@
 
 namespace Tests\Unit\View\Components;
 
-use App\View\Components\Alert;
 use Tests\TestCase;
 
 class AlertTest extends TestCase
 {
-    public function test_alert_renders_with_type(): void
+    public function test_alert_renders_success_variant(): void
     {
-        $component = new Alert(type: 'success', title: 'Success!');
-
-        $this->assertEquals('success', $component->type);
-        $this->assertEquals('Success!', $component->title);
-        // Skip shouldRender test in unit context - slot is only available in view context
-        $this->assertTrue(true); // Placeholder
+        $html = view('components.alert', ['type' => 'success', 'slot' => 'Saved'])->render();
+        $this->assertStringContainsString('bg-success-subtle', $html);
+        $this->assertStringContainsString('Saved', $html);
     }
 
-    public function test_alert_style_classes(): void
+    public function test_alert_renders_error_variant(): void
     {
-        $success = new Alert(type: 'success');
-        $error = new Alert(type: 'error');
-        $warning = new Alert(type: 'warning');
-        $info = new Alert(type: 'info');
-
-        $this->assertStringContainsString('bg-green-50', $success->getStyleClasses());
-        $this->assertStringContainsString('bg-red-50', $error->getStyleClasses());
-        $this->assertStringContainsString('bg-yellow-50', $warning->getStyleClasses());
-        $this->assertStringContainsString('bg-blue-50', $info->getStyleClasses());
+        $html = view('components.alert', ['type' => 'error', 'slot' => 'Failed'])->render();
+        $this->assertStringContainsString('bg-danger-subtle', $html);
+        $this->assertStringContainsString('Failed', $html);
     }
 
-    public function test_alert_icon_paths(): void
+    public function test_alert_danger_alias_renders_error_styling(): void
     {
-        $component = new Alert(type: 'success');
-
-        $this->assertNotEmpty($component->getIconPath());
-        $this->assertStringContainsString('M9 12l2 2 4-4', $component->getIconPath());
+        $html = view('components.alert', ['type' => 'danger', 'slot' => 'Danger'])->render();
+        $this->assertStringContainsString('bg-danger-subtle', $html);
+        // also ensure no raw red classes
+        $this->assertStringNotContainsString('bg-red-', $html);
+        $this->assertStringNotContainsString('text-red-', $html);
     }
 
-    public function test_alert_renders_view(): void
+    public function test_alert_renders_title(): void
     {
-        $component = new Alert(type: 'error', title: 'Test Error');
+        $html = view('components.alert', ['type' => 'info', 'title' => 'Note', 'slot' => 'Body'])->render();
+        $this->assertStringContainsString('Note', $html);
+        $this->assertStringContainsString('Body', $html);
+    }
 
-        $view = $component->render();
-
-        $this->assertNotNull($view);
+    public function test_alert_can_hide_icon(): void
+    {
+        $html = view('components.alert', ['type' => 'info', 'icon' => false, 'slot' => 'No icon'])->render();
+        $this->assertStringNotContainsString('<svg', $html);
     }
 }
