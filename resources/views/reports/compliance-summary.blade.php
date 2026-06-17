@@ -50,7 +50,7 @@
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-ink-muted">EDD Cases Processed</span>
-                        <span class="text-sm font-medium text-blue-600">{{ number_format($eddCount) }}</span>
+                        <span class="text-sm font-medium text-info">{{ number_format($eddCount) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-ink-muted">Suspicious Transaction Reports</span>
