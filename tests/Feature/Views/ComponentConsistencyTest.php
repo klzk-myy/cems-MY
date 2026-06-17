@@ -41,6 +41,16 @@ class ComponentConsistencyTest extends TestCase
             'checkbox' => ['components.checkbox', ['name' => 'is_active', 'label' => 'Active', 'slot' => '']],
             'radio-group' => ['components.radio-group', ['name' => 'risk_level', 'options' => ['low' => 'Low'], 'slot' => '']],
             'empty-state-div' => ['components.empty-state', ['as' => 'div', 'slot' => '']],
+            'verify-card' => ['pages.mfa.verify', []],
         ];
+    }
+
+    public function test_mfa_verify_uses_card_component(): void
+    {
+        $path = resource_path('views/pages/mfa/verify.blade.php');
+        $content = file_get_contents($path);
+
+        $this->assertStringContainsString('<x-card', $content);
+        $this->assertStringNotContainsString('bg-surface rounded-lg shadow p-6', $content);
     }
 }

@@ -1,8 +1,12 @@
 <x-app-layout title="Verify MFA">
+    @php
+        $attributes = $attributes ?? new \Illuminate\View\ComponentAttributeBag([]);
+    @endphp
+
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-6">Two-Factor Verification</h1>
 
-        <div class="max-w-lg bg-surface rounded-lg shadow p-6">
+        <x-card {{ $attributes->merge(['class' => 'max-w-lg shadow']) }}>
             <p class="text-ink-muted mb-4">Enter the 6-digit code from your authenticator app.</p>
 
             <form method="POST" action="{{ route('mfa.verify.store') }}">
@@ -14,6 +18,6 @@
             <div class="mt-4 text-center">
                 <a href="{{ route('mfa.recovery') }}" class="text-info hover:text-info-hover hover:underline">Use Recovery Code</a>
             </div>
-        </div>
+        </x-card>
     </div>
 </x-app-layout>
