@@ -24,7 +24,9 @@ class ThemeTokenUsageTest extends TestCase
         return [
             'app-layout' => ['components.app-layout', ['slot' => ''], ['bg-canvas-subtle', 'text-ink']],
             'card' => ['components.card', ['title' => 'Title', 'slot' => ''], ['bg-surface', 'border-border', 'text-ink']],
+            'card-body-padding' => ['components.card', ['title' => 'T', 'slot' => 'Body'], ['p-6']],
             'card-section' => ['components.card-section', ['title' => 'Title', 'slot' => ''], ['bg-surface', 'border-border', 'text-ink']],
+            'card-section-body-padding' => ['components.card-section', ['title' => 'T', 'slot' => 'Body'], ['p-6']],
             'button-primary' => ['components.button', ['variant' => 'primary', 'slot' => 'Click'], ['bg-primary']],
             'button-secondary' => ['components.button', ['variant' => 'secondary', 'slot' => 'Click'], ['bg-surface', 'border-border', 'text-ink-muted']],
             'button-primary-foreground' => ['components.button', ['variant' => 'primary', 'slot' => 'Click'], ['text-on-primary']],

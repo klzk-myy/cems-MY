@@ -16,26 +16,24 @@
         </x-stat-grid>
 
         <x-card title="Pass Rate Trend (Last {{ $days }} Days)">
-            <div class="p-6">
-                @if(!empty($trendData) && count($trendData) > 0)
-                    <div class="h-64 flex items-end justify-between gap-2">
-                        @foreach($trendData as $dataPoint)
-                            <div class="flex-1 flex flex-col items-center">
-                                <x-chart-bar
-                                    :value="max($dataPoint['pass_rate'], 5)"
-                                    :color="$dataPoint['pass_rate'] >= 80 ? 'green' : ($dataPoint['pass_rate'] >= 50 ? 'yellow' : 'red')"
-                                />
-                                <span class="mt-2 text-xs text-ink-muted">{{ $dataPoint['date'] }}</span>
-                                <span class="text-xs font-medium text-ink-muted">{{ $dataPoint['pass_rate'] }}%</span>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="h-64 flex items-center justify-center bg-canvas-subtle rounded-lg">
-                        <p class="text-sm text-ink-muted">No trend data available for the selected period</p>
-                    </div>
-                @endif
-            </div>
+            @if(!empty($trendData) && count($trendData) > 0)
+                <div class="h-64 flex items-end justify-between gap-2">
+                    @foreach($trendData as $dataPoint)
+                        <div class="flex-1 flex flex-col items-center">
+                            <x-chart-bar
+                                :value="max($dataPoint['pass_rate'], 5)"
+                                :color="$dataPoint['pass_rate'] >= 80 ? 'green' : ($dataPoint['pass_rate'] >= 50 ? 'yellow' : 'red')"
+                            />
+                            <span class="mt-2 text-xs text-ink-muted">{{ $dataPoint['date'] }}</span>
+                            <span class="text-xs font-medium text-ink-muted">{{ $dataPoint['pass_rate'] }}%</span>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="h-64 flex items-center justify-center bg-canvas-subtle rounded-lg">
+                    <p class="text-sm text-ink-muted">No trend data available for the selected period</p>
+                </div>
+            @endif
         </x-card>
 
         <x-card title="Latest Results by Suite">
@@ -105,56 +103,52 @@
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <x-card title="Status Distribution">
-                <div class="p-6">
-                    <div class="space-y-3">
-                        @if(!empty($statistics['by_status']))
-                            @foreach($statistics['by_status'] as $status => $count)
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        @if($status === 'passed')
-                                            <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                                            <span class="text-sm text-ink-muted">Passed</span>
-                                        @elseif($status === 'failed')
-                                            <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                                            <span class="text-sm text-ink-muted">Failed</span>
-                                        @elseif($status === 'error')
-                                            <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                                            <span class="text-sm text-ink-muted">Error</span>
-                                        @else
-                                            <span class="w-3 h-3 rounded-full bg-canvas-subtle"></span>
-                                            <span class="text-sm text-ink-muted">{{ ucfirst($status) }}</span>
-                                        @endif
-                                    </div>
-                                    <span class="text-sm font-medium text-ink">{{ number_format($count) }}</span>
+                <div class="space-y-3">
+                    @if(!empty($statistics['by_status']))
+                        @foreach($statistics['by_status'] as $status => $count)
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    @if($status === 'passed')
+                                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                                        <span class="text-sm text-ink-muted">Passed</span>
+                                    @elseif($status === 'failed')
+                                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                        <span class="text-sm text-ink-muted">Failed</span>
+                                    @elseif($status === 'error')
+                                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                                        <span class="text-sm text-ink-muted">Error</span>
+                                    @else
+                                        <span class="w-3 h-3 rounded-full bg-canvas-subtle"></span>
+                                        <span class="text-sm text-ink-muted">{{ ucfirst($status) }}</span>
+                                    @endif
                                 </div>
-                            @endforeach
-                        @else
-                            <p class="text-sm text-ink-muted">No status data available</p>
-                        @endif
-                    </div>
+                                <span class="text-sm font-medium text-ink">{{ number_format($count) }}</span>
+                            </div>
+                        @endforeach
+                    @else
+                        <p class="text-sm text-ink-muted">No status data available</p>
+                    @endif
                 </div>
             </x-card>
 
             <x-card title="Daily Summary">
-                <div class="p-6">
-                    <div class="space-y-3">
-                        @if(!empty($statistics['daily_summary']))
-                            @foreach($statistics['daily_summary'] as $day)
-                                <div class="flex items-center justify-between py-2 border-b border-border last:border-0">
-                                    <span class="text-sm text-ink-muted">{{ $day['date'] }}</span>
-                                    <div class="flex items-center gap-4">
-                                        <span class="text-xs text-success-text">{{ $day['passed'] }} passed</span>
-                                        <span class="text-xs text-danger-text">{{ $day['failed'] }} failed</span>
-                                        <span class="text-sm font-medium {{ $day['pass_rate'] >= 80 ? 'text-success-text' : ($day['pass_rate'] >= 50 ? 'text-warning-text' : 'text-danger-text') }}">
-                                            {{ $day['pass_rate'] }}%
-                                        </span>
-                                    </div>
+                <div class="space-y-3">
+                    @if(!empty($statistics['daily_summary']))
+                        @foreach($statistics['daily_summary'] as $day)
+                            <div class="flex items-center justify-between py-2 border-b border-border last:border-0">
+                                <span class="text-sm text-ink-muted">{{ $day['date'] }}</span>
+                                <div class="flex items-center gap-4">
+                                    <span class="text-xs text-success-text">{{ $day['passed'] }} passed</span>
+                                    <span class="text-xs text-danger-text">{{ $day['failed'] }} failed</span>
+                                    <span class="text-sm font-medium {{ $day['pass_rate'] >= 80 ? 'text-success-text' : ($day['pass_rate'] >= 50 ? 'text-warning-text' : 'text-danger-text') }}">
+                                        {{ $day['pass_rate'] }}%
+                                    </span>
                                 </div>
-                            @endforeach
-                        @else
-                            <p class="text-sm text-ink-muted">No daily summary available</p>
-                        @endif
-                    </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <p class="text-sm text-ink-muted">No daily summary available</p>
+                    @endif
                 </div>
             </x-card>
         </div>

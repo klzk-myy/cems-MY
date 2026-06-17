@@ -14,57 +14,53 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <x-card title="Risk Distribution">
-                <div class="p-6">
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-ink-muted">High Risk</span>
-                            <div class="flex items-center gap-3">
-                                <x-progress-bar :value="6" :max="100" color="bg-danger" width="w-48" />
-                                <span class="text-sm font-medium text-ink">6%</span>
-                            </div>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-ink-muted">High Risk</span>
+                        <div class="flex items-center gap-3">
+                            <x-progress-bar :value="6" :max="100" color="bg-danger" width="w-48" />
+                            <span class="text-sm font-medium text-ink">6%</span>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-ink-muted">Medium Risk</span>
-                            <div class="flex items-center gap-3">
-                                <x-progress-bar :value="14" :max="100" color="bg-warning" width="w-48" />
-                                <span class="text-sm font-medium text-ink">14%</span>
-                            </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-ink-muted">Medium Risk</span>
+                        <div class="flex items-center gap-3">
+                            <x-progress-bar :value="14" :max="100" color="bg-warning" width="w-48" />
+                            <span class="text-sm font-medium text-ink">14%</span>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-ink-muted">Low Risk</span>
-                            <div class="flex items-center gap-3">
-                                <x-progress-bar :value="80" :max="100" color="bg-success" width="w-48" />
-                                <span class="text-sm font-medium text-ink">80%</span>
-                            </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-ink-muted">Low Risk</span>
+                        <div class="flex items-center gap-3">
+                            <x-progress-bar :value="80" :max="100" color="bg-success" width="w-48" />
+                            <span class="text-sm font-medium text-ink">80%</span>
                         </div>
                     </div>
                 </div>
             </x-card>
 
             <x-card title="High Risk Customers">
-                <div class="p-6">
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-ink">Ahmad Razali</p>
-                                <p class="text-xs text-ink-muted">CUST-001</p>
-                            </div>
-                            <x-button variant="ghost" size="sm" href="#">View</x-button>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-ink">Ahmad Razali</p>
+                            <p class="text-xs text-ink-muted">CUST-001</p>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-ink">Siti Nurhaliza</p>
-                                <p class="text-xs text-ink-muted">CUST-042</p>
-                            </div>
-                            <x-button variant="ghost" size="sm" href="#">View</x-button>
+                        <x-button variant="ghost" size="sm" href="#">View</x-button>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-ink">Siti Nurhaliza</p>
+                            <p class="text-xs text-ink-muted">CUST-042</p>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-ink">Tan Wei Ming</p>
-                                <p class="text-xs text-ink-muted">CUST-108</p>
-                            </div>
-                            <x-button variant="ghost" size="sm" href="#">View</x-button>
+                        <x-button variant="ghost" size="sm" href="#">View</x-button>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-ink">Tan Wei Ming</p>
+                            <p class="text-xs text-ink-muted">CUST-108</p>
                         </div>
+                        <x-button variant="ghost" size="sm" href="#">View</x-button>
                     </div>
                 </div>
             </x-card>

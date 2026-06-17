@@ -6,19 +6,17 @@
         />
 
         <x-card title="Import Summary">
-            <div class="p-6">
-                <x-stat-grid cols="4">
-                    <x-stat-card label="Total Records" :value="$results['total'] ?? 0" />
-                    <x-stat-card label="Successful" :value="$results['successful'] ?? 0" color="green" />
-                    <x-stat-card label="Failed" :value="$results['failed'] ?? 0" color="red" />
-                    <x-stat-card label="Skipped" :value="$results['skipped'] ?? 0" color="yellow" />
-                </x-stat-grid>
-            </div>
+            <x-stat-grid cols="4">
+                <x-stat-card label="Total Records" :value="$results['total'] ?? 0" />
+                <x-stat-card label="Successful" :value="$results['successful'] ?? 0" color="green" />
+                <x-stat-card label="Failed" :value="$results['failed'] ?? 0" color="red" />
+                <x-stat-card label="Skipped" :value="$results['skipped'] ?? 0" color="yellow" />
+            </x-stat-grid>
         </x-card>
 
         @if(!empty($results['errors']))
             <x-card title="Errors">
-                <div class="p-6 space-y-4">
+                <div class="space-y-4">
                     @foreach($results['errors'] as $error)
                         <x-alert type="error" class="mb-0" :title="'Row ' . ($error['row'] ?? 'N/A')">
                             {{ $error['message'] ?? 'Unknown error' }}
@@ -60,7 +58,7 @@
         @endif
 
         <x-card>
-            <div class="p-6 flex items-center gap-4">
+            <div class="flex items-center gap-4">
                 <x-button variant="primary" href="{{ route('transactions.batch-upload') }}">
                     Upload Another File
                 </x-button>
