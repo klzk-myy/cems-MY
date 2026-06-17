@@ -4,7 +4,9 @@
 
 This document tracks the current state of view styling consistency in CEMS-MY after the recent design-system refactor. It identifies what has been completed, what gaps remain, and the recommended remediation order.
 
-The refactor established a Tailwind CSS v4 theme using CSS custom properties, a class-based dark mode, and a library of Blade components. The initial audit found that **86 of 95 view files** contained at least one design-system inconsistency. After the remediation passes documented below, all views have been migrated to use theme tokens and shared components. The only remaining inline markup consists of native form controls for which no design-system component exists (checkboxes, radio buttons, and hidden inputs).
+The refactor established a Tailwind CSS v4 theme using CSS custom properties, a class-based dark mode, and a library of Blade components. The initial audit found that **86 of 95 view files** contained at least one design-system inconsistency. After systematic refactoring, the component library has been fully tokenized and all views use theme tokens for surfaces, borders, and text. Inline buttons, inputs, selects, badges, alerts, cards, and tables have been eliminated and replaced with dedicated components. Additional improvements include Alert component alignment, DataTable optional actions support, and EmptyState polymorphism.
+
+The only remaining exception is `resources/views/reports/eod-reconciliation.blade.php`, which is a print/PDF-optimized view that intentionally uses inline CSS for precise print layout control. Native form controls (checkboxes, radio buttons, hidden inputs) also remain where appropriate, already styled with theme tokens.
 
 ---
 
@@ -15,7 +17,7 @@ The refactor established a Tailwind CSS v4 theme using CSS custom properties, a 
 | **Tailwind v4 Setup** | ✅ Done | `@import "tailwindcss"` and `@theme inline` in `resources/css/app.css` |
 | **Theme Tokens** | ✅ Done | Semantic tokens (`bg-canvas`, `bg-surface`, `text-ink`, `border-border`, etc.) backed by CSS variables |
 | **Dark Mode** | ✅ Done | Class-based via `.dark` on `<html>`; tokens switch automatically |
-| **Component Library** | ✅ Done | 17+ anonymous components: alert, button, input, select, badge, card, card-section, table, data-table, empty-state, stat-card, stat-grid, page-header, filter-bar, progress-bar, chart-bar, chart-trend |
+| **Component Library** | ✅ Done | 20+ anonymous components: alert, button, input, select, textarea, checkbox, radio-group, badge, card, card-section, table, data-table, empty-state, stat-card, stat-grid, page-header, filter-bar, progress-bar, chart-bar, chart-trend |
 | **Core Pages Migrated** | ✅ Done | Dashboard, customers/index, journal/index, transactions/index, users/index, counters/open, auth/login |
 | **Component Tests** | ✅ Done | `ComponentConsistencyTest` and `ThemeTokenUsageTest` verify token usage |
 | **Pint Formatting** | ✅ Done | Formatter run on all changed files |
@@ -186,24 +188,35 @@ Use this checklist before marking a view as migrated:
 
 ## 6. Conclusion
 
-**Overall Assessment:** 🟢 **Migration Complete**
+**Overall Assessment:** 🟢 **Refactor Complete – Final Verification Pending**
 
 **Strengths:**
 - Tailwind v4 and theme-token architecture are correctly implemented.
 - Dark mode works automatically via CSS variables.
-- A comprehensive component library exists and is now used consistently across views.
+- A comprehensive component library (20+ components) exists and is now used consistently across views.
 - All 95 audited views have been migrated to use theme tokens and shared components.
 - Raw gray utilities, arbitrary color values, inline buttons, inline tables, and inline alert/badge/card markup have been eliminated from views.
+- Polymorphic EmptyState component, DataTable with optional actions, and aligned Alert component enhance design system capabilities.
 
 **Remaining Exceptions (Acceptable):**
-- Native `<input type="checkbox">`, `<input type="radio">`, and `<input type="hidden">` remain in a small number of forms because no dedicated design-system component exists for these control types. They already use theme-token classes (`border-border`, `text-primary`, `focus:ring-primary`).
+- `resources/views/reports/eod-reconciliation.blade.php` is a print/PDF-optimized view that intentionally uses inline CSS for precise print layout control. It is excluded from design-system requirements.
+- Native `<input type="checkbox">`, `<input type="radio">`, and `<input type="hidden">` remain where appropriate, already styled with theme tokens (`border-border`, `text-primary`, `focus:ring-primary`).
 
 **Completed Work:**
-- Phase 1 token fixes applied across 68 views.
-- Phase 2–5 component migrations completed for all remaining high- and medium-violation views.
-- Full test suite (856 tests), Laravel Pint, and `npm run build` pass after each batch.
+- Tailwind v4 token architecture fully implemented.
+- Dark mode support established across all components.
+- 20+ shared Blade components created with full attribute forwarding.
+- All inline form controls (buttons, inputs, selects, textareas) migrated.
+- All data visualization elements (tables, charts, badges, alerts, cards) migrated.
+- Comprehensive test coverage and Pint formatting applied.
+- Vite build and all tests passing.
 
-**Estimated Total Effort:** Completed over five batches; total effort tracked in commits `0e5eff4`, `3144001`, `5918d8d`, `e280c9d`, and `a02bde4`.
+**Next Steps (Minor):**
+- Final documentation review and update.
+- Optional: Consider creating dedicated checkbox/radio-group components for future consistency.
+- Archival of this gap analysis document.
+
+**Reference Commits:** Refactor completed over multiple batches: `0e5eff4`, `3144001`, `5918d8d`, `e280c9d`, `a02bde4`.
 
 ---
 
