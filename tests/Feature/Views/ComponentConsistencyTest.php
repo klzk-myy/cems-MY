@@ -42,6 +42,7 @@ class ComponentConsistencyTest extends TestCase
             'radio-group' => ['components.radio-group', ['name' => 'risk_level', 'options' => ['low' => 'Low'], 'slot' => '']],
             'empty-state-div' => ['components.empty-state', ['as' => 'div', 'slot' => '']],
             'verify-card' => ['pages.mfa.verify', []],
+            'link' => ['components.link', ['href' => '/dashboard', 'slot' => 'Dashboard']],
         ];
     }
 
