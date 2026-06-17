@@ -32,7 +32,7 @@
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Source URL</label>
                     <p class="text-sm text-ink">
                         @if ($list->source_url)
-                            <a href="{{ $list->source_url }}" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-800">
+                            <a href="{{ $list->source_url }}" target="_blank" rel="noopener" class="text-info hover:text-info-hover">
                                 {{ $list->source_url }}
                             </a>
                         @else
