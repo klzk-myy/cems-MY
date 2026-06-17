@@ -12,7 +12,7 @@
             </form>
 
             <div class="mt-4 text-center">
-                <a href="{{ route('mfa.recovery') }}" class="text-blue-600 hover:underline">Use Recovery Code</a>
+                <a href="{{ route('mfa.recovery') }}" class="text-info hover:text-info-hover hover:underline">Use Recovery Code</a>
             </div>
         </div>
     </div>
