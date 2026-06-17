@@ -203,4 +203,13 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
         $this->assertStringContainsString('name="business_address"', $content);
     }
+
+    public function test_setup_index_uses_on_primary_foreground(): void
+    {
+        $path = $this->getViewPath('setup.index');
+        $content = file_get_contents($path);
+
+        $this->assertStringContainsString('bg-primary text-on-primary', $content);
+        $this->assertStringNotContainsString('bg-primary text-white', $content);
+    }
 }

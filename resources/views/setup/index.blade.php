@@ -32,7 +32,7 @@
                 <div class="step-indicator mb-8 flex justify-between">
                     @for($i = 1; $i <= 6; $i++)
                         <div class="flex flex-col items-center">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium {{ $i <= $currentStep ? 'bg-primary text-white' : 'bg-canvas-subtle text-ink-muted' }}">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium {{ $i <= $currentStep ? 'bg-primary text-on-primary' : 'bg-canvas-subtle text-ink-muted' }}">
                                 {{ $i }}
                             </div>
                             <span class="text-xs text-ink-muted mt-1">
