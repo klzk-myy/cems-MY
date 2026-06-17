@@ -39,6 +39,7 @@ class ComponentConsistencyTest extends TestCase
             'chart-trend' => ['components.chart-trend', ['title' => 'X', 'labels' => [], 'values' => []]],
             'textarea' => ['components.textarea', ['name' => 'notes', 'slot' => '']],
             'checkbox' => ['components.checkbox', ['name' => 'is_active', 'label' => 'Active', 'slot' => '']],
+            'radio-group' => ['components.radio-group', ['name' => 'risk_level', 'options' => ['low' => 'Low'], 'slot' => '']],
         ];
     }
 }
