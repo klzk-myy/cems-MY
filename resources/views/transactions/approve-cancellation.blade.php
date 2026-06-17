@@ -49,16 +49,12 @@
         <x-card title="Manager Approval">
             <form method="POST" action="{{ route('transactions.approve-cancellation.store', $transaction['id'] ?? 0) }}">
                 @csrf
-                <div class="mb-4">
-                    <label for="approval_notes" class="block text-sm font-medium text-ink-muted mb-2">Approval Notes</label>
-                    <textarea
-                        id="approval_notes"
-                        name="approval_notes"
-                        rows="4"
-                        class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"
-                        placeholder="Enter approval notes (optional)"
-                    ></textarea>
-                </div>
+                <x-textarea
+                    name="approval_notes"
+                    label="Approval Notes"
+                    rows="4"
+                    placeholder="Enter approval notes (optional)"
+                >{{ old('approval_notes') }}</x-textarea>
                 <div class="flex items-center gap-4">
                     <x-button type="submit" variant="primary">Approve Cancellation</x-button>
                     <x-button variant="secondary" href="{{ route('transactions.index') }}">Cancel</x-button>

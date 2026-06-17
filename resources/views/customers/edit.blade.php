@@ -37,15 +37,11 @@
                     <x-input name="phone" label="Phone Number" value="{{ old('phone', $customer->phone ?? '') }}" />
                 </div>
 
-                <div class="mt-6">
-                    <label for="address" class="block text-sm font-medium text-ink-muted mb-2">Address</label>
-                    <textarea
-                        id="address"
-                        name="address"
-                        rows="2"
-                        class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black"
-                    >{{ old('address', $customer->address ?? '') }}</textarea>
-                </div>
+                <x-textarea
+                    name="address"
+                    label="Address"
+                    rows="2"
+                >{{ old('address', $customer->address ?? '') }}</x-textarea>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth', $customer->date_of_birth ?? '') }}" />

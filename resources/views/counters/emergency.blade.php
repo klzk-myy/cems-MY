@@ -36,17 +36,13 @@
                 @csrf
                 <input type="hidden" name="action" value="{{ $action ?? 'force_close' }}">
 
-                <div class="mb-4">
-                    <label for="reason" class="block text-sm font-medium text-ink-muted mb-1">Reason for Emergency Action</label>
-                    <textarea
-                        id="reason"
-                        name="reason"
-                        rows="2"
-                        class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg text-ink placeholder:text-ink-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
-                        required
-                        placeholder="Describe the emergency..."
-                    ></textarea>
-                </div>
+                <x-textarea
+                    name="reason"
+                    label="Reason for Emergency Action"
+                    :required="true"
+                    rows="2"
+                    placeholder="Describe the emergency..."
+                >{{ old('reason') }}</x-textarea>
 
                 <x-input type="password" name="supervisor_pin" label="Supervisor PIN" required />
 

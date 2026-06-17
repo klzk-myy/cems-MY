@@ -59,16 +59,12 @@
                         />
                     </div>
 
-                    <div class="mb-6">
-                        <label for="notes" class="block text-sm font-medium text-ink-muted mb-2">Notes (Optional)</label>
-                        <textarea
-                            name="notes"
-                            id="notes"
-                            rows="2"
-                            class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg text-ink placeholder:text-ink-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
-                            placeholder="Any special instructions for the next operator..."
-                        ></textarea>
-                    </div>
+                    <x-textarea
+                        name="notes"
+                        label="Notes (Optional)"
+                        rows="2"
+                        placeholder="Any special instructions for the next operator..."
+                    >{{ old('notes') }}</x-textarea>
 
                     <x-alert type="warning">
                         <strong>Note:</strong> The receiving operator must acknowledge this handover to complete the transfer.

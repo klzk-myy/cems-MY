@@ -81,10 +81,7 @@
                             <label class="block text-sm font-medium text-ink-muted">Rate Sell</label>
                             <x-input type="text" name="rate_sell" id="override-rate-sell" inline class="mt-1 w-full" required />
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-ink-muted">Reason</label>
-                            <textarea name="reason" id="override-reason" rows="2" class="mt-1 w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"></textarea>
-                        </div>
+                        <x-textarea name="reason" label="Reason" rows="2" class="mt-1 w-full"></x-textarea>
                     </div>
                     <div class="mt-6 flex items-center justify-end gap-3">
                         <x-button type="button" id="cancel-override" variant="secondary">Cancel</x-button>

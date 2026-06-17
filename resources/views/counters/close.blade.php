@@ -77,10 +77,12 @@
                     @endforeach
                 </div>
 
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Cash Summary</label>
-                    <textarea name="summary" rows="3" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" placeholder="Enter cash counts summary...">{{ old('summary') }}</textarea>
-                </div>
+                <x-textarea
+                    name="summary"
+                    label="Cash Summary"
+                    rows="3"
+                    placeholder="Enter cash counts summary..."
+                >{{ old('summary') }}</x-textarea>
 
                 <div class="mb-6">
                     <x-input

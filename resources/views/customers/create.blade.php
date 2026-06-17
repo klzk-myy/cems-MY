@@ -30,18 +30,12 @@
                         <x-input name="phone" label="Phone Number" value="{{ old('phone') }}" />
                     </div>
 
-                    <div>
-                        <label for="address" class="block text-sm font-medium text-ink-muted mb-2">Address</label>
-                        <textarea
-                            id="address"
-                            name="address"
-                            rows="2"
-                            class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg text-ink placeholder:text-ink-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary disabled:bg-canvas-subtle disabled:text-ink-muted @error('address') border-danger @enderror"
-                        >{{ old('address') }}</textarea>
-                        @error('address')
-                            <p class="mt-1 text-sm text-danger-text">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-textarea
+                        name="address"
+                        label="Address"
+                        :required="$errors->has('address') ? true : false"
+                        rows="2"
+                    >{{ old('address') }}</x-textarea>
 
                     <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth') }}" />
 

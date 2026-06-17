@@ -40,10 +40,12 @@
                     </x-table>
                 </x-card-section>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Reason for Emergency Closure</label>
-                    <textarea name="reason" rows="3" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg" required></textarea>
-                </div>
+                <x-textarea
+                    name="reason"
+                    label="Reason for Emergency Closure"
+                    :required="true"
+                    rows="3"
+                >{{ old('reason') }}</x-textarea>
 
                 <div class="mb-6">
                     <x-input

@@ -15,13 +15,12 @@
 
                 <x-input type="text" name="amount" id="amount" label="Amount" placeholder="0.00" required />
 
-                <div class="mb-4">
-                    <label for="notes" class="block text-sm font-medium text-ink-muted mb-2">Notes (Optional)</label>
-                    <textarea name="notes" id="notes" rows="3" placeholder="Add any additional notes or instructions..." class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg text-ink placeholder:text-ink-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary resize-none"></textarea>
-                    @error('notes')
-                        <p class="mt-1 text-sm text-danger-text">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-textarea
+                    name="notes"
+                    label="Notes (Optional)"
+                    rows="3"
+                    placeholder="Add any additional notes or instructions..."
+                >{{ old('notes') }}</x-textarea>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border">
                     <x-button href="{{ route('stock-transfers.index') }}" variant="secondary">Cancel</x-button>

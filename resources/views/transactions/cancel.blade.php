@@ -42,22 +42,13 @@
         <x-card title="Cancellation Request">
             <form method="POST" action="{{ route('transactions.cancel.store', $transaction['id'] ?? 0) }}">
                 @csrf
-                <div class="mb-4">
-                    <label for="reason" class="block text-sm font-medium text-ink-muted mb-2">
-                        Reason for Cancellation <span class="text-danger-text">*</span>
-                    </label>
-                    <textarea
-                        id="reason"
-                        name="reason"
-                        rows="4"
-                        required
-                        class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"
-                        placeholder="Enter the reason for cancellation"
-                    ></textarea>
-                    @error('reason')
-                        <p class="mt-1 text-sm text-danger-text">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-textarea
+                    name="reason"
+                    label="Reason for Cancellation"
+                    :required="true"
+                    rows="4"
+                    placeholder="Enter the reason for cancellation"
+                >{{ old('reason') }}</x-textarea>
 
                 <div class="flex items-center gap-4">
                     <x-button type="submit" variant="primary">Submit Cancellation Request</x-button>

@@ -24,15 +24,18 @@
                     <x-input name="postal_code" label="Postal Code" value="{{ old('postal_code', $sanctionEntry->postal_code) }}" />
                 </div>
 
-                <div class="mb-6">
-                    <label for="aliases" class="block text-sm font-medium text-ink-muted mb-2">Aliases</label>
-                    <textarea id="aliases" name="aliases" rows="3" placeholder="Enter aliases, one per line" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black">{{ old('aliases', is_array($sanctionEntry->aliases) ? implode("\n", $sanctionEntry->aliases) : $sanctionEntry->aliases) }}</textarea>
-                </div>
+                <x-textarea
+                    name="aliases"
+                    label="Aliases"
+                    rows="3"
+                    placeholder="Enter aliases, one per line"
+                >{{ old('aliases', is_array($sanctionEntry->aliases) ? implode("\n", $sanctionEntry->aliases) : $sanctionEntry->aliases) }}</x-textarea>
 
-                <div class="mb-6">
-                    <label for="details" class="block text-sm font-medium text-ink-muted mb-2">Additional Information</label>
-                    <textarea id="details" name="details" rows="3" class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black">{{ old('details', $sanctionEntry->details) }}</textarea>
-                </div>
+                <x-textarea
+                    name="details"
+                    label="Additional Information"
+                    rows="3"
+                >{{ old('details', $sanctionEntry->details) }}</x-textarea>
 
                 <div class="flex justify-end gap-3">
                     <x-button href="{{ route('compliance.sanctions.entries.index') }}" variant="secondary">Cancel</x-button>

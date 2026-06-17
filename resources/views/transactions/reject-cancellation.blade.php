@@ -51,22 +51,13 @@
         <x-card title="Rejection Details">
             <form method="POST" action="{{ route('transactions.reject-cancellation.store', $transaction['id'] ?? 0) }}">
                 @csrf
-                <div class="mb-4">
-                    <label for="rejection_reason" class="block text-sm font-medium text-ink-muted mb-2">
-                        Rejection Reason <span class="text-danger-text">*</span>
-                    </label>
-                    <textarea
-                        id="rejection_reason"
-                        name="rejection_reason"
-                        rows="4"
-                        required
-                        class="w-full px-4 py-2.5 text-sm bg-surface border border-border rounded-lg"
-                        placeholder="Enter the reason for rejecting this cancellation request"
-                    ></textarea>
-                    @error('rejection_reason')
-                        <p class="mt-1 text-sm text-danger-text">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-textarea
+                    name="rejection_reason"
+                    label="Rejection Reason"
+                    :required="true"
+                    rows="4"
+                    placeholder="Enter the reason for rejecting this cancellation request"
+                >{{ old('rejection_reason') }}</x-textarea>
 
                 <div class="flex items-center gap-4">
                     <x-button type="submit" variant="danger">Reject Cancellation</x-button>
