@@ -43,6 +43,7 @@ class ComponentConsistencyTest extends TestCase
             'empty-state-div' => ['components.empty-state', ['as' => 'div', 'slot' => '']],
             'verify-card' => ['pages.mfa.verify', []],
             'link' => ['components.link', ['href' => '/dashboard', 'slot' => 'Dashboard']],
+            'status-dot' => ['components.status-dot', ['color' => 'success', 'slot' => '']],
         ];
     }
 

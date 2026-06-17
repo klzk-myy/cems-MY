@@ -109,16 +109,16 @@
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     @if($status === 'passed')
-                                        <span class="w-3 h-3 rounded-full bg-success"></span>
+                                        <x-status-dot color="success" />
                                         <span class="text-sm text-ink-muted">Passed</span>
                                     @elseif($status === 'failed')
-                                        <span class="w-3 h-3 rounded-full bg-danger"></span>
+                                        <x-status-dot color="danger" />
                                         <span class="text-sm text-ink-muted">Failed</span>
                                     @elseif($status === 'error')
-                                        <span class="w-3 h-3 rounded-full bg-warning"></span>
+                                        <x-status-dot color="warning" />
                                         <span class="text-sm text-ink-muted">Error</span>
                                     @else
-                                        <span class="w-3 h-3 rounded-full bg-canvas-subtle"></span>
+                                        <x-status-dot color="gray" />
                                         <span class="text-sm text-ink-muted">{{ ucfirst($status) }}</span>
                                     @endif
                                 </div>
