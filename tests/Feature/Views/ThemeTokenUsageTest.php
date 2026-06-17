@@ -28,7 +28,14 @@ class ThemeTokenUsageTest extends TestCase
             'button-secondary' => ['components.button', ['variant' => 'secondary', 'slot' => 'Click'], ['bg-surface', 'border-border', 'text-ink-muted']],
             'button-primary-foreground' => ['components.button', ['variant' => 'primary', 'slot' => 'Click'], ['text-on-primary']],
             'button-danger-foreground' => ['components.button', ['variant' => 'danger', 'slot' => 'Click'], ['text-on-danger']],
-            'button-hover-tokens' => ['components.button', ['variant' => 'danger', 'slot' => 'Click'], ['bg-danger-hover']],
+            'button-success-foreground' => ['components.button', ['variant' => 'success', 'slot' => 'Click'], ['text-on-success']],
+            'button-warning-foreground' => ['components.button', ['variant' => 'warning', 'slot' => 'Click'], ['text-on-warning']],
+            'button-info-foreground' => ['components.button', ['variant' => 'info', 'slot' => 'Click'], ['text-on-info']],
+            'button-primary-hover' => ['components.button', ['variant' => 'primary', 'slot' => 'Click'], ['bg-primary-hover']],
+            'button-danger-hover' => ['components.button', ['variant' => 'danger', 'slot' => 'Click'], ['bg-danger-hover']],
+            'button-success-hover' => ['components.button', ['variant' => 'success', 'slot' => 'Click'], ['bg-success-hover']],
+            'button-warning-hover' => ['components.button', ['variant' => 'warning', 'slot' => 'Click'], ['bg-warning-hover']],
+            'button-info-hover' => ['components.button', ['variant' => 'info', 'slot' => 'Click'], ['bg-info-hover']],
             'alert' => ['components.alert', ['type' => 'info', 'slot' => 'Message'], ['bg-info-subtle', 'border-info-border', 'text-info-text']],
             'badge' => ['components.badge', ['variant' => 'success', 'slot' => 'Active'], ['bg-success-subtle', 'text-success-text']],
             'input' => ['components.input', ['name' => 'foo', 'errors' => new ViewErrorBag], ['bg-surface', 'border-border', 'text-ink']],
@@ -42,6 +49,12 @@ class ThemeTokenUsageTest extends TestCase
             'chart-trend' => ['components.chart-trend', ['title' => 'X', 'labels' => [], 'values' => []], ['bg-surface', 'border-border', 'text-ink']],
             'navigation-tokens' => ['components.navigation', [], ['bg-sidebar', 'text-sidebar-text']],
         ];
+    }
+
+    public function test_button_primary_uses_on_primary_foreground(): void
+    {
+        $html = view('components.button', ['variant' => 'primary', 'slot' => 'Click'])->render();
+        $this->assertStringContainsString('text-on-primary', $html);
     }
 
     #[DataProvider('themedComponentProvider')]
