@@ -44,6 +44,7 @@ class ComponentConsistencyTest extends TestCase
             'verify-card' => ['pages.mfa.verify', []],
             'link' => ['components.link', ['href' => '/dashboard', 'slot' => 'Dashboard']],
             'status-dot' => ['components.status-dot', ['color' => 'success', 'slot' => '']],
+            'icon-circle' => ['components.icon-circle', ['color' => 'info', 'slot' => '']],
         ];
     }
 
