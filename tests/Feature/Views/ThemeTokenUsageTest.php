@@ -58,6 +58,12 @@ class ThemeTokenUsageTest extends TestCase
             'table' => ['components.table', ['thead' => '', 'tbody' => ''], ['bg-surface', 'divide-border', 'bg-canvas-subtle']],
             'data-table' => ['components.data-table', [], ['bg-surface', 'border-border']],
             'stat-card' => ['components.stat-card', ['label' => 'X', 'value' => '1'], ['bg-surface', 'border-border', 'text-ink-muted']],
+            'stat-card-blue' => ['components.stat-card', ['label' => 'X', 'value' => '1', 'color' => 'blue'], ['text-info']],
+            'stat-card-red' => ['components.stat-card', ['label' => 'X', 'value' => '1', 'color' => 'red'], ['text-danger']],
+            'stat-card-yellow' => ['components.stat-card', ['label' => 'X', 'value' => '1', 'color' => 'yellow'], ['text-warning']],
+            'stat-card-purple' => ['components.stat-card', ['label' => 'X', 'value' => '1', 'color' => 'purple'], ['text-accent']],
+            'stat-card-green' => ['components.stat-card', ['label' => 'X', 'value' => '1', 'color' => 'green'], ['text-success']],
+            'stat-card-trend-colors' => ['components.stat-card', ['label' => 'X', 'value' => '1', 'color' => 'red', 'trend' => 10], ['text-success', 'text-danger']],
             'filter-bar' => ['components.filter-bar', ['slot' => ''], ['bg-surface', 'border-border']],
             'empty-state' => ['components.empty-state', [], ['text-ink-muted']],
             'progress-bar' => ['components.progress-bar', ['value' => 50], ['bg-canvas-subtle']],
@@ -70,6 +76,18 @@ class ThemeTokenUsageTest extends TestCase
     {
         $html = view('components.button', ['variant' => 'primary', 'slot' => 'Click'])->render();
         $this->assertStringContainsString('text-on-primary', $html);
+    }
+
+    public function test_stat_card_uses_semantic_color_tokens(): void
+    {
+        $html = view('components.stat-card', [
+            'label' => 'Revenue',
+            'value' => '12345',
+            'color' => 'red',
+        ])->render();
+        $this->assertStringContainsString('text-danger', $html);
+        $this->assertStringNotContainsString('text-red-600', $html);
+        $this->assertStringNotContainsString('text-red-700', $html);
     }
 
     #[DataProvider('themedComponentProvider')]

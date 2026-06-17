@@ -10,12 +10,12 @@
 
 @php
 $valueColorClass = match($color) {
-    'blue' => 'text-blue-600',
-    'red' => 'text-red-600',
-    'yellow' => 'text-yellow-600',
-    'purple' => 'text-purple-600',
-    'green' => 'text-green-600',
-    default => is_numeric($value) && $value >= 80 ? 'text-green-600' : (is_numeric($value) && $value >= 50 ? 'text-yellow-600' : 'text-ink'),
+    'blue' => 'text-info',
+    'red' => 'text-danger',
+    'yellow' => 'text-warning',
+    'purple' => 'text-accent',
+    'green' => 'text-success',
+    default => is_numeric($value) && $value >= 80 ? 'text-success' : (is_numeric($value) && $value >= 50 ? 'text-warning' : 'text-ink'),
 };
 @endphp
 
@@ -29,7 +29,7 @@ $valueColorClass = match($color) {
                 @if($suffix)<span class="text-lg">{{ $suffix }}</span>@endif
             </p>
             @if($trend !== null)
-                <p class="mt-1 text-xs {{ $trend >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                <p class="mt-1 text-xs {{ $trend >= 0 ? 'text-success' : 'text-danger' }}">
                     {{ $trend >= 0 ? '+' : '' }}{{ $trend }}% from last period
                 </p>
             @endif
