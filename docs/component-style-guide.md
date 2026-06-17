@@ -24,6 +24,11 @@ This application uses a comprehensive Blade component library built on Tailwind 
     Something went wrong. Please try again.
 </x-alert>
 
+{{-- Danger Alert (alias for error) --}}
+<x-alert type="danger" title="Danger">
+    This action is destructive.
+</x-alert>
+
 {{-- Warning Alert --}}
 <x-alert type="warning">
     This action cannot be undone.
@@ -33,16 +38,62 @@ This application uses a comprehensive Blade component library built on Tailwind 
 <x-alert type="info" dismissible>
     New feature available! Check out the latest updates.
 </x-alert>
+
+{{-- Without Icon --}}
+<x-alert type="info" :icon="false">
+    This alert has no icon.
+</x-alert>
 ```
 
 **Props:**
-- `type`: `success` | `error` | `warning` | `info` (default: `info`)
+- `type`: `success` | `error` | `danger` | `warning` | `info` (default: `info`)
+  - `danger` is an alias for `error`
 - `title`: Optional alert title
 - `dismissible`: Boolean, shows close button (default: `false`)
+- `icon`: Boolean, show/hide alert icon (default: `true`)
+
+**Styling:** Uses theme tokens only (no raw colors). Backgrounds from `*-subtle` tokens, borders from `*-border` tokens, text from `*-text` tokens.
 
 ---
 
-### 2. Button Component
+### 2. Badge Component
+
+**File:** `resources/views/components/badge.blade.php`
+
+**Usage:**
+```blade
+{{-- Status Badges --}}
+<x-badge variant="success">Completed</x-badge>
+<x-badge variant="danger">Cancelled</x-badge>
+<x-badge variant="warning">Pending</x-badge>
+<x-badge variant="info">New</x-badge>
+<x-badge variant="gray">Draft</x-badge>
+<x-badge variant="purple">Premium</x-badge>
+
+{{-- With Icon --}}
+<x-badge variant="success" icon="✓">Verified</x-badge>
+
+{{-- Sizes --}}
+<x-badge variant="info" size="sm">Small</x-badge>
+<x-badge variant="info" size="lg">Large</x-badge>
+```
+
+**Variants:**
+- `success`: `bg-success-subtle text-success-text`
+- `danger`: `bg-danger-subtle text-danger-text`
+- `warning`: `bg-warning-subtle text-warning-text`
+- `info`: `bg-info-subtle text-info-text`
+- `gray`: `bg-canvas-subtle text-ink-muted` (neutral/draft)
+- `purple`: `bg-accent/10 text-accent` (premium/special)
+
+**Props:**
+- `variant`: Badge color variant
+- `size`: `sm` | `md` (default: `md`) | `lg`
+- `icon`: Optional icon text or SVG
+
+---
+
+### 3. Button Component
 
 **File:** `resources/views/components/button.blade.php`
 
@@ -77,16 +128,16 @@ This application uses a comprehensive Blade component library built on Tailwind 
 ```
 
 **Variants:**
-- `primary`: Black background (default)
-- `secondary`: White with border
-- `danger`: Red background
-- `success`: Green background
-- `warning`: Yellow background
-- `info`: Blue background
-- `indigo`: Indigo background
-- `purple`: Purple background
-- `teal`: Teal background
-- `ghost`: Transparent background
+- `primary`: Uses `bg-primary`, `text-on-primary`, `hover:bg-primary-hover`
+- `secondary`: Uses `bg-surface`, `border-border`, `text-ink-muted`, `hover:bg-canvas-subtle`
+- `danger`: Uses `bg-danger`, `text-on-danger`, `hover:bg-danger-hover`
+- `success`: Uses `bg-success`, `text-on-success`, `hover:bg-success-hover`
+- `warning`: Uses `bg-warning`, `text-on-warning`, `hover:bg-warning-hover`
+- `info`: Uses `bg-info`, `text-on-info`, `hover:bg-info-hover`
+- `indigo`: Raw Tailwind color (`bg-indigo-600`, `hover:bg-indigo-700`)
+- `purple`: Raw Tailwind color (`bg-purple-600`, `hover:bg-purple-700`)
+- `teal`: Raw Tailwind color (`bg-teal-600`, `hover:bg-teal-700`)
+- `ghost`: Uses `bg-transparent`, `text-ink-muted`, `hover:bg-canvas-subtle`
 
 **Sizes:**
 - `sm`: Small (px-3 py-1.5 text-xs)
@@ -104,7 +155,209 @@ This application uses a comprehensive Blade component library built on Tailwind 
 
 ---
 
-### 3. Input Component
+### 4. Card Component
+
+**File:** `resources/views/components/card.blade.php`
+
+**Usage:**
+```blade
+{{-- Basic Card --}}
+<x-card>
+    Card content here
+</x-card>
+
+{{-- Card with Title --}}
+<x-card title="Card Title">
+    Card content here
+</x-card>
+
+{{-- Card with Description --}}
+<x-card title="Card Title" description="Card description">
+    Card content here
+</x-card>
+```
+
+**Props:**
+- `title`: Card title
+- `description`: Card description/subtitle
+
+**Note:** The component automatically applies body padding (`p-6`). No manual padding wrappers are needed.
+
+---
+
+### 5. Card Section Component
+
+**File:** `resources/views/components/card-section.blade.php`
+
+**Usage:**
+```blade
+<x-card-section title="Transaction Details" :actions="true">
+    <p>Card content here</p>
+    
+    <x-slot:actions>
+        <x-button variant="secondary">Edit</x-button>
+        <x-button variant="primary">Save</x-button>
+    </x-slot:actions>
+</x-card-section>
+```
+
+**Props:**
+- `title`: Section title
+- `actions`: Boolean, shows actions slot
+
+**Note:** The component automatically applies body padding. No additional padding wrappers required.
+
+---
+
+### 6. Checkbox Component
+
+**File:** `resources/views/components/checkbox.blade.php`
+
+**Usage:**
+```blade
+{{-- Basic Checkbox --}}
+<x-checkbox name="terms" label="I accept the terms and conditions" required />
+
+{{-- With Help Text --}}
+<x-checkbox name="newsletter" label="Subscribe to newsletter" help="Receive weekly updates" checked />
+
+{{-- Inline (no margin) --}}
+<div class="flex items-center gap-4">
+    <x-checkbox name="option1" label="Option 1" inline />
+    <x-checkbox name="option2" label="Option 2" inline />
+</div>
+
+{{-- Disabled State --}}
+<x-checkbox name="disabled" label="Disabled option" disabled />
+```
+
+**Props:**
+- `label`: Checkbox label text
+- `name`: Input name (for validation)
+- `value`: Checkbox value (default: `1`)
+- `checked`: Boolean, pre-checked state (default: `false`)
+- `required`: Required field
+- `disabled`: Disabled state
+- `help`: Help text below checkbox
+- `inline`: Remove bottom margin
+
+**Features:**
+- Errors displayed with `text-danger-text` token
+- Required asterisk uses `text-danger` token
+- Automatic error state styling
+
+---
+
+### 7. DataTable Component
+
+**File:** `resources/views/components/data-table.blade.php`
+
+**Usage:**
+```blade
+<x-data-table :columns="$columns" :data="$users" :has-data="true">
+    {{-- Custom row rendering --}}
+    @foreach($users as $user)
+        <tr>
+            <td class="px-4 py-2">{{ $user->name }}</td>
+            <td class="px-4 py-2">{{ $user->email }}</td>
+            <td class="px-4 py-2">
+                <x-button variant="secondary" size="sm">Edit</x-button>
+            </td>
+        </tr>
+    @endforeach
+</x-data-table>
+
+{{-- With Pagination --}}
+<x-data-table :columns="$columns" :data="$paginatedUsers">
+    {{-- rows --}}
+</x-data-table>
+
+{{-- Hide Actions Column --}}
+<x-data-table :columns="$columns" :data="$data" :has-actions="false">
+    {{-- rows without actions column --}}
+</x-data-table>
+
+{{-- Custom Empty State --}}
+<x-data-table :columns="$columns" :data="null" empty-message="No records match your search">
+    {{-- will show empty state --}}
+</x-data-table>
+```
+
+**Props:**
+- `columns`: Array of column definitions (`['key' => 'name', 'label' => 'Name', 'sortable' => true]`)
+- `data`: Collection or paginator of data rows
+- `hasData`: Boolean indicating if data is present (alternative to checking `$data`)
+- `columnCount`: Number of columns (for empty state colspan calculation)
+- `hasActions`: Boolean to show/hide the actions column (default: `true`)
+- `searchable`: Boolean to show/hide search input (default: `true`)
+- `sortable`: Boolean to enable column sorting (default: `true`)
+- `emptyMessage`: Custom empty state message (default: "No records found")
+
+**Features:**
+- Automatic search input
+- Sortable column headers
+- Pagination support for LengthAwarePaginator
+- Empty state with auto colspan
+
+---
+
+### 8. Empty State Component
+
+**File:** `resources/views/components/empty-state.blade.php`
+
+**Usage:**
+```blade
+{{-- In Table --}}
+<x-table>
+    <x-slot:thead>...</x-slot:thead>
+    <x-slot:tbody>
+        <x-empty-state message="No results found" :colspan="3" />
+    </x-slot:tbody>
+</x-table>
+
+{{-- Standalone (div) --}}
+<div class="text-center py-12">
+    <x-empty-state as="div" message="No transactions found" icon="search" />
+</div>
+
+{{-- Custom Icon --}}
+<x-empty-state message="No data" icon="M12 4v16m8-8H4" />
+```
+
+**Props:**
+- `message`: Message to display (default: "No results found")
+- `colspan`: Table column span (default: `1`)
+- `icon`: Optional custom SVG path
+- `as`: Element type - `'tr'` (default, for table contexts) or `'div'` (for standalone)
+
+**Polymorphic:** Use `as="div"` for non-table contexts, `as="tr"` for table rows.
+
+---
+
+### 9. Filter Bar Component
+
+**File:** `resources/views/components/filter-bar.blade.php`
+
+**Usage:**
+```blade
+<x-filter-bar>
+    <x-input name="search" placeholder="Search..." inline />
+    <x-select name="status" 
+              :options="['active' => 'Active', 'inactive' => 'Inactive']" 
+              inline />
+    <x-button variant="primary" type="submit">Filter</x-button>
+</x-filter-bar>
+```
+
+**Props:**
+- `method`: Form method (default: GET)
+- `class`: Additional CSS classes
+
+**Note:** Use `inline` prop on child inputs to remove bottom margins.
+
+---
+
+### 10. Input Component
 
 **File:** `resources/views/components/input.blade.php`
 
@@ -143,14 +396,132 @@ This application uses a comprehensive Blade component library built on Tailwind 
 - `inline`: Remove bottom margin
 
 **Automatically handles:**
-- Error state styling (red border)
-- Error message display
+- Error state styling (red border using `border-danger`)
+- Error message display (using `text-danger-text` token)
 - Focus ring styling
-- Disabled state styling
+- Disabled state styling (using `disabled:bg-canvas-subtle`, `disabled:text-ink-muted`)
+- Required asterisk (using `text-danger` token)
 
 ---
 
-### 4. Select Component
+### 11. Navigation Component
+
+**File:** `resources/views/components/navigation.blade.php`
+
+**Usage:** (See existing implementation)
+
+---
+
+### 12. Page Header Component
+
+**File:** `resources/views/components/page-header.blade.php`
+
+**Usage:**
+```blade
+<x-page-header title="Users" :actions="true">
+    Manage system users and their permissions.
+    
+    <x-slot:actions>
+        <x-button variant="secondary">Import</x-button>
+        <x-button variant="primary" icon="M12 4v16m8-8H4">Add User</x-button>
+    </x-slot:actions>
+</x-page-header>
+```
+
+**Props:**
+- `title`: Page title
+- `actions`: Boolean, shows actions slot
+
+**Slots:**
+- Default slot: Page description/subtitle
+- `actions`: Right-aligned action buttons
+
+---
+
+### 13. Progress Bar Component
+
+**File:** `resources/views/components/progress-bar.blade.php`
+
+**Usage:**
+```blade
+<x-progress-bar :value="75" :max="100" label="Completion" />
+
+{{-- With Color --}}
+<x-progress-bar :value="75" color="green" />
+
+{{-- Large Progress Bar --}}
+<x-progress-bar :value="75" size="lg" />
+```
+
+**Props:**
+- `value`: Current value
+- `max`: Maximum value (default: `100`)
+- `label`: Optional label
+- `color`: `blue` | `green` | `red` | `yellow` (default: `blue`)
+- `size`: `sm` | `md` | `lg` (default: `md`)
+
+---
+
+### 14. RadioGroup Component
+
+**File:** `resources/views/components/radio-group.blade.php`
+
+**Usage:**
+```blade
+{{-- Basic Radio Group --}}
+<x-radio-group name="status" 
+               :options="[
+                   'active' => 'Active',
+                   'inactive' => 'Inactive',
+                   'pending' => 'Pending'
+               ]"
+               label="Account Status"
+               required />
+
+{{-- With Selected Binding --}}
+<x-radio-group name="notification_frequency"
+               :options="[
+                   'daily' => 'Daily',
+                   'weekly' => 'Weekly',
+                   'monthly' => 'Monthly'
+               ]"
+               selected="weekly"
+               label="Notification Frequency"
+               help="How often would you like to receive notifications?" />
+
+{{-- Inline Layout --}}
+<div class="flex gap-6">
+    <x-radio-group name="gender"
+                   :options="['male' => 'Male', 'female' => 'Female', 'other' => 'Other']"
+                   inline />
+</div>
+
+{{-- Disabled --}}
+<x-radio-group name="fixed_option"
+               :options="['opt1' => 'Option 1']"
+               disabled
+               label="Fixed Choice" />
+```
+
+**Props:**
+- `label`: Group label
+- `name`: Radio name (all radios share same name)
+- `options`: Array of `value => label` pairs
+- `selected`: Selected value (default: `null`)
+- `required`: Required field
+- `disabled`: Disabled state for all radios
+- `help`: Help text below the group
+- `inline`: Remove bottom margin (radios flow inline)
+
+**Features:**
+- Error display with `text-danger-text` token
+- Required asterisk uses `text-danger` token
+- Uses `old()` helper for form repopulation
+- Accessible labels and grouping
+
+---
+
+### 15. Select Component
 
 **File:** `resources/views/components/select.blade.php`
 
@@ -176,90 +547,63 @@ This application uses a comprehensive Blade component library built on Tailwind 
 - `help`: Help text below select
 - `inline`: Remove bottom margin
 
+**Automatically handles:**
+- Error border styling (`border-danger`)
+- Error messages (using `text-danger-text` token)
+- Required asterisk (using `text-danger` token)
+- Focus ring and disabled states
+
 ---
 
-### 5. Badge Component
+### 16. Stat Card Component
 
-**File:** `resources/views/components/badge.blade.php`
+**File:** `resources/views/components/stat-card.blade.php`
 
 **Usage:**
 ```blade
-{{-- Status Badges --}}
-<x-badge variant="success">Completed</x-badge>
-<x-badge variant="danger">Cancelled</x-badge>
-<x-badge variant="warning">Pending</x-badge>
-<x-badge variant="info">New</x-badge>
-<x-badge variant="gray">Draft</x-badge>
-
-{{-- With Icon --}}
-<x-badge variant="success" icon="✓">Verified</x-badge>
+<x-stat-card title="Total Revenue" 
+             value="$45,231" 
+             trend="+20.1%" 
+             trend-type="positive">
+    From last month
+</x-stat-card>
 ```
 
-**Variants:**
-- `success`: Green (completed, approved)
-- `danger`: Red (error, cancelled)
-- `warning`: Yellow (pending, warning)
-- `info`: Blue (info, new)
-- `gray`: Gray (neutral, draft)
-
 **Props:**
-- `variant`: Badge color variant
-- `size`: `sm` | `md` (default: `md`)
-- `icon`: Optional icon text or SVG
+- `title`: Stat title
+- `value`: Main value
+- `trend`: Trend value (e.g., "+20.1%")
+- `trend-type`: `positive` | `negative` | `neutral`
 
 ---
 
-### 6. Card Component
+### 17. Stat Grid Component
 
-**File:** `resources/views/components/card.blade.php`
+**File:** `resources/views/components/stat-grid.blade.php`
 
 **Usage:**
 ```blade
-{{-- Basic Card --}}
-<x-card>
-    Card content here
-</x-card>
-
-{{-- Card with Title --}}
-<x-card title="Card Title">
-    Card content here
-</x-card>
-
-{{-- Card with Description --}}
-<x-card title="Card Title" description="Card description">
-    Card content here
-</x-card>
+<x-stat-grid :cols="4">
+    <x-stat-card title="Revenue" value="$45,231" />
+    <x-stat-card title="Users" value="2,345" />
+    <x-stat-card title="Orders" value="1,234" />
+    <x-stat-card title="Growth" value="+20.1%" />
+</x-stat-grid>
 ```
 
 **Props:**
-- `title`: Card title
-- `description`: Card description/subtitle
+- `cols`: Number of columns (1|2|3|4|6)
+
+**Responsive Grid:**
+- `cols=1`: 1 column on all screens
+- `cols=2`: 1 column mobile, 2 columns tablet+
+- `cols=3`: 1 column mobile, 2 columns tablet, 3 columns desktop
+- `cols=4`: 1 column mobile, 2 columns tablet, 4 columns desktop (default)
+- `cols=6`: 1 column mobile, 2 columns tablet, 3 columns desktop, 6 columns large
 
 ---
 
-### 7. Card Section Component
-
-**File:** `resources/views/components/card-section.blade.php`
-
-**Usage:**
-```blade
-<x-card-section title="Transaction Details" :actions="true">
-    <p>Card content here</p>
-    
-    <x-slot:actions>
-        <x-button variant="secondary">Edit</x-button>
-        <x-button variant="primary">Save</x-button>
-    </x-slot:actions>
-</x-card-section>
-```
-
-**Props:**
-- `title`: Section title
-- `actions`: Boolean, shows actions slot
-
----
-
-### 8. Table Component
+### 18. Table Component
 
 **File:** `resources/views/components/table.blade.php`
 
@@ -292,155 +636,52 @@ This application uses a comprehensive Blade component library built on Tailwind 
 
 ---
 
-### 9. Empty State Component
+### 19. Textarea Component
 
-**File:** `resources/views/components/empty-state.blade.php`
+**File:** `resources/views/components/textarea.blade.php`
 
 **Usage:**
 ```blade
-{{-- In Table --}}
-<x-table>
-    <x-slot:thead>...</x-slot:thead>
-    <x-slot:tbody>
-        <x-empty-state message="No results found" :colspan="3" />
-    </x-slot:tbody>
-</x-table>
+{{-- Basic Textarea --}}
+<x-textarea name="notes" label="Notes" rows="3" placeholder="Enter notes..." required>
+    {{ old('notes') }}
+</x-textarea>
 
-{{-- Standalone --}}
-<div class="text-center py-12">
-    <x-empty-state message="No transactions found" />
+{{-- With Help Text --}}
+<x-textarea name="comments" 
+            label="Comments" 
+            help="Maximum 500 characters"
+            :rows="5" />
+
+{{-- Inline (no margin) --}}
+<div class="flex gap-4">
+    <x-textarea name="quick_note" label="Quick Note" :rows="2" inline />
 </div>
+
+{{-- Disabled/Readonly --}}
+<x-textarea name="template" label="Template" disabled rows="4" />
 ```
 
 **Props:**
-- `message`: Message to display (default: "No results found")
-- `colspan`: Table column span (default: 1)
-- `icon`: Optional custom SVG path
+- `label`: Field label
+- `name`: Input name (for validation)
+- `required`: Required field
+- `placeholder`: Placeholder text
+- `help`: Help text below textarea
+- `rows`: Number of rows (default: `3`)
+- `inline`: Remove bottom margin
+- `disabled`: Disabled state
+- `readonly`: Read-only state
+
+**Automatically handles:**
+- Error border (`border-danger`)
+- Error messages (using `text-danger-text` token)
+- Required asterisk (using `text-danger` token)
+- Focus ring and disabled states
 
 ---
 
-### 10. Stat Card Component
-
-**File:** `resources/views/components/stat-card.blade.php`
-
-**Usage:**
-```blade
-<x-stat-card title="Total Revenue" 
-             value="$45,231" 
-             trend="+20.1%" 
-             trend-type="positive">
-    From last month
-</x-stat-card>
-```
-
-**Props:**
-- `title`: Stat title
-- `value`: Main value
-- `trend`: Trend value (e.g., "+20.1%")
-- `trend-type`: `positive` | `negative` | `neutral`
-
----
-
-### 11. Stat Grid Component
-
-**File:** `resources/views/components/stat-grid.blade.php`
-
-**Usage:**
-```blade
-<x-stat-grid :cols="4">
-    <x-stat-card title="Revenue" value="$45,231" />
-    <x-stat-card title="Users" value="2,345" />
-    <x-stat-card title="Orders" value="1,234" />
-    <x-stat-card title="Growth" value="+20.1%" />
-</x-stat-grid>
-```
-
-**Props:**
-- `cols`: Number of columns (1|2|3|4|6)
-
-**Responsive Grid:**
-- `cols=1`: 1 column on all screens
-- `cols=2`: 1 column mobile, 2 columns tablet+
-- `cols=3`: 1 column mobile, 2 columns tablet, 3 columns desktop
-- `cols=4`: 1 column mobile, 2 columns tablet, 4 columns desktop (default)
-- `cols=6`: 1 column mobile, 2 columns tablet, 3 columns desktop, 6 columns large
-
----
-
-### 12. Page Header Component
-
-**File:** `resources/views/components/page-header.blade.php`
-
-**Usage:**
-```blade
-<x-page-header title="Users" :actions="true">
-    Manage system users and their permissions.
-    
-    <x-slot:actions>
-        <x-button variant="secondary">Import</x-button>
-        <x-button variant="primary" icon="M12 4v16m8-8H4">Add User</x-button>
-    </x-slot:actions>
-</x-page-header>
-```
-
-**Props:**
-- `title`: Page title
-- `actions`: Boolean, shows actions slot
-
-**Slots:**
-- Default slot: Page description/subtitle
-- `actions`: Right-aligned action buttons
-
----
-
-### 13. Filter Bar Component
-
-**File:** `resources/views/components/filter-bar.blade.php`
-
-**Usage:**
-```blade
-<x-filter-bar>
-    <x-input name="search" placeholder="Search..." inline />
-    <x-select name="status" 
-              :options="['active' => 'Active', 'inactive' => 'Inactive']" 
-              inline />
-    <x-button variant="primary" type="submit">Filter</x-button>
-</x-filter-bar>
-```
-
-**Props:**
-- `method`: Form method (default: GET)
-- `class`: Additional CSS classes
-
-**Note:** Use `inline` prop on child inputs to remove bottom margins.
-
----
-
-### 14. Progress Bar Component
-
-**File:** `resources/views/components/progress-bar.blade.php`
-
-**Usage:**
-```blade
-<x-progress-bar :value="75" :max="100" label="Completion" />
-
-{{-- With Color --}}
-<x-progress-bar :value="75" color="green" />
-
-{{-- Large Progress Bar --}}
-<x-progress-bar :value="75" size="lg" />
-```
-
-**Props:**
-- `value`: Current value
-- `max`: Maximum value (default: 100)
-- `label`: Optional label
-- `color`: `blue` | `green` | `red` | `yellow` (default: `blue`)
-- `size`: `sm` | `md` | `lg` (default: `md`)
-
----
-
-### 15. Chart Bar Component
+### 20. Chart Bar Component
 
 **File:** `resources/views/components/chart-bar.blade.php`
 
@@ -457,15 +698,7 @@ This application uses a comprehensive Blade component library built on Tailwind 
 
 ---
 
-### 16. Navigation Component
-
-**File:** `resources/views/components/navigation.blade.php`
-
-**Usage:** (See existing implementation)
-
----
-
-### 17. App Layout Component
+### 21. App Layout Component
 
 **File:** `resources/views/components/app-layout.blade.php`
 
@@ -498,14 +731,29 @@ Use Tailwind theme tokens backed by CSS variables. Do **not** use raw hex values
 | Surface | `bg-surface` | Cards, tables, inputs, filters |
 | Ink | `text-ink`, `text-ink-muted` | Body text, labels, muted text |
 | Border | `border-border`, `divide-border` | Card/input borders, table dividers |
-| Primary | `bg-primary`, `text-primary` | Primary buttons, focus rings |
+| Primary | `bg-primary`, `text-primary`, `focus:ring-primary/10` | Primary buttons, focus rings |
+| Text on Primary | `text-on-primary` | Text/icons on primary buttons |
 | Primary Hover | `bg-primary-hover` | Primary button hover |
 | Success | `bg-success`, `bg-success-subtle`, `text-success-text` | Success states |
+| Text on Success | `text-on-success` | Text/icons on success buttons |
+| Success Hover | `bg-success-hover` | Success button hover |
 | Danger | `bg-danger`, `bg-danger-subtle`, `text-danger-text` | Error / danger states |
+| Text on Danger | `text-on-danger` | Text/icons on danger buttons |
+| Danger Hover | `bg-danger-hover` | Danger button hover |
 | Warning | `bg-warning`, `bg-warning-subtle`, `text-warning-text` | Warning states |
+| Text on Warning | `text-on-warning` | Text/icons on warning buttons |
+| Warning Hover | `bg-warning-hover` | Warning button hover |
 | Info | `bg-info`, `bg-info-subtle`, `text-info-text` | Info states |
+| Text on Info | `text-on-info` | Text/icons on info buttons |
+| Info Hover | `bg-info-hover` | Info button hover |
+| Accent | `bg-accent/10`, `text-accent` | Special highlights (e.g., purple badge) |
+| Sidebar | `bg-sidebar`, `text-sidebar-text`, `border-sidebar-border` | Sidebar backgrounds |
+| Sidebar Hover | `bg-sidebar-hover` | Sidebar item hover |
+| Sidebar Ring | `focus:ring-sidebar-ring` | Sidebar focus state |
 
 **Avoid:** `bg-[#0a0a0a]`, `border-[#e5e5e5]`, `bg-white`, `text-gray-900`, `text-gray-500`.
+
+---
 
 ### Dark Mode
 
@@ -523,6 +771,8 @@ Dark mode is class-based. The `dark` class on `<html>` switches CSS custom-prope
 - Only use `dark:*` for values that are **not** theme tokens (e.g., `dark:hover:bg-white/10` on a dismiss button).
 - Test with the nav toggle or by adding `class="dark"` to `<html>`.
 
+---
+
 ### Typography
 
 **Font Sizes:**
@@ -538,6 +788,8 @@ Dark mode is class-based. The `dark` class on `<html>` switches CSS custom-prope
 - semibold: `font-semibold` (600)
 - bold: `font-bold` (700)
 
+---
+
 ### Spacing
 
 **Common Patterns:**
@@ -545,6 +797,8 @@ Dark mode is class-based. The `dark` class on `<html>` switches CSS custom-prope
 - Form field spacing: `mb-4` (1rem / 16px)
 - Gap between elements: `gap-4` (1rem / 16px)
 - Page padding: `p-6` (1.5rem / 24px)
+
+---
 
 ### Border Radius
 
@@ -592,12 +846,14 @@ Dark mode is class-based. The `dark` class on `<html>` switches CSS custom-prope
 
 1. **Always use components** instead of inline styles
 2. **Use semantic variants** (success, danger, warning) instead of colors
-3. **Keep forms consistent** - use Input/Select components
+3. **Keep forms consistent** - use Input/Select/Textarea/Checkbox/RadioGroup components
 4. **Show loading states** - use `loading` prop on buttons
 5. **Provide context** - use Alert components for feedback
-6. **Empty states matter** - use EmptyState component
+6. **Empty states matter** - use EmptyState component (with `as="div"` for non-table contexts)
 7. **Responsive by default** - components work on all screen sizes
 8. **Accessible** - components include proper ARIA attributes
+9. **Token-based styling** - use theme tokens, never raw colors
+10. **Automatic padding** - Card and CardSection include padding automatically
 
 ---
 
@@ -608,18 +864,24 @@ Before deploying a view, ensure:
 - [ ] All buttons use `<x-button>`
 - [ ] All inputs use `<x-input>`
 - [ ] All selects use `<x-select>`
+- [ ] All textareas use `<x-textarea>`
+- [ ] All checkboxes use `<x-checkbox>`
+- [ ] All radio groups use `<x-radio-group>`
 - [ ] All badges use `<x-badge>`
 - [ ] All alerts use `<x-alert>`
 - [ ] All cards use `<x-card>` or `<x-card-section>`
 - [ ] All tables use `<x-table>` or `<x-data-table>`
-- [ ] Empty states use `<x-empty-state>`
+- [ ] Empty states use `<x-empty-state>` (with appropriate `as` attribute)
 - [ ] Page headers use `<x-page-header>`
 - [ ] Stats use `<x-stat-card>` and `<x-stat-grid>`
 - [ ] Filters use `<x-filter-bar>`
+- [ ] Navigation uses `<x-navigation>`
 - [ ] No arbitrary Tailwind values like `bg-[#0a0a0a]` or `border-[#e5e5e5]`
 - [ ] No raw Tailwind grays like `bg-white`, `text-gray-900`, or `text-gray-500`
 - [ ] Theme tokens are used for backgrounds, borders, and text
 - [ ] Dark mode works by using theme tokens (no `dark:bg-*-dark` pairs needed)
+- [ ] Error messages use `text-danger-text` token (handled automatically)
+- [ ] Required asterisks use `text-danger` token (handled automatically)
 
 ---
 
