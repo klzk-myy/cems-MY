@@ -67,6 +67,9 @@ class ThemeTokenUsageTest extends TestCase
             'filter-bar' => ['components.filter-bar', ['slot' => ''], ['bg-surface', 'border-border']],
             'empty-state' => ['components.empty-state', [], ['text-ink-muted']],
             'progress-bar' => ['components.progress-bar', ['value' => 50], ['bg-canvas-subtle']],
+            'progress-bar-success' => ['components.progress-bar', ['value' => 50], ['bg-success']],
+            'progress-bar-warning' => ['components.progress-bar', ['value' => 85], ['bg-warning']],
+            'progress-bar-danger' => ['components.progress-bar', ['value' => 100], ['bg-danger']],
             'chart-trend' => ['components.chart-trend', ['title' => 'X', 'labels' => [], 'values' => []], ['bg-surface', 'border-border', 'text-ink']],
             'navigation-tokens' => ['components.navigation', [], ['bg-sidebar', 'text-sidebar-text']],
         ];
@@ -108,5 +111,26 @@ class ThemeTokenUsageTest extends TestCase
         $this->assertStringContainsString('text-accent', $html, 'Badge purple variant should use text-accent token.');
         $this->assertStringNotContainsString('text-purple-700', $html, 'Badge purple variant should not use raw text-purple-700.');
         $this->assertStringNotContainsString('bg-purple-100', $html, 'Badge purple variant should not use raw bg-purple-100.');
+    }
+
+    public function test_progress_bar_uses_semantic_color_tokens(): void
+    {
+        // Success case (value < 80)
+        $html = view('components.progress-bar', ['value' => 50])->render();
+        $this->assertStringContainsString('bg-success', $html, 'Progress bar with value 50 should use bg-success token.');
+        $this->assertStringNotContainsString('bg-green-500', $html, 'Progress bar should not use raw bg-green-500.');
+        $this->assertStringNotContainsString('bg-green-600', $html, 'Progress bar should not use raw bg-green-600.');
+
+        // Warning case (80 <= value < 100)
+        $html = view('components.progress-bar', ['value' => 85])->render();
+        $this->assertStringContainsString('bg-warning', $html, 'Progress bar with value 85 should use bg-warning token.');
+        $this->assertStringNotContainsString('bg-yellow-500', $html, 'Progress bar should not use raw bg-yellow-500.');
+        $this->assertStringNotContainsString('bg-yellow-600', $html, 'Progress bar should not use raw bg-yellow-600.');
+
+        // Danger case (value >= 100)
+        $html = view('components.progress-bar', ['value' => 100])->render();
+        $this->assertStringContainsString('bg-danger', $html, 'Progress bar with value 100 should use bg-danger token.');
+        $this->assertStringNotContainsString('bg-red-500', $html, 'Progress bar should not use raw bg-red-500.');
+        $this->assertStringNotContainsString('bg-red-600', $html, 'Progress bar should not use raw bg-red-600.');
     }
 }

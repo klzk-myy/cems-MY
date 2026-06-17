@@ -2,7 +2,7 @@
 
 @php
 $percent = min(($value / $max) * 100, 100);
-$colorClass = $color ?? ($percent >= 100 ? 'bg-red-500' : ($percent >= 80 ? 'bg-yellow-500' : 'bg-green-500'));
+$colorClass = $color ?? ($percent >= 100 ? 'bg-danger' : ($percent >= 80 ? 'bg-warning' : 'bg-success'));
 $sizeClass = match($size) {
     'sm' => 'h-1',
     'md' => 'h-2',
