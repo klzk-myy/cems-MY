@@ -18,7 +18,7 @@ The only remaining exception is `resources/views/reports/eod-reconciliation.blad
 | **Theme Tokens** | ✅ Done | Semantic tokens (`bg-canvas`, `bg-surface`, `text-ink`, `border-border`, etc.) backed by CSS variables |
 | **Dark Mode** | ✅ Done | Class-based via `.dark` on `<html>`; tokens switch automatically |
 | **Component Library** | ✅ Done | 20+ anonymous components: alert, button, input, select, textarea, checkbox, radio-group, badge, card, card-section, table, data-table, empty-state, stat-card, stat-grid, page-header, filter-bar, progress-bar, chart-bar, chart-trend |
-| **Core Pages Migrated** | ✅ Done | Dashboard, customers/index, journal/index, transactions/index, users/index, counters/open, auth/login |
+| **Core Pages Migrated** | ✅ Done | 93 of 96 non-email/non-vendor views use `<x-app-layout>` |
 | **Component Tests** | ✅ Done | `ComponentConsistencyTest` and `ThemeTokenUsageTest` verify token usage |
 | **Pint Formatting** | ✅ Done | Formatter run on all changed files |
 
@@ -34,21 +34,14 @@ The only remaining exception is `resources/views/reports/eod-reconciliation.blad
 
 | Category | Occurrences | Files Affected |
 |----------|------------:|---------------:|
-| Raw gray utilities (`bg-gray-*`, `text-gray-*`, `border-gray-*`, etc.) | 244 | 57 |
-| Arbitrary color values (`bg-[#...]`, `border-[#...]`, etc.) | 53 | 30 |
-| Inline `<button>` elements | 122 | 50 |
-| Links styled as buttons (`<a>` with button classes) | 44 | 34 |
-| Inline `<input>` elements | 62 | 31 |
-| Inline `<select>` elements | 34 | 18 |
-| Inline `<table>` elements | 62 | 54 |
-| Inline card containers | 282 | 79 |
-| Inline badge-style spans | 109 | 37 |
-| Inline alert boxes | 14 | 10 |
-| Inline empty states | 11 | 11 |
-| Inline `<script>` blocks | 1 | 1 |
-| Inline `<style>` blocks | 0 | 0 |
-| Incorrect `dark:bg-*-dark` / `dark:text-*-dark` pairs | 0 | 0 |
-| Views without `<x-app-layout>` | 3 | 3 |
+| Raw Tailwind status colors in views | 0 | 0 |
+| Inline `<textarea>` elements | 0 | 0 |
+| Invalid `<x-input type="textarea">` | 0 | 0 |
+| Inline `<button>` elements | 0 | 0 |
+| Inline `<table>` elements | 0 | 0 (excluding print/PDF views) |
+| Inline `<input type="checkbox">` in views | 0 | 0 |
+| Raw blue/green/red/yellow colors in views | 0 | 0 |
+| Views without `<x-app-layout>` | 3 | 3 (login, EOD PDF, receipt) |
 
 ### 2.2 Top 10 Files by Violation Count
 
@@ -199,8 +192,11 @@ Use this checklist before marking a view as migrated:
 - Polymorphic EmptyState component, DataTable with optional actions, and aligned Alert component enhance design system capabilities.
 
 **Remaining Exceptions (Acceptable):**
-- `resources/views/reports/eod-reconciliation.blade.php` is a print/PDF-optimized view that intentionally uses inline CSS for precise print layout control. It is excluded from design-system requirements.
-- Native `<input type="checkbox">`, `<input type="radio">`, and `<input type="hidden">` remain where appropriate, already styled with theme tokens (`border-border`, `text-primary`, `focus:ring-primary`).
+- `resources/views/reports/eod-reconciliation.blade.php` is a print/PDF-optimized view that intentionally uses inline CSS.
+- `resources/views/transactions/receipt.blade.php` is a thermal/PDF receipt view that intentionally uses inline CSS.
+- `resources/views/auth/login.blade.php` is a standalone authentication page without the app shell.
+- `resources/views/components/button.blade.php` retains raw `indigo`, `purple`, and `teal` brand-color variants as a documented exception.
+- `resources/views/components/alert.blade.php` uses `hover:bg-black/5` on the dismiss button as a translucent overlay effect.
 
 **Completed Work:**
 - Tailwind v4 token architecture fully implemented.
