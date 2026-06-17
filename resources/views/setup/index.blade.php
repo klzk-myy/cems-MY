@@ -54,7 +54,7 @@
                         <h3 class="text-lg font-medium text-ink mb-4">Company Information</h3>
                         <div class="space-y-4">
                             <x-input name="business_name" label="Business Name" inline required />
-                            <x-input type="textarea" name="business_address" label="Address" rows="2" inline />
+                            <x-textarea name="business_address" label="Address" :rows="2" inline>{{ old('business_address') }}</x-textarea>
                             <div class="grid grid-cols-2 gap-4">
                                 <x-input type="text" name="business_phone" label="Phone" inline />
                                 <x-input type="email" name="business_email" label="Email" inline />

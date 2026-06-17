@@ -193,4 +193,14 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('name="currency_codes[]"', $content);
         $this->assertStringContainsString('name="use_default_rates"', $content);
     }
+
+    public function test_setup_index_uses_textarea_component(): void
+    {
+        $path = $this->getViewPath('setup.index');
+        $content = file_get_contents($path);
+
+        $this->assertStringNotContainsString('type="textarea"', $content);
+        $this->assertStringContainsString('<x-textarea', $content);
+        $this->assertStringContainsString('name="business_address"', $content);
+    }
 }
