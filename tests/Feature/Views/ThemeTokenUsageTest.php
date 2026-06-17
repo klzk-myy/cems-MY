@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Views;
 
+use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -40,6 +41,17 @@ class ThemeTokenUsageTest extends TestCase
             'badge' => ['components.badge', ['variant' => 'success', 'slot' => 'Active'], ['bg-success-subtle', 'text-success-text']],
             'input' => ['components.input', ['name' => 'foo', 'errors' => new ViewErrorBag], ['bg-surface', 'border-border', 'text-ink']],
             'select' => ['components.select', ['name' => 'foo', 'options' => [], 'errors' => new ViewErrorBag], ['bg-surface', 'border-border', 'text-ink']],
+            'input-error-text' => ['components.input', [
+                'name' => 'foo',
+                'label' => 'Foo',
+                'errors' => (new ViewErrorBag)->put('default', new MessageBag(['foo' => ['The foo field is required.']])),
+            ], ['text-danger-text']],
+            'select-error-text' => ['components.select', [
+                'name' => 'foo',
+                'options' => [],
+                'label' => 'Foo',
+                'errors' => (new ViewErrorBag)->put('default', new MessageBag(['foo' => ['The foo field is required.']])),
+            ], ['text-danger-text']],
             'table' => ['components.table', ['thead' => '', 'tbody' => ''], ['bg-surface', 'divide-border', 'bg-canvas-subtle']],
             'data-table' => ['components.data-table', [], ['bg-surface', 'border-border']],
             'stat-card' => ['components.stat-card', ['label' => 'X', 'value' => '1'], ['bg-surface', 'border-border', 'text-ink-muted']],

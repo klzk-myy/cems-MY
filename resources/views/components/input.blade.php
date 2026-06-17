@@ -15,7 +15,7 @@
         <label for="{{ $name ?? $attributes->whereStartsWith('id')->first() }}" 
                class="block text-sm font-medium text-ink-muted mb-2">
             {{ $label }}
-            @if($required) <span class="text-red-500">*</span> @endif
+            @if($required) <span class="text-danger">*</span> @endif
         </label>
     @endif
     
@@ -39,7 +39,7 @@
     
     @if($name && isset($errors))
         @error($name)
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-danger-text">{{ $message }}</p>
         @enderror
     @endif
 </div>
