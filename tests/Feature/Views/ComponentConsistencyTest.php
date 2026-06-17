@@ -38,6 +38,7 @@ class ComponentConsistencyTest extends TestCase
             'chart-bar' => ['components.chart-bar', ['value' => 50]],
             'chart-trend' => ['components.chart-trend', ['title' => 'X', 'labels' => [], 'values' => []]],
             'textarea' => ['components.textarea', ['name' => 'notes', 'slot' => '']],
+            'checkbox' => ['components.checkbox', ['name' => 'is_active', 'label' => 'Active', 'slot' => '']],
         ];
     }
 }
