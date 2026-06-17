@@ -26,6 +26,9 @@ class ThemeTokenUsageTest extends TestCase
             'card-section' => ['components.card-section', ['title' => 'Title', 'slot' => ''], ['bg-surface', 'border-border', 'text-ink']],
             'button-primary' => ['components.button', ['variant' => 'primary', 'slot' => 'Click'], ['bg-primary']],
             'button-secondary' => ['components.button', ['variant' => 'secondary', 'slot' => 'Click'], ['bg-surface', 'border-border', 'text-ink-muted']],
+            'button-primary-foreground' => ['components.button', ['variant' => 'primary', 'slot' => 'Click'], ['text-on-primary']],
+            'button-danger-foreground' => ['components.button', ['variant' => 'danger', 'slot' => 'Click'], ['text-on-danger']],
+            'button-hover-tokens' => ['components.button', ['variant' => 'danger', 'slot' => 'Click'], ['bg-danger-hover']],
             'alert' => ['components.alert', ['type' => 'info', 'slot' => 'Message'], ['bg-info-subtle', 'border-info-border', 'text-info-text']],
             'badge' => ['components.badge', ['variant' => 'success', 'slot' => 'Active'], ['bg-success-subtle', 'text-success-text']],
             'input' => ['components.input', ['name' => 'foo', 'errors' => new ViewErrorBag], ['bg-surface', 'border-border', 'text-ink']],
@@ -37,6 +40,7 @@ class ThemeTokenUsageTest extends TestCase
             'empty-state' => ['components.empty-state', [], ['text-ink-muted']],
             'progress-bar' => ['components.progress-bar', ['value' => 50], ['bg-canvas-subtle']],
             'chart-trend' => ['components.chart-trend', ['title' => 'X', 'labels' => [], 'values' => []], ['bg-surface', 'border-border', 'text-ink']],
+            'navigation-tokens' => ['components.navigation', [], ['bg-sidebar', 'text-sidebar-text']],
         ];
     }
 

@@ -32,6 +32,24 @@
   --color-info-border-val: #bfdbfe;
   --color-info-text-val: #1d4ed8;
 
+  --color-on-primary-val: #ffffff;
+  --color-on-danger-val: #ffffff;
+  --color-on-success-val: #ffffff;
+  --color-on-warning-val: #ffffff;
+  --color-on-info-val: #ffffff;
+
+  --color-danger-hover-val: #b91c1c;
+  --color-success-hover-val: #15803d;
+  --color-warning-hover-val: #b45309;
+  --color-info-hover-val: #1d4ed8;
+
+  --color-sidebar-val: #171717;
+  --color-sidebar-hover-val: #262626;
+  --color-sidebar-border-val: #2d2d2d;
+  --color-sidebar-text-val: #ffffff;
+  --color-sidebar-text-muted-val: #9ca3af;
+  --color-sidebar-ring-val: #4b5563;
+
   --sidebar-border-val: #2d2d2d;
   --sidebar-hover-val: #262626;
   --sidebar-text-val: #ffffff;
@@ -70,6 +88,24 @@
   --color-info-border-val: #1e40af;
   --color-info-text-val: #bfdbfe;
 
+  --color-on-primary-val: #171717;
+  --color-on-danger-val: #171717;
+  --color-on-success-val: #171717;
+  --color-on-warning-val: #171717;
+  --color-on-info-val: #171717;
+
+  --color-danger-hover-val: #f87171;
+  --color-success-hover-val: #4ade80;
+  --color-warning-hover-val: #fbbf24;
+  --color-info-hover-val: #60a5fa;
+
+  --color-sidebar-val: #0a0a0a;
+  --color-sidebar-hover-val: #262626;
+  --color-sidebar-border-val: #2d2d2d;
+  --color-sidebar-text-val: #f7f7f8;
+  --color-sidebar-text-muted-val: #9ca3af;
+  --color-sidebar-ring-val: #6b7280;
+
   --sidebar-border-val: #2d2d2d;
   --sidebar-hover-val: #262626;
   --sidebar-text-val: #ffffff;
@@ -107,6 +143,24 @@
   --color-info-subtle: var(--color-info-subtle-val);
   --color-info-border: var(--color-info-border-val);
   --color-info-text: var(--color-info-text-val);
+
+  --color-on-primary: var(--color-on-primary-val);
+  --color-on-danger: var(--color-on-danger-val);
+  --color-on-success: var(--color-on-success-val);
+  --color-on-warning: var(--color-on-warning-val);
+  --color-on-info: var(--color-on-info-val);
+
+  --color-danger-hover: var(--color-danger-hover-val);
+  --color-success-hover: var(--color-success-hover-val);
+  --color-warning-hover: var(--color-warning-hover-val);
+  --color-info-hover: var(--color-info-hover-val);
+
+  --color-sidebar: var(--color-sidebar-val);
+  --color-sidebar-hover: var(--color-sidebar-hover-val);
+  --color-sidebar-border: var(--color-sidebar-border-val);
+  --color-sidebar-text: var(--color-sidebar-text-val);
+  --color-sidebar-text-muted: var(--color-sidebar-text-muted-val);
+  --color-sidebar-ring: var(--color-sidebar-ring-val);
 
   --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
 

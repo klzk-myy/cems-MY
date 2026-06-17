@@ -12,9 +12,9 @@
 $baseClass = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary/10 disabled:opacity-50 disabled:cursor-not-allowed';
 
 $variantClass = match($variant) {
-    'primary' => 'bg-primary text-white hover:bg-primary-hover',
+    'primary' => 'bg-primary text-on-primary hover:bg-primary-hover',
     'secondary' => 'bg-surface border border-border text-ink-muted hover:bg-canvas-subtle',
-    'danger' => 'bg-danger text-white hover:bg-red-700',
+    'danger' => 'bg-danger text-on-danger hover:bg-danger-hover',
     'success' => 'bg-success text-white hover:bg-green-700',
     'warning' => 'bg-warning text-white hover:bg-yellow-600',
     'info' => 'bg-info text-white hover:bg-blue-700',
@@ -22,7 +22,7 @@ $variantClass = match($variant) {
     'purple' => 'bg-purple-600 text-white hover:bg-purple-700',
     'teal' => 'bg-teal-600 text-white hover:bg-teal-700',
     'ghost' => 'bg-transparent text-ink-muted hover:bg-canvas-subtle',
-    default => 'bg-primary text-white hover:bg-primary-hover',
+    default => 'bg-primary text-on-primary hover:bg-primary-hover',
 };
 
 $sizeClass = match($size) {

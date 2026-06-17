@@ -2,19 +2,19 @@
 
 @php
     // Navigation is provided by NavigationComposer
-    $currentRoute = request()->route()->getName();
+    $currentRoute = request()->route()?->getName();
     $user = $currentUser ?? auth()->user();
 @endphp
 
 <nav x-data="{ collapsed: {{ $collapsed ? 'true' : 'false' }} }" 
      :class="collapsed ? 'w-20' : 'w-64'"
-     class="bg-gray-900 text-white min-h-screen flex flex-col transition-all duration-300">
+     class="bg-sidebar text-sidebar-text min-h-screen flex flex-col transition-all duration-300">
     
     {{-- Brand --}}
-    <div class="p-4 border-b border-gray-700 flex items-center justify-between">
+    <div class="p-4 border-b border-sidebar-border flex items-center justify-between">
         <h1 x-show="!collapsed" class="text-xl font-bold transition-opacity duration-300">{{ config('app.name') }}</h1>
         <button @click="collapsed = !collapsed" 
-                class="p-2 rounded hover:bg-gray-800 transition-colors">
+                class="p-2 rounded hover:bg-sidebar-hover transition-colors focus:outline-none focus:ring-2 focus:ring-sidebar-ring">
             <svg x-show="!collapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7 7" />
             </svg>
@@ -32,7 +32,7 @@
                 @foreach($config['items'] as $item)
                     <li>
                         <a href="{{ route($item['route']) }}" 
-                           class="flex items-center {{ $collapsed ? 'justify-center px-3' : 'px-4' }} py-2 hover:bg-gray-800 {{ request()->routeIs($item['route']) ? 'bg-gray-800' : '' }}"
+                           class="flex items-center {{ $collapsed ? 'justify-center px-3' : 'px-4' }} py-2 hover:bg-sidebar-hover {{ request()->routeIs($item['route']) ? 'bg-sidebar-hover' : '' }}"
                            title="{{ $collapsed ? $item['label'] : '' }}">
                             <x-dynamic-component :component="'heroicon-o-' . ($item['icon'] ?? 'circle')" class="w-5 h-5 shrink-0" />
                             <span x-show="!collapsed" class="ml-3">{{ $item['label'] }}</span>
@@ -47,7 +47,7 @@
                 @foreach($config['items'] as $item)
                     <li>
                         <a href="{{ route($item['route']) }}" 
-                           class="flex items-center {{ $collapsed ? 'justify-center px-3' : 'pl-6' }} py-2 text-sm hover:bg-gray-800 {{ request()->routeIs($item['route'] . '*') ? 'bg-gray-800' : '' }}"
+                           class="flex items-center {{ $collapsed ? 'justify-center px-3' : 'pl-6' }} py-2 text-sm hover:bg-sidebar-hover {{ request()->routeIs($item['route'] . '*') ? 'bg-sidebar-hover' : '' }}"
                            title="{{ $collapsed ? $item['label'] : '' }}">
                             <x-dynamic-component :component="'heroicon-o-' . ($item['icon'] ?? 'circle')" class="w-5 h-5 shrink-0" />
                             <span x-show="!collapsed" class="ml-3">{{ $item['label'] }}</span>
@@ -59,10 +59,10 @@
     </ul>
 
     {{-- User Menu & Logout --}}
-    <div class="p-4 border-t border-gray-700">
+    <div class="p-4 border-t border-sidebar-border">
         @if(!$collapsed)
-            <div class="mb-3 flex items-center gap-3 pb-3 border-b border-gray-700">
-                <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+            <div class="mb-3 flex items-center gap-3 pb-3 border-b border-sidebar-border">
+                <div class="w-8 h-8 rounded-full bg-sidebar-hover flex items-center justify-center">
                     <span class="text-sm font-medium">{{ strtoupper(substr($userName ?? ($user->name ?? 'U'), 0, 1)) }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
@@ -74,7 +74,7 @@
             {{-- Dark Mode Toggle --}}
             <button 
                 data-toggle="dark-mode"
-                class="w-full mb-3 p-2 rounded hover:bg-gray-800 flex items-center justify-center gap-2 text-sm"
+                class="w-full mb-3 p-2 rounded hover:bg-sidebar-hover flex items-center justify-center gap-2 text-sm"
                 title="Toggle dark mode"
             >
                 <svg x-cloak x-show="!document.documentElement.classList.contains('dark')" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" 
-                    class="w-full {{ $collapsed ? 'px-3' : 'px-4' }} py-2 hover:bg-gray-800 rounded flex items-center justify-center"
+                    class="w-full {{ $collapsed ? 'px-3' : 'px-4' }} py-2 hover:bg-sidebar-hover rounded flex items-center justify-center"
                     title="{{ $collapsed ? 'Logout' : '' }}">
                 <x-heroicon-o-arrow-right-on-rectangle class="w-5 h-5" />
                 <span x-show="!collapsed" class="ml-2">Logout</span>
