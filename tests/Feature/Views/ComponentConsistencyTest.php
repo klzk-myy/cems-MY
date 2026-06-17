@@ -37,6 +37,7 @@ class ComponentConsistencyTest extends TestCase
             'progress-bar' => ['components.progress-bar', ['value' => 50]],
             'chart-bar' => ['components.chart-bar', ['value' => 50]],
             'chart-trend' => ['components.chart-trend', ['title' => 'X', 'labels' => [], 'values' => []]],
+            'textarea' => ['components.textarea', ['name' => 'notes', 'slot' => '']],
         ];
     }
 }
