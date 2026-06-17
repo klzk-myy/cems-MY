@@ -78,6 +78,58 @@ class ThemeTokenUsageTest extends TestCase
             'chart-bar-success' => ['components.chart-bar', ['value' => 80], ['bg-success']],
             'chart-bar-warning' => ['components.chart-bar', ['value' => 65], ['bg-warning']],
             'chart-bar-danger' => ['components.chart-bar', ['value' => 30], ['bg-danger']],
+            'info-link-text' => ['pages.mfa.verify', ['errors' => new ViewErrorBag], ['text-info']],
+            'success-status-dot' => ['test-results.statistics', [
+                'days' => 30,
+                'statistics' => [
+                    'total_runs' => 1,
+                    'total_tests' => 10,
+                    'overall_pass_rate' => 90.0,
+                    'avg_duration' => 1.5,
+                    'by_status' => [
+                        'passed' => 9,
+                        'failed' => 1,
+                        'error' => 0,
+                    ],
+                    'daily_summary' => [],
+                ],
+                'trendData' => [],
+                'latestBySuite' => [],
+            ], ['bg-success']],
+            'danger-status-dot' => ['test-results.statistics', [
+                'days' => 30,
+                'statistics' => [
+                    'total_runs' => 1,
+                    'total_tests' => 10,
+                    'overall_pass_rate' => 90.0,
+                    'avg_duration' => 1.5,
+                    'by_status' => [
+                        'passed' => 9,
+                        'failed' => 1,
+                        'error' => 0,
+                    ],
+                    'daily_summary' => [],
+                ],
+                'trendData' => [],
+                'latestBySuite' => [],
+            ], ['bg-danger']],
+            'warning-status-dot' => ['test-results.statistics', [
+                'days' => 30,
+                'statistics' => [
+                    'total_runs' => 1,
+                    'total_tests' => 10,
+                    'overall_pass_rate' => 90.0,
+                    'avg_duration' => 1.5,
+                    'by_status' => [
+                        'passed' => 9,
+                        'failed' => 1,
+                        'error' => 0,
+                    ],
+                    'daily_summary' => [],
+                ],
+                'trendData' => [],
+                'latestBySuite' => [],
+            ], ['bg-warning']],
         ];
     }
 
