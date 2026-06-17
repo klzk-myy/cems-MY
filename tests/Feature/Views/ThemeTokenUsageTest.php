@@ -39,6 +39,7 @@ class ThemeTokenUsageTest extends TestCase
             'button-info-hover' => ['components.button', ['variant' => 'info', 'slot' => 'Click'], ['bg-info-hover']],
             'alert' => ['components.alert', ['type' => 'info', 'slot' => 'Message'], ['bg-info-subtle', 'border-info-border', 'text-info-text']],
             'badge' => ['components.badge', ['variant' => 'success', 'slot' => 'Active'], ['bg-success-subtle', 'text-success-text']],
+            'badge-gray' => ['components.badge', ['variant' => 'gray', 'slot' => 'Draft'], ['bg-canvas-subtle', 'text-ink-muted']],
             'input' => ['components.input', ['name' => 'foo', 'errors' => new ViewErrorBag], ['bg-surface', 'border-border', 'text-ink']],
             'select' => ['components.select', ['name' => 'foo', 'options' => [], 'errors' => new ViewErrorBag], ['bg-surface', 'border-border', 'text-ink']],
             'input-error-text' => ['components.input', [
@@ -78,5 +79,14 @@ class ThemeTokenUsageTest extends TestCase
         $this->assertStringNotContainsString('border-[#', $html, "Component {$component} uses hardcoded border-[#...] color.");
         $this->assertStringNotContainsString('text-gray-900', $html, "Component {$component} uses text-gray-900.");
         $this->assertStringNotContainsString('text-gray-500', $html, "Component {$component} uses text-gray-500.");
+    }
+
+    public function test_badge_purple_does_not_use_raw_tailwind_colors(): void
+    {
+        $html = view('components.badge', ['variant' => 'purple', 'slot' => 'VIP'])->render();
+        $this->assertStringContainsString('bg-accent/10', $html, 'Badge purple variant should use bg-accent/10 token.');
+        $this->assertStringContainsString('text-accent', $html, 'Badge purple variant should use text-accent token.');
+        $this->assertStringNotContainsString('text-purple-700', $html, 'Badge purple variant should not use raw text-purple-700.');
+        $this->assertStringNotContainsString('bg-purple-100', $html, 'Badge purple variant should not use raw bg-purple-100.');
     }
 }

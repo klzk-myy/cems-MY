@@ -9,7 +9,8 @@ $styles = match($variant) {
     'danger' => 'bg-danger-subtle text-danger-text',
     'warning' => 'bg-warning-subtle text-warning-text',
     'info' => 'bg-info-subtle text-info-text',
-    'purple' => 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300',
+    'gray' => 'bg-canvas-subtle text-ink-muted',
+    'purple' => 'bg-accent/10 text-accent',
     default => 'bg-canvas-subtle text-ink-muted',
 };
 
