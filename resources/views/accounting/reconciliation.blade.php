@@ -42,7 +42,7 @@
                             <td class="px-4 py-3 text-sm">2026-04-28</td>
                             <td class="px-4 py-3 text-sm text-right">5,000.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-border">
+                                <x-checkbox inline />
                             </td>
                         </tr>
                         <tr class="hover:bg-canvas-subtle">
@@ -50,7 +50,7 @@
                             <td class="px-4 py-3 text-sm">2026-04-30</td>
                             <td class="px-4 py-3 text-sm text-right">12,500.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-border">
+                                <x-checkbox inline />
                             </td>
                         </tr>
                         <tr class="hover:bg-canvas-subtle">
@@ -58,7 +58,7 @@
                             <td class="px-4 py-3 text-sm">2026-05-02</td>
                             <td class="px-4 py-3 text-sm text-right">8,250.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-border">
+                                <x-checkbox inline />
                             </td>
                         </tr>
                         <tr class="bg-canvas-subtle font-medium">
@@ -84,7 +84,7 @@
                             <td class="px-4 py-3 text-sm">2026-04-30</td>
                             <td class="px-4 py-3 text-sm text-right">45,000.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-border">
+                                <x-checkbox inline />
                             </td>
                         </tr>
                         <tr class="hover:bg-canvas-subtle">
@@ -92,7 +92,7 @@
                             <td class="px-4 py-3 text-sm">2026-05-01</td>
                             <td class="px-4 py-3 text-sm text-right">32,500.00</td>
                             <td class="px-4 py-3 text-center">
-                                <input type="checkbox" class="h-4 w-4 rounded border-border">
+                                <x-checkbox inline />
                             </td>
                         </tr>
                         <tr class="bg-canvas-subtle font-medium">

@@ -212,4 +212,13 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('bg-primary text-on-primary', $content);
         $this->assertStringNotContainsString('bg-primary text-white', $content);
     }
+
+    public function test_bank_reconciliation_uses_checkbox_components(): void
+    {
+        $path = $this->getViewPath('accounting.reconciliation');
+        $content = file_get_contents($path);
+
+        $this->assertStringNotContainsString('<input type="checkbox"', $content);
+        $this->assertStringContainsString('<x-checkbox', $content);
+    }
 }
