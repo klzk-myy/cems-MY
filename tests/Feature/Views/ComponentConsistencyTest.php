@@ -40,6 +40,7 @@ class ComponentConsistencyTest extends TestCase
             'textarea' => ['components.textarea', ['name' => 'notes', 'slot' => '']],
             'checkbox' => ['components.checkbox', ['name' => 'is_active', 'label' => 'Active', 'slot' => '']],
             'radio-group' => ['components.radio-group', ['name' => 'risk_level', 'options' => ['low' => 'Low'], 'slot' => '']],
+            'empty-state-div' => ['components.empty-state', ['as' => 'div', 'slot' => '']],
         ];
     }
 }
