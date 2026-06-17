@@ -33,7 +33,6 @@
                     <x-textarea
                         name="address"
                         label="Address"
-                        :required="$errors->has('address') ? true : false"
                         rows="2"
                     >{{ old('address') }}</x-textarea>
 

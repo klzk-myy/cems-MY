@@ -136,4 +136,61 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringNotContainsString('<textarea', $content);
         $this->assertStringContainsString('<x-textarea', $content);
     }
+
+    public function test_customer_create_uses_radio_group(): void
+    {
+        $path = $this->getViewPath('customers.create');
+        $content = file_get_contents($path);
+
+        // Raw radio inputs should be replaced
+        $this->assertStringNotContainsString('type="radio"', $content);
+
+        // Check radio-group component is present with correct name
+        $this->assertStringContainsString('<x-radio-group', $content);
+        $this->assertStringContainsString('name="risk_level"', $content);
+    }
+
+    public function test_user_create_uses_checkbox_components(): void
+    {
+        $path = $this->getViewPath('users.create');
+        $content = file_get_contents($path);
+
+        // Raw checkbox inputs should be replaced
+        $this->assertStringNotContainsString('type="checkbox"', $content);
+
+        // Check checkbox components are present
+        $this->assertStringContainsString('<x-checkbox', $content);
+        $this->assertStringContainsString('name="is_active"', $content);
+        $this->assertStringContainsString('name="mfa_enabled"', $content);
+        $this->assertStringContainsString('label="Active User"', $content);
+        $this->assertStringContainsString('label="Enable MFA (Required for all roles)"', $content);
+    }
+
+    public function test_user_edit_uses_checkbox_component(): void
+    {
+        $path = $this->getViewPath('users.edit');
+        $content = file_get_contents($path);
+
+        // Raw checkbox inputs should be replaced
+        $this->assertStringNotContainsString('type="checkbox"', $content);
+
+        // Check checkbox component is present
+        $this->assertStringContainsString('<x-checkbox', $content);
+        $this->assertStringContainsString('name="is_active"', $content);
+        $this->assertStringContainsString('label="Active"', $content);
+    }
+
+    public function test_setup_index_uses_checkbox_components(): void
+    {
+        $path = $this->getViewPath('setup.index');
+        $content = file_get_contents($path);
+
+        // Raw x-input type="checkbox" should be replaced with x-checkbox
+        $this->assertStringNotContainsString('<x-input type="checkbox"', $content);
+
+        // Check x-checkbox components are present
+        $this->assertStringContainsString('<x-checkbox', $content);
+        $this->assertStringContainsString('name="currency_codes[]"', $content);
+        $this->assertStringContainsString('name="use_default_rates"', $content);
+    }
 }
