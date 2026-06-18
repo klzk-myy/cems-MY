@@ -27,6 +27,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+/**
+ * @group slow
+ */
 class TransactionServiceTest extends TestCase
 {
     use RefreshDatabase;

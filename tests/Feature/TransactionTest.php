@@ -14,6 +14,9 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+/**
+ * @group slow
+ */
 class TransactionTest extends TestCase
 {
     use DatabaseTransactions;

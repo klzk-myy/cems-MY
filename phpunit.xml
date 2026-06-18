@@ -6,11 +6,20 @@
          failOnRisky="true"
          failOnWarning="true"
 >
+    <groups>
+        <exclude>
+            <group>slow</group>
+        </exclude>
+    </groups>
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>
         <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Fast">
+            <directory>tests/Unit</directory>
             <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>

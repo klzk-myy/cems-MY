@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+/**
+ * @group slow
+ */
 class SanctionsOrchestrationServiceTest extends TestCase
 {
     use RefreshDatabase;

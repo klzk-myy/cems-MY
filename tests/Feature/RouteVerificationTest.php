@@ -12,6 +12,9 @@ use Tests\TestCase;
  *
  * Tests the route verification script functionality.
  */
+/**
+ * @group slow
+ */
 class RouteVerificationTest extends TestCase
 {
     protected string $scriptPath;

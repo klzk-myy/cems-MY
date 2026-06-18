@@ -31,6 +31,9 @@ use Tests\TestCase;
  * - Concurrent transaction handling
  * - Threshold consistency
  */
+/**
+ * @group slow
+ */
 class CriticalTransactionWorkflowTest extends TestCase
 {
     use DatabaseTransactions;

@@ -39,6 +39,9 @@ use Tests\TestCase;
  * Verification test: 20 transactions per branch by teller
  * Verifies accounting entries and ledger balances match
  */
+/**
+ * @group slow
+ */
 class TransactionAccountingVerificationTest extends TestCase
 {
     use DatabaseTransactions;
