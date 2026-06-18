@@ -133,9 +133,7 @@ class TransactionWorkflowTest extends TestCase
         $response = $this->actingAs($this->teller, 'sanctum')
             ->getJson('/api/v1/transactions');
 
-        // Just check that we get a successful response (could be 200 or 500 depending on implementation)
-        $this->assertTrue(in_array($response->status(), [200, 201, 500]),
-            "Expected status 200/201/500, got {$response->status()}");
+        $response->assertOk();
     }
 
     #[Test]
@@ -157,9 +155,7 @@ class TransactionWorkflowTest extends TestCase
         $response = $this->actingAs($this->teller, 'sanctum')
             ->getJson("/api/v1/transactions/{$transaction->id}");
 
-        // Just check that we get a response
-        $this->assertTrue(in_array($response->status(), [200, 404, 500]),
-            "Expected status 200/404/500, got {$response->status()}");
+        $response->assertOk();
     }
 
     #[Test]
