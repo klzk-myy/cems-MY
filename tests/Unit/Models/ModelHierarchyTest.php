@@ -7,6 +7,12 @@ use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\CounterHandover;
 use App\Models\CounterSession;
+use App\Models\Customer;
+use App\Models\CustomerDocument;
+use App\Models\CustomerNote;
+use App\Models\CustomerRelation;
+use App\Models\CustomerRiskHistory;
+use App\Models\RiskScoreSnapshot;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,6 +31,27 @@ class ModelHierarchyTest extends TestCase
             CounterHandover::class,
             TillBalance::class,
             TellerAllocation::class,
+        ];
+
+        foreach ($models as $model) {
+            $instance = new $model;
+            $this->assertInstanceOf(
+                BaseModel::class,
+                $instance,
+                "{$model} should extend BaseModel"
+            );
+        }
+    }
+
+    public function test_customer_models_extend_base_model(): void
+    {
+        $models = [
+            Customer::class,
+            CustomerDocument::class,
+            CustomerNote::class,
+            CustomerRelation::class,
+            CustomerRiskHistory::class,
+            RiskScoreSnapshot::class,
         ];
 
         foreach ($models as $model) {

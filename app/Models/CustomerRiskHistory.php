@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use App\Enums\RiskRating;
-use Illuminate\Database\Eloquent\Model;
 
-class CustomerRiskHistory extends Model
+class CustomerRiskHistory extends BaseModel
 {
     protected $table = 'customer_risk_history';
 

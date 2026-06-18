@@ -5,10 +5,9 @@ namespace App\Models;
 use App\Enums\IdType;
 use App\Enums\RelationType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class CustomerRelation extends Model
+class CustomerRelation extends BaseModel
 {
     use HasFactory;
 

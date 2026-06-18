@@ -5,10 +5,9 @@ namespace App\Models;
 use App\Enums\RiskRating;
 use App\Enums\RiskTrend;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class RiskScoreSnapshot extends Model
+class RiskScoreSnapshot extends BaseModel
 {
     use HasFactory;
 
