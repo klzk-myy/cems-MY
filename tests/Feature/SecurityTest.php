@@ -15,16 +15,25 @@ class SecurityTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected User $defaultUser;
+
+    protected User $teller;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->defaultUser = User::factory()->create();
+        $this->teller = User::factory()->create(['role' => UserRole::Teller]);
+    }
+
     /**
      * Test SQL injection prevention in search parameters
      */
     #[Test]
     public function sql_injection_prevention_in_search(): void
     {
-        $user = User::factory()->create();
-
         // Classic injection attempt
-        $response = $this->actingAs($user)->get('/customers?search='.urlencode("' OR '1'='1"));
+        $response = $this->actingAs($this->defaultUser)->get('/customers?search='.urlencode("' OR '1'='1"));
 
         // Should not expose SQL error, should just return empty or safe response
         $response->assertStatus(200);
@@ -37,9 +46,7 @@ class SecurityTest extends TestCase
     #[Test]
     public function sql_injection_prevention_in_transaction_search(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->get('/transactions?search='.urlencode("'; DROP TABLE transactions;--"));
+        $response = $this->actingAs($this->defaultUser)->get('/transactions?search='.urlencode("'; DROP TABLE transactions;--"));
 
         $response->assertStatus(200);
         $this->assertStringNotContainsString('SQLSTATE', $response->getContent());
@@ -51,10 +58,8 @@ class SecurityTest extends TestCase
     #[Test]
     public function xss_prevention_in_name_field(): void
     {
-        $user = User::factory()->create();
-
         // Attempt XSS in customer creation
-        $response = $this->actingAs($user)->post('/customers', [
+        $response = $this->actingAs($this->defaultUser)->post('/customers', [
             'name' => '<script>alert("XSS")</script>',
             'ic_number' => '123456-12-1234',
         ]);
@@ -73,9 +78,7 @@ class SecurityTest extends TestCase
     #[Test]
     public function xss_prevention_in_transaction_purpose(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/transactions', [
+        $response = $this->actingAs($this->defaultUser)->post('/transactions', [
             'purpose' => '<img src=x onerror=alert(1)>',
         ]);
 
@@ -88,10 +91,8 @@ class SecurityTest extends TestCase
     #[Test]
     public function csrf_token_required_for_transaction(): void
     {
-        $user = User::factory()->create();
-
         // Submit without CSRF token
-        $response = $this->actingAs($user)->post('/transactions', [
+        $response = $this->actingAs($this->defaultUser)->post('/transactions', [
             '_token' => 'invalid-token',
         ]);
 
@@ -109,11 +110,7 @@ class SecurityTest extends TestCase
     #[Test]
     public function teller_cannot_access_admin_routes(): void
     {
-        $teller = User::factory()->create([
-            'role' => UserRole::Teller,
-        ]);
-
-        $response = $this->actingAs($teller)->get('/users');
+        $response = $this->actingAs($this->teller)->get('/users');
 
         $response->assertStatus(403);
     }
@@ -124,11 +121,7 @@ class SecurityTest extends TestCase
     #[Test]
     public function teller_cannot_access_accounting(): void
     {
-        $teller = User::factory()->create([
-            'role' => UserRole::Teller,
-        ]);
-
-        $response = $this->actingAs($teller)->get('/accounting');
+        $response = $this->actingAs($this->teller)->get('/accounting');
 
         $response->assertStatus(403);
     }
@@ -139,11 +132,7 @@ class SecurityTest extends TestCase
     #[Test]
     public function teller_cannot_access_compliance_routes(): void
     {
-        $teller = User::factory()->create([
-            'role' => UserRole::Teller,
-        ]);
-
-        $response = $this->actingAs($teller)->get('/compliance/alerts');
+        $response = $this->actingAs($this->teller)->get('/compliance/alerts');
 
         $response->assertStatus(403);
     }
@@ -202,16 +191,14 @@ class SecurityTest extends TestCase
     #[Test]
     public function mass_assignment_protection(): void
     {
-        $user = User::factory()->create();
-
         // Attempt to set admin role via mass assignment
-        $response = $this->actingAs($user)->put('/users/'.$user->id, [
+        $response = $this->actingAs($this->defaultUser)->put('/users/'.$this->defaultUser->id, [
             'name' => 'Test',
             'role' => 'Admin', // Should be ignored or rejected
         ]);
 
-        $user->refresh();
-        $this->assertNotEquals('Admin', $user->role->value);
+        $this->defaultUser->refresh();
+        $this->assertNotEquals('Admin', $this->defaultUser->role->value);
     }
 
     /**
@@ -240,9 +227,7 @@ class SecurityTest extends TestCase
     #[Test]
     public function invalid_email_rejected(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/customers', [
+        $response = $this->actingAs($this->defaultUser)->post('/customers', [
             'name' => 'Test Customer',
             'ic_number' => '123456-12-1234',
             'email' => 'not-an-email',
@@ -257,9 +242,7 @@ class SecurityTest extends TestCase
     #[Test]
     public function negative_amount_rejected(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/transactions', [
+        $response = $this->actingAs($this->defaultUser)->post('/transactions', [
             'amount' => '-100',
         ]);
 
@@ -273,9 +256,7 @@ class SecurityTest extends TestCase
     #[Test]
     public function rate_precision_validation(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/transactions', [
+        $response = $this->actingAs($this->defaultUser)->post('/transactions', [
             'rate' => '4.723456789',
         ]);
 

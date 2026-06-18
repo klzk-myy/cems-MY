@@ -16,10 +16,13 @@ class UnifiedComplianceAlertsTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected User $complianceOfficer;
+
     protected function setUp(): void
     {
         parent::setUp();
         Http::preventStrayRequests();
+        $this->complianceOfficer = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
     }
 
     #[Test]
@@ -56,8 +59,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -84,8 +86,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -99,8 +100,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -118,8 +118,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -141,8 +140,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -157,8 +155,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?source=alert');
         $response->assertStatus(200);
@@ -173,8 +170,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?source=finding');
         $response->assertStatus(200);
@@ -187,8 +183,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?priority=Critical');
         $response->assertStatus(200);
@@ -201,8 +196,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?status=open');
         $response->assertStatus(200);
@@ -215,8 +209,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?type=Velocity');
         $response->assertStatus(200);
@@ -229,8 +222,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?customer=John');
         $response->assertStatus(200);
@@ -243,8 +235,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?from_date=2026-04-01&to_date=2026-04-17');
         $response->assertStatus(200);
@@ -257,8 +248,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -283,8 +273,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -299,8 +288,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -319,8 +307,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -335,8 +322,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified');
         $response->assertStatus(200);
@@ -348,7 +334,7 @@ class UnifiedComplianceAlertsTest extends TestCase
     public function findings_are_fetched_when_source_is_finding(): void
     {
         $customer = Customer::factory()->create();
-        $finding = ComplianceFinding::factory()->create([
+        ComplianceFinding::factory()->create([
             'subject_type' => 'Customer',
             'subject_id' => $customer->id,
             'severity' => 'High',
@@ -357,8 +343,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             'details' => ['summary' => 'Test finding'],
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?source=finding');
         $response->assertStatus(200);
@@ -379,8 +364,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             'details' => ['summary' => 'Test finding'],
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?source=all');
         $response->assertStatus(200);
@@ -412,8 +396,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             'generated_at' => now(),
         ]);
 
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user);
+        $this->actingAs($this->complianceOfficer);
 
         $response = $this->get('/compliance/unified?source=finding');
         $response->assertStatus(200);

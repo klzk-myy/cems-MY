@@ -16,6 +16,14 @@ class ScreeningApiTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected User $complianceOfficer;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->complianceOfficer = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+    }
+
     #[Test]
     public function screen_customer_requires_authentication(): void
     {
@@ -42,8 +50,7 @@ class ScreeningApiTest extends TestCase
     #[Test]
     public function screen_customer_returns_flag_for_match(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user, 'sanctum');
+        $this->actingAs($this->complianceOfficer, 'sanctum');
 
         $list = SanctionList::factory()->create();
         $normalizedName = 'test terrorist';
@@ -71,8 +78,7 @@ class ScreeningApiTest extends TestCase
     #[Test]
     public function get_screening_history(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user, 'sanctum');
+        $this->actingAs($this->complianceOfficer, 'sanctum');
 
         $customer = Customer::factory()->create();
 
@@ -89,8 +95,7 @@ class ScreeningApiTest extends TestCase
     #[Test]
     public function get_screening_status(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-        $this->actingAs($user, 'sanctum');
+        $this->actingAs($this->complianceOfficer, 'sanctum');
 
         $customer = Customer::factory()->create();
 

@@ -14,12 +14,18 @@ class SanctionsEntriesViewTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected User $complianceOfficer;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->complianceOfficer = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+    }
+
     #[Test]
     public function create_form_renders_with_csrf_and_named_action(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
-
-        $response = $this->actingAs($user)->get(route('compliance.sanctions.entries.create'));
+        $response = $this->actingAs($this->complianceOfficer)->get(route('compliance.sanctions.entries.create'));
 
         $response->assertStatus(200);
         $response->assertViewIs('compliance.sanctions.entries.create');
@@ -30,10 +36,9 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function store_creates_sanction_entry(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $list = SanctionList::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('compliance.sanctions.entries.store'), [
+        $response = $this->actingAs($this->complianceOfficer)->post(route('compliance.sanctions.entries.store'), [
             'list_id' => $list->id,
             'entity_name' => 'ACME Corp',
             'entity_type' => 'Organization',
@@ -46,10 +51,9 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function store_accepts_details_and_aliases_as_strings(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $list = SanctionList::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('compliance.sanctions.entries.store'), [
+        $response = $this->actingAs($this->complianceOfficer)->post(route('compliance.sanctions.entries.store'), [
             'list_id' => $list->id,
             'entity_name' => 'Alias Test',
             'list_source' => 'ofac',
@@ -72,10 +76,9 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function store_rejects_details_as_array(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $list = SanctionList::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('compliance.sanctions.entries.store'), [
+        $response = $this->actingAs($this->complianceOfficer)->post(route('compliance.sanctions.entries.store'), [
             'list_id' => $list->id,
             'entity_name' => 'Array Details Test',
             'entity_type' => 'Individual',
@@ -88,10 +91,9 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function store_rejects_invalid_entity_type(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $list = SanctionList::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('compliance.sanctions.entries.store'), [
+        $response = $this->actingAs($this->complianceOfficer)->post(route('compliance.sanctions.entries.store'), [
             'list_id' => $list->id,
             'entity_name' => 'Test',
             'entity_type' => 'invalid',
@@ -103,14 +105,13 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function edit_form_binds_model_data(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'ACME Corp',
             'list_source' => 'ofac',
             'entity_type' => 'organization',
         ]);
 
-        $response = $this->actingAs($user)->get(route('compliance.sanctions.entries.edit', $entry));
+        $response = $this->actingAs($this->complianceOfficer)->get(route('compliance.sanctions.entries.edit', $entry));
 
         $response->assertStatus(200);
         $response->assertSee('value="ACME Corp"', false);
@@ -121,14 +122,13 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function update_modifies_sanction_entry(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'Old Name',
             'list_source' => 'ofac',
             'entity_type' => 'organization',
         ]);
 
-        $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
+        $response = $this->actingAs($this->complianceOfficer)->put(route('compliance.sanctions.entries.update', $entry), [
             'entity_name' => 'New Name',
             'list_source' => 'un',
             'entity_type' => 'Individual',
@@ -143,14 +143,13 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function update_succeeds_without_list_source(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'Test',
             'list_source' => 'ofac',
             'entity_type' => 'organization',
         ]);
 
-        $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
+        $response = $this->actingAs($this->complianceOfficer)->put(route('compliance.sanctions.entries.update', $entry), [
             'entity_name' => 'Updated Name',
             'entity_type' => 'Organization',
         ]);
@@ -163,14 +162,13 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function update_rejects_invalid_entity_type(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'Test',
             'list_source' => 'ofac',
             'entity_type' => 'organization',
         ]);
 
-        $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
+        $response = $this->actingAs($this->complianceOfficer)->put(route('compliance.sanctions.entries.update', $entry), [
             'entity_name' => 'Test',
             'list_source' => 'ofac',
             'entity_type' => 'Invalid',
@@ -182,14 +180,13 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function update_persists_address_fields(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'Test',
             'list_source' => 'ofac',
             'entity_type' => 'organization',
         ]);
 
-        $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
+        $response = $this->actingAs($this->complianceOfficer)->put(route('compliance.sanctions.entries.update', $entry), [
             'entity_name' => 'Test',
             'list_source' => 'ofac',
             'entity_type' => 'Organization',
@@ -208,10 +205,9 @@ class SanctionsEntriesViewTest extends TestCase
     #[Test]
     public function entries_index_does_not_show_hardcoded_dummy_data(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         SanctionEntry::factory()->count(3)->create();
 
-        $response = $this->actingAs($user)->get(route('compliance.sanctions.entries.index'));
+        $response = $this->actingAs($this->complianceOfficer)->get(route('compliance.sanctions.entries.index'));
 
         $response->assertStatus(200);
         $response->assertDontSee('John Doe', false);

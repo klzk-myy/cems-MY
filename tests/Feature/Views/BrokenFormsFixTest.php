@@ -13,13 +13,23 @@ class BrokenFormsFixTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected User $user;
+
+    protected User $manager;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+        $this->manager = User::factory()->create(['role' => 'manager']);
+    }
+
     #[Test]
     public function customer_note_form_has_action_and_method(): void
     {
-        $user = User::factory()->create();
         $customer = Customer::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('customers.show', $customer));
+        $response = $this->actingAs($this->user)->get(route('customers.show', $customer));
 
         $response->assertStatus(200);
         $response->assertSee('action="'.e(route('customers.notes.store', $customer)).'"', false);
@@ -29,10 +39,9 @@ class BrokenFormsFixTest extends TestCase
     #[Test]
     public function customer_note_can_be_stored(): void
     {
-        $user = User::factory()->create();
         $customer = Customer::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('customers.notes.store', $customer), [
+        $response = $this->actingAs($this->user)->post(route('customers.notes.store', $customer), [
             'note' => 'Test note content',
         ]);
 
@@ -40,16 +49,14 @@ class BrokenFormsFixTest extends TestCase
         $this->assertDatabaseHas('customer_notes', [
             'customer_id' => $customer->id,
             'note' => 'Test note content',
-            'created_by' => $user->id,
+            'created_by' => $this->user->id,
         ]);
     }
 
     #[Test]
     public function rate_override_form_has_action_and_method(): void
     {
-        $user = User::factory()->create(['role' => 'manager']);
-
-        $response = $this->actingAs($user)->get(route('rates.index'));
+        $response = $this->actingAs($this->manager)->get(route('rates.index'));
 
         $response->assertStatus(200);
         $response->assertSee('id="override-form"', false);
@@ -60,14 +67,13 @@ class BrokenFormsFixTest extends TestCase
     #[Test]
     public function rate_override_can_be_stored(): void
     {
-        $user = User::factory()->create(['role' => 'manager']);
         ExchangeRate::factory()->create([
             'currency_code' => 'USD',
             'rate_buy' => '4.2000',
             'rate_sell' => '4.3000',
         ]);
 
-        $response = $this->actingAs($user)->post(route('rates.override'), [
+        $response = $this->actingAs($this->manager)->post(route('rates.override'), [
             'currency_code' => 'USD',
             'rate_buy' => '4.2500',
             'rate_sell' => '4.3500',
@@ -85,15 +91,14 @@ class BrokenFormsFixTest extends TestCase
     #[Test]
     public function customer_note_is_displayed_after_creation(): void
     {
-        $user = User::factory()->create();
         $customer = Customer::factory()->create();
 
-        $this->actingAs($user)->post(route('customers.notes.store', $customer), [
+        $this->actingAs($this->user)->post(route('customers.notes.store', $customer), [
             'note' => 'Displayed note',
         ]);
 
-        $response = $this->actingAs($user)->get(route('customers.show', $customer));
+        $response = $this->actingAs($this->user)->get(route('customers.show', $customer));
         $response->assertSee('Displayed note', false);
-        $response->assertSee($user->name, false);
+        $response->assertSee($this->user->name, false);
     }
 }
