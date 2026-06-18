@@ -4,6 +4,7 @@ namespace App\Services\Contracts;
 
 use App\Models\ExchangeRate;
 use App\Models\User;
+use App\Services\DTOs\RateOverrideResult;
 use Illuminate\Support\Collection;
 
 interface RateManagementServiceInterface
@@ -21,7 +22,7 @@ interface RateManagementServiceInterface
         User $approvedBy,
         ?string $reason = null,
         ?int $branchId = null
-    ): array;
+    ): RateOverrideResult;
 
     public function validateTransactionRate(
         string $submittedRate,

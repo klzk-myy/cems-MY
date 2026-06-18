@@ -120,11 +120,11 @@ class RateController extends Controller
             $branchId
         );
 
-        if (! $result['success']) {
-            return back()->with('error', $result['message'])->withInput();
+        if (! $result->success) {
+            return back()->with('error', $result->message)->withInput();
         }
 
-        return back()->with('success', $result['message']);
+        return back()->with('success', $result->message);
     }
 
     public function history(Request $request, string $currencyCode): JsonResponse

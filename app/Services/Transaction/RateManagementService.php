@@ -7,6 +7,7 @@ use App\Models\ExchangeRateHistory;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Contracts\RateManagementServiceInterface;
+use App\Services\DTOs\RateOverrideResult;
 use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -69,27 +70,27 @@ class RateManagementService implements RateManagementServiceInterface
         User $approvedBy,
         ?string $reason = null,
         ?int $branchId = null
-    ): array {
+    ): RateOverrideResult {
         if (! $approvedBy->role->isManager() && ! $approvedBy->role->isAdmin()) {
-            return [
-                'success' => false,
-                'message' => 'Insufficient permissions to override rates',
-            ];
+            return new RateOverrideResult(
+                success: false,
+                message: 'Insufficient permissions to override rates',
+            );
         }
 
         if ($this->mathService->compare($newBuyRate, '0') <= 0 ||
             $this->mathService->compare($newSellRate, '0') <= 0) {
-            return [
-                'success' => false,
-                'message' => 'Rates must be positive numbers',
-            ];
+            return new RateOverrideResult(
+                success: false,
+                message: 'Rates must be positive numbers',
+            );
         }
 
         if ($this->mathService->compare($newSellRate, $newBuyRate) <= 0) {
-            return [
-                'success' => false,
-                'message' => 'Sell rate must be higher than buy rate',
-            ];
+            return new RateOverrideResult(
+                success: false,
+                message: 'Sell rate must be higher than buy rate',
+            );
         }
 
         $query = ExchangeRate::where('currency_code', $currencyCode);
@@ -112,14 +113,12 @@ class RateManagementService implements RateManagementServiceInterface
             $cacheKey = 'rate:'.$currencyCode.($branchId ? ':'.$branchId : '');
             Cache::forget($cacheKey);
 
-            return [
-                'success' => true,
-                'message' => "Rate for {$currencyCode} created successfully",
-                'old_buy_rate' => null,
-                'old_sell_rate' => null,
-                'new_buy_rate' => $newBuyRate,
-                'new_sell_rate' => $newSellRate,
-            ];
+            return new RateOverrideResult(
+                success: true,
+                message: "Rate for {$currencyCode} created successfully",
+                previousRate: null,
+                newRate: $newBuyRate,
+            );
         }
 
         $oldBuyRate = $exchangeRate->rate_buy;
@@ -154,14 +153,12 @@ class RateManagementService implements RateManagementServiceInterface
             ]
         );
 
-        return [
-            'success' => true,
-            'message' => "Rate for {$currencyCode} overridden successfully",
-            'old_buy_rate' => $oldBuyRate,
-            'old_sell_rate' => $oldSellRate,
-            'new_buy_rate' => $newBuyRate,
-            'new_sell_rate' => $newSellRate,
-        ];
+        return new RateOverrideResult(
+            success: true,
+            message: "Rate for {$currencyCode} overridden successfully",
+            previousRate: $oldBuyRate,
+            newRate: $newBuyRate,
+        );
     }
 
     public function validateTransactionRate(
