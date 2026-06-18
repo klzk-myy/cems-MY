@@ -4,9 +4,8 @@ namespace App\Models;
 
 use App\Enums\CounterSessionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class CounterSession extends Model
+class CounterSession extends BaseModel
 {
     use HasFactory;
 

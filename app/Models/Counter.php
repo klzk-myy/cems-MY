@@ -4,14 +4,13 @@ namespace App\Models;
 
 use App\Enums\CounterSessionStatus;
 use App\Enums\CounterStatus;
+use App\Models\Traits\BelongsToBranch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Counter extends Model
+class Counter extends BaseModel
 {
-    use HasFactory, SoftDeletes;
+    use BelongsToBranch, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'code',
@@ -31,11 +30,6 @@ class Counter extends Model
     public function getRouteKeyName(): string
     {
         return 'code';
-    }
-
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
     }
 
     public function scopeActive($query)

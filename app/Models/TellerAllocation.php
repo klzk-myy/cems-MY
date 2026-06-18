@@ -4,14 +4,14 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\TellerAllocationStatus;
+use App\Models\Traits\BelongsToBranch;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class TellerAllocation extends Model
+class TellerAllocation extends BaseModel
 {
-    use HasFactory;
+    use BelongsToBranch, HasFactory;
 
     protected MathService $mathService;
 
@@ -61,11 +61,6 @@ class TellerAllocation extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
     }
 
     public function counter(): BelongsTo

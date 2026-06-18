@@ -3,14 +3,14 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Models\Traits\BelongsToBranch;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class TillBalance extends Model
+class TillBalance extends BaseModel
 {
-    use HasFactory;
+    use BelongsToBranch, HasFactory;
 
     public $timestamps = false;
 
@@ -47,14 +47,6 @@ class TillBalance extends Model
     public function currency()
     {
         return $this->belongsTo(Currency::class, 'currency_code');
-    }
-
-    /**
-     * Get the branch associated with this till balance.
-     */
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
     }
 
     public function opener()
