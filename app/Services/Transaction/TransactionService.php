@@ -279,7 +279,7 @@ class TransactionService implements TransactionServiceInterface
         $holdReason = null;
         $approvedBy = null;
 
-        if ($holdCheck['requires_hold'] || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
+        if ($holdCheck->requiresHold || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
             // BNM AML/CFT COMPLIANCE REQUIREMENT:
             // Transactions >= RM 10,000 (auto_approve threshold) require manager approval, regardless of compliance hold status.
             // This is a BNM regulatory requirement to ensure proper oversight of larger transactions.
@@ -297,8 +297,8 @@ class TransactionService implements TransactionServiceInterface
             // NOTE: CDD levels (Simplified/Specific/Standard/Enhanced) are separate from approval requirements.
             // CDD determines documentation requirements; approval requirement is based on transaction amount.
             $status = TransactionStatus::PendingApproval;
-            if ($holdCheck['requires_hold']) {
-                $holdReason = implode(', ', $holdCheck['reasons']);
+            if ($holdCheck->requiresHold) {
+                $holdReason = implode(', ', $holdCheck->reasons);
             }
         }
 

@@ -5,6 +5,7 @@ namespace App\Services\Contracts;
 use App\Enums\CddLevel;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\DTOs\ComplianceCheckResult;
 
 interface ComplianceServiceInterface
 {
@@ -18,7 +19,7 @@ interface ComplianceServiceInterface
 
     public function checkStructuring(int $customerId): bool;
 
-    public function requiresHold(string $amount, Customer $customer): array;
+    public function requiresHold(string $amount, Customer $customer): ComplianceCheckResult;
 
     public function checkAggregateTransactions(int $customerId, string $currentAmount): array;
 

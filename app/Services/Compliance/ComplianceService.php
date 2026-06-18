@@ -13,6 +13,7 @@ use App\Models\SanctionEntry;
 use App\Models\Transaction;
 use App\Services\Contracts\ComplianceServiceInterface;
 use App\Services\CustomerScreeningService;
+use App\Services\DTOs\ComplianceCheckResult;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
 use App\Services\System\EncryptionService;
@@ -321,11 +322,8 @@ class ComplianceService implements ComplianceServiceInterface
      *
      * @param  string  $amount  Transaction amount in MYR (as string for precision)
      * @param  Customer  $customer  The customer initiating the transaction
-     * @return array<string, mixed> Hold decision containing:
-     *                              - requires_hold: bool Whether the transaction must be held
-     *                              - reasons: array<string> List of ComplianceFlagType values as strings
      */
-    public function requiresHold(string $amount, Customer $customer): array
+    public function requiresHold(string $amount, Customer $customer): ComplianceCheckResult
     {
         $reasons = [];
 
@@ -345,10 +343,10 @@ class ComplianceService implements ComplianceServiceInterface
             $reasons[] = ComplianceFlagType::HighRiskCustomer->value;
         }
 
-        return [
-            'requires_hold' => ! empty($reasons),
-            'reasons' => $reasons,
-        ];
+        return new ComplianceCheckResult(
+            requiresHold: ! empty($reasons),
+            reasons: $reasons,
+        );
     }
 
     /**

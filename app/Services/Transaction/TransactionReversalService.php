@@ -116,9 +116,9 @@ class TransactionReversalService
 
         $status = TransactionStatus::Completed;
         $holdReason = null;
-        if ($holdCheck['requires_hold']) {
+        if ($holdCheck->requiresHold) {
             $status = TransactionStatus::PendingApproval;
-            $holdReason = implode(', ', $holdCheck['reasons']);
+            $holdReason = implode(', ', $holdCheck->reasons);
         }
 
         $refund = Transaction::create([
@@ -153,7 +153,7 @@ class TransactionReversalService
                     'amount_local' => $amountLocal,
                     'status' => $status->value,
                     'hold_reason' => $holdReason,
-                    'compliance_reasons' => $holdCheck['reasons'],
+                    'compliance_reasons' => $holdCheck->reasons,
                 ],
             ],
             'INFO'

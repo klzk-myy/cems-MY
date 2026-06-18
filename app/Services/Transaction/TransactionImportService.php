@@ -168,9 +168,9 @@ class TransactionImportService
             $holdReason = null;
             $approvedBy = null;
 
-            if ($holdCheck['requires_hold']) {
+            if ($holdCheck->requiresHold) {
                 $status = TransactionStatus::PendingApproval->value;
-                $holdReason = implode(', ', $holdCheck['reasons']);
+                $holdReason = implode(', ', $holdCheck->reasons);
             }
 
             // For sell transactions, check stock availability
