@@ -11,7 +11,7 @@ use App\Models\Customer;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\HighRiskCountry;
 use App\Models\Transaction;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
 
 /**

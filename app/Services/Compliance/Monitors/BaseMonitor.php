@@ -6,7 +6,7 @@ use App\Enums\FindingSeverity;
 use App\Enums\FindingStatus;
 use App\Enums\FindingType;
 use App\Models\Compliance\ComplianceFinding;
-use App\Services\MathService;
+use App\Services\System\MathService;
 
 /**
  * Abstract base class for compliance monitors.

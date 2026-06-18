@@ -23,7 +23,7 @@ class TransactionServiceEventTimingTest extends TestCase
             $committedWhenFired = ! DB::transactionLevel();
         });
 
-        $fileContent = file_get_contents(app_path('Services/TransactionService.php'));
+        $fileContent = file_get_contents(app_path('Services/Transaction/TransactionService.php'));
 
         $this->assertStringContainsString(
             'afterCommit',

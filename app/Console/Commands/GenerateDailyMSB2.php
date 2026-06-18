@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Services\ExportService;
-use App\Services\ReportingService;
+use App\Services\Reporting\ExportService;
+use App\Services\Reporting\ReportingService;
 use Illuminate\Console\Command;
 
 class GenerateDailyMSB2 extends Command

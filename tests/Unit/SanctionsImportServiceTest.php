@@ -7,7 +7,7 @@ use App\Enums\SanctionStatus;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Services\Compliance\SanctionsImportService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;

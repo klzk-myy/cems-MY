@@ -2,7 +2,7 @@
 
 namespace App\ValueObjects;
 
-use App\Services\MathService;
+use App\Services\System\MathService;
 use InvalidArgumentException;
 
 /**

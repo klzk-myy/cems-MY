@@ -7,7 +7,7 @@ use App\Models\ExchangeRateHistory;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Contracts\RateManagementServiceInterface;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 

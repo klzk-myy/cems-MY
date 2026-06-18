@@ -16,7 +16,7 @@ use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\CounterOpeningWorkflowService;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\TellerAllocationService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

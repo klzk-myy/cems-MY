@@ -9,7 +9,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\TestRunnerService;
+use App\Services\System\TestRunnerService;
 use Illuminate\Console\Command;
 
 class RunTestsCommand extends Command

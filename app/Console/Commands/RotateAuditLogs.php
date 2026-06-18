@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\LogRotationService;
+use App\Services\System\LogRotationService;
 use Illuminate\Console\Command;
 
 class RotateAuditLogs extends Command

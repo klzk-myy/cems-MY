@@ -7,7 +7,7 @@ use App\Enums\PepType;
 use App\Enums\RiskRating;
 use App\Models\Customer;
 use App\Services\Compliance\CddLevelDeterminationService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

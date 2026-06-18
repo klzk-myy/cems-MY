@@ -9,7 +9,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\DeferredAccountingReconciliationFailedNotification;
 use App\Services\AuditService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\Transaction\TransactionService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

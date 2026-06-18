@@ -10,7 +10,7 @@ use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\RevaluationService;
 use App\Services\AuditService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\Transaction\RateApiService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;

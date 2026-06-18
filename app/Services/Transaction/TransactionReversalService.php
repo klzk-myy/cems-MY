@@ -15,7 +15,7 @@ use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 

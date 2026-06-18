@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Services\DocumentStorageService;
-use App\Services\ExportService;
-use App\Services\ReportingService;
+use App\Services\Reporting\ExportService;
+use App\Services\Reporting\ReportingService;
+use App\Services\System\DocumentStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

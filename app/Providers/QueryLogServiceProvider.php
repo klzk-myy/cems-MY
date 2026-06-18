@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Models\SystemLog;
-use App\Services\QueryOptimizerService;
+use App\Services\System\QueryOptimizerService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;

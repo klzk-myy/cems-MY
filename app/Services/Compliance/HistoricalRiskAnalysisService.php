@@ -2,11 +2,10 @@
 
 namespace App\Services\Compliance;
 
-use App\Services\MathService;
-use App\Services\AuditService;
-use App\Services\ThresholdService;
-
 use App\Models\Customer;
+use App\Services\AuditService;
+use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use App\ValueObjects\RiskAnalysisResult;
 use Illuminate\Support\Facades\Log;
 

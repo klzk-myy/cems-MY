@@ -7,7 +7,7 @@ use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\Compliance\ComplianceService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

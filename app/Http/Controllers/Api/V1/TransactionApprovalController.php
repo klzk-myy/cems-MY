@@ -8,7 +8,7 @@ use App\Models\Transaction;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
 use App\Services\Compliance\ComplianceService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionMonitoringService;
 use App\Services\Transaction\TransactionService;

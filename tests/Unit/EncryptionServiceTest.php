@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\EncryptionService;
+use App\Services\System\EncryptionService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 

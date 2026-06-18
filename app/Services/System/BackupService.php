@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\System;
 
 use App\Models\BackupLog;
 use App\Models\User;

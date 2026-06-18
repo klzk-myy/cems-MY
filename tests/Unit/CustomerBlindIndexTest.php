@@ -3,8 +3,8 @@
 namespace Tests\Unit;
 
 use App\Models\Customer;
-use App\Services\CustomerService;
-use App\Services\EncryptionService;
+use App\Services\Customer\CustomerService;
+use App\Services\System\EncryptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

@@ -8,7 +8,7 @@ use App\Models\Counter;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Contracts\TellerAllocationServiceInterface;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

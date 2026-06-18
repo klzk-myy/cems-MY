@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\EodReconciliationService;
-use App\Services\ExportService;
+use App\Services\Reporting\ExportService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 

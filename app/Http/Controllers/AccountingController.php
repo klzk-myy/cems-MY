@@ -26,7 +26,7 @@ use App\Services\Accounting\BankReconciliationService;
 use App\Services\Accounting\BudgetService;
 use App\Services\Accounting\LedgerService;
 use App\Services\Accounting\PeriodCloseService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

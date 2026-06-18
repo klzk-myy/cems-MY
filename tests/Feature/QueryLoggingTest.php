@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Customer;
 use App\Models\User;
-use App\Services\QueryLoggingService;
+use App\Services\System\QueryLoggingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use PHPUnit\Framework\Attributes\Test;

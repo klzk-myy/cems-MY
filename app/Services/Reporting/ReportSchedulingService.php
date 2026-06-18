@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Reporting;
 
 use App\Enums\ReportStatus;
 use App\Events\ReportGenerated;

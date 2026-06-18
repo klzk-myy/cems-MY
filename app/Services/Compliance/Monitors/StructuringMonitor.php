@@ -7,8 +7,8 @@ use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Services\MathService;
 use App\Services\Risk\StructuringRiskService;
+use App\Services\System\MathService;
 use App\Services\ThresholdService;
 
 class StructuringMonitor extends BaseMonitor

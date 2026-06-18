@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\CacheMonitoringService;
-use App\Services\QueryLoggingService;
+use App\Services\System\CacheMonitoringService;
+use App\Services\System\QueryLoggingService;
 use Illuminate\View\View;
 
 class PerformanceMonitoringController extends Controller

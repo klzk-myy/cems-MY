@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\System;
 
 use App\Models\SystemLog;
+use App\Services\AuditService;
 use Carbon\Carbon;
 
 class LogRotationService

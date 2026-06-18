@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Reporting;
 
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
@@ -8,6 +8,8 @@ use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
 use App\Services\Contracts\ReportingServiceInterface;
+use App\Services\System\EncryptionService;
+use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;

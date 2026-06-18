@@ -3,8 +3,8 @@
 namespace Tests\Unit;
 
 use App\Services\Compliance\Monitors\VelocityMonitor;
-use App\Services\MathService;
 use App\Services\Risk\VelocityRiskService;
+use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

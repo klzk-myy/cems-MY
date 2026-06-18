@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\MfaService;
+use App\Services\System\MfaService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;

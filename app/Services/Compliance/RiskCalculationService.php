@@ -2,9 +2,6 @@
 
 namespace App\Services\Compliance;
 
-use App\Services\MathService;
-use App\Services\ThresholdService;
-
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
@@ -13,6 +10,8 @@ use App\Services\Risk\GeographicRiskService;
 use App\Services\Risk\PatternRiskService;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
+use App\Services\System\MathService;
+use App\Services\ThresholdService;
 
 class RiskCalculationService
 {

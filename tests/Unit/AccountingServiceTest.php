@@ -9,7 +9,7 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\AuditService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

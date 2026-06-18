@@ -7,7 +7,7 @@ use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use App\Services\AuditService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\Transaction\TransactionService;
 use Illuminate\Support\Facades\Log;
 

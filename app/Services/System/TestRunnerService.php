@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\System;
 
 use App\Models\TestResult;
 use Illuminate\Support\Str;

@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Customer;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 

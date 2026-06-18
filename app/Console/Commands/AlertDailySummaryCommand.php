@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\SystemAlertService;
+use App\Services\System\SystemAlertService;
 use Illuminate\Console\Command;
 
 class AlertDailySummaryCommand extends Command

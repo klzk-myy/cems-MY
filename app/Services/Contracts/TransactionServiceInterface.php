@@ -4,7 +4,7 @@ namespace App\Services\Contracts;
 
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Services\PreValidationResult;
+use App\Services\DTOs\PreValidationResult;
 
 interface TransactionServiceInterface
 {

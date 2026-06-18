@@ -9,7 +9,7 @@ use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\TellerAllocationService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

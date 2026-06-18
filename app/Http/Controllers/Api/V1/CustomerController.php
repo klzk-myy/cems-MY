@@ -11,7 +11,7 @@ use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\AuditService;
-use App\Services\CustomerService;
+use App\Services\Customer\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

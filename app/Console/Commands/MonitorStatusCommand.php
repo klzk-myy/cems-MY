@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\SystemAlert;
 use App\Models\SystemHealthCheck;
-use App\Services\SystemHealthService;
+use App\Services\System\SystemHealthService;
 use Illuminate\Console\Command;
 
 class MonitorStatusCommand extends Command

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\CacheMonitoringService;
+use App\Services\System\CacheMonitoringService;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

@@ -5,7 +5,7 @@ namespace App\Services\Accounting;
 use App\Models\AccountingPeriod;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 
 /**

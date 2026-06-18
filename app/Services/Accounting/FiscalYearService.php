@@ -17,7 +17,7 @@ use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
 
 /**

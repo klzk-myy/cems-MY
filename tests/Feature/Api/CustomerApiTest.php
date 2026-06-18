@@ -5,7 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\CustomerService;
+use App\Services\Customer\CustomerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

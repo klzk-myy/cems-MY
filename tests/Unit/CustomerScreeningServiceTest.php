@@ -9,7 +9,7 @@ use App\Models\SanctionList;
 use App\Models\ScreeningResult;
 use App\Models\Transaction;
 use App\Services\CustomerScreeningService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

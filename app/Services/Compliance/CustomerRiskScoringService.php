@@ -2,11 +2,6 @@
 
 namespace App\Services\Compliance;
 
-use App\Services\MathService;
-use App\Services\AuditService;
-use App\Services\CustomerScreeningService;
-use App\Services\ThresholdService;
-
 use App\DTO\PepCessationResult;
 use App\Enums\RiskTrend;
 use App\Enums\TransactionStatus;
@@ -16,8 +11,12 @@ use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use App\Models\Transaction;
+use App\Services\AuditService;
+use App\Services\CustomerScreeningService;
 use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
+use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\QueryLoggingService;
+use App\Services\System\QueryLoggingService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

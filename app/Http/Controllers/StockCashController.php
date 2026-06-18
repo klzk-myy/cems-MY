@@ -11,7 +11,7 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Branch\TillService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

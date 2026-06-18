@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Services\SystemAlertService;
-use App\Services\SystemHealthService;
+use App\Services\System\SystemAlertService;
+use App\Services\System\SystemHealthService;
 use Illuminate\Console\Command;
 
 class MonitorCheckCommand extends Command

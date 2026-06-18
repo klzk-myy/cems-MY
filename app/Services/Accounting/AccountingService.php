@@ -10,8 +10,8 @@ use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Services\AuditService;
-use App\Services\MathService;
 use App\Services\Contracts\AccountingServiceInterface;
+use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
 
 /**

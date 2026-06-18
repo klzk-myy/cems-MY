@@ -12,7 +12,7 @@ use App\Models\TillBalance;
 use App\Models\User;
 use App\Notifications\EmergencyCounterClosureNotification;
 use App\Services\AuditService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 
 class EmergencyCounterService
 {

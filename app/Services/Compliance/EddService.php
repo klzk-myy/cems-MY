@@ -2,14 +2,13 @@
 
 namespace App\Services\Compliance;
 
-use App\Services\MathService;
-
 use App\Enums\CddLevel;
 use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
 use App\Models\User;
+use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
 
 class EddService

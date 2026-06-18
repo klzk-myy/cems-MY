@@ -2,13 +2,12 @@
 
 namespace App\Services\Compliance;
 
-use App\Services\MathService;
-
 use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;
 use App\Enums\EddTemplateType;
 use App\Models\EddTemplate;
 use App\Models\EnhancedDiligenceRecord;
+use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 
 class EddTemplateService

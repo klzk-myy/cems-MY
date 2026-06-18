@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\ReportingService;
+use App\Services\Reporting\ReportingService;
 use App\Services\ThresholdService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

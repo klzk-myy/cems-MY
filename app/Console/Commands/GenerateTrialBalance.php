@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ReportGenerated;
 use App\Services\Accounting\AccountingService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 

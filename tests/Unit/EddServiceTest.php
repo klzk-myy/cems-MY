@@ -7,7 +7,7 @@ use App\Models\CustomerDocument;
 use App\Models\FlaggedTransaction;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\EddService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\ExchangeRate;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\Transaction\RateApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

@@ -28,7 +28,7 @@ use App\Services\Branch\CounterOpeningWorkflowService;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

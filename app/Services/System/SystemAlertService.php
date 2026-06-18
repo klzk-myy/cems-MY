@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\System;
 
 use App\Models\SystemAlert;
 use Illuminate\Support\Facades\Log;

@@ -11,7 +11,7 @@ use App\Models\Customer;
 use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 

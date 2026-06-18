@@ -4,7 +4,7 @@ namespace App\Services\Risk;
 
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Support\Collection;
 

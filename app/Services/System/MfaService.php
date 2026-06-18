@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\System;
 
 use App\Enums\UserRole;
 use App\Models\DeviceComputations;
 use App\Models\MfaRecoveryCode;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;

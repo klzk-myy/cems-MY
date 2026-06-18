@@ -6,7 +6,7 @@ use App\Enums\RelationType;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
 use App\Services\AuditService;
-use App\Services\CustomerRelationService;
+use App\Services\Customer\CustomerRelationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

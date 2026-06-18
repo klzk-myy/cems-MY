@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Reporting;
 
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
+use App\Services\System\MathService;
 
 /**
  * Financial Ratio Service

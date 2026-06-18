@@ -2,11 +2,6 @@
 
 namespace App\Services\Compliance;
 
-use App\Services\MathService;
-use App\Services\CustomerScreeningService;
-use App\Services\EncryptionService;
-use App\Services\ThresholdService;
-
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
 use App\Enums\RiskRating;
@@ -17,8 +12,12 @@ use App\Models\FlaggedTransaction;
 use App\Models\SanctionEntry;
 use App\Models\Transaction;
 use App\Services\Contracts\ComplianceServiceInterface;
+use App\Services\CustomerScreeningService;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
+use App\Services\System\EncryptionService;
+use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use Carbon\Carbon;
 
 /**

@@ -7,7 +7,7 @@ use App\Http\Requests\Mfa\SetupMfaRequest;
 use App\Http\Requests\Mfa\VerifyMfaRequest;
 use App\Http\Requests\Mfa\VerifyRecoveryCodeRequest;
 use App\Services\AuditService;
-use App\Services\MfaService;
+use App\Services\System\MfaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;

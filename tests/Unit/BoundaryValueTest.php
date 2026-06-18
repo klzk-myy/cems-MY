@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Enums\CddLevel;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;

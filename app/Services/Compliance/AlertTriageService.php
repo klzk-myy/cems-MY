@@ -13,7 +13,7 @@ use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Database\Eloquent\Collection;

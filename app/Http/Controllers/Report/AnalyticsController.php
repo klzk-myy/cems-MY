@@ -13,7 +13,7 @@ use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

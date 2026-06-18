@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Backup;
 
-use App\Services\BackupService;
+use App\Services\System\BackupService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 

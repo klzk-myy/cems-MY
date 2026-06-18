@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Customer;
 
 use App\Events\CustomerRelationAdded;
 use App\Events\CustomerRelationRemoved;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
+use App\Services\AuditService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 

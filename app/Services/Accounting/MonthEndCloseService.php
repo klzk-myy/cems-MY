@@ -9,7 +9,7 @@ use App\Models\ReportGenerated;
 use App\Models\RevaluationEntry;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\ReportingService;
+use App\Services\Reporting\ReportingService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

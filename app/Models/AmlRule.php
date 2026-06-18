@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\AmlRuleType;
 use App\Enums\TransactionStatus;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

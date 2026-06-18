@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\Customer;
 use App\Models\User;
-use App\Services\CustomerService;
+use App\Services\Customer\CustomerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Mockery;

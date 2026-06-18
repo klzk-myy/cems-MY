@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\System;
 
 use App\Enums\TestResultStatus;
 use App\Models\SystemHealthCheck;

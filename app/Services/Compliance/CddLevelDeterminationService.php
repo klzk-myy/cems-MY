@@ -2,13 +2,12 @@
 
 namespace App\Services\Compliance;
 
-use App\Services\MathService;
-use App\Services\ThresholdService;
-
 use App\Enums\CddLevel;
 use App\Enums\PepType;
 use App\Enums\RiskRating;
 use App\Models\Customer;
+use App\Services\System\MathService;
+use App\Services\ThresholdService;
 
 /**
  * CDD Level Determination Service

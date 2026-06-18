@@ -9,7 +9,7 @@ use App\Services\Compliance\Monitors\CustomerLocationAnomalyMonitor;
 use App\Services\Compliance\Monitors\SanctionsRescreeningMonitor;
 use App\Services\Compliance\Monitors\StructuringMonitor;
 use App\Services\Compliance\Monitors\VelocityMonitor;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 

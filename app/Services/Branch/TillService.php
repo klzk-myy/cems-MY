@@ -5,7 +5,7 @@ namespace App\Services\Branch;
 use App\Enums\TransactionType;
 use App\Models\TillBalance;
 use App\Models\Transaction;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 
 /**

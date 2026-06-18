@@ -5,7 +5,7 @@ namespace App\Services\Risk;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Transaction;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Collection;
 
 class PatternRiskService

@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Services\EncryptionService;
-use App\Services\MathService;
-use App\Services\ReportingService;
+use App\Services\Reporting\ReportingService;
+use App\Services\System\EncryptionService;
+use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

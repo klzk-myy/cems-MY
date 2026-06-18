@@ -4,7 +4,7 @@ namespace Tests\Unit\Repositories;
 
 use App\Models\Customer;
 use App\Repositories\CustomerRepository;
-use App\Services\CustomerService;
+use App\Services\Customer\CustomerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

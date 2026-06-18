@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\MathService;
+use App\Services\System\MathService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 

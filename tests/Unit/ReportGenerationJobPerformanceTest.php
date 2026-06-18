@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Jobs\ReportGenerationJob;
-use App\Services\ReportingService;
+use App\Services\Reporting\ReportingService;
 use App\Services\ThresholdService;
 use Illuminate\Support\Facades\Log;
 use Mockery;

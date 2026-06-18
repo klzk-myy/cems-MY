@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\System;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;

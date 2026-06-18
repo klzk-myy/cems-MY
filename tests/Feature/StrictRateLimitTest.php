@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Middleware\StrictRateLimit;
 use App\Models\User;
-use App\Services\RateLimitService;
+use App\Services\System\RateLimitService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;

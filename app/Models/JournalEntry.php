@@ -6,7 +6,7 @@ use App\Enums\JournalEntryStatus;
 use App\Enums\ReferenceType;
 use App\Models\Bases\AccountingModel;
 use App\Models\Traits\HasCreator;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

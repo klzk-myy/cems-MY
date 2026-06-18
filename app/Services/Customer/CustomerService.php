@@ -1,13 +1,17 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Customer;
 
 use App\Enums\CddLevel;
 use App\Enums\RiskRating;
 use App\Models\Customer;
 use App\Repositories\CustomerRepository;
+use App\Services\AuditService;
 use App\Services\Compliance\RiskScoringEngine;
 use App\Services\Contracts\CustomerServiceInterface;
+use App\Services\CustomerScreeningService;
+use App\Services\System\CacheTagsService;
+use App\Services\System\EncryptionService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 

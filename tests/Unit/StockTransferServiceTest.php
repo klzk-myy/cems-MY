@@ -6,7 +6,7 @@ use App\Enums\UserRole;
 use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use App\Services\Transaction\StockTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

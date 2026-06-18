@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\PerformanceBaselineService;
+use App\Services\System\PerformanceBaselineService;
 use App\Services\ThresholdService;
 use Illuminate\Support\Facades\Cache;
 use Mockery;

@@ -6,7 +6,7 @@ use App\Enums\CounterSessionStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Services\Branch\CounterService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

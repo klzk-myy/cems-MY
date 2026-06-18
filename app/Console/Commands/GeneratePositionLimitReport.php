@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\ReportGenerated;
-use App\Services\ReportingService;
+use App\Services\Reporting\ReportingService;
 use Illuminate\Console\Command;
 
 class GeneratePositionLimitReport extends Command

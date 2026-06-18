@@ -4,7 +4,7 @@ namespace App\Listeners;
 
 use App\Events\CustomerRelationAdded;
 use App\Events\CustomerRelationRemoved;
-use App\Services\CustomerRelationService;
+use App\Services\Customer\CustomerRelationService;
 
 class CustomerRelationListener
 {

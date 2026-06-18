@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\DTOs;
 
 use App\Enums\CddLevel;
 

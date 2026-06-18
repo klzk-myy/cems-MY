@@ -3,7 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Customer;
-use App\Services\CustomerService;
+use App\Services\Customer\CustomerService;
 use Illuminate\Database\Eloquent\Collection;
 
 class CustomerRepository

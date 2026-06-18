@@ -8,7 +8,7 @@ use App\Models\ChartOfAccount;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\BudgetService;
-use App\Services\MathService;
+use App\Services\System\MathService;
 use Database\Seeders\EnhancedChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
