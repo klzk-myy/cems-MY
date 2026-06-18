@@ -2,6 +2,8 @@
 
 namespace App\Models\Traits;
 
+use Illuminate\Support\Facades\DB;
+
 trait HasReferenceNumber
 {
     protected string $referenceNumberColumn = 'reference_number';
@@ -21,17 +23,20 @@ trait HasReferenceNumber
 
     protected function generateReferenceNumber(): string
     {
-        $last = static::query()
-            ->where($this->referenceNumberColumn, 'like', $this->referenceNumberPrefix.'%')
-            ->orderByDesc('id')
-            ->value($this->referenceNumberColumn);
+        return DB::transaction(function () {
+            $last = static::query()
+                ->where($this->referenceNumberColumn, 'like', $this->referenceNumberPrefix.'%')
+                ->orderByDesc('id')
+                ->lockForUpdate()
+                ->value($this->referenceNumberColumn);
 
-        $next = 1;
+            $next = 1;
 
-        if ($last) {
-            $next = ((int) substr($last, strlen($this->referenceNumberPrefix))) + 1;
-        }
+            if ($last) {
+                $next = ((int) substr($last, strlen($this->referenceNumberPrefix))) + 1;
+            }
 
-        return $this->referenceNumberPrefix.str_pad((string) $next, $this->referenceNumberLength, '0', STR_PAD_LEFT);
+            return $this->referenceNumberPrefix.str_pad((string) $next, $this->referenceNumberLength, '0', STR_PAD_LEFT);
+        });
     }
 }
