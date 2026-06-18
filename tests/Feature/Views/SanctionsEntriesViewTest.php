@@ -131,7 +131,7 @@ class SanctionsEntriesViewTest extends TestCase
         $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
             'entity_name' => 'New Name',
             'list_source' => 'un',
-            'entity_type' => 'individual',
+            'entity_type' => 'Individual',
         ]);
 
         $response->assertRedirect(route('compliance.sanctions.entries.show', $entry));
@@ -152,7 +152,7 @@ class SanctionsEntriesViewTest extends TestCase
 
         $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
             'entity_name' => 'Updated Name',
-            'entity_type' => 'organization',
+            'entity_type' => 'Organization',
         ]);
 
         $response->assertRedirect();
@@ -173,7 +173,7 @@ class SanctionsEntriesViewTest extends TestCase
         $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
             'entity_name' => 'Test',
             'list_source' => 'ofac',
-            'entity_type' => 'invalid',
+            'entity_type' => 'Invalid',
         ]);
 
         $response->assertSessionHasErrors('entity_type');
@@ -192,7 +192,7 @@ class SanctionsEntriesViewTest extends TestCase
         $response = $this->actingAs($user)->put(route('compliance.sanctions.entries.update', $entry), [
             'entity_name' => 'Test',
             'list_source' => 'ofac',
-            'entity_type' => 'organization',
+            'entity_type' => 'Organization',
             'address' => '123 Main St',
             'city' => 'New York',
             'country' => 'United States',
