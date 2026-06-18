@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class TellerBranchRequiredException extends RuntimeException
+class TellerBranchRequiredException extends DomainException
 {
     public function __construct(string $message = 'Teller must be assigned to a branch')
     {

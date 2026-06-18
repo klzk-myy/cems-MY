@@ -2,7 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-class PepApprovalRequiredException extends \RuntimeException
+class PepApprovalRequiredException extends DomainException
 {
     public function __construct(string $message = 'Senior Management approval required for PEP customer')
     {

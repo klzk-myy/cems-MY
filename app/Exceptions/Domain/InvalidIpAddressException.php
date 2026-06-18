@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class InvalidIpAddressException extends InvalidArgumentException
+class InvalidIpAddressException extends DomainException
 {
     public function __construct(string $ip = '')
     {

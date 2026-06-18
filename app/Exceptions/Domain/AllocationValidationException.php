@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class AllocationValidationException extends InvalidArgumentException
+class AllocationValidationException extends DomainException
 {
     public function __construct(string $reason)
     {

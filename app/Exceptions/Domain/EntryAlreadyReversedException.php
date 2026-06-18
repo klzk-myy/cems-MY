@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class EntryAlreadyReversedException extends RuntimeException
+class EntryAlreadyReversedException extends DomainException
 {
     public function __construct(int $entryId)
     {

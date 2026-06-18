@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class InvalidTransactionStateException extends InvalidArgumentException
+class InvalidTransactionStateException extends DomainException
 {
     public function __construct(string $requiredState, ?string $currentState = null)
     {

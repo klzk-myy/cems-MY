@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class TillBalanceMissingException extends RuntimeException
+class TillBalanceMissingException extends DomainException
 {
     public function __construct(public readonly string $currency, public readonly string $tillId)
     {

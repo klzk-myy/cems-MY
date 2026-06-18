@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class TransactionAlreadyProcessedException extends RuntimeException
+class TransactionAlreadyProcessedException extends DomainException
 {
     public function __construct(public readonly int $transactionId)
     {

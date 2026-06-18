@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class ClosedPeriodException extends InvalidArgumentException
+class ClosedPeriodException extends DomainException
 {
     public function __construct(string $periodCode)
     {

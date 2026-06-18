@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class InvalidStateException extends InvalidArgumentException
+class InvalidStateException extends DomainException
 {
     public function __construct(string $message = 'Invalid state')
     {

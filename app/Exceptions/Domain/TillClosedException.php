@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class TillClosedException extends RuntimeException
+class TillClosedException extends DomainException
 {
     public function __construct(?string $tillId = null)
     {

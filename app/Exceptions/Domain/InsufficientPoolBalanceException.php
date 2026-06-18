@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class InsufficientPoolBalanceException extends RuntimeException
+class InsufficientPoolBalanceException extends DomainException
 {
     public function __construct(
         public readonly string $currency,

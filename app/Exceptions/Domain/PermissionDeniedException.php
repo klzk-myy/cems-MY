@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class PermissionDeniedException extends InvalidArgumentException
+class PermissionDeniedException extends DomainException
 {
     public function __construct(string $action)
     {

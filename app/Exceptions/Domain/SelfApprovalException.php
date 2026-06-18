@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class SelfApprovalException extends InvalidArgumentException
+class SelfApprovalException extends DomainException
 {
     public function __construct()
     {

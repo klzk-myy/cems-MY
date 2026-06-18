@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class SupervisorRequiredException extends RuntimeException
+class SupervisorRequiredException extends DomainException
 {
     public function __construct(string $message = 'Supervisor must be a manager or admin')
     {

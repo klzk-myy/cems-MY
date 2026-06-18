@@ -3,9 +3,8 @@
 namespace App\Exceptions\Domain;
 
 use App\Models\Customer;
-use InvalidArgumentException;
 
-class CddDocumentExpiredException extends InvalidArgumentException
+class CddDocumentExpiredException extends DomainException
 {
     public function __construct(Customer $customer)
     {

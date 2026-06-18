@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class FiscalYearClosedException extends InvalidArgumentException
+class FiscalYearClosedException extends DomainException
 {
     public function __construct(string $message = 'Fiscal year is already closed')
     {

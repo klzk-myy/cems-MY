@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class SessionOwnershipException extends RuntimeException
+class SessionOwnershipException extends DomainException
 {
     public function __construct(string $message = 'Session does not belong to the specified user')
     {

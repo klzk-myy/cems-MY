@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class InvalidCurrencyException extends InvalidArgumentException
+class InvalidCurrencyException extends DomainException
 {
     public function __construct(string $currencyCode)
     {

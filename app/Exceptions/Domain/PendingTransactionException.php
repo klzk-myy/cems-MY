@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class PendingTransactionException extends RuntimeException
+class PendingTransactionException extends DomainException
 {
     public function __construct(public readonly int $transactionId, public readonly string $status)
     {

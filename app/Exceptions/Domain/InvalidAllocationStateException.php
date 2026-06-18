@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class InvalidAllocationStateException extends RuntimeException
+class InvalidAllocationStateException extends DomainException
 {
     public function __construct(string $requiredState = 'approved')
     {

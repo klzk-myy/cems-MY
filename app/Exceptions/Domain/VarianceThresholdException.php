@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class VarianceThresholdException extends RuntimeException
+class VarianceThresholdException extends DomainException
 {
     public function __construct(string $threshold, bool $requiresApproval = false)
     {

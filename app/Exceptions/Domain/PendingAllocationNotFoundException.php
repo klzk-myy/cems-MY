@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class PendingAllocationNotFoundException extends RuntimeException
+class PendingAllocationNotFoundException extends DomainException
 {
     public function __construct(string $currency)
     {

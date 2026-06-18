@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class SessionClosedException extends RuntimeException
+class SessionClosedException extends DomainException
 {
     public function __construct(string $message = 'Session is not open')
     {

@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class InvalidFiscalYearStateException extends InvalidArgumentException
+class InvalidFiscalYearStateException extends DomainException
 {
     public function __construct(string $message)
     {

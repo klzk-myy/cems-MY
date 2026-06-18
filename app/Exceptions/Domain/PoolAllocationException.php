@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class PoolAllocationException extends RuntimeException
+class PoolAllocationException extends DomainException
 {
     public function __construct(string $message = 'Failed to allocate from branch pool')
     {

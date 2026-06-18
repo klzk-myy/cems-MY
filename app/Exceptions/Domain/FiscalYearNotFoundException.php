@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use Exception;
-
-class FiscalYearNotFoundException extends Exception
+class FiscalYearNotFoundException extends DomainException
 {
     public function __construct(string $yearCode)
     {

@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class UnbalancedJournalEntriesException extends RuntimeException
+class UnbalancedJournalEntriesException extends DomainException
 {
     public function __construct(string $entryIds)
     {

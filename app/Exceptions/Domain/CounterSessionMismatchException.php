@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class CounterSessionMismatchException extends RuntimeException
+class CounterSessionMismatchException extends DomainException
 {
     public function __construct(
         public readonly string $counterCode,

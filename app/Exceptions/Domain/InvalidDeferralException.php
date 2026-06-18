@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class InvalidDeferralException extends InvalidArgumentException
+class InvalidDeferralException extends DomainException
 {
     public function __construct(string $message = 'Only Enhanced CDD transactions support deferred entries')
     {

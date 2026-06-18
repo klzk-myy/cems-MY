@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use Exception;
-
-class RiskProfileNotFoundException extends Exception
+class RiskProfileNotFoundException extends DomainException
 {
     public function __construct(int $customerId)
     {

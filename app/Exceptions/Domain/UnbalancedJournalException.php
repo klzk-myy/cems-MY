@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class UnbalancedJournalException extends InvalidArgumentException
+class UnbalancedJournalException extends DomainException
 {
     public function __construct(string $debits, string $credits)
     {

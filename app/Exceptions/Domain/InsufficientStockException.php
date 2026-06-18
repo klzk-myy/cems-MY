@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class InsufficientStockException extends InvalidArgumentException
+class InsufficientStockException extends DomainException
 {
     public function __construct(
         public readonly string $currency,

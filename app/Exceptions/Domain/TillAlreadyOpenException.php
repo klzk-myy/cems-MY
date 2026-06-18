@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class TillAlreadyOpenException extends RuntimeException
+class TillAlreadyOpenException extends DomainException
 {
     public function __construct(public readonly string $counterCode)
     {

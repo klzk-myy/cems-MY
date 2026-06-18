@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class AccountNotFoundException extends InvalidArgumentException
+class AccountNotFoundException extends DomainException
 {
     public function __construct(string $accountCode)
     {

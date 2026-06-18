@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class UserAlreadyAtCounterException extends RuntimeException
+class UserAlreadyAtCounterException extends DomainException
 {
     public function __construct(public readonly int $userId)
     {

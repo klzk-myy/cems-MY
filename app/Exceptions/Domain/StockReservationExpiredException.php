@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class StockReservationExpiredException extends RuntimeException
+class StockReservationExpiredException extends DomainException
 {
     public function __construct(public readonly int $transactionId)
     {

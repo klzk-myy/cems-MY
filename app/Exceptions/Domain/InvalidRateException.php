@@ -2,7 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-class InvalidRateException extends InvalidArgumentException
+class InvalidRateException extends DomainException
 {
     public function __construct(
         public readonly string $message,

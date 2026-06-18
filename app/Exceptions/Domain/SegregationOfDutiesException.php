@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use InvalidArgumentException;
-
-class SegregationOfDutiesException extends InvalidArgumentException
+class SegregationOfDutiesException extends DomainException
 {
     public function __construct(string $action = 'perform this action')
     {

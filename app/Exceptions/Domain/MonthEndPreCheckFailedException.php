@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use Exception;
-
-class MonthEndPreCheckFailedException extends Exception
+class MonthEndPreCheckFailedException extends DomainException
 {
     protected array $failures;
 

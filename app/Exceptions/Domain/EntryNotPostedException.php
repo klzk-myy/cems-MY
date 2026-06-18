@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class EntryNotPostedException extends RuntimeException
+class EntryNotPostedException extends DomainException
 {
     public function __construct(int $entryId)
     {

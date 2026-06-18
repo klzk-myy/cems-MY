@@ -2,9 +2,7 @@
 
 namespace App\Exceptions\Domain;
 
-use RuntimeException;
-
-class DuplicateTransactionException extends RuntimeException
+class DuplicateTransactionException extends DomainException
 {
     public function __construct(int $cooldownSeconds = 30)
     {
