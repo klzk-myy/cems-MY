@@ -2,13 +2,10 @@
 
 namespace Tests\Unit\Services;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class AccountingDirectoryTest extends TestCase
 {
-    use RefreshDatabase;
-
     public function test_accounting_services_are_in_accounting_directory(): void
     {
         $expectedFiles = [

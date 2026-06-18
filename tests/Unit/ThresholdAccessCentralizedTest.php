@@ -6,14 +6,11 @@ use App\Enums\AmlRuleType;
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
 use App\Services\ThresholdService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ThresholdAccessCentralizedTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function cdd_level_uses_centralized_threshold_access(): void
     {

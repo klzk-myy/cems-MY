@@ -6,15 +6,12 @@ use App\Models\Customer;
 use App\Models\JournalEntry;
 use App\Models\SanctionEntry;
 use App\Models\Transaction;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use Tests\TestCase;
 
 class EagerLoadingPerformanceTest extends TestCase
 {
-    use RefreshDatabase;
-
     private function getDefaultWith(string $modelClass): array
     {
         $reflection = new ReflectionClass($modelClass);

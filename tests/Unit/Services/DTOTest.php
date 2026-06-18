@@ -6,13 +6,10 @@ use App\Services\DTOs\AllocationValidationResult;
 use App\Services\DTOs\ComplianceCheckResult;
 use App\Services\DTOs\RateOverrideResult;
 use App\Services\DTOs\ValidationResult;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class DTOTest extends TestCase
 {
-    use RefreshDatabase;
-
     public function test_validation_result_holds_data(): void
     {
         $result = new ValidationResult(

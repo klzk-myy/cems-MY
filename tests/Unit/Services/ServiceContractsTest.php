@@ -26,13 +26,10 @@ use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\TransactionMonitoringService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ServiceContractsTest extends TestCase
 {
-    use RefreshDatabase;
-
     public function test_services_implement_their_interfaces(): void
     {
         $mappings = [

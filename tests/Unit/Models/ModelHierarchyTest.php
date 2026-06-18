@@ -62,13 +62,10 @@ use App\Models\TransactionConfirmation;
 use App\Models\TransactionError;
 use App\Models\TransactionImport;
 use App\Models\UserNotificationPreference;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ModelHierarchyTest extends TestCase
 {
-    use RefreshDatabase;
-
     public function test_branch_models_extend_base_model(): void
     {
         $models = [

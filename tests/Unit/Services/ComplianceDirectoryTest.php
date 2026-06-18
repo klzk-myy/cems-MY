@@ -2,13 +2,10 @@
 
 namespace Tests\Unit\Services;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ComplianceDirectoryTest extends TestCase
 {
-    use RefreshDatabase;
-
     public function test_compliance_services_are_in_compliance_directory(): void
     {
         $expectedFiles = [

@@ -4,15 +4,12 @@ namespace Tests\Unit;
 
 use App\Enums\CddLevel;
 use App\Services\System\MathService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BoundaryValueTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected MathService $mathService;
 
     protected function setUp(): void
