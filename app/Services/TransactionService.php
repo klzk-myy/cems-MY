@@ -11,13 +11,9 @@ use App\Events\TransactionCreated;
 use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
-use App\Exceptions\Domain\InvalidCurrencyException;
-use App\Exceptions\Domain\InvalidIpAddressException;
-use App\Exceptions\Domain\PepApprovalRequiredException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Http\Traits\ValidatorMethods;
-use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\TillBalance;
@@ -46,32 +42,8 @@ class TransactionService implements TransactionServiceInterface
         protected CacheTagsService $cacheTagsService,
         protected TransactionAccountingService $transactionAccountingService,
         protected PepApprovalService $pepApprovalService,
+        protected TransactionValidationService $validationService,
     ) {}
-
-    protected function validateIpAddress(?string $ipAddress): void
-    {
-        if ($ipAddress && ! filter_var($ipAddress, FILTER_VALIDATE_IP)) {
-            throw new InvalidIpAddressException($ipAddress);
-        }
-    }
-
-    /**
-     * Validate currency code exists in system.
-     *
-     * @param  string  $currencyCode  Currency code to validate
-     *
-     * @throws \InvalidArgumentException If currency code is invalid
-     */
-    protected function validateCurrencyCode(string $currencyCode): void
-    {
-        $currency = Currency::where('code', $currencyCode)
-            ->where('is_active', true)
-            ->first();
-
-        if (! $currency) {
-            throw new InvalidCurrencyException($currencyCode);
-        }
-    }
 
     /**
      * Run complete pre-transaction validation before creation.
@@ -200,24 +172,14 @@ class TransactionService implements TransactionServiceInterface
      */
     public function createTransaction(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction
     {
-        $this->validateCurrencyCode($data['currency_code']);
+        $this->validationService->validateCurrency($data['currency_code']);
 
         $userId = $userId ?? auth()->id();
         $ipAddress = $ipAddress ?? request()->ip();
 
-        // Validate IP address format
-        $this->validateIpAddress($ipAddress);
+        $this->validationService->validateIpAddress($ipAddress);
 
-        // Verify till is open for this currency
-        $tillBalance = TillBalance::where('till_id', $data['till_id'])
-            ->where('currency_code', $data['currency_code'])
-            ->whereDate('date', today())
-            ->whereNull('closed_at')
-            ->first();
-
-        if (! $tillBalance) {
-            throw new TillBalanceMissingException($data['currency_code'], $data['till_id']);
-        }
+        $tillBalance = $this->validationService->validateTillBalance($data['till_id'], $data['currency_code']);
 
         // Get customer and calculate amounts
         $customer = Customer::findOrFail($data['customer_id']);
@@ -225,31 +187,7 @@ class TransactionService implements TransactionServiceInterface
         $rate = (string) $data['rate'];
         $amountLocal = $this->mathService->multiply($amountForeign, $rate);
 
-        // pd-00.md 14C.13.1(d): Check if PEP customer requires head office Senior Management approval
-        // This is pre-transaction approval for establishing/continuing business relationship with PEPs
-        if ($this->pepApprovalService->requiresHeadOfficeApproval($customer)) {
-            // Check if customer already has approved approval
-            if (! $this->pepApprovalService->hasApprovedApproval($customer)) {
-                $pendingApproval = $this->pepApprovalService->requestApproval(
-                    $customer,
-                    $data['type'] ?? 'transaction'
-                );
-
-                throw new PepApprovalRequiredException(
-                    "Senior Management approval required for PEP customer. Approval ID: {$pendingApproval->id}"
-                );
-            }
-        }
-
-        // pd-00.md 14C.13.1(c): PEPs must provide BOTH source of funds AND source of wealth
-        if ($customer->pep_status) {
-            if (empty($data['source_of_funds'])) {
-                throw new \InvalidArgumentException('Source of funds is required for PEP customers.');
-            }
-            if (empty($data['source_of_wealth'])) {
-                throw new \InvalidArgumentException('Source of wealth is required for PEP customers per pd-00.md 14C.13.1(c).');
-            }
-        }
+        $this->validationService->validatePepRequirements($customer, $data);
 
         // Validate against teller allocation (only for tellers, not manager/admin overrides)
         // Only validate for Buy transactions (teller sells foreign currency and needs allocation)
@@ -627,7 +565,7 @@ class TransactionService implements TransactionServiceInterface
     {
         $ipAddress = $ipAddress ?? request()->ip();
 
-        $this->validateIpAddress($ipAddress);
+        $this->validationService->validateIpAddress($ipAddress);
 
         // Validate transaction is in pending approval status
         if ($transaction->status !== TransactionStatus::PendingApproval) {
