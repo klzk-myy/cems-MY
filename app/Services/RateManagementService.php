@@ -10,17 +10,10 @@ use Illuminate\Support\Facades\Cache;
 
 class RateManagementService
 {
-    protected RateApiService $rateApiService;
-
-    protected MathService $mathService;
-
     public function __construct(
-        ?RateApiService $rateApiService = null,
-        ?MathService $mathService = null
-    ) {
-        $this->rateApiService = $rateApiService ?? new RateApiService;
-        $this->mathService = $mathService ?? new MathService;
-    }
+        protected RateApiService $rateApiService,
+        protected MathService $mathService
+    ) {}
 
     public function fetchAndStoreRates(?User $initiatedBy = null, ?int $branchId = null): array
     {
