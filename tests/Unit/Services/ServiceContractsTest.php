@@ -2,7 +2,8 @@
 
 namespace Tests\Unit\Services;
 
-use App\Services\AccountingService;
+use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
 use App\Services\ComplianceService;
 use App\Services\Contracts\AccountingServiceInterface;
@@ -17,7 +18,6 @@ use App\Services\Contracts\ReportingServiceInterface;
 use App\Services\Contracts\TellerAllocationServiceInterface;
 use App\Services\Contracts\ThresholdServiceInterface;
 use App\Services\Contracts\TransactionMonitoringServiceInterface;
-use App\Services\CurrencyPositionService;
 use App\Services\CustomerScreeningService;
 use App\Services\CustomerService;
 use App\Services\MathService;

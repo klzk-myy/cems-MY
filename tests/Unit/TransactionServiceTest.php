@@ -20,7 +20,7 @@ use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\CurrencyPositionService;
+use App\Services\Accounting\CurrencyPositionService;
 use App\Services\MathService;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -7,7 +7,7 @@ use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Models\FiscalYear;
 use App\Models\User;
-use App\Services\AccountingService;
+use App\Services\Accounting\AccountingService;
 use App\Services\AuditService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

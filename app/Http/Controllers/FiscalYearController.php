@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreFiscalYearRequest;
 use App\Models\FiscalYear;
-use App\Services\FiscalYearService;
+use App\Services\Accounting\FiscalYearService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

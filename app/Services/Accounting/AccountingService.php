@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Accounting;
 
 use App\Enums\AccountType;
 use App\Enums\JournalEntryStatus;
@@ -9,6 +9,8 @@ use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
+use App\Services\AuditService;
+use App\Services\MathService;
 use App\Services\Contracts\AccountingServiceInterface;
 use Illuminate\Support\Facades\DB;
 

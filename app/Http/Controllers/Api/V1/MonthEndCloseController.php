@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Http\Controllers\Controller;
-use App\Services\MonthEndCloseService;
+use App\Services\Accounting\MonthEndCloseService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

@@ -7,7 +7,7 @@ use App\Models\AccountingPeriod;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
-use App\Services\LedgerService;
+use App\Services\Accounting\LedgerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;

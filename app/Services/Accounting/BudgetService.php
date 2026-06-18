@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Accounting;
 
 use App\Models\AccountingPeriod;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
+use App\Services\MathService;
 use Illuminate\Support\Collection;
 
 /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Accounting;
 
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\UnbalancedJournalEntriesException;
@@ -8,6 +8,8 @@ use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
+use App\Services\AuditService;
+use App\Services\MathService;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 

@@ -8,7 +8,7 @@ use App\Models\CurrencyPosition;
 use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\CurrencyPositionService;
+use App\Services\Accounting\CurrencyPositionService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

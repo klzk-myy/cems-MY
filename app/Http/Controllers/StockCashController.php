@@ -9,7 +9,7 @@ use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\TillBalance;
 use App\Models\Transaction;
-use App\Services\CurrencyPositionService;
+use App\Services\Accounting\CurrencyPositionService;
 use App\Services\MathService;
 use App\Services\TillService;
 use Illuminate\Http\RedirectResponse;

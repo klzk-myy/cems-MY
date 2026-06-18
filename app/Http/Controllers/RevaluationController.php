@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CurrencyPosition;
 use App\Models\RevaluationEntry;
-use App\Services\RevaluationService;
+use App\Services\Accounting\RevaluationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

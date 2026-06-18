@@ -6,7 +6,7 @@ use App\Enums\StockReservationStatus;
 use App\Models\StockReservation;
 use App\Models\User;
 use App\Notifications\ReservationExpiredNotification;
-use App\Services\CurrencyPositionService;
+use App\Services\Accounting\CurrencyPositionService;
 use Illuminate\Console\Command;
 
 class ExpireStockReservations extends Command

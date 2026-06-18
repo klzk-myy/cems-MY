@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
-use App\Services\MonthEndCloseService;
+use App\Services\Accounting\MonthEndCloseService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 

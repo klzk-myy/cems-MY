@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Accounting;
 
 use App\Enums\AccountType;
 use App\Exceptions\Domain\AccountNotFoundException;
@@ -16,6 +16,8 @@ use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\User;
+use App\Services\AuditService;
+use App\Services\MathService;
 use Illuminate\Support\Facades\DB;
 
 /**

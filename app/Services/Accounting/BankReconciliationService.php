@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Accounting;
 
 use App\Enums\CheckStatus;
 use App\Models\BankReconciliation;
 use App\Models\JournalEntry;
+use App\Services\MathService;
 use Illuminate\Support\Facades\DB;
 
 class BankReconciliationService

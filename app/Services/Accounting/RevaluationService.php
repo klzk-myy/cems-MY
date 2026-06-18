@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Accounting;
 
 use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
@@ -8,6 +8,9 @@ use App\Models\ChartOfAccount;
 use App\Models\CurrencyPosition;
 use App\Models\RevaluationEntry;
 use App\Models\User;
+use App\Services\AuditService;
+use App\Services\MathService;
+use App\Services\RateApiService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;

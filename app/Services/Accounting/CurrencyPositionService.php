@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Accounting;
 
 use App\Enums\CounterSessionStatus;
 use App\Enums\StockReservationStatus;
@@ -10,6 +10,7 @@ use App\Models\CurrencyPosition;
 use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\MathService;
 use App\Services\Contracts\CurrencyPositionServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;

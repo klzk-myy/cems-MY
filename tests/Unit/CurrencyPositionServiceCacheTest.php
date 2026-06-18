@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\CurrencyPosition;
-use App\Services\CurrencyPositionService;
+use App\Services\Accounting\CurrencyPositionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;

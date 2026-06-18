@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\ReportGenerated;
-use App\Services\AccountingService;
+use App\Services\Accounting\AccountingService;
 use App\Services\MathService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;

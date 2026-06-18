@@ -10,7 +10,7 @@ use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\FiscalYear;
 use App\Models\User;
-use App\Services\MonthEndCloseService;
+use App\Services\Accounting\MonthEndCloseService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
