@@ -15,7 +15,7 @@ use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
-use App\Services\ComplianceService;
+use App\Services\Compliance\ComplianceService;
 use App\Services\MathService;
 use App\Services\TransactionCancellationService;
 use App\Services\TransactionMonitoringService;

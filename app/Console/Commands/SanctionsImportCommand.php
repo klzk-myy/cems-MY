@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\SanctionList;
-use App\Services\SanctionsImportService;
+use App\Services\Compliance\SanctionsImportService;
 use Illuminate\Console\Command;
 
 class SanctionsImportCommand extends Command

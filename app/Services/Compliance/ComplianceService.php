@@ -1,6 +1,11 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Compliance;
+
+use App\Services\MathService;
+use App\Services\CustomerScreeningService;
+use App\Services\EncryptionService;
+use App\Services\ThresholdService;
 
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;

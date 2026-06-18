@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Compliance;
 
 use App\Enums\CddLevel;
 use App\Models\Customer;

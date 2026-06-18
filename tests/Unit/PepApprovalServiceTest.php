@@ -8,7 +8,7 @@ use App\Enums\RiskRating;
 use App\Models\Customer;
 use App\Models\PepApprovalRequest;
 use App\Models\User;
-use App\Services\PepApprovalService;
+use App\Services\Compliance\PepApprovalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

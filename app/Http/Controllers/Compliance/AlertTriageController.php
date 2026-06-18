@@ -8,7 +8,7 @@ use App\Http\Requests\AssignAlertRequest;
 use App\Http\Requests\DismissAlertRequest;
 use App\Http\Requests\ResolveAlertRequest;
 use App\Models\Alert;
-use App\Services\AlertTriageService;
+use App\Services\Compliance\AlertTriageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

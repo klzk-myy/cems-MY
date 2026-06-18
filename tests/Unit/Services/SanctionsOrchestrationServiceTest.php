@@ -4,10 +4,10 @@ namespace Tests\Unit\Services;
 
 use App\Enums\SanctionListType;
 use App\Models\SanctionList;
+use App\Services\Compliance\SanctionsDownloadService;
+use App\Services\Compliance\SanctionsImportService;
+use App\Services\Compliance\SanctionsOrchestrationService;
 use App\Services\MathService;
-use App\Services\SanctionsDownloadService;
-use App\Services\SanctionsImportService;
-use App\Services\SanctionsOrchestrationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;

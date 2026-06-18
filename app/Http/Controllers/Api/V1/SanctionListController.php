@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
-use App\Services\SanctionsImportService;
+use App\Services\Compliance\SanctionsImportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

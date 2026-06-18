@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
-use App\Services\CustomerRiskScoringService;
+use App\Services\Compliance\CustomerRiskScoringService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

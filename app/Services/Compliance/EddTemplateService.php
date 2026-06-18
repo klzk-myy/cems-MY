@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Compliance;
+
+use App\Services\MathService;
 
 use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;

@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\CustomerRiskReviewService;
+use App\Services\Compliance\CustomerRiskReviewService;
 use App\Services\ThresholdService;
 use Illuminate\Console\Command;
 

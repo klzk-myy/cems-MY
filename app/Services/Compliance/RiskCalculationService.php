@@ -1,6 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Compliance;
+
+use App\Services\MathService;
+use App\Services\ThresholdService;
 
 use App\Enums\TransactionStatus;
 use App\Models\Customer;

@@ -24,7 +24,7 @@ use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\LedgerService;
 use App\Services\AuditService;
 use App\Services\BranchPoolService;
-use App\Services\ComplianceService;
+use App\Services\Compliance\ComplianceService;
 use App\Services\CounterOpeningWorkflowService;
 use App\Services\CounterService;
 use App\Services\MathService;

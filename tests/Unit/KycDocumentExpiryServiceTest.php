@@ -11,7 +11,7 @@ use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\KycDocumentExpiryService;
+use App\Services\Compliance\KycDocumentExpiryService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Compliance;
 
 use App\Enums\ApprovalStatus;
 use App\Enums\PepType;

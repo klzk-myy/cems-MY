@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Alert;
-use App\Services\AlertTriageService;
+use App\Services\Compliance\AlertTriageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

@@ -5,7 +5,7 @@ namespace Tests\Unit\Services;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
-use App\Services\ComplianceService;
+use App\Services\Compliance\ComplianceService;
 use App\Services\Contracts\AccountingServiceInterface;
 use App\Services\Contracts\AuditServiceInterface;
 use App\Services\Contracts\ComplianceServiceInterface;

@@ -1,6 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Compliance;
+
+use App\Services\MathService;
+use App\Services\AuditService;
+use App\Services\ThresholdService;
 
 use App\Models\Customer;
 use App\ValueObjects\RiskAnalysisResult;

@@ -6,7 +6,7 @@ use App\Enums\CddLevel;
 use App\Enums\PepType;
 use App\Enums\RiskRating;
 use App\Models\Customer;
-use App\Services\CddLevelDeterminationService;
+use App\Services\Compliance\CddLevelDeterminationService;
 use App\Services\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

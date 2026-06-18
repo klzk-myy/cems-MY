@@ -6,7 +6,7 @@ use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
-use App\Services\ComplianceService;
+use App\Services\Compliance\ComplianceService;
 use App\Services\EncryptionService;
 use App\Services\MathService;
 use App\Services\Risk\StructuringRiskService;

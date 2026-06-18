@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Compliance;
 
 use App\Http\Traits\ValidatorMethods;
 use Illuminate\Support\Facades\Http;

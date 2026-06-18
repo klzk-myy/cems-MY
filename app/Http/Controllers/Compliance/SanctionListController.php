@@ -8,7 +8,7 @@ use App\Http\Requests\UpdateSanctionEntryRequest;
 use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
-use App\Services\SanctionsOrchestrationService;
+use App\Services\Compliance\SanctionsOrchestrationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

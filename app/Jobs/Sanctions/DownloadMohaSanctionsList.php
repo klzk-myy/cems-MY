@@ -3,8 +3,8 @@
 namespace App\Jobs\Sanctions;
 
 use App\Services\AuditService;
-use App\Services\SanctionsDownloadService;
-use App\Services\SanctionsImportService;
+use App\Services\Compliance\SanctionsDownloadService;
+use App\Services\Compliance\SanctionsImportService;
 use Illuminate\Support\Facades\Log;
 
 class DownloadMohaSanctionsList extends BaseSanctionsDownloadJob

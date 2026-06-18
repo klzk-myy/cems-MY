@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\SanctionList;
-use App\Services\SanctionsImportService;
+use App\Services\Compliance\SanctionsImportService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

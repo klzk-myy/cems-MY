@@ -1,6 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Compliance;
+
+use App\Services\MathService;
+use App\Services\TransactionMonitoringService;
+use App\Services\ThresholdService;
 
 use App\Enums\AlertPriority;
 use App\Enums\ComplianceFlagType;

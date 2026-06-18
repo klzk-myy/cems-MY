@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
-use App\Services\ComplianceService;
+use App\Services\Compliance\ComplianceService;
 use App\Services\MathService;
 use App\Services\TransactionApprovalService;
 use App\Services\TransactionMonitoringService;

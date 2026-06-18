@@ -11,8 +11,8 @@ use App\Events\RiskScoreUpdated;
 use App\Models\Alert;
 use App\Models\RiskScoreSnapshot;
 use App\Services\AuditService;
-use App\Services\CustomerRiskScoringService;
-use App\Services\EddTemplateService;
+use App\Services\Compliance\CustomerRiskScoringService;
+use App\Services\Compliance\EddTemplateService;
 
 class ComplianceEventListener
 {

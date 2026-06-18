@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Compliance;
 
 use App\Models\SanctionList;
 use Illuminate\Support\Facades\Log;
