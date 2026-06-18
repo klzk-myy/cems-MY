@@ -197,4 +197,14 @@ class Transaction extends TransactionModel
     {
         return $this->hasMany(TransactionError::class);
     }
+
+    public function journalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function deferredJournalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'deferred_journal_entry_id');
+    }
 }
