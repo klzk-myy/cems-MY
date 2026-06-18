@@ -486,7 +486,7 @@ class TransactionService implements TransactionServiceInterface
             );
 
             // Dispatch event for async processing
-            Event::dispatch(new TransactionCreated($transaction));
+            Event::dispatchAfterCommit(new TransactionCreated($transaction));
 
             return $transaction;
         });
