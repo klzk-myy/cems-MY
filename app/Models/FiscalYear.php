@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $closedBy
  * @property-read Collection<int, AccountingPeriod> $periods
  */
-class FiscalYear extends Model
+class FiscalYear extends BaseModel
 {
     use HasFactory;
 

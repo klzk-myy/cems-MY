@@ -5,10 +5,9 @@ namespace App\Models;
 use App\Enums\SanctionListType;
 use App\Enums\UpdateStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class SanctionList extends Model
+class SanctionList extends BaseModel
 {
     use HasFactory;
 

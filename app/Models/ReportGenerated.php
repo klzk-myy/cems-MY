@@ -5,10 +5,9 @@ namespace App\Models;
 use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ReportGenerated extends Model
+class ReportGenerated extends BaseModel
 {
     use HasFactory;
 

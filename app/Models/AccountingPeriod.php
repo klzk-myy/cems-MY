@@ -32,7 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Collection|JournalEntry[] $journalEntries Journal entries posted in this period
  * @property-read User|null $closedBy User who closed this period
  */
-class AccountingPeriod extends Model
+class AccountingPeriod extends BaseModel
 {
     use HasFactory;
 

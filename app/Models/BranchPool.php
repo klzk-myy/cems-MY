@@ -4,10 +4,9 @@ namespace App\Models;
 
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BranchPool extends Model
+class BranchPool extends BaseModel
 {
     use HasFactory;
 

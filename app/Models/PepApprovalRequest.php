@@ -29,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-class PepApprovalRequest extends Model
+class PepApprovalRequest extends BaseModel
 {
     use HasFactory;
 

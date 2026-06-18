@@ -34,7 +34,7 @@ use Illuminate\Support\Carbon;
  * @property-read CostCenter|null $costCenter
  * @property-read Department|null $department
  */
-class ChartOfAccount extends Model
+class ChartOfAccount extends BaseModel
 {
     use HasFactory;
 

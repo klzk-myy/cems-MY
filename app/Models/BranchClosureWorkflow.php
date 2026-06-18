@@ -4,10 +4,9 @@ namespace App\Models;
 
 use App\Enums\BranchClosureStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BranchClosureWorkflow extends Model
+class BranchClosureWorkflow extends BaseModel
 {
     use HasFactory;
 

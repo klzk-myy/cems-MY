@@ -4,10 +4,9 @@ namespace App\Models;
 
 use Cron\CronExpression;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ReportSchedule extends Model
+class ReportSchedule extends BaseModel
 {
     use HasFactory;
 

@@ -3,12 +3,12 @@
 namespace App\Models\Compliance;
 
 use App\Enums\CaseNoteType;
+use App\Models\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ComplianceCaseNote extends Model
+class ComplianceCaseNote extends BaseModel
 {
     use HasFactory;
 

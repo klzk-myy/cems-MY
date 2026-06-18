@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Backup Log Model
  * Tracks backup history, sizes, and statuses for CEMS-MY system
  */
-class BackupLog extends Model
+class BackupLog extends BaseModel
 {
     use HasFactory;
 

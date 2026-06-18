@@ -4,10 +4,9 @@ namespace App\Models;
 
 use App\Enums\AnalysisType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SanctionsAnalysis extends Model
+class SanctionsAnalysis extends BaseModel
 {
     use HasFactory;
 

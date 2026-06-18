@@ -2,6 +2,7 @@
 
 namespace App\Models\Compliance;
 
+use App\Models\BaseModel;
 use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +26,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-class CustomerBehavioralBaseline extends Model
+class CustomerBehavioralBaseline extends BaseModel
 {
     use HasFactory;
 

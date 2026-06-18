@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
-class RevaluationEntry extends Model
+class RevaluationEntry extends BaseModel
 {
     protected $fillable = [
         'currency_code',

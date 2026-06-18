@@ -23,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Collection<int, CostCenter> $costCenters
  */
-class Department extends Model
+class Department extends BaseModel
 {
     use HasCodeAndName, HasFactory;
 

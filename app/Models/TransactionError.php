@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class TransactionError extends Model
+class TransactionError extends BaseModel
 {
     use HasFactory;
 

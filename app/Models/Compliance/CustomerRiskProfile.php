@@ -3,6 +3,7 @@
 namespace App\Models\Compliance;
 
 use App\Enums\RecalculationTrigger;
+use App\Models\BaseModel;
 use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,7 +31,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-class CustomerRiskProfile extends Model
+class CustomerRiskProfile extends BaseModel
 {
     use HasFactory;
 

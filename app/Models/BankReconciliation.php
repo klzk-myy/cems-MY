@@ -5,10 +5,9 @@ namespace App\Models;
 use App\Enums\BankReconciliationStatus;
 use App\Enums\CheckStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BankReconciliation extends Model
+class BankReconciliation extends BaseModel
 {
     use HasFactory;
 

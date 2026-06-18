@@ -5,9 +5,8 @@ namespace App\Models;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class FlaggedTransaction extends Model
+class FlaggedTransaction extends BaseModel
 {
     use HasFactory;
 

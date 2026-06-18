@@ -7,10 +7,9 @@ use App\Models\Traits\BelongsToUser;
 use App\Models\Traits\HasNotes;
 use App\Models\Traits\HasStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class TransactionConfirmation extends Model
+class TransactionConfirmation extends BaseModel
 {
     use BelongsToUser, HasFactory, HasNotes, HasStatus;
 

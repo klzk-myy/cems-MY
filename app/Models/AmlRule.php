@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\Log;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class AmlRule extends Model
+class AmlRule extends BaseModel
 {
     use HasFactory;
 

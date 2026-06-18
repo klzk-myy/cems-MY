@@ -4,10 +4,9 @@ namespace App\Models;
 
 use App\Enums\MatchType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ScreeningResult extends Model
+class ScreeningResult extends BaseModel
 {
     use HasFactory;
 

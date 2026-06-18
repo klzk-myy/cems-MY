@@ -4,9 +4,8 @@ namespace App\Models;
 
 use App\Enums\TransactionImportStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class TransactionImport extends Model
+class TransactionImport extends BaseModel
 {
     use HasFactory;
 

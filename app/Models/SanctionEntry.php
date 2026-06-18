@@ -5,10 +5,9 @@ namespace App\Models;
 use App\Enums\EntityType;
 use App\Enums\SanctionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SanctionEntry extends Model
+class SanctionEntry extends BaseModel
 {
     use HasFactory;
 

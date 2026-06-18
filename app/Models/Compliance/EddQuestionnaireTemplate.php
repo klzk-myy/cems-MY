@@ -2,11 +2,11 @@
 
 namespace App\Models\Compliance;
 
+use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class EddQuestionnaireTemplate extends Model
+class EddQuestionnaireTemplate extends BaseModel
 {
     use HasFactory;
 

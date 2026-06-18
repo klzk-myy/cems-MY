@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use App\Enums\HighRiskCountryRiskLevel;
-use Illuminate\Database\Eloquent\Model;
 
-class HighRiskCountry extends Model
+class HighRiskCountry extends BaseModel
 {
     protected $primaryKey = 'country_code';
 
