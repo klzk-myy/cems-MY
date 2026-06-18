@@ -24,9 +24,15 @@ class TransactionServiceEventTimingTest extends TestCase
         $fileContent = file_get_contents(app_path('Services/TransactionService.php'));
 
         $this->assertStringContainsString(
-            'dispatchAfterCommit',
+            'afterCommit',
             $fileContent,
-            'TransactionService should use dispatchAfterCommit() instead of dispatch() inside DB::transaction'
+            'TransactionService should use DB::afterCommit() to dispatch events outside the transaction'
+        );
+
+        $this->assertStringContainsString(
+            'Event::dispatch',
+            $fileContent,
+            'TransactionService should dispatch events via Event::dispatch inside afterCommit'
         );
 
         Event::assertNothingDispatched();
