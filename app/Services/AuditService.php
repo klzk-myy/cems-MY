@@ -4,10 +4,11 @@ namespace App\Services;
 
 use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
+use App\Services\Contracts\AuditServiceInterface;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Request;
 
-class AuditService
+class AuditService implements AuditServiceInterface
 {
     /**
      * Compute SHA-256 hash for a log entry (tamper-evident chain)

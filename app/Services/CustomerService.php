@@ -7,6 +7,7 @@ use App\Enums\RiskRating;
 use App\Models\Customer;
 use App\Repositories\CustomerRepository;
 use App\Services\Compliance\RiskScoringEngine;
+use App\Services\Contracts\CustomerServiceInterface;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +25,7 @@ use Illuminate\Support\Facades\DB;
  * This service removes business logic from controllers and models,
  * ensuring proper MVC separation of concerns.
  */
-class CustomerService
+class CustomerService implements CustomerServiceInterface
 {
     public function __construct(
         protected EncryptionService $encryptionService,

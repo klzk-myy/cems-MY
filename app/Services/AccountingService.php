@@ -9,6 +9,7 @@ use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
+use App\Services\Contracts\AccountingServiceInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  *
  * Ensures double-entry bookkeeping integrity and maintains ledger consistency.
  */
-class AccountingService
+class AccountingService implements AccountingServiceInterface
 {
     /**
      * Math service for high-precision calculations.

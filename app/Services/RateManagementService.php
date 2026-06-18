@@ -5,10 +5,11 @@ namespace App\Services;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Models\User;
+use App\Services\Contracts\RateManagementServiceInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
-class RateManagementService
+class RateManagementService implements RateManagementServiceInterface
 {
     public function __construct(
         protected RateApiService $rateApiService,

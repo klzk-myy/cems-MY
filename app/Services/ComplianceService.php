@@ -11,6 +11,7 @@ use App\Models\CustomerDocument;
 use App\Models\FlaggedTransaction;
 use App\Models\SanctionEntry;
 use App\Models\Transaction;
+use App\Services\Contracts\ComplianceServiceInterface;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
 use Carbon\Carbon;
@@ -29,7 +30,7 @@ use Carbon\Carbon;
  * - PDPA 2010 (Amended 2024)
  * - MIA accounting standards
  */
-class ComplianceService
+class ComplianceService implements ComplianceServiceInterface
 {
     /**
      * Encryption service for sensitive data operations.
