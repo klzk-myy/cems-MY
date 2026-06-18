@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\OverrideRateRequest;
 use App\Http\Requests\Api\V1\Rate\CheckRateSetRequest;
 use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
 use App\Http\Requests\Api\V1\Rate\ValidateRateRequest;
 use App\Http\Requests\FetchRateRequest;
+use App\Http\Requests\OverrideRateRequest;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Services\RateManagementService;
