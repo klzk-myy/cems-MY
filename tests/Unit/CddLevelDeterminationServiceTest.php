@@ -9,13 +9,13 @@ use App\Models\Customer;
 use App\Services\Compliance\CddLevelDeterminationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CddLevelDeterminationServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected CddLevelDeterminationService $service;
 

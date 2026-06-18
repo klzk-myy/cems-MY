@@ -4,14 +4,14 @@ namespace Tests\Unit;
 
 use App\Models\CurrencyPosition;
 use App\Services\Accounting\CurrencyPositionService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CurrencyPositionServiceCacheTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected function setUp(): void
     {

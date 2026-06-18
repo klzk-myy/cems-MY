@@ -11,6 +11,9 @@ use App\Models\Customer;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\User;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
@@ -25,6 +28,55 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         config(['cems.mfa.enabled' => false]);
+    }
+
+    /**
+     * Boot the testing helper traits.
+     *
+     * Override to ensure the in-memory database schema exists before traits
+     * like DatabaseTransactions begin their transaction lifecycle.
+     */
+    protected function setUpTraits(): void
+    {
+        $this->ensureInMemoryDatabaseReady();
+
+        parent::setUpTraits();
+    }
+
+    /**
+     * For in-memory SQLite, ensure the schema exists and the PDO is preserved
+     * between test classes. DatabaseTransactions has no migration logic and
+     * no in-memory connection preservation, so we handle it here.
+     *
+     * Only applies to tests using DatabaseTransactions — RefreshDatabase
+     * handles its own migration, and tests with no DB trait are unaffected.
+     */
+    protected function ensureInMemoryDatabaseReady(): void
+    {
+        $uses = array_flip(class_uses_recursive(static::class));
+
+        if (! isset($uses[DatabaseTransactions::class])) {
+            return;
+        }
+
+        $default = config('database.default');
+        $isInMemory = config("database.connections.{$default}.database") === ':memory:';
+
+        if (! $isInMemory) {
+            return;
+        }
+
+        $database = $this->app->make('db');
+        $connection = $database->connection();
+        $connectionName = $connection->getName();
+
+        if (isset(RefreshDatabaseState::$inMemoryConnections[$connectionName])) {
+            $connection->setPdo(RefreshDatabaseState::$inMemoryConnections[$connectionName]);
+        } else {
+            $this->artisan('migrate:fresh', ['--force' => true]);
+            $this->app[Kernel::class]->setArtisan(null);
+            RefreshDatabaseState::$inMemoryConnections[$connectionName] = $connection->getPdo();
+        }
     }
 
     /**

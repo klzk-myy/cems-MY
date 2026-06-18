@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Models\Customer;
 use App\Models\User;
 use App\Services\Customer\CustomerService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class CustomerServiceCacheTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function get_customer_uses_cache()

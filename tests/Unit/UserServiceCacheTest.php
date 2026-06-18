@@ -4,14 +4,14 @@ namespace Tests\Unit;
 
 use App\Models\User;
 use App\Services\Customer\UserService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class UserServiceCacheTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function get_user_permissions_uses_cache()

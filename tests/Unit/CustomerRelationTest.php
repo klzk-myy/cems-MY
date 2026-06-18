@@ -3,13 +3,13 @@
 namespace Tests\Unit;
 
 use App\Models\CustomerRelation;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerRelationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function customer_relation_can_store_engagement_assessment(): void

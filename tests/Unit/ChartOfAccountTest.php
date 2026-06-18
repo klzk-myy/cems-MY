@@ -3,13 +3,13 @@
 namespace Tests\Unit;
 
 use App\Models\ChartOfAccount;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ChartOfAccountTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function unused_methods_removed()
