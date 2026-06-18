@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\Branch;
 use App\Models\BranchPool;
-use App\Services\BranchPoolService;
+use App\Services\Branch\BranchPoolService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

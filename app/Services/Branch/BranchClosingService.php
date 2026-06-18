@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Branch;
 
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
@@ -12,6 +12,7 @@ use App\Models\CounterSession;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
+use App\Services\AuditService;
 use Illuminate\Support\Facades\DB;
 
 class BranchClosingService

@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Enums\TransactionStatus;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Models\Transaction;
-use App\Services\TransactionApprovalService;
+use App\Services\Transaction\TransactionApprovalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

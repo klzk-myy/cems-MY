@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Transaction;
 
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Models\Transaction;
+use App\Services\AuditService;
 
 class TransactionApprovalService
 {

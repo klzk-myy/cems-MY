@@ -6,7 +6,7 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\InvalidCurrencyException;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Models\User;
-use App\Services\TransactionValidationService;
+use App\Services\Transaction\TransactionValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

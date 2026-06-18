@@ -6,7 +6,7 @@ use App\Http\Requests\ApproveStockTransferRequest;
 use App\Http\Requests\StoreStockTransferRequest;
 use App\Models\StockTransfer;
 use App\Services\AuditService;
-use App\Services\StockTransferService;
+use App\Services\Transaction\StockTransferService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

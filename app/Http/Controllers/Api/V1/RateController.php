@@ -10,7 +10,7 @@ use App\Http\Requests\FetchRateRequest;
 use App\Http\Requests\OverrideRateRequest;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
-use App\Services\RateManagementService;
+use App\Services\Transaction\RateManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

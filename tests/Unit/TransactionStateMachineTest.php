@@ -13,7 +13,7 @@ use App\Models\SystemLog;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\TransactionStateMachine;
+use App\Services\Transaction\TransactionStateMachine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

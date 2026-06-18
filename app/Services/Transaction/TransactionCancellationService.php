@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Transaction;
 
 use App\Enums\StockReservationStatus;
 use App\Enums\TransactionStatus;
@@ -13,7 +13,10 @@ use App\Models\User;
 use App\Notifications\TransactionCancellationPendingNotification;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
+use App\Services\AuditService;
+use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
+use App\Services\MathService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;

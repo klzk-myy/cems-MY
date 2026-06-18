@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Branch;
 
 use App\Models\Branch;
+use App\Services\AuditService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 

@@ -9,7 +9,7 @@ use App\Http\Requests\TransactionWizardStep2Request;
 use App\Http\Requests\TransactionWizardStep3Request;
 use App\Models\Customer;
 use App\Services\MathService;
-use App\Services\TransactionService;
+use App\Services\Transaction\TransactionService;
 use App\Services\WizardSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

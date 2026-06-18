@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\CloseCounterRequest;
 use App\Models\Counter;
-use App\Services\CounterService;
+use App\Services\Branch\CounterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 

@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Enums\UserRole;
 use App\Models\ExchangeRate;
 use App\Models\User;
-use App\Services\RateManagementService;
+use App\Services\Transaction\RateManagementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;

@@ -8,7 +8,7 @@ use App\Exceptions\Domain\UnauthorizedException;
 use App\Http\Controllers\Controller;
 use App\Models\Counter;
 use App\Models\CounterHandover;
-use App\Services\CounterHandoverService;
+use App\Services\Branch\CounterHandoverService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

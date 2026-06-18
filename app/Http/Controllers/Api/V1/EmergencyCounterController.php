@@ -8,7 +8,7 @@ use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Http\Controllers\Controller;
 use App\Models\Counter;
 use App\Models\EmergencyClosure;
-use App\Services\EmergencyCounterService;
+use App\Services\Branch\EmergencyCounterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

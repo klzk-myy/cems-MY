@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\Transaction;
-use App\Services\TransactionService;
+use App\Services\Transaction\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

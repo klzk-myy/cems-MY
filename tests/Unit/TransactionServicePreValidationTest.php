@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Enums\CddLevel;
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Services\TransactionService;
+use App\Services\Transaction\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

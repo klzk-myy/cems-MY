@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Branch;
 
 use App\Enums\TellerAllocationStatus;
 use App\Models\Branch;
@@ -8,6 +8,7 @@ use App\Models\Counter;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Contracts\TellerAllocationServiceInterface;
+use App\Services\MathService;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

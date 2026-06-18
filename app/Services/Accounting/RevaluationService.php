@@ -10,7 +10,7 @@ use App\Models\RevaluationEntry;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\MathService;
-use App\Services\RateApiService;
+use App\Services\Transaction\RateApiService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;

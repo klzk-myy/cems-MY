@@ -6,7 +6,7 @@ use App\Http\Requests\OverrideRateRequest;
 use App\Models\Branch;
 use App\Models\ExchangeRateHistory;
 use App\Models\User;
-use App\Services\RateManagementService;
+use App\Services\Transaction\RateManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

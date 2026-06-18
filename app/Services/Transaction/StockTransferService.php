@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Transaction;
 
 use App\Enums\StockTransferStatus;
 use App\Models\Currency;
 use App\Models\StockTransfer;
 use App\Models\User;
+use App\Services\AuditService;
+use App\Services\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 

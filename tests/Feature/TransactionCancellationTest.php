@@ -6,7 +6,7 @@ use App\Enums\TransactionStatus;
 use App\Enums\UserRole;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\TransactionCancellationService;
+use App\Services\Transaction\TransactionCancellationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

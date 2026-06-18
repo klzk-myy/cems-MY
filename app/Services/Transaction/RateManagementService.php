@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Transaction;
 
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Models\User;
+use App\Services\AuditService;
 use App\Services\Contracts\RateManagementServiceInterface;
+use App\Services\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 

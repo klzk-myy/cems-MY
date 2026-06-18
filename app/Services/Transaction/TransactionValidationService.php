@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Transaction;
 
 use App\Exceptions\Domain\InvalidCurrencyException;
 use App\Exceptions\Domain\InvalidIpAddressException;
@@ -9,9 +9,11 @@ use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\TillBalance;
+use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\PepApprovalService;
 use App\Services\Contracts\TransactionValidationInterface;
+use App\Services\ThresholdService;
 
 class TransactionValidationService implements TransactionValidationInterface
 {

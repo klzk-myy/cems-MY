@@ -5,7 +5,7 @@ namespace App\Providers;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\Contracts\TransactionServiceInterface;
-use App\Services\TransactionService;
+use App\Services\Transaction\TransactionService;
 use App\View\Composers\NavigationComposer;
 use App\View\Composers\UserComposer;
 use Carbon\Carbon;

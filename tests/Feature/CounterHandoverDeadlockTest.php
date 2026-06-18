@@ -10,7 +10,7 @@ use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\TillBalance;
 use App\Models\User;
-use App\Services\CounterService;
+use App\Services\Branch\CounterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

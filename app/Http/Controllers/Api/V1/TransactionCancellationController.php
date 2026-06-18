@@ -8,7 +8,7 @@ use App\Http\Requests\ApproveCancelRequest;
 use App\Http\Requests\RejectCancelRequest;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\TransactionCancellationService;
+use App\Services\Transaction\TransactionCancellationService;
 use Illuminate\Http\JsonResponse;
 
 class TransactionCancellationController extends Controller

@@ -4,7 +4,7 @@ namespace App\Listeners;
 
 use App\Events\TransactionCreated;
 use App\Services\Compliance\RiskScoringEngine;
-use App\Services\TransactionMonitoringService;
+use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class TransactionCreatedListener implements ShouldQueue

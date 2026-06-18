@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Branch;
 
 use App\Models\Branch;
 use App\Models\BranchPool;
+use App\Services\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

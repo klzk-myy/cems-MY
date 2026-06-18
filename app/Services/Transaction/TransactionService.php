@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Transaction;
 
 use App\Enums\CddLevel;
 use App\Enums\RiskRating;
@@ -22,10 +22,18 @@ use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
+use App\Services\AuditService;
+use App\Services\Branch\TellerAllocationService;
+use App\Services\CacheTagsService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
 use App\Services\Compliance\PepApprovalService;
 use App\Services\Contracts\TransactionServiceInterface;
+use App\Services\CustomerScreeningService;
+use App\Services\MathService;
+use App\Services\PreValidationResult;
+use App\Services\SanctionCheckResult;
+use App\Services\ThresholdService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Branch;
 
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
@@ -17,6 +17,7 @@ use App\Models\ExchangeRate;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\User;
+use App\Services\ThresholdService;
 use App\Support\BcmathHelper;
 use Illuminate\Support\Facades\DB;
 

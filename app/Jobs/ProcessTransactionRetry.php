@@ -3,9 +3,9 @@
 namespace App\Jobs;
 
 use App\Models\Transaction;
-use App\Services\TransactionErrorHandler;
-use App\Services\TransactionRecoveryService;
-use App\Services\TransactionStateMachine;
+use App\Services\Transaction\TransactionErrorHandler;
+use App\Services\Transaction\TransactionRecoveryService;
+use App\Services\Transaction\TransactionStateMachine;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

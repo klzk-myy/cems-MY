@@ -12,7 +12,7 @@ use App\Services\MathService;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
 use App\Services\ThresholdService;
-use App\Services\TransactionMonitoringService;
+use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

@@ -6,7 +6,7 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Services\BranchClosingService;
+use App\Services\Branch\BranchClosingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

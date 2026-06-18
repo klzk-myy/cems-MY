@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Enums\StockReservationStatus;
 use App\Models\StockReservation;
 use App\Models\Transaction;
-use App\Services\StockReleaseService;
+use App\Services\Transaction\StockReleaseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

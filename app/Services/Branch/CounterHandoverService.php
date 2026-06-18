@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Branch;
 
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;

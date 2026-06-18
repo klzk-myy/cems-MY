@@ -2,10 +2,6 @@
 
 namespace App\Services\Compliance;
 
-use App\Services\MathService;
-use App\Services\TransactionMonitoringService;
-use App\Services\ThresholdService;
-
 use App\Enums\AlertPriority;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
@@ -17,6 +13,9 @@ use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\MathService;
+use App\Services\ThresholdService;
+use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 

@@ -7,7 +7,7 @@ use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\MathService;
-use App\Services\StockTransferService;
+use App\Services\Transaction\StockTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

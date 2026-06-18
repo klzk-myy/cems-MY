@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Branch;
 
 use App\Enums\CounterSessionStatus;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
@@ -11,6 +11,8 @@ use App\Models\EmergencyClosure;
 use App\Models\TillBalance;
 use App\Models\User;
 use App\Notifications\EmergencyCounterClosureNotification;
+use App\Services\AuditService;
+use App\Services\MathService;
 
 class EmergencyCounterService
 {

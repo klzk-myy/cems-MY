@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Models\Branch;
-use App\Services\BranchClosingService;
+use App\Services\Branch\BranchClosingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

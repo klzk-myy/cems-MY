@@ -11,7 +11,7 @@ use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
 use App\Services\CacheOptimizationService;
 use App\Services\CacheTagsService;
-use App\Services\RateApiService;
+use App\Services\Transaction\RateApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

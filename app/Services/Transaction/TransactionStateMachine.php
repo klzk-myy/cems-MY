@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Transaction;
 
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
+use App\Services\AuditService;
 use Illuminate\Support\Facades\Log;
 
 /**
