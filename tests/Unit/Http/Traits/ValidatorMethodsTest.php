@@ -23,7 +23,8 @@ class ValidatorMethodsTest extends TestCase
         $this->validator->publicValidateCurrencyCode('EUR');
         $this->validator->publicValidateCurrencyCode('GBP');
         $this->validator->publicValidateCurrencyCode('JPY');
-        $this->assertTrue(true);
+
+        $this->expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -61,7 +62,8 @@ class ValidatorMethodsTest extends TestCase
         $this->validator->publicValidateIpAddress('192.168.1.1');
         $this->validator->publicValidateIpAddress('10.0.0.1');
         $this->validator->publicValidateIpAddress('255.255.255.255');
-        $this->assertTrue(true);
+
+        $this->expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -69,14 +71,16 @@ class ValidatorMethodsTest extends TestCase
     {
         $this->validator->publicValidateIpAddress('2001:0db8:85a3:0000:0000:8a2e:0370:7334');
         $this->validator->publicValidateIpAddress('::1');
-        $this->assertTrue(true);
+
+        $this->expectNotToPerformAssertions();
     }
 
     #[Test]
     public function validate_ip_address_accepts_null(): void
     {
         $this->validator->publicValidateIpAddress(null);
-        $this->assertTrue(true);
+
+        $this->expectNotToPerformAssertions();
     }
 
     #[Test]

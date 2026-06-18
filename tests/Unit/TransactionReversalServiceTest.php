@@ -170,7 +170,11 @@ class TransactionReversalServiceTest extends TestCase
 
         $this->service->reversePositions($transaction);
 
-        $this->assertTrue(true);
+        $position = CurrencyPosition::where('currency_code', 'XYZ')
+            ->where('till_id', 'NONEXISTENT-TILL')
+            ->first();
+
+        $this->assertNull($position);
     }
 
     public function test_get_cancellation_window_hours(): void

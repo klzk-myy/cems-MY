@@ -52,9 +52,9 @@ class TransactionApprovalServiceTest extends TestCase
             'user_id' => 1,
         ]);
 
-        $this->approvalService->validateApprovalEligibility($transaction, 2);
+        $this->expectNotToPerformAssertions();
 
-        $this->assertTrue(true);
+        $this->approvalService->validateApprovalEligibility($transaction, 2);
     }
 
     public function test_validate_approval_eligibility_accepts_pending_approval_status(): void
@@ -63,8 +63,8 @@ class TransactionApprovalServiceTest extends TestCase
             'status' => TransactionStatus::PendingApproval,
         ]);
 
-        $this->approvalService->validateApprovalEligibility($transaction, 99);
+        $this->expectNotToPerformAssertions();
 
-        $this->assertTrue(true);
+        $this->approvalService->validateApprovalEligibility($transaction, 99);
     }
 }

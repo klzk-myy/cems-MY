@@ -43,6 +43,7 @@ class StockReleaseServiceTest extends TestCase
 
         $this->service->releaseReservation($transaction);
 
-        $this->assertTrue(true);
+        $reservation = StockReservation::where('transaction_id', $transaction->id)->first();
+        $this->assertNull($reservation);
     }
 }

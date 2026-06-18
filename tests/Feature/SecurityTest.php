@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\User;
 use App\Rules\PasswordComplexityRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -142,9 +144,26 @@ class SecurityTest extends TestCase
      */
     public function test_user_cannot_access_other_branch_data(): void
     {
-        // This test would require multi-branch setup
-        // For now, just verify the middleware exists
-        $this->assertTrue(true);
+        $branchA = Branch::factory()->create(['code' => 'SCOP-A'.uniqid()]);
+        $branchB = Branch::factory()->create(['code' => 'SCOP-B'.uniqid()]);
+
+        $userA = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branchA->id,
+        ]);
+
+        $customerB = Customer::factory()->create([
+            'full_name' => 'BranchB-'.uniqid(),
+        ]);
+
+        $response = $this->actingAs($userA)->getJson('/api/v1/customers');
+
+        $response->assertOk();
+        $this->assertStringNotContainsString(
+            $customerB->full_name,
+            $response->getContent(),
+            'Branch A user should not see Branch B customers'
+        );
     }
 
     /**
@@ -152,11 +171,18 @@ class SecurityTest extends TestCase
      */
     public function test_session_regenerated_on_login(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['password' => bcrypt('Secret12345!')]);
 
-        $response = $this->actingAs($user)->post('/logout');
+        $sessionBefore = session()->getId();
 
-        $response->assertRedirect('/');
+        $this->post('/login', [
+            'username' => $user->username,
+            'password' => 'Secret12345!',
+        ]);
+
+        $sessionAfter = session()->getId();
+
+        $this->assertNotEquals($sessionBefore, $sessionAfter, 'Session ID should change after login');
     }
 
     /**
@@ -183,11 +209,16 @@ class SecurityTest extends TestCase
     {
         $user = User::factory()->create([
             'is_active' => false,
+            'password' => bcrypt('Secret12345!'),
         ]);
 
-        // User should not be able to authenticate if is_active is false
-        // This depends on Auth::attempt() implementation
-        $this->assertFalse($user->is_active);
+        $response = $this->post('/login', [
+            'username' => $user->username,
+            'password' => 'Secret12345!',
+        ]);
+
+        $response->assertRedirect('/');
+        $this->assertGuest();
     }
 
     /**

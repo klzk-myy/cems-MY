@@ -292,7 +292,10 @@ class CounterHandoverDeadlockTest extends TestCase
         $this->assertArrayHasKey('new_session', $result2);
 
         // Both handovers completed successfully - no deadlock
-        $this->assertTrue(true);
+        $session1->refresh();
+        $session2->refresh();
+        $this->assertEquals(CounterSessionStatus::PendingHandover, $session1->status);
+        $this->assertEquals(CounterSessionStatus::PendingHandover, $session2->status);
     }
 
     /**

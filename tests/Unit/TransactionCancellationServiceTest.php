@@ -133,8 +133,12 @@ class TransactionCancellationServiceTest extends TestCase
         // Should not throw, just log warning
         $this->cancellationService->reversePositions($transaction);
 
-        // No exception means success
-        $this->assertTrue(true);
+        // No position found, nothing to reverse
+        $position = CurrencyPosition::where('currency_code', 'XYZ')
+            ->where('till_id', 'NONEXISTENT-TILL')
+            ->first();
+
+        $this->assertNull($position);
     }
 
     public function test_cancel_transaction_throws_exception_direct_cancel_not_allowed(): void

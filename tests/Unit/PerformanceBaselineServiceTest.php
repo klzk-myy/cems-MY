@@ -47,7 +47,7 @@ class PerformanceBaselineServiceTest extends TestCase
 
         $service->setBaseline(['response_time_ms' => 150]);
 
-        $this->assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
     public function test_compare_response_time_calculates_variance()
