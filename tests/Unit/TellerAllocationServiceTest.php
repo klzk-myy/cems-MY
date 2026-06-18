@@ -133,8 +133,8 @@ class TellerAllocationServiceTest extends TestCase
 
         $result = $this->service->validateTransaction($teller, 'MYR', '10000.0000', true);
 
-        $this->assertFalse($result['valid']);
-        $this->assertEquals('Insufficient allocation balance', $result['reason']);
+        $this->assertFalse($result->valid);
+        $this->assertEquals('Insufficient allocation balance', $result->reason);
     }
 
     #[Test]
@@ -155,8 +155,8 @@ class TellerAllocationServiceTest extends TestCase
 
         $result = $this->service->validateTransaction($teller, 'MYR', '2000.0000', true);
 
-        $this->assertFalse($result['valid']);
-        $this->assertEquals('Daily limit exceeded', $result['reason']);
+        $this->assertFalse($result->valid);
+        $this->assertEquals('Daily limit exceeded', $result->reason);
     }
 
     #[Test]
@@ -177,8 +177,8 @@ class TellerAllocationServiceTest extends TestCase
 
         $result = $this->service->validateTransaction($teller, 'MYR', '5000.0000', true);
 
-        $this->assertTrue($result['valid']);
-        $this->assertArrayHasKey('allocation', $result);
+        $this->assertTrue($result->valid);
+        $this->assertNotNull($result->allocation);
     }
 
     #[Test]
@@ -199,8 +199,8 @@ class TellerAllocationServiceTest extends TestCase
 
         $result = $this->service->validateTransaction($teller, 'USD', '1000.0000', false);
 
-        $this->assertFalse($result['valid']);
-        $this->assertEquals('No USD balance available to sell', $result['reason']);
+        $this->assertFalse($result->valid);
+        $this->assertEquals('No USD balance available to sell', $result->reason);
     }
 
     #[Test]

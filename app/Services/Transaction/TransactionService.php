@@ -218,11 +218,11 @@ class TransactionService implements TransactionServiceInterface
                     $isBuy
                 );
 
-                if (! $validationResult['valid']) {
-                    throw new AllocationValidationException($validationResult['reason']);
+                if (! $validationResult->valid) {
+                    throw new AllocationValidationException($validationResult->reason);
                 }
 
-                $allocationForUpdate = $validationResult['allocation'];
+                $allocationForUpdate = $validationResult->allocation;
             } else {
                 // For Sell transactions, get allocation for update after transaction completes
                 $allocationForUpdate = $this->tellerAllocationService->getActiveAllocation(

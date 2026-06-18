@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\TellerAllocation;
 use App\Models\User;
+use App\Services\DTOs\AllocationValidationResult;
 use Illuminate\Support\Collection;
 
 interface TellerAllocationServiceInterface
@@ -32,7 +33,7 @@ interface TellerAllocationServiceInterface
 
     public function transferToTeller(TellerAllocation $allocation, User $toTeller): TellerAllocation;
 
-    public function validateTransaction(User $teller, string $currencyCode, string $amountMyr, bool $isBuy): array;
+    public function validateTransaction(User $teller, string $currencyCode, string $amountMyr, bool $isBuy): AllocationValidationResult;
 
     public function canManageAllocations(User $user): bool;
 

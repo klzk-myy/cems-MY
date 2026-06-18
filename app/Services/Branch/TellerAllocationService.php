@@ -8,6 +8,7 @@ use App\Models\Counter;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Contracts\TellerAllocationServiceInterface;
+use App\Services\DTOs\AllocationValidationResult;
 use App\Services\System\MathService;
 use Exception;
 use Illuminate\Support\Collection;
@@ -200,29 +201,27 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         return $allocation;
     }
 
-    public function validateTransaction(User $teller, string $currencyCode, string $amountMyr, bool $isBuy): array
+    public function validateTransaction(User $teller, string $currencyCode, string $amountMyr, bool $isBuy): AllocationValidationResult
     {
         $allocation = $this->getActiveAllocation($teller, $currencyCode);
 
         if (! $allocation) {
-            return ['valid' => false, 'reason' => 'No active allocation for this currency'];
+            return new AllocationValidationResult(valid: false, reason: 'No active allocation for this currency');
         }
 
         if ($isBuy && ! $allocation->hasAvailable($amountMyr)) {
-            return ['valid' => false, 'reason' => 'Insufficient allocation balance'];
+            return new AllocationValidationResult(valid: false, reason: 'Insufficient allocation balance');
         }
 
-        // For sell transactions, check if there's sufficient foreign currency balance to cover the sale
-        // The amountMyr parameter here is the foreign currency amount being sold (e.g. USD 1000)
         if (! $isBuy && ! $allocation->hasAvailable($amountMyr)) {
-            return ['valid' => false, 'reason' => "No {$allocation->currency_code} balance available to sell"];
+            return new AllocationValidationResult(valid: false, reason: "No {$allocation->currency_code} balance available to sell");
         }
 
         if (! $allocation->hasDailyLimitRemaining($amountMyr)) {
-            return ['valid' => false, 'reason' => 'Daily limit exceeded'];
+            return new AllocationValidationResult(valid: false, reason: 'Daily limit exceeded');
         }
 
-        return ['valid' => true, 'allocation' => $allocation];
+        return new AllocationValidationResult(valid: true, allocation: $allocation);
     }
 
     /**
