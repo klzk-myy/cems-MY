@@ -33,6 +33,12 @@ class CustomerController extends Controller
     {
         $query = Customer::query();
 
+        if ($branchScope = $request->get('_branch_scope')) {
+            $query->whereHas('transactions', function ($q) use ($branchScope) {
+                $q->where('branch_id', $branchScope);
+            })->orWhere('created_by_branch_id', $branchScope);
+        }
+
         if ($request->has('search') && ! empty($request->search)) {
             $searchTerm = str_replace(['%', '_'], ['\%', '\_'], $request->search);
             $query->where('full_name', 'like', '%'.$searchTerm.'%');

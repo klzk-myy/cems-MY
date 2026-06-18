@@ -3,6 +3,7 @@
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\CheckRoleAny;
+use App\Http\Middleware\EnsureBranchScope;
 use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\IpBlocker;
 use App\Http\Middleware\PerformanceTrackingMiddleware;
@@ -58,6 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => Authenticate::class,
             'auth.basic' => AuthenticateWithBasicAuth::class,
             'auth.session' => AuthenticateSession::class,
+            'branch.scope' => EnsureBranchScope::class,
             'cache.headers' => SetCacheHeaders::class,
             'can' => Authorize::class,
             'guest' => RedirectIfAuthenticated::class,

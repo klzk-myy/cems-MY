@@ -51,7 +51,7 @@ Route::get('/webhooks/sanctions/health', [SanctionsWebhookController::class, 'he
     ->middleware('throttle:30,1')
     ->name('api.v1.webhooks.sanctions.health');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'branch.scope'])->group(function () {
     // Transactions API
     Route::get('/transactions', [TransactionController::class, 'index'])
         ->name('api.v1.transactions.index');
