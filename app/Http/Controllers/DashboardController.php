@@ -19,29 +19,13 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    protected AuditService $auditService;
-
-    protected CurrencyPositionService $currencyPositionService;
-
-    protected RateApiService $rateApiService;
-
-    protected CacheOptimizationService $cacheOptimizationService;
-
-    protected CacheTagsService $cacheTagsService;
-
     public function __construct(
-        AuditService $auditService,
-        CurrencyPositionService $currencyPositionService,
-        RateApiService $rateApiService,
-        CacheOptimizationService $cacheOptimizationService,
-        CacheTagsService $cacheTagsService
-    ) {
-        $this->auditService = $auditService;
-        $this->currencyPositionService = $currencyPositionService;
-        $this->rateApiService = $rateApiService;
-        $this->cacheOptimizationService = $cacheOptimizationService;
-        $this->cacheTagsService = $cacheTagsService;
-    }
+        protected AuditService $auditService,
+        protected CurrencyPositionService $currencyPositionService,
+        protected RateApiService $rateApiService,
+        protected CacheOptimizationService $cacheOptimizationService,
+        protected CacheTagsService $cacheTagsService,
+    ) {}
 
     /**
      * Display the dashboard with cached daily statistics.
