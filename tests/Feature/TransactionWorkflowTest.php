@@ -15,13 +15,13 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Transaction\TransactionService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected TransactionService $transactionService;
 

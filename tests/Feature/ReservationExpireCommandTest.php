@@ -9,14 +9,14 @@ use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\ReservationExpiredNotification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ReservationExpireCommandTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function expires_releases_stale_reservations(): void

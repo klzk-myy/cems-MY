@@ -4,14 +4,14 @@ namespace Tests\Feature\Views;
 
 use App\Models\Customer;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class LayoutConsistencyTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[DataProvider('sharedLayoutViewProvider')]
     #[Test]

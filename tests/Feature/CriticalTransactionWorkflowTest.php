@@ -17,7 +17,7 @@ use App\Models\StockReservation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -33,7 +33,7 @@ use Tests\TestCase;
  */
 class CriticalTransactionWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $teller;
 

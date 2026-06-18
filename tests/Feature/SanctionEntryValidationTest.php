@@ -5,13 +5,13 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\SanctionEntry;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SanctionEntryValidationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function store_sanction_entry_requires_entity_name(): void

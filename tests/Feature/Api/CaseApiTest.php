@@ -4,13 +4,13 @@ namespace Tests\Feature\Api;
 
 use App\Models\Compliance\ComplianceCase;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CaseApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function show_still_returns_legacy_envelope()

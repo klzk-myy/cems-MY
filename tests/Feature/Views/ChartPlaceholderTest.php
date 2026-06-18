@@ -7,13 +7,13 @@ use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use App\Models\TestResult;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ChartPlaceholderTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function risk_trends_renders_real_chart_data(): void

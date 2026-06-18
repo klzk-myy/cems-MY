@@ -10,13 +10,13 @@ use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Transaction\TransactionService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function store_returns_transaction_resource()

@@ -5,13 +5,13 @@ namespace Tests\Feature\Views;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BrokenFormsFixTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function customer_note_form_has_action_and_method(): void

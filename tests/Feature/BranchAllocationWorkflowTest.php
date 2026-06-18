@@ -18,13 +18,13 @@ use App\Services\Branch\CounterService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BranchAllocationWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected Branch $branch;
 

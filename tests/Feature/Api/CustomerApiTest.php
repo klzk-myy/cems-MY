@@ -6,13 +6,13 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Customer\CustomerService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function store_delegates_to_customer_service()

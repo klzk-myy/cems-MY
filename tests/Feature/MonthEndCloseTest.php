@@ -12,13 +12,13 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Services\Accounting\MonthEndCloseService;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MonthEndCloseTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected MonthEndCloseService $service;
 

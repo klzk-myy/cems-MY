@@ -8,13 +8,13 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Models\ScreeningResult;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ScreeningApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function screen_customer_requires_authentication(): void

@@ -31,7 +31,7 @@ use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -41,7 +41,7 @@ use Tests\TestCase;
  */
 class TransactionAccountingVerificationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected MathService $mathService;
 

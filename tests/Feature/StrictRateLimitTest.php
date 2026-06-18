@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Http\Middleware\StrictRateLimit;
 use App\Models\User;
 use App\Services\System\RateLimitService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class StrictRateLimitTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /**
      * Test that burst requests still count against rate limit.

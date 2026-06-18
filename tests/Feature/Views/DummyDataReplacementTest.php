@@ -7,13 +7,13 @@ use App\Enums\UserRole;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\FiscalYear;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class DummyDataReplacementTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function cases_index_does_not_show_hardcoded_assignee(): void

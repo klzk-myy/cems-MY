@@ -6,13 +6,13 @@ use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HomeControllerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function incomplete_setup_redirects_to_setup(): void

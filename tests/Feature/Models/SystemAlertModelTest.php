@@ -5,13 +5,13 @@ namespace Tests\Feature\Models;
 use App\Enums\SystemAlertLevel;
 use App\Models\SystemAlert;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SystemAlertModelTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function it_retrieves_info_alerts_via_scope(): void

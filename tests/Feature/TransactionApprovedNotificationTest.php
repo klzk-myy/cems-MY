@@ -6,14 +6,14 @@ use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\TransactionApprovedNotification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionApprovedNotificationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function transaction_approved_email_renders_correctly(): void

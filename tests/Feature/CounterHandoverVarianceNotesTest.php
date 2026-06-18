@@ -11,7 +11,7 @@ use App\Models\Currency;
 use App\Models\TillBalance;
 use App\Models\User;
 use App\Services\Branch\CounterService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -24,7 +24,7 @@ use Tests\TestCase;
  */
 class CounterHandoverVarianceNotesTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected Branch $branch;
 

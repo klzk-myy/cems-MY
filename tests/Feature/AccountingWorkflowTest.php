@@ -13,13 +13,13 @@ use App\Models\JournalLine;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\FiscalYearService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AccountingWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $manager;
 

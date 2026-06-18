@@ -7,13 +7,13 @@ use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\User;
 use App\Rules\PasswordComplexityRule;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SecurityTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /**
      * Test SQL injection prevention in search parameters
