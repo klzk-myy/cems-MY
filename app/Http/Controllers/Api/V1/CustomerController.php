@@ -57,7 +57,8 @@ class CustomerController extends Controller
         }
 
         $perPage = $request->get('per_page', 20);
-        $customers = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        $customers = $query->with(['documents', 'latestRiskSnapshot'])
+            ->orderBy('created_at', 'desc')->paginate($perPage);
 
         return (new CustomerCollection($customers))->additional(['success' => true]);
     }

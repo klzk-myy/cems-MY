@@ -23,7 +23,7 @@ class TransactionController extends Controller
     public function index(Request $request): TransactionCollection
     {
         $perPage = $request->get('per_page', 20);
-        $query = Transaction::with(['customer', 'user']);
+        $query = Transaction::with(['customer', 'user', 'branch']);
 
         // Branch segregation: non-admin users can only see their branch's transactions
         $user = auth()->user();

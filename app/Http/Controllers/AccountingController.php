@@ -64,7 +64,7 @@ class AccountingController extends Controller
 
     public function index(): View
     {
-        $entries = JournalEntry::with('postedBy')
+        $entries = JournalEntry::with(['lines', 'postedBy', 'creator', 'approver'])
             ->orderBy('entry_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(25);
