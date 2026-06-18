@@ -8,10 +8,18 @@ use App\Services\ComplianceService;
 use App\Services\Contracts\AccountingServiceInterface;
 use App\Services\Contracts\AuditServiceInterface;
 use App\Services\Contracts\ComplianceServiceInterface;
+use App\Services\Contracts\CustomerScreeningServiceInterface;
 use App\Services\Contracts\CustomerServiceInterface;
 use App\Services\Contracts\RateManagementServiceInterface;
+use App\Services\Contracts\TellerAllocationServiceInterface;
+use App\Services\Contracts\ThresholdServiceInterface;
+use App\Services\Contracts\TransactionMonitoringServiceInterface;
+use App\Services\CustomerScreeningService;
 use App\Services\CustomerService;
 use App\Services\RateManagementService;
+use App\Services\TellerAllocationService;
+use App\Services\ThresholdService;
+use App\Services\TransactionMonitoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -27,6 +35,10 @@ class ServiceContractsTest extends TestCase
             AuditService::class => AuditServiceInterface::class,
             ComplianceService::class => ComplianceServiceInterface::class,
             AccountingService::class => AccountingServiceInterface::class,
+            TransactionMonitoringService::class => TransactionMonitoringServiceInterface::class,
+            TellerAllocationService::class => TellerAllocationServiceInterface::class,
+            CustomerScreeningService::class => CustomerScreeningServiceInterface::class,
+            ThresholdService::class => ThresholdServiceInterface::class,
         ];
 
         foreach ($mappings as $concrete => $interface) {

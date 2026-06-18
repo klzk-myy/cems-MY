@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Models\ThresholdAudit;
+use App\Services\Contracts\ThresholdServiceInterface;
 use Illuminate\Support\Facades\Log;
 
-class ThresholdService
+class ThresholdService implements ThresholdServiceInterface
 {
     /**
      * Fallback constants for backward compatibility.

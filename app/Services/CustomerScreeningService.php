@@ -11,12 +11,13 @@ use App\Models\SanctionsAnalysis;
 use App\Models\ScreeningResult;
 use App\Models\SystemAlert;
 use App\Models\Transaction;
+use App\Services\Contracts\CustomerScreeningServiceInterface;
 use App\ValueObjects\ScreeningMatch;
 use App\ValueObjects\ScreeningResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
-class CustomerScreeningService
+class CustomerScreeningService implements CustomerScreeningServiceInterface
 {
     protected float $thresholdFlag;
 
