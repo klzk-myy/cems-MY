@@ -217,14 +217,31 @@ class CustomerController extends Controller
 
         $validated = $request->validate([
             'document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'document_type' => 'required|string',
+            'document_type' => 'required|string|max:100',
         ]);
 
-        // Document upload handling would go here
+        $file = $request->file('document');
+        $path = $file->store('kyc/'.$customer->id, 'local');
+
+        $document = $customer->documents()->create([
+            'document_type' => $request->document_type,
+            'file_path' => $path,
+            'file_hash' => hash_file('sha256', $file->getRealPath()),
+            'file_size' => $file->getSize(),
+            'uploaded_by' => auth()->id(),
+        ]);
+
+        $this->auditService->logWithSeverity('kyc_document_uploaded', [
+            'entity_type' => 'Customer',
+            'entity_id' => $customer->id,
+            'new_values' => ['document_type' => $request->document_type],
+        ]);
+
         return response()->json([
             'success' => true,
+            'document_id' => $document->id,
             'message' => 'Document uploaded successfully.',
-        ], 201);
+        ]);
     }
 
     /**
