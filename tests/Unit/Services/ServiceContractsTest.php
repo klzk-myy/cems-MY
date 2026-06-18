@@ -8,15 +8,21 @@ use App\Services\ComplianceService;
 use App\Services\Contracts\AccountingServiceInterface;
 use App\Services\Contracts\AuditServiceInterface;
 use App\Services\Contracts\ComplianceServiceInterface;
+use App\Services\Contracts\CurrencyPositionServiceInterface;
 use App\Services\Contracts\CustomerScreeningServiceInterface;
 use App\Services\Contracts\CustomerServiceInterface;
+use App\Services\Contracts\MathServiceInterface;
 use App\Services\Contracts\RateManagementServiceInterface;
+use App\Services\Contracts\ReportingServiceInterface;
 use App\Services\Contracts\TellerAllocationServiceInterface;
 use App\Services\Contracts\ThresholdServiceInterface;
 use App\Services\Contracts\TransactionMonitoringServiceInterface;
+use App\Services\CurrencyPositionService;
 use App\Services\CustomerScreeningService;
 use App\Services\CustomerService;
+use App\Services\MathService;
 use App\Services\RateManagementService;
+use App\Services\ReportingService;
 use App\Services\TellerAllocationService;
 use App\Services\ThresholdService;
 use App\Services\TransactionMonitoringService;
@@ -39,6 +45,9 @@ class ServiceContractsTest extends TestCase
             TellerAllocationService::class => TellerAllocationServiceInterface::class,
             CustomerScreeningService::class => CustomerScreeningServiceInterface::class,
             ThresholdService::class => ThresholdServiceInterface::class,
+            ReportingService::class => ReportingServiceInterface::class,
+            MathService::class => MathServiceInterface::class,
+            CurrencyPositionService::class => CurrencyPositionServiceInterface::class,
         ];
 
         foreach ($mappings as $concrete => $interface) {

@@ -10,19 +10,13 @@ use App\Models\CurrencyPosition;
 use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Contracts\CurrencyPositionServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Currency Position Service
- *
- * Manages foreign currency positions for currency exchange operations.
- * Tracks balances, calculates average costs, and monitors unrealized P&L.
- * Uses MathService for high-precision calculations to prevent floating-point errors.
- */
-class CurrencyPositionService
+class CurrencyPositionService implements CurrencyPositionServiceInterface
 {
     /**
      * Math service instance for high-precision calculations.

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Services\Contracts\MathServiceInterface;
+
 /**
  * Math Service
  *
@@ -16,7 +18,7 @@ namespace App\Services;
  * calculations and database storage. Exchange rates use explicit scale=6
  * where needed (decimal(18,6) in DB).
  */
-class MathService
+class MathService implements MathServiceInterface
 {
     /**
      * Decimal scale for BCMath operations.

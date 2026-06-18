@@ -7,11 +7,12 @@ use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
+use App\Services\Contracts\ReportingServiceInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
-class ReportingService
+class ReportingService implements ReportingServiceInterface
 {
     protected EncryptionService $encryptionService;
 
