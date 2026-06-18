@@ -84,7 +84,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 
 | Component | Technology |
 |-----------|------------|
-| Framework | Laravel 10.x |
+| Framework | Laravel 11.x |
 | Language | PHP 8.3 |
 | Database | MySQL 8.0 |
 | Cache/Queue | Redis |
