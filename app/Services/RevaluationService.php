@@ -233,7 +233,6 @@ class RevaluationService
         $date = $date ?? now()->toDateString();
         $postedBy = $postedBy ?? auth()->id() ?? 1;
 
-        // FAULT #5 FIX: Validate period before processing
         $this->validatePeriodForDate($date);
 
         $positions = CurrencyPosition::all();
@@ -242,7 +241,6 @@ class RevaluationService
         $totalLoss = '0';
         $errors = [];
 
-        // FAULT #6 FIX: Process each currency independently in its own transaction
         foreach ($positions as $position) {
             if ($this->mathService->compare($position->balance, '0') <= 0) {
                 continue;
@@ -300,7 +298,6 @@ class RevaluationService
                         ],
                     ];
 
-                    // FAULT #5 FIX: AccountingService will assign period_id to journal entry
                     $this->accountingService->createJournalEntry(
                         $lines,
                         'Revaluation',
@@ -337,7 +334,6 @@ class RevaluationService
                     'is_gain' => $isGain,
                 ];
             } catch (\Exception $e) {
-                // FAULT #6 FIX: Log error and continue processing other currencies
                 $errorMessage = "Revaluation failed for {$position->currency_code}: {$e->getMessage()}";
                 Log::error($errorMessage);
                 $errors[] = [
@@ -375,7 +371,7 @@ class RevaluationService
     }
 
     /**
-     * FAULT #5 FIX: Validate that the posting date falls within an open period.
+     * Validate that the posting date falls within an open period.
      *
      * Checks that the given date falls within an existing accounting period
      * and that the period is currently open for posting.
