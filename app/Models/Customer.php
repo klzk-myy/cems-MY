@@ -8,6 +8,7 @@ use App\Enums\IdType;
 use App\Enums\RiskRating;
 use App\Services\CustomerService;
 use App\Services\EncryptionService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -120,6 +121,23 @@ class Customer extends Model
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function latestTransaction(): HasOne
+    {
+        return $this->hasOne(Transaction::class)->latestOfMany();
+    }
+
+    public function getBranchAttribute(): ?Branch
+    {
+        return $this->latestTransaction?->branch;
+    }
+
+    public function scopeForBranch(Builder $query, int $branchId): Builder
+    {
+        return $query->whereHas('transactions', function ($q) use ($branchId) {
+            $q->where('branch_id', $branchId);
+        });
     }
 
     /**
