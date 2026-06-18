@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\User;
 use App\Rules\PasswordComplexityRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SecurityTest extends TestCase
@@ -17,7 +18,8 @@ class SecurityTest extends TestCase
     /**
      * Test SQL injection prevention in search parameters
      */
-    public function test_sql_injection_prevention_in_search(): void
+    #[Test]
+    public function sql_injection_prevention_in_search(): void
     {
         $user = User::factory()->create();
 
@@ -32,7 +34,8 @@ class SecurityTest extends TestCase
     /**
      * Test SQL injection in transaction search
      */
-    public function test_sql_injection_prevention_in_transaction_search(): void
+    #[Test]
+    public function sql_injection_prevention_in_transaction_search(): void
     {
         $user = User::factory()->create();
 
@@ -45,7 +48,8 @@ class SecurityTest extends TestCase
     /**
      * Test XSS prevention in customer name
      */
-    public function test_xss_prevention_in_name_field(): void
+    #[Test]
+    public function xss_prevention_in_name_field(): void
     {
         $user = User::factory()->create();
 
@@ -66,7 +70,8 @@ class SecurityTest extends TestCase
     /**
      * Test XSS prevention in transaction purpose
      */
-    public function test_xss_prevention_in_transaction_purpose(): void
+    #[Test]
+    public function xss_prevention_in_transaction_purpose(): void
     {
         $user = User::factory()->create();
 
@@ -80,7 +85,8 @@ class SecurityTest extends TestCase
     /**
      * Test CSRF token required for form submission
      */
-    public function test_csrf_token_required_for_transaction(): void
+    #[Test]
+    public function csrf_token_required_for_transaction(): void
     {
         $user = User::factory()->create();
 
@@ -100,7 +106,8 @@ class SecurityTest extends TestCase
     /**
      * Test authorization - teller cannot access admin routes
      */
-    public function test_teller_cannot_access_admin_routes(): void
+    #[Test]
+    public function teller_cannot_access_admin_routes(): void
     {
         $teller = User::factory()->create([
             'role' => UserRole::Teller,
@@ -114,7 +121,8 @@ class SecurityTest extends TestCase
     /**
      * Test authorization - teller cannot access accounting
      */
-    public function test_teller_cannot_access_accounting(): void
+    #[Test]
+    public function teller_cannot_access_accounting(): void
     {
         $teller = User::factory()->create([
             'role' => UserRole::Teller,
@@ -128,7 +136,8 @@ class SecurityTest extends TestCase
     /**
      * Test authorization - teller cannot access compliance
      */
-    public function test_teller_cannot_access_compliance_routes(): void
+    #[Test]
+    public function teller_cannot_access_compliance_routes(): void
     {
         $teller = User::factory()->create([
             'role' => UserRole::Teller,
@@ -142,7 +151,8 @@ class SecurityTest extends TestCase
     /**
      * Test unauthorized access to another branch's data
      */
-    public function test_user_cannot_access_other_branch_data(): void
+    #[Test]
+    public function user_cannot_access_other_branch_data(): void
     {
         $branchA = Branch::factory()->create(['code' => 'SCOP-A'.uniqid()]);
         $branchB = Branch::factory()->create(['code' => 'SCOP-B'.uniqid()]);
@@ -169,7 +179,8 @@ class SecurityTest extends TestCase
     /**
      * Test session fixation prevention
      */
-    public function test_session_regenerated_on_login(): void
+    #[Test]
+    public function session_regenerated_on_login(): void
     {
         $user = User::factory()->create(['password' => bcrypt('Secret12345!')]);
 
@@ -188,7 +199,8 @@ class SecurityTest extends TestCase
     /**
      * Test mass assignment protection
      */
-    public function test_mass_assignment_protection(): void
+    #[Test]
+    public function mass_assignment_protection(): void
     {
         $user = User::factory()->create();
 
@@ -205,7 +217,8 @@ class SecurityTest extends TestCase
     /**
      * Test inactive user cannot login
      */
-    public function test_inactive_user_cannot_login(): void
+    #[Test]
+    public function inactive_user_cannot_login(): void
     {
         $user = User::factory()->create([
             'is_active' => false,
@@ -224,7 +237,8 @@ class SecurityTest extends TestCase
     /**
      * Test input validation for invalid email
      */
-    public function test_invalid_email_rejected(): void
+    #[Test]
+    public function invalid_email_rejected(): void
     {
         $user = User::factory()->create();
 
@@ -240,7 +254,8 @@ class SecurityTest extends TestCase
     /**
      * Test input validation for negative amounts
      */
-    public function test_negative_amount_rejected(): void
+    #[Test]
+    public function negative_amount_rejected(): void
     {
         $user = User::factory()->create();
 
@@ -255,7 +270,8 @@ class SecurityTest extends TestCase
     /**
      * Test rate with too many decimals is handled
      */
-    public function test_rate_precision_validation(): void
+    #[Test]
+    public function rate_precision_validation(): void
     {
         $user = User::factory()->create();
 
@@ -270,7 +286,8 @@ class SecurityTest extends TestCase
     /**
      * Test password must meet complexity requirements
      */
-    public function test_password_must_meet_complexity_requirements(): void
+    #[Test]
+    public function password_must_meet_complexity_requirements(): void
     {
         $rule = new PasswordComplexityRule;
 

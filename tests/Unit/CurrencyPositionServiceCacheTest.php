@@ -6,6 +6,7 @@ use App\Models\CurrencyPosition;
 use App\Services\CurrencyPositionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CurrencyPositionServiceCacheTest extends TestCase
@@ -18,7 +19,8 @@ class CurrencyPositionServiceCacheTest extends TestCase
         $this->createTestBranch();
     }
 
-    public function test_get_available_balance_uses_cache()
+    #[Test]
+    public function get_available_balance_uses_cache()
     {
         // Create a position
         CurrencyPosition::factory()->create([
@@ -38,7 +40,8 @@ class CurrencyPositionServiceCacheTest extends TestCase
         $this->assertEquals('1000.00', $balance);
     }
 
-    public function test_update_position_invalidates_cache()
+    #[Test]
+    public function update_position_invalidates_cache()
     {
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',

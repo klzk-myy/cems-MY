@@ -11,6 +11,7 @@ use App\Models\CounterSession;
 use App\Models\EmergencyClosure;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MfaRequirementTest extends TestCase
@@ -63,7 +64,8 @@ class MfaRequirementTest extends TestCase
         ];
     }
 
-    public function test_counter_approve_and_open_requires_mfa(): void
+    #[Test]
+    public function counter_approve_and_open_requires_mfa(): void
     {
         $teller = User::factory()->create([
             'username' => 'teller2'.substr(uniqid(), -6),
@@ -105,7 +107,8 @@ class MfaRequirementTest extends TestCase
         $this->assertNotEquals(403, $response->status());
     }
 
-    public function test_emergency_close_requires_mfa(): void
+    #[Test]
+    public function emergency_close_requires_mfa(): void
     {
         CounterSession::factory()->create([
             'counter_id' => $this->counter->id,
@@ -135,7 +138,8 @@ class MfaRequirementTest extends TestCase
         $this->assertEquals(201, $response->status());
     }
 
-    public function test_emergency_acknowledge_requires_mfa(): void
+    #[Test]
+    public function emergency_acknowledge_requires_mfa(): void
     {
         $session = CounterSession::factory()->create([
             'counter_id' => $this->counter->id,
@@ -169,7 +173,8 @@ class MfaRequirementTest extends TestCase
         $this->assertEquals(200, $response->status());
     }
 
-    public function test_handover_acknowledge_requires_mfa(): void
+    #[Test]
+    public function handover_acknowledge_requires_mfa(): void
     {
         $session = CounterSession::factory()->create([
             'counter_id' => $this->counter->id,

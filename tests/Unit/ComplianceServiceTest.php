@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Services\ComplianceService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ComplianceServiceTest extends TestCase
@@ -26,7 +27,8 @@ class ComplianceServiceTest extends TestCase
         $this->complianceService = resolve(ComplianceService::class);
     }
 
-    public function test_simplified_cdd_for_small_amounts(): void
+    #[Test]
+    public function simplified_cdd_for_small_amounts(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
@@ -41,7 +43,8 @@ class ComplianceServiceTest extends TestCase
         $this->assertEquals(CddLevel::Simplified, $cddLevel);
     }
 
-    public function test_standard_cdd_for_medium_amounts(): void
+    #[Test]
+    public function standard_cdd_for_medium_amounts(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
@@ -56,7 +59,8 @@ class ComplianceServiceTest extends TestCase
         $this->assertEquals(CddLevel::Standard, $cddLevel);
     }
 
-    public function test_enhanced_cdd_not_triggered_by_amount_alone(): void
+    #[Test]
+    public function enhanced_cdd_not_triggered_by_amount_alone(): void
     {
         // Large amount by low-risk, non-PEP, non-sanctioned customer should NOT trigger Enhanced
         $customer = Customer::factory()->create([
@@ -73,7 +77,8 @@ class ComplianceServiceTest extends TestCase
         $this->assertEquals(CddLevel::Standard, $cddLevel);
     }
 
-    public function test_enhanced_cdd_triggered_by_high_risk_customer(): void
+    #[Test]
+    public function enhanced_cdd_triggered_by_high_risk_customer(): void
     {
         // Small amount by high-risk customer SHOULD trigger Enhanced
         $customer = Customer::factory()->create([
@@ -89,7 +94,8 @@ class ComplianceServiceTest extends TestCase
         $this->assertEquals(CddLevel::Enhanced, $cddLevel);
     }
 
-    public function test_enhanced_cdd_for_pep(): void
+    #[Test]
+    public function enhanced_cdd_for_pep(): void
     {
         $amount = '1000.00'; // Small amount but PEP triggers enhanced
 
@@ -104,7 +110,8 @@ class ComplianceServiceTest extends TestCase
         $this->assertEquals(CddLevel::Enhanced, $cddLevel);
     }
 
-    public function test_enhanced_cdd_for_sanction_match(): void
+    #[Test]
+    public function enhanced_cdd_for_sanction_match(): void
     {
         $amount = '1000.00';
 
@@ -119,7 +126,8 @@ class ComplianceServiceTest extends TestCase
         $this->assertEquals(CddLevel::Enhanced, $cddLevel);
     }
 
-    public function test_velocity_check_uses_velocity_threshold_not_large_transaction(): void
+    #[Test]
+    public function velocity_check_uses_velocity_threshold_not_large_transaction(): void
     {
         $customer = Customer::factory()->create();
 

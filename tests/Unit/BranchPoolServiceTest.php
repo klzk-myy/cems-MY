@@ -7,6 +7,7 @@ use App\Models\BranchPool;
 use App\Services\BranchPoolService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BranchPoolServiceTest extends TestCase
@@ -21,7 +22,8 @@ class BranchPoolServiceTest extends TestCase
         $this->service = new BranchPoolService(new MathService);
     }
 
-    public function test_get_or_create_for_branch(): void
+    #[Test]
+    public function get_or_create_for_branch(): void
     {
         $branch = Branch::factory()->create();
 
@@ -34,7 +36,8 @@ class BranchPoolServiceTest extends TestCase
         $this->assertEquals('0.0000', $pool->allocated_balance);
     }
 
-    public function test_get_or_create_returns_existing_pool(): void
+    #[Test]
+    public function get_or_create_returns_existing_pool(): void
     {
         $branch = Branch::factory()->create();
 
@@ -44,7 +47,8 @@ class BranchPoolServiceTest extends TestCase
         $this->assertSame($pool1->id, $pool2->id);
     }
 
-    public function test_allocate_to_teller_reduces_available(): void
+    #[Test]
+    public function allocate_to_teller_reduces_available(): void
     {
         $branch = Branch::factory()->create();
         $pool = $this->service->getOrCreateForBranch($branch, 'USD');
@@ -58,7 +62,8 @@ class BranchPoolServiceTest extends TestCase
         $this->assertEquals('5000.0000', $pool->allocated_balance);
     }
 
-    public function test_allocate_fails_when_insufficient(): void
+    #[Test]
+    public function allocate_fails_when_insufficient(): void
     {
         $branch = Branch::factory()->create();
         $pool = $this->service->getOrCreateForBranch($branch, 'USD');
@@ -72,7 +77,8 @@ class BranchPoolServiceTest extends TestCase
         $this->assertEquals('0.0000', $pool->allocated_balance);
     }
 
-    public function test_deallocate_returns_to_available(): void
+    #[Test]
+    public function deallocate_returns_to_available(): void
     {
         $branch = Branch::factory()->create();
         $pool = $this->service->getOrCreateForBranch($branch, 'USD');
@@ -89,7 +95,8 @@ class BranchPoolServiceTest extends TestCase
         $this->assertEquals('2000.0000', $pool->allocated_balance);
     }
 
-    public function test_deallocate_fails_when_insufficient_allocated(): void
+    #[Test]
+    public function deallocate_fails_when_insufficient_allocated(): void
     {
         $branch = Branch::factory()->create();
         $pool = $this->service->getOrCreateForBranch($branch, 'USD');

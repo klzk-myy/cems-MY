@@ -9,6 +9,7 @@ use App\Services\ComplianceService;
 use App\Services\EddService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class EddServiceTest extends TestCase
@@ -29,7 +30,8 @@ class EddServiceTest extends TestCase
         $this->eddService = new EddService($this->mathService, $this->complianceService);
     }
 
-    public function test_edd_record_complete_requires_all_documents(): void
+    #[Test]
+    public function edd_record_complete_requires_all_documents(): void
     {
         // Create a high-risk customer (triggers Enhanced CDD document requirements)
         $customer = Customer::factory()->create([
@@ -99,7 +101,8 @@ class EddServiceTest extends TestCase
         $this->assertTrue($this->eddService->isRecordComplete($eddRecord->fresh()));
     }
 
-    public function test_edd_record_complete_medium_risk_does_not_require_documents(): void
+    #[Test]
+    public function edd_record_complete_medium_risk_does_not_require_documents(): void
     {
         // Create a medium-risk customer
         $customer = Customer::factory()->create([
@@ -120,7 +123,8 @@ class EddServiceTest extends TestCase
         $this->assertTrue($this->eddService->isRecordComplete($eddRecord->fresh()));
     }
 
-    public function test_edd_record_complete_with_empty_source_or_purpose(): void
+    #[Test]
+    public function edd_record_complete_with_empty_source_or_purpose(): void
     {
         $customer = Customer::factory()->create([
             'risk_rating' => 'High',

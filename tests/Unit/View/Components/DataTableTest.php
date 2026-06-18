@@ -4,11 +4,13 @@ namespace Tests\Unit\View\Components;
 
 use App\View\Components\DataTable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class DataTableTest extends TestCase
 {
-    public function test_datatable_has_data(): void
+    #[Test]
+    public function datatable_has_data(): void
     {
         $mockPaginator = $this->createMock(LengthAwarePaginator::class);
         $mockPaginator->method('isNotEmpty')->willReturn(true);
@@ -20,7 +22,8 @@ class DataTableTest extends TestCase
         $this->assertTrue($component->hasData());
     }
 
-    public function test_datatable_empty_state(): void
+    #[Test]
+    public function datatable_empty_state(): void
     {
         $mockPaginator = $this->createMock(LengthAwarePaginator::class);
         $mockPaginator->method('isNotEmpty')->willReturn(false);
@@ -35,7 +38,8 @@ class DataTableTest extends TestCase
         $this->assertEquals(2, $component->getColumnCount());
     }
 
-    public function test_datatable_column_count(): void
+    #[Test]
+    public function datatable_column_count(): void
     {
         $component = new DataTable(columns: [
             ['key' => 'name', 'label' => 'Name'],
@@ -46,7 +50,8 @@ class DataTableTest extends TestCase
         $this->assertEquals(4, $component->getColumnCount());
     }
 
-    public function test_datatable_renders_view(): void
+    #[Test]
+    public function datatable_renders_view(): void
     {
         $component = new DataTable(columns: []);
 
@@ -55,7 +60,8 @@ class DataTableTest extends TestCase
         $this->assertNotNull($view);
     }
 
-    public function test_datatable_can_hide_actions_column(): void
+    #[Test]
+    public function datatable_can_hide_actions_column(): void
     {
         $component = new DataTable(
             data: null,

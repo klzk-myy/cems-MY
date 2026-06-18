@@ -8,6 +8,7 @@ use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Models\User;
 use App\Services\TransactionValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionValidationServiceTest extends TestCase
@@ -22,7 +23,8 @@ class TransactionValidationServiceTest extends TestCase
         $this->service = app(TransactionValidationService::class);
     }
 
-    public function test_validate_throws_on_invalid_currency(): void
+    #[Test]
+    public function validate_throws_on_invalid_currency(): void
     {
         $user = User::factory()->create(['role' => UserRole::Teller]);
 
@@ -31,7 +33,8 @@ class TransactionValidationServiceTest extends TestCase
         $this->service->validateCurrency('INVALID');
     }
 
-    public function test_validate_throws_on_missing_till_balance(): void
+    #[Test]
+    public function validate_throws_on_missing_till_balance(): void
     {
         $user = User::factory()->create(['role' => UserRole::Teller]);
 

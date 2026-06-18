@@ -88,7 +88,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_initiate_closure_workflow(): void
+    public function initiate_closure_workflow(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
@@ -100,7 +100,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_checklist_reflects_actual_branch_state(): void
+    public function checklist_reflects_actual_branch_state(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
         $checklist = $this->branchClosingService->getChecklist($workflow);
@@ -118,7 +118,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_can_finalize_when_branch_has_no_pending_items(): void
+    public function can_finalize_when_branch_has_no_pending_items(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
@@ -126,7 +126,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_finalize_succeeds_when_checklist_complete(): void
+    public function finalize_succeeds_when_checklist_complete(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
@@ -138,7 +138,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_finalize_throws_when_branch_has_pending_items(): void
+    public function finalize_throws_when_branch_has_pending_items(): void
     {
         $mathService = new MathService;
         $branchPoolService = new BranchPoolService($mathService);
@@ -163,7 +163,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_get_active_workflow_returns_latest_initiated(): void
+    public function get_active_workflow_returns_latest_initiated(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
@@ -174,7 +174,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_get_active_workflow_returns_null_when_no_workflow(): void
+    public function get_active_workflow_returns_null_when_no_workflow(): void
     {
         $active = $this->branchClosingService->getActiveWorkflow($this->branch);
 
@@ -182,7 +182,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_get_active_workflow_excludes_finalized(): void
+    public function get_active_workflow_excludes_finalized(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
@@ -200,7 +200,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_workflow_status_helpers(): void
+    public function workflow_status_helpers(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
@@ -224,7 +224,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_api_endpoints_work(): void
+    public function api_endpoints_work(): void
     {
         $user = $this->manager;
 
@@ -256,7 +256,7 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_api_finalize_with_incomplete_checklist_fails(): void
+    public function api_finalize_with_incomplete_checklist_fails(): void
     {
         $user = $this->manager;
 

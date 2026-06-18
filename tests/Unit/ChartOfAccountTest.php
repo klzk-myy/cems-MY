@@ -4,13 +4,15 @@ namespace Tests\Unit;
 
 use App\Models\ChartOfAccount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ChartOfAccountTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_unused_methods_removed()
+    #[Test]
+    public function unused_methods_removed()
     {
         $account = ChartOfAccount::factory()->create(['account_type' => 'Asset']);
 

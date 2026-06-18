@@ -9,13 +9,15 @@ use App\Models\SanctionList;
 use App\Models\ScreeningResult;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ScreeningApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_screen_customer_requires_authentication(): void
+    #[Test]
+    public function screen_customer_requires_authentication(): void
     {
         $customer = Customer::factory()->create();
 
@@ -24,7 +26,8 @@ class ScreeningApiTest extends TestCase
         $response->assertStatus(401);
     }
 
-    public function test_screen_customer_requires_compliance_role(): void
+    #[Test]
+    public function screen_customer_requires_compliance_role(): void
     {
         $customer = Customer::factory()->create();
         $user = User::factory()->create(['role' => UserRole::Teller]);
@@ -36,7 +39,8 @@ class ScreeningApiTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_screen_customer_returns_flag_for_match(): void
+    #[Test]
+    public function screen_customer_returns_flag_for_match(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user, 'sanctum');
@@ -64,7 +68,8 @@ class ScreeningApiTest extends TestCase
         $this->assertMatchesRegularExpression('/flag|block/', $data['action']);
     }
 
-    public function test_get_screening_history(): void
+    #[Test]
+    public function get_screening_history(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user, 'sanctum');
@@ -81,7 +86,8 @@ class ScreeningApiTest extends TestCase
             ->assertJsonCount(3, 'data');
     }
 
-    public function test_get_screening_status(): void
+    #[Test]
+    public function get_screening_status(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user, 'sanctum');

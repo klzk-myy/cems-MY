@@ -11,13 +11,15 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_store_returns_transaction_resource()
+    #[Test]
+    public function store_returns_transaction_resource()
     {
         $transaction = Transaction::factory()->create();
 
@@ -58,7 +60,8 @@ class TransactionApiTest extends TestCase
             ->assertJsonPath('data.status', $transaction->status->value);
     }
 
-    public function test_show_returns_transaction_with_loaded_relations()
+    #[Test]
+    public function show_returns_transaction_with_loaded_relations()
     {
         $branch = Branch::factory()->create();
         $counter = Counter::factory()->create(['branch_id' => $branch->id]);

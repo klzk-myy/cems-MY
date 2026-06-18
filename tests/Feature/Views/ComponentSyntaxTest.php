@@ -3,12 +3,14 @@
 namespace Tests\Feature\Views;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ComponentSyntaxTest extends TestCase
 {
     #[DataProvider('componentProvider')]
-    public function test_component_renders_without_syntax_errors(string $component, array $data): void
+    #[Test]
+    public function component_renders_without_syntax_errors(string $component, array $data): void
     {
         $html = view($component, $data)->render();
 

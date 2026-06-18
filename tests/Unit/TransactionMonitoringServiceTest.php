@@ -14,6 +14,7 @@ use App\Services\Risk\VelocityRiskService;
 use App\Services\ThresholdService;
 use App\Services\TransactionMonitoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionMonitoringServiceTest extends TestCase
@@ -51,7 +52,8 @@ class TransactionMonitoringServiceTest extends TestCase
         );
     }
 
-    public function test_is_round_amount_method_was_removed(): void
+    #[Test]
+    public function is_round_amount_method_was_removed(): void
     {
         $reflection = new \ReflectionClass($this->service);
 
@@ -61,7 +63,8 @@ class TransactionMonitoringServiceTest extends TestCase
         );
     }
 
-    public function test_round_amount_detection_does_not_flag_legitimate_large_transactions(): void
+    #[Test]
+    public function round_amount_detection_does_not_flag_legitimate_large_transactions(): void
     {
         $amount = '50000.00';
 
@@ -75,7 +78,8 @@ class TransactionMonitoringServiceTest extends TestCase
         );
     }
 
-    public function test_rm_75000_is_not_flagged_as_round_amount(): void
+    #[Test]
+    public function rm_75000_is_not_flagged_as_round_amount(): void
     {
         $amount = '75000.00';
         $threshold = '25000';
@@ -84,7 +88,8 @@ class TransactionMonitoringServiceTest extends TestCase
         $this->assertEquals('0', $remainder, 'RM 75,000 is divisible by RM 25,000');
     }
 
-    public function test_rm_100000_is_not_flagged_as_round_amount(): void
+    #[Test]
+    public function rm_100000_is_not_flagged_as_round_amount(): void
     {
         $amount = '100000.00';
         $threshold = '25000';
@@ -93,7 +98,8 @@ class TransactionMonitoringServiceTest extends TestCase
         $this->assertEquals('0', $remainder, 'RM 100,000 is divisible by RM 25,000');
     }
 
-    public function test_monitor_transaction_does_not_create_round_amount_flags(): void
+    #[Test]
+    public function monitor_transaction_does_not_create_round_amount_flags(): void
     {
         $customer = Customer::factory()->create();
 
@@ -115,7 +121,8 @@ class TransactionMonitoringServiceTest extends TestCase
         $this->assertArrayHasKey('flags', $result);
     }
 
-    public function test_monitor_transaction_handles_rm_25000_exact_threshold(): void
+    #[Test]
+    public function monitor_transaction_handles_rm_25000_exact_threshold(): void
     {
         $customer = Customer::factory()->create();
 

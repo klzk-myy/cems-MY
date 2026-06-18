@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\EncryptionService;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class EncryptionServiceTest extends TestCase
@@ -17,7 +18,8 @@ class EncryptionServiceTest extends TestCase
         $this->encryptionService = new EncryptionService;
     }
 
-    public function test_can_encrypt_and_decrypt_data(): void
+    #[Test]
+    public function can_encrypt_and_decrypt_data(): void
     {
         $plaintext = 'This is sensitive data';
 
@@ -27,7 +29,8 @@ class EncryptionServiceTest extends TestCase
         $this->assertEquals($plaintext, $decrypted);
     }
 
-    public function test_encrypts_produce_different_ciphertexts(): void
+    #[Test]
+    public function encrypts_produce_different_ciphertexts(): void
     {
         $plaintext = 'Same input data';
 
@@ -38,14 +41,16 @@ class EncryptionServiceTest extends TestCase
         $this->assertNotEquals($encrypted1, $encrypted2);
     }
 
-    public function test_decrypt_with_invalid_data_returns_null(): void
+    #[Test]
+    public function decrypt_with_invalid_data_returns_null(): void
     {
         $this->assertNull($this->encryptionService->decrypt('invalid-data'));
         $this->assertNull($this->encryptionService->decrypt(''));
         $this->assertNull($this->encryptionService->decrypt(base64_encode('short')));
     }
 
-    public function test_encrypt_empty_string(): void
+    #[Test]
+    public function encrypt_empty_string(): void
     {
         $plaintext = '';
 
@@ -55,7 +60,8 @@ class EncryptionServiceTest extends TestCase
         $this->assertEquals($plaintext, $decrypted);
     }
 
-    public function test_encrypt_unicode_characters(): void
+    #[Test]
+    public function encrypt_unicode_characters(): void
     {
         $plaintext = '日本語テスト 한국어 Ελληνικά';
 
@@ -65,7 +71,8 @@ class EncryptionServiceTest extends TestCase
         $this->assertEquals($plaintext, $decrypted);
     }
 
-    public function test_encrypt_very_long_string(): void
+    #[Test]
+    public function encrypt_very_long_string(): void
     {
         $plaintext = str_repeat('A very long string. ', 1000);
 
@@ -75,7 +82,8 @@ class EncryptionServiceTest extends TestCase
         $this->assertEquals($plaintext, $decrypted);
     }
 
-    public function test_hash_produces_consistent_output(): void
+    #[Test]
+    public function hash_produces_consistent_output(): void
     {
         $data = 'test data';
         $hash1 = $this->encryptionService->hash($data);
@@ -85,7 +93,8 @@ class EncryptionServiceTest extends TestCase
         $this->assertEquals(64, strlen($hash1)); // SHA-256 produces 64 hex chars
     }
 
-    public function test_hash_produces_different_output_for_different_data(): void
+    #[Test]
+    public function hash_produces_different_output_for_different_data(): void
     {
         $hash1 = $this->encryptionService->hash('data1');
         $hash2 = $this->encryptionService->hash('data2');
@@ -93,7 +102,8 @@ class EncryptionServiceTest extends TestCase
         $this->assertNotEquals($hash1, $hash2);
     }
 
-    public function test_hash_uses_hmac_not_simple_concat(): void
+    #[Test]
+    public function hash_uses_hmac_not_simple_concat(): void
     {
         // This test verifies the fix for FAU-004 (length extension attack vulnerability)
         $data = 'sensitive data';
@@ -104,7 +114,8 @@ class EncryptionServiceTest extends TestCase
         $this->assertTrue(ctype_xdigit($hash));
     }
 
-    public function test_encryption_key_is_derived_to_32_bytes(): void
+    #[Test]
+    public function encryption_key_is_derived_to_32_bytes(): void
     {
         // Verify that the key is properly derived to 32 bytes for AES-256
         $reflection = new \ReflectionClass($this->encryptionService);
@@ -117,13 +128,15 @@ class EncryptionServiceTest extends TestCase
         $this->assertEquals(32, strlen($key));
     }
 
-    public function test_encrypt_produces_base64_output(): void
+    #[Test]
+    public function encrypt_produces_base64_output(): void
     {
         $encrypted = $this->encryptionService->encrypt('test');
         $this->assertTrue(base64_decode($encrypted) !== false);
     }
 
-    public function test_malaysian_ic_format(): void
+    #[Test]
+    public function malaysian_ic_format(): void
     {
         $ic = '901213-01-2345';
         $encrypted = $this->encryptionService->encrypt($ic);

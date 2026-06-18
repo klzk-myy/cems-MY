@@ -4,13 +4,15 @@ namespace Tests\Unit;
 
 use App\Models\CustomerRelation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerRelationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_customer_relation_can_store_engagement_assessment(): void
+    #[Test]
+    public function customer_relation_can_store_engagement_assessment(): void
     {
         $relation = CustomerRelation::factory()->create();
 
@@ -21,7 +23,8 @@ class CustomerRelationTest extends TestCase
         $this->assertNotNull($relation->engagement_assessed_at);
     }
 
-    public function test_customer_relation_can_store_indirect_engagement(): void
+    #[Test]
+    public function customer_relation_can_store_indirect_engagement(): void
     {
         $relation = CustomerRelation::factory()->create();
 
@@ -32,7 +35,8 @@ class CustomerRelationTest extends TestCase
         $this->assertNotNull($relation->engagement_assessed_at);
     }
 
-    public function test_customer_relation_can_store_minimal_engagement(): void
+    #[Test]
+    public function customer_relation_can_store_minimal_engagement(): void
     {
         $relation = CustomerRelation::factory()->create();
 

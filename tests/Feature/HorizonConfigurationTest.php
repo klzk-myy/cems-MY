@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HorizonConfigurationTest extends TestCase
 {
-    public function test_horizon_has_optimized_configuration()
+    #[Test]
+    public function horizon_has_optimized_configuration()
     {
         $config = config('horizon.environments.production');
 
@@ -20,7 +22,8 @@ class HorizonConfigurationTest extends TestCase
         $this->assertGreaterThanOrEqual(3600, $supervisor['timeout']);
     }
 
-    public function test_horizon_trim_settings_are_configured()
+    #[Test]
+    public function horizon_trim_settings_are_configured()
     {
         $trim = config('horizon.trim');
 

@@ -4,11 +4,13 @@ namespace Tests\Unit;
 
 use App\Services\CacheMonitoringService;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CacheMonitoringServiceTest extends TestCase
 {
-    public function test_get_cache_stats_returns_structure()
+    #[Test]
+    public function get_cache_stats_returns_structure()
     {
         $service = app(CacheMonitoringService::class);
         $stats = $service->getCacheStats();
@@ -19,7 +21,8 @@ class CacheMonitoringServiceTest extends TestCase
         $this->assertArrayHasKey('total_keys', $stats);
     }
 
-    public function test_calculate_hit_rate_returns_float()
+    #[Test]
+    public function calculate_hit_rate_returns_float()
     {
         Cache::put('test_key', 'test_value');
         Cache::get('test_key');

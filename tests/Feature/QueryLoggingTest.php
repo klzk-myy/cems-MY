@@ -7,25 +7,29 @@ use App\Models\User;
 use App\Services\QueryLoggingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class QueryLoggingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_query_logging_can_be_enabled()
+    #[Test]
+    public function query_logging_can_be_enabled()
     {
         Config::set('database.logging', true);
         $this->assertTrue(Config::get('database.logging'));
     }
 
-    public function test_query_logging_can_be_disabled()
+    #[Test]
+    public function query_logging_can_be_disabled()
     {
         Config::set('database.logging', false);
         $this->assertFalse(Config::get('database.logging'));
     }
 
-    public function test_queries_are_logged_when_enabled_via_service()
+    #[Test]
+    public function queries_are_logged_when_enabled_via_service()
     {
         $service = app(QueryLoggingService::class);
         $service->enable();
@@ -38,7 +42,8 @@ class QueryLoggingTest extends TestCase
         $this->assertStringContainsString('customers', $queries[0]['query']);
     }
 
-    public function test_queries_are_not_logged_when_disabled_via_service()
+    #[Test]
+    public function queries_are_not_logged_when_disabled_via_service()
     {
         $service = app(QueryLoggingService::class);
         $service->disable();
@@ -50,7 +55,8 @@ class QueryLoggingTest extends TestCase
         $this->assertEmpty($queries);
     }
 
-    public function test_n_plus_one_detection_logs_duplicate_queries()
+    #[Test]
+    public function n_plus_one_detection_logs_duplicate_queries()
     {
         $service = app(QueryLoggingService::class);
         $service->enable();
@@ -70,7 +76,8 @@ class QueryLoggingTest extends TestCase
         $this->assertGreaterThan(1, count($customerQueries));
     }
 
-    public function test_middleware_logs_queries_when_config_enabled()
+    #[Test]
+    public function middleware_logs_queries_when_config_enabled()
     {
         Config::set('database.logging', true);
 
@@ -85,7 +92,8 @@ class QueryLoggingTest extends TestCase
         $this->assertStringContainsString('customers', $data['queries'][0]['query']);
     }
 
-    public function test_middleware_does_not_log_queries_when_config_disabled()
+    #[Test]
+    public function middleware_does_not_log_queries_when_config_disabled()
     {
         Config::set('database.logging', false);
 

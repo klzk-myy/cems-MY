@@ -24,6 +24,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerRiskReviewServiceTest extends TestCase
@@ -77,7 +78,8 @@ class CustomerRiskReviewServiceTest extends TestCase
         $this->service = new CustomerRiskReviewService($riskScoringService);
     }
 
-    public function test_process_due_reviews_returns_empty_when_no_customers_due(): void
+    #[Test]
+    public function process_due_reviews_returns_empty_when_no_customers_due(): void
     {
         $customer = Customer::factory()->create();
 
@@ -102,7 +104,8 @@ class CustomerRiskReviewServiceTest extends TestCase
         $this->assertEquals(0, $results['errors']);
     }
 
-    public function test_process_due_reviews_processes_customers_past_next_screening_date(): void
+    #[Test]
+    public function process_due_reviews_processes_customers_past_next_screening_date(): void
     {
         $customer = Customer::factory()->create(['risk_score' => 50]);
 
@@ -126,7 +129,8 @@ class CustomerRiskReviewServiceTest extends TestCase
         $this->assertEquals(0, $results['errors']);
     }
 
-    public function test_process_due_reviews_respects_batch_size(): void
+    #[Test]
+    public function process_due_reviews_respects_batch_size(): void
     {
         for ($i = 0; $i < 5; $i++) {
             $customer = Customer::factory()->create();
@@ -150,7 +154,8 @@ class CustomerRiskReviewServiceTest extends TestCase
         $this->assertEquals(2, $results['processed']);
     }
 
-    public function test_process_due_reviews_counts_score_changes(): void
+    #[Test]
+    public function process_due_reviews_counts_score_changes(): void
     {
         $customer = Customer::factory()->create(['risk_score' => 30]);
 

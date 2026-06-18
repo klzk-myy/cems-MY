@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\HistoricalRiskAnalysisService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HistoricalRiskAnalysisServiceTest extends TestCase
@@ -21,7 +22,8 @@ class HistoricalRiskAnalysisServiceTest extends TestCase
         $this->service = app(HistoricalRiskAnalysisService::class);
     }
 
-    public function test_detects_velocity_risk(): void
+    #[Test]
+    public function detects_velocity_risk(): void
     {
         $customer = Customer::factory()->create();
 
@@ -38,7 +40,8 @@ class HistoricalRiskAnalysisServiceTest extends TestCase
         $this->assertEquals('velocity', $flags[0]['type']);
     }
 
-    public function test_detects_structuring_risk(): void
+    #[Test]
+    public function detects_structuring_risk(): void
     {
         $customer = Customer::factory()->create();
 
@@ -57,7 +60,8 @@ class HistoricalRiskAnalysisServiceTest extends TestCase
         $this->assertEquals('critical', $flags[0]['severity']);
     }
 
-    public function test_detects_pattern_reversal(): void
+    #[Test]
+    public function detects_pattern_reversal(): void
     {
         $customer = Customer::factory()->create();
 
@@ -97,7 +101,8 @@ class HistoricalRiskAnalysisServiceTest extends TestCase
         $this->assertNotEmpty($patternFlags);
     }
 
-    public function test_no_flags_for_new_customer(): void
+    #[Test]
+    public function no_flags_for_new_customer(): void
     {
         $customer = Customer::factory()->create();
 

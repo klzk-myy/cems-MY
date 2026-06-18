@@ -10,6 +10,7 @@ use App\Services\MathService;
 use App\Services\SanctionsImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SanctionsImportServiceTest extends TestCase
@@ -24,7 +25,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->service = new SanctionsImportService(new MathService(2));
     }
 
-    public function test_import_creates_entries_from_json(): void
+    #[Test]
+    public function import_creates_entries_from_json(): void
     {
         Http::fake([
             'https://api.opensanctions.org/*' => Http::response([
@@ -80,7 +82,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertEquals('acme corporation', $acme->normalized_name);
     }
 
-    public function test_import_updates_existing_entries(): void
+    #[Test]
+    public function import_updates_existing_entries(): void
     {
         Http::fake([
             'https://api.opensanctions.org/*' => Http::response([
@@ -128,7 +131,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertEquals('Canada', $existingEntry->nationality);
     }
 
-    public function test_import_deactivates_missing_entries(): void
+    #[Test]
+    public function import_deactivates_missing_entries(): void
     {
         Http::fake([
             'https://api.opensanctions.org/*' => Http::response([
@@ -175,7 +179,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertEquals(SanctionStatus::Active, $stillActive->status);
     }
 
-    public function test_parse_open_sanctions_entry_handles_array_names(): void
+    #[Test]
+    public function parse_open_sanctions_entry_handles_array_names(): void
     {
         $list = SanctionList::factory()->create(['slug' => 'test-parsing-list']);
 
@@ -198,7 +203,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertEquals('1985-05-20', $result['date_of_birth']);
     }
 
-    public function test_parse_open_sanctions_entry_returns_null_for_missing_name(): void
+    #[Test]
+    public function parse_open_sanctions_entry_returns_null_for_missing_name(): void
     {
         $list = SanctionList::factory()->create(['slug' => 'test-missing-name']);
 
@@ -212,7 +218,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function test_normalize_name(): void
+    #[Test]
+    public function normalize_name(): void
     {
         $this->assertEquals('john doe', $this->service->normalizeName('John Doe'));
         $this->assertEquals('john doe', $this->service->normalizeName('  John   Doe  '));
@@ -221,7 +228,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertEquals('john doe-smith', $this->service->normalizeName('John Doe-Smith'));
     }
 
-    public function test_map_entity_type(): void
+    #[Test]
+    public function map_entity_type(): void
     {
         $this->assertEquals(EntityType::Individual, $this->service->mapEntityType('Person'));
         $this->assertEquals(EntityType::Individual, $this->service->mapEntityType('Individual'));
@@ -233,7 +241,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertEquals(EntityType::Individual, $this->service->mapEntityType(''));
     }
 
-    public function test_parse_date(): void
+    #[Test]
+    public function parse_date(): void
     {
         $this->assertEquals('1990-01-15', $this->service->parseDate('1990-01-15'));
         $this->assertEquals('1990-01-01', $this->service->parseDate('1990'));
@@ -243,7 +252,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertNull($this->service->parseDate(''));
     }
 
-    public function test_fetch_source_retries_on_failure(): void
+    #[Test]
+    public function fetch_source_retries_on_failure(): void
     {
         Http::fake([
             'https://api.opensanctions.org/*' => Http::sequence()
@@ -266,7 +276,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertEquals(1, $result['created']);
     }
 
-    public function test_import_handles_empty_results(): void
+    #[Test]
+    public function import_handles_empty_results(): void
     {
         Http::fake([
             'https://api.opensanctions.org/*' => Http::response(['results' => []], 200),

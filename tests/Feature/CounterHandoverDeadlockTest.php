@@ -131,7 +131,8 @@ class CounterHandoverDeadlockTest extends TestCase
      * consistent lock order preventing deadlocks when concurrent handovers
      * involve overlapping but different currency sets.
      */
-    public function test_currency_codes_are_sorted_before_locking_in_handover(): void
+    #[Test]
+    public function currency_codes_are_sorted_before_locking_in_handover(): void
     {
         // Create session with multiple currencies
         $session = CounterSession::factory()->create([
@@ -207,7 +208,8 @@ class CounterHandoverDeadlockTest extends TestCase
      * Without alphabetical sorting, these could deadlock.
      * With the fix, they complete successfully.
      */
-    public function test_concurrent_handovers_different_currencies_do_not_conflict(): void
+    #[Test]
+    public function concurrent_handovers_different_currencies_do_not_conflict(): void
     {
         $today = now()->toDateString();
         $counterService = app(CounterService::class);
@@ -301,7 +303,8 @@ class CounterHandoverDeadlockTest extends TestCase
     /**
      * Test that handover with many currencies maintains consistent lock order.
      */
-    public function test_handover_with_many_currencies_maintains_lock_order(): void
+    #[Test]
+    public function handover_with_many_currencies_maintains_lock_order(): void
     {
         $today = now()->toDateString();
         $counterService = app(CounterService::class);

@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionServicePreValidationTest extends TestCase
@@ -21,7 +22,8 @@ class TransactionServicePreValidationTest extends TestCase
         $this->service = app(TransactionService::class);
     }
 
-    public function test_sanctions_block_stops_validation(): void
+    #[Test]
+    public function sanctions_block_stops_validation(): void
     {
         $customer = Customer::factory()->create(['sanction_hit' => true]);
 
@@ -31,7 +33,8 @@ class TransactionServicePreValidationTest extends TestCase
         $this->assertFalse($result->isHoldRequired());
     }
 
-    public function test_enhanced_cdd_requires_hold(): void
+    #[Test]
+    public function enhanced_cdd_requires_hold(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -45,7 +48,8 @@ class TransactionServicePreValidationTest extends TestCase
         $this->assertEquals(CddLevel::Enhanced, $result->getCDDLevel());
     }
 
-    public function test_standard_cdd_no_hold(): void
+    #[Test]
+    public function standard_cdd_no_hold(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
@@ -60,7 +64,8 @@ class TransactionServicePreValidationTest extends TestCase
         $this->assertEquals(CddLevel::Standard, $result->getCDDLevel());
     }
 
-    public function test_simplified_cdd_no_hold(): void
+    #[Test]
+    public function simplified_cdd_no_hold(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
@@ -74,7 +79,8 @@ class TransactionServicePreValidationTest extends TestCase
         $this->assertEquals(CddLevel::Simplified, $result->getCDDLevel());
     }
 
-    public function test_returning_customer_has_risk_analysis(): void
+    #[Test]
+    public function returning_customer_has_risk_analysis(): void
     {
         $customer = Customer::factory()->create();
 

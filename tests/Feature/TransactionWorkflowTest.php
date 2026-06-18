@@ -159,7 +159,7 @@ class TransactionWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_concurrent_sell_transactions_respect_reservation(): void
+    public function concurrent_sell_transactions_respect_reservation(): void
     {
         $customer = Customer::factory()->create([
             'risk_rating' => 'Low',
@@ -230,7 +230,7 @@ class TransactionWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_approval_history_reflects_actual_state_transitions(): void
+    public function approval_history_reflects_actual_state_transitions(): void
     {
         $customer = Customer::factory()->create([
             'risk_rating' => 'Low',
@@ -322,7 +322,7 @@ class TransactionWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_transaction_approval_required_at_10000(): void
+    public function transaction_approval_required_at_10000(): void
     {
         $customer = Customer::factory()->create([
             'risk_rating' => 'Low',

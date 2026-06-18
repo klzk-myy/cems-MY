@@ -5,13 +5,15 @@ namespace Tests\Unit\Models;
 use App\Models\JournalEntry;
 use App\Models\Transaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionJournalEntryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_transaction_has_journal_entry_relationship(): void
+    #[Test]
+    public function transaction_has_journal_entry_relationship(): void
     {
         $journalEntry = JournalEntry::factory()->create();
         $transaction = Transaction::factory()->create([
@@ -22,7 +24,8 @@ class TransactionJournalEntryTest extends TestCase
         $this->assertEquals($journalEntry->id, $transaction->journalEntry->id);
     }
 
-    public function test_transaction_has_deferred_journal_entry_relationship(): void
+    #[Test]
+    public function transaction_has_deferred_journal_entry_relationship(): void
     {
         $journalEntry = JournalEntry::factory()->create();
         $transaction = Transaction::factory()->create([

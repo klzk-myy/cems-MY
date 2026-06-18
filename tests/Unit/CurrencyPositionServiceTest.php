@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\CurrencyPositionService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CurrencyPositionServiceTest extends TestCase
@@ -25,7 +26,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->mathService = new MathService;
     }
 
-    public function test_creates_position_on_first_buy(): void
+    #[Test]
+    public function creates_position_on_first_buy(): void
     {
         // Simulate adding to empty position
         $positionQty = '0';
@@ -36,7 +38,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertEquals('1000.0000', $newQuantity);
     }
 
-    public function test_updates_position_on_additional_buy(): void
+    #[Test]
+    public function updates_position_on_additional_buy(): void
     {
         // Existing position
         $positionQty = '5000';
@@ -55,7 +58,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertEquals('4.1875', $newAvgCost);
     }
 
-    public function test_decreases_position_on_sell(): void
+    #[Test]
+    public function decreases_position_on_sell(): void
     {
         $positionQty = '10000';
         $sellQuantity = '3000';
@@ -64,7 +68,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertEquals('7000.0000', $newQuantity);
     }
 
-    public function test_multiple_sells_cannot_exceed_total_balance(): void
+    #[Test]
+    public function multiple_sells_cannot_exceed_total_balance(): void
     {
         $positionQty = '1000';
         $sellQuantity = '1500';
@@ -73,7 +78,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertFalse($canSell);
     }
 
-    public function test_position_balance_never_negative(): void
+    #[Test]
+    public function position_balance_never_negative(): void
     {
         $positionQty = '500';
         $sellQuantity = '600';
@@ -83,7 +89,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertLessThan(0, bccomp($newQuantity, '0', 4));
     }
 
-    public function test_throws_exception_when_selling_more_than_balance(): void
+    #[Test]
+    public function throws_exception_when_selling_more_than_balance(): void
     {
         $positionQty = '100';
         $sellAmount = '500';
@@ -92,7 +99,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertFalse($canSell);
     }
 
-    public function test_throws_exception_when_selling_exact_balance(): void
+    #[Test]
+    public function throws_exception_when_selling_exact_balance(): void
     {
         $positionQty = '1000';
         $sellAmount = '1000';
@@ -101,7 +109,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertTrue($canSell); // Can sell exact balance
     }
 
-    public function test_throws_exception_when_selling_with_zero_balance(): void
+    #[Test]
+    public function throws_exception_when_selling_with_zero_balance(): void
     {
         $positionQty = '0';
         $canSell = bccomp($positionQty, '0', 4) > 0;
@@ -109,7 +118,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertFalse($canSell);
     }
 
-    public function test_allows_partial_sell_within_balance(): void
+    #[Test]
+    public function allows_partial_sell_within_balance(): void
     {
         $positionQty = '5000';
         $sellAmount = '2500';
@@ -118,7 +128,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertTrue($canSell);
     }
 
-    public function test_average_cost_calculation_weighted_average(): void
+    #[Test]
+    public function average_cost_calculation_weighted_average(): void
     {
         // First purchase: 1000 @ 4.00 = 4000
         $qty1 = '1000';
@@ -138,7 +149,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertEquals('4.5000', $avgCost);
     }
 
-    public function test_average_cost_with_extreme_values(): void
+    #[Test]
+    public function average_cost_with_extreme_values(): void
     {
         // Very small cost per unit, large quantity
         $qty1 = '1000000';
@@ -159,7 +171,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertEquals('0.000001', $avgCost);
     }
 
-    public function test_consume_rejects_expired_reservation(): void
+    #[Test]
+    public function consume_rejects_expired_reservation(): void
     {
         $teller = User::factory()->create(['role' => 'teller']);
         Currency::factory()->create(['code' => 'USD']);
@@ -205,7 +218,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertEquals(StockReservationStatus::Pending, $expiredReservation->status);
     }
 
-    public function test_consume_accepts_valid_reservation(): void
+    #[Test]
+    public function consume_accepts_valid_reservation(): void
     {
         $teller = User::factory()->create(['role' => 'teller']);
         Currency::factory()->create(['code' => 'USD']);
@@ -248,7 +262,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertEquals(StockReservationStatus::Consumed, $result->status);
     }
 
-    public function test_release_releases_expired_reservation(): void
+    #[Test]
+    public function release_releases_expired_reservation(): void
     {
         $teller = User::factory()->create(['role' => 'teller']);
         Currency::factory()->create(['code' => 'USD']);

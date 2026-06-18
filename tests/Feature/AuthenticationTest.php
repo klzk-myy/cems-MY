@@ -6,25 +6,29 @@ use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_page_is_accessible(): void
+    #[Test]
+    public function login_page_is_accessible(): void
     {
         $response = $this->get('/login');
         $response->assertStatus(200);
     }
 
-    public function test_unauthenticated_user_is_redirected_to_login(): void
+    #[Test]
+    public function unauthenticated_user_is_redirected_to_login(): void
     {
         $response = $this->get('/dashboard');
         $response->assertRedirect('/login');
     }
 
-    public function test_teller_can_login_with_valid_credentials(): void
+    #[Test]
+    public function teller_can_login_with_valid_credentials(): void
     {
         $user = User::factory()->create([
             'role' => UserRole::Teller,
@@ -40,7 +44,8 @@ class AuthenticationTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
-    public function test_login_fails_with_invalid_password(): void
+    #[Test]
+    public function login_fails_with_invalid_password(): void
     {
         $user = User::factory()->create([
             'password' => bcrypt('password123'),
@@ -55,7 +60,8 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_login_fails_with_nonexistent_email(): void
+    #[Test]
+    public function login_fails_with_nonexistent_email(): void
     {
         $response = $this->post('/login', [
             'username' => 'nonexistent_user',
@@ -66,7 +72,8 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_inactive_user_cannot_login(): void
+    #[Test]
+    public function inactive_user_cannot_login(): void
     {
         $user = User::factory()->create([
             'is_active' => false,
@@ -82,7 +89,8 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_password_is_hashed_in_database(): void
+    #[Test]
+    public function password_is_hashed_in_database(): void
     {
         $user = User::factory()->create([
             'password_hash' => Hash::make('plainpassword'),
@@ -92,7 +100,8 @@ class AuthenticationTest extends TestCase
         $this->assertTrue(password_verify('plainpassword', $user->password_hash));
     }
 
-    public function test_authenticated_user_can_logout(): void
+    #[Test]
+    public function authenticated_user_can_logout(): void
     {
         $user = User::factory()->create();
 
@@ -102,7 +111,8 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_dashboard_is_accessible_to_authenticated_users(): void
+    #[Test]
+    public function dashboard_is_accessible_to_authenticated_users(): void
     {
         $user = User::factory()->create();
 
@@ -111,7 +121,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_teller_has_correct_role_permissions(): void
+    #[Test]
+    public function teller_has_correct_role_permissions(): void
     {
         $user = User::factory()->create(['role' => UserRole::Teller]);
 
@@ -120,7 +131,8 @@ class AuthenticationTest extends TestCase
         $this->assertFalse($user->role->canManageUsers());
     }
 
-    public function test_manager_has_correct_role_permissions(): void
+    #[Test]
+    public function manager_has_correct_role_permissions(): void
     {
         $user = User::factory()->create(['role' => UserRole::Manager]);
 
@@ -129,7 +141,8 @@ class AuthenticationTest extends TestCase
         $this->assertTrue($user->role->canAccessAccounting());
     }
 
-    public function test_compliance_officer_has_correct_role_permissions(): void
+    #[Test]
+    public function compliance_officer_has_correct_role_permissions(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
@@ -137,7 +150,8 @@ class AuthenticationTest extends TestCase
         $this->assertFalse($user->role->canAccessAccounting());
     }
 
-    public function test_admin_has_correct_role_permissions(): void
+    #[Test]
+    public function admin_has_correct_role_permissions(): void
     {
         $user = User::factory()->create(['role' => UserRole::Admin]);
 
@@ -145,7 +159,8 @@ class AuthenticationTest extends TestCase
         $this->assertTrue($user->role->canAccessAll());
     }
 
-    public function test_teller_cannot_access_accounting(): void
+    #[Test]
+    public function teller_cannot_access_accounting(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
 
@@ -154,7 +169,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_manager_cannot_access_user_management(): void
+    #[Test]
+    public function manager_cannot_access_user_management(): void
     {
         $manager = User::factory()->create(['role' => UserRole::Manager]);
 
@@ -163,7 +179,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_compliance_officer_cannot_access_accounting(): void
+    #[Test]
+    public function compliance_officer_cannot_access_accounting(): void
     {
         $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
@@ -172,7 +189,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_admin_can_access_user_management(): void
+    #[Test]
+    public function admin_can_access_user_management(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
@@ -181,7 +199,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_manager_can_access_accounting(): void
+    #[Test]
+    public function manager_can_access_accounting(): void
     {
         $manager = User::factory()->create(['role' => UserRole::Manager]);
 
@@ -190,7 +209,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_compliance_officer_can_access_compliance_portal(): void
+    #[Test]
+    public function compliance_officer_can_access_compliance_portal(): void
     {
         $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
@@ -199,7 +219,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_admin_can_access_compliance_portal(): void
+    #[Test]
+    public function admin_can_access_compliance_portal(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
@@ -208,7 +229,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_admin_can_access_stock_cash(): void
+    #[Test]
+    public function admin_can_access_stock_cash(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
@@ -217,7 +239,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_manager_can_access_stock_cash(): void
+    #[Test]
+    public function manager_can_access_stock_cash(): void
     {
         $manager = User::factory()->create(['role' => UserRole::Manager]);
 
@@ -226,7 +249,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_teller_cannot_access_stock_cash(): void
+    #[Test]
+    public function teller_cannot_access_stock_cash(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
 
@@ -235,7 +259,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_teller_cannot_access_compliance_portal(): void
+    #[Test]
+    public function teller_cannot_access_compliance_portal(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
 
@@ -244,7 +269,8 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_manager_cannot_access_compliance_portal(): void
+    #[Test]
+    public function manager_cannot_access_compliance_portal(): void
     {
         $manager = User::factory()->create(['role' => UserRole::Manager]);
 

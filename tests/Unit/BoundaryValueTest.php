@@ -6,6 +6,7 @@ use App\Enums\CddLevel;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BoundaryValueTest extends TestCase
@@ -21,7 +22,8 @@ class BoundaryValueTest extends TestCase
     }
 
     #[DataProvider('cddThresholdProvider')]
-    public function test_cdd_level_at_thresholds(float $amount, string $expectedLevel): void
+    #[Test]
+    public function cdd_level_at_thresholds(float $amount, string $expectedLevel): void
     {
         $cddLevel = $this->determineCddLevel((string) $amount, false, false);
 
@@ -38,26 +40,30 @@ class BoundaryValueTest extends TestCase
         ];
     }
 
-    public function test_negative_amount_validation(): void
+    #[Test]
+    public function negative_amount_validation(): void
     {
         $result = $this->mathService->compare('-100', '0');
         $this->assertLessThan(0, $result);
     }
 
-    public function test_maximum_amount_handling(): void
+    #[Test]
+    public function maximum_amount_handling(): void
     {
         $maxAmount = '999999999.99';
         $result = $this->mathService->add($maxAmount, '0.01');
         $this->assertEquals('1000000000.0000', $result);
     }
 
-    public function test_precision_maintained_for_small_amounts(): void
+    #[Test]
+    public function precision_maintained_for_small_amounts(): void
     {
         $result = $this->mathService->add('0.01', '0.02');
         $this->assertEquals('0.0300', $result);
     }
 
-    public function test_six_decimal_precision_handling(): void
+    #[Test]
+    public function six_decimal_precision_handling(): void
     {
         $rate = '4.723456';
         $amount = '1000';
@@ -65,14 +71,16 @@ class BoundaryValueTest extends TestCase
         $this->assertEquals('4723.4560', $result);
     }
 
-    public function test_currency_position_at_zero_balance(): void
+    #[Test]
+    public function currency_position_at_zero_balance(): void
     {
         $positionQty = '0';
         $canSell = bccomp($positionQty, '10', 2) >= 0;
         $this->assertFalse($canSell);
     }
 
-    public function test_average_cost_calculation_extreme_values(): void
+    #[Test]
+    public function average_cost_calculation_extreme_values(): void
     {
         // Old: 0.000001 @ 1000000 units
         $oldQuantity = '1000000';
@@ -93,7 +101,8 @@ class BoundaryValueTest extends TestCase
         $this->assertEquals('0.0000', $newAvgCost);
     }
 
-    public function test_revaluation_with_zero_rate_change(): void
+    #[Test]
+    public function revaluation_with_zero_rate_change(): void
     {
         $oldRate = '4.5000';
         $newRate = '4.5000';

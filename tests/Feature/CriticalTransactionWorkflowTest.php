@@ -18,6 +18,7 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -77,7 +78,8 @@ class CriticalTransactionWorkflowTest extends TestCase
      *
      * CRITICAL: BNM AML/CFT compliance requirement
      */
-    public function test_manager_cannot_approve_own_transaction(): void
+    #[Test]
+    public function manager_cannot_approve_own_transaction(): void
     {
         // Create position for sell transaction
         $this->createPosition('10000.00');
@@ -103,7 +105,8 @@ class CriticalTransactionWorkflowTest extends TestCase
     /**
      * Test: Segregation of Duties - Manager can approve teller's transaction
      */
-    public function test_manager_can_approve_teller_transaction(): void
+    #[Test]
+    public function manager_can_approve_teller_transaction(): void
     {
         // Create position for sell transaction
         $this->createPosition('10000.00');
@@ -129,7 +132,8 @@ class CriticalTransactionWorkflowTest extends TestCase
      *
      * CRITICAL: Prevents stock from being blocked indefinitely
      */
-    public function test_stock_reservation_released_on_cancellation(): void
+    #[Test]
+    public function stock_reservation_released_on_cancellation(): void
     {
         // Create initial position
         $this->createPosition('10000.00');
@@ -170,7 +174,8 @@ class CriticalTransactionWorkflowTest extends TestCase
      *
      * CRITICAL: PendingCancellation should NOT transition to Approved/Processing/Completed
      */
-    public function test_pending_cancellation_cannot_transition_to_approved(): void
+    #[Test]
+    public function pending_cancellation_cannot_transition_to_approved(): void
     {
         // Create position for sell transaction
         $this->createPosition('10000.00');
@@ -202,7 +207,8 @@ class CriticalTransactionWorkflowTest extends TestCase
      *
      * CRITICAL: Prevents overselling
      */
-    public function test_concurrent_transactions_respect_stock_reservations(): void
+    #[Test]
+    public function concurrent_transactions_respect_stock_reservations(): void
     {
         // Create initial position with limited stock
         $this->createPosition('3000.00');
@@ -249,7 +255,8 @@ class CriticalTransactionWorkflowTest extends TestCase
      * The fix moves the getAvailableBalance check BEFORE consumeStockReservation
      * so we don't consume a reservation when there's insufficient stock.
      */
-    public function test_concurrent_sell_approval_first_succeeds_second_gets_insufficient_stock(): void
+    #[Test]
+    public function concurrent_sell_approval_first_succeeds_second_gets_insufficient_stock(): void
     {
         // Create initial position with enough for the transaction to be created
         // Position must be >= 3000 for the sell transaction to be created (reserve check)
@@ -287,7 +294,8 @@ class CriticalTransactionWorkflowTest extends TestCase
      *
      * Transactions >= RM 3,000 should require approval
      */
-    public function test_threshold_consistency_for_approval_requirement(): void
+    #[Test]
+    public function threshold_consistency_for_approval_requirement(): void
     {
         // Create position for sell transactions
         $this->createPosition('10000.00');
@@ -307,7 +315,8 @@ class CriticalTransactionWorkflowTest extends TestCase
      * Test: CDD level determination uses correct thresholds
      * Note: Amount is in USD, converted to MYR at rate 4.50
      */
-    public function test_cdd_level_determination_thresholds(): void
+    #[Test]
+    public function cdd_level_determination_thresholds(): void
     {
         // Per pd-00.md 14C.12 for MSB (amounts converted to MYR at 4.50):
         // < RM 3,000 = Simplified (e.g., 500 USD = 2250 MYR < 3000)
@@ -330,7 +339,8 @@ class CriticalTransactionWorkflowTest extends TestCase
     /**
      * Test: Stock reservation expiry prevents indefinite blocking
      */
-    public function test_expired_stock_reservations_are_ignored(): void
+    #[Test]
+    public function expired_stock_reservations_are_ignored(): void
     {
         // Create position
         $this->createPosition('10000.00');
@@ -353,7 +363,8 @@ class CriticalTransactionWorkflowTest extends TestCase
     /**
      * Test: Transaction approval updates position correctly
      */
-    public function test_approval_updates_position_and_till_balance(): void
+    #[Test]
+    public function approval_updates_position_and_till_balance(): void
     {
         // Create initial position
         $this->createPosition('10000.00');

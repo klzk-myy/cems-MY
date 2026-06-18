@@ -99,7 +99,8 @@ class TransactionAccountingVerificationTest extends TestCase
         ]);
     }
 
-    public function test_create_20_transactions_per_branch_verify_accounting(): void
+    #[Test]
+    public function create_20_transactions_per_branch_verify_accounting(): void
     {
         $this->createTestData();
         $this->createTransactions();

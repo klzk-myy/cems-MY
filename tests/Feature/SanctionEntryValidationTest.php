@@ -6,13 +6,15 @@ use App\Enums\UserRole;
 use App\Models\SanctionEntry;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SanctionEntryValidationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_store_sanction_entry_requires_entity_name(): void
+    #[Test]
+    public function store_sanction_entry_requires_entity_name(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user);
@@ -25,7 +27,8 @@ class SanctionEntryValidationTest extends TestCase
         $response->assertJsonValidationErrors('entity_name');
     }
 
-    public function test_store_sanction_entry_requires_list_id(): void
+    #[Test]
+    public function store_sanction_entry_requires_list_id(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user);
@@ -38,7 +41,8 @@ class SanctionEntryValidationTest extends TestCase
         $response->assertJsonValidationErrors('list_id');
     }
 
-    public function test_store_sanction_entry_requires_entity_type(): void
+    #[Test]
+    public function store_sanction_entry_requires_entity_type(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user);
@@ -52,7 +56,8 @@ class SanctionEntryValidationTest extends TestCase
         $response->assertJsonValidationErrors('entity_type');
     }
 
-    public function test_store_sanction_entry_validates_entity_type_enum(): void
+    #[Test]
+    public function store_sanction_entry_validates_entity_type_enum(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user);
@@ -67,7 +72,8 @@ class SanctionEntryValidationTest extends TestCase
         $response->assertJsonValidationErrors('entity_type');
     }
 
-    public function test_store_sanction_entry_validates_list_id_exists(): void
+    #[Test]
+    public function store_sanction_entry_validates_list_id_exists(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user);
@@ -82,7 +88,8 @@ class SanctionEntryValidationTest extends TestCase
         $response->assertJsonValidationErrors('list_id');
     }
 
-    public function test_update_sanction_entry_requires_entity_name(): void
+    #[Test]
+    public function update_sanction_entry_requires_entity_name(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user);
@@ -98,7 +105,8 @@ class SanctionEntryValidationTest extends TestCase
         $response->assertJsonValidationErrors('entity_name');
     }
 
-    public function test_update_sanction_entry_allows_optional_fields(): void
+    #[Test]
+    public function update_sanction_entry_allows_optional_fields(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->actingAs($user);

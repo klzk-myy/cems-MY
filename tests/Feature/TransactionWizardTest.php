@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionWizardTest extends TestCase
@@ -27,7 +28,8 @@ class TransactionWizardTest extends TestCase
         Counter::factory()->create(['id' => '1', 'code' => 'T1']);
     }
 
-    public function test_step1_returns_cdd_level_and_required_documents(): void
+    #[Test]
+    public function step1_returns_cdd_level_and_required_documents(): void
     {
         $customer = Customer::factory()->create(['risk_rating' => 'Low']);
 
@@ -58,7 +60,8 @@ class TransactionWizardTest extends TestCase
             });
     }
 
-    public function test_step1_blocks_sanctioned_customers(): void
+    #[Test]
+    public function step1_blocks_sanctioned_customers(): void
     {
         $customer = Customer::factory()->create(['sanction_hit' => true]);
 
@@ -81,7 +84,8 @@ class TransactionWizardTest extends TestCase
             ]);
     }
 
-    public function test_step1_detects_velocity_risk(): void
+    #[Test]
+    public function step1_detects_velocity_risk(): void
     {
         $customer = Customer::factory()->create();
 
@@ -109,7 +113,8 @@ class TransactionWizardTest extends TestCase
             });
     }
 
-    public function test_teller_can_override_to_collect_additional_details(): void
+    #[Test]
+    public function teller_can_override_to_collect_additional_details(): void
     {
         $customer = Customer::factory()->create(['risk_rating' => 'Low']);
 
@@ -132,7 +137,8 @@ class TransactionWizardTest extends TestCase
             ]);
     }
 
-    public function test_enhanced_cdd_requires_hold(): void
+    #[Test]
+    public function enhanced_cdd_requires_hold(): void
     {
         $customer = Customer::factory()->create(['pep_status' => true]);
 

@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class RevaluationServiceTest extends TestCase
@@ -66,7 +67,8 @@ class RevaluationServiceTest extends TestCase
         ]);
     }
 
-    public function test_run_revaluation_with_journal_throws_when_accounting_service_fails(): void
+    #[Test]
+    public function run_revaluation_with_journal_throws_when_accounting_service_fails(): void
     {
         // Arrange: Create an open accounting period
         $testDate = now()->toDateString();
@@ -115,7 +117,8 @@ class RevaluationServiceTest extends TestCase
         }
     }
 
-    public function test_revaluation_error_includes_successful_currencies(): void
+    #[Test]
+    public function revaluation_error_includes_successful_currencies(): void
     {
         // Arrange: Create an open accounting period
         $testDate = now()->toDateString();
@@ -188,7 +191,8 @@ class RevaluationServiceTest extends TestCase
         }
     }
 
-    public function test_run_revaluation_with_journal_succeeds_when_all_currencies_process(): void
+    #[Test]
+    public function run_revaluation_with_journal_succeeds_when_all_currencies_process(): void
     {
         // Arrange: Create an open accounting period
         $testDate = now()->toDateString();
@@ -234,7 +238,8 @@ class RevaluationServiceTest extends TestCase
         $this->assertEquals(1, $result['positions_updated']);
     }
 
-    public function test_run_revaluation_with_journal_skips_zero_balance_positions(): void
+    #[Test]
+    public function run_revaluation_with_journal_skips_zero_balance_positions(): void
     {
         // Arrange: Create an open accounting period
         $testDate = now()->toDateString();
@@ -276,7 +281,8 @@ class RevaluationServiceTest extends TestCase
         $this->assertEmpty($result['results']);
     }
 
-    public function test_revaluation_uses_consistent_scale(): void
+    #[Test]
+    public function revaluation_uses_consistent_scale(): void
     {
         // Test that bccomp uses scale=6 (matching MathService default)
         // This ensures consistency across all BCMath operations

@@ -9,13 +9,15 @@ use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ComplianceScreeningJobPerformanceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_compliance_screening_job_logs_performance()
+    #[Test]
+    public function compliance_screening_job_logs_performance()
     {
         $customer = Customer::factory()->create();
 
@@ -29,7 +31,8 @@ class ComplianceScreeningJobPerformanceTest extends TestCase
         $job->handle(app(CustomerScreeningService::class), app(ThresholdService::class));
     }
 
-    public function test_slow_compliance_screening_job_logs_warning_when_threshold_exceeded()
+    #[Test]
+    public function slow_compliance_screening_job_logs_warning_when_threshold_exceeded()
     {
         $customer = Customer::factory()->create();
 

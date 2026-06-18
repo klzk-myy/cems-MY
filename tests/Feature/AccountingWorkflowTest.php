@@ -269,7 +269,7 @@ class AccountingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_closing_entries_use_correct_income_summary_account_type(): void
+    public function closing_entries_use_correct_income_summary_account_type(): void
     {
         // Income Summary (4998) is classified as Equity in the chart of accounts,
         // but should be treated as a debit-normal account when creating closing ledger entries.
@@ -413,7 +413,7 @@ class AccountingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_closing_entries_use_bcmath_for_large_numbers(): void
+    public function closing_entries_use_bcmath_for_large_numbers(): void
     {
         // Test that BCMath is used for absolute value in closing entries.
         // Using a reasonable amount that stays within decimal(18,4) column precision.

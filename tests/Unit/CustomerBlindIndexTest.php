@@ -6,13 +6,15 @@ use App\Models\Customer;
 use App\Services\CustomerService;
 use App\Services\EncryptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerBlindIndexTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_blind_index_hash_is_deterministic(): void
+    #[Test]
+    public function blind_index_hash_is_deterministic(): void
     {
         $hash1 = CustomerService::computeBlindIndex('A123456');
         $hash2 = CustomerService::computeBlindIndex('A123456');
@@ -20,7 +22,8 @@ class CustomerBlindIndexTest extends TestCase
         $this->assertEquals($hash1, $hash2);
     }
 
-    public function test_blind_index_different_inputs_produce_different_hashes(): void
+    #[Test]
+    public function blind_index_different_inputs_produce_different_hashes(): void
     {
         $hash1 = CustomerService::computeBlindIndex('A123456');
         $hash2 = CustomerService::computeBlindIndex('B123456');
@@ -28,7 +31,8 @@ class CustomerBlindIndexTest extends TestCase
         $this->assertNotEquals($hash1, $hash2);
     }
 
-    public function test_find_by_id_number_returns_correct_customer(): void
+    #[Test]
+    public function find_by_id_number_returns_correct_customer(): void
     {
         $plaintextId = 'A12345678';
 
@@ -58,7 +62,8 @@ class CustomerBlindIndexTest extends TestCase
         $this->assertEquals($customer->id, $found->id);
     }
 
-    public function test_find_by_id_number_returns_null_for_non_existent(): void
+    #[Test]
+    public function find_by_id_number_returns_null_for_non_existent(): void
     {
         $customerService = app(CustomerService::class);
         $found = $customerService->findByIdNumber('NONEXISTENT123');

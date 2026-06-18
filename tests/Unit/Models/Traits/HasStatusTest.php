@@ -7,6 +7,7 @@ use App\Models\Traits\HasStatus;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HasStatusTest extends TestCase
@@ -24,7 +25,8 @@ class HasStatusTest extends TestCase
         });
     }
 
-    public function test_scope_active_filters_active_statuses(): void
+    #[Test]
+    public function scope_active_filters_active_statuses(): void
     {
         $model = new class extends BaseModel
         {
@@ -57,7 +59,8 @@ class HasStatusTest extends TestCase
         $this->assertEquals($active->id, $found->first());
     }
 
-    public function test_scope_open_filters_open_statuses(): void
+    #[Test]
+    public function scope_open_filters_open_statuses(): void
     {
         $model = new class extends BaseModel
         {
@@ -144,7 +147,8 @@ class HasStatusTest extends TestCase
         $this->assertEqualsCanonicalizing([$open->id, $pending->id], $found);
     }
 
-    public function test_is_active_returns_expected_boolean(): void
+    #[Test]
+    public function is_active_returns_expected_boolean(): void
     {
         $active = new class(['status' => 'active']) extends BaseModel
         {

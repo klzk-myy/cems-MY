@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HasApproverTest extends TestCase
@@ -26,7 +27,8 @@ class HasApproverTest extends TestCase
         });
     }
 
-    public function test_it_adds_approval_fields_to_fillable_and_casts(): void
+    #[Test]
+    public function it_adds_approval_fields_to_fillable_and_casts(): void
     {
         $model = new class extends BaseModel
         {
@@ -40,7 +42,8 @@ class HasApproverTest extends TestCase
         $this->assertArrayHasKey('approved_at', $model->getCasts());
     }
 
-    public function test_approve_sets_user_and_timestamp(): void
+    #[Test]
+    public function approve_sets_user_and_timestamp(): void
     {
         $user = User::factory()->create();
 

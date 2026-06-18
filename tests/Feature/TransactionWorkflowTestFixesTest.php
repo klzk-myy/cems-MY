@@ -3,13 +3,15 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionWorkflowTestFixesTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_transaction_workflow_test_does_not_accept_500_as_success(): void
+    #[Test]
+    public function transaction_workflow_test_does_not_accept_500_as_success(): void
     {
         $fileContent = file_get_contents(
             base_path('tests/Feature/TransactionWorkflowTest.php')
@@ -22,7 +24,8 @@ class TransactionWorkflowTestFixesTest extends TestCase
         );
     }
 
-    public function test_transaction_workflow_test_does_not_accept_500_for_view(): void
+    #[Test]
+    public function transaction_workflow_test_does_not_accept_500_for_view(): void
     {
         $fileContent = file_get_contents(
             base_path('tests/Feature/TransactionWorkflowTest.php')

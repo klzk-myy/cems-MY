@@ -110,7 +110,8 @@ class CounterHandoverVarianceNotesTest extends TestCase
      * When a handover occurs with a variance, the variance notes should be stored
      * in TillBalance.notes so that the audit trail captures the variance details.
      */
-    public function test_variance_notes_recorded_in_till_balance(): void
+    #[Test]
+    public function variance_notes_recorded_in_till_balance(): void
     {
         $today = now()->toDateString();
 
@@ -205,7 +206,8 @@ class CounterHandoverVarianceNotesTest extends TestCase
      *
      * Verifies the complete variance notes format including all currencies with variances.
      */
-    public function test_till_balance_notes_contains_all_currency_variances(): void
+    #[Test]
+    public function till_balance_notes_contains_all_currency_variances(): void
     {
         $today = now()->toDateString();
 
@@ -268,7 +270,8 @@ class CounterHandoverVarianceNotesTest extends TestCase
     /**
      * Test that when there is no variance, TillBalance.notes is just 'Handover'.
      */
-    public function test_till_balance_notes_is_handover_when_no_variance(): void
+    #[Test]
+    public function till_balance_notes_is_handover_when_no_variance(): void
     {
         $today = now()->toDateString();
 

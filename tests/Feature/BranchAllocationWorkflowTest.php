@@ -113,7 +113,7 @@ class BranchAllocationWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_full_teller_opening_workflow(): void
+    public function full_teller_opening_workflow(): void
     {
         $requestAmount = '50000.0000';
 
@@ -154,7 +154,7 @@ class BranchAllocationWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_eod_return_workflow(): void
+    public function eod_return_workflow(): void
     {
         $approvedAmount = '40000.0000';
         $dailyLimit = '150000.0000';
@@ -192,7 +192,7 @@ class BranchAllocationWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function test_handover_workflow(): void
+    public function handover_workflow(): void
     {
         $approvedAmount = '35000.0000';
 

@@ -7,6 +7,7 @@ use App\Models\Traits\HasReferenceNumber;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HasReferenceNumberRaceTest extends TestCase
@@ -24,7 +25,8 @@ class HasReferenceNumberRaceTest extends TestCase
         });
     }
 
-    public function test_concurrent_generators_produce_unique_reference_numbers(): void
+    #[Test]
+    public function concurrent_generators_produce_unique_reference_numbers(): void
     {
         $results = [];
         for ($i = 0; $i < 10; $i++) {

@@ -10,6 +10,7 @@ use App\Models\JournalEntry;
 use App\Services\LedgerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class LedgerServiceTest extends TestCase
@@ -82,7 +83,8 @@ class LedgerServiceTest extends TestCase
         ]);
     }
 
-    public function test_get_trial_balance_returns_all_accounts(): void
+    #[Test]
+    public function get_trial_balance_returns_all_accounts(): void
     {
         $result = $this->service->getTrialBalance(now()->toDateString());
 
@@ -97,7 +99,8 @@ class LedgerServiceTest extends TestCase
         $this->assertContains('5000', $codes);
     }
 
-    public function test_get_trial_balance_has_debit_and_credit_columns(): void
+    #[Test]
+    public function get_trial_balance_has_debit_and_credit_columns(): void
     {
         $this->createLedgerEntry('1000', now()->toDateString(), '1000.00', '0.00', '1000.00');
 
@@ -110,7 +113,8 @@ class LedgerServiceTest extends TestCase
         $this->assertArrayHasKey('balance', $cash);
     }
 
-    public function test_get_account_ledger_returns_entries(): void
+    #[Test]
+    public function get_account_ledger_returns_entries(): void
     {
         $today = now()->toDateString();
         $this->createLedgerEntry('1000', $today, '500.00', '0.00', '500.00');
@@ -126,7 +130,8 @@ class LedgerServiceTest extends TestCase
         $this->assertEquals('800.0000', $result['closing_balance']);
     }
 
-    public function test_get_profit_and_loss_returns_revenue_and_expenses(): void
+    #[Test]
+    public function get_profit_and_loss_returns_revenue_and_expenses(): void
     {
         $today = now()->toDateString();
         $this->createLedgerEntry('4000', $today, '0.00', '5000.00', '5000.00');
@@ -145,7 +150,8 @@ class LedgerServiceTest extends TestCase
         $this->assertContains('5000', $expenseCodes);
     }
 
-    public function test_get_balance_sheet_returns_assets_liabilities_equity(): void
+    #[Test]
+    public function get_balance_sheet_returns_assets_liabilities_equity(): void
     {
         $today = now()->toDateString();
         $this->createLedgerEntry('1000', $today, '10000.00', '0.00', '10000.00');
@@ -168,7 +174,8 @@ class LedgerServiceTest extends TestCase
         $this->assertContains('3000', $equityCodes);
     }
 
-    public function test_profit_and_loss_calculates_net_profit(): void
+    #[Test]
+    public function profit_and_loss_calculates_net_profit(): void
     {
         $today = now()->toDateString();
         $this->createLedgerEntry('4000', $today, '0.00', '10000.00', '10000.00');
@@ -181,7 +188,8 @@ class LedgerServiceTest extends TestCase
         $this->assertEquals('4000.0000', $result['net_profit']);
     }
 
-    public function test_balance_sheet_assets_equal_liabilities_plus_equity(): void
+    #[Test]
+    public function balance_sheet_assets_equal_liabilities_plus_equity(): void
     {
         $today = now()->toDateString();
         $this->createLedgerEntry('1000', $today, '10000.00', '0.00', '10000.00');
@@ -197,7 +205,8 @@ class LedgerServiceTest extends TestCase
         );
     }
 
-    public function test_get_account_balance_respects_branch_filter(): void
+    #[Test]
+    public function get_account_balance_respects_branch_filter(): void
     {
         $today = now()->toDateString();
         $branch2 = Branch::factory()->create(['code' => 'B2', 'name' => 'Branch 2']);
@@ -236,7 +245,8 @@ class LedgerServiceTest extends TestCase
         $this->assertEquals('500', $branch2Cash['debit']);
     }
 
-    public function test_profit_loss_by_branch(): void
+    #[Test]
+    public function profit_loss_by_branch(): void
     {
         $today = now()->toDateString();
         $branch2 = Branch::factory()->create(['code' => 'B2', 'name' => 'Branch 2']);

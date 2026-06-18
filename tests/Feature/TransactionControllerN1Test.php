@@ -7,13 +7,15 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionControllerN1Test extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_transaction_index_uses_eager_loading()
+    #[Test]
+    public function transaction_index_uses_eager_loading()
     {
         $user = User::factory()->create();
         $customer = Customer::factory()->create();

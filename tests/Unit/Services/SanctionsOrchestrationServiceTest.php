@@ -10,6 +10,7 @@ use App\Services\SanctionsImportService;
 use App\Services\SanctionsOrchestrationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SanctionsOrchestrationServiceTest extends TestCase
@@ -27,7 +28,8 @@ class SanctionsOrchestrationServiceTest extends TestCase
         );
     }
 
-    public function test_sync_sanctions_list_downloads_and_imports(): void
+    #[Test]
+    public function sync_sanctions_list_downloads_and_imports(): void
     {
         Http::fake([
             'https://api.opensanctions.org/*' => Http::response([
@@ -65,7 +67,8 @@ class SanctionsOrchestrationServiceTest extends TestCase
         $this->assertArrayHasKey('deactivated', $result);
     }
 
-    public function test_sync_sanctions_list_returns_error_on_download_failure(): void
+    #[Test]
+    public function sync_sanctions_list_returns_error_on_download_failure(): void
     {
         Http::fake([
             '*' => Http::response('Server Error', 500),
@@ -84,7 +87,8 @@ class SanctionsOrchestrationServiceTest extends TestCase
         $this->assertNotNull($result['error']);
     }
 
-    public function test_sync_sanctions_list_handles_invalid_json(): void
+    #[Test]
+    public function sync_sanctions_list_handles_invalid_json(): void
     {
         Http::fake([
             '*' => Http::response('not valid json {', 200),
@@ -103,7 +107,8 @@ class SanctionsOrchestrationServiceTest extends TestCase
         $this->assertEquals('Downloaded content is not valid JSON', $result['error']);
     }
 
-    public function test_sync_sanctions_list_calls_import_service(): void
+    #[Test]
+    public function sync_sanctions_list_calls_import_service(): void
     {
         Http::fake([
             '*' => Http::response([

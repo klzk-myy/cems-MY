@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Repositories\CustomerRepository;
 use App\Services\CustomerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerRepositoryTest extends TestCase
@@ -20,7 +21,8 @@ class CustomerRepositoryTest extends TestCase
         $this->repository = new CustomerRepository;
     }
 
-    public function test_find_by_id_returns_customer(): void
+    #[Test]
+    public function find_by_id_returns_customer(): void
     {
         $customer = Customer::factory()->create();
 
@@ -30,14 +32,16 @@ class CustomerRepositoryTest extends TestCase
         $this->assertEquals($customer->id, $result->id);
     }
 
-    public function test_find_by_id_returns_null_for_missing_customer(): void
+    #[Test]
+    public function find_by_id_returns_null_for_missing_customer(): void
     {
         $result = $this->repository->findById(999999);
 
         $this->assertNull($result);
     }
 
-    public function test_find_by_id_number_returns_customer(): void
+    #[Test]
+    public function find_by_id_number_returns_customer(): void
     {
         $idNumber = '900101-01-1234';
         $customer = Customer::factory()->create([
@@ -50,7 +54,8 @@ class CustomerRepositoryTest extends TestCase
         $this->assertEquals($customer->id, $result->id);
     }
 
-    public function test_search_returns_customers_by_name(): void
+    #[Test]
+    public function search_returns_customers_by_name(): void
     {
         Customer::factory()->create(['full_name' => 'Ahmad Bin Ismail']);
         Customer::factory()->create(['full_name' => 'Sarah Tan']);
@@ -61,7 +66,8 @@ class CustomerRepositoryTest extends TestCase
         $this->assertEquals('Ahmad Bin Ismail', $results->first()->full_name);
     }
 
-    public function test_get_by_ids_returns_matching_customers(): void
+    #[Test]
+    public function get_by_ids_returns_matching_customers(): void
     {
         $customers = Customer::factory()->count(3)->create();
         $ids = $customers->pluck('id')->take(2)->toArray();
@@ -72,7 +78,8 @@ class CustomerRepositoryTest extends TestCase
         $this->assertEqualsCanonicalizing($ids, $results->pluck('id')->toArray());
     }
 
-    public function test_get_customers_needing_rescreening_returns_high_risk_customers(): void
+    #[Test]
+    public function get_customers_needing_rescreening_returns_high_risk_customers(): void
     {
         $highRisk = Customer::factory()->create(['risk_score' => 75, 'risk_assessed_at' => now()->subDays(10)]);
         Customer::factory()->create(['risk_score' => 30, 'risk_assessed_at' => now()->subDays(10)]);
@@ -82,7 +89,8 @@ class CustomerRepositoryTest extends TestCase
         $this->assertTrue($results->contains('id', $highRisk->id));
     }
 
-    public function test_get_customers_needing_rescreening_returns_stale_customers(): void
+    #[Test]
+    public function get_customers_needing_rescreening_returns_stale_customers(): void
     {
         $stale = Customer::factory()->create(['risk_score' => 30, 'risk_assessed_at' => now()->subDays(31)]);
         Customer::factory()->create(['risk_score' => 30, 'risk_assessed_at' => now()->subDays(5)]);

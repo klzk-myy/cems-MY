@@ -12,6 +12,7 @@ use App\Services\MathService;
 use Database\Seeders\EnhancedChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BudgetServiceTest extends TestCase
@@ -36,7 +37,8 @@ class BudgetServiceTest extends TestCase
         $this->seed(EnhancedChartOfAccountsSeeder::class);
     }
 
-    public function test_get_budget_report_returns_correct_structure(): void
+    #[Test]
+    public function get_budget_report_returns_correct_structure(): void
     {
         $periodCode = now()->format('Y-m');
 
@@ -64,7 +66,8 @@ class BudgetServiceTest extends TestCase
         $this->assertEquals($periodCode, $report['period_code']);
     }
 
-    public function test_get_budget_report_returns_items_with_correct_keys(): void
+    #[Test]
+    public function get_budget_report_returns_items_with_correct_keys(): void
     {
         $periodCode = now()->format('Y-m');
 
@@ -92,7 +95,8 @@ class BudgetServiceTest extends TestCase
         $this->assertArrayHasKey('variance', $item);
     }
 
-    public function test_get_budget_report_calculates_variance_correctly(): void
+    #[Test]
+    public function get_budget_report_calculates_variance_correctly(): void
     {
         $periodCode = now()->format('Y-m');
 
@@ -115,7 +119,8 @@ class BudgetServiceTest extends TestCase
         $this->assertEquals('2000', $report['items'][0]['variance']);
     }
 
-    public function test_get_budget_report_calculates_totals_correctly(): void
+    #[Test]
+    public function get_budget_report_calculates_totals_correctly(): void
     {
         $periodCode = now()->format('Y-m');
 
@@ -148,7 +153,8 @@ class BudgetServiceTest extends TestCase
         $this->assertEquals('11000.0000', $report['total_actual']);
     }
 
-    public function test_get_accounts_without_budget_returns_expense_accounts(): void
+    #[Test]
+    public function get_accounts_without_budget_returns_expense_accounts(): void
     {
         $periodCode = now()->format('Y-m');
 
@@ -157,7 +163,8 @@ class BudgetServiceTest extends TestCase
         $this->assertInstanceOf(Collection::class, $accountsWithoutBudget);
     }
 
-    public function test_budget_report_empty_for_no_budgets(): void
+    #[Test]
+    public function budget_report_empty_for_no_budgets(): void
     {
         $periodCode = '2099-01'; // Future period with no budgets
 
@@ -168,7 +175,8 @@ class BudgetServiceTest extends TestCase
         $this->assertEquals('0', $report['total_actual']);
     }
 
-    public function test_budget_model_calculates_variance(): void
+    #[Test]
+    public function budget_model_calculates_variance(): void
     {
         $periodCode = now()->format('Y-m');
 
@@ -189,7 +197,8 @@ class BudgetServiceTest extends TestCase
         $this->assertEquals(2000.00, $variance);
     }
 
-    public function test_budget_model_detects_over_budget(): void
+    #[Test]
+    public function budget_model_detects_over_budget(): void
     {
         $periodCode = now()->format('Y-m');
 
@@ -209,7 +218,8 @@ class BudgetServiceTest extends TestCase
         $this->assertTrue($budget->isOverBudget());
     }
 
-    public function test_budget_model_detects_under_budget(): void
+    #[Test]
+    public function budget_model_detects_under_budget(): void
     {
         $periodCode = now()->format('Y-m');
 

@@ -8,13 +8,15 @@ use App\Models\RiskScoreSnapshot;
 use App\Models\TestResult;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ChartPlaceholderTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_risk_trends_renders_real_chart_data(): void
+    #[Test]
+    public function risk_trends_renders_real_chart_data(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $customer = Customer::factory()->create();
@@ -33,7 +35,8 @@ class ChartPlaceholderTest extends TestCase
         $response->assertSee('Alert Volume Trend', false);
     }
 
-    public function test_test_statistics_does_not_have_placeholder_comment(): void
+    #[Test]
+    public function statistics_does_not_have_placeholder_comment(): void
     {
         $user = User::factory()->create(['role' => UserRole::Admin]);
 

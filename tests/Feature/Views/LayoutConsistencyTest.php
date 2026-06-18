@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class LayoutConsistencyTest extends TestCase
@@ -13,7 +14,8 @@ class LayoutConsistencyTest extends TestCase
     use RefreshDatabase;
 
     #[DataProvider('sharedLayoutViewProvider')]
-    public function test_view_extends_shared_layout(string $route, string $view): void
+    #[Test]
+    public function view_extends_shared_layout(string $route, string $view): void
     {
         $user = User::factory()->create(['role' => 'compliance_officer']);
         $customer = Customer::factory()->create();
@@ -49,7 +51,8 @@ class LayoutConsistencyTest extends TestCase
         ];
     }
 
-    public function test_recovery_codes_redirects_without_session_codes(): void
+    #[Test]
+    public function recovery_codes_redirects_without_session_codes(): void
     {
         $user = User::factory()->create();
 

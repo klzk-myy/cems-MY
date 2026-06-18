@@ -4,12 +4,14 @@ namespace Tests\Feature\Views;
 
 use Illuminate\View\ComponentAttributeBag;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ComponentConsistencyTest extends TestCase
 {
     #[DataProvider('forwardingComponentProvider')]
-    public function test_components_forward_attributes(string $component, array $data): void
+    #[Test]
+    public function components_forward_attributes(string $component, array $data): void
     {
         $data['attributes'] = new ComponentAttributeBag([
             'class' => 'custom-class',
@@ -48,7 +50,8 @@ class ComponentConsistencyTest extends TestCase
         ];
     }
 
-    public function test_mfa_verify_uses_card_component(): void
+    #[Test]
+    public function mfa_verify_uses_card_component(): void
     {
         $path = resource_path('views/pages/mfa/verify.blade.php');
         $content = file_get_contents($path);

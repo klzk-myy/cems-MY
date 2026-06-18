@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BelongsToBranchTest extends TestCase
@@ -26,7 +27,8 @@ class BelongsToBranchTest extends TestCase
         });
     }
 
-    public function test_it_adds_branch_id_to_fillable(): void
+    #[Test]
+    public function it_adds_branch_id_to_fillable(): void
     {
         $model = new class extends BaseModel
         {
@@ -38,7 +40,8 @@ class BelongsToBranchTest extends TestCase
         $this->assertContains('branch_id', $model->getFillable());
     }
 
-    public function test_it_defines_branch_relationship(): void
+    #[Test]
+    public function it_defines_branch_relationship(): void
     {
         $branch = Branch::create([
             'code' => 'HQ',
@@ -58,7 +61,8 @@ class BelongsToBranchTest extends TestCase
         $this->assertTrue($model->branch()->is($branch));
     }
 
-    public function test_scope_for_branch_filters_by_branch(): void
+    #[Test]
+    public function scope_for_branch_filters_by_branch(): void
     {
         $branchA = Branch::create(['code' => 'A', 'name' => 'A', 'is_active' => true]);
         $branchB = Branch::create(['code' => 'B', 'name' => 'B', 'is_active' => true]);

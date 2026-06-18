@@ -6,6 +6,7 @@ use App\Models\ExchangeRate;
 use App\Services\MathService;
 use App\Services\RateApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class RateApiServiceTest extends TestCase
@@ -23,7 +24,8 @@ class RateApiServiceTest extends TestCase
         $this->service = new RateApiService($this->mathService);
     }
 
-    public function test_rate_deviation_uses_mid_rate_for_mid_type(): void
+    #[Test]
+    public function rate_deviation_uses_mid_rate_for_mid_type(): void
     {
         // Arrange: Create an exchange rate with known buy and sell rates
         // Using buy = 4.5000 and sell = 4.6000, mid should be (4.5000 + 4.6000) / 2 = 4.5500
@@ -47,7 +49,8 @@ class RateApiServiceTest extends TestCase
         $this->assertEquals('4.6000', $this->service->getCurrentRate('USD', 'sell'));
     }
 
-    public function test_mid_rate_calculation_with_odd_values(): void
+    #[Test]
+    public function mid_rate_calculation_with_odd_values(): void
     {
         // Arrange: Create an exchange rate where (buy + sell) / 2 results in a .5 decimal
         $exchangeRate = ExchangeRate::factory()->create([
@@ -65,13 +68,15 @@ class RateApiServiceTest extends TestCase
         $this->assertEquals('4.4000', $midRate);
     }
 
-    public function test_get_current_rate_returns_null_for_unknown_currency(): void
+    #[Test]
+    public function get_current_rate_returns_null_for_unknown_currency(): void
     {
         // Act & Assert
         $this->assertNull($this->service->getCurrentRate('XYZ'));
     }
 
-    public function test_validate_rate_deviation_with_mid_type(): void
+    #[Test]
+    public function validate_rate_deviation_with_mid_type(): void
     {
         // Arrange: Create an exchange rate with known buy and sell rates
         $exchangeRate = ExchangeRate::factory()->create([
@@ -95,7 +100,8 @@ class RateApiServiceTest extends TestCase
         $this->assertEquals('4.5500', $result['market_rate']);
     }
 
-    public function test_spread_calculation_is_consistent(): void
+    #[Test]
+    public function spread_calculation_is_consistent(): void
     {
         // Test that the spread calculation in RateManagementService.calculateSpread()
         // is mathematically inverse to the spread application in RateApiService.processRates()
@@ -141,7 +147,8 @@ class RateApiServiceTest extends TestCase
         $this->assertEquals($expectedSpreadPercent, bcadd($calculatedSpreadPercent, '0', 2));
     }
 
-    public function test_spread_with_various_rates(): void
+    #[Test]
+    public function spread_with_various_rates(): void
     {
         // Test spread consistency with different mid rates and spread percentages
         $mathService = new MathService;

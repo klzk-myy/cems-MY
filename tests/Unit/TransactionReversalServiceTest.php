@@ -10,6 +10,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\TransactionReversalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionReversalServiceTest extends TestCase
@@ -25,7 +26,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->service = app(TransactionReversalService::class);
     }
 
-    public function test_can_reverse_completed_transaction_within_window(): void
+    #[Test]
+    public function can_reverse_completed_transaction_within_window(): void
     {
         $transaction = Transaction::factory()->create([
             'status' => TransactionStatus::Completed,
@@ -35,7 +37,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertTrue($this->service->canReverse($transaction));
     }
 
-    public function test_cannot_reverse_non_completed_transaction(): void
+    #[Test]
+    public function cannot_reverse_non_completed_transaction(): void
     {
         $transaction = Transaction::factory()->create([
             'status' => TransactionStatus::PendingApproval,
@@ -44,7 +47,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertFalse($this->service->canReverse($transaction));
     }
 
-    public function test_cannot_reverse_already_reversed_transaction(): void
+    #[Test]
+    public function cannot_reverse_already_reversed_transaction(): void
     {
         $transaction = Transaction::factory()->create([
             'status' => TransactionStatus::Reversed,
@@ -53,7 +57,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertFalse($this->service->canReverse($transaction));
     }
 
-    public function test_cannot_reverse_refund_transaction(): void
+    #[Test]
+    public function cannot_reverse_refund_transaction(): void
     {
         $transaction = Transaction::factory()->create([
             'status' => TransactionStatus::Completed,
@@ -63,7 +68,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertFalse($this->service->canReverse($transaction));
     }
 
-    public function test_is_within_cancellation_window(): void
+    #[Test]
+    public function is_within_cancellation_window(): void
     {
         $transaction = Transaction::factory()->create([
             'created_at' => now()->subHours(12),
@@ -72,7 +78,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertTrue($this->service->isWithinCancellationWindow($transaction));
     }
 
-    public function test_is_outside_cancellation_window(): void
+    #[Test]
+    public function is_outside_cancellation_window(): void
     {
         $transaction = Transaction::factory()->create([
             'created_at' => now()->subHours(25),
@@ -81,7 +88,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertFalse($this->service->isWithinCancellationWindow($transaction));
     }
 
-    public function test_manager_can_reverse_any_transaction(): void
+    #[Test]
+    public function manager_can_reverse_any_transaction(): void
     {
         $manager = User::factory()->create(['role' => UserRole::Manager]);
         $transaction = Transaction::factory()->create();
@@ -89,7 +97,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertTrue($this->service->canUserReverse($manager, $transaction));
     }
 
-    public function test_teller_can_reverse_own_transaction(): void
+    #[Test]
+    public function teller_can_reverse_own_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $transaction = Transaction::factory()->create(['user_id' => $teller->id]);
@@ -97,7 +106,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertTrue($this->service->canUserReverse($teller, $transaction));
     }
 
-    public function test_teller_cannot_reverse_other_user_transaction(): void
+    #[Test]
+    public function teller_cannot_reverse_other_user_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $otherTeller = User::factory()->create(['role' => UserRole::Teller]);
@@ -106,7 +116,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertFalse($this->service->canUserReverse($teller, $transaction));
     }
 
-    public function test_create_refund_transaction(): void
+    #[Test]
+    public function create_refund_transaction(): void
     {
         $original = Transaction::factory()->create([
             'type' => TransactionType::Buy,
@@ -122,7 +133,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertTrue($refund->is_refund);
     }
 
-    public function test_reverse_positions_updates_currency_position(): void
+    #[Test]
+    public function reverse_positions_updates_currency_position(): void
     {
         $currencyCode = 'USD';
         $tillId = 'TEST-TILL-'.uniqid();
@@ -156,7 +168,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertEquals('4000.0000', $position->balance);
     }
 
-    public function test_reverse_positions_handles_nonexistent_position(): void
+    #[Test]
+    public function reverse_positions_handles_nonexistent_position(): void
     {
         $transaction = Transaction::factory()->make([
             'id' => 99904,
@@ -177,7 +190,8 @@ class TransactionReversalServiceTest extends TestCase
         $this->assertNull($position);
     }
 
-    public function test_get_cancellation_window_hours(): void
+    #[Test]
+    public function get_cancellation_window_hours(): void
     {
         $hours = $this->service->getCancellationWindowHours();
 

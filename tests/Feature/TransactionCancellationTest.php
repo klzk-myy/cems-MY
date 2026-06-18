@@ -8,13 +8,15 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\TransactionCancellationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionCancellationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_cancel_calls_request_cancellation()
+    #[Test]
+    public function cancel_calls_request_cancellation()
     {
         $transaction = Transaction::factory()->create(['status' => TransactionStatus::Completed]);
 
@@ -50,7 +52,8 @@ class TransactionCancellationTest extends TestCase
         $response->assertRedirect();
     }
 
-    public function test_direct_cancel_throws_exception()
+    #[Test]
+    public function direct_cancel_throws_exception()
     {
         $transaction = Transaction::factory()->create(['status' => TransactionStatus::Completed]);
 

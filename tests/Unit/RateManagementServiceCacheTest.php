@@ -8,13 +8,15 @@ use App\Models\User;
 use App\Services\RateManagementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class RateManagementServiceCacheTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_get_rate_for_currency_uses_cache()
+    #[Test]
+    public function get_rate_for_currency_uses_cache()
     {
         ExchangeRate::factory()->create([
             'currency_code' => 'USD',
@@ -35,7 +37,8 @@ class RateManagementServiceCacheTest extends TestCase
         $this->assertEquals('4.5000', $rate->rate_buy);
     }
 
-    public function test_override_rate_invalidates_cache()
+    #[Test]
+    public function override_rate_invalidates_cache()
     {
         ExchangeRate::factory()->create([
             'currency_code' => 'USD',
@@ -59,7 +62,8 @@ class RateManagementServiceCacheTest extends TestCase
         $service->overrideRate('USD', '4.6000', '4.7000', $manager);
     }
 
-    public function test_rate_override_is_atomic()
+    #[Test]
+    public function rate_override_is_atomic()
     {
         ExchangeRate::factory()->create([
             'currency_code' => 'USD',

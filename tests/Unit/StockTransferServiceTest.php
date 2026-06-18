@@ -9,6 +9,7 @@ use App\Services\AuditService;
 use App\Services\MathService;
 use App\Services\StockTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class StockTransferServiceTest extends TestCase
@@ -31,7 +32,8 @@ class StockTransferServiceTest extends TestCase
         $this->stockTransferService = new StockTransferService(new MathService, new AuditService, $this->user);
     }
 
-    public function test_create_request_validates_source_and_destination_branches(): void
+    #[Test]
+    public function create_request_validates_source_and_destination_branches(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Source and destination branches are required');
@@ -43,7 +45,8 @@ class StockTransferServiceTest extends TestCase
         ]);
     }
 
-    public function test_create_request_validates_source_and_destination_not_same(): void
+    #[Test]
+    public function create_request_validates_source_and_destination_not_same(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Source and destination branches cannot be the same');
@@ -55,7 +58,8 @@ class StockTransferServiceTest extends TestCase
         ]);
     }
 
-    public function test_create_request_validates_items_not_empty(): void
+    #[Test]
+    public function create_request_validates_items_not_empty(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('At least one item is required');
@@ -67,7 +71,8 @@ class StockTransferServiceTest extends TestCase
         ]);
     }
 
-    public function test_create_request_validates_currency_code_required(): void
+    #[Test]
+    public function create_request_validates_currency_code_required(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Currency code is required for each item');
@@ -81,7 +86,8 @@ class StockTransferServiceTest extends TestCase
         ]);
     }
 
-    public function test_create_request_validates_quantity_positive(): void
+    #[Test]
+    public function create_request_validates_quantity_positive(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Quantity must be a positive number');
@@ -95,7 +101,8 @@ class StockTransferServiceTest extends TestCase
         ]);
     }
 
-    public function test_create_request_validates_rate_positive(): void
+    #[Test]
+    public function create_request_validates_rate_positive(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Rate must be a positive number');
@@ -109,7 +116,8 @@ class StockTransferServiceTest extends TestCase
         ]);
     }
 
-    public function test_create_request_validates_currency_exists(): void
+    #[Test]
+    public function create_request_validates_currency_exists(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Currency XXX does not exist');
@@ -123,7 +131,8 @@ class StockTransferServiceTest extends TestCase
         ]);
     }
 
-    public function test_create_request_validates_total_value_matches_items(): void
+    #[Test]
+    public function create_request_validates_total_value_matches_items(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Total value does not match sum of item values');
@@ -138,7 +147,8 @@ class StockTransferServiceTest extends TestCase
         ]);
     }
 
-    public function test_create_request_succeeds_with_valid_data(): void
+    #[Test]
+    public function create_request_succeeds_with_valid_data(): void
     {
         $transfer = $this->stockTransferService->createRequest([
             'source_branch_name' => 'Branch A',
@@ -155,7 +165,8 @@ class StockTransferServiceTest extends TestCase
         $this->assertCount(1, $transfer->items);
     }
 
-    public function test_create_request_calculates_total_value_correctly(): void
+    #[Test]
+    public function create_request_calculates_total_value_correctly(): void
     {
         $transfer = $this->stockTransferService->createRequest([
             'source_branch_name' => 'Branch A',

@@ -10,6 +10,7 @@ use App\Models\PepApprovalRequest;
 use App\Models\User;
 use App\Services\PepApprovalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -35,7 +36,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test that Foreign PEPs always require head office approval.
      */
-    public function test_foreign_pep_requires_head_office_approval(): void
+    #[Test]
+    public function foreign_pep_requires_head_office_approval(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -49,7 +51,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test that non-PEP customers do not require head office approval.
      */
-    public function test_non_pep_does_not_require_head_office_approval(): void
+    #[Test]
+    public function non_pep_does_not_require_head_office_approval(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
@@ -61,7 +64,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test that Domestic PEPs with Low risk do NOT require head office approval.
      */
-    public function test_domestic_pep_low_risk_does_not_require_head_office_approval(): void
+    #[Test]
+    public function domestic_pep_low_risk_does_not_require_head_office_approval(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -75,7 +79,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test that Domestic PEPs with Medium risk DO require head office approval.
      */
-    public function test_domestic_pep_medium_risk_requires_head_office_approval(): void
+    #[Test]
+    public function domestic_pep_medium_risk_requires_head_office_approval(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -89,7 +94,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test that Domestic PEPs with High risk DO require head office approval.
      */
-    public function test_domestic_pep_high_risk_requires_head_office_approval(): void
+    #[Test]
+    public function domestic_pep_high_risk_requires_head_office_approval(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -103,7 +109,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test that International Organisation PEPs with High risk require head office approval.
      */
-    public function test_international_org_pep_high_risk_requires_head_office_approval(): void
+    #[Test]
+    public function international_org_pep_high_risk_requires_head_office_approval(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -117,7 +124,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test that Family Member PEPs with Low risk do NOT require head office approval.
      */
-    public function test_family_member_pep_low_risk_does_not_require_head_office_approval(): void
+    #[Test]
+    public function family_member_pep_low_risk_does_not_require_head_office_approval(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -131,7 +139,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test requesting approval creates a pending PepApprovalRequest.
      */
-    public function test_request_approval_creates_pending_request(): void
+    #[Test]
+    public function request_approval_creates_pending_request(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -151,7 +160,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test approving a request updates status correctly.
      */
-    public function test_approve_updates_status_to_approved(): void
+    #[Test]
+    public function approve_updates_status_to_approved(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -173,7 +183,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test rejecting a request updates status and stores reason.
      */
-    public function test_reject_updates_status_and_stores_reason(): void
+    #[Test]
+    public function reject_updates_status_and_stores_reason(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -197,7 +208,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test hasPendingApproval returns true when pending request exists.
      */
-    public function test_has_pending_approval_returns_true_when_pending(): void
+    #[Test]
+    public function has_pending_approval_returns_true_when_pending(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -213,7 +225,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test hasApprovedApproval returns true when approved request exists.
      */
-    public function test_has_approved_approval_returns_true_when_approved(): void
+    #[Test]
+    public function has_approved_approval_returns_true_when_approved(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
@@ -231,7 +244,8 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test getPendingApproval returns the pending request.
      */
-    public function test_get_pending_approval_returns_pending_request(): void
+    #[Test]
+    public function get_pending_approval_returns_pending_request(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,

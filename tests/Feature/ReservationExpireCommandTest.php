@@ -11,13 +11,15 @@ use App\Models\User;
 use App\Notifications\ReservationExpiredNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ReservationExpireCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_expires_releases_stale_reservations(): void
+    #[Test]
+    public function expires_releases_stale_reservations(): void
     {
         $teller = User::factory()->create(['role' => 'teller']);
         Currency::factory()->create(['code' => 'USD']);
@@ -59,7 +61,8 @@ class ReservationExpireCommandTest extends TestCase
         $this->assertEquals(StockReservationStatus::Released, $reservation->status);
     }
 
-    public function test_does_not_expire_future_reservations(): void
+    #[Test]
+    public function does_not_expire_future_reservations(): void
     {
         $teller = User::factory()->create(['role' => 'teller']);
 
@@ -92,7 +95,8 @@ class ReservationExpireCommandTest extends TestCase
         $this->assertEquals(StockReservationStatus::Pending, $reservation->status);
     }
 
-    public function test_notifies_teller_on_expiry(): void
+    #[Test]
+    public function notifies_teller_on_expiry(): void
     {
         Notification::fake();
 
@@ -126,7 +130,8 @@ class ReservationExpireCommandTest extends TestCase
         Notification::assertSentTo($teller, ReservationExpiredNotification::class);
     }
 
-    public function test_expire_command_uses_model_is_expired_method(): void
+    #[Test]
+    public function expire_command_uses_model_is_expired_method(): void
     {
         $teller = User::factory()->create(['role' => 'teller']);
 

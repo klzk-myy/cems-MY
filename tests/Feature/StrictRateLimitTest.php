@@ -8,6 +8,7 @@ use App\Services\RateLimitService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class StrictRateLimitTest extends TestCase
@@ -21,7 +22,8 @@ class StrictRateLimitTest extends TestCase
      * requests were returning $next($request) WITHOUT calling RateLimiter::hit(),
      * allowing burst requests to not count against the rate limit.
      */
-    public function test_burst_requests_still_count_against_rate_limit(): void
+    #[Test]
+    public function burst_requests_still_count_against_rate_limit(): void
     {
         $user = User::factory()->create();
 
@@ -64,7 +66,8 @@ class StrictRateLimitTest extends TestCase
     /**
      * Test that rate limit headers are present in burst responses.
      */
-    public function test_burst_responses_include_rate_limit_headers(): void
+    #[Test]
+    public function burst_responses_include_rate_limit_headers(): void
     {
         $user = User::factory()->create();
 
@@ -98,7 +101,8 @@ class StrictRateLimitTest extends TestCase
     /**
      * Test that requests exceeding burst allowance still count.
      */
-    public function test_requests_exceeding_burst_allowance_count(): void
+    #[Test]
+    public function requests_exceeding_burst_allowance_count(): void
     {
         $user = User::factory()->create();
 
@@ -135,7 +139,8 @@ class StrictRateLimitTest extends TestCase
     /**
      * Test that burst allowance temporarily allows excess but counts it.
      */
-    public function test_burst_allows_temporary_excess_but_counts_requests(): void
+    #[Test]
+    public function burst_allows_temporary_excess_but_counts_requests(): void
     {
         $user = User::factory()->create();
 

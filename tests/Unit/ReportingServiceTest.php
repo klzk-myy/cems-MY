@@ -6,6 +6,7 @@ use App\Services\EncryptionService;
 use App\Services\MathService;
 use App\Services\ReportingService;
 use App\Services\ThresholdService;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ReportingServiceTest extends TestCase
@@ -29,24 +30,28 @@ class ReportingServiceTest extends TestCase
         );
     }
 
-    public function test_service_is_instantiated(): void
+    #[Test]
+    public function service_is_instantiated(): void
     {
         $this->assertInstanceOf(ReportingService::class, $this->service);
     }
 
-    public function test_threshold_service_integration_for_str(): void
+    #[Test]
+    public function threshold_service_integration_for_str(): void
     {
         $strThreshold = $this->thresholdService->getStrThreshold();
         $this->assertEquals('50000', $strThreshold);
     }
 
-    public function test_threshold_service_integration_for_edd(): void
+    #[Test]
+    public function threshold_service_integration_for_edd(): void
     {
         $eddThreshold = $this->thresholdService->getEddThreshold();
         $this->assertEquals('50000', $eddThreshold);
     }
 
-    public function test_all_reporting_thresholds_return_string(): void
+    #[Test]
+    public function all_reporting_thresholds_return_string(): void
     {
         $this->assertIsString($this->thresholdService->getStrThreshold());
         $this->assertIsString($this->thresholdService->getEddThreshold());

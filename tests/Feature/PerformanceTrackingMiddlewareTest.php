@@ -7,6 +7,7 @@ use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class PerformanceTrackingMiddlewareTest extends TestCase
@@ -19,7 +20,8 @@ class PerformanceTrackingMiddlewareTest extends TestCase
         config(['database.logging' => false]);
     }
 
-    public function test_performance_tracking_middleware_logs_request_performance()
+    #[Test]
+    public function performance_tracking_middleware_logs_request_performance()
     {
         $user = User::factory()->create();
         $this->actingAs($user);
@@ -38,7 +40,8 @@ class PerformanceTrackingMiddlewareTest extends TestCase
         $this->get('/dashboard');
     }
 
-    public function test_performance_tracking_middleware_logs_slow_endpoints_when_threshold_exceeded()
+    #[Test]
+    public function performance_tracking_middleware_logs_slow_endpoints_when_threshold_exceeded()
     {
         $user = User::factory()->create();
         $this->actingAs($user);

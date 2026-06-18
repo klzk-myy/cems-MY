@@ -14,6 +14,7 @@ use App\Services\Risk\VelocityRiskService;
 use App\Services\RiskCalculationService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class RiskCalculationServiceTest extends TestCase
@@ -43,7 +44,8 @@ class RiskCalculationServiceTest extends TestCase
         );
     }
 
-    public function test_calculate_velocity_risk_returns_zero_with_no_transactions(): void
+    #[Test]
+    public function calculate_velocity_risk_returns_zero_with_no_transactions(): void
     {
         $customer = Customer::factory()->create();
 
@@ -52,7 +54,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_velocity_risk_with_small_transactions(): void
+    #[Test]
+    public function calculate_velocity_risk_with_small_transactions(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -68,7 +71,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_velocity_risk_with_medium_risk_transactions(): void
+    #[Test]
+    public function calculate_velocity_risk_with_medium_risk_transactions(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -84,7 +88,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(10, $result);
     }
 
-    public function test_calculate_velocity_risk_with_high_risk_transactions(): void
+    #[Test]
+    public function calculate_velocity_risk_with_high_risk_transactions(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -100,7 +105,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(30, $result);
     }
 
-    public function test_calculate_velocity_risk_max_is_40(): void
+    #[Test]
+    public function calculate_velocity_risk_max_is_40(): void
     {
         $customer = Customer::factory()->create();
         for ($i = 0; $i < 10; $i++) {
@@ -118,7 +124,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertLessThanOrEqual(40, $result);
     }
 
-    public function test_calculate_structuring_risk_returns_zero_with_no_transactions(): void
+    #[Test]
+    public function calculate_structuring_risk_returns_zero_with_no_transactions(): void
     {
         $customer = Customer::factory()->create();
 
@@ -127,7 +134,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_structuring_risk_with_single_transaction(): void
+    #[Test]
+    public function calculate_structuring_risk_with_single_transaction(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -143,7 +151,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_structuring_risk_with_three_transactions_same_hour(): void
+    #[Test]
+    public function calculate_structuring_risk_with_three_transactions_same_hour(): void
     {
         $customer = Customer::factory()->create();
         for ($i = 0; $i < 3; $i++) {
@@ -161,7 +170,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(25, $result);
     }
 
-    public function test_calculate_structuring_risk_max_is_30(): void
+    #[Test]
+    public function calculate_structuring_risk_max_is_30(): void
     {
         $customer = Customer::factory()->create();
         for ($i = 0; $i < 10; $i++) {
@@ -179,7 +189,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertLessThanOrEqual(30, $result);
     }
 
-    public function test_calculate_amount_risk_returns_zero_for_no_transactions(): void
+    #[Test]
+    public function calculate_amount_risk_returns_zero_for_no_transactions(): void
     {
         $customer = Customer::factory()->create();
 
@@ -188,7 +199,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_amount_risk_with_large_max_transaction(): void
+    #[Test]
+    public function calculate_amount_risk_with_large_max_transaction(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -204,7 +216,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(30, $result);
     }
 
-    public function test_calculate_amount_risk_with_escalation_above_average(): void
+    #[Test]
+    public function calculate_amount_risk_with_escalation_above_average(): void
     {
         $customer = Customer::factory()->create();
 
@@ -226,7 +239,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(10, $result);
     }
 
-    public function test_calculate_cumulative_risk_returns_not_triggered_with_no_transactions(): void
+    #[Test]
+    public function calculate_cumulative_risk_returns_not_triggered_with_no_transactions(): void
     {
         $customer = Customer::factory()->create();
 
@@ -238,7 +252,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertEquals('50000', $result['threshold']);
     }
 
-    public function test_calculate_cumulative_risk_with_transactions_below_threshold(): void
+    #[Test]
+    public function calculate_cumulative_risk_with_transactions_below_threshold(): void
     {
         $customer = Customer::factory()->create();
         for ($i = 0; $i < 3; $i++) {
@@ -256,7 +271,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertFalse($result['triggered']);
     }
 
-    public function test_calculate_cumulative_risk_triggered_with_high_transactions(): void
+    #[Test]
+    public function calculate_cumulative_risk_triggered_with_high_transactions(): void
     {
         $customer = Customer::factory()->create();
         for ($i = 0; $i < 3; $i++) {
@@ -274,7 +290,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertTrue($result['triggered']);
     }
 
-    public function test_calculate_cumulative_risk_includes_current_amount(): void
+    #[Test]
+    public function calculate_cumulative_risk_includes_current_amount(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -291,7 +308,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertTrue($result['triggered']);
     }
 
-    public function test_check_velocity_threshold_with_no_transactions(): void
+    #[Test]
+    public function check_velocity_threshold_with_no_transactions(): void
     {
         $customer = Customer::factory()->create();
 
@@ -302,7 +320,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertEquals(3, $result['threshold']);
     }
 
-    public function test_check_velocity_threshold_triggered(): void
+    #[Test]
+    public function check_velocity_threshold_triggered(): void
     {
         $customer = Customer::factory()->create();
         for ($i = 0; $i < 3; $i++) {
@@ -321,7 +340,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertEquals(3, $result['count']);
     }
 
-    public function test_check_structuring_threshold_with_no_transactions(): void
+    #[Test]
+    public function check_structuring_threshold_with_no_transactions(): void
     {
         $customer = Customer::factory()->create();
 
@@ -331,7 +351,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertEquals(0, $result['count']);
     }
 
-    public function test_cancelled_transactions_excluded_from_calculations(): void
+    #[Test]
+    public function cancelled_transactions_excluded_from_calculations(): void
     {
         $customer = Customer::factory()->create();
 
@@ -363,7 +384,8 @@ class RiskCalculationServiceTest extends TestCase
         $this->assertFalse($cumulative['triggered']);
     }
 
-    public function test_get_overall_risk_score_combines_all_factors(): void
+    #[Test]
+    public function get_overall_risk_score_combines_all_factors(): void
     {
         $customer = Customer::factory()->create();
 

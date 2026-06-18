@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BelongsToCurrencyTest extends TestCase
@@ -26,7 +27,8 @@ class BelongsToCurrencyTest extends TestCase
         });
     }
 
-    public function test_it_adds_currency_code_to_fillable(): void
+    #[Test]
+    public function it_adds_currency_code_to_fillable(): void
     {
         $model = new class extends BaseModel
         {
@@ -38,7 +40,8 @@ class BelongsToCurrencyTest extends TestCase
         $this->assertContains('currency_code', $model->getFillable());
     }
 
-    public function test_it_defines_currency_relationship(): void
+    #[Test]
+    public function it_defines_currency_relationship(): void
     {
         $currency = Currency::create([
             'code' => 'JPY',
@@ -60,7 +63,8 @@ class BelongsToCurrencyTest extends TestCase
         $this->assertTrue($model->currency()->is($currency));
     }
 
-    public function test_scope_for_currency_filters_by_currency(): void
+    #[Test]
+    public function scope_for_currency_filters_by_currency(): void
     {
         Currency::create(['code' => 'JPY', 'name' => 'Japanese Yen', 'symbol' => '¥', 'decimal_places' => 2, 'is_active' => true]);
         Currency::create(['code' => 'CNY', 'name' => 'Chinese Yuan', 'symbol' => '¥', 'decimal_places' => 2, 'is_active' => true]);

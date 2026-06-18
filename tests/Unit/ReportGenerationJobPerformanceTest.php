@@ -7,11 +7,13 @@ use App\Services\ReportingService;
 use App\Services\ThresholdService;
 use Illuminate\Support\Facades\Log;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ReportGenerationJobPerformanceTest extends TestCase
 {
-    public function test_report_generation_job_logs_performance()
+    #[Test]
+    public function report_generation_job_logs_performance()
     {
         Log::shouldReceive('info')
             ->once()

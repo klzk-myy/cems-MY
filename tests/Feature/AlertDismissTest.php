@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Models\Alert;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AlertDismissTest extends TestCase
@@ -18,7 +19,8 @@ class AlertDismissTest extends TestCase
         parent::setUp();
     }
 
-    public function test_unauthenticated_user_cannot_dismiss_alert(): void
+    #[Test]
+    public function unauthenticated_user_cannot_dismiss_alert(): void
     {
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
 
@@ -27,7 +29,8 @@ class AlertDismissTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_teller_cannot_dismiss_alert(): void
+    #[Test]
+    public function teller_cannot_dismiss_alert(): void
     {
         $user = User::factory()->create(['role' => UserRole::Teller]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
@@ -37,7 +40,8 @@ class AlertDismissTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_manager_cannot_dismiss_alert(): void
+    #[Test]
+    public function manager_cannot_dismiss_alert(): void
     {
         $user = User::factory()->create(['role' => UserRole::Manager]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
@@ -47,7 +51,8 @@ class AlertDismissTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_compliance_officer_can_dismiss_alert(): void
+    #[Test]
+    public function compliance_officer_can_dismiss_alert(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
@@ -58,7 +63,8 @@ class AlertDismissTest extends TestCase
         $response->assertSessionHas('success', 'Alert dismissed');
     }
 
-    public function test_admin_can_dismiss_alert(): void
+    #[Test]
+    public function admin_can_dismiss_alert(): void
     {
         $user = User::factory()->create(['role' => UserRole::Admin]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
@@ -69,7 +75,8 @@ class AlertDismissTest extends TestCase
         $response->assertSessionHas('success', 'Alert dismissed');
     }
 
-    public function test_dismiss_updates_alert_status_to_rejected(): void
+    #[Test]
+    public function dismiss_updates_alert_status_to_rejected(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
@@ -82,7 +89,8 @@ class AlertDismissTest extends TestCase
         ]);
     }
 
-    public function test_dismiss_redirects_to_index_with_success_message(): void
+    #[Test]
+    public function dismiss_redirects_to_index_with_success_message(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
@@ -93,7 +101,8 @@ class AlertDismissTest extends TestCase
         $response->assertSessionHas('success', 'Alert dismissed');
     }
 
-    public function test_dismissing_non_existent_alert_returns_404(): void
+    #[Test]
+    public function dismissing_non_existent_alert_returns_404(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
@@ -102,7 +111,8 @@ class AlertDismissTest extends TestCase
         $response->assertStatus(404);
     }
 
-    public function test_already_resolved_alert_cannot_be_dismissed(): void
+    #[Test]
+    public function already_resolved_alert_cannot_be_dismissed(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Resolved]);
@@ -112,7 +122,8 @@ class AlertDismissTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_alert_with_under_review_status_can_be_dismissed(): void
+    #[Test]
+    public function alert_with_under_review_status_can_be_dismissed(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $alert = Alert::factory()->create(['status' => FlagStatus::UnderReview]);
@@ -126,7 +137,8 @@ class AlertDismissTest extends TestCase
         ]);
     }
 
-    public function test_alert_with_escalated_status_can_be_dismissed(): void
+    #[Test]
+    public function alert_with_escalated_status_can_be_dismissed(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Escalated]);
@@ -140,7 +152,8 @@ class AlertDismissTest extends TestCase
         ]);
     }
 
-    public function test_dismiss_with_reason_is_successful(): void
+    #[Test]
+    public function dismiss_with_reason_is_successful(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
@@ -156,7 +169,8 @@ class AlertDismissTest extends TestCase
         ]);
     }
 
-    public function test_dismiss_reason_is_optional(): void
+    #[Test]
+    public function dismiss_reason_is_optional(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
@@ -170,7 +184,8 @@ class AlertDismissTest extends TestCase
         ]);
     }
 
-    public function test_already_rejected_alert_cannot_be_dismissed(): void
+    #[Test]
+    public function already_rejected_alert_cannot_be_dismissed(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $alert = Alert::factory()->create(['status' => FlagStatus::Rejected]);

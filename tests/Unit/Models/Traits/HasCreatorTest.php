@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HasCreatorTest extends TestCase
@@ -25,7 +26,8 @@ class HasCreatorTest extends TestCase
         });
     }
 
-    public function test_it_adds_created_by_to_fillable(): void
+    #[Test]
+    public function it_adds_created_by_to_fillable(): void
     {
         $model = new class extends BaseModel
         {
@@ -37,7 +39,8 @@ class HasCreatorTest extends TestCase
         $this->assertContains('created_by', $model->getFillable());
     }
 
-    public function test_it_defines_creator_relationship(): void
+    #[Test]
+    public function it_defines_creator_relationship(): void
     {
         $user = User::factory()->create();
 

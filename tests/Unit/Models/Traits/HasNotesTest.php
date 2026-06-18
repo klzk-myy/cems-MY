@@ -7,6 +7,7 @@ use App\Models\Traits\HasNotes;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HasNotesTest extends TestCase
@@ -24,7 +25,8 @@ class HasNotesTest extends TestCase
         });
     }
 
-    public function test_it_adds_notes_to_fillable(): void
+    #[Test]
+    public function it_adds_notes_to_fillable(): void
     {
         $model = new class extends BaseModel
         {

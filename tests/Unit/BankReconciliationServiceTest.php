@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\BankReconciliationService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BankReconciliationServiceTest extends TestCase
@@ -33,7 +34,8 @@ class BankReconciliationServiceTest extends TestCase
         ]);
     }
 
-    public function test_auto_match_matches_debit_statement_to_journal_entry(): void
+    #[Test]
+    public function auto_match_matches_debit_statement_to_journal_entry(): void
     {
         $accountCode = '1001';
         $statementDate = now()->toDateString();
@@ -81,7 +83,8 @@ class BankReconciliationServiceTest extends TestCase
         $this->assertNotNull($reconciliation->matched_at);
     }
 
-    public function test_auto_match_matches_credit_statement_to_journal_entry(): void
+    #[Test]
+    public function auto_match_matches_credit_statement_to_journal_entry(): void
     {
         $accountCode = '1002';
         $statementDate = now()->toDateString();
@@ -129,7 +132,8 @@ class BankReconciliationServiceTest extends TestCase
         $this->assertNotNull($reconciliation->matched_at);
     }
 
-    public function test_auto_match_skips_checks(): void
+    #[Test]
+    public function auto_match_skips_checks(): void
     {
         $accountCode = '1003';
         $statementDate = now()->toDateString();
@@ -177,7 +181,8 @@ class BankReconciliationServiceTest extends TestCase
         $this->assertNull($reconciliation->matched_to_journal_entry_id);
     }
 
-    public function test_auto_match_does_not_match_different_amounts(): void
+    #[Test]
+    public function auto_match_does_not_match_different_amounts(): void
     {
         $accountCode = '1004';
         $statementDate = now()->toDateString();
@@ -223,7 +228,8 @@ class BankReconciliationServiceTest extends TestCase
         $this->assertNull($reconciliation->matched_to_journal_entry_id);
     }
 
-    public function test_auto_match_does_not_match_different_dates(): void
+    #[Test]
+    public function auto_match_does_not_match_different_dates(): void
     {
         $accountCode = '1005';
         $amount = '1000.00';

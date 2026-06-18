@@ -5,13 +5,15 @@ namespace Tests\Feature\Api;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CaseApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_show_still_returns_legacy_envelope()
+    #[Test]
+    public function show_still_returns_legacy_envelope()
     {
         $case = ComplianceCase::factory()->create();
 

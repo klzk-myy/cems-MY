@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\MonthEndCloseService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MonthEndCloseTest extends TestCase
@@ -63,7 +64,8 @@ class MonthEndCloseTest extends TestCase
         ]);
     }
 
-    public function test_pre_flight_checks_passes_with_open_period(): void
+    #[Test]
+    public function pre_flight_checks_passes_with_open_period(): void
     {
         $date = Carbon::parse('2026-03-31');
 
@@ -81,7 +83,8 @@ class MonthEndCloseTest extends TestCase
         $this->assertEmpty($result['failures']);
     }
 
-    public function test_pre_flight_checks_fails_when_no_period_exists(): void
+    #[Test]
+    public function pre_flight_checks_fails_when_no_period_exists(): void
     {
         $date = Carbon::parse('2026-03-31');
 
@@ -91,7 +94,8 @@ class MonthEndCloseTest extends TestCase
         $this->assertStringContainsString('No accounting period found', $result['failures'][0]);
     }
 
-    public function test_pre_flight_checks_fails_when_period_already_closed(): void
+    #[Test]
+    public function pre_flight_checks_fails_when_period_already_closed(): void
     {
         $date = Carbon::parse('2026-03-31');
         $period = AccountingPeriod::factory()->create([
@@ -108,7 +112,8 @@ class MonthEndCloseTest extends TestCase
         $this->assertStringContainsString('already closed', $result['failures'][0]);
     }
 
-    public function test_pre_flight_checks_fails_when_pending_entries_exist(): void
+    #[Test]
+    public function pre_flight_checks_fails_when_pending_entries_exist(): void
     {
         $date = Carbon::parse('2026-03-31');
         $period = $this->createFiscalYearAndPeriod($date->toDateString());
@@ -124,7 +129,8 @@ class MonthEndCloseTest extends TestCase
         $this->assertFalse($result['passed']);
     }
 
-    public function test_run_month_end_closing_throws_when_pre_check_fails(): void
+    #[Test]
+    public function run_month_end_closing_throws_when_pre_check_fails(): void
     {
         $date = Carbon::parse('2026-03-31');
 
@@ -133,7 +139,8 @@ class MonthEndCloseTest extends TestCase
         $this->service->runMonthEndClosing($date, $this->manager);
     }
 
-    public function test_close_period_creates_next_period(): void
+    #[Test]
+    public function close_period_creates_next_period(): void
     {
         $date = Carbon::parse('2026-03-31');
         $period = AccountingPeriod::factory()->create([
@@ -154,7 +161,8 @@ class MonthEndCloseTest extends TestCase
         $this->assertEquals(AccountingPeriodStatus::Closed, $period->status);
     }
 
-    public function test_get_month_end_status_returns_correct_data(): void
+    #[Test]
+    public function get_month_end_status_returns_correct_data(): void
     {
         $date = Carbon::parse('2026-03-31');
         AccountingPeriod::factory()->create([
@@ -174,7 +182,8 @@ class MonthEndCloseTest extends TestCase
         $this->assertFalse($status['revaluation_run']);
     }
 
-    public function test_close_period_sets_period_to_closed(): void
+    #[Test]
+    public function close_period_sets_period_to_closed(): void
     {
         $date = Carbon::parse('2026-03-31');
         $period = AccountingPeriod::factory()->create([

@@ -21,6 +21,7 @@ use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerRiskScoringServiceTest extends TestCase
@@ -64,7 +65,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         );
     }
 
-    public function test_calculate_velocity_score_with_no_transactions(): void
+    #[Test]
+    public function calculate_velocity_score_with_no_transactions(): void
     {
         $customer = Customer::factory()->create();
 
@@ -77,7 +79,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_velocity_score_with_small_transactions(): void
+    #[Test]
+    public function calculate_velocity_score_with_small_transactions(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -93,7 +96,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_velocity_score_with_medium_transactions(): void
+    #[Test]
+    public function calculate_velocity_score_with_medium_transactions(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -109,7 +113,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(10, $result);
     }
 
-    public function test_calculate_velocity_score_with_high_transactions(): void
+    #[Test]
+    public function calculate_velocity_score_with_high_transactions(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -125,7 +130,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(30, $result);
     }
 
-    public function test_calculate_velocity_score_max_is_40(): void
+    #[Test]
+    public function calculate_velocity_score_max_is_40(): void
     {
         $customer = Customer::factory()->create();
         for ($i = 0; $i < 10; $i++) {
@@ -143,7 +149,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertLessThanOrEqual(40, $result);
     }
 
-    public function test_calculate_structuring_score_with_no_transactions(): void
+    #[Test]
+    public function calculate_structuring_score_with_no_transactions(): void
     {
         $customer = Customer::factory()->create();
 
@@ -156,7 +163,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_structuring_score_with_single_transaction(): void
+    #[Test]
+    public function calculate_structuring_score_with_single_transaction(): void
     {
         $customer = Customer::factory()->create();
         Transaction::factory()
@@ -172,7 +180,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_structuring_score_with_three_transactions_same_hour(): void
+    #[Test]
+    public function calculate_structuring_score_with_three_transactions_same_hour(): void
     {
         $customer = Customer::factory()->create();
         for ($i = 0; $i < 3; $i++) {
@@ -190,7 +199,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(25, $result);
     }
 
-    public function test_calculate_structuring_score_max_is_30(): void
+    #[Test]
+    public function calculate_structuring_score_max_is_30(): void
     {
         $customer = Customer::factory()->create();
         for ($i = 0; $i < 10; $i++) {
@@ -208,7 +218,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertLessThanOrEqual(30, $result);
     }
 
-    public function test_calculate_amount_score_returns_zero_for_no_transactions(): void
+    #[Test]
+    public function calculate_amount_score_returns_zero_for_no_transactions(): void
     {
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateAmountScore');
@@ -221,7 +232,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_calculate_amount_score_for_large_max_transaction(): void
+    #[Test]
+    public function calculate_amount_score_for_large_max_transaction(): void
     {
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateAmountScore');
@@ -237,7 +249,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(30, $result);
     }
 
-    public function test_extract_risk_factors_includes_pep_customer(): void
+    #[Test]
+    public function extract_risk_factors_includes_pep_customer(): void
     {
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('extractRiskFactors');
@@ -258,7 +271,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertContains('PEP customer', $result);
     }
 
-    public function test_extract_risk_factors_excludes_pep_when_not_pep(): void
+    #[Test]
+    public function extract_risk_factors_excludes_pep_when_not_pep(): void
     {
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('extractRiskFactors');
@@ -279,7 +293,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertNotContains('PEP customer', $result);
     }
 
-    public function test_threshold_service_integration(): void
+    #[Test]
+    public function threshold_service_integration(): void
     {
         $this->assertEquals('50000', $this->thresholdService->getRiskHighThreshold());
         $this->assertEquals('30000', $this->thresholdService->getRiskMediumThreshold());
@@ -287,7 +302,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertEquals('3000', $this->thresholdService->getStructuringSubThreshold());
     }
 
-    public function test_risk_tier_boundaries_are_consistent(): void
+    #[Test]
+    public function risk_tier_boundaries_are_consistent(): void
     {
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('getRiskLevel');
@@ -328,7 +344,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         }
     }
 
-    public function test_customer_lock_does_not_auto_expire_before_edd_complete(): void
+    #[Test]
+    public function customer_lock_does_not_auto_expire_before_edd_complete(): void
     {
         // Create a customer and risk profile
         $customer = Customer::factory()->create();
@@ -367,7 +384,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         Carbon::setTestNow();
     }
 
-    public function test_pep_cessation_after_5_years_allows_cessation(): void
+    #[Test]
+    public function pep_cessation_after_5_years_allows_cessation(): void
     {
         $customer = Customer::factory()->create([
             'pep_role_ended_at' => Carbon::now()->subYears(6),
@@ -380,7 +398,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertTrue($result->canCessate);
     }
 
-    public function test_recent_pep_continuing_in_same_domain_cannot_cessate(): void
+    #[Test]
+    public function recent_pep_continuing_in_same_domain_cannot_cessate(): void
     {
         $customer = Customer::factory()->create([
             'pep_role_ended_at' => Carbon::now()->subMonths(6),
@@ -393,7 +412,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertFalse($result->canCessate);
     }
 
-    public function test_pep_cessation_medium_time_since_role(): void
+    #[Test]
+    public function pep_cessation_medium_time_since_role(): void
     {
         $customer = Customer::factory()->create([
             'pep_role_ended_at' => Carbon::now()->subYears(3),
@@ -409,7 +429,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertEquals('medium', $result->factors['informal_influence']['level']);
     }
 
-    public function test_pep_cessation_no_role_ended_date(): void
+    #[Test]
+    public function pep_cessation_no_role_ended_date(): void
     {
         $customer = Customer::factory()->create([
             'pep_role_ended_at' => null,

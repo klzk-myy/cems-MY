@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\TransactionStateMachine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionStateMachineTest extends TestCase
@@ -86,7 +87,8 @@ class TransactionStateMachineTest extends TestCase
         ]);
     }
 
-    public function test_force_status_logs_to_audit_trail(): void
+    #[Test]
+    public function force_status_logs_to_audit_trail(): void
     {
         $transaction = $this->createTransaction(TransactionStatus::Draft);
 
@@ -111,7 +113,8 @@ class TransactionStateMachineTest extends TestCase
         $this->assertEquals($this->user->id, $auditEntry->user_id);
     }
 
-    public function test_force_status_without_audit_service_still_saves(): void
+    #[Test]
+    public function force_status_without_audit_service_still_saves(): void
     {
         $transaction = $this->createTransaction(TransactionStatus::Draft);
 
@@ -124,7 +127,8 @@ class TransactionStateMachineTest extends TestCase
         $this->assertEquals(TransactionStatus::Cancelled, $transaction->status);
     }
 
-    public function test_release_method_has_been_removed(): void
+    #[Test]
+    public function release_method_has_been_removed(): void
     {
         $transaction = $this->createTransaction(TransactionStatus::Draft);
         $stateMachine = new TransactionStateMachine($transaction);

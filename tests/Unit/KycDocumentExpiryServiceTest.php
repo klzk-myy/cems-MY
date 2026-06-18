@@ -14,6 +14,7 @@ use App\Services\AuditService;
 use App\Services\KycDocumentExpiryService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class KycDocumentExpiryServiceTest extends TestCase
@@ -83,7 +84,8 @@ class KycDocumentExpiryServiceTest extends TestCase
         ]);
     }
 
-    public function test_no_block_when_all_documents_valid(): void
+    #[Test]
+    public function no_block_when_all_documents_valid(): void
     {
         CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
@@ -99,7 +101,8 @@ class KycDocumentExpiryServiceTest extends TestCase
         $this->assertFalse($this->service->mustBlockDueToExpiredDocuments($this->customer));
     }
 
-    public function test_no_block_within_grace_period(): void
+    #[Test]
+    public function no_block_within_grace_period(): void
     {
         CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
@@ -115,7 +118,8 @@ class KycDocumentExpiryServiceTest extends TestCase
         $this->assertFalse($this->service->mustBlockDueToExpiredDocuments($this->customer));
     }
 
-    public function test_blocks_after_grace_period_expired(): void
+    #[Test]
+    public function blocks_after_grace_period_expired(): void
     {
         CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
@@ -131,12 +135,14 @@ class KycDocumentExpiryServiceTest extends TestCase
         $this->assertTrue($this->service->mustBlockDueToExpiredDocuments($this->customer));
     }
 
-    public function test_blocks_when_document_missing(): void
+    #[Test]
+    public function blocks_when_document_missing(): void
     {
         $this->assertTrue($this->service->mustBlockDueToExpiredDocuments($this->customer));
     }
 
-    public function test_standard_cdd_requires_proof_of_address(): void
+    #[Test]
+    public function standard_cdd_requires_proof_of_address(): void
     {
         $this->customer->update(['cdd_level' => CddLevel::Standard]);
 
@@ -154,7 +160,8 @@ class KycDocumentExpiryServiceTest extends TestCase
         $this->assertTrue($this->service->mustBlockDueToExpiredDocuments($this->customer));
     }
 
-    public function test_standard_cdd_no_block_when_all_documents_present(): void
+    #[Test]
+    public function standard_cdd_no_block_when_all_documents_present(): void
     {
         $this->customer->update(['cdd_level' => CddLevel::Standard]);
 
@@ -183,7 +190,8 @@ class KycDocumentExpiryServiceTest extends TestCase
         $this->assertFalse($this->service->mustBlockDueToExpiredDocuments($this->customer));
     }
 
-    public function test_enhanced_cdd_requires_passport(): void
+    #[Test]
+    public function enhanced_cdd_requires_passport(): void
     {
         $this->customer->update(['cdd_level' => CddLevel::Enhanced]);
 
@@ -212,7 +220,8 @@ class KycDocumentExpiryServiceTest extends TestCase
         $this->assertTrue($this->service->mustBlockDueToExpiredDocuments($this->customer));
     }
 
-    public function test_enhanced_cdd_no_block_when_all_documents_present(): void
+    #[Test]
+    public function enhanced_cdd_no_block_when_all_documents_present(): void
     {
         $this->customer->update(['cdd_level' => CddLevel::Enhanced]);
 
@@ -252,7 +261,8 @@ class KycDocumentExpiryServiceTest extends TestCase
         $this->assertFalse($this->service->mustBlockDueToExpiredDocuments($this->customer));
     }
 
-    public function test_get_expired_documents_returns_only_expired(): void
+    #[Test]
+    public function get_expired_documents_returns_only_expired(): void
     {
         CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
@@ -282,7 +292,8 @@ class KycDocumentExpiryServiceTest extends TestCase
         $this->assertEquals(DocumentType::MyKad, $expired->first()->document_type);
     }
 
-    public function test_no_grace_for_document_without_expiry_date(): void
+    #[Test]
+    public function no_grace_for_document_without_expiry_date(): void
     {
         CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,

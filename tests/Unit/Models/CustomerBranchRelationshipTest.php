@@ -8,13 +8,15 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerBranchRelationshipTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_customer_has_branch_relationship(): void
+    #[Test]
+    public function customer_has_branch_relationship(): void
     {
         $branch = Branch::factory()->create(['code' => 'TEST'.uniqid()]);
         $user = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branch->id]);
@@ -30,7 +32,8 @@ class CustomerBranchRelationshipTest extends TestCase
         $this->assertEquals($branch->id, $customer->branch->id);
     }
 
-    public function test_customer_can_be_scoped_to_branch(): void
+    #[Test]
+    public function customer_can_be_scoped_to_branch(): void
     {
         $branchA = Branch::factory()->create(['code' => 'SCA'.uniqid()]);
         $branchB = Branch::factory()->create(['code' => 'SCB'.uniqid()]);

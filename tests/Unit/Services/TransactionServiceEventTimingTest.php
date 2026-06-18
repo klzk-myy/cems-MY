@@ -6,13 +6,15 @@ use App\Events\TransactionCreated;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionServiceEventTimingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_transaction_created_event_is_dispatched_after_commit(): void
+    #[Test]
+    public function transaction_created_event_is_dispatched_after_commit(): void
     {
         Event::fake([TransactionCreated::class]);
 

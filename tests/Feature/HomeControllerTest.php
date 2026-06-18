@@ -7,20 +7,23 @@ use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HomeControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_incomplete_setup_redirects_to_setup(): void
+    #[Test]
+    public function incomplete_setup_redirects_to_setup(): void
     {
         $response = $this->get('/');
 
         $response->assertRedirect('/setup');
     }
 
-    public function test_authenticated_user_redirects_to_dashboard(): void
+    #[Test]
+    public function authenticated_user_redirects_to_dashboard(): void
     {
         Currency::factory()->create();
         ExchangeRate::factory()->create();
@@ -32,7 +35,8 @@ class HomeControllerTest extends TestCase
         $response->assertRedirect('/dashboard');
     }
 
-    public function test_guest_redirects_to_login(): void
+    #[Test]
+    public function guest_redirects_to_login(): void
     {
         Currency::factory()->create();
         ExchangeRate::factory()->create();

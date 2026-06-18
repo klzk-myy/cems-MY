@@ -10,6 +10,7 @@ use App\Services\CddLevelDeterminationService;
 use App\Services\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CddLevelDeterminationServiceTest extends TestCase
@@ -33,7 +34,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         );
     }
 
-    public function test_simplified_cdd_for_small_amounts(): void
+    #[Test]
+    public function simplified_cdd_for_small_amounts(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
@@ -46,7 +48,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(CddLevel::Simplified, $level);
     }
 
-    public function test_standard_cdd_for_large_amounts_non_pep(): void
+    #[Test]
+    public function standard_cdd_for_large_amounts_non_pep(): void
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
@@ -59,7 +62,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(CddLevel::Standard, $level);
     }
 
-    public function test_foreign_pep_always_gets_enhanced_cdd(): void
+    #[Test]
+    public function foreign_pep_always_gets_enhanced_cdd(): void
     {
         // Foreign PEPs per pd-00.md 15.2 require Enhanced CDD always
         // Even with low risk rating and small transaction amount
@@ -77,7 +81,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(['Foreign PEP'], $this->service->getLastCddTriggers());
     }
 
-    public function test_domestic_pep_low_risk_specific_cdd(): void
+    #[Test]
+    public function domestic_pep_low_risk_specific_cdd(): void
     {
         // Domestic PEPs per pd-00.md 15.3 only get Enhanced CDD if higher risk
         // Low risk domestic PEP should NOT get Enhanced for transaction >= RM 3000
@@ -95,7 +100,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(CddLevel::Specific, $level);
     }
 
-    public function test_domestic_pep_high_risk_gets_enhanced(): void
+    #[Test]
+    public function domestic_pep_high_risk_gets_enhanced(): void
     {
         // Domestic PEP with high risk rating should get Enhanced CDD
         $customer = Customer::factory()->create([
@@ -112,7 +118,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(['Domestic PEP (higher risk)'], $this->service->getLastCddTriggers());
     }
 
-    public function test_domestic_pep_medium_risk_gets_enhanced(): void
+    #[Test]
+    public function domestic_pep_medium_risk_gets_enhanced(): void
     {
         // Domestic PEP with medium risk rating should get Enhanced CDD (per isHigherRisk logic)
         $customer = Customer::factory()->create([
@@ -128,7 +135,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(CddLevel::Enhanced, $level);
     }
 
-    public function test_legacy_pep_status_without_type_still_works(): void
+    #[Test]
+    public function legacy_pep_status_without_type_still_works(): void
     {
         // Legacy PEP status without type distinction should still trigger Enhanced
         $customer = Customer::factory()->create([
@@ -142,7 +150,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(CddLevel::Enhanced, $level);
     }
 
-    public function test_family_member_pep_low_risk_specific_cdd(): void
+    #[Test]
+    public function family_member_pep_low_risk_specific_cdd(): void
     {
         // Family member of PEP with low risk should not get automatic Enhanced
         // Amount >= RM 3000 triggers Specific CDD (amount-based)
@@ -161,7 +170,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(CddLevel::Specific, $level);
     }
 
-    public function test_close_associate_pep_high_risk_gets_enhanced(): void
+    #[Test]
+    public function close_associate_pep_high_risk_gets_enhanced(): void
     {
         // Close associate of PEP with high risk should get Enhanced
         // Note: pep_status is true since this person IS the close associate (they have PEP relation)
@@ -179,7 +189,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(CddLevel::Enhanced, $level);
     }
 
-    public function test_international_org_pep_high_risk_gets_enhanced(): void
+    #[Test]
+    public function international_org_pep_high_risk_gets_enhanced(): void
     {
         // International org PEP with high risk should get Enhanced
         $customer = Customer::factory()->create([
@@ -195,7 +206,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(CddLevel::Enhanced, $level);
     }
 
-    public function test_high_risk_customer_always_gets_enhanced(): void
+    #[Test]
+    public function high_risk_customer_always_gets_enhanced(): void
     {
         // High risk customer (non-PEP) should get Enhanced CDD
         $customer = Customer::factory()->create([
@@ -210,7 +222,8 @@ class CddLevelDeterminationServiceTest extends TestCase
         $this->assertEquals(['High risk customer'], $this->service->getLastCddTriggers());
     }
 
-    public function test_sanctions_match_always_gets_enhanced(): void
+    #[Test]
+    public function sanctions_match_always_gets_enhanced(): void
     {
         // Customer with sanctions match should get Enhanced CDD
         $customer = Customer::factory()->create([

@@ -6,13 +6,15 @@ use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerControllerN1Test extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_customer_index_uses_eager_loading()
+    #[Test]
+    public function customer_index_uses_eager_loading()
     {
         $user = User::factory()->create();
         Customer::factory()->count(10)->create();

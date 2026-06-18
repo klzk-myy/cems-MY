@@ -8,6 +8,7 @@ use App\Models\CustomerRelation;
 use App\Services\AuditService;
 use App\Services\CustomerRelationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerRelationServiceTest extends TestCase
@@ -24,7 +25,8 @@ class CustomerRelationServiceTest extends TestCase
         );
     }
 
-    public function test_add_relation_creates_relation_record(): void
+    #[Test]
+    public function add_relation_creates_relation_record(): void
     {
         $customer = Customer::factory()->create();
 
@@ -41,7 +43,8 @@ class CustomerRelationServiceTest extends TestCase
         $this->assertEquals($customer->id, $relation->customer_id);
     }
 
-    public function test_get_relations_returns_customer_relations(): void
+    #[Test]
+    public function get_relations_returns_customer_relations(): void
     {
         $customer = Customer::factory()->create();
         CustomerRelation::factory()->count(3)->create([
@@ -53,7 +56,8 @@ class CustomerRelationServiceTest extends TestCase
         $this->assertCount(3, $relations);
     }
 
-    public function test_is_pep_associate_returns_true_when_pep_relation_exists(): void
+    #[Test]
+    public function is_pep_associate_returns_true_when_pep_relation_exists(): void
     {
         $customer = Customer::factory()->create(['pep_status' => false]);
         CustomerRelation::factory()->create([
@@ -64,14 +68,16 @@ class CustomerRelationServiceTest extends TestCase
         $this->assertTrue($this->service->isPepAssociate($customer));
     }
 
-    public function test_is_pep_associate_returns_false_when_no_pep_relation(): void
+    #[Test]
+    public function is_pep_associate_returns_false_when_no_pep_relation(): void
     {
         $customer = Customer::factory()->create(['pep_status' => false]);
 
         $this->assertFalse($this->service->isPepAssociate($customer));
     }
 
-    public function test_remove_relation_deletes_record(): void
+    #[Test]
+    public function remove_relation_deletes_record(): void
     {
         $customer = Customer::factory()->create();
         $relation = CustomerRelation::factory()->create([
@@ -83,7 +89,8 @@ class CustomerRelationServiceTest extends TestCase
         $this->assertNull(CustomerRelation::find($relation->id));
     }
 
-    public function test_update_relation_updates_record(): void
+    #[Test]
+    public function update_relation_updates_record(): void
     {
         $customer = Customer::factory()->create();
         $relation = CustomerRelation::factory()->create([
@@ -98,7 +105,8 @@ class CustomerRelationServiceTest extends TestCase
         $this->assertEquals('Updated Name', $updated->related_name);
     }
 
-    public function test_calculate_relation_risk_score_returns_zero_for_no_relations(): void
+    #[Test]
+    public function calculate_relation_risk_score_returns_zero_for_no_relations(): void
     {
         $customer = Customer::factory()->create(['pep_status' => false]);
 
@@ -107,7 +115,8 @@ class CustomerRelationServiceTest extends TestCase
         $this->assertEquals(0, $score);
     }
 
-    public function test_calculate_relation_risk_score_adds_pep_status(): void
+    #[Test]
+    public function calculate_relation_risk_score_adds_pep_status(): void
     {
         $customer = Customer::factory()->create(['pep_status' => true]);
 
@@ -116,7 +125,8 @@ class CustomerRelationServiceTest extends TestCase
         $this->assertEquals(20, $score);
     }
 
-    public function test_calculate_relation_risk_score_adds_pep_relations(): void
+    #[Test]
+    public function calculate_relation_risk_score_adds_pep_relations(): void
     {
         $customer = Customer::factory()->create(['pep_status' => false]);
         CustomerRelation::factory()->count(2)->create([
@@ -130,7 +140,8 @@ class CustomerRelationServiceTest extends TestCase
         $this->assertEquals(10, $score);
     }
 
-    public function test_is_high_risk_relation_returns_true_when_pep_relation(): void
+    #[Test]
+    public function is_high_risk_relation_returns_true_when_pep_relation(): void
     {
         $customer = Customer::factory()->create();
         CustomerRelation::factory()->create([
@@ -141,7 +152,8 @@ class CustomerRelationServiceTest extends TestCase
         $this->assertTrue($this->service->isHighRiskRelation($customer));
     }
 
-    public function test_get_related_customers_returns_customer_models(): void
+    #[Test]
+    public function get_related_customers_returns_customer_models(): void
     {
         $customer = Customer::factory()->create();
         $relatedCustomer = Customer::factory()->create();

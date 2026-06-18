@@ -6,11 +6,13 @@ use App\Services\Compliance\Monitors\VelocityMonitor;
 use App\Services\MathService;
 use App\Services\Risk\VelocityRiskService;
 use App\Services\ThresholdService;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class VelocityMonitorTest extends TestCase
 {
-    public function test_uses_velocity_window_days_from_threshold_service(): void
+    #[Test]
+    public function uses_velocity_window_days_from_threshold_service(): void
     {
         $mathService = new MathService;
         $thresholdService = new ThresholdService;
@@ -28,7 +30,8 @@ class VelocityMonitorTest extends TestCase
         $this->assertEquals(90, $property->getValue($monitor));
     }
 
-    public function test_velocity_window_is_configurable(): void
+    #[Test]
+    public function velocity_window_is_configurable(): void
     {
         config(['thresholds.velocity.window_days' => 30]);
 
@@ -50,7 +53,8 @@ class VelocityMonitorTest extends TestCase
         config(['thresholds.velocity.window_days' => 90]);
     }
 
-    public function test_no_longer_uses_hardcoded_lookback_hours(): void
+    #[Test]
+    public function no_longer_uses_hardcoded_lookback_hours(): void
     {
         // Verify the LOOKBACK_HOURS constant no longer exists
         $reflection = new \ReflectionClass(VelocityMonitor::class);

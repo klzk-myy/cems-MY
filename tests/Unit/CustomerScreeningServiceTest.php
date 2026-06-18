@@ -11,6 +11,7 @@ use App\Models\Transaction;
 use App\Services\CustomerScreeningService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerScreeningServiceTest extends TestCase
@@ -25,7 +26,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->service = new CustomerScreeningService(new MathService);
     }
 
-    public function test_screen_name_returns_clear_for_no_match(): void
+    #[Test]
+    public function screen_name_returns_clear_for_no_match(): void
     {
         $sanctionList = SanctionList::factory()->create([
             'slug' => 'test-list-1',
@@ -44,7 +46,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertTrue($response->matches->isEmpty());
     }
 
-    public function test_screen_name_returns_flag_for_partial_match(): void
+    #[Test]
+    public function screen_name_returns_flag_for_partial_match(): void
     {
         $sanctionList = SanctionList::factory()->create([
             'slug' => 'test-list-2',
@@ -66,7 +69,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertFalse($response->matches->isEmpty());
     }
 
-    public function test_screen_name_uses_dob_for_confidence(): void
+    #[Test]
+    public function screen_name_uses_dob_for_confidence(): void
     {
         $sanctionList = SanctionList::factory()->create([
             'slug' => 'test-list-3',
@@ -88,7 +92,8 @@ class CustomerScreeningServiceTest extends TestCase
         );
     }
 
-    public function test_screen_customer_checks_existing_sanction_hit(): void
+    #[Test]
+    public function screen_customer_checks_existing_sanction_hit(): void
     {
         $customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
@@ -101,7 +106,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertEquals(100.0, $response->confidenceScore);
     }
 
-    public function test_screen_customer_persists_result(): void
+    #[Test]
+    public function screen_customer_persists_result(): void
     {
         $customer = Customer::factory()->create([
             'full_name' => 'New Customer',
@@ -117,7 +123,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertEquals($customer->id, $result->customer_id);
     }
 
-    public function test_threshold_is_75_percent(): void
+    #[Test]
+    public function threshold_is_75_percent(): void
     {
         $sanctionList = SanctionList::factory()->create([
             'slug' => 'test-list-6',
@@ -137,7 +144,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(75.0, $exactResponse->confidenceScore);
     }
 
-    public function test_levenshtein_similarity_calculation(): void
+    #[Test]
+    public function levenshtein_similarity_calculation(): void
     {
         $service = new CustomerScreeningService(new MathService);
 
@@ -146,7 +154,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertGreaterThan(0.7, $service->levenshteinSimilarity('john', 'johm'));
     }
 
-    public function test_screen_transaction_uses_customer_info(): void
+    #[Test]
+    public function screen_transaction_uses_customer_info(): void
     {
         $customer = Customer::factory()->create([
             'full_name' => 'Alice Johnson',
@@ -163,7 +172,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertNotNull($response);
     }
 
-    public function test_batch_screen_returns_collection(): void
+    #[Test]
+    public function batch_screen_returns_collection(): void
     {
         $customer1 = Customer::factory()->create(['full_name' => 'Customer One']);
         $customer2 = Customer::factory()->create(['full_name' => 'Customer Two']);
@@ -173,7 +183,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertCount(2, $results);
     }
 
-    public function test_get_status_returns_correct_structure(): void
+    #[Test]
+    public function get_status_returns_correct_structure(): void
     {
         $customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
@@ -192,7 +203,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertFalse($status['sanction_hit']);
     }
 
-    public function test_get_history_returns_screening_results(): void
+    #[Test]
+    public function get_history_returns_screening_results(): void
     {
         $customer = Customer::factory()->create(['full_name' => 'History Test Customer']);
 
@@ -204,7 +216,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(2, $history->count());
     }
 
-    public function test_confirmed_sanctions_match_triggers_freeze(): void
+    #[Test]
+    public function confirmed_sanctions_match_triggers_freeze(): void
     {
         $customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
@@ -221,7 +234,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertNotNull($customer->frozen_at);
     }
 
-    public function test_potential_customer_with_positive_match_is_rejected(): void
+    #[Test]
+    public function potential_customer_with_positive_match_is_rejected(): void
     {
         $customer = Customer::factory()->create([
             'full_name' => 'Pending Customer',
@@ -236,7 +250,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertEquals('positive_DOMESTIC_match', $customer->rejection_reason);
     }
 
-    public function test_confirmed_match_blocks_transactions(): void
+    #[Test]
+    public function confirmed_match_blocks_transactions(): void
     {
         $customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
@@ -250,7 +265,8 @@ class CustomerScreeningServiceTest extends TestCase
         $this->assertTrue($customer->transactions_blocked);
     }
 
-    public function test_related_parties_due_diligence_conducted(): void
+    #[Test]
+    public function related_parties_due_diligence_conducted(): void
     {
         $customer = Customer::factory()->create();
         $relatedParty = Customer::factory()->create();

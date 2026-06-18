@@ -11,6 +11,7 @@ use App\Models\CurrencyPosition;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionCancellationFlowTest extends TestCase
@@ -29,7 +30,8 @@ class TransactionCancellationFlowTest extends TestCase
         Currency::firstOrCreate(['code' => 'MYR'], ['name' => 'Malaysian Ringgit', 'symbol' => 'RM', 'decimal_places' => 2, 'is_active' => true]);
     }
 
-    public function test_cancelled_completed_transactions_have_cancel_option(): void
+    #[Test]
+    public function cancelled_completed_transactions_have_cancel_option(): void
     {
         $manager = User::factory()->create(['role' => UserRole::Manager]);
         $teller = User::factory()->create(['role' => UserRole::Teller]);
@@ -56,7 +58,8 @@ class TransactionCancellationFlowTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_old_transactions_cannot_be_cancelled(): void
+    #[Test]
+    public function old_transactions_cannot_be_cancelled(): void
     {
         $manager = User::factory()->create(['role' => UserRole::Manager]);
         $teller = User::factory()->create(['role' => UserRole::Teller]);
@@ -87,7 +90,8 @@ class TransactionCancellationFlowTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_only_completed_transactions_can_be_cancelled(): void
+    #[Test]
+    public function only_completed_transactions_can_be_cancelled(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
@@ -124,7 +128,8 @@ class TransactionCancellationFlowTest extends TestCase
         ]);
     }
 
-    public function test_guest_users_cannot_access_cancellation(): void
+    #[Test]
+    public function guest_users_cannot_access_cancellation(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $customer = $this->createTestCustomer();
@@ -152,7 +157,8 @@ class TransactionCancellationFlowTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_cancellation_reason_is_required_and_min_length(): void
+    #[Test]
+    public function cancellation_reason_is_required_and_min_length(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
@@ -198,7 +204,8 @@ class TransactionCancellationFlowTest extends TestCase
         $response->assertSessionHasErrors('cancellation_reason');
     }
 
-    public function test_confirmation_checkbox_is_required(): void
+    #[Test]
+    public function confirmation_checkbox_is_required(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
@@ -236,7 +243,8 @@ class TransactionCancellationFlowTest extends TestCase
         $response->assertSessionHasErrors('confirm_understanding');
     }
 
-    public function test_cancelled_transactions_cannot_be_cancelled_again(): void
+    #[Test]
+    public function cancelled_transactions_cannot_be_cancelled_again(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
@@ -280,7 +288,8 @@ class TransactionCancellationFlowTest extends TestCase
         $response->assertRedirect();
     }
 
-    public function test_teller_transaction_can_be_cancelled_by_manager(): void
+    #[Test]
+    public function teller_transaction_can_be_cancelled_by_manager(): void
     {
         // This test verifies that managers CAN cancel transactions created by tellers
         $manager = User::factory()->create(['role' => UserRole::Manager]);
@@ -316,7 +325,8 @@ class TransactionCancellationFlowTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_manager_can_cancel_transaction(): void
+    #[Test]
+    public function manager_can_cancel_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
@@ -351,7 +361,8 @@ class TransactionCancellationFlowTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_teller_cannot_cancel_other_teller_transaction(): void
+    #[Test]
+    public function teller_cannot_cancel_other_teller_transaction(): void
     {
         $teller1 = User::factory()->create(['role' => UserRole::Teller]);
         $teller2 = User::factory()->create(['role' => UserRole::Teller]);

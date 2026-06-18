@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Views;
 
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SharedComponentFormsTest extends TestCase
@@ -11,7 +12,8 @@ class SharedComponentFormsTest extends TestCase
         return resource_path('views/'.str_replace('.', '/', $view).'.blade.php');
     }
 
-    public function test_customer_create_form_uses_textarea_component(): void
+    #[Test]
+    public function customer_create_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('customers.create');
         $content = file_get_contents($path);
@@ -20,7 +22,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_customer_edit_form_uses_textarea_component(): void
+    #[Test]
+    public function customer_edit_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('customers.edit');
         $content = file_get_contents($path);
@@ -29,7 +32,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_customer_show_form_uses_textarea_component(): void
+    #[Test]
+    public function customer_show_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('customers.show');
         $content = file_get_contents($path);
@@ -38,7 +42,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_sanctions_entry_create_form_uses_textarea_component(): void
+    #[Test]
+    public function sanctions_entry_create_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('compliance.sanctions.entries.create');
         $content = file_get_contents($path);
@@ -47,7 +52,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_sanctions_entry_edit_form_uses_textarea_component(): void
+    #[Test]
+    public function sanctions_entry_edit_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('compliance.sanctions.entries.edit');
         $content = file_get_contents($path);
@@ -56,7 +62,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_transaction_cancel_form_uses_textarea_component(): void
+    #[Test]
+    public function transaction_cancel_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('transactions.cancel');
         $content = file_get_contents($path);
@@ -65,7 +72,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_transaction_approve_cancellation_form_uses_textarea_component(): void
+    #[Test]
+    public function transaction_approve_cancellation_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('transactions.approve-cancellation');
         $content = file_get_contents($path);
@@ -74,7 +82,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_transaction_reject_cancellation_form_uses_textarea_component(): void
+    #[Test]
+    public function transaction_reject_cancellation_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('transactions.reject-cancellation');
         $content = file_get_contents($path);
@@ -83,7 +92,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_counter_handover_form_uses_textarea_component(): void
+    #[Test]
+    public function counter_handover_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('counters.handover');
         $content = file_get_contents($path);
@@ -92,7 +102,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_counter_close_form_uses_textarea_component(): void
+    #[Test]
+    public function counter_close_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('counters.close');
         $content = file_get_contents($path);
@@ -101,7 +112,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_counter_emergency_closure_form_uses_textarea_component(): void
+    #[Test]
+    public function counter_emergency_closure_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('counters.emergency-closure');
         $content = file_get_contents($path);
@@ -110,7 +122,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_counter_emergency_form_uses_textarea_component(): void
+    #[Test]
+    public function counter_emergency_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('counters.emergency');
         $content = file_get_contents($path);
@@ -119,7 +132,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_rates_index_form_uses_textarea_component(): void
+    #[Test]
+    public function rates_index_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('rates.index');
         $content = file_get_contents($path);
@@ -128,7 +142,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_stock_transfer_create_form_uses_textarea_component(): void
+    #[Test]
+    public function stock_transfer_create_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('stock-transfers.create');
         $content = file_get_contents($path);
@@ -137,7 +152,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('<x-textarea', $content);
     }
 
-    public function test_customer_create_uses_radio_group(): void
+    #[Test]
+    public function customer_create_uses_radio_group(): void
     {
         $path = $this->getViewPath('customers.create');
         $content = file_get_contents($path);
@@ -150,7 +166,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('name="risk_level"', $content);
     }
 
-    public function test_user_create_uses_checkbox_components(): void
+    #[Test]
+    public function user_create_uses_checkbox_components(): void
     {
         $path = $this->getViewPath('users.create');
         $content = file_get_contents($path);
@@ -166,7 +183,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('label="Enable MFA (Required for all roles)"', $content);
     }
 
-    public function test_user_edit_uses_checkbox_component(): void
+    #[Test]
+    public function user_edit_uses_checkbox_component(): void
     {
         $path = $this->getViewPath('users.edit');
         $content = file_get_contents($path);
@@ -180,7 +198,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('label="Active"', $content);
     }
 
-    public function test_setup_index_uses_checkbox_components(): void
+    #[Test]
+    public function setup_index_uses_checkbox_components(): void
     {
         $path = $this->getViewPath('setup.index');
         $content = file_get_contents($path);
@@ -194,7 +213,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('name="use_default_rates"', $content);
     }
 
-    public function test_setup_index_uses_textarea_component(): void
+    #[Test]
+    public function setup_index_uses_textarea_component(): void
     {
         $path = $this->getViewPath('setup.index');
         $content = file_get_contents($path);
@@ -204,7 +224,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringContainsString('name="business_address"', $content);
     }
 
-    public function test_setup_index_uses_on_primary_foreground(): void
+    #[Test]
+    public function setup_index_uses_on_primary_foreground(): void
     {
         $path = $this->getViewPath('setup.index');
         $content = file_get_contents($path);
@@ -213,7 +234,8 @@ class SharedComponentFormsTest extends TestCase
         $this->assertStringNotContainsString('bg-primary text-white', $content);
     }
 
-    public function test_bank_reconciliation_uses_checkbox_components(): void
+    #[Test]
+    public function bank_reconciliation_uses_checkbox_components(): void
     {
         $path = $this->getViewPath('accounting.reconciliation');
         $content = file_get_contents($path);

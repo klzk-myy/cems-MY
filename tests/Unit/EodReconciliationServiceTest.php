@@ -16,6 +16,7 @@ use App\Services\ThresholdService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class EodReconciliationServiceTest extends TestCase
@@ -49,7 +50,8 @@ class EodReconciliationServiceTest extends TestCase
         Currency::firstOrCreate(['code' => 'MYR'], ['name' => 'Malaysian Ringgit', 'symbol' => 'RM', 'decimal_places' => 2, 'is_active' => true]);
     }
 
-    public function test_variance_returns_expected_for_unclosed_sessions(): void
+    #[Test]
+    public function variance_returns_expected_for_unclosed_sessions(): void
     {
         $date = Carbon::today();
 
@@ -100,7 +102,8 @@ class EodReconciliationServiceTest extends TestCase
         $this->assertEquals('15000.0000', $variance);
     }
 
-    public function test_variance_returns_calculated_difference_when_session_closed(): void
+    #[Test]
+    public function variance_returns_calculated_difference_when_session_closed(): void
     {
         $date = Carbon::today();
 
@@ -155,7 +158,8 @@ class EodReconciliationServiceTest extends TestCase
         $this->assertEquals('-200.0000', $variance);
     }
 
-    public function test_variance_returns_expected_closing_for_unclosed_session_with_no_transactions(): void
+    #[Test]
+    public function variance_returns_expected_closing_for_unclosed_session_with_no_transactions(): void
     {
         $date = Carbon::today();
 
@@ -188,7 +192,8 @@ class EodReconciliationServiceTest extends TestCase
         $this->assertEquals('10000.0000', $variance);
     }
 
-    public function test_pending_transactions_excluded_from_eod_variance(): void
+    #[Test]
+    public function pending_transactions_excluded_from_eod_variance(): void
     {
         $date = Carbon::today();
 

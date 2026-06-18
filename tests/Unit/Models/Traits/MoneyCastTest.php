@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MoneyCastTest extends TestCase
@@ -36,14 +37,16 @@ class MoneyCastTest extends TestCase
         };
     }
 
-    public function test_get_returns_scaled_string(): void
+    #[Test]
+    public function get_returns_scaled_string(): void
     {
         $m = $this->model();
         $m->amount = '123.45678';
         $this->assertSame('123.4568', $m->amount);
     }
 
-    public function test_set_accepts_numeric_strings_and_numbers(): void
+    #[Test]
+    public function set_accepts_numeric_strings_and_numbers(): void
     {
         $m = $this->model();
         $m->amount = '99.999';
@@ -53,14 +56,16 @@ class MoneyCastTest extends TestCase
         $this->assertSame('42.5000', $m->amount);
     }
 
-    public function test_null_is_preserved(): void
+    #[Test]
+    public function null_is_preserved(): void
     {
         $m = $this->model();
         $m->amount = null;
         $this->assertNull($m->amount);
     }
 
-    public function test_non_numeric_throws(): void
+    #[Test]
+    public function non_numeric_throws(): void
     {
         $m = $this->model();
         $this->expectException(\InvalidArgumentException::class);

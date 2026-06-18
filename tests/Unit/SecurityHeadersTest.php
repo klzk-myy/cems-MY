@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SecurityHeadersTest extends TestCase
@@ -13,7 +14,8 @@ class SecurityHeadersTest extends TestCase
      * Test that in non-production environments, the CSP Report-Only header
      * does NOT include the invalid 'upgrade-insecure-requests' directive.
      */
-    public function test_csp_report_only_excludes_upgrade_insecure_requests(): void
+    #[Test]
+    public function csp_report_only_excludes_upgrade_insecure_requests(): void
     {
         // Test directly with local environment mock
         $middleware = new SecurityHeaders;
@@ -37,7 +39,8 @@ class SecurityHeadersTest extends TestCase
      * Test that in production, the strict CSP header includes
      * 'upgrade-insecure-requests' (valid in enforcement mode).
      */
-    public function test_csp_enforcement_includes_upgrade_insecure_requests(): void
+    #[Test]
+    public function csp_enforcement_includes_upgrade_insecure_requests(): void
     {
         $middleware = new SecurityHeaders;
         $request = Request::create('/test', 'GET');
@@ -56,7 +59,8 @@ class SecurityHeadersTest extends TestCase
     /**
      * Test the full middleware behavior with environment detection.
      */
-    public function test_middleware_applies_csp_headers(): void
+    #[Test]
+    public function middleware_applies_csp_headers(): void
     {
         $middleware = new SecurityHeaders;
         $request = Request::create('/test', 'GET');

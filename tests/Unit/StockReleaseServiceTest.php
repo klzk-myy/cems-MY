@@ -7,6 +7,7 @@ use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Services\StockReleaseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class StockReleaseServiceTest extends TestCase
@@ -22,7 +23,8 @@ class StockReleaseServiceTest extends TestCase
         $this->service = app(StockReleaseService::class);
     }
 
-    public function test_release_reservation_releases_pending_stock(): void
+    #[Test]
+    public function release_reservation_releases_pending_stock(): void
     {
         $transaction = Transaction::factory()->create();
 
@@ -37,7 +39,8 @@ class StockReleaseServiceTest extends TestCase
         $this->assertEquals(StockReservationStatus::Released, $reservation->status);
     }
 
-    public function test_release_reservation_does_nothing_when_no_reservation(): void
+    #[Test]
+    public function release_reservation_does_nothing_when_no_reservation(): void
     {
         $transaction = Transaction::factory()->create();
 

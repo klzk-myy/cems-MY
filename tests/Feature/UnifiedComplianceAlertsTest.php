@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class UnifiedComplianceAlertsTest extends TestCase
@@ -21,13 +22,15 @@ class UnifiedComplianceAlertsTest extends TestCase
         Http::preventStrayRequests();
     }
 
-    public function test_unauthorized_access_redirects_to_login(): void
+    #[Test]
+    public function unauthorized_access_redirects_to_login(): void
     {
         $response = $this->get('/compliance/unified');
         $response->assertRedirect('/login');
     }
 
-    public function test_teller_cannot_access_unified_alerts(): void
+    #[Test]
+    public function teller_cannot_access_unified_alerts(): void
     {
         $user = User::factory()->create(['role' => UserRole::Teller]);
         $this->actingAs($user);
@@ -36,7 +39,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_manager_cannot_access_unified_alerts(): void
+    #[Test]
+    public function manager_cannot_access_unified_alerts(): void
     {
         $user = User::factory()->create(['role' => UserRole::Manager]);
         $this->actingAs($user);
@@ -45,7 +49,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_compliance_officer_can_access_unified_alerts(): void
+    #[Test]
+    public function compliance_officer_can_access_unified_alerts(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -58,7 +63,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_admin_can_access_unified_alerts(): void
+    #[Test]
+    public function admin_can_access_unified_alerts(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -71,7 +77,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_page_loads_successfully(): void
+    #[Test]
+    public function page_loads_successfully(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -85,7 +92,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertViewIs('compliance.unified.index');
     }
 
-    public function test_stats_bar_is_displayed(): void
+    #[Test]
+    public function stats_bar_is_displayed(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -103,7 +111,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('Resolved Today', false);
     }
 
-    public function test_filter_form_is_present(): void
+    #[Test]
+    public function filter_form_is_present(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -125,7 +134,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('Apply Filters', false);
     }
 
-    public function test_clear_filters_link_is_present(): void
+    #[Test]
+    public function clear_filters_link_is_present(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -140,7 +150,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('Clear', false);
     }
 
-    public function test_source_filter_shows_alerts_only(): void
+    #[Test]
+    public function source_filter_shows_alerts_only(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -155,7 +166,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('selected', false);
     }
 
-    public function test_source_filter_shows_findings_only(): void
+    #[Test]
+    public function source_filter_shows_findings_only(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -168,7 +180,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_priority_filter(): void
+    #[Test]
+    public function priority_filter(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -181,7 +194,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_status_filter(): void
+    #[Test]
+    public function status_filter(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -194,7 +208,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_type_filter(): void
+    #[Test]
+    public function type_filter(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -207,7 +222,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_customer_search_filter(): void
+    #[Test]
+    public function customer_search_filter(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -220,7 +236,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_date_range_filter(): void
+    #[Test]
+    public function date_range_filter(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -233,7 +250,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_unified_table_is_present(): void
+    #[Test]
+    public function unified_table_is_present(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -255,7 +273,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('Actions', false);
     }
 
-    public function test_source_badges_are_displayed(): void
+    #[Test]
+    public function source_badges_are_displayed(): void
     {
         $customer = Customer::factory()->create();
         Alert::factory()->create(['customer_id' => $customer->id]);
@@ -273,7 +292,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('Alert', false);
     }
 
-    public function test_stats_display_with_zero_values(): void
+    #[Test]
+    public function stats_display_with_zero_values(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -288,7 +308,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('0', false);
     }
 
-    public function test_stats_display_with_alerts_data(): void
+    #[Test]
+    public function stats_display_with_alerts_data(): void
     {
         $customer = Customer::factory()->create();
         Alert::factory()->create(['customer_id' => $customer->id]);
@@ -307,7 +328,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('2', false);
     }
 
-    public function test_empty_state_shown_when_no_data(): void
+    #[Test]
+    public function empty_state_shown_when_no_data(): void
     {
         Http::fake([
             config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
@@ -322,7 +344,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('No items found', false);
     }
 
-    public function test_findings_are_fetched_when_source_is_finding(): void
+    #[Test]
+    public function findings_are_fetched_when_source_is_finding(): void
     {
         $customer = Customer::factory()->create();
         $finding = ComplianceFinding::factory()->create([
@@ -342,7 +365,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('Finding', false);
     }
 
-    public function test_alerts_and_findings_are_merged_in_unified_view(): void
+    #[Test]
+    public function alerts_and_findings_are_merged_in_unified_view(): void
     {
         $customer = Customer::factory()->create();
         Alert::factory()->create(['customer_id' => $customer->id]);
@@ -365,7 +389,8 @@ class UnifiedComplianceAlertsTest extends TestCase
         $response->assertSee('Finding', false);
     }
 
-    public function test_findings_are_sorted_by_date(): void
+    #[Test]
+    public function findings_are_sorted_by_date(): void
     {
         $customer = Customer::factory()->create();
         ComplianceFinding::factory()->create([

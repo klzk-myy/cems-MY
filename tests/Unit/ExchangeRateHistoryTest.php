@@ -5,13 +5,15 @@ namespace Tests\Unit;
 use App\Models\ExchangeRateHistory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ExchangeRateHistoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_can_create_exchange_rate_history(): void
+    #[Test]
+    public function can_create_exchange_rate_history(): void
     {
         $history = ExchangeRateHistory::create([
             'currency_code' => 'USD',
@@ -26,7 +28,8 @@ class ExchangeRateHistoryTest extends TestCase
         $this->assertEquals('USD', $history->currency_code);
     }
 
-    public function test_belongs_to_currency_relationship(): void
+    #[Test]
+    public function belongs_to_currency_relationship(): void
     {
         $history = ExchangeRateHistory::create([
             'currency_code' => 'EUR',
@@ -38,7 +41,8 @@ class ExchangeRateHistoryTest extends TestCase
         $this->assertEquals('EUR', $history->currency->code);
     }
 
-    public function test_belongs_to_creator_relationship(): void
+    #[Test]
+    public function belongs_to_creator_relationship(): void
     {
         $user = User::factory()->create();
 
@@ -53,7 +57,8 @@ class ExchangeRateHistoryTest extends TestCase
         $this->assertEquals($user->id, $history->creator->id);
     }
 
-    public function test_scope_for_currency(): void
+    #[Test]
+    public function scope_for_currency(): void
     {
         ExchangeRateHistory::create([
             'currency_code' => 'USD',
@@ -74,7 +79,8 @@ class ExchangeRateHistoryTest extends TestCase
         $this->assertEquals('USD', $usdHistory->first()->currency_code);
     }
 
-    public function test_scope_for_date_range(): void
+    #[Test]
+    public function scope_for_date_range(): void
     {
         ExchangeRateHistory::create([
             'currency_code' => 'USD',
@@ -100,7 +106,8 @@ class ExchangeRateHistoryTest extends TestCase
         $this->assertCount(1, $logs);
     }
 
-    public function test_get_latest_rate_returns_most_recent(): void
+    #[Test]
+    public function get_latest_rate_returns_most_recent(): void
     {
         ExchangeRateHistory::create([
             'currency_code' => 'USD',
@@ -122,7 +129,8 @@ class ExchangeRateHistoryTest extends TestCase
         $this->assertEquals('4.550000', $latest->rate);
     }
 
-    public function test_get_latest_rate_returns_null_when_no_history(): void
+    #[Test]
+    public function get_latest_rate_returns_null_when_no_history(): void
     {
         $latest = ExchangeRateHistory::where('currency_code', 'INVALID')
             ->orderBy('effective_date', 'desc')
@@ -131,7 +139,8 @@ class ExchangeRateHistoryTest extends TestCase
         $this->assertNull($latest);
     }
 
-    public function test_rate_precision_is_maintained(): void
+    #[Test]
+    public function rate_precision_is_maintained(): void
     {
         $history = ExchangeRateHistory::create([
             'currency_code' => 'USD',

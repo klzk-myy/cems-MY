@@ -8,13 +8,15 @@ use App\Models\Compliance\ComplianceCase;
 use App\Models\FiscalYear;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class DummyDataReplacementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_cases_index_does_not_show_hardcoded_assignee(): void
+    #[Test]
+    public function cases_index_does_not_show_hardcoded_assignee(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         ComplianceCase::factory()->create();
@@ -25,7 +27,8 @@ class DummyDataReplacementTest extends TestCase
         $response->assertDontSee('Jane Doe', false);
     }
 
-    public function test_case_show_does_not_show_hardcoded_timeline_entry(): void
+    #[Test]
+    public function case_show_does_not_show_hardcoded_timeline_entry(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $case = ComplianceCase::factory()->create();
@@ -36,7 +39,8 @@ class DummyDataReplacementTest extends TestCase
         $response->assertDontSee('2024-01-15 10:00:00 by Jane Doe', false);
     }
 
-    public function test_fiscal_years_does_not_show_hardcoded_dates(): void
+    #[Test]
+    public function fiscal_years_does_not_show_hardcoded_dates(): void
     {
         $user = User::factory()->create(['role' => UserRole::Manager]);
         FiscalYear::factory()->forYear(2025)->create();
@@ -48,7 +52,8 @@ class DummyDataReplacementTest extends TestCase
         $response->assertSee('FY 2025', false);
     }
 
-    public function test_cases_index_renders_real_model_data(): void
+    #[Test]
+    public function cases_index_renders_real_model_data(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         ComplianceCase::factory()->create([
@@ -61,7 +66,8 @@ class DummyDataReplacementTest extends TestCase
         $response->assertSee('Investigation', false);
     }
 
-    public function test_fiscal_years_renders_real_model_data(): void
+    #[Test]
+    public function fiscal_years_renders_real_model_data(): void
     {
         $user = User::factory()->create(['role' => UserRole::Manager]);
         $fiscalYear = FiscalYear::factory()->create([

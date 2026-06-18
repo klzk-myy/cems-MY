@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\CurrencyPositionService;
 use App\Services\TransactionCancellationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionCancellationServiceTest extends TestCase
@@ -29,7 +30,8 @@ class TransactionCancellationServiceTest extends TestCase
         $this->cancellationService = app(TransactionCancellationService::class);
     }
 
-    public function test_concurrent_reversals_produce_correct_balance(): void
+    #[Test]
+    public function concurrent_reversals_produce_correct_balance(): void
     {
         $currencyCode = 'USD';
         $tillId = 'TEST-TILL-'.uniqid();
@@ -81,7 +83,8 @@ class TransactionCancellationServiceTest extends TestCase
         $this->assertEquals('3000.0000', $position->balance);
     }
 
-    public function test_reverse_positions_acquires_row_lock(): void
+    #[Test]
+    public function reverse_positions_acquires_row_lock(): void
     {
         $currencyCode = 'USD';
         $tillId = 'TEST-TILL-'.uniqid();
@@ -118,7 +121,8 @@ class TransactionCancellationServiceTest extends TestCase
         $this->assertEquals('2500.0000', $position->balance);
     }
 
-    public function test_reverse_positions_handles_nonexistent_position(): void
+    #[Test]
+    public function reverse_positions_handles_nonexistent_position(): void
     {
         $transaction = Transaction::factory()->make([
             'id' => 99904,
@@ -141,7 +145,8 @@ class TransactionCancellationServiceTest extends TestCase
         $this->assertNull($position);
     }
 
-    public function test_cancel_transaction_throws_exception_direct_cancel_not_allowed(): void
+    #[Test]
+    public function cancel_transaction_throws_exception_direct_cancel_not_allowed(): void
     {
         $transaction = Transaction::factory()->make([
             'id' => 99905,
@@ -159,7 +164,8 @@ class TransactionCancellationServiceTest extends TestCase
         $this->cancellationService->cancelTransaction($transaction, 1, 'Test reason');
     }
 
-    public function test_refund_requires_different_approver_than_requester(): void
+    #[Test]
+    public function refund_requires_different_approver_than_requester(): void
     {
         // Create a teller who will request the reversal
         $teller = User::factory()->create(['role' => UserRole::Teller]);
@@ -191,7 +197,8 @@ class TransactionCancellationServiceTest extends TestCase
         $this->cancellationService->requestReversal($transaction, $teller, 'Test reversal reason');
     }
 
-    public function test_manager_can_reverse_other_user_transaction(): void
+    #[Test]
+    public function manager_can_reverse_other_user_transaction(): void
     {
         // Create a teller who created the transaction
         $teller = User::factory()->create(['role' => UserRole::Teller]);
@@ -226,7 +233,8 @@ class TransactionCancellationServiceTest extends TestCase
         $this->assertEquals(TransactionStatus::Reversed, $transaction->status);
     }
 
-    public function test_cancellation_rejection_restores_previous_status(): void
+    #[Test]
+    public function cancellation_rejection_restores_previous_status(): void
     {
         // Create a manager who will request cancellation
         $manager = User::factory()->create(['role' => UserRole::Manager]);

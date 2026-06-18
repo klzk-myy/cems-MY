@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BelongsToUserTest extends TestCase
@@ -26,7 +27,8 @@ class BelongsToUserTest extends TestCase
         });
     }
 
-    public function test_it_adds_user_id_to_fillable(): void
+    #[Test]
+    public function it_adds_user_id_to_fillable(): void
     {
         $model = new class extends BaseModel
         {
@@ -38,7 +40,8 @@ class BelongsToUserTest extends TestCase
         $this->assertContains('user_id', $model->getFillable());
     }
 
-    public function test_it_defines_user_relationship(): void
+    #[Test]
+    public function it_defines_user_relationship(): void
     {
         $user = User::factory()->create();
 
@@ -54,7 +57,8 @@ class BelongsToUserTest extends TestCase
         $this->assertTrue($model->user()->is($user));
     }
 
-    public function test_scope_for_user_filters_by_user(): void
+    #[Test]
+    public function scope_for_user_filters_by_user(): void
     {
         $userA = User::factory()->create();
         $userB = User::factory()->create();

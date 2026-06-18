@@ -7,13 +7,15 @@ use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ThresholdAccessCentralizedTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_cdd_level_uses_centralized_threshold_access(): void
+    #[Test]
+    public function cdd_level_uses_centralized_threshold_access(): void
     {
         // Verify CddLevel::determine uses centralized thresholds
         $standard = CddLevel::determine('10000');
@@ -30,7 +32,8 @@ class ThresholdAccessCentralizedTest extends TestCase
         $this->assertStringContainsString('10000', CddLevel::Standard->thresholdAmount());
     }
 
-    public function test_cdd_level_enhanced_bypasses_amount_check(): void
+    #[Test]
+    public function cdd_level_enhanced_bypasses_amount_check(): void
     {
         // Enhanced is triggered by risk, not amount
         $enhanced = CddLevel::determine('100', isPep: true);
@@ -40,7 +43,8 @@ class ThresholdAccessCentralizedTest extends TestCase
         $this->assertEquals(CddLevel::Enhanced, $enhancedByRisk);
     }
 
-    public function test_compliance_flag_type_uses_centralized_threshold_access(): void
+    #[Test]
+    public function compliance_flag_type_uses_centralized_threshold_access(): void
     {
         // Verify ComplianceFlagType::thresholdAmount() uses centralized thresholds
         $largeAmount = ComplianceFlagType::LargeAmount->thresholdAmount();
@@ -57,7 +61,8 @@ class ThresholdAccessCentralizedTest extends TestCase
         $this->assertNull(ComplianceFlagType::ManualReview->thresholdAmount());
     }
 
-    public function test_aml_rule_type_uses_centralized_threshold_access(): void
+    #[Test]
+    public function aml_rule_type_uses_centralized_threshold_access(): void
     {
         // Verify AmlRuleType::defaultConditions() uses centralized thresholds
         $structuringConditions = AmlRuleType::Structuring->defaultConditions();
@@ -67,7 +72,8 @@ class ThresholdAccessCentralizedTest extends TestCase
         $this->assertEquals('50000', $amountThresholdConditions['min_amount']);
     }
 
-    public function test_all_enum_threshold_access_routes_through_threshold_service(): void
+    #[Test]
+    public function all_enum_threshold_access_routes_through_threshold_service(): void
     {
         // This test verifies that enum threshold access is routed through ThresholdService
         // by checking that the values match what ThresholdService provides
@@ -99,7 +105,8 @@ class ThresholdAccessCentralizedTest extends TestCase
         );
     }
 
-    public function test_threshold_service_provides_aml_thresholds(): void
+    #[Test]
+    public function threshold_service_provides_aml_thresholds(): void
     {
         $thresholdService = new ThresholdService;
 
@@ -107,7 +114,8 @@ class ThresholdAccessCentralizedTest extends TestCase
         $this->assertEquals('50000', $thresholdService->getAmlAmountThreshold());
     }
 
-    public function test_enum_thresholds_match_threshold_service_constants(): void
+    #[Test]
+    public function enum_thresholds_match_threshold_service_constants(): void
     {
         // Verify the fallback constants exist and match
         $thresholdService = new ThresholdService;

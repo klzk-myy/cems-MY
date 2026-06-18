@@ -5,12 +5,14 @@ namespace Tests\Feature\Views;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ThemeTokenUsageTest extends TestCase
 {
     #[DataProvider('themedComponentProvider')]
-    public function test_component_uses_theme_tokens(string $component, array $data, array $expectedTokens): void
+    #[Test]
+    public function component_uses_theme_tokens(string $component, array $data, array $expectedTokens): void
     {
         $html = view($component, $data)->render();
 
@@ -133,13 +135,15 @@ class ThemeTokenUsageTest extends TestCase
         ];
     }
 
-    public function test_button_primary_uses_on_primary_foreground(): void
+    #[Test]
+    public function button_primary_uses_on_primary_foreground(): void
     {
         $html = view('components.button', ['variant' => 'primary', 'slot' => 'Click'])->render();
         $this->assertStringContainsString('text-on-primary', $html);
     }
 
-    public function test_stat_card_uses_semantic_color_tokens(): void
+    #[Test]
+    public function stat_card_uses_semantic_color_tokens(): void
     {
         $html = view('components.stat-card', [
             'label' => 'Revenue',
@@ -152,7 +156,8 @@ class ThemeTokenUsageTest extends TestCase
     }
 
     #[DataProvider('themedComponentProvider')]
-    public function test_component_avoids_hardcoded_colors(string $component, array $data): void
+    #[Test]
+    public function component_avoids_hardcoded_colors(string $component, array $data): void
     {
         $html = view($component, $data)->render();
 
@@ -162,7 +167,8 @@ class ThemeTokenUsageTest extends TestCase
         $this->assertStringNotContainsString('text-gray-500', $html, "Component {$component} uses text-gray-500.");
     }
 
-    public function test_badge_purple_does_not_use_raw_tailwind_colors(): void
+    #[Test]
+    public function badge_purple_does_not_use_raw_tailwind_colors(): void
     {
         $html = view('components.badge', ['variant' => 'purple', 'slot' => 'VIP'])->render();
         $this->assertStringContainsString('bg-accent/10', $html, 'Badge purple variant should use bg-accent/10 token.');
@@ -171,7 +177,8 @@ class ThemeTokenUsageTest extends TestCase
         $this->assertStringNotContainsString('bg-purple-100', $html, 'Badge purple variant should not use raw bg-purple-100.');
     }
 
-    public function test_progress_bar_uses_semantic_color_tokens(): void
+    #[Test]
+    public function progress_bar_uses_semantic_color_tokens(): void
     {
         // Success case (value < 80)
         $html = view('components.progress-bar', ['value' => 50])->render();

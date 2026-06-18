@@ -34,7 +34,7 @@ class MathServiceTest extends TestCase
     }
 
     #[Test]
-    public function test_math_service_scale_matches_database_precision(): void
+    public function math_service_scale_matches_database_precision(): void
     {
         // MathService default scale=4 matches DB decimal(18,4) for monetary amounts
         $mathService = new MathService;

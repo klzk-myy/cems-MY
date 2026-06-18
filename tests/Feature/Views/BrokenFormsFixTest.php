@@ -6,13 +6,15 @@ use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BrokenFormsFixTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_customer_note_form_has_action_and_method(): void
+    #[Test]
+    public function customer_note_form_has_action_and_method(): void
     {
         $user = User::factory()->create();
         $customer = Customer::factory()->create();
@@ -24,7 +26,8 @@ class BrokenFormsFixTest extends TestCase
         $response->assertSee('method="POST"', false);
     }
 
-    public function test_customer_note_can_be_stored(): void
+    #[Test]
+    public function customer_note_can_be_stored(): void
     {
         $user = User::factory()->create();
         $customer = Customer::factory()->create();
@@ -41,7 +44,8 @@ class BrokenFormsFixTest extends TestCase
         ]);
     }
 
-    public function test_rate_override_form_has_action_and_method(): void
+    #[Test]
+    public function rate_override_form_has_action_and_method(): void
     {
         $user = User::factory()->create(['role' => 'manager']);
 
@@ -53,7 +57,8 @@ class BrokenFormsFixTest extends TestCase
         $response->assertSee('method="POST"', false);
     }
 
-    public function test_rate_override_can_be_stored(): void
+    #[Test]
+    public function rate_override_can_be_stored(): void
     {
         $user = User::factory()->create(['role' => 'manager']);
         ExchangeRate::factory()->create([
@@ -77,7 +82,8 @@ class BrokenFormsFixTest extends TestCase
         ]);
     }
 
-    public function test_customer_note_is_displayed_after_creation(): void
+    #[Test]
+    public function customer_note_is_displayed_after_creation(): void
     {
         $user = User::factory()->create();
         $customer = Customer::factory()->create();

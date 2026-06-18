@@ -240,7 +240,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
     }
 
     #[Test]
-    public function test_handover_acknowledge_requires_manager_role(): void
+    public function handover_acknowledge_requires_manager_role(): void
     {
         $result = $this->createPendingHandover();
         $handover = $result['handover'];
@@ -271,7 +271,7 @@ class CounterHandoverAcknowledgeTest extends TestCase
     }
 
     #[Test]
-    public function test_yellow_variance_requires_acknowledgment(): void
+    public function yellow_variance_requires_acknowledgment(): void
     {
         // Create a handover with yellow_variance flag set to true
         $session = CounterSession::factory()->create([

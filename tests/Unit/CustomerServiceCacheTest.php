@@ -8,13 +8,15 @@ use App\Services\CustomerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerServiceCacheTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_get_customer_uses_cache()
+    #[Test]
+    public function get_customer_uses_cache()
     {
         $customer = Customer::factory()->create([
             'full_name' => 'Test Customer',
@@ -41,7 +43,8 @@ class CustomerServiceCacheTest extends TestCase
         $this->assertEquals($customer->id, $result->id);
     }
 
-    public function test_update_customer_invalidates_cache()
+    #[Test]
+    public function update_customer_invalidates_cache()
     {
         $customer = Customer::factory()->create([
             'full_name' => 'Test Customer',

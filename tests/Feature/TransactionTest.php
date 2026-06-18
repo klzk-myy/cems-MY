@@ -11,6 +11,7 @@ use App\Models\CurrencyPosition;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionTest extends TestCase
@@ -29,7 +30,8 @@ class TransactionTest extends TestCase
         Currency::firstOrCreate(['code' => 'MYR'], ['name' => 'Malaysian Ringgit', 'symbol' => 'RM', 'decimal_places' => 2, 'is_active' => true]);
     }
 
-    public function test_teller_can_access_transaction_create(): void
+    #[Test]
+    public function teller_can_access_transaction_create(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
 
@@ -38,7 +40,8 @@ class TransactionTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_can_view_transaction_list(): void
+    #[Test]
+    public function can_view_transaction_list(): void
     {
         $user = User::factory()->create();
         $customer = $this->createTestCustomer();
@@ -51,7 +54,8 @@ class TransactionTest extends TestCase
     /**
      * Test teller can create buy transaction
      */
-    public function test_teller_can_create_buy_transaction(): void
+    #[Test]
+    public function teller_can_create_buy_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $customer = $this->createTestCustomer();
@@ -83,7 +87,8 @@ class TransactionTest extends TestCase
         ]);
     }
 
-    public function test_sell_updates_currency_position(): void
+    #[Test]
+    public function sell_updates_currency_position(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $customer = $this->createTestCustomer();
@@ -123,7 +128,8 @@ class TransactionTest extends TestCase
         ]);
     }
 
-    public function test_buy_updates_currency_position(): void
+    #[Test]
+    public function buy_updates_currency_position(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $customer = $this->createTestCustomer();
@@ -163,7 +169,8 @@ class TransactionTest extends TestCase
         ]);
     }
 
-    public function test_sell_fails_with_insufficient_stock(): void
+    #[Test]
+    public function sell_fails_with_insufficient_stock(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $customer = $this->createTestCustomer();
@@ -200,7 +207,8 @@ class TransactionTest extends TestCase
         ]);
     }
 
-    public function test_transaction_requires_positive_amount(): void
+    #[Test]
+    public function transaction_requires_positive_amount(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $customer = $this->createTestCustomer();
@@ -224,7 +232,8 @@ class TransactionTest extends TestCase
         $response->assertSessionHasErrors('amount_foreign');
     }
 
-    public function test_transaction_requires_valid_currency(): void
+    #[Test]
+    public function transaction_requires_valid_currency(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $customer = $this->createTestCustomer();
@@ -248,7 +257,8 @@ class TransactionTest extends TestCase
         $response->assertSessionHasErrors('currency_code');
     }
 
-    public function test_large_transaction_requires_approval(): void
+    #[Test]
+    public function large_transaction_requires_approval(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $customer = $this->createTestCustomer();
@@ -280,7 +290,8 @@ class TransactionTest extends TestCase
         ]);
     }
 
-    public function test_teller_cannot_approve_transaction(): void
+    #[Test]
+    public function teller_cannot_approve_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $transaction = Transaction::factory()->create([
@@ -292,7 +303,8 @@ class TransactionTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_manager_can_approve_transaction(): void
+    #[Test]
+    public function manager_can_approve_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
@@ -351,7 +363,8 @@ class TransactionTest extends TestCase
         ]);
     }
 
-    public function test_manager_can_reject_transaction(): void
+    #[Test]
+    public function manager_can_reject_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
@@ -393,7 +406,8 @@ class TransactionTest extends TestCase
         ]);
     }
 
-    public function test_teller_cannot_reject_transaction(): void
+    #[Test]
+    public function teller_cannot_reject_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $transaction = Transaction::factory()->create([

@@ -6,13 +6,15 @@ use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class RiskPortfolioApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_portfolio_returns_distribution_with_integer_counts(): void
+    #[Test]
+    public function portfolio_returns_distribution_with_integer_counts(): void
     {
         $customerOne = Customer::factory()->create();
         $customerTwo = Customer::factory()->create();
@@ -40,7 +42,8 @@ class RiskPortfolioApiTest extends TestCase
         $this->assertIsInt($payload['data']['by_tier']['Low']);
     }
 
-    public function test_portfolio_returns_empty_distribution_when_no_profiles_exist(): void
+    #[Test]
+    public function portfolio_returns_empty_distribution_when_no_profiles_exist(): void
     {
         $response = $this->actingAs(User::factory()->create(['role' => 'compliance_officer']))
             ->getJson('/api/v1/risk/portfolio');

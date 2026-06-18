@@ -24,6 +24,7 @@ use App\Services\CurrencyPositionService;
 use App\Services\MathService;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionServiceTest extends TestCase
@@ -152,7 +153,8 @@ class TransactionServiceTest extends TestCase
         ]);
     }
 
-    public function test_can_create_buy_transaction(): void
+    #[Test]
+    public function can_create_buy_transaction(): void
     {
         $data = [
             'customer_id' => $this->customer->id,
@@ -177,7 +179,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals(CddLevel::Simplified, $transaction->cdd_level);
     }
 
-    public function test_buy_transaction_with_insufficient_stock_position_is_created(): void
+    #[Test]
+    public function buy_transaction_with_insufficient_stock_position_is_created(): void
     {
         // For buy transactions, position doesn't need to exist beforehand
         $data = [
@@ -199,7 +202,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals(TransactionStatus::Completed, $transaction->status);
     }
 
-    public function test_large_transaction_requires_hold(): void
+    #[Test]
+    public function large_transaction_requires_hold(): void
     {
         $data = [
             'customer_id' => $this->customer->id,
@@ -224,7 +228,8 @@ class TransactionServiceTest extends TestCase
         $this->assertNotNull($transaction->hold_reason);
     }
 
-    public function test_transaction_without_till_balance_throws_exception(): void
+    #[Test]
+    public function transaction_without_till_balance_throws_exception(): void
     {
         // Close the till
         $this->tillBalance->update(['closed_at' => now()]);
@@ -246,7 +251,8 @@ class TransactionServiceTest extends TestCase
         $this->transactionService->createTransaction($data, $this->teller->id);
     }
 
-    public function test_transaction_with_invalid_ip_throws_exception(): void
+    #[Test]
+    public function transaction_with_invalid_ip_throws_exception(): void
     {
         $data = [
             'customer_id' => $this->customer->id,
@@ -265,7 +271,8 @@ class TransactionServiceTest extends TestCase
         $this->transactionService->createTransaction($data, $this->teller->id, 'invalid-ip');
     }
 
-    public function test_transaction_amount_precision(): void
+    #[Test]
+    public function transaction_amount_precision(): void
     {
         $data = [
             'customer_id' => $this->customer->id,
@@ -286,7 +293,8 @@ class TransactionServiceTest extends TestCase
         $this->assertGreaterThan(0, strlen(explode('.', $transaction->amount_local)[1] ?? ''));
     }
 
-    public function test_transaction_creates_audit_log(): void
+    #[Test]
+    public function transaction_creates_audit_log(): void
     {
         $data = [
             'customer_id' => $this->customer->id,
@@ -311,7 +319,8 @@ class TransactionServiceTest extends TestCase
         ]);
     }
 
-    public function test_idempotency_key_prevents_duplicate(): void
+    #[Test]
+    public function idempotency_key_prevents_duplicate(): void
     {
         $idempotencyKey = uniqid('test_', true);
 
@@ -337,7 +346,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals($transaction1->id, $transaction2->id);
     }
 
-    public function test_transaction_updates_till_balance(): void
+    #[Test]
+    public function transaction_updates_till_balance(): void
     {
         $initialForeignTotal = $this->tillBalance->foreign_total;
 
@@ -372,7 +382,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals('450.0000', $myrBalance->transaction_total);
     }
 
-    public function test_foreign_currency_position_tracked_separately_for_buy_and_sell(): void
+    #[Test]
+    public function foreign_currency_position_tracked_separately_for_buy_and_sell(): void
     {
         // Reset till balance to zero for clean test
         $this->tillBalance->update([
@@ -428,7 +439,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals($expectedBalance, $this->tillBalance->getExpectedBalance());
     }
 
-    public function test_transaction_assigns_correct_cdd_level(): void
+    #[Test]
+    public function transaction_assigns_correct_cdd_level(): void
     {
         // Test Simplified CDD (< RM 3,000)
         $data = [
@@ -461,7 +473,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals(CddLevel::Standard, $transaction3->cdd_level);
     }
 
-    public function test_transaction_with_pep_customer_gets_enhanced_cdd(): void
+    #[Test]
+    public function transaction_with_pep_customer_gets_enhanced_cdd(): void
     {
         // Mark customer as PEP
         $this->customer->update(['pep_status' => true]);
@@ -485,7 +498,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
     }
 
-    public function test_get_available_balance_excludes_pending_reservations(): void
+    #[Test]
+    public function get_available_balance_excludes_pending_reservations(): void
     {
         // Create a position with 1000 USD
         CurrencyPosition::factory()->create([
@@ -512,7 +526,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals('700.000000', $available);
     }
 
-    public function test_reservation_consumed_on_transaction_approval(): void
+    #[Test]
+    public function reservation_consumed_on_transaction_approval(): void
     {
         $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
         $counter = Counter::factory()->create();
@@ -577,7 +592,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals(StockReservationStatus::Consumed, $reservation->status);
     }
 
-    public function test_approval_fails_if_stock_no_longer_available(): void
+    #[Test]
+    public function approval_fails_if_stock_no_longer_available(): void
     {
         $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
 
@@ -633,7 +649,8 @@ class TransactionServiceTest extends TestCase
         $this->assertStringContainsString('Insufficient stock', $result['message']);
     }
 
-    public function test_myr_till_balance_updated_on_buy_transaction(): void
+    #[Test]
+    public function myr_till_balance_updated_on_buy_transaction(): void
     {
         $customer = Customer::factory()->create([
             'risk_rating' => 'Low',
@@ -692,7 +709,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals('450.0000', $myrBalance->transaction_total);
     }
 
-    public function test_myr_till_balance_updated_on_sell_transaction(): void
+    #[Test]
+    public function myr_till_balance_updated_on_sell_transaction(): void
     {
         $customer = Customer::factory()->create([
             'risk_rating' => 'Low',
@@ -748,7 +766,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals('450.0000', $myrBalance->transaction_total);
     }
 
-    public function test_pep_transaction_requires_both_source_of_funds_and_source_of_wealth(): void
+    #[Test]
+    public function pep_transaction_requires_both_source_of_funds_and_source_of_wealth(): void
     {
         // Mark customer as PEP
         $this->customer->update(['pep_status' => true]);
@@ -773,7 +792,8 @@ class TransactionServiceTest extends TestCase
         $this->transactionService->createTransaction($dataWithoutWealth, $this->teller->id);
     }
 
-    public function test_pep_transaction_succeeds_with_both_source_of_funds_and_source_of_wealth(): void
+    #[Test]
+    public function pep_transaction_succeeds_with_both_source_of_funds_and_source_of_wealth(): void
     {
         // Mark customer as PEP
         $this->customer->update(['pep_status' => true]);
@@ -798,7 +818,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals('Salary', $transaction->source_of_funds);
     }
 
-    public function test_non_pep_transaction_requires_only_source_of_funds(): void
+    #[Test]
+    public function non_pep_transaction_requires_only_source_of_funds(): void
     {
         // Ensure customer is NOT a PEP
         $this->customer->update(['pep_status' => false, 'risk_rating' => 'Low']);

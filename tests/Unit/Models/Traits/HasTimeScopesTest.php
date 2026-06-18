@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HasTimeScopesTest extends TestCase
@@ -24,7 +25,8 @@ class HasTimeScopesTest extends TestCase
         });
     }
 
-    public function test_scope_latest_orders_by_created_at_desc(): void
+    #[Test]
+    public function scope_latest_orders_by_created_at_desc(): void
     {
         $older = new class extends BaseModel
         {
@@ -53,7 +55,8 @@ class HasTimeScopesTest extends TestCase
         $this->assertEquals([$newer->id, $older->id], $result);
     }
 
-    public function test_scope_today_filters_today_records(): void
+    #[Test]
+    public function scope_today_filters_today_records(): void
     {
         $today = new class extends BaseModel
         {
@@ -82,7 +85,8 @@ class HasTimeScopesTest extends TestCase
         $this->assertEquals([$today->id], $result);
     }
 
-    public function test_scope_between_dates_filters_correctly(): void
+    #[Test]
+    public function scope_between_dates_filters_correctly(): void
     {
         $from = Carbon::now()->subDays(3)->startOfDay();
         $to = Carbon::now()->subDays(1)->endOfDay();

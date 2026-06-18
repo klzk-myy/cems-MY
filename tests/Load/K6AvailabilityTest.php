@@ -2,11 +2,13 @@
 
 namespace Tests\Load;
 
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class K6AvailabilityTest extends TestCase
 {
-    public function test_k6_is_available(): void
+    #[Test]
+    public function k6_is_available(): void
     {
         $result = shell_exec('which k6 2>/dev/null');
 

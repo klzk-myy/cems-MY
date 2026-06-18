@@ -6,6 +6,7 @@ use App\Services\PerformanceBaselineService;
 use App\Services\ThresholdService;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class PerformanceBaselineServiceTest extends TestCase
@@ -16,7 +17,8 @@ class PerformanceBaselineServiceTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_get_baseline_returns_default_values()
+    #[Test]
+    public function get_baseline_returns_default_values()
     {
         Cache::shouldReceive('get')
             ->with('performance_baseline', Mockery::any())
@@ -36,7 +38,8 @@ class PerformanceBaselineServiceTest extends TestCase
         $this->assertEquals(80.0, $baseline['cache_hit_rate']);
     }
 
-    public function test_set_baseline_stores_values_in_cache()
+    #[Test]
+    public function set_baseline_stores_values_in_cache()
     {
         Cache::shouldReceive('forever')
             ->with('performance_baseline', Mockery::any())
@@ -50,7 +53,8 @@ class PerformanceBaselineServiceTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
-    public function test_compare_response_time_calculates_variance()
+    #[Test]
+    public function compare_response_time_calculates_variance()
     {
         Cache::shouldReceive('get')
             ->with('performance_baseline', Mockery::any())
@@ -69,7 +73,8 @@ class PerformanceBaselineServiceTest extends TestCase
         $this->assertEquals('warning', $result['status']);
     }
 
-    public function test_compare_response_time_detects_degradation()
+    #[Test]
+    public function compare_response_time_detects_degradation()
     {
         Cache::shouldReceive('get')
             ->with('performance_baseline', Mockery::any())
@@ -86,7 +91,8 @@ class PerformanceBaselineServiceTest extends TestCase
         $this->assertEquals('degraded', $result['status']);
     }
 
-    public function test_compare_cache_hit_rate_calculates_variance()
+    #[Test]
+    public function compare_cache_hit_rate_calculates_variance()
     {
         Cache::shouldReceive('get')
             ->with('performance_baseline', Mockery::any())
@@ -105,7 +111,8 @@ class PerformanceBaselineServiceTest extends TestCase
         $this->assertEquals('warning', $result['status']);
     }
 
-    public function test_compare_queries_per_request()
+    #[Test]
+    public function compare_queries_per_request()
     {
         Cache::shouldReceive('get')
             ->with('performance_baseline', Mockery::any())

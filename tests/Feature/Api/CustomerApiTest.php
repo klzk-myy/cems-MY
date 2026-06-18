@@ -7,13 +7,15 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\CustomerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_store_delegates_to_customer_service()
+    #[Test]
+    public function store_delegates_to_customer_service()
     {
         $customerService = $this->mock(CustomerService::class);
         $customerService->shouldReceive('createCustomer')
@@ -46,7 +48,8 @@ class CustomerApiTest extends TestCase
             ->assertJsonPath('data.full_name', 'John Doe');
     }
 
-    public function test_update_delegates_to_customer_service()
+    #[Test]
+    public function update_delegates_to_customer_service()
     {
         $customer = Customer::factory()->create();
         $customerService = $this->mock(CustomerService::class);
@@ -79,7 +82,8 @@ class CustomerApiTest extends TestCase
             ->assertJsonPath('data.id', $customer->id);
     }
 
-    public function test_show_returns_customer_with_transaction_stats_and_loaded_relations()
+    #[Test]
+    public function show_returns_customer_with_transaction_stats_and_loaded_relations()
     {
         $customer = Customer::factory()->create();
         Transaction::factory()->count(2)->create([
@@ -100,7 +104,8 @@ class CustomerApiTest extends TestCase
             ->assertJsonCount(2, 'data.transactions');
     }
 
-    public function test_show_returns_404_for_missing_customer()
+    #[Test]
+    public function show_returns_404_for_missing_customer()
     {
         $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
             ->getJson('/api/v1/customers/999999');
@@ -110,7 +115,8 @@ class CustomerApiTest extends TestCase
             ->assertJsonPath('message', 'Customer not found.');
     }
 
-    public function test_customer_history_returns_transaction_collection()
+    #[Test]
+    public function customer_history_returns_transaction_collection()
     {
         $customer = Customer::factory()->create();
         $olderTransaction = Transaction::factory()->create([

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AuditServiceTest extends TestCase
@@ -22,7 +23,8 @@ class AuditServiceTest extends TestCase
         $this->auditService = new AuditService;
     }
 
-    public function test_system_log_can_be_created(): void
+    #[Test]
+    public function system_log_can_be_created(): void
     {
         $user = User::factory()->create();
 
@@ -39,7 +41,8 @@ class AuditServiceTest extends TestCase
         $this->assertEquals('test_action', $log->action);
     }
 
-    public function test_system_log_chain_integrity(): void
+    #[Test]
+    public function system_log_chain_integrity(): void
     {
         $user = User::factory()->create();
 
@@ -60,7 +63,8 @@ class AuditServiceTest extends TestCase
         $this->assertEquals($log1->hash, $log2->previous_hash);
     }
 
-    public function test_verify_chain_integrity_returns_valid_when_intact(): void
+    #[Test]
+    public function verify_chain_integrity_returns_valid_when_intact(): void
     {
         $user = User::factory()->create();
 
@@ -81,7 +85,8 @@ class AuditServiceTest extends TestCase
         $this->assertNull($result['broken_at']);
     }
 
-    public function test_verify_chain_integrity_detects_tampering(): void
+    #[Test]
+    public function verify_chain_integrity_detects_tampering(): void
     {
         $user = User::factory()->create();
 
@@ -111,7 +116,8 @@ class AuditServiceTest extends TestCase
         $this->assertNotNull($result['broken_at']);
     }
 
-    public function test_log_with_severity_creates_entry(): void
+    #[Test]
+    public function log_with_severity_creates_entry(): void
     {
         $user = User::factory()->create();
 
@@ -124,7 +130,8 @@ class AuditServiceTest extends TestCase
         $this->assertNotNull($result);
     }
 
-    public function test_session_id_is_recorded(): void
+    #[Test]
+    public function session_id_is_recorded(): void
     {
         $user = User::factory()->create();
         $sessionId = session()->getId();
@@ -142,7 +149,8 @@ class AuditServiceTest extends TestCase
         $this->assertNotNull($log);
     }
 
-    public function test_log_contains_ip_address(): void
+    #[Test]
+    public function log_contains_ip_address(): void
     {
         $user = User::factory()->create();
 
@@ -158,7 +166,8 @@ class AuditServiceTest extends TestCase
         $this->assertNotNull($log);
     }
 
-    public function test_system_log_belongs_to_user(): void
+    #[Test]
+    public function system_log_belongs_to_user(): void
     {
         $user = User::factory()->create();
 
@@ -171,7 +180,8 @@ class AuditServiceTest extends TestCase
         $this->assertEquals($user->id, $log->user->id);
     }
 
-    public function test_audit_hash_sealed_async_by_job(): void
+    #[Test]
+    public function audit_hash_sealed_async_by_job(): void
     {
         // Create a first log entry to establish the chain
         $log1 = $this->auditService->logWithSeverity('test_action_first', ['entity_type' => 'Test'], 'INFO');
@@ -191,7 +201,8 @@ class AuditServiceTest extends TestCase
         $this->assertNotNull($log2->previous_hash);
     }
 
-    public function test_verify_chain_integrity_skips_unsealed_entries(): void
+    #[Test]
+    public function verify_chain_integrity_skips_unsealed_entries(): void
     {
         // Create unsealed log
         $log = $this->auditService->logWithSeverity('test_action', [], 'INFO');

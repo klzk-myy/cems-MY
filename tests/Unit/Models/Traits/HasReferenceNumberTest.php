@@ -7,6 +7,7 @@ use App\Models\Traits\HasReferenceNumber;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HasReferenceNumberTest extends TestCase
@@ -24,7 +25,8 @@ class HasReferenceNumberTest extends TestCase
         });
     }
 
-    public function test_it_generates_sequential_reference_numbers(): void
+    #[Test]
+    public function it_generates_sequential_reference_numbers(): void
     {
         $model1 = new class extends BaseModel
         {
@@ -46,7 +48,8 @@ class HasReferenceNumberTest extends TestCase
         $this->assertEquals('REF00000002', $model2->refresh()->reference_number);
     }
 
-    public function test_it_uses_custom_prefix_and_length(): void
+    #[Test]
+    public function it_uses_custom_prefix_and_length(): void
     {
         $model = new class extends BaseModel
         {
@@ -81,7 +84,8 @@ class HasReferenceNumberTest extends TestCase
         $this->assertEquals('INV000003', $ref);
     }
 
-    public function test_existing_reference_number_is_preserved(): void
+    #[Test]
+    public function existing_reference_number_is_preserved(): void
     {
         $model = new class extends BaseModel
         {

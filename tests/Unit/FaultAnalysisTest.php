@@ -18,6 +18,7 @@ use App\Services\EncryptionService;
 use App\Services\MathService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -44,7 +45,8 @@ class FaultAnalysisTest extends TestCase
      * The isRecordComplete() method only checks for null, not empty string.
      * An EDD record with empty string for purpose_of_transaction passes validation.
      */
-    public function test_edd_record_with_empty_purpose_of_transaction_is_not_complete(): void
+    #[Test]
+    public function edd_record_with_empty_purpose_of_transaction_is_not_complete(): void
     {
         $user = User::factory()->create();
         $customer = Customer::factory()->create();
@@ -65,7 +67,8 @@ class FaultAnalysisTest extends TestCase
     /**
      * FAULT #1 FIX: isRecordComplete() should reject empty purpose_of_transaction
      */
-    public function test_edd_record_requires_both_source_of_funds_and_purpose(): void
+    #[Test]
+    public function edd_record_requires_both_source_of_funds_and_purpose(): void
     {
         $user = User::factory()->create();
         $customer = Customer::factory()->create();
@@ -97,7 +100,8 @@ class FaultAnalysisTest extends TestCase
     /**
      * FAULT #1: Complete record should pass validation
      */
-    public function test_complete_edd_record_passes_validation(): void
+    #[Test]
+    public function complete_edd_record_passes_validation(): void
     {
         $customer = Customer::factory()->create();
 
@@ -119,7 +123,8 @@ class FaultAnalysisTest extends TestCase
      * If customer name contains % or _, they act as wildcards in SQL LIKE,
      * causing false matches in sanctions screening.
      */
-    public function test_sanctions_query_escapes_wildcard_characters(): void
+    #[Test]
+    public function sanctions_query_escapes_wildcard_characters(): void
     {
         $customer = Customer::factory()->create(['full_name' => 'John 100% Senior']);
         $list = SanctionList::factory()->create();
@@ -151,7 +156,8 @@ class FaultAnalysisTest extends TestCase
      * The while ($current->lt($to)) means exclusive of end date.
      * Monday to Tuesday = only Monday counted (should be 2 days).
      */
-    public function test_working_days_calculation_inclusive_range(): void
+    #[Test]
+    public function working_days_calculation_inclusive_range(): void
     {
         $service = new ComplianceService(new EncryptionService, new MathService);
 
@@ -172,7 +178,8 @@ class FaultAnalysisTest extends TestCase
      * With float math: 0.1 + 0.2001 can become 0.300099999..., which (at scale 4)
      * compares as 0.3000 and fails a 0.3001 threshold check.
      */
-    public function test_aml_structuring_uses_precise_decimal_math(): void
+    #[Test]
+    public function aml_structuring_uses_precise_decimal_math(): void
     {
         $customer = Customer::factory()->create();
 
@@ -211,7 +218,8 @@ class FaultAnalysisTest extends TestCase
     /**
      * MathService::compare must correctly handle string amounts near thresholds.
      */
-    public function test_math_service_comparison_precision(): void
+    #[Test]
+    public function math_service_comparison_precision(): void
     {
         $math = new MathService;
 

@@ -7,13 +7,15 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SanctionsEntriesViewTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_create_form_renders_with_csrf_and_named_action(): void
+    #[Test]
+    public function create_form_renders_with_csrf_and_named_action(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
@@ -25,7 +27,8 @@ class SanctionsEntriesViewTest extends TestCase
         $response->assertSee('action="'.e(route('compliance.sanctions.entries.store')).'"', false);
     }
 
-    public function test_store_creates_sanction_entry(): void
+    #[Test]
+    public function store_creates_sanction_entry(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $list = SanctionList::factory()->create();
@@ -40,7 +43,8 @@ class SanctionsEntriesViewTest extends TestCase
         $this->assertDatabaseHas('sanction_entries', ['entity_name' => 'ACME Corp']);
     }
 
-    public function test_store_accepts_details_and_aliases_as_strings(): void
+    #[Test]
+    public function store_accepts_details_and_aliases_as_strings(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $list = SanctionList::factory()->create();
@@ -65,7 +69,8 @@ class SanctionsEntriesViewTest extends TestCase
         $this->assertContains('Alias Two', $entry->aliases);
     }
 
-    public function test_store_rejects_details_as_array(): void
+    #[Test]
+    public function store_rejects_details_as_array(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $list = SanctionList::factory()->create();
@@ -80,7 +85,8 @@ class SanctionsEntriesViewTest extends TestCase
         $response->assertSessionHasErrors('details');
     }
 
-    public function test_store_rejects_invalid_entity_type(): void
+    #[Test]
+    public function store_rejects_invalid_entity_type(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $list = SanctionList::factory()->create();
@@ -94,7 +100,8 @@ class SanctionsEntriesViewTest extends TestCase
         $response->assertSessionHasErrors('entity_type');
     }
 
-    public function test_edit_form_binds_model_data(): void
+    #[Test]
+    public function edit_form_binds_model_data(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
@@ -111,7 +118,8 @@ class SanctionsEntriesViewTest extends TestCase
         $response->assertSee('name="_method" value="PUT"', false);
     }
 
-    public function test_update_modifies_sanction_entry(): void
+    #[Test]
+    public function update_modifies_sanction_entry(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
@@ -132,7 +140,8 @@ class SanctionsEntriesViewTest extends TestCase
         $this->assertEquals('un', $entry->list_source);
     }
 
-    public function test_update_succeeds_without_list_source(): void
+    #[Test]
+    public function update_succeeds_without_list_source(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
@@ -151,7 +160,8 @@ class SanctionsEntriesViewTest extends TestCase
         $this->assertEquals('Updated Name', $entry->entity_name);
     }
 
-    public function test_update_rejects_invalid_entity_type(): void
+    #[Test]
+    public function update_rejects_invalid_entity_type(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
@@ -169,7 +179,8 @@ class SanctionsEntriesViewTest extends TestCase
         $response->assertSessionHasErrors('entity_type');
     }
 
-    public function test_update_persists_address_fields(): void
+    #[Test]
+    public function update_persists_address_fields(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $entry = SanctionEntry::factory()->create([
@@ -194,7 +205,8 @@ class SanctionsEntriesViewTest extends TestCase
         $this->assertEquals('New York', $entry->city);
     }
 
-    public function test_entries_index_does_not_show_hardcoded_dummy_data(): void
+    #[Test]
+    public function entries_index_does_not_show_hardcoded_dummy_data(): void
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         SanctionEntry::factory()->count(3)->create();

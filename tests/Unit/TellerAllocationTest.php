@@ -9,13 +9,15 @@ use App\Models\Currency;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TellerAllocationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_can_create_teller_allocation(): void
+    #[Test]
+    public function can_create_teller_allocation(): void
     {
         $currency = Currency::factory()->create();
         $branch = Branch::factory()->create();
@@ -37,7 +39,8 @@ class TellerAllocationTest extends TestCase
         ]);
     }
 
-    public function test_has_pending_status_check(): void
+    #[Test]
+    public function has_pending_status_check(): void
     {
         $allocation = TellerAllocation::factory()->pending()->create();
 
@@ -47,7 +50,8 @@ class TellerAllocationTest extends TestCase
         $this->assertFalse($allocation->isReturned());
     }
 
-    public function test_has_available_uses_bccomp(): void
+    #[Test]
+    public function has_available_uses_bccomp(): void
     {
         $allocation = TellerAllocation::factory()->create([
             'current_balance' => '5000.0000',
@@ -58,7 +62,8 @@ class TellerAllocationTest extends TestCase
         $this->assertFalse($allocation->hasAvailable('5000.0001'));
     }
 
-    public function test_deduct_reduces_balance(): void
+    #[Test]
+    public function deduct_reduces_balance(): void
     {
         $allocation = TellerAllocation::factory()->create([
             'current_balance' => '10000.0000',
@@ -69,7 +74,8 @@ class TellerAllocationTest extends TestCase
         $this->assertEquals('7500.0000', $allocation->current_balance);
     }
 
-    public function test_add_increases_balance(): void
+    #[Test]
+    public function add_increases_balance(): void
     {
         $allocation = TellerAllocation::factory()->create([
             'current_balance' => '10000.0000',
@@ -80,7 +86,8 @@ class TellerAllocationTest extends TestCase
         $this->assertEquals('11500.0000', $allocation->current_balance);
     }
 
-    public function test_add_daily_used(): void
+    #[Test]
+    public function add_daily_used(): void
     {
         $allocation = TellerAllocation::factory()->create([
             'daily_used_myr' => '0.0000',
@@ -91,7 +98,8 @@ class TellerAllocationTest extends TestCase
         $this->assertEquals('5000.0000', $allocation->daily_used_myr);
     }
 
-    public function test_has_daily_limit_remaining(): void
+    #[Test]
+    public function has_daily_limit_remaining(): void
     {
         $allocation = TellerAllocation::factory()->create([
             'daily_limit_myr' => '50000.0000',
@@ -103,7 +111,8 @@ class TellerAllocationTest extends TestCase
         $this->assertFalse($allocation->hasDailyLimitRemaining('30000.0001'));
     }
 
-    public function test_has_daily_limit_remaining_returns_true_when_no_limit(): void
+    #[Test]
+    public function has_daily_limit_remaining_returns_true_when_no_limit(): void
     {
         // daily_limit_myr is NOT NULL in the DB schema, so test the null-branch
         // via an unsaved model instance to avoid the constraint violation.
@@ -115,7 +124,8 @@ class TellerAllocationTest extends TestCase
         $this->assertTrue($allocation->hasDailyLimitRemaining('999999.0000'));
     }
 
-    public function test_approve_updates_status_and_amounts(): void
+    #[Test]
+    public function approve_updates_status_and_amounts(): void
     {
         $approver = User::factory()->create();
         $allocation = TellerAllocation::factory()->pending()->create([
@@ -133,7 +143,8 @@ class TellerAllocationTest extends TestCase
         $this->assertNotNull($allocation->approved_at);
     }
 
-    public function test_activate_updates_status_and_timestamp(): void
+    #[Test]
+    public function activate_updates_status_and_timestamp(): void
     {
         $allocation = TellerAllocation::factory()->approved()->create();
 
@@ -143,7 +154,8 @@ class TellerAllocationTest extends TestCase
         $this->assertNotNull($allocation->opened_at);
     }
 
-    public function test_return_to_pool(): void
+    #[Test]
+    public function return_to_pool(): void
     {
         $allocation = TellerAllocation::factory()->active()->create();
 
@@ -153,7 +165,8 @@ class TellerAllocationTest extends TestCase
         $this->assertNotNull($allocation->closed_at);
     }
 
-    public function test_force_return(): void
+    #[Test]
+    public function force_return(): void
     {
         $allocation = TellerAllocation::factory()->active()->create();
 
@@ -163,21 +176,24 @@ class TellerAllocationTest extends TestCase
         $this->assertNotNull($allocation->closed_at);
     }
 
-    public function test_belongs_to_user(): void
+    #[Test]
+    public function belongs_to_user(): void
     {
         $allocation = TellerAllocation::factory()->create();
 
         $this->assertInstanceOf(User::class, $allocation->user);
     }
 
-    public function test_belongs_to_branch(): void
+    #[Test]
+    public function belongs_to_branch(): void
     {
         $allocation = TellerAllocation::factory()->create();
 
         $this->assertInstanceOf(Branch::class, $allocation->branch);
     }
 
-    public function test_belongs_to_counter(): void
+    #[Test]
+    public function belongs_to_counter(): void
     {
         // Factory defaults counter_id to a new Counter; explicitly null it out.
         $allocation = TellerAllocation::factory()->create(['counter_id' => null]);
@@ -190,7 +206,8 @@ class TellerAllocationTest extends TestCase
         $this->assertInstanceOf(Counter::class, $allocationWithCounter->counter);
     }
 
-    public function test_belongs_to_approver(): void
+    #[Test]
+    public function belongs_to_approver(): void
     {
         $allocation = TellerAllocation::factory()->create(['approved_by' => null]);
 
@@ -202,7 +219,8 @@ class TellerAllocationTest extends TestCase
         $this->assertInstanceOf(User::class, $allocationWithApprover->approver);
     }
 
-    public function test_pending_state(): void
+    #[Test]
+    public function pending_state(): void
     {
         $allocation = TellerAllocation::factory()->pending()->create();
 
@@ -212,7 +230,8 @@ class TellerAllocationTest extends TestCase
         $this->assertNull($allocation->closed_at);
     }
 
-    public function test_active_state(): void
+    #[Test]
+    public function active_state(): void
     {
         $allocation = TellerAllocation::factory()->active()->create();
 
@@ -223,7 +242,8 @@ class TellerAllocationTest extends TestCase
         $this->assertNull($allocation->closed_at);
     }
 
-    public function test_returned_state(): void
+    #[Test]
+    public function returned_state(): void
     {
         $allocation = TellerAllocation::factory()->returned()->create();
 

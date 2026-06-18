@@ -7,13 +7,15 @@ use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CustomerDocumentUploadTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_upload_document_actually_stores_file(): void
+    #[Test]
+    public function upload_document_actually_stores_file(): void
     {
         $user = User::factory()->create(['role' => UserRole::Teller]);
         $customer = Customer::factory()->create();

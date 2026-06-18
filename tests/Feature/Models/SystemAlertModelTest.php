@@ -6,13 +6,15 @@ use App\Enums\SystemAlertLevel;
 use App\Models\SystemAlert;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SystemAlertModelTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_retrieves_info_alerts_via_scope(): void
+    #[Test]
+    public function it_retrieves_info_alerts_via_scope(): void
     {
         $alert = SystemAlert::create([
             'level' => SystemAlertLevel::Info,
@@ -23,7 +25,8 @@ class SystemAlertModelTest extends TestCase
         $this->assertTrue(SystemAlert::info()->where('id', $alert->id)->exists());
     }
 
-    public function test_acknowledge_sets_user_and_timestamp(): void
+    #[Test]
+    public function acknowledge_sets_user_and_timestamp(): void
     {
         $user = User::factory()->create();
         $alert = SystemAlert::create([
@@ -41,7 +44,8 @@ class SystemAlertModelTest extends TestCase
         $this->assertTrue($alert->fresh()->isAcknowledged());
     }
 
-    public function test_status_accessors_work(): void
+    #[Test]
+    public function status_accessors_work(): void
     {
         $alert = new SystemAlert([
             'level' => SystemAlertLevel::Critical,
@@ -50,7 +54,8 @@ class SystemAlertModelTest extends TestCase
         $this->assertEquals('Critical', $alert->statusLabel);
     }
 
-    public function test_today_scope_filters_today_alerts(): void
+    #[Test]
+    public function today_scope_filters_today_alerts(): void
     {
         $alert = SystemAlert::create([
             'level' => SystemAlertLevel::Info,
@@ -61,7 +66,8 @@ class SystemAlertModelTest extends TestCase
         $this->assertTrue(SystemAlert::today()->where('id', $alert->id)->exists());
     }
 
-    public function test_latest_scope_orders_by_created_at_desc(): void
+    #[Test]
+    public function latest_scope_orders_by_created_at_desc(): void
     {
         $older = SystemAlert::create([
             'level' => SystemAlertLevel::Info,

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\CounterService;
 use App\Services\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CounterServiceTest extends TestCase
@@ -22,7 +23,8 @@ class CounterServiceTest extends TestCase
         $this->mathService = new MathService;
     }
 
-    public function test_can_open_counter_session(): void
+    #[Test]
+    public function can_open_counter_session(): void
     {
         $user = User::factory()->create(['role' => UserRole::Teller]);
 
@@ -37,7 +39,8 @@ class CounterServiceTest extends TestCase
         $this->assertEquals($user->id, $sessionData['user_id']);
     }
 
-    public function test_cannot_open_if_already_open(): void
+    #[Test]
+    public function cannot_open_if_already_open(): void
     {
         $existingSession = true;
         $counterAlreadyOpen = true;
@@ -46,7 +49,8 @@ class CounterServiceTest extends TestCase
         $this->assertTrue($counterAlreadyOpen);
     }
 
-    public function test_cannot_open_if_user_at_another_counter(): void
+    #[Test]
+    public function cannot_open_if_user_at_another_counter(): void
     {
         $userAtAnotherCounter = true;
 
@@ -54,7 +58,8 @@ class CounterServiceTest extends TestCase
         $this->assertTrue($userAtAnotherCounter);
     }
 
-    public function test_close_session_updates_balance(): void
+    #[Test]
+    public function close_session_updates_balance(): void
     {
         $openingFloat = '10000.00';
         $closingFloat = '10500.00';
@@ -64,7 +69,8 @@ class CounterServiceTest extends TestCase
         $this->assertEquals('500.00', $variance);
     }
 
-    public function test_calculates_variance_correctly(): void
+    #[Test]
+    public function calculates_variance_correctly(): void
     {
         $openingFloat = '10000.00';
         $closingFloat = '9800.00';
@@ -74,7 +80,8 @@ class CounterServiceTest extends TestCase
         $this->assertEquals('-200.00', $variance);
     }
 
-    public function test_requires_supervisor_for_large_variance(): void
+    #[Test]
+    public function requires_supervisor_for_large_variance(): void
     {
         $variance = '600.00'; // Exceeds RM 500 threshold
         $varianceThreshold = '500.00';
@@ -86,7 +93,8 @@ class CounterServiceTest extends TestCase
         $this->assertTrue($requiresSupervisor);
     }
 
-    public function test_small_variance_no_supervisor_required(): void
+    #[Test]
+    public function small_variance_no_supervisor_required(): void
     {
         $variance = '200.00';
         $varianceThreshold = '500.00';
@@ -97,14 +105,16 @@ class CounterServiceTest extends TestCase
         $this->assertFalse($requiresSupervisor);
     }
 
-    public function test_zero_variance_handover(): void
+    #[Test]
+    public function zero_variance_handover(): void
     {
         $variance = '0.00';
 
         $this->assertEquals('0.00', $variance);
     }
 
-    public function test_initiate_handover_fails_when_from_user_not_session_user(): void
+    #[Test]
+    public function initiate_handover_fails_when_from_user_not_session_user(): void
     {
         $fromUserId = 1;
         $sessionUserId = 2;
@@ -114,28 +124,32 @@ class CounterServiceTest extends TestCase
         $this->assertTrue($userMismatch);
     }
 
-    public function test_initiate_handover_fails_when_to_user_at_another_counter(): void
+    #[Test]
+    public function initiate_handover_fails_when_to_user_at_another_counter(): void
     {
         $toUserAtAnotherCounter = true;
 
         $this->assertTrue($toUserAtAnotherCounter);
     }
 
-    public function test_initiate_handover_fails_when_session_not_open(): void
+    #[Test]
+    public function initiate_handover_fails_when_session_not_open(): void
     {
         $sessionStatus = CounterSessionStatus::Closed;
 
         $this->assertEquals(CounterSessionStatus::Closed, $sessionStatus);
     }
 
-    public function test_handover_preserves_audit_trail(): void
+    #[Test]
+    public function handover_preserves_audit_trail(): void
     {
         $tillBalanceTransferred = true;
 
         $this->assertTrue($tillBalanceTransferred);
     }
 
-    public function test_resolve_currencies_returns_string_keys_for_numeric_ids(): void
+    #[Test]
+    public function resolve_currencies_returns_string_keys_for_numeric_ids(): void
     {
         // Note: Currency model uses 'code' as primary key (non-incrementing string).
         // When currency_id is passed as numeric, it represents a database row ID
@@ -163,7 +177,8 @@ class CounterServiceTest extends TestCase
         $this->assertArrayNotHasKey('999', $result);
     }
 
-    public function test_resolve_currencies_returns_string_keys_for_string_codes(): void
+    #[Test]
+    public function resolve_currencies_returns_string_keys_for_string_codes(): void
     {
         $floats = [
             ['currency_id' => 'EUR', 'amount' => '1000.00'],
@@ -183,7 +198,8 @@ class CounterServiceTest extends TestCase
         $this->assertEquals('GBP', $result['GBP']);
     }
 
-    public function test_resolve_currencies_for_counts_returns_string_keys(): void
+    #[Test]
+    public function resolve_currencies_for_counts_returns_string_keys(): void
     {
         // Note: Currency model uses 'code' as primary key. Testing with string codes
         // which is the proper usage pattern for this codebase.
@@ -206,7 +222,8 @@ class CounterServiceTest extends TestCase
         $this->assertEquals('EUR', $result['EUR']);
     }
 
-    public function test_resolve_currencies_all_keys_are_strings(): void
+    #[Test]
+    public function resolve_currencies_all_keys_are_strings(): void
     {
         $floats = [
             ['currency_id' => 'USD', 'amount' => '1000.00'],

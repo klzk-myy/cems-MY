@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -40,17 +41,20 @@ class RouteVerificationTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_script_exists()
+    #[Test]
+    public function script_exists()
     {
         $this->assertFileExists($this->scriptPath);
     }
 
-    public function test_script_is_executable()
+    #[Test]
+    public function script_is_executable()
     {
         $this->assertIsReadable($this->scriptPath);
     }
 
-    public function test_script_detects_valid_routes()
+    #[Test]
+    public function script_detects_valid_routes()
     {
         // Create a test view with valid route references
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -65,7 +69,8 @@ class RouteVerificationTest extends TestCase
         $this->assertStringContainsString('Total route references in views: 3', $output);
     }
 
-    public function test_script_detects_missing_routes()
+    #[Test]
+    public function script_detects_missing_routes()
     {
         // Create a test view with invalid route references
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -78,7 +83,8 @@ class RouteVerificationTest extends TestCase
         $this->assertStringContainsString('nonexistent.route', $output);
     }
 
-    public function test_script_handles_double_quoted_routes()
+    #[Test]
+    public function script_handles_double_quoted_routes()
     {
         // Create a test view with double-quoted route references
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -91,7 +97,8 @@ class RouteVerificationTest extends TestCase
         $this->assertStringContainsString('Total route references in views: 2', $output);
     }
 
-    public function test_script_handles_routes_with_parameters()
+    #[Test]
+    public function script_handles_routes_with_parameters()
     {
         // Create a test view with route references that have parameters
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -104,7 +111,8 @@ class RouteVerificationTest extends TestCase
         $this->assertStringContainsString('Total route references in views: 2', $output);
     }
 
-    public function test_script_handles_mixed_quote_styles()
+    #[Test]
+    public function script_handles_mixed_quote_styles()
     {
         // Create a test view with mixed quote styles
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -118,7 +126,8 @@ class RouteVerificationTest extends TestCase
         $this->assertStringContainsString('Total route references in views: 3', $output);
     }
 
-    public function test_script_outputs_json_format()
+    #[Test]
+    public function script_outputs_json_format()
     {
         // Create a test view
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -137,7 +146,8 @@ class RouteVerificationTest extends TestCase
         $this->assertArrayHasKey('summary', $data);
     }
 
-    public function test_json_format_includes_all_data()
+    #[Test]
+    public function json_format_includes_all_data()
     {
         // Create a test view with both valid and invalid routes
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -159,7 +169,8 @@ class RouteVerificationTest extends TestCase
         $this->assertContains('nonexistent.route', $data['missing_routes']);
     }
 
-    public function test_script_handles_empty_views_directory()
+    #[Test]
+    public function script_handles_empty_views_directory()
     {
         // Create empty views directory
         if (! is_dir($this->tempViewsPath)) {
@@ -172,7 +183,8 @@ class RouteVerificationTest extends TestCase
         $this->assertStringContainsString('All route references in views are valid', $output);
     }
 
-    public function test_script_exits_with_zero_on_success()
+    #[Test]
+    public function script_exits_with_zero_on_success()
     {
         // Create a test view with valid routes
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -184,7 +196,8 @@ class RouteVerificationTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
-    public function test_script_exits_with_one_on_missing_routes()
+    #[Test]
+    public function script_exits_with_one_on_missing_routes()
     {
         // Create a test view with invalid routes
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -196,7 +209,8 @@ class RouteVerificationTest extends TestCase
         $this->assertEquals(1, $result);
     }
 
-    public function test_script_exits_with_two_on_error()
+    #[Test]
+    public function script_exits_with_two_on_error()
     {
         // Use a non-existent path
         $result = $this->runScriptWithExitCode(['--path=/nonexistent/path']);
@@ -204,7 +218,8 @@ class RouteVerificationTest extends TestCase
         $this->assertEquals(2, $result);
     }
 
-    public function test_script_ignores_non_php_files()
+    #[Test]
+    public function script_ignores_non_php_files()
     {
         // Create test files with different extensions
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'
@@ -218,7 +233,8 @@ class RouteVerificationTest extends TestCase
         $this->assertStringContainsString('Total route references in views: 1', $output);
     }
 
-    public function test_script_handles_multiple_files()
+    #[Test]
+    public function script_handles_multiple_files()
     {
         // Create multiple test files
         File::put($this->tempViewsPath.'/file1.blade.php', <<<'BLADE'
@@ -234,7 +250,8 @@ class RouteVerificationTest extends TestCase
         $this->assertStringContainsString('Total route references in views: 3', $output);
     }
 
-    public function test_script_deduplicates_route_references()
+    #[Test]
+    public function script_deduplicates_route_references()
     {
         // Create a test view with duplicate route references
         File::put($this->tempViewsPath.'/test.blade.php', <<<'BLADE'

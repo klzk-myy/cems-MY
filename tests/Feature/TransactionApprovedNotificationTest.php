@@ -8,13 +8,15 @@ use App\Models\User;
 use App\Notifications\TransactionApprovedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionApprovedNotificationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_transaction_approved_email_renders_correctly(): void
+    #[Test]
+    public function transaction_approved_email_renders_correctly(): void
     {
         $teller = User::factory()->create(['role' => 'teller']);
         $approver = User::factory()->create(['role' => 'manager']);
@@ -31,7 +33,8 @@ class TransactionApprovedNotificationTest extends TestCase
         $this->assertStringContainsString((string) $transaction->id, (string) $mail->render());
     }
 
-    public function test_notification_sent_to_teller_on_approval(): void
+    #[Test]
+    public function notification_sent_to_teller_on_approval(): void
     {
         Notification::fake();
 

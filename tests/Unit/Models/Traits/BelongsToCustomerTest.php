@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BelongsToCustomerTest extends TestCase
@@ -25,7 +26,8 @@ class BelongsToCustomerTest extends TestCase
         });
     }
 
-    public function test_it_adds_customer_id_to_fillable(): void
+    #[Test]
+    public function it_adds_customer_id_to_fillable(): void
     {
         $model = new class extends BaseModel
         {
@@ -37,7 +39,8 @@ class BelongsToCustomerTest extends TestCase
         $this->assertContains('customer_id', $model->getFillable());
     }
 
-    public function test_it_defines_customer_relationship(): void
+    #[Test]
+    public function it_defines_customer_relationship(): void
     {
         $customer = $this->createTestCustomer();
 
@@ -53,7 +56,8 @@ class BelongsToCustomerTest extends TestCase
         $this->assertTrue($model->customer()->is($customer));
     }
 
-    public function test_scope_for_customer_filters_by_customer(): void
+    #[Test]
+    public function scope_for_customer_filters_by_customer(): void
     {
         $customerA = $this->createTestCustomer();
         $customerB = $this->createTestCustomer();

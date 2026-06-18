@@ -26,7 +26,8 @@ class AccountingServiceTest extends TestCase
         $this->mathService = new MathService;
     }
 
-    public function test_journal_entry_must_be_balanced(): void
+    #[Test]
+    public function journal_entry_must_be_balanced(): void
     {
         $service = new AccountingService($this->mathService, new AuditService);
 
@@ -38,7 +39,8 @@ class AccountingServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    public function test_unbalanced_entry_rejected(): void
+    #[Test]
+    public function unbalanced_entry_rejected(): void
     {
         $service = new AccountingService($this->mathService, new AuditService);
 
@@ -50,7 +52,8 @@ class AccountingServiceTest extends TestCase
         $this->assertFalse($result);
     }
 
-    public function test_validate_balanced_returns_true_for_balanced_entry(): void
+    #[Test]
+    public function validate_balanced_returns_true_for_balanced_entry(): void
     {
         $service = new AccountingService($this->mathService, new AuditService);
 
@@ -63,7 +66,8 @@ class AccountingServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    public function test_validate_balanced_returns_false_for_unbalanced_entry(): void
+    #[Test]
+    public function validate_balanced_returns_false_for_unbalanced_entry(): void
     {
         $service = new AccountingService($this->mathService, new AuditService);
 
@@ -75,7 +79,8 @@ class AccountingServiceTest extends TestCase
         $this->assertFalse($result);
     }
 
-    public function test_can_reverse_journal_entry(): void
+    #[Test]
+    public function can_reverse_journal_entry(): void
     {
         $cashAccount = ChartOfAccount::factory()->create([
             'account_code' => '1010',
@@ -122,7 +127,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('Reversal', $reversal->reference_type->value);
     }
 
-    public function test_reversal_creates_explicit_link(): void
+    #[Test]
+    public function reversal_creates_explicit_link(): void
     {
         $cashAccount = ChartOfAccount::factory()->create([
             'account_code' => '1020',
@@ -168,7 +174,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals($original->id, $reversal->reference_id);
     }
 
-    public function test_reversed_entry_status_is_updated(): void
+    #[Test]
+    public function reversed_entry_status_is_updated(): void
     {
         $cashAccount = ChartOfAccount::factory()->create([
             'account_code' => '1030',
@@ -215,7 +222,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('Reversed', $entry->status->value);
     }
 
-    public function test_get_account_balance_returns_correct_balance(): void
+    #[Test]
+    public function get_account_balance_returns_correct_balance(): void
     {
         $cashAccount = ChartOfAccount::factory()->create([
             'account_code' => '1040',
@@ -260,7 +268,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('5000.0000', $balance);
     }
 
-    public function test_get_account_balance_returns_zero_for_no_entries(): void
+    #[Test]
+    public function get_account_balance_returns_zero_for_no_entries(): void
     {
         $service = new AccountingService($this->mathService, new AuditService);
 
@@ -268,7 +277,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('0', $balance);
     }
 
-    public function test_debit_account_balance_increases_with_debit_and_decreases_with_credit(): void
+    #[Test]
+    public function debit_account_balance_increases_with_debit_and_decreases_with_credit(): void
     {
         $assetAccount = ChartOfAccount::factory()->create([
             'account_code' => '1050',
@@ -337,7 +347,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('1300.0000', $balance);
     }
 
-    public function test_credit_account_balance_decreases_with_debit_and_increases_with_credit(): void
+    #[Test]
+    public function credit_account_balance_decreases_with_debit_and_increases_with_credit(): void
     {
         $assetAccount = ChartOfAccount::factory()->create([
             'account_code' => '1060',
@@ -406,7 +417,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('1000.0000', $balance);
     }
 
-    public function test_revenue_account_balance_increases_with_credit(): void
+    #[Test]
+    public function revenue_account_balance_increases_with_credit(): void
     {
         $assetAccount = ChartOfAccount::factory()->create([
             'account_code' => '1070',
@@ -451,7 +463,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('1000.0000', $balance);
     }
 
-    public function test_expense_account_balance_increases_with_debit(): void
+    #[Test]
+    public function expense_account_balance_increases_with_debit(): void
     {
         $assetAccount = ChartOfAccount::factory()->create([
             'account_code' => '1080',
@@ -496,7 +509,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('500.0000', $balance);
     }
 
-    public function test_comprehensive_balance_calculation(): void
+    #[Test]
+    public function comprehensive_balance_calculation(): void
     {
         $cashAccount = ChartOfAccount::factory()->create([
             'account_code' => '1090',
@@ -556,7 +570,8 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('3500.0000', $revenueBalance);
     }
 
-    public function test_balance_calculation_with_zero_amounts(): void
+    #[Test]
+    public function balance_calculation_with_zero_amounts(): void
     {
         $service = new AccountingService($this->mathService, new AuditService);
 
@@ -568,7 +583,8 @@ class AccountingServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    public function test_update_ledger_is_atomic(): void
+    #[Test]
+    public function update_ledger_is_atomic(): void
     {
         $cashAccount = ChartOfAccount::factory()->create([
             'account_code' => '9999',
@@ -622,7 +638,7 @@ class AccountingServiceTest extends TestCase
     }
 
     #[Test]
-    public function test_journal_reversal_produces_correct_economic_effect(): void
+    public function journal_reversal_produces_correct_economic_effect(): void
     {
         $cashAccount = ChartOfAccount::factory()->create([
             'account_code' => '1001',

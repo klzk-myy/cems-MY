@@ -8,13 +8,15 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BranchScopeAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_api_customer_index_is_scoped_to_user_branch(): void
+    #[Test]
+    public function api_customer_index_is_scoped_to_user_branch(): void
     {
         $branchA = Branch::factory()->create(['code' => 'BR-A'.uniqid()]);
         $branchB = Branch::factory()->create(['code' => 'BR-B'.uniqid()]);

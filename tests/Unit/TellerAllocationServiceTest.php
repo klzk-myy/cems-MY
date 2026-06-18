@@ -11,6 +11,7 @@ use App\Services\BranchPoolService;
 use App\Services\MathService;
 use App\Services\TellerAllocationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TellerAllocationServiceTest extends TestCase
@@ -28,7 +29,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->service = new TellerAllocationService($this->branchPoolService, new MathService);
     }
 
-    public function test_request_allocation_creates_pending(): void
+    #[Test]
+    public function request_allocation_creates_pending(): void
     {
         $branch = Branch::factory()->create();
         $pool = BranchPool::factory()->for($branch)->myr()->create([
@@ -44,7 +46,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals('10000.0000', $allocation->requested_amount);
     }
 
-    public function test_approve_allocation_deducts_from_pool(): void
+    #[Test]
+    public function approve_allocation_deducts_from_pool(): void
     {
         $branch = Branch::factory()->create();
         $pool = BranchPool::factory()->for($branch)->myr()->create([
@@ -64,7 +67,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals('10000.0000', $allocation->current_balance);
     }
 
-    public function test_activate_allocation(): void
+    #[Test]
+    public function activate_allocation(): void
     {
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
@@ -86,7 +90,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertNotNull($allocation->opened_at);
     }
 
-    public function test_return_to_pool_returns_balance(): void
+    #[Test]
+    public function return_to_pool_returns_balance(): void
     {
         $branch = Branch::factory()->create();
         $pool = BranchPool::factory()->for($branch)->myr()->create([
@@ -112,7 +117,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals(TellerAllocationStatus::RETURNED, $allocation->status);
     }
 
-    public function test_validate_transaction_buy_insufficient_balance(): void
+    #[Test]
+    public function validate_transaction_buy_insufficient_balance(): void
     {
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
@@ -131,7 +137,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals('Insufficient allocation balance', $result['reason']);
     }
 
-    public function test_validate_transaction_daily_limit_exceeded(): void
+    #[Test]
+    public function validate_transaction_daily_limit_exceeded(): void
     {
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
@@ -152,7 +159,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals('Daily limit exceeded', $result['reason']);
     }
 
-    public function test_validate_transaction_success(): void
+    #[Test]
+    public function validate_transaction_success(): void
     {
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
@@ -173,7 +181,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertArrayHasKey('allocation', $result);
     }
 
-    public function test_sell_without_allocation_is_rejected(): void
+    #[Test]
+    public function sell_without_allocation_is_rejected(): void
     {
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
@@ -194,7 +203,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals('No USD balance available to sell', $result['reason']);
     }
 
-    public function test_reject_allocation_releases_pool_balance(): void
+    #[Test]
+    public function reject_allocation_releases_pool_balance(): void
     {
         $branch = Branch::factory()->create();
         $pool = BranchPool::factory()->for($branch)->myr()->create([
@@ -216,7 +226,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals('Insufficient documentation', $allocation->rejection_reason);
     }
 
-    public function test_force_return_all_open(): void
+    #[Test]
+    public function force_return_all_open(): void
     {
         $branch = Branch::factory()->create();
         $pool = BranchPool::factory()->for($branch)->myr()->create([
@@ -252,7 +263,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals('50000.0000', $pool->available_balance);
     }
 
-    public function test_transfer_to_teller(): void
+    #[Test]
+    public function transfer_to_teller(): void
     {
         $branch = Branch::factory()->create();
         $teller1 = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
@@ -272,7 +284,8 @@ class TellerAllocationServiceTest extends TestCase
         $this->assertEquals($teller2->id, $result->user_id);
     }
 
-    public function test_allocation_calculations_use_math_service_precision(): void
+    #[Test]
+    public function allocation_calculations_use_math_service_precision(): void
     {
         $branch = Branch::factory()->create();
         $pool = BranchPool::factory()->for($branch)->myr()->create([
