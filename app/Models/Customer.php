@@ -49,7 +49,7 @@ class Customer extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $with = ['documents', 'latestRiskSnapshot'];
+    protected $with = [];
 
     /**
      * The attributes that are mass assignable.

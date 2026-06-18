@@ -55,7 +55,7 @@ class JournalEntry extends AccountingModel
     use HasCreator;
     use HasFactory;
 
-    protected $with = ['lines', 'creator', 'approver'];
+    protected $with = [];
 
     protected $fillable = [
         'period_id',
