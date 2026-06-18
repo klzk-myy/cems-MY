@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreSanctionEntryRequest;
+use App\Http\Requests\UpdateSanctionEntryRequest;
 use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
@@ -135,19 +137,9 @@ class SanctionListController extends Controller
         return view('compliance.sanctions.entries.create', compact('lists'));
     }
 
-    public function storeEntry(Request $request): RedirectResponse
+    public function storeEntry(StoreSanctionEntryRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'list_id' => 'required|integer|exists:sanction_lists,id',
-            'entity_name' => 'required|string|max:255',
-            'entity_type' => 'required|in:Individual,Organization,Vessel,Aircraft',
-            'aliases' => 'nullable|string',
-            'nationality' => 'nullable|string|max:100',
-            'date_of_birth' => 'nullable|date',
-            'reference_number' => 'nullable|string|max:100',
-            'listing_date' => 'nullable|date',
-            'details' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $validated['aliases'] = $request->has('aliases')
             ? array_filter(array_map('trim', explode("\n", $request->input('aliases'))))
@@ -178,26 +170,13 @@ class SanctionListController extends Controller
         return view('compliance.sanctions.entries.edit', ['sanctionEntry' => $entry]);
     }
 
-    public function updateEntry(Request $request, SanctionEntry $entry): RedirectResponse
+    public function updateEntry(UpdateSanctionEntryRequest $request, SanctionEntry $entry): RedirectResponse
     {
         $request->merge([
             'entity_type' => ucfirst($request->input('entity_type', '')),
         ]);
 
-        $validated = $request->validate([
-            'entity_name' => 'required|string|max:255',
-            'list_source' => 'nullable|string|max:255',
-            'entity_type' => 'required|in:Individual,Organization,Vessel,Aircraft',
-            'reference_number' => 'nullable|string|max:255',
-            'nationality' => 'nullable|string|max:255',
-            'date_listed' => 'nullable|date',
-            'aliases' => 'nullable|string',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:255',
-            'country' => 'nullable|string|max:255',
-            'postal_code' => 'nullable|string|max:255',
-            'details' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $validated['aliases'] = $request->has('aliases')
             ? array_filter(array_map('trim', explode("\n", $request->input('aliases'))))
