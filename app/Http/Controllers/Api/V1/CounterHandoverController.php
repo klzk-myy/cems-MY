@@ -6,11 +6,11 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\UnauthorizedException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Counter\AcknowledgeHandoverRequest;
 use App\Models\Counter;
 use App\Models\CounterHandover;
 use App\Services\Branch\CounterHandoverService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CounterHandoverController extends Controller
@@ -19,7 +19,7 @@ class CounterHandoverController extends Controller
         protected CounterHandoverService $handoverService
     ) {}
 
-    public function acknowledge(Request $request, int $counterId, int $handoverId): JsonResponse
+    public function acknowledge(AcknowledgeHandoverRequest $request, int $counterId, int $handoverId): JsonResponse
     {
         $counter = Counter::find($counterId);
         if (! $counter) {
@@ -43,10 +43,7 @@ class CounterHandoverController extends Controller
             abort(403, 'You do not have permission to access this resource.');
         }
 
-        $validated = $request->validate([
-            'verified' => 'required|boolean',
-            'notes' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             $this->handoverService->acknowledgeHandover(

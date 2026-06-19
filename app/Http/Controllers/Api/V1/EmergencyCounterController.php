@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Counter\InitiateEmergencyCloseRequest;
 use App\Models\Counter;
 use App\Models\EmergencyClosure;
 use App\Services\Branch\EmergencyCounterService;
@@ -19,11 +20,9 @@ class EmergencyCounterController extends Controller
         protected EmergencyCounterService $emergencyService
     ) {}
 
-    public function initiateClose(Request $request, int $counterId): JsonResponse
+    public function initiateClose(InitiateEmergencyCloseRequest $request, int $counterId): JsonResponse
     {
-        $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $counter = Counter::find($counterId);
         if (! $counter) {
@@ -43,7 +42,7 @@ class EmergencyCounterController extends Controller
             $closure = $this->emergencyService->initiateEmergencyClose(
                 $counter,
                 $user,
-                $request->input('reason')
+                $validated['reason']
             );
 
             return response()->json([
