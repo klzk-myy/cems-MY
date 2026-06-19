@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\TellerAllocation\ApproveAllocationRequest;
+use App\Http\Requests\Api\V1\TellerAllocation\ModifyAllocationRequest;
+use App\Http\Requests\Api\V1\TellerAllocation\MyActiveAllocationRequest;
+use App\Http\Requests\Api\V1\TellerAllocation\RejectAllocationRequest;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Branch\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -96,7 +99,7 @@ class TellerAllocationController extends Controller
      * Approve a pending allocation.
      * Manager/Admin only.
      */
-    public function approve(Request $request, int $allocationId): JsonResponse
+    public function approve(ApproveAllocationRequest $request, int $allocationId): JsonResponse
     {
         $user = Auth::user();
 
@@ -107,10 +110,7 @@ class TellerAllocationController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'approved_amount' => 'required|numeric|min:0.0001',
-            'daily_limit_myr' => 'nullable|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         $allocation = TellerAllocation::find($allocationId);
 
@@ -155,7 +155,7 @@ class TellerAllocationController extends Controller
      * Reject a pending allocation.
      * Manager/Admin only.
      */
-    public function reject(Request $request, int $allocationId): JsonResponse
+    public function reject(RejectAllocationRequest $request, int $allocationId): JsonResponse
     {
         $user = Auth::user();
 
@@ -182,9 +182,7 @@ class TellerAllocationController extends Controller
             ], 400);
         }
 
-        $validated = $request->validate([
-            'rejection_reason' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             $allocation = $this->allocationService->rejectAllocation(
@@ -212,7 +210,7 @@ class TellerAllocationController extends Controller
      * Modify an active allocation (increase/decrease).
      * Manager/Admin only.
      */
-    public function modify(Request $request, int $allocationId): JsonResponse
+    public function modify(ModifyAllocationRequest $request, int $allocationId): JsonResponse
     {
         $user = Auth::user();
 
@@ -223,10 +221,7 @@ class TellerAllocationController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'new_amount' => 'required|numeric|min:0.0001',
-            'is_increase' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $allocation = TellerAllocation::find($allocationId);
 
@@ -312,13 +307,11 @@ class TellerAllocationController extends Controller
     /**
      * Get active allocation for authenticated teller.
      */
-    public function myActiveAllocation(Request $request): JsonResponse
+    public function myActiveAllocation(MyActiveAllocationRequest $request): JsonResponse
     {
         $user = Auth::user();
 
-        $validated = $request->validate([
-            'currency_code' => 'required|string|size:3',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->allocationService->getActiveAllocationForTeller($user, $validated['currency_code']);
 
