@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Screening\BatchScreenRequest;
 use App\Models\Customer;
 use App\Services\CustomerScreeningService;
 use Illuminate\Http\JsonResponse;
@@ -49,12 +50,9 @@ class ScreeningController extends Controller
         ]);
     }
 
-    public function batchScreen(Request $request): JsonResponse
+    public function batchScreen(BatchScreenRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'customer_ids' => 'required|array|min:1|max:100',
-            'customer_ids.*' => 'integer|exists:customers,id',
-        ]);
+        $validated = $request->validated();
 
         $results = $this->screeningService->batchScreen($validated['customer_ids']);
 
