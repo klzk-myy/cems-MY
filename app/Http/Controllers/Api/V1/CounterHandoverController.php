@@ -40,7 +40,10 @@ class CounterHandoverController extends Controller
         $user = Auth::user();
 
         if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this resource.');
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to access this resource.',
+            ], 403);
         }
 
         $validated = $request->validated();

@@ -15,7 +15,6 @@ use App\Services\Transaction\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class TransactionApprovalController extends Controller
 {
@@ -38,8 +37,6 @@ class TransactionApprovalController extends Controller
      * - Double-entry accounting journal entries
      * - AML/Compliance monitoring before approval
      * - Audit logging
-     *
-     * @throws AccessDeniedHttpException
      */
     public function approve(Request $request, int $transactionId): JsonResponse
     {
@@ -50,7 +47,10 @@ class TransactionApprovalController extends Controller
         // Enforce branch-based authorization: managers can only approve transactions within their own branch
         $user = auth()->user();
         if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
-            throw new AccessDeniedHttpException('You can only approve transactions for your own branch.');
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only approve transactions for your own branch.',
+            ], 403);
         }
 
         try {
