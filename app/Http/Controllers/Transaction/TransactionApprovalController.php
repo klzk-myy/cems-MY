@@ -210,18 +210,6 @@ class TransactionApprovalController extends Controller
             if ($validated['confirmation_action'] === 'confirm') {
                 $confirmation->markConfirmed(auth()->id(), $validated['notes'] ?? null);
 
-                $updated = Transaction::where('id', $transaction->id)
-                    ->where('status', TransactionStatus::PendingApproval)
-                    ->update([
-                        'status' => TransactionStatus::PendingApproval,
-                    ]);
-
-                if (! $updated) {
-                    DB::rollBack();
-
-                    return back()->with('error', 'Transaction could not be updated. Status may have changed.');
-                }
-
                 $transaction->refresh();
 
                 $this->auditService->logWithSeverity('transaction_confirmed', [
