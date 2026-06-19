@@ -2,12 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Models\ReportGenerated;
+use App\Console\Commands\Concerns\HasReportFormatting;
 use App\Services\Reporting\ReportingService;
 use Illuminate\Console\Command;
 
 class GenerateMonthlyLMCA extends Command
 {
+    use HasReportFormatting;
+
     protected $signature = 'report:lmca {--month= : Specific month (Y-m), defaults to previous month}';
 
     protected $description = 'Generate monthly BNM Form LMCA report';
@@ -21,15 +23,7 @@ class GenerateMonthlyLMCA extends Command
         try {
             $filepath = $reportingService->generateFormLMCACsv($month);
 
-            ReportGenerated::create([
-                'report_type' => 'LMCA',
-                'period_start' => now()->parse($month)->startOfMonth(),
-                'period_end' => now()->parse($month)->endOfMonth(),
-                'generated_by' => 1,
-                'generated_at' => now(),
-                'file_format' => 'CSV',
-                'status' => 'Generated',
-            ]);
+            $this->createReportRecord('LMCA', now()->parse($month)->startOfMonth(), now()->parse($month)->endOfMonth());
 
             $this->info("Form LMCA generated: {$filepath}");
 

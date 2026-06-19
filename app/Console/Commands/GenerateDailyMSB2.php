@@ -2,12 +2,15 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\HasReportFormatting;
 use App\Services\Reporting\ExportService;
 use App\Services\Reporting\ReportingService;
 use Illuminate\Console\Command;
 
 class GenerateDailyMSB2 extends Command
 {
+    use HasReportFormatting;
+
     protected $signature = 'report:msb2 {--date= : Specific date (Y-m-d)}';
 
     protected $description = 'Generate daily MSB(2) report';

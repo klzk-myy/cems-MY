@@ -2,13 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Models\ReportGenerated;
+use App\Console\Commands\Concerns\HasReportFormatting;
 use App\Services\Reporting\ReportingService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class GenerateQuarterlyLVR extends Command
 {
+    use HasReportFormatting;
+
     protected $signature = 'report:qlvr {--quarter= : Specific quarter (Y-Qn), defaults to previous quarter}';
 
     protected $description = 'Generate quarterly large value transaction report';
@@ -22,15 +24,7 @@ class GenerateQuarterlyLVR extends Command
         try {
             $filepath = $reportingService->generateQuarterlyLargeValueCsv($quarter);
 
-            ReportGenerated::create([
-                'report_type' => 'QLVR',
-                'period_start' => $this->getQuarterStart($quarter),
-                'period_end' => $this->getQuarterEnd($quarter),
-                'generated_by' => 1,
-                'generated_at' => now(),
-                'file_format' => 'CSV',
-                'status' => 'Generated',
-            ]);
+            $this->createReportRecord('QLVR', $this->getQuarterStart($quarter), $this->getQuarterEnd($quarter));
 
             $this->info("Quarterly LVR generated: {$filepath}");
 
