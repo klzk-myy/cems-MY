@@ -264,7 +264,7 @@ class DashboardController extends Controller
      */
     private function ensureComplianceOfficerAccess(User $user, string $message = ''): void
     {
-        if (! $user->isComplianceOfficer()) {
+        if (! $user->isAdmin() && ! $user->isComplianceOfficer()) {
             abort(403, $message);
         }
     }
