@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CddLevel;
+use App\Http\Requests\CustomerSearchRequest;
+use App\Http\Requests\QuickCreateCustomerRequest;
 use App\Http\Requests\StoreCustomerNoteRequest;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
@@ -33,11 +35,9 @@ class CustomerController extends Controller
     /**
      * Search customers for transaction form autocomplete.
      */
-    public function search(Request $request): JsonResponse
+    public function search(CustomerSearchRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'query' => 'required|string|min:2',
-        ]);
+        $validated = $request->validated();
 
         $results = $this->customerService->searchCustomers($validated['query']);
 
@@ -53,16 +53,9 @@ class CustomerController extends Controller
      * Quick create customer from transaction form.
      * Used when customer not found in database.
      */
-    public function quickCreate(Request $request): JsonResponse
+    public function quickCreate(QuickCreateCustomerRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'id_type' => 'required|in:MyKad,Passport,Others',
-            'id_number' => 'required|string|max:50',
-            'date_of_birth' => 'required|date|before:today',
-            'nationality' => 'required|string|max:100',
-            'phone' => 'nullable|string|max:20',
-        ]);
+        $validated = $request->validated();
 
         try {
             $customer = $this->customerService->createCustomer($validated, auth()->id());

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
@@ -127,20 +128,11 @@ class UserController extends Controller
     /**
      * Reset user password
      */
-    public function resetPassword(Request $request, User $user): RedirectResponse
+    public function resetPassword(ResetPasswordRequest $request, User $user): RedirectResponse
     {
         $this->requireAdmin();
-        $validated = $request->validate([
-            'password' => [
-                'required',
-                'string',
-                'min:12',
-                'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
-            ],
-        ]);
 
-        $this->userService->resetPassword($user, $validated['password'], auth()->id());
+        $this->userService->resetPassword($user, $request->validated('password'), auth()->id());
 
         return redirect()->route('users.index')
             ->with('success', "Password for {$user->username} has been reset!");
