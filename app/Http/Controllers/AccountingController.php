@@ -34,33 +34,14 @@ use Illuminate\View\View;
 
 class AccountingController extends Controller
 {
-    protected AccountingService $accountingService;
-
-    protected BudgetService $budgetService;
-
-    protected MathService $mathService;
-
-    protected PeriodCloseService $periodCloseService;
-
-    protected BankReconciliationService $bankReconciliationService;
-
-    protected LedgerService $ledgerService;
-
     public function __construct(
-        AccountingService $accountingService,
-        BudgetService $budgetService,
-        MathService $mathService,
-        PeriodCloseService $periodCloseService,
-        BankReconciliationService $bankReconciliationService,
-        LedgerService $ledgerService
-    ) {
-        $this->accountingService = $accountingService;
-        $this->budgetService = $budgetService;
-        $this->mathService = $mathService;
-        $this->periodCloseService = $periodCloseService;
-        $this->bankReconciliationService = $bankReconciliationService;
-        $this->ledgerService = $ledgerService;
-    }
+        protected AccountingService $accountingService,
+        protected BudgetService $budgetService,
+        protected MathService $mathService,
+        protected PeriodCloseService $periodCloseService,
+        protected BankReconciliationService $bankReconciliationService,
+        protected LedgerService $ledgerService
+    ) {}
 
     public function index(): View
     {

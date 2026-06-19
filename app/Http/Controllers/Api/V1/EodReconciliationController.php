@@ -35,9 +35,8 @@ class EodReconciliationController extends Controller
 
         $carbonDate = Carbon::parse($date);
 
-        // Managers and compliance officers can view EOD reports
         $user = auth()->user();
-        if (! $user->isManager() && ! $user->isComplianceOfficer() && ! $user->isAdmin()) {
+        if (! $this->canAccessEod($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Manager, Compliance Officer, or Admin access required.',
@@ -46,9 +45,7 @@ class EodReconciliationController extends Controller
 
         $branchId = $validated['branch_id'] ?? null;
 
-        // If branch filter is set, verify user has access
         if ($branchId && ! $user->isAdmin() && $user->branch_id !== $branchId) {
-            // Check if user has any role that can access other branches
             if (! $user->isComplianceOfficer()) {
                 return response()->json([
                     'success' => false,
@@ -84,9 +81,7 @@ class EodReconciliationController extends Controller
 
         $carbonDate = Carbon::parse($date);
 
-        // Managers and compliance officers can view EOD reports
-        $user = auth()->user();
-        if (! $user->isManager() && ! $user->isComplianceOfficer() && ! $user->isAdmin()) {
+        if (! $this->canAccessEod(auth()->user())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Manager, Compliance Officer, or Admin access required.',
@@ -119,9 +114,7 @@ class EodReconciliationController extends Controller
 
         $carbonDate = Carbon::parse($date);
 
-        // Only managers and compliance officers can generate PDF reports
-        $user = auth()->user();
-        if (! $user->isManager() && ! $user->isComplianceOfficer() && ! $user->isAdmin()) {
+        if (! $this->canAccessEod(auth()->user())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Manager, Compliance Officer, or Admin access required.',
@@ -165,5 +158,10 @@ class EodReconciliationController extends Controller
                 'message' => 'Failed to generate reconciliation report: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    private function canAccessEod($user): bool
+    {
+        return $user->isManager() || $user->isComplianceOfficer() || $user->isAdmin();
     }
 }

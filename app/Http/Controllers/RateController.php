@@ -15,12 +15,9 @@ use Illuminate\View\View;
 
 class RateController extends Controller
 {
-    protected RateManagementService $rateService;
-
-    public function __construct(RateManagementService $rateService)
-    {
-        $this->rateService = $rateService;
-    }
+    public function __construct(
+        protected RateManagementService $rateService
+    ) {}
 
     public function index(Request $request): View
     {

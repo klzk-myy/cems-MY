@@ -19,16 +19,7 @@ class RiskController extends Controller
      */
     public function show(string $customerId): JsonResponse
     {
-        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)
-            ->with('customer')
-            ->first();
-
-        if (! $profile) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Risk profile not found.',
-            ], 404);
-        }
+        $profile = $this->findProfileOrFail($customerId);
 
         return response()->json([
             'success' => true,
@@ -88,14 +79,7 @@ class RiskController extends Controller
     {
         $validated = $request->validated();
 
-        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
-
-        if (! $profile) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Risk profile not found.',
-            ], 404);
-        }
+        $profile = $this->findProfileOrFail($customerId);
 
         $profile->lock(auth()->id(), $validated['reason']);
 
@@ -111,14 +95,7 @@ class RiskController extends Controller
      */
     public function unlock(string $customerId): JsonResponse
     {
-        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
-
-        if (! $profile) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Risk profile not found.',
-            ], 404);
-        }
+        $profile = $this->findProfileOrFail($customerId);
 
         $profile->unlock();
 
@@ -148,5 +125,16 @@ class RiskController extends Controller
                 'by_tier' => $distribution,
             ],
         ]);
+    }
+
+    private function findProfileOrFail(string $customerId): CustomerRiskProfile
+    {
+        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
+
+        if (! $profile) {
+            abort(404, 'Risk profile not found.');
+        }
+
+        return $profile;
     }
 }

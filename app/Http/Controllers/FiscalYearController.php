@@ -12,12 +12,9 @@ use Illuminate\View\View;
 
 class FiscalYearController extends Controller
 {
-    protected FiscalYearService $fiscalYearService;
-
-    public function __construct(FiscalYearService $fiscalYearService)
-    {
-        $this->fiscalYearService = $fiscalYearService;
-    }
+    public function __construct(
+        protected FiscalYearService $fiscalYearService
+    ) {}
 
     /**
      * Display list of fiscal years.

@@ -21,15 +21,10 @@ use Illuminate\View\View;
 
 class AnalyticsController extends Controller
 {
-    protected MathService $mathService;
-
-    protected ThresholdService $thresholdService;
-
-    public function __construct(MathService $mathService, ThresholdService $thresholdService)
-    {
-        $this->mathService = $mathService;
-        $this->thresholdService = $thresholdService;
-    }
+    public function __construct(
+        protected MathService $mathService,
+        protected ThresholdService $thresholdService
+    ) {}
 
     /**
      * Monthly transaction trends

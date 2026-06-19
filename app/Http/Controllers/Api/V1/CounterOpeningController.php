@@ -12,7 +12,6 @@ use App\Services\Branch\CounterOpeningWorkflowService;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -36,7 +35,7 @@ class CounterOpeningController extends Controller
      * Get pending opening requests for a branch.
      * Manager/Admin only.
      */
-    public function pendingRequests(Request $request): JsonResponse
+    public function pendingRequests(): JsonResponse
     {
         $user = Auth::user();
 

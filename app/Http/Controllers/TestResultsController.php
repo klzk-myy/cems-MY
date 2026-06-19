@@ -13,12 +13,9 @@ use Illuminate\View\View;
 
 class TestResultsController extends Controller
 {
-    protected TestRunnerService $testRunner;
-
-    public function __construct(TestRunnerService $testRunner)
-    {
-        $this->testRunner = $testRunner;
-    }
+    public function __construct(
+        protected TestRunnerService $testRunner
+    ) {}
 
     /**
      * Display list of all test runs

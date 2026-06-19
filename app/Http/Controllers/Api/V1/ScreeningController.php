@@ -28,7 +28,7 @@ class ScreeningController extends Controller
         ]);
     }
 
-    public function history(Request $request, int $customerId): JsonResponse
+    public function history(int $customerId): JsonResponse
     {
         $customer = Customer::findOrFail($customerId);
 
@@ -39,7 +39,7 @@ class ScreeningController extends Controller
         ]);
     }
 
-    public function status(Request $request, int $customerId): JsonResponse
+    public function status(int $customerId): JsonResponse
     {
         $customer = Customer::findOrFail($customerId);
 

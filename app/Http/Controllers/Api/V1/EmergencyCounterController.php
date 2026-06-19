@@ -11,7 +11,6 @@ use App\Models\Counter;
 use App\Models\EmergencyClosure;
 use App\Services\Branch\EmergencyCounterService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EmergencyCounterController extends Controller
@@ -100,7 +99,7 @@ class EmergencyCounterController extends Controller
         ]);
     }
 
-    public function acknowledge(Request $request, int $counterId, int $closureId): JsonResponse
+    public function acknowledge(int $counterId, int $closureId): JsonResponse
     {
         $counter = Counter::find($counterId);
         if (! $counter) {

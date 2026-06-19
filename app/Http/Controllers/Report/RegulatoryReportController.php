@@ -18,19 +18,11 @@ use Illuminate\View\View;
 
 class RegulatoryReportController extends Controller
 {
-    protected ReportingService $reportingService;
-
-    protected MathService $mathService;
-
-    protected ThresholdService $thresholdService;
-
     public function __construct(
-        ReportingService $reportingService,
-        MathService $mathService,
-    ) {
-        $this->reportingService = $reportingService;
-        $this->mathService = $mathService;
-    }
+        protected ReportingService $reportingService,
+        protected MathService $mathService,
+        protected ThresholdService $thresholdService
+    ) {}
 
     protected function getQuarterStart(string $quarter): Carbon
     {

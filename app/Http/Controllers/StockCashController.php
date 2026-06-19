@@ -18,18 +18,11 @@ use Illuminate\View\View;
 
 class StockCashController extends Controller
 {
-    protected MathService $mathService;
-
-    protected CurrencyPositionService $currencyPositionService;
-
-    protected TillService $tillService;
-
-    public function __construct(MathService $mathService, CurrencyPositionService $currencyPositionService, TillService $tillService)
-    {
-        $this->mathService = $mathService;
-        $this->currencyPositionService = $currencyPositionService;
-        $this->tillService = $tillService;
-    }
+    public function __construct(
+        protected MathService $mathService,
+        protected CurrencyPositionService $currencyPositionService,
+        protected TillService $tillService
+    ) {}
 
     /**
      * Display stock and cash management dashboard

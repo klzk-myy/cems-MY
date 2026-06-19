@@ -23,12 +23,9 @@ use Illuminate\Support\Facades\Auth;
  */
 class RateController extends Controller
 {
-    protected RateManagementService $rateService;
-
-    public function __construct(RateManagementService $rateService)
-    {
-        $this->rateService = $rateService;
-    }
+    public function __construct(
+        protected RateManagementService $rateService
+    ) {}
 
     /**
      * Get all current rates.

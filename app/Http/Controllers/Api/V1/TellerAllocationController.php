@@ -22,12 +22,9 @@ use Illuminate\Support\Facades\Log;
  */
 class TellerAllocationController extends Controller
 {
-    protected TellerAllocationService $allocationService;
-
-    public function __construct(TellerAllocationService $allocationService)
-    {
-        $this->allocationService = $allocationService;
-    }
+    public function __construct(
+        protected TellerAllocationService $allocationService
+    ) {}
 
     /**
      * Get pending allocations for the authenticated user's branch.
