@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\TransactionType;
 use App\Http\Requests\CloseTillRequest;
 use App\Http\Requests\OpenTillRequest;
+use App\Http\Requests\TillReconciliationRequest;
+use App\Http\Requests\TillReportRequest;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\TillBalance;
@@ -13,7 +15,6 @@ use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StockCashController extends Controller
@@ -231,13 +232,10 @@ class StockCashController extends Controller
     /**
      * Get till report
      */
-    public function tillReport(Request $request): View|RedirectResponse
+    public function tillReport(TillReportRequest $request): View|RedirectResponse
     {
         $this->requireManagerOrAdmin();
-        $validated = $request->validate([
-            'till_id' => 'required|string',
-            'date' => 'nullable|date',
-        ]);
+        $validated = $request->validated();
 
         $date = $validated['date'] ?? today()->toDateString();
 
@@ -256,14 +254,11 @@ class StockCashController extends Controller
     /**
      * Generate till reconciliation report
      */
-    public function reconciliationReport(Request $request): View|RedirectResponse
+    public function reconciliationReport(TillReconciliationRequest $request): View|RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
-        $validated = $request->validate([
-            'date' => 'nullable|date',
-            'till_id' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         $date = $validated['date'] ?? today()->toDateString();
         $tillId = $validated['till_id'];

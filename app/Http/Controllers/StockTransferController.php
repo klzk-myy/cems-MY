@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ApproveStockTransferRequest;
+use App\Http\Requests\CancelStockTransferRequest;
+use App\Http\Requests\ReceiveStockTransferRequest;
 use App\Http\Requests\StoreStockTransferRequest;
 use App\Models\StockTransfer;
 use App\Services\AuditService;
@@ -101,14 +103,8 @@ class StockTransferController extends Controller
         return redirect()->back()->with('success', 'Transfer dispatched');
     }
 
-    public function receive(Request $request, StockTransfer $stockTransfer): RedirectResponse
+    public function receive(ReceiveStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
     {
-        $request->validate([
-            'items' => 'required|array',
-            'items.*.id' => 'required|exists:stock_transfer_items,id',
-            'items.*.quantity_received' => 'required|numeric|min:0',
-        ]);
-
         $this->stockTransferService->receiveItems($stockTransfer, $request->items);
 
         $this->auditService->logStockTransferEvent('stock_transfer_partially_received', $stockTransfer->id, [
@@ -127,12 +123,8 @@ class StockTransferController extends Controller
         return redirect()->back()->with('success', 'Transfer completed');
     }
 
-    public function cancel(Request $request, StockTransfer $stockTransfer): RedirectResponse
+    public function cancel(CancelStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
     {
-        $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
-
         $this->stockTransferService->cancel($stockTransfer, $request->reason);
 
         $this->auditService->logStockTransferEvent('stock_transfer_cancelled', $stockTransfer->id, [

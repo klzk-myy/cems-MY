@@ -6,7 +6,9 @@ use App\Enums\CounterSessionStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
+use App\Http\Requests\AcknowledgeHandoverWebRequest;
 use App\Http\Requests\CloseCounterRequest;
+use App\Http\Requests\EmergencyCloseRequest;
 use App\Http\Requests\HandoverCounterRequest;
 use App\Http\Requests\OpenCounterRequest;
 use App\Models\Counter;
@@ -322,12 +324,8 @@ class CounterController extends Controller
         return view('counters.emergency', compact('counter', 'session'));
     }
 
-    public function emergency(Request $request, Counter $counter): RedirectResponse
+    public function emergency(EmergencyCloseRequest $request, Counter $counter): RedirectResponse
     {
-        $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
-
         $user = auth()->user();
 
         try {
@@ -391,7 +389,7 @@ class CounterController extends Controller
         return view('counters.acknowledge-handover', compact('counter', 'handover'));
     }
 
-    public function acknowledgeHandover(Request $request, Counter $counter): RedirectResponse
+    public function acknowledgeHandover(AcknowledgeHandoverWebRequest $request, Counter $counter): RedirectResponse
     {
         $user = auth()->user();
         $today = now()->toDateString();
@@ -405,11 +403,6 @@ class CounterController extends Controller
         if (! $handover) {
             return back()->with('error', 'No pending handover to acknowledge');
         }
-
-        $request->validate([
-            'verified' => 'required|boolean',
-            'notes' => 'nullable|string|max:500',
-        ]);
 
         try {
             $this->counterHandoverService->acknowledgeHandover(
