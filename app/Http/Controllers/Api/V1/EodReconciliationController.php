@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Eod\CounterReconciliationRequest;
+use App\Http\Requests\Api\V1\Eod\GenerateReportRequest;
+use App\Http\Requests\Api\V1\Eod\ShowReconciliationRequest;
 use App\Services\EodReconciliationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use PDF;
 
@@ -27,12 +29,9 @@ class EodReconciliationController extends Controller
      *
      * @param  string  $date  Date in YYYY-MM-DD format
      */
-    public function show(Request $request, string $date): JsonResponse
+    public function show(ShowReconciliationRequest $request, string $date): JsonResponse
     {
-        $validated = $request->validate([
-            'date' => 'required|date_format:Y-m-d',
-            'branch_id' => 'nullable|exists:branches,id',
-        ]);
+        $validated = $request->validated();
 
         $carbonDate = Carbon::parse($date);
 
@@ -79,11 +78,9 @@ class EodReconciliationController extends Controller
      * @param  string  $date  Date in YYYY-MM-DD format
      * @param  int  $counterId  Counter ID
      */
-    public function counterReconciliation(Request $request, string $date, int $counterId): JsonResponse
+    public function counterReconciliation(CounterReconciliationRequest $request, string $date, int $counterId): JsonResponse
     {
-        $validated = $request->validate([
-            'date' => 'required|date_format:Y-m-d',
-        ]);
+        $validated = $request->validated();
 
         $carbonDate = Carbon::parse($date);
 
@@ -116,14 +113,9 @@ class EodReconciliationController extends Controller
      *
      * @param  string  $date  Date in YYYY-MM-DD format
      */
-    public function report(Request $request, string $date): JsonResponse|Response
+    public function report(GenerateReportRequest $request, string $date): JsonResponse|Response
     {
-        $validated = $request->validate([
-            'date' => 'required|date_format:Y-m-d',
-            'branch_id' => 'nullable|exists:branches,id',
-            'counter_id' => 'nullable|exists:counters,id',
-            'format' => 'nullable|in:pdf,json',
-        ]);
+        $validated = $request->validated();
 
         $carbonDate = Carbon::parse($date);
 

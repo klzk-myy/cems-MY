@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Report\ExportReportRequest;
 use App\Services\Reporting\ExportService;
 use App\Services\Reporting\ReportingService;
 use App\Services\System\DocumentStorageService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
@@ -47,13 +47,9 @@ class ReportController extends Controller
     /**
      * Export report data.
      */
-    public function export(Request $request): JsonResponse
+    public function export(ExportReportRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'report_type' => 'required|in:msb2,trial_balance,pl,balance_sheet',
-            'period' => 'required|string',
-            'format' => 'required|in:CSV,PDF,XLSX',
-        ]);
+        $validated = $request->validated();
 
         $data = match ($validated['report_type']) {
             'msb2' => $this->reportingService->generateMSB2Data($validated['period']),
