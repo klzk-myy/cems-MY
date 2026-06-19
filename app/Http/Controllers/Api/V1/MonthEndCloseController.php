@@ -33,13 +33,13 @@ class MonthEndCloseController extends Controller
         } catch (MonthEndPreCheckFailedException $e) {
             return response()->json([
                 'success' => false,
-                'error' => 'Pre-flight checks failed',
+                'message' => 'Pre-flight checks failed',
                 'failures' => $e->getFailures(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -57,7 +57,7 @@ class MonthEndCloseController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

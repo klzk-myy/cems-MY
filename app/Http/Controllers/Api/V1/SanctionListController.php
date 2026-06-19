@@ -26,6 +26,7 @@ class SanctionListController extends Controller
             ->get();
 
         return response()->json([
+            'success' => true,
             'data' => $lists->map(fn ($list) => [
                 'id' => $list->id,
                 'name' => $list->name,
@@ -85,6 +86,7 @@ class SanctionListController extends Controller
             $result = $this->importService->import($list, manual: true);
 
             return response()->json([
+                'success' => true,
                 'data' => [
                     'status' => 'success',
                     'records_added' => $result['added'],
@@ -110,6 +112,7 @@ class SanctionListController extends Controller
             ->get();
 
         return response()->json([
+            'success' => true,
             'data' => $logs->map(fn ($log) => [
                 'id' => $log->id,
                 'list' => [
@@ -148,6 +151,7 @@ class SanctionListController extends Controller
         ]);
 
         return response()->json([
+            'success' => true,
             'data' => [
                 'id' => $entry->id,
                 'entity_name' => $entry->entity_name,
@@ -170,6 +174,7 @@ class SanctionListController extends Controller
         $entry->update($validated);
 
         return response()->json([
+            'success' => true,
             'data' => [
                 'id' => $entry->id,
                 'entity_name' => $entry->entity_name,
@@ -184,6 +189,6 @@ class SanctionListController extends Controller
 
         $entry->update(['status' => 'inactive']);
 
-        return response()->json(['data' => ['message' => 'Entry deactivated']]);
+        return response()->json(['success' => true, 'data' => ['message' => 'Entry deactivated']]);
     }
 }

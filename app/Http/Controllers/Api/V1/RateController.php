@@ -122,7 +122,7 @@ class RateController extends Controller
             ]
         );
 
-        return response()->json(['message' => 'Rate override saved.', 'data' => $rate]);
+        return response()->json(['success' => true, 'message' => 'Rate override saved.', 'data' => $rate]);
     }
 
     /**

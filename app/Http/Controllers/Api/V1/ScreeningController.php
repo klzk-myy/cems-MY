@@ -24,6 +24,7 @@ class ScreeningController extends Controller
         $response = $this->screeningService->screenCustomer($customer, $notes);
 
         return response()->json([
+            'success' => true,
             'data' => $response->toArray(),
         ]);
     }
@@ -35,6 +36,7 @@ class ScreeningController extends Controller
         $history = $this->screeningService->getHistory($customer);
 
         return response()->json([
+            'success' => true,
             'data' => $history->map(fn ($r) => $r->toArray())->toArray(),
         ]);
     }
@@ -46,6 +48,7 @@ class ScreeningController extends Controller
         $status = $this->screeningService->getStatus($customer);
 
         return response()->json([
+            'success' => true,
             'data' => $status,
         ]);
     }
@@ -57,6 +60,7 @@ class ScreeningController extends Controller
         $results = $this->screeningService->batchScreen($validated['customer_ids']);
 
         return response()->json([
+            'success' => true,
             'data' => $results->map(fn ($r, $id) => array_merge(['customer_id' => $id], $r->toArray()))->values()->toArray(),
         ]);
     }
