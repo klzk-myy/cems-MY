@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Exceptions\Domain\DomainException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -51,7 +52,11 @@ class Handler extends ExceptionHandler
 
         // For API requests, return sanitized JSON response
         if ($request->expectsJson()) {
-            $status = $this->isHttpException($e) ? $e->getStatusCode() : 500;
+            $status = match (true) {
+                $this->isHttpException($e) => $e->getStatusCode(),
+                $e instanceof DomainException => $e->getStatusCode(),
+                default => 500,
+            };
 
             // Don't expose internal error details for 500 errors
             if ($status >= 500) {

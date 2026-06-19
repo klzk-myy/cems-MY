@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\TransactionType;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Http\Resources\Api\V1\TransactionResource;
@@ -73,6 +74,12 @@ class TransactionController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 422);
+
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], $e->getStatusCode());
 
         } catch (\Exception $e) {
             return response()->json([
