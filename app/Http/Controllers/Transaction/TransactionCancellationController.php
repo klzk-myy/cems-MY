@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers\Transaction;
 
+use App\Http\Concerns\CancellableTransaction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApproveCancelRequest;
 use App\Http\Requests\CancelTransactionRequest;
 use App\Http\Requests\RejectCancelRequest;
 use App\Models\Transaction;
-use App\Models\User;
 use App\Services\Transaction\TransactionCancellationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class TransactionCancellationController extends Controller
 {
+    use CancellableTransaction;
+
     public function __construct(
         protected TransactionCancellationService $cancellationService
     ) {}
@@ -23,7 +25,7 @@ class TransactionCancellationController extends Controller
      */
     public function showCancel(Transaction $transaction): View|RedirectResponse
     {
-        if (! $this->canCancel(auth()->user(), $transaction)) {
+        if (! $this->canRequestCancellation(auth()->user(), $transaction)) {
             abort(403, 'Unauthorized to cancel this transaction.');
         }
 
@@ -42,7 +44,7 @@ class TransactionCancellationController extends Controller
      */
     public function cancel(CancelTransactionRequest $request, Transaction $transaction): RedirectResponse
     {
-        if (! $this->canCancel(auth()->user(), $transaction)) {
+        if (! $this->canRequestCancellation(auth()->user(), $transaction)) {
             abort(403, 'Unauthorized to cancel this transaction.');
         }
 
@@ -76,7 +78,7 @@ class TransactionCancellationController extends Controller
      */
     public function showApproveCancel(Transaction $transaction): View|RedirectResponse
     {
-        if (! $this->canApproveOrReject(auth()->user())) {
+        if (! $this->canApproveCancellation(auth()->user(), $transaction)) {
             abort(403, 'Unauthorized to approve cancellations.');
         }
 
@@ -92,7 +94,7 @@ class TransactionCancellationController extends Controller
      */
     public function approveCancel(ApproveCancelRequest $request, Transaction $transaction): RedirectResponse
     {
-        if (! $this->canApproveOrReject(auth()->user())) {
+        if (! $this->canApproveCancellation(auth()->user(), $transaction)) {
             abort(403, 'Unauthorized to approve cancellations.');
         }
 
@@ -126,7 +128,7 @@ class TransactionCancellationController extends Controller
      */
     public function showRejectCancel(Transaction $transaction): View|RedirectResponse
     {
-        if (! $this->canApproveOrReject(auth()->user())) {
+        if (! $this->canApproveCancellation(auth()->user(), $transaction)) {
             abort(403, 'Unauthorized to reject cancellations.');
         }
 
@@ -142,7 +144,7 @@ class TransactionCancellationController extends Controller
      */
     public function rejectCancel(RejectCancelRequest $request, Transaction $transaction): RedirectResponse
     {
-        if (! $this->canApproveOrReject(auth()->user())) {
+        if (! $this->canApproveCancellation(auth()->user(), $transaction)) {
             abort(403, 'Unauthorized to reject cancellations.');
         }
 
@@ -171,57 +173,8 @@ class TransactionCancellationController extends Controller
         }
     }
 
-    /**
-     * Check if user can cancel transaction
-     *
-     * All transaction cancellations require manager or admin approval.
-     * This enforces segregation of duties - no user should be able to
-     * cancel their own transactions without supervisory approval.
-     */
-    protected function canCancel(User $user, Transaction $transaction): bool
+    protected function isWithinCancellationWindow(Transaction $transaction): bool
     {
-        if ($user->isAdmin() || $user->isManager()) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Check if user can approve or reject a cancellation.
-     */
-    protected function canApproveOrReject(User $user): bool
-    {
-        return $user->isAdmin() || $user->isManager() || $user->isComplianceOfficer();
-    }
-
-    /**
-     * Check if transaction can be cancelled (or reversed if completed)
-     */
-    protected function canBeCancelled(Transaction $transaction): bool
-    {
-        $status = $transaction->status;
-
-        if ($status->isFinalized()) {
-            return false;
-        }
-
-        if ($status->isCancelled() || $status->isReversed()) {
-            return false;
-        }
-
-        if ($transaction->cancelled_at !== null) {
-            return false;
-        }
-
-        if ($transaction->is_refund) {
-            return false;
-        }
-
-        if ($status->isCompleted()) {
-            return $this->cancellationService->isWithinCancellationWindow($transaction);
-        }
-
-        return true;
+        return $this->cancellationService->isWithinCancellationWindow($transaction);
     }
 }

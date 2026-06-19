@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\SanctionEntryNormalizer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\SanctionList\IndexSanctionEntryRequest;
 use App\Http\Requests\Api\V1\SanctionList\StoreSanctionEntryRequest;
@@ -15,6 +16,8 @@ use Illuminate\Http\Request;
 
 class SanctionListController extends Controller
 {
+    use SanctionEntryNormalizer;
+
     public function __construct(
         protected SanctionsImportService $importService,
     ) {}
@@ -134,6 +137,8 @@ class SanctionListController extends Controller
     {
         $validated = $request->validated();
 
+        $normalized = $this->normalizeEntityName($validated['entity_name']);
+
         $entry = SanctionEntry::create([
             'list_id' => $validated['list_id'],
             'entity_name' => $validated['entity_name'],
@@ -144,9 +149,9 @@ class SanctionListController extends Controller
             'reference_number' => $validated['reference_number'] ?? null,
             'listing_date' => $validated['listing_date'] ?? null,
             'details' => $validated['details'] ?? null,
-            'normalized_name' => strtolower(preg_replace('/[^\p{L}\s]/u', '', $validated['entity_name'])),
-            'soundex_code' => soundex($validated['entity_name']),
-            'metaphone_code' => metaphone($validated['entity_name']),
+            'normalized_name' => $normalized['normalized_name'],
+            'soundex_code' => $normalized['soundex_code'],
+            'metaphone_code' => $normalized['metaphone_code'],
             'status' => 'active',
         ]);
 
@@ -166,9 +171,10 @@ class SanctionListController extends Controller
         $validated = $request->validated();
 
         if (isset($validated['entity_name'])) {
-            $validated['normalized_name'] = strtolower(preg_replace('/[^\p{L}\s]/u', '', $validated['entity_name']));
-            $validated['soundex_code'] = soundex($validated['entity_name']);
-            $validated['metaphone_code'] = metaphone($validated['entity_name']);
+            $normalized = $this->normalizeEntityName($validated['entity_name']);
+            $validated['normalized_name'] = $normalized['normalized_name'];
+            $validated['soundex_code'] = $normalized['soundex_code'];
+            $validated['metaphone_code'] = $normalized['metaphone_code'];
         }
 
         $entry->update($validated);

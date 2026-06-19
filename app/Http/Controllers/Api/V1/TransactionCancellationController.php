@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\CancellableTransaction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApiCancelTransactionRequest;
 use App\Http\Requests\ApproveCancelRequest;
 use App\Http\Requests\RejectCancelRequest;
 use App\Models\Transaction;
-use App\Models\User;
 use App\Services\Transaction\TransactionCancellationService;
 use Illuminate\Http\JsonResponse;
 
 class TransactionCancellationController extends Controller
 {
+    use CancellableTransaction;
+
     public function __construct(
         protected TransactionCancellationService $cancellationService
     ) {}
@@ -170,63 +172,6 @@ class TransactionCancellationController extends Controller
         ]);
     }
 
-    /**
-     * Determine whether the user is allowed to request a cancellation.
-     *
-     * Only managers and admins may request a cancellation.
-     */
-    protected function canRequestCancellation(User $user, Transaction $transaction): bool
-    {
-        return $user->isAdmin() || $user->isManager();
-    }
-
-    /**
-     * Determine whether the user is allowed to approve or reject a cancellation.
-     *
-     * Managers, compliance officers, and admins may approve or reject.
-     */
-    protected function canApproveCancellation(User $user, Transaction $transaction): bool
-    {
-        return $user->isAdmin() || $user->isManager() || $user->isComplianceOfficer();
-    }
-
-    /**
-     * Determine whether the transaction can be cancelled or reversed.
-     *
-     * Finalized, cancelled, reversed, and refund transactions cannot be
-     * cancelled. Completed transactions may only be reversed within the
-     * cancellation window.
-     */
-    protected function canBeCancelled(Transaction $transaction): bool
-    {
-        $status = $transaction->status;
-
-        if ($status->isFinalized()) {
-            return false;
-        }
-
-        if ($status->isCancelled() || $status->isReversed()) {
-            return false;
-        }
-
-        if ($transaction->cancelled_at !== null) {
-            return false;
-        }
-
-        if ($transaction->is_refund) {
-            return false;
-        }
-
-        if ($status->isCompleted()) {
-            return $this->isWithinCancellationWindow($transaction);
-        }
-
-        return true;
-    }
-
-    /**
-     * Determine whether the completed transaction is still within the cancellation window.
-     */
     protected function isWithinCancellationWindow(Transaction $transaction): bool
     {
         return $this->cancellationService->isWithinCancellationWindow($transaction);

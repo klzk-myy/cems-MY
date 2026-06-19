@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Http\Concerns\SanctionEntryNormalizer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSanctionEntryRequest;
 use App\Http\Requests\UpdateSanctionEntryRequest;
@@ -15,6 +16,8 @@ use Illuminate\View\View;
 
 class SanctionListController extends Controller
 {
+    use SanctionEntryNormalizer;
+
     public function __construct(
         protected SanctionsOrchestrationService $orchestrationService,
     ) {}
@@ -145,6 +148,8 @@ class SanctionListController extends Controller
             ? array_filter(array_map('trim', explode("\n", $request->input('aliases'))))
             : null;
 
+        $normalized = $this->normalizeEntityName($validated['entity_name']);
+
         SanctionEntry::create([
             'list_id' => $validated['list_id'],
             'entity_name' => $validated['entity_name'],
@@ -155,9 +160,9 @@ class SanctionListController extends Controller
             'reference_number' => $validated['reference_number'] ?? null,
             'listing_date' => $validated['listing_date'] ?? null,
             'details' => $validated['details'] ?? null,
-            'normalized_name' => strtolower(preg_replace('/[^\p{L}\s]/u', '', $validated['entity_name'])),
-            'soundex_code' => soundex($validated['entity_name']),
-            'metaphone_code' => metaphone($validated['entity_name']),
+            'normalized_name' => $normalized['normalized_name'],
+            'soundex_code' => $normalized['soundex_code'],
+            'metaphone_code' => $normalized['metaphone_code'],
             'status' => 'active',
         ]);
 
@@ -182,6 +187,8 @@ class SanctionListController extends Controller
             ? array_filter(array_map('trim', explode("\n", $request->input('aliases'))))
             : null;
 
+        $normalized = $this->normalizeEntityName($validated['entity_name']);
+
         $updateData = [
             'list_source' => $validated['list_source'] ?? null,
             'entity_name' => $validated['entity_name'],
@@ -197,9 +204,9 @@ class SanctionListController extends Controller
             'details' => $validated['details'] ?? null,
         ];
 
-        $updateData['normalized_name'] = strtolower(preg_replace('/[^\p{L}\s]/u', '', $validated['entity_name']));
-        $updateData['soundex_code'] = soundex($validated['entity_name']);
-        $updateData['metaphone_code'] = metaphone($validated['entity_name']);
+        $updateData['normalized_name'] = $normalized['normalized_name'];
+        $updateData['soundex_code'] = $normalized['soundex_code'];
+        $updateData['metaphone_code'] = $normalized['metaphone_code'];
 
         $entry->update($updateData);
 

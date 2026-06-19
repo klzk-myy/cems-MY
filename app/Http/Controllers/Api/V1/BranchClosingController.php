@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
+use App\Http\Concerns\BranchScoped;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Services\Branch\BranchClosingService;
@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 
 class BranchClosingController extends Controller
 {
+    use BranchScoped;
+
     public function __construct(
         protected BranchClosingService $branchClosingService,
     ) {}
@@ -20,11 +22,12 @@ class BranchClosingController extends Controller
     public function initiate(Request $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
-        $user = Auth::user();
 
-        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            return response()->json(['success' => false, 'message' => 'You do not have permission to access this branch.'], 403);
+        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
+            return $unauthorized;
         }
+
+        $user = Auth::user();
 
         $existingWorkflow = $this->branchClosingService->getActiveWorkflow($branch);
         if ($existingWorkflow) {
@@ -47,10 +50,9 @@ class BranchClosingController extends Controller
     public function checklist(Request $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
-        $user = Auth::user();
 
-        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            return response()->json(['success' => false, 'message' => 'You do not have permission to access this branch.'], 403);
+        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
+            return $unauthorized;
         }
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
@@ -77,10 +79,9 @@ class BranchClosingController extends Controller
     public function finalize(Request $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
-        $user = Auth::user();
 
-        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            return response()->json(['success' => false, 'message' => 'You do not have permission to access this branch.'], 403);
+        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
+            return $unauthorized;
         }
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
@@ -91,6 +92,8 @@ class BranchClosingController extends Controller
                 'message' => 'No active closure workflow found for this branch',
             ], 404);
         }
+
+        $user = Auth::user();
 
         try {
             $this->branchClosingService->finalize($workflow, $user);
@@ -110,10 +113,8 @@ class BranchClosingController extends Controller
 
     public function show(Request $request, int $branchId): JsonResponse
     {
-        $user = Auth::user();
-
-        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            return response()->json(['success' => false, 'message' => 'You do not have permission to access this branch.'], 403);
+        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
+            return $unauthorized;
         }
 
         $branch = Branch::findOrFail($branchId);
