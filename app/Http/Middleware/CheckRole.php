@@ -14,7 +14,7 @@ class CheckRole
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle(Request $request, Closure $next, string ...$roles)
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         $user = auth()->user();
 

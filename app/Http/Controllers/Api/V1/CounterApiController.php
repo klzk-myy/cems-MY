@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 class CounterApiController extends Controller
 {
     public function __construct(
-        private CounterService $counterService
+        protected CounterService $counterService
     ) {}
 
     public function close(CloseCounterRequest $request, string $counterId): JsonResponse

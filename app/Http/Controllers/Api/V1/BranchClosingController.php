@@ -23,7 +23,7 @@ class BranchClosingController extends Controller
         $user = Auth::user();
 
         if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this branch.');
+            return response()->json(['success' => false, 'message' => 'You do not have permission to access this branch.'], 403);
         }
 
         $existingWorkflow = $this->branchClosingService->getActiveWorkflow($branch);
@@ -50,7 +50,7 @@ class BranchClosingController extends Controller
         $user = Auth::user();
 
         if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this branch.');
+            return response()->json(['success' => false, 'message' => 'You do not have permission to access this branch.'], 403);
         }
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
@@ -80,7 +80,7 @@ class BranchClosingController extends Controller
         $user = Auth::user();
 
         if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this branch.');
+            return response()->json(['success' => false, 'message' => 'You do not have permission to access this branch.'], 403);
         }
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
@@ -113,7 +113,7 @@ class BranchClosingController extends Controller
         $user = Auth::user();
 
         if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this branch.');
+            return response()->json(['success' => false, 'message' => 'You do not have permission to access this branch.'], 403);
         }
 
         $branch = Branch::findOrFail($branchId);

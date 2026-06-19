@@ -132,7 +132,7 @@ class RiskController extends Controller
         $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
 
         if (! $profile) {
-            abort(404, 'Risk profile not found.');
+            return response()->json(['success' => false, 'message' => 'Risk profile not found.'], 404);
         }
 
         return $profile;

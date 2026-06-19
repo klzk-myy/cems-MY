@@ -6,6 +6,7 @@ use App\Services\ThresholdService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
 
 class PerformanceTrackingMiddleware
 {
@@ -13,7 +14,7 @@ class PerformanceTrackingMiddleware
         protected ThresholdService $thresholdService
     ) {}
 
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $start = microtime(true);
         $response = $next($request);

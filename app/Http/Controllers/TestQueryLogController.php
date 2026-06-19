@@ -6,7 +6,7 @@ use App\Models\Customer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
-class TestQueryLogController
+class TestQueryLogController extends Controller
 {
     public function index(): JsonResponse
     {

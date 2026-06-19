@@ -12,6 +12,7 @@ use App\Models\CurrencyPosition;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Services\Accounting\CurrencyPositionService;
+use App\Services\AuditService;
 use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +23,8 @@ class StockCashController extends Controller
     public function __construct(
         protected MathService $mathService,
         protected CurrencyPositionService $currencyPositionService,
-        protected TillService $tillService
+        protected TillService $tillService,
+        protected AuditService $auditService
     ) {}
 
     /**
