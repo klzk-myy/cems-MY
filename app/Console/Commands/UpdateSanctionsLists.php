@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Bus;
 
 class UpdateSanctionsLists extends Command
 {
+    use Concerns\HasSanctionsImport;
+
     protected $signature = 'sanctions:update
                             {--source= : Update specific source (un, ofac, moha, eu)}
                             {--sync : Run synchronously instead of dispatching to queue}';
