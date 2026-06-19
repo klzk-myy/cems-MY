@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\CustomerRiskScoringService;
+use App\Services\Compliance\PepAssessmentService;
 use App\Services\Compliance\RiskCalculationService;
 use App\Services\CustomerScreeningService;
 use App\Services\Risk\AmountRiskService;
@@ -61,7 +62,8 @@ class CustomerRiskScoringServiceTest extends TestCase
             $auditService,
             $this->mathService,
             $this->thresholdService,
-            $riskCalculationService
+            $riskCalculationService,
+            new PepAssessmentService,
         );
     }
 

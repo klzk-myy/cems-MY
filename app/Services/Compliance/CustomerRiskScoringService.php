@@ -17,7 +17,6 @@ use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class CustomerRiskScoringService
@@ -29,6 +28,7 @@ class CustomerRiskScoringService
         protected MathService $mathService,
         protected ThresholdService $thresholdService,
         protected RiskCalculationService $riskCalculationService,
+        protected PepAssessmentService $pepAssessmentService,
         protected ?GeographicRiskService $geographicRiskService = null,
         protected ?AmountRiskService $amountRiskService = null,
     ) {}
@@ -343,60 +343,8 @@ class CustomerRiskScoringService
         return ($levels[$newLevel] ?? 0) > ($levels[$oldLevel] ?? 0);
     }
 
-    /**
-     * pd-00.md 15.4: Assess whether PEP status should cease
-     *
-     * Factors:
-     *   (a) level of informal influence the PEP could still exercise
-     *   (b) whether previous and current functions are linked to same substantive matters
-     */
     public function assessPepCessation(Customer $customer): PepCessationResult
     {
-        $factors = [];
-
-        // Factor (a): Informal influence assessment
-        $informalInfluence = $this->assessInformalInfluence($customer);
-        $factors['informal_influence'] = $informalInfluence;
-
-        // Factor (b): Same substantive matters
-        $sameMatters = $this->assessFunctionContinuity($customer);
-        $factors['same_substantive_matters'] = $sameMatters;
-
-        // Decision: If both factors indicate low risk, PEP status can cease
-        $canCessation = $informalInfluence['level'] === 'low' && ! $sameMatters;
-
-        return new PepCessationResult(
-            canCessate: $canCessation,
-            factors: $factors,
-            assessedAt: Carbon::now(),
-        );
-    }
-
-    /**
-     * Assess the level of informal influence a former PEP could still exercise.
-     */
-    private function assessInformalInfluence(Customer $customer): array
-    {
-        $lastRoleEnded = $customer->pep_role_ended_at;
-        $yearsSince = $lastRoleEnded ? $lastRoleEnded->diffInYears(Carbon::now()) : 0;
-
-        if ($yearsSince > 5) {
-            return ['level' => 'low', 'reason' => '5+ years since PEP role'];
-        }
-
-        if ($yearsSince > 2) {
-            return ['level' => 'medium', 'reason' => '2-5 years since PEP role'];
-        }
-
-        return ['level' => 'high', 'reason' => 'Recent PEP role (< 2 years)'];
-    }
-
-    /**
-     * Assess whether current and former roles involve same substantive matters.
-     */
-    private function assessFunctionContinuity(Customer $customer): bool
-    {
-        // Check if current role involves same policy/regulatory domain as former PEP role
-        return $customer->current_role_domain === $customer->former_pep_domain;
+        return $this->pepAssessmentService->assessPepCessation($customer);
     }
 }
