@@ -7,6 +7,8 @@ use App\Enums\CaseResolution;
 use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Compliance\AddCaseNoteRequest;
+use App\Http\Requests\Api\V1\Compliance\CloseCaseRequest;
 use App\Http\Requests\StoreCaseRequest;
 use App\Http\Requests\UpdateCaseRequest;
 use App\Http\Resources\Api\V1\Compliance\CaseCollection;
@@ -125,13 +127,9 @@ class CaseController extends Controller
     /**
      * Add a note to a case.
      */
-    public function addNote(Request $request, int $id): JsonResponse
+    public function addNote(AddCaseNoteRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'note_type' => 'required|string',
-            'content' => 'required|string|max:2000',
-            'is_internal' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $case = ComplianceCase::findOrFail($id);
 
@@ -153,12 +151,9 @@ class CaseController extends Controller
     /**
      * Close a case.
      */
-    public function close(Request $request, int $id): JsonResponse
+    public function close(CloseCaseRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'resolution' => 'required|string',
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $case = ComplianceCase::findOrFail($id);
 
