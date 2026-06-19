@@ -16,12 +16,11 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Transaction\TransactionService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-/**
- * @group slow
- */
+#[Group('slow')]
 class TransactionWorkflowTest extends TestCase
 {
     use DatabaseTransactions;

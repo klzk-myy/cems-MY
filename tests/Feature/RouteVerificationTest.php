@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -12,9 +13,7 @@ use Tests\TestCase;
  *
  * Tests the route verification script functionality.
  */
-/**
- * @group slow
- */
+#[Group('slow')]
 class RouteVerificationTest extends TestCase
 {
     protected string $scriptPath;
