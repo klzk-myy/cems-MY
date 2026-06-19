@@ -8,6 +8,7 @@ use App\Models\CurrencyPosition;
 use App\Models\JournalEntry;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\RevaluationNotificationService;
 use App\Services\Accounting\RevaluationService;
 use App\Services\AuditService;
 use App\Services\System\MathService;
@@ -103,10 +104,9 @@ class RevaluationServiceTest extends TestCase
             $this->mathService,
             $mockRateApi,
             $mockAccounting,
-            $mockAudit
+            $mockAudit,
+            Mockery::mock(RevaluationNotificationService::class)->shouldIgnoreMissing()
         );
-
-        // Act & Assert: Verify that an exception is thrown with failed currencies summary
         try {
             $service->runRevaluationWithJournal($testDate, $this->testUser->id);
             $this->fail('Expected RuntimeException was not thrown');
@@ -174,7 +174,8 @@ class RevaluationServiceTest extends TestCase
             $this->mathService,
             $mockRateApi,
             $mockAccounting,
-            $mockAudit
+            $mockAudit,
+            Mockery::mock(RevaluationNotificationService::class)->shouldIgnoreMissing()
         );
 
         // Act & Assert: Verify error message includes both successful and failed currencies
@@ -227,7 +228,8 @@ class RevaluationServiceTest extends TestCase
             $this->mathService,
             $mockRateApi,
             $mockAccounting,
-            $mockAudit
+            $mockAudit,
+            Mockery::mock(RevaluationNotificationService::class)->shouldIgnoreMissing()
         );
 
         // Act
@@ -270,7 +272,8 @@ class RevaluationServiceTest extends TestCase
             $this->mathService,
             $mockRateApi,
             $mockAccounting,
-            $mockAudit
+            $mockAudit,
+            Mockery::mock(RevaluationNotificationService::class)->shouldIgnoreMissing()
         );
 
         // Act

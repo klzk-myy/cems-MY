@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Accounting\RevaluationNotificationService;
 use App\Services\Accounting\RevaluationService;
 use App\Services\Reporting\ExportService;
 use Illuminate\Console\Command;
@@ -12,7 +13,7 @@ class RunMonthlyRevaluation extends Command
 
     protected $description = 'Run monthly currency revaluation';
 
-    public function handle(RevaluationService $service, ExportService $exportService): int
+    public function handle(RevaluationService $service, ExportService $exportService, RevaluationNotificationService $notificationService): int
     {
         $isMonthEnd = now()->isLastOfMonth();
 
@@ -31,7 +32,7 @@ class RunMonthlyRevaluation extends Command
             $path = $exportService->toCSV($results['results'], $filename);
             $results['report_path'] = $path;
 
-            $service->sendRevaluationNotification($results);
+            $notificationService->sendRevaluationNotification($results);
 
             $this->info("Revaluation complete. {$results['positions_updated']} positions updated.");
             $this->info("Net P&L: {$results['net_pnl']}");
