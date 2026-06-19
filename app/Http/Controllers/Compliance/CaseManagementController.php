@@ -3,6 +3,12 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AddCaseLinkRequest;
+use App\Http\Requests\CreateCaseFromAlertsRequest;
+use App\Http\Requests\LinkAlertToCaseRequest;
+use App\Http\Requests\MergeCasesRequest;
+use App\Http\Requests\UpdateCaseStatusRequest;
+use App\Http\Requests\UploadCaseDocumentRequest;
 use App\Models\Alert;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceCaseDocument;
@@ -40,13 +46,8 @@ class CaseManagementController extends Controller
         return view('compliance.cases.index', compact('cases', 'summary'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(CreateCaseFromAlertsRequest $request): RedirectResponse
     {
-        $request->validate([
-            'alert_ids' => 'required|array|min:1',
-            'alert_ids.*' => 'exists:alerts,id',
-        ]);
-
         $case = $this->caseManagementService->createFromAlerts(
             $request->alert_ids,
             auth()->id()
@@ -63,13 +64,8 @@ class CaseManagementController extends Controller
         return view('compliance.cases.show', compact('case'));
     }
 
-    public function update(Request $request, ComplianceCase $case): RedirectResponse
+    public function update(UpdateCaseStatusRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'status' => 'nullable|in:open,in_progress,pending_review,resolved,closed',
-            'notes' => 'nullable|string',
-        ]);
-
         if ($request->has('status')) {
             $case = $this->caseManagementService->updateStatus($case, $request->status);
         }
@@ -81,12 +77,8 @@ class CaseManagementController extends Controller
         return redirect()->back()->with('success', 'Case updated successfully');
     }
 
-    public function merge(Request $request, ComplianceCase $case): RedirectResponse
+    public function merge(MergeCasesRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'target_case_id' => 'required|exists:compliance_cases,id',
-        ]);
-
         $targetCase = ComplianceCase::findOrFail($request->target_case_id);
 
         $mergedCase = $this->caseManagementService->mergeCases($case, $targetCase);
@@ -95,12 +87,8 @@ class CaseManagementController extends Controller
             ->with('success', 'Cases merged successfully');
     }
 
-    public function linkAlert(Request $request, ComplianceCase $case): RedirectResponse
+    public function linkAlert(LinkAlertToCaseRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'alert_id' => 'required|exists:alerts,id',
-        ]);
-
         $alert = Alert::findOrFail($request->alert_id);
 
         $this->caseManagementService->linkAlertToCase($alert, $case);
@@ -108,12 +96,8 @@ class CaseManagementController extends Controller
         return redirect()->back()->with('success', 'Alert linked to case');
     }
 
-    public function uploadDocument(Request $request, ComplianceCase $case): RedirectResponse
+    public function uploadDocument(UploadCaseDocumentRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
-        ]);
-
         $document = $this->caseManagementService->addDocument(
             $case->id,
             $request->file('file'),
@@ -134,13 +118,8 @@ class CaseManagementController extends Controller
         return redirect()->back()->with('success', 'Document verified');
     }
 
-    public function addLink(Request $request, ComplianceCase $case): RedirectResponse
+    public function addLink(AddCaseLinkRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'linked_type' => 'required|string',
-            'linked_id' => 'required|integer',
-        ]);
-
         $this->caseManagementService->addLink($case->id, $request->linked_type, $request->linked_id);
 
         return redirect()->back()->with('success', 'Link added');
@@ -157,7 +136,7 @@ class CaseManagementController extends Controller
         return redirect()->back()->with('success', 'Link removed');
     }
 
-    public function escalate(Request $request, ComplianceCase $case): RedirectResponse
+    public function escalate(ComplianceCase $case): RedirectResponse
     {
         $this->caseManagementService->escalateCase($case);
 
