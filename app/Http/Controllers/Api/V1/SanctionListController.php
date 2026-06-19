@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\SanctionList\IndexSanctionEntryRequest;
+use App\Http\Requests\Api\V1\SanctionList\StoreSanctionEntryRequest;
+use App\Http\Requests\Api\V1\SanctionList\UpdateSanctionEntryRequest;
 use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
@@ -36,15 +39,9 @@ class SanctionListController extends Controller
         ]);
     }
 
-    public function entries(Request $request): JsonResponse
+    public function entries(IndexSanctionEntryRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'page' => 'integer|min:1',
-            'per_page' => 'integer|min:1|max:100',
-            'list_id' => 'integer|exists:sanction_lists,id',
-            'search' => 'string|max:255',
-            'status' => 'in:active,inactive,all',
-        ]);
+        $validated = $request->validated();
 
         $perPage = $validated['per_page'] ?? 50;
         $status = $validated['status'] ?? 'active';
@@ -130,19 +127,9 @@ class SanctionListController extends Controller
         ]);
     }
 
-    public function storeEntry(Request $request): JsonResponse
+    public function storeEntry(StoreSanctionEntryRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'list_id' => 'required|exists:sanction_lists,id',
-            'entity_name' => 'required|string|max:255',
-            'entity_type' => 'required|in:Individual,Entity',
-            'aliases' => 'nullable|string',
-            'nationality' => 'nullable|string|max:100',
-            'date_of_birth' => 'nullable|date',
-            'reference_number' => 'nullable|string|max:100',
-            'listing_date' => 'nullable|date',
-            'details' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         $entry = SanctionEntry::create([
             'list_id' => $validated['list_id'],
@@ -168,21 +155,11 @@ class SanctionListController extends Controller
         ], 201);
     }
 
-    public function updateEntry(Request $request, int $entryId): JsonResponse
+    public function updateEntry(UpdateSanctionEntryRequest $request, int $entryId): JsonResponse
     {
         $entry = SanctionEntry::findOrFail($entryId);
 
-        $validated = $request->validate([
-            'entity_name' => 'nullable|string|max:255',
-            'entity_type' => 'nullable|in:Individual,Entity',
-            'aliases' => 'nullable|string',
-            'nationality' => 'nullable|string|max:100',
-            'date_of_birth' => 'nullable|date',
-            'reference_number' => 'nullable|string|max:100',
-            'listing_date' => 'nullable|date',
-            'details' => 'nullable|array',
-            'status' => 'nullable|in:active,inactive',
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['entity_name'])) {
             $validated['normalized_name'] = strtolower(preg_replace('/[^\p{L}\s]/u', '', $validated['entity_name']));

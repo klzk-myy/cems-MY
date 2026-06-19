@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Compliance\AuditTrailExportRequest;
+use App\Http\Requests\Api\V1\Compliance\AuditTrailRequest;
 use App\Services\Compliance\ComplianceReportingService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -60,14 +61,9 @@ class DashboardController extends Controller
     /**
      * Get audit trail for compliance actions.
      */
-    public function auditTrail(Request $request): JsonResponse
+    public function auditTrail(AuditTrailRequest $request): JsonResponse
     {
-        $filters = $request->validate([
-            'per_page' => 'nullable|integer|min:1|max:100',
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date|after_or_equal:from_date',
-            'case_id' => 'nullable|integer',
-        ]);
+        $filters = $request->validated();
 
         $trail = $this->reportingService->getAuditTrail($filters);
 
@@ -86,13 +82,9 @@ class DashboardController extends Controller
     /**
      * Export audit trail as CSV.
      */
-    public function auditTrailExport(Request $request): StreamedResponse
+    public function auditTrailExport(AuditTrailExportRequest $request): StreamedResponse
     {
-        $filters = $request->validate([
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date|after_or_equal:from_date',
-            'case_id' => 'nullable|integer',
-        ]);
+        $filters = $request->validated();
 
         $csv = $this->reportingService->exportAuditTrailToCsv($filters);
 

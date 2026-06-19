@@ -1,0 +1,15 @@
+<?php
+
+namespace App\Http\Requests\Api\V1\Compliance;
+
+use App\Http\Requests\ApiFormRequest;
+
+class LockRiskProfileRequest extends ApiFormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'reason' => 'required|string|max:500',
+        ];
+    }
+}
