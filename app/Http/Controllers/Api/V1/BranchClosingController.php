@@ -113,30 +113,6 @@ class BranchClosingController extends Controller
 
     public function show(Request $request, int $branchId): JsonResponse
     {
-        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
-            return $unauthorized;
-        }
-
-        $branch = Branch::findOrFail($branchId);
-
-        $workflow = $this->branchClosingService->getActiveWorkflow($branch);
-
-        if (! $workflow) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No active closure workflow found for this branch',
-            ], 404);
-        }
-
-        $checklist = $this->branchClosingService->getChecklist($workflow);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'workflow' => $workflow,
-                'checklist' => $checklist,
-                'can_finalize' => $this->branchClosingService->canFinalize($workflow),
-            ],
-        ]);
+        return $this->checklist($request, $branchId);
     }
 }

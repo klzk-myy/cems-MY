@@ -19,7 +19,7 @@ class FindingController extends Controller
     {
         $query = ComplianceFinding::query();
 
-        $this->applyFindingFilters($query, $request, 'from_date', 'to_date');
+        $this->applyFindingFilters($query, $request);
 
         $perPage = $request->get('per_page', 20);
         $findingsPaginated = $query->orderBy('generated_at', 'desc')->paginate($perPage);
@@ -53,17 +53,6 @@ class FindingController extends Controller
             return redirect()->route('compliance.findings.index')
                 ->with('error', 'Finding not found');
         }
-
-        $findingData = [
-            'id' => $finding->id,
-            'finding_type' => $finding->finding_type?->value,
-            'severity' => $finding->severity?->value,
-            'status' => $finding->status?->value,
-            'details' => $finding->details,
-            'generated_at' => $finding->generated_at?->toIso8601String(),
-            'subject_type' => $finding->subject_type,
-            'subject_id' => $finding->subject_id,
-        ];
 
         return view('compliance.findings.show', compact('finding'));
     }
