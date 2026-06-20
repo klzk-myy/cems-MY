@@ -405,4 +405,62 @@ class UnifiedComplianceAlertsTest extends TestCase
         $this->assertStringContainsString('Sanction_Match', $content);
         $this->assertStringContainsString('Velocity_Exceeded', $content);
     }
+
+    #[Test]
+    public function customer_search_filters_findings_by_customer_name(): void
+    {
+        $jane = Customer::factory()->create(['full_name' => 'Jane Smith']);
+        $john = Customer::factory()->create(['full_name' => 'John Doe']);
+
+        ComplianceFinding::factory()->create([
+            'subject_type' => 'Customer',
+            'subject_id' => $jane->id,
+            'severity' => 'High',
+            'finding_type' => 'Velocity_Exceeded',
+            'status' => 'New',
+            'details' => ['summary' => 'Jane finding'],
+            'generated_at' => now(),
+        ]);
+        ComplianceFinding::factory()->create([
+            'subject_type' => 'Customer',
+            'subject_id' => $john->id,
+            'severity' => 'Critical',
+            'finding_type' => 'Sanction_Match',
+            'status' => 'New',
+            'details' => ['summary' => 'John finding'],
+            'generated_at' => now(),
+        ]);
+
+        $this->actingAs($this->complianceOfficer);
+
+        $response = $this->get('/compliance/unified?source=finding&customer=Jane');
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+        $this->assertStringContainsString('Jane Smith', $content);
+        $this->assertStringNotContainsString('John Doe', $content);
+    }
+
+    #[Test]
+    public function customer_search_filters_alerts_by_customer_name(): void
+    {
+        $jane = Customer::factory()->create(['full_name' => 'Jane Smith']);
+        $john = Customer::factory()->create(['full_name' => 'John Doe']);
+
+        Alert::factory()->create(['customer_id' => $jane->id]);
+        Alert::factory()->create(['customer_id' => $john->id]);
+
+        Http::fake([
+            config('app.url').'/api/v1/compliance/findings*' => Http::response(['data' => ['data' => []]], 200),
+        ]);
+
+        $this->actingAs($this->complianceOfficer);
+
+        $response = $this->get('/compliance/unified?source=alert&customer=Jane');
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+        $this->assertStringContainsString('Jane Smith', $content);
+        $this->assertStringNotContainsString('John Doe', $content);
+    }
 }
