@@ -122,7 +122,7 @@ class CounterOpeningController extends Controller
 
         $validated = $request->validated();
 
-        $teller = User::find($validated['teller_id']);
+        $teller = User::findOrFail($validated['teller_id']);
 
         // Verify teller belongs to same branch
         if ($teller->branch_id !== $counter->branch_id) {
