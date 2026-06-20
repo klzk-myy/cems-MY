@@ -8,6 +8,7 @@ use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\AddCaseNoteRequest;
+use App\Http\Requests\Api\V1\Compliance\CaseIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\CloseCaseRequest;
 use App\Http\Requests\StoreCaseRequest;
 use App\Http\Requests\UpdateCaseRequest;
@@ -16,7 +17,6 @@ use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceFinding;
 use App\Services\Compliance\CaseManagementService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class CaseController extends Controller
 {
@@ -27,7 +27,7 @@ class CaseController extends Controller
     /**
      * List cases with filtering.
      */
-    public function index(Request $request): CaseCollection
+    public function index(CaseIndexRequest $request): CaseCollection
     {
         $query = ComplianceCase::with(['customer', 'assignee']);
 

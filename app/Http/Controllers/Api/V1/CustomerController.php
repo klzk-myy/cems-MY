@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Customer\SearchCustomerRequest;
 use App\Http\Requests\Api\V1\Customer\UploadDocumentRequest;
+use App\Http\Requests\Api\V1\CustomerIndexRequest;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Http\Resources\Api\V1\CustomerCollection;
@@ -15,7 +16,6 @@ use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\Customer\CustomerService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -31,7 +31,7 @@ class CustomerController extends Controller
         protected AuditService $auditService,
     ) {}
 
-    public function index(Request $request): CustomerCollection
+    public function index(CustomerIndexRequest $request): CustomerCollection
     {
         $query = Customer::query();
 

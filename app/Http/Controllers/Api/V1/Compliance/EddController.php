@@ -4,19 +4,19 @@ namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Enums\EddStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Compliance\EddIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\RejectEddRequest;
 use App\Http\Requests\Api\V1\Compliance\SubmitQuestionnaireRequest;
 use App\Models\Compliance\EddQuestionnaireTemplate;
 use App\Models\EnhancedDiligenceRecord;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class EddController extends Controller
 {
     /**
      * List EDD records with filtering.
      */
-    public function index(Request $request): JsonResponse
+    public function index(EddIndexRequest $request): JsonResponse
     {
         $query = EnhancedDiligenceRecord::with(['customer', 'flaggedTransaction']);
 

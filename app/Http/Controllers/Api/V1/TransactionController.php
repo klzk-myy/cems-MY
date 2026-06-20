@@ -5,12 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Transaction\StoreTransactionRequest;
+use App\Http\Requests\Api\V1\TransactionIndexRequest;
 use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\Transaction;
 use App\Services\Transaction\TransactionService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
@@ -21,7 +21,7 @@ class TransactionController extends Controller
     /**
      * Display a paginated list of transactions.
      */
-    public function index(Request $request): TransactionCollection
+    public function index(TransactionIndexRequest $request): TransactionCollection
     {
         $perPage = $request->get('per_page', 20);
         $query = Transaction::with(['customer', 'user', 'branch']);

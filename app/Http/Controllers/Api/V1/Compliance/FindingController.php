@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Api\V1\Compliance;
 use App\Http\Concerns\FiltersComplianceFindings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\DismissFindingRequest;
+use App\Http\Requests\Api\V1\Compliance\FindingIndexRequest;
 use App\Models\Compliance\ComplianceFinding;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class FindingController extends Controller
 {
@@ -16,7 +16,7 @@ class FindingController extends Controller
     /**
      * List compliance findings with filtering.
      */
-    public function index(Request $request): JsonResponse
+    public function index(FindingIndexRequest $request): JsonResponse
     {
         $query = ComplianceFinding::query();
 

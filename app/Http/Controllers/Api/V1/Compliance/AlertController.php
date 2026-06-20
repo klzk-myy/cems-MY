@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Compliance\AlertIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\BulkAssignAlertRequest;
 use App\Http\Requests\Api\V1\Compliance\BulkResolveAlertRequest;
 use App\Models\Alert;
 use App\Services\Compliance\AlertTriageService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class AlertController extends Controller
 {
@@ -19,7 +19,7 @@ class AlertController extends Controller
     /**
      * List alerts for triage.
      */
-    public function index(Request $request): JsonResponse
+    public function index(AlertIndexRequest $request): JsonResponse
     {
         $query = Alert::with(['customer', 'flaggedTransaction', 'assignedTo'])
             ->whereNull('case_id');
