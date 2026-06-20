@@ -10,19 +10,21 @@ class CustomerRiskHistory extends BaseModel
 
     protected $fillable = [
         'customer_id',
-        'old_score',
+        'previous_score',
         'new_score',
-        'old_rating',
+        'previous_rating',
         'new_rating',
         'change_reason',
-        'assessed_by',
+        'changed_by',
+        'changed_at',
     ];
 
     protected $casts = [
-        'old_score' => 'integer',
+        'previous_score' => 'integer',
         'new_score' => 'integer',
-        'old_rating' => RiskRating::class,
+        'previous_rating' => RiskRating::class,
         'new_rating' => RiskRating::class,
+        'changed_at' => 'datetime',
     ];
 
     public function customer()
@@ -32,6 +34,6 @@ class CustomerRiskHistory extends BaseModel
 
     public function assessor()
     {
-        return $this->belongsTo(User::class, 'assessed_by');
+        return $this->belongsTo(User::class, 'changed_by');
     }
 }
