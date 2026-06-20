@@ -52,9 +52,6 @@ return new class extends Migration
             if (! $this->hasIndex('currency_positions', 'currency_positions_currency_idx')) {
                 $table->index('currency_code', 'currency_positions_currency_idx');
             }
-            if (! $this->hasIndex('currency_positions', 'currency_positions_till_idx')) {
-                $table->index('till_id', 'currency_positions_till_idx');
-            }
         });
 
         // Flagged transactions indexes
@@ -88,7 +85,6 @@ return new class extends Migration
 
         Schema::table('currency_positions', function (Blueprint $table) {
             $table->dropIndex('currency_positions_currency_idx');
-            $table->dropIndex('currency_positions_till_idx');
         });
 
         Schema::table('flagged_transactions', function (Blueprint $table) {
