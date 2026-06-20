@@ -144,15 +144,6 @@ class CurrencyPosition extends BaseModel
         return $this->average_cost ?? '0';
     }
 
-    /**
-     * Whether this position needs revaluation (always false — revaluation
-     * status is per-month, not per-position; computed at service level).
-     */
-    public function getNeedsRevaluationAttribute(): bool
-    {
-        return false;
-    }
-
     // Legacy mutators
 
     public function setBalanceAttribute($value): void
