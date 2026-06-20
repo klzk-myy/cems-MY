@@ -307,14 +307,14 @@ class TransactionService implements TransactionServiceInterface
             // where two concurrent transactions could both pass the duplicate check
             // before either acquires the lock
             if ($data['type'] === TransactionType::Sell->value) {
-                $this->positionService->getPositionWithLock($data['currency_code'], $data['till_id']);
+                $this->positionService->getPositionWithLock($data['currency_code'], $tillBalance->branch_id);
 
                 // Verify sufficient stock for Sell transactions IMMEDIATELY after acquiring lock
                 // This prevents race conditions where another transaction could modify the position
                 // Use getAvailableBalance which accounts for pending reservations
                 $availableBalance = $this->positionService->getAvailableBalance(
                     $data['currency_code'],
-                    $data['till_id']
+                    $tillBalance->branch_id
                 );
                 if ($this->mathService->compare($availableBalance, $amountForeign) < 0) {
                     throw new InsufficientStockException(
@@ -327,7 +327,7 @@ class TransactionService implements TransactionServiceInterface
                 // For Buy transactions, acquire position lock to prevent race conditions
                 // where concurrent transactions could cause inconsistent position updates.
                 // Unlike Sell, Buy does not require stock validation (we are acquiring currency).
-                $this->positionService->getPositionWithLock($data['currency_code'], $data['till_id']);
+                $this->positionService->getPositionWithLock($data['currency_code'], $tillBalance->branch_id);
             }
 
             // Check for duplicate transaction via idempotency key (inside transaction to prevent race)
@@ -399,7 +399,7 @@ class TransactionService implements TransactionServiceInterface
                     $amountForeign,
                     $rate,
                     $data['type'],
-                    $data['till_id']
+                    $tillBalance->branch_id
                 );
                 $this->updateTillBalance($tillBalance, $data['type'], $amountLocal, $amountForeign);
 
@@ -664,7 +664,7 @@ class TransactionService implements TransactionServiceInterface
                 // Position could have been deleted between transaction creation and approval
                 if ($lockedTransaction->type->isSell()) {
                     $position = CurrencyPosition::where('currency_code', $lockedTransaction->currency_code)
-                        ->where('till_id', $lockedTransaction->till_id)
+                        ->where('branch_id', $lockedTransaction->branch_id)
                         ->first();
 
                     if (! $position) {
@@ -721,7 +721,7 @@ class TransactionService implements TransactionServiceInterface
                 if ($lockedTransaction->type === TransactionType::Sell) {
                     $available = $this->positionService->getAvailableBalance(
                         $lockedTransaction->currency_code,
-                        (string) $lockedTransaction->till_id
+                        (string) $lockedTransaction->branch_id
                     );
 
                     if ($this->mathService->compare($available, (string) $lockedTransaction->amount_foreign) < 0) {
@@ -746,7 +746,7 @@ class TransactionService implements TransactionServiceInterface
                     (string) $lockedTransaction->amount_foreign,
                     (string) $lockedTransaction->rate,
                     $lockedTransaction->type->value,
-                    $lockedTransaction->till_id ?? 'MAIN'
+                    $lockedTransaction->branch_id ?? 'HQ'
                 );
                 $this->updateTillBalance(
                     $tillBalance,

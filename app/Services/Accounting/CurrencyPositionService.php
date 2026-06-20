@@ -51,7 +51,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * @param  string  $amount  Transaction amount as string
      * @param  string  $rate  Exchange rate for this transaction
      * @param  string  $type  Transaction type: 'Buy' or 'Sell'
-     * @param  string  $tillId  Till identifier (default: 'MAIN')
+     * @param  string  $branchId  Branch identifier (default: 'HQ')
      * @return CurrencyPosition Updated position model
      *
      * @throws \InvalidArgumentException If selling with insufficient or zero balance
@@ -61,12 +61,12 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         string $amount,
         string $rate,
         string $type,
-        string $tillId = 'MAIN'
+        string $branchId = 'HQ'
     ): CurrencyPosition {
-        $position = DB::transaction(function () use ($currencyCode, $amount, $rate, $type, $tillId) {
+        $position = DB::transaction(function () use ($currencyCode, $amount, $rate, $type, $branchId) {
             // Lock the position row for update to prevent race conditions on concurrent sells
             $position = CurrencyPosition::where('currency_code', $currencyCode)
-                ->where('till_id', $tillId)
+                ->where('branch_id', $branchId)
                 ->lockForUpdate()
                 ->first();
 
@@ -74,16 +74,16 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             if ($position === null) {
                 $position = new CurrencyPosition([
                     'currency_code' => $currencyCode,
-                    'till_id' => $tillId,
-                    'balance' => '0',
-                    'avg_cost_rate' => $rate,
-                    'last_valuation_rate' => $rate,
+                    'branch_id' => $branchId,
+                    'quantity' => '0',
+                    'average_cost' => $rate,
+                    'current_rate' => $rate,
                 ]);
                 $position->save();
             }
 
-            $oldBalance = $position->balance;
-            $oldAvgCost = $position->avg_cost_rate;
+            $oldBalance = $position->quantity;
+            $oldAvgCost = $position->average_cost;
 
             if ($type === TransactionType::Buy->value) {
                 // Buying foreign currency - increase position
@@ -116,21 +116,21 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             }
 
             $position->update([
-                'balance' => $this->mathService->round($newBalance, $this->positionPrecision),
-                'avg_cost_rate' => $this->mathService->round($newAvgCost, $this->positionPrecision),
-                'last_valuation_rate' => $this->mathService->round($rate, $this->positionPrecision),
-                'unrealized_pnl' => $this->mathService->round(
+                'quantity' => $this->mathService->round($newBalance, $this->positionPrecision),
+                'average_cost' => $this->mathService->round($newAvgCost, $this->positionPrecision),
+                'current_rate' => $this->mathService->round($rate, $this->positionPrecision),
+                'unrealized_gain_loss' => $this->mathService->round(
                     $this->mathService->calculateRevaluationPnl($newBalance, $newAvgCost, $rate),
                     $this->positionPrecision
                 ),
-                'last_valuation_at' => now(),
+                'last_revalued_at' => now(),
             ]);
 
             return $position->fresh();
         });
 
         // Invalidate cache for available balance
-        $cacheKey = "position:{$tillId}:{$currencyCode}:available";
+        $cacheKey = "position:{$branchId}:{$currencyCode}:available";
         Cache::forget($cacheKey);
 
         return $position;
@@ -144,13 +144,13 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * both pass the balance check and cause negative positions.
      *
      * @param  string  $currencyCode  Currency code (e.g., 'USD', 'EUR')
-     * @param  string  $tillId  Till identifier
+     * @param  string  $branchId  Branch identifier
      * @return CurrencyPosition|null Position model or null if not found
      */
-    public function getPositionWithLock(string $currencyCode, string $tillId): ?CurrencyPosition
+    public function getPositionWithLock(string $currencyCode, string $branchId): ?CurrencyPosition
     {
         return CurrencyPosition::where('currency_code', $currencyCode)
-            ->where('till_id', $tillId)
+            ->where('branch_id', $branchId)
             ->lockForUpdate()
             ->first();
     }
@@ -159,76 +159,76 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * Get a specific currency position.
      *
      * @param  string  $currencyCode  Currency code (e.g., 'USD', 'EUR')
-     * @param  string|null  $tillId  Till identifier (default: 'MAIN' with warning log)
+     * @param  string|null  $branchId  Branch identifier (default: 'HQ' with warning log)
      * @return CurrencyPosition|null Position model or null if not found
      */
-    public function getPosition(string $currencyCode, ?string $tillId = null): ?CurrencyPosition
+    public function getPosition(string $currencyCode, ?string $branchId = null): ?CurrencyPosition
     {
-        // If no till specified, use MAIN as fallback (but log a warning)
-        if ($tillId === null) {
+        // If no branch specified, use HQ as fallback (but log a warning)
+        if ($branchId === null) {
             Log::warning(
-                'getPosition called without till_id - using MAIN as fallback',
+                'getPosition called without branch_id - using HQ as fallback',
                 [
                     'currency_code' => $currencyCode,
                     'stack_trace' => collect(debug_backtrace())->take(5)->pluck('file')->toArray(),
                 ]
             );
-            $tillId = 'MAIN';
+            $branchId = 'HQ';
         }
 
         return CurrencyPosition::where('currency_code', $currencyCode)
-            ->where('till_id', $tillId)
+            ->where('branch_id', $branchId)
             ->first();
     }
 
     /**
-     * Get position for a specific transaction (required till_id).
+     * Get position for a specific transaction (required branch_id).
      *
      * @param  string  $currencyCode  Currency code (e.g., 'USD', 'EUR')
-     * @param  string  $tillId  Till identifier (required)
+     * @param  string  $branchId  Branch identifier (required)
      * @return CurrencyPosition|null Position model or null if not found
      *
-     * @throws \InvalidArgumentException If till_id is empty or invalid
+     * @throws \InvalidArgumentException If branch_id is empty or invalid
      */
-    public function getPositionForTransaction(string $currencyCode, string $tillId): ?CurrencyPosition
+    public function getPositionForTransaction(string $currencyCode, string $branchId): ?CurrencyPosition
     {
-        if (empty($tillId) || $tillId === 'undefined') {
+        if (empty($branchId) || $branchId === 'undefined') {
             throw new \InvalidArgumentException(
-                'till_id is required for position lookup. Transaction must specify a till.'
+                'branch_id is required for position lookup. Transaction must specify a branch.'
             );
         }
 
-        return $this->getPosition($currencyCode, $tillId);
+        return $this->getPosition($currencyCode, $branchId);
     }
 
     /**
-     * Get all positions for a specific till.
+     * Get all positions for a specific branch.
      *
-     * @param  string  $tillId  Till identifier (default: 'MAIN')
+     * @param  string  $branchId  Branch identifier (default: 'HQ')
      * @return Collection Collection of position models
      */
-    public function getAllPositions(string $tillId = 'MAIN'): Collection
+    public function getAllPositions(string $branchId = 'HQ'): Collection
     {
-        return CurrencyPosition::where('till_id', $tillId)
+        return CurrencyPosition::where('branch_id', $branchId)
             ->with('currency')
             ->get();
     }
 
     /**
-     * Calculate total unrealized P&L across all positions for a till.
+     * Calculate total unrealized P&L across all positions for a branch.
      *
      * Uses MathService for high-precision addition of position P&L values.
      *
-     * @param  string  $tillId  Till identifier (default: 'MAIN')
+     * @param  string  $branchId  Branch identifier (default: 'HQ')
      * @return string Total unrealized P&L as string
      */
-    public function getTotalPnl(string $tillId = 'MAIN'): string
+    public function getTotalPnl(string $branchId = 'HQ'): string
     {
-        $positions = $this->getAllPositions($tillId);
+        $positions = $this->getAllPositions($branchId);
         $totalUnrealized = '0';
 
         foreach ($positions as $position) {
-            $totalUnrealized = $this->mathService->add($totalUnrealized, $position['unrealized_pnl'] ?? '0');
+            $totalUnrealized = $this->mathService->add($totalUnrealized, $position['unrealized_gain_loss'] ?? '0');
         }
 
         return $totalUnrealized;
@@ -277,7 +277,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * Get consolidated positions aggregated by currency code across all branches.
      *
      * For Admin dashboard view - shows total of each currency across all branches.
-     * Uses weighted average for avg_cost and sums unrealized_pnl.
+     * Uses weighted average for average_cost and sums unrealized_gain_loss.
      */
     protected function getConsolidatedPositions(): Collection
     {
@@ -289,35 +289,34 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
 
         // Group by currency_code and consolidate
         $consolidated = $positions->groupBy('currency_code')->map(function ($group, $currencyCode) {
-            $totalBalance = '0';
+            $totalQuantity = '0';
             $totalValue = '0';
-            $totalUnrealizedPnl = '0';
+            $totalUnrealizedGainLoss = '0';
             $firstCurrency = null;
 
             foreach ($group as $position) {
                 $firstCurrency = $firstCurrency ?? $position->currency;
-                $totalBalance = $this->mathService->add($totalBalance, $position->balance);
-                // Value = balance * avg_cost_rate
-                $positionValue = $this->mathService->multiply($position->balance, $position->avg_cost_rate ?? '0');
+                $totalQuantity = $this->mathService->add($totalQuantity, $position->quantity);
+                // Value = quantity * average_cost
+                $positionValue = $this->mathService->multiply($position->quantity, $position->average_cost ?? '0');
                 $totalValue = $this->mathService->add($totalValue, $positionValue);
-                $totalUnrealizedPnl = $this->mathService->add($totalUnrealizedPnl, $position->unrealized_pnl ?? '0');
+                $totalUnrealizedGainLoss = $this->mathService->add($totalUnrealizedGainLoss, $position->unrealized_gain_loss ?? '0');
             }
 
-            // Weighted average cost = total value / total balance
-            $weightedAvgCost = $this->mathService->compare($totalBalance, '0') !== 0
-                ? $this->mathService->divide($totalValue, $totalBalance)
+            // Weighted average cost = total value / total quantity
+            $weightedAvgCost = $this->mathService->compare($totalQuantity, '0') !== 0
+                ? $this->mathService->divide($totalValue, $totalQuantity)
                 : '0';
 
             // Create a virtual consolidated position
             $consolidatedPosition = new CurrencyPosition([
                 'currency_code' => $currencyCode,
                 'branch_id' => null, // Indicates consolidated across branches
-                'till_id' => 'CONSOLIDATED',
-                'balance' => $totalBalance,
-                'avg_cost_rate' => $weightedAvgCost,
-                'last_valuation_rate' => $group->first()->last_valuation_rate,
-                'unrealized_pnl' => $totalUnrealizedPnl,
-                'last_valuation_at' => $group->max('last_valuation_at'),
+                'quantity' => $totalQuantity,
+                'average_cost' => $weightedAvgCost,
+                'current_rate' => $group->first()->current_rate,
+                'unrealized_gain_loss' => $totalUnrealizedGainLoss,
+                'last_revalued_at' => $group->max('last_revalued_at'),
             ]);
             $consolidatedPosition->setRelation('currency', $firstCurrency);
             $consolidatedPosition->setAttribute('is_consolidated', true);
@@ -340,15 +339,15 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
 
         $aggregates = [
             'total_balance_myr' => '0',
-            'total_unrealized_pnl' => '0',
+            'total_unrealized_gain_loss' => '0',
             'total_positions' => $positions->count(),
             'currencies' => [],
         ];
 
         foreach ($positions as $position) {
             $myrEquivalent = $this->mathService->multiply(
-                $position->balance,
-                $position->last_valuation_rate
+                $position->quantity,
+                $position->current_rate
             );
 
             $aggregates['total_balance_myr'] = $this->mathService->add(
@@ -356,17 +355,18 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 $myrEquivalent
             );
 
-            $aggregates['total_unrealized_pnl'] = $this->mathService->add(
-                $aggregates['total_unrealized_pnl'],
-                $position->unrealized_pnl
+            $aggregates['total_unrealized_gain_loss'] = $this->mathService->add(
+                $aggregates['total_unrealized_gain_loss'],
+                $position->unrealized_gain_loss
             );
 
             $aggregates['currencies'][] = [
                 'currency_code' => $position->currency_code,
-                'balance' => $position->balance,
+                'quantity' => $position->quantity,
                 'myr_equivalent' => $myrEquivalent,
-                'avg_cost_rate' => $position->avg_cost_rate,
-                'unrealized_pnl' => $position->unrealized_pnl,
+                'average_cost' => $position->average_cost,
+                'current_rate' => $position->current_rate,
+                'unrealized_gain_loss' => $position->unrealized_gain_loss,
             ];
         }
 
@@ -377,30 +377,30 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * Get available balance excluding pending reservations.
      *
      * @param  string  $currencyCode  Currency code
-     * @param  string  $tillId  Till identifier
+     * @param  string  $locationId  Branch identifier (used for position and reservation lookup)
      * @return string Available balance as string
      */
-    public function getAvailableBalance(string $currencyCode, string $tillId): string
+    public function getAvailableBalance(string $currencyCode, string $locationId): string
     {
-        $cacheKey = "position:{$tillId}:{$currencyCode}:available";
+        $cacheKey = "position:{$locationId}:{$currencyCode}:available";
 
-        return Cache::remember($cacheKey, now()->addMinute(), function () use ($currencyCode, $tillId) {
-            return DB::transaction(function () use ($currencyCode, $tillId) {
+        return Cache::remember($cacheKey, now()->addMinute(), function () use ($currencyCode, $locationId) {
+            return DB::transaction(function () use ($currencyCode, $locationId) {
                 // Lock the position to prevent race conditions
                 $position = CurrencyPosition::where('currency_code', $currencyCode)
-                    ->where('till_id', $tillId)
+                    ->where('branch_id', $locationId)
                     ->lockForUpdate()
                     ->first();
-                $balance = $position ? $position->balance : '0';
+                $quantity = $position ? $position->quantity : '0';
 
-                // Query reservations within same transaction
+                // Query reservations within same transaction (reservations stored with till_id)
                 $reserved = StockReservation::where('currency_code', $currencyCode)
-                    ->where('till_id', $tillId)
+                    ->where('till_id', $locationId)
                     ->where('status', StockReservationStatus::Pending)
                     ->where('expires_at', '>', now())
                     ->sum('amount_foreign');
 
-                $result = $this->mathService->subtract($balance, (string) $reserved);
+                $result = $this->mathService->subtract($quantity, (string) $reserved);
 
                 // Return with 6 decimal places for consistency with test expectations
                 return $this->mathService->round($result, 6);
@@ -419,14 +419,14 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         $reservation = StockReservation::create([
             'transaction_id' => $transaction->id,
             'currency_code' => $transaction->currency_code,
-            'till_id' => $transaction->till_id,
+            'branch_id' => $transaction->branch_id,
             'amount_foreign' => $transaction->amount_foreign,
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),
             'created_by' => $transaction->user_id,
         ]);
 
-        Cache::forget("position:{$transaction->till_id}:{$transaction->currency_code}:available");
+        Cache::forget("position:{$transaction->branch_id}:{$transaction->currency_code}:available");
 
         return $reservation;
     }
@@ -448,7 +448,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         }
 
         $reservation->update(['status' => StockReservationStatus::Consumed]);
-        Cache::forget("position:{$reservation->till_id}:{$reservation->currency_code}:available");
+        Cache::forget("position:{$reservation->branch_id}:{$reservation->currency_code}:available");
 
         return $reservation;
     }
@@ -470,7 +470,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         }
 
         $reservation->update(['status' => StockReservationStatus::Released]);
-        Cache::forget("position:{$reservation->till_id}:{$reservation->currency_code}:available");
+        Cache::forget("position:{$reservation->branch_id}:{$reservation->currency_code}:available");
 
         return $reservation;
     }

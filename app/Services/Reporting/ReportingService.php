@@ -126,8 +126,8 @@ class ReportingService implements ReportingServiceInterface
                 'Sell_Count' => $sellTxns->count(),
                 'Avg_Buy_Rate' => (string) ($buyTxns->avg('rate') ?? '0'),
                 'Avg_Sell_Rate' => (string) ($sellTxns->avg('rate') ?? '0'),
-                'Opening_Position' => $position ? $position->balance : '0',
-                'Closing_Position' => $position ? $position->balance : '0',
+                'Opening_Position' => $position ? $position->quantity : '0',
+                'Closing_Position' => $position ? $position->quantity : '0',
             ];
         }
 
@@ -149,12 +149,12 @@ class ReportingService implements ReportingServiceInterface
             $data[] = [
                 'currency_code' => $position->currency_code,
                 'currency_name' => $position->currency->name ?? $position->currency_code,
-                'balance' => $position->balance,
-                'avg_cost_rate' => $position->avg_cost_rate,
-                'last_valuation_rate' => $position->last_valuation_rate,
-                'unrealized_pnl' => $position->unrealized_pnl,
+                'quantity' => $position->quantity,
+                'average_cost' => $position->average_cost,
+                'current_rate' => $position->current_rate,
+                'unrealized_gain_loss' => $position->unrealized_gain_loss,
             ];
-            $totalUnrealizedPnl = $this->mathService->add($totalUnrealizedPnl, $position->unrealized_pnl ?? '0');
+            $totalUnrealizedPnl = $this->mathService->add($totalUnrealizedPnl, $position->unrealized_gain_loss ?? '0');
         }
 
         return [
@@ -167,7 +167,7 @@ class ReportingService implements ReportingServiceInterface
     public function generateUnrealizedPnLReport(): array
     {
         $positions = CurrencyPosition::with('currency')
-            ->whereRaw('unrealized_pnl != 0')
+            ->whereRaw('unrealized_gain_loss != 0')
             ->get();
 
         $data = [];
@@ -175,7 +175,7 @@ class ReportingService implements ReportingServiceInterface
         $totalLoss = '0';
 
         foreach ($positions as $position) {
-            $pnl = $position->unrealized_pnl ?? '0';
+            $pnl = $position->unrealized_gain_loss ?? '0';
 
             if ($this->mathService->compare($pnl, '0') >= 0) {
                 $totalGain = $this->mathService->add($totalGain, $pnl);
@@ -186,10 +186,10 @@ class ReportingService implements ReportingServiceInterface
             $data[] = [
                 'currency_code' => $position->currency_code,
                 'currency_name' => $position->currency->name ?? $position->currency_code,
-                'balance' => $position->balance,
-                'avg_cost_rate' => $position->avg_cost_rate,
-                'last_valuation_rate' => $position->last_valuation_rate,
-                'unrealized_pnl' => $pnl,
+                'quantity' => $position->quantity,
+                'average_cost' => $position->average_cost,
+                'current_rate' => $position->current_rate,
+                'unrealized_gain_loss' => $pnl,
                 'is_gain' => $this->mathService->compare($pnl, '0') >= 0,
             ];
         }
@@ -238,8 +238,8 @@ class ReportingService implements ReportingServiceInterface
                 'sell_count' => $sellTxns->count(),
                 'sell_volume' => $sellTxns->sum('amount_foreign'),
                 'sell_value_myr' => $sellTxns->sum('amount_local'),
-                'opening_stock' => $openingPosition ? $openingPosition->balance : '0',
-                'closing_stock' => $openingPosition ? $openingPosition->balance : '0',
+                'opening_stock' => $openingPosition ? $openingPosition->quantity : '0',
+                'closing_stock' => $openingPosition ? $openingPosition->quantity : '0',
             ];
         }
 
@@ -417,7 +417,7 @@ class ReportingService implements ReportingServiceInterface
 
         foreach ($positions as $position) {
             $limit = $limits[$position->currency_code] ?? null;
-            $currentBalance = $position->balance;
+            $currentBalance = $position->quantity;
             if ($this->mathService->compare($currentBalance, '0') < 0) {
                 $currentBalance = $this->mathService->multiply($currentBalance, '-1');
             }
@@ -432,12 +432,12 @@ class ReportingService implements ReportingServiceInterface
             $data[] = [
                 'currency_code' => $position->currency_code,
                 'currency_name' => $position->currency->name ?? $position->currency_code,
-                'current_balance' => $position->balance,
+                'current_balance' => $position->quantity,
                 'position_limit' => $limit,
                 'utilization_percent' => $utilization,
-                'avg_cost_rate' => $position->avg_cost_rate,
-                'last_valuation_rate' => $position->last_valuation_rate,
-                'exposure_myr' => $this->mathService->multiply($currentBalance, $position->last_valuation_rate ?? '0'),
+                'average_cost' => $position->average_cost,
+                'current_rate' => $position->current_rate,
+                'exposure_myr' => $this->mathService->multiply($currentBalance, $position->current_rate ?? '0'),
                 'status' => $this->mathService->compare($utilization, '90') >= 0
                     ? 'Critical'
                     : ($this->mathService->compare($utilization, '75') >= 0 ? 'Warning' : 'Normal'),
@@ -445,7 +445,7 @@ class ReportingService implements ReportingServiceInterface
 
             $totalExposure = $this->mathService->add(
                 $totalExposure,
-                $this->mathService->multiply($currentBalance, $position->last_valuation_rate ?? '0')
+                $this->mathService->multiply($currentBalance, $position->current_rate ?? '0')
             );
         }
 
@@ -495,8 +495,8 @@ class ReportingService implements ReportingServiceInterface
                 $row['current_balance'],
                 $row['position_limit'] ?? 'N/A',
                 $row['utilization_percent'].'%',
-                $row['avg_cost_rate'],
-                $row['last_valuation_rate'],
+                $row['average_cost'],
+                $row['current_rate'],
                 $row['exposure_myr'],
                 $row['status'],
             ]);

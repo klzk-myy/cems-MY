@@ -122,10 +122,10 @@ class AnalyticsController extends Controller
 
             return [
                 'currency' => $position->currency,
-                'balance' => $position->balance,
-                'avg_cost_rate' => $position->avg_cost_rate,
+                'quantity' => $position->quantity,
+                'average_cost' => $position->average_cost,
                 'current_rate' => $currentRate,
-                'unrealized_pnl' => $stats['unrealized_pnl'],
+                'unrealized_gain_loss' => $stats['unrealized_pnl'],
                 'realized_pnl' => $stats['realized_pnl'],
                 'total_pnl' => $stats['total_pnl'],
                 'buy_volume' => $stats['buy_volume'],
@@ -148,8 +148,8 @@ class AnalyticsController extends Controller
      */
     protected function calculateCurrencyProfitability(CurrencyPosition $position, float $currentRate, string $startDate, string $endDate): array
     {
-        $avgCost = (string) $position->avg_cost_rate;
-        $balance = (string) $position->balance;
+        $avgCost = (string) $position->average_cost;
+        $balance = (string) $position->quantity;
         $currencyCode = $position->currency_code;
 
         // Unrealized P&L (on current balance)

@@ -51,6 +51,7 @@ class TransactionCancellationServiceTest extends TestCase
         $transaction1 = Transaction::factory()->make([
             'id' => 99901,
             'currency_code' => $currencyCode,
+            'branch_id' => $branch->id,
             'till_id' => $tillId,
             'type' => TransactionType::Buy,
             'amount_foreign' => '1000.00',
@@ -64,6 +65,7 @@ class TransactionCancellationServiceTest extends TestCase
         $transaction2 = Transaction::factory()->make([
             'id' => 99902,
             'currency_code' => $currencyCode,
+            'branch_id' => $branch->id,
             'till_id' => $tillId,
             'type' => TransactionType::Buy,
             'amount_foreign' => '1000.00',
@@ -77,7 +79,7 @@ class TransactionCancellationServiceTest extends TestCase
         // Each Buy reversal = Sell = decrease position
         // 5000 - 1000 - 1000 = 3000
         $position = CurrencyPosition::where('currency_code', $currencyCode)
-            ->where('till_id', $tillId)
+            ->where('branch_id', $branch->id)
             ->first();
 
         $this->assertEquals('3000.0000', $position->balance);
@@ -104,6 +106,7 @@ class TransactionCancellationServiceTest extends TestCase
         $transaction = Transaction::factory()->make([
             'id' => 99903,
             'currency_code' => $currencyCode,
+            'branch_id' => $branch->id,
             'till_id' => $tillId,
             'type' => TransactionType::Buy,
             'amount_foreign' => '500.00',
@@ -114,7 +117,7 @@ class TransactionCancellationServiceTest extends TestCase
         $this->cancellationService->reversePositions($transaction);
 
         $position = CurrencyPosition::where('currency_code', $currencyCode)
-            ->where('till_id', $tillId)
+            ->where('branch_id', $branch->id)
             ->first();
 
         // Buy transaction reversed as Sell: 3000 - 500 = 2500
@@ -127,6 +130,7 @@ class TransactionCancellationServiceTest extends TestCase
         $transaction = Transaction::factory()->make([
             'id' => 99904,
             'currency_code' => 'XYZ',
+            'branch_id' => 99999,
             'till_id' => 'NONEXISTENT-TILL',
             'type' => TransactionType::Sell,
             'amount_foreign' => '100.00',
@@ -139,7 +143,7 @@ class TransactionCancellationServiceTest extends TestCase
 
         // No position found, nothing to reverse
         $position = CurrencyPosition::where('currency_code', 'XYZ')
-            ->where('till_id', 'NONEXISTENT-TILL')
+            ->where('branch_id', 'NONEXISTENT-BRANCH')
             ->first();
 
         $this->assertNull($position);

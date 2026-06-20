@@ -78,10 +78,10 @@ class RevaluationServiceTest extends TestCase
         // Create a currency position with balance
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TEST-TILL',
-            'balance' => '1000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => 'TEST-BRANCH',
+            'quantity' => '1000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         // Mock the RateApiService to return a different rate (causing gain/loss)
@@ -127,18 +127,18 @@ class RevaluationServiceTest extends TestCase
         // Create multiple currency positions (USD and EUR)
         $usdPosition = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TEST-TILL',
-            'balance' => '1000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => 'TEST-BRANCH',
+            'quantity' => '1000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         $eurPosition = CurrencyPosition::factory()->create([
             'currency_code' => 'EUR',
-            'till_id' => 'TEST-TILL',
-            'balance' => '500.00',
-            'avg_cost_rate' => '5.00',
-            'last_valuation_rate' => '5.00',
+            'branch_id' => 'TEST-BRANCH',
+            'quantity' => '500.00',
+            'average_cost' => '5.00',
+            'current_rate' => '5.00',
         ]);
 
         // Mock RateApiService to return different rates (causing gain/loss)
@@ -202,10 +202,10 @@ class RevaluationServiceTest extends TestCase
         // Create a currency position with balance
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TEST-TILL',
-            'balance' => '1000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => 'TEST-BRANCH',
+            'quantity' => '1000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         // Mock the RateApiService to return a rate
@@ -250,10 +250,10 @@ class RevaluationServiceTest extends TestCase
         // Create a currency position with zero balance
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TEST-TILL',
-            'balance' => '0.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => 'TEST-BRANCH',
+            'quantity' => '0.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         // Mock the RateApiService

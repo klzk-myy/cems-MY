@@ -152,6 +152,7 @@ class TransactionReversalServiceTest extends TestCase
         $transaction = Transaction::factory()->make([
             'id' => 99901,
             'currency_code' => $currencyCode,
+            'branch_id' => $branch->id,
             'till_id' => $tillId,
             'type' => TransactionType::Buy,
             'amount_foreign' => '1000.00',
@@ -162,7 +163,7 @@ class TransactionReversalServiceTest extends TestCase
         $this->service->reversePositions($transaction);
 
         $position = CurrencyPosition::where('currency_code', $currencyCode)
-            ->where('till_id', $tillId)
+            ->where('branch_id', $branch->id)
             ->first();
 
         $this->assertEquals('4000.0000', $position->balance);
@@ -174,6 +175,7 @@ class TransactionReversalServiceTest extends TestCase
         $transaction = Transaction::factory()->make([
             'id' => 99904,
             'currency_code' => 'XYZ',
+            'branch_id' => 99999,
             'till_id' => 'NONEXISTENT-TILL',
             'type' => TransactionType::Sell,
             'amount_foreign' => '100.00',
@@ -184,7 +186,7 @@ class TransactionReversalServiceTest extends TestCase
         $this->service->reversePositions($transaction);
 
         $position = CurrencyPosition::where('currency_code', 'XYZ')
-            ->where('till_id', 'NONEXISTENT-TILL')
+            ->where('branch_id', 'NONEXISTENT-BRANCH')
             ->first();
 
         $this->assertNull($position);
