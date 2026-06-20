@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class TestResultsController extends Controller
@@ -131,22 +132,40 @@ class TestResultsController extends Controller
      */
     private function buildLatestBySuite(\DateTimeInterface $since): array
     {
-        return collect($this->testRunner->getLatestBySuite())
-            ->filter()
-            ->map(function (TestResult $run) use ($since) {
-                $previousRun = TestResult::where('test_suite', $run->test_suite)
-                    ->where('id', '<', $run->id)
-                    ->where('created_at', '>=', $since)
-                    ->latest()
-                    ->first();
+        $latestRuns = collect($this->testRunner->getLatestBySuite())->filter();
 
-                return [
-                    'last_run' => $run,
-                    'pass_rate' => $run->pass_rate,
-                    'trend' => $this->calculateRunTrend($run, $previousRun),
-                ];
+        if ($latestRuns->isEmpty()) {
+            return [];
+        }
+
+        $previousRunIds = TestResult::query()
+            ->where('created_at', '>=', $since)
+            ->where(function ($q) use ($latestRuns) {
+                foreach ($latestRuns as $run) {
+                    $q->orWhere(function ($sub) use ($run) {
+                        $sub->where('test_suite', $run->test_suite)
+                            ->where('id', '<', $run->id);
+                    });
+                }
             })
-            ->toArray();
+            ->select('test_suite', DB::raw('MAX(id) as max_id'))
+            ->groupBy('test_suite')
+            ->pluck('max_id', 'test_suite');
+
+        $previousRuns = TestResult::whereIn('id', $previousRunIds->values()->all())
+            ->get()
+            ->keyBy('id');
+
+        return $latestRuns->mapWithKeys(function (TestResult $run) use ($previousRuns, $previousRunIds) {
+            $prevId = $previousRunIds->get($run->test_suite);
+            $previousRun = $prevId ? $previousRuns->get($prevId) : null;
+
+            return [$run->test_suite => [
+                'last_run' => $run,
+                'pass_rate' => $run->pass_rate,
+                'trend' => $this->calculateRunTrend($run, $previousRun),
+            ]];
+        })->toArray();
     }
 
     /**
