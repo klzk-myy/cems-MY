@@ -43,7 +43,7 @@ class TransactionImportService
     {
         $this->import->update([
             'status' => TransactionImportStatus::Processing->value,
-            'started_at' => now(),
+            'imported_at' => now(),
         ]);
 
         $handle = fopen($filePath, 'r');
@@ -77,7 +77,7 @@ class TransactionImportService
                 'status' => count($this->errors) > 0 ? TransactionImportStatus::CompletedWithErrors->value : TransactionImportStatus::Completed->value,
                 'success_count' => $this->successCount,
                 'error_count' => count($this->errors),
-                'errors' => $this->errors,
+                'error_details' => $this->errors,
                 'completed_at' => now(),
             ]);
         } finally {
@@ -193,7 +193,7 @@ class TransactionImportService
                 // Create transaction record
                 $transaction = Transaction::create([
                     'customer_id' => $data['customer_id'],
-                    'user_id' => $this->import->user_id,
+                    'user_id' => $this->import->imported_by,
                     'till_id' => $data['till_id'],
                     'type' => $data['type'],
                     'currency_code' => $data['currency_code'],
