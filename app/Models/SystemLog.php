@@ -32,6 +32,14 @@ class SystemLog extends BaseModel
         'severity' => 'string',
     ];
 
+    protected $hidden = [
+        'session_id',
+        'ip_address',
+        'user_agent',
+        'previous_hash',
+        'entry_hash',
+    ];
+
     /**
      * Scope by severity
      */
