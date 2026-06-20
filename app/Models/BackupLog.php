@@ -46,12 +46,6 @@ class BackupLog extends BaseModel
         'status' => BackupStatus::class,
     ];
 
-    protected $dates = [
-        'started_at',
-        'completed_at',
-        'verified_at',
-    ];
-
     /**
      * Backup status constants (deprecated — use BackupStatus enum)
      */

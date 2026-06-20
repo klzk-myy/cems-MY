@@ -13,8 +13,6 @@ class SanctionEntry extends BaseModel
 
     public $timestamps = false;
 
-    protected $with = [];
-
     protected $fillable = [
         'list_id',
         'list_source',
@@ -56,11 +54,6 @@ class SanctionEntry extends BaseModel
     public function setAliasesAttribute($value)
     {
         $this->attributes['aliases'] = is_array($value) ? json_encode($value) : $value;
-    }
-
-    public function getDetailsAttribute($value)
-    {
-        return $value;
     }
 
     public function setDetailsAttribute($value)

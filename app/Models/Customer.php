@@ -49,8 +49,6 @@ class Customer extends BaseModel
 {
     use HasFactory, SoftDeletes;
 
-    protected $with = [];
-
     /**
      * The attributes that are mass assignable.
      *
