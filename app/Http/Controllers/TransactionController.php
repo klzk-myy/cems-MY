@@ -80,9 +80,9 @@ class TransactionController extends Controller
      */
     public function create(): View
     {
-        $currencies = Currency::where('is_active', true)->get()->pluck('name', 'code');
-        $customers = Customer::all();
-        $branches = Branch::all();
+        $currencies = Currency::select('code', 'name')->where('is_active', true)->get()->pluck('name', 'code');
+        $customers = Customer::select('id', 'full_name')->orderBy('full_name')->get();
+        $branches = Branch::select('id', 'name')->orderBy('name')->get();
         $counters = Counter::where('status', 'active')->get();
 
         $suggested_rate = null;
