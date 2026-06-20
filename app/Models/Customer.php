@@ -89,11 +89,6 @@ class Customer extends BaseModel
         'rejection_reason',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<string>
-     */
     protected $hidden = [
         'id_number_encrypted',
     ];

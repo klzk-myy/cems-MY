@@ -28,11 +28,6 @@ class CustomerRelation extends BaseModel
         'additional_info',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<string>
-     */
     protected $hidden = [
         'id_number_encrypted',
     ];
