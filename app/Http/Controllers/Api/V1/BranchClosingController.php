@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Api\V1;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Http\Concerns\BranchScoped;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\BranchClosingRequest;
 use App\Models\Branch;
 use App\Services\Branch\BranchClosingService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class BranchClosingController extends Controller
@@ -19,7 +19,7 @@ class BranchClosingController extends Controller
         protected BranchClosingService $branchClosingService,
     ) {}
 
-    public function initiate(Request $request, int $branchId): JsonResponse
+    public function initiate(BranchClosingRequest $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
 
@@ -47,7 +47,7 @@ class BranchClosingController extends Controller
         ], 201);
     }
 
-    public function checklist(Request $request, int $branchId): JsonResponse
+    public function checklist(BranchClosingRequest $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
 
@@ -76,7 +76,7 @@ class BranchClosingController extends Controller
         ]);
     }
 
-    public function finalize(Request $request, int $branchId): JsonResponse
+    public function finalize(BranchClosingRequest $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
 
@@ -111,7 +111,7 @@ class BranchClosingController extends Controller
         }
     }
 
-    public function show(Request $request, int $branchId): JsonResponse
+    public function show(BranchClosingRequest $request, int $branchId): JsonResponse
     {
         return $this->checklist($request, $branchId);
     }

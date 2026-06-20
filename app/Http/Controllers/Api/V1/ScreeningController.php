@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Screening\BatchScreenRequest;
+use App\Http\Requests\Api\V1\ScreeningRequest;
 use App\Models\Customer;
 use App\Services\CustomerScreeningService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ScreeningController extends Controller
 {
@@ -15,7 +15,7 @@ class ScreeningController extends Controller
         protected CustomerScreeningService $screeningService,
     ) {}
 
-    public function screen(Request $request, int $customerId): JsonResponse
+    public function screen(ScreeningRequest $request, int $customerId): JsonResponse
     {
         $customer = Customer::findOrFail($customerId);
 

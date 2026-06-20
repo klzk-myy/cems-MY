@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Rate\CheckRateSetRequest;
 use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
 use App\Http\Requests\Api\V1\Rate\ValidateRateRequest;
+use App\Http\Requests\Api\V1\RateHistoryRequest;
 use App\Http\Requests\FetchRateRequest;
 use App\Http\Requests\OverrideRateRequest;
 use App\Models\ExchangeRateHistory;
 use App\Services\Transaction\RateManagementService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -171,7 +171,7 @@ class RateController extends Controller
     /**
      * Get rate history/trend for a currency.
      */
-    public function history(Request $request, string $currencyCode): JsonResponse
+    public function history(RateHistoryRequest $request, string $currencyCode): JsonResponse
     {
         $days = $request->get('days', 30);
 
