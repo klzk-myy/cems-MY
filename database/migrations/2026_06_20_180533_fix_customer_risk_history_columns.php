@@ -12,10 +12,6 @@ return new class extends Migration
         $driver = config('database.connections.'.config('database.default').'.driver');
 
         if ($driver === 'sqlite') {
-            Schema::table('customer_risk_history', function (Blueprint $table) {
-                $table->timestamp('changed_at')->nullable()->after('changed_by');
-            });
-
             DB::statement('ALTER TABLE customer_risk_history RENAME TO _customer_risk_history_old');
             DB::statement('
                 CREATE TABLE customer_risk_history (

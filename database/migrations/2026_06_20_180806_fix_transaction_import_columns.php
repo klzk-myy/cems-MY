@@ -16,15 +16,15 @@ return new class extends Migration
             DB::statement('
                 CREATE TABLE transaction_imports (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
+                    imported_by INTEGER NOT NULL,
                     filename TEXT NOT NULL,
                     original_filename TEXT NOT NULL,
                     total_rows INTEGER NOT NULL,
                     success_count INTEGER NOT NULL DEFAULT 0,
                     error_count INTEGER NOT NULL DEFAULT 0,
-                    errors TEXT NULL,
+                    error_details TEXT NULL,
                     status TEXT NOT NULL,
-                    started_at TIMESTAMP NULL,
+                    imported_at TIMESTAMP NULL,
                     completed_at TIMESTAMP NULL,
                     created_at TIMESTAMP NULL,
                     updated_at TIMESTAMP NULL,
@@ -34,7 +34,7 @@ return new class extends Migration
                 )
             ');
             DB::statement('
-                INSERT INTO transaction_imports (id, user_id, filename, original_filename, total_rows, success_count, error_count, errors, status, started_at, completed_at, created_at, updated_at)
+                INSERT INTO transaction_imports (id, imported_by, filename, original_filename, total_rows, success_count, error_count, error_details, status, imported_at, completed_at, created_at, updated_at)
                 SELECT id, user_id, filename, original_filename, total_rows, success_count, error_count, errors, status, started_at, completed_at, created_at, updated_at
                 FROM _transaction_imports_old
             ');
