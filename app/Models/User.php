@@ -52,19 +52,13 @@ class User extends Authenticatable
         'last_login_at',
     ];
 
-    protected $guarded = [
-        'role',
-        'mfa_enabled',
-        'mfa_secret',
-        'mfa_verified_at',
-    ];
-
     /**
      * The attributes that should be hidden for serialization.
      *
      * @var array<string>
      */
     protected $hidden = [
+        'password',
         'password_hash',
         'mfa_secret',
     ];
@@ -220,20 +214,6 @@ class User extends Authenticatable
         }
 
         // First login - within grace period doesn't need setup yet
-        return false;
-    }
-
-    /**
-     * Check if user's MFA session has expired.
-     */
-    public function isMfaSessionExpired(): bool
-    {
-        if (! $this->mfa_enabled) {
-            return false;
-        }
-
-        // MFA verification is per-session, so this is always false after verification
-        // The session expiry is handled by Laravel's session management
         return false;
     }
 
