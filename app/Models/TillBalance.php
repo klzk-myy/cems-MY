@@ -44,17 +44,17 @@ class TillBalance extends BaseModel
         'closed_at' => 'datetime',
     ];
 
-    public function currency()
+    public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code');
     }
 
-    public function opener()
+    public function opener(): BelongsTo
     {
         return $this->belongsTo(User::class, 'opened_by');
     }
 
-    public function closer()
+    public function closer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'closed_by');
     }

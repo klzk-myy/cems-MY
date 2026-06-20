@@ -14,6 +14,7 @@ use App\Models\Bases\ComplianceModel;
 use App\Models\FlaggedTransaction;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -250,7 +251,7 @@ class ComplianceCase extends ComplianceModel
     /**
      * Scope: Filter cases under review.
      */
-    public function scopeUnderReview($query)
+    public function scopeUnderReview(Builder $query): Builder
     {
         return $query->where('status', ComplianceCaseStatus::UnderReview->value);
     }
@@ -258,7 +259,7 @@ class ComplianceCase extends ComplianceModel
     /**
      * Scope: Filter cases by assignee.
      */
-    public function scopeByAssignee($query, int $userId)
+    public function scopeByAssignee(Builder $query, int $userId): Builder
     {
         return $query->where('assigned_to', $userId);
     }
@@ -266,7 +267,7 @@ class ComplianceCase extends ComplianceModel
     /**
      * Scope: Filter overdue cases.
      */
-    public function scopeOverdue($query)
+    public function scopeOverdue(Builder $query): Builder
     {
         return $query->where('sla_deadline', '<', now())
             ->where('status', '!=', ComplianceCaseStatus::Closed->value);

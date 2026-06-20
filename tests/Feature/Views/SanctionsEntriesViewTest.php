@@ -108,7 +108,7 @@ class SanctionsEntriesViewTest extends TestCase
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'ACME Corp',
             'list_source' => 'ofac',
-            'entity_type' => 'organization',
+            'entity_type' => 'Organization',
         ]);
 
         $response = $this->actingAs($this->complianceOfficer)->get(route('compliance.sanctions.entries.edit', $entry));
@@ -125,7 +125,7 @@ class SanctionsEntriesViewTest extends TestCase
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'Old Name',
             'list_source' => 'ofac',
-            'entity_type' => 'organization',
+            'entity_type' => 'Organization',
         ]);
 
         $response = $this->actingAs($this->complianceOfficer)->put(route('compliance.sanctions.entries.update', $entry), [
@@ -146,7 +146,7 @@ class SanctionsEntriesViewTest extends TestCase
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'Test',
             'list_source' => 'ofac',
-            'entity_type' => 'organization',
+            'entity_type' => 'Organization',
         ]);
 
         $response = $this->actingAs($this->complianceOfficer)->put(route('compliance.sanctions.entries.update', $entry), [
@@ -165,7 +165,7 @@ class SanctionsEntriesViewTest extends TestCase
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'Test',
             'list_source' => 'ofac',
-            'entity_type' => 'organization',
+            'entity_type' => 'Organization',
         ]);
 
         $response = $this->actingAs($this->complianceOfficer)->put(route('compliance.sanctions.entries.update', $entry), [
@@ -183,7 +183,7 @@ class SanctionsEntriesViewTest extends TestCase
         $entry = SanctionEntry::factory()->create([
             'entity_name' => 'Test',
             'list_source' => 'ofac',
-            'entity_type' => 'organization',
+            'entity_type' => 'Organization',
         ]);
 
         $response = $this->actingAs($this->complianceOfficer)->put(route('compliance.sanctions.entries.update', $entry), [

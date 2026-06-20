@@ -6,6 +6,8 @@ use App\Enums\CounterSessionStatus;
 use App\Enums\CounterStatus;
 use App\Models\Traits\BelongsToBranch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Counter extends BaseModel
@@ -37,12 +39,12 @@ class Counter extends BaseModel
         return $query->where('status', CounterStatus::Active->value);
     }
 
-    public function sessions()
+    public function sessions(): HasMany
     {
         return $this->hasMany(CounterSession::class);
     }
 
-    public function currentSession()
+    public function currentSession(): HasOne
     {
         return $this->hasOne(CounterSession::class)
             ->where('session_date', now()->toDateString())

@@ -7,6 +7,7 @@ use App\Enums\FindingStatus;
 use App\Enums\FindingType;
 use App\Models\BaseModel;
 use App\Models\Traits\HasStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
@@ -123,7 +124,7 @@ class ComplianceFinding extends BaseModel
     /**
      * Scope to filter findings by status.
      */
-    public function scopeWithStatus($query, FindingStatus $status)
+    public function scopeWithStatus(Builder $query, FindingStatus $status): Builder
     {
         return $query->where('status', $status->value);
     }
@@ -131,7 +132,7 @@ class ComplianceFinding extends BaseModel
     /**
      * Scope to filter findings by severity.
      */
-    public function scopeWithSeverity($query, FindingSeverity $severity)
+    public function scopeWithSeverity(Builder $query, FindingSeverity $severity): Builder
     {
         return $query->where('severity', $severity->value);
     }
@@ -139,7 +140,7 @@ class ComplianceFinding extends BaseModel
     /**
      * Scope to filter new findings.
      */
-    public function scopeNew($query)
+    public function scopeNew(Builder $query): Builder
     {
         return $query->where('status', FindingStatus::New->value);
     }
@@ -147,7 +148,7 @@ class ComplianceFinding extends BaseModel
     /**
      * Scope to filter findings by type.
      */
-    public function scopeOfType($query, FindingType $type)
+    public function scopeOfType(Builder $query, FindingType $type): Builder
     {
         return $query->where('finding_type', $type->value);
     }

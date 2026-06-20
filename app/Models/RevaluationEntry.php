@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RevaluationEntry extends BaseModel
 {
@@ -26,12 +27,12 @@ class RevaluationEntry extends BaseModel
         'posted_at' => 'datetime',
     ];
 
-    public function currency()
+    public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code');
     }
 
-    public function postedBy()
+    public function postedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'posted_by');
     }

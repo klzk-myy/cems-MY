@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\RelationType;
+use App\Enums\SystemAlertLevel;
 use App\Events\RelatedPartyOwnershipConcern;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
@@ -200,7 +201,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
     private function reportToBnmFiu(Customer $customer, string $listType): void
     {
         SystemAlert::create([
-            'level' => SystemAlert::LEVEL_CRITICAL,
+            'level' => SystemAlertLevel::Critical->value,
             'message' => "Positive {$listType} match on customer {$customer->full_name} (ID: {$customer->id}) - BNM FIU/IGP reporting required within 24 hours per pd-00.md 27.7.1",
             'source' => 'sanctions_screening',
             'metadata' => [

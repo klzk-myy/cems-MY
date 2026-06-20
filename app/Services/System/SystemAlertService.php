@@ -2,6 +2,7 @@
 
 namespace App\Services\System;
 
+use App\Enums\SystemAlertLevel;
 use App\Models\SystemAlert;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -15,7 +16,7 @@ class SystemAlertService
     /**
      * Send an alert
      */
-    public function send(string $message, string $level = SystemAlert::LEVEL_INFO, array $options = []): SystemAlert
+    public function send(string $message, string $level = SystemAlertLevel::Info->value, array $options = []): SystemAlert
     {
         // Create alert in database
         $alert = SystemAlert::create([
@@ -27,7 +28,7 @@ class SystemAlertService
         ]);
 
         // Send email for warning and critical alerts
-        if (in_array($level, [SystemAlert::LEVEL_WARNING, SystemAlert::LEVEL_CRITICAL])) {
+        if (in_array($level, [SystemAlertLevel::Warning->value, SystemAlertLevel::Critical->value])) {
             $this->sendEmail($alert, $options);
         }
 
@@ -42,7 +43,7 @@ class SystemAlertService
      */
     public function info(string $message, array $options = []): SystemAlert
     {
-        return $this->send($message, SystemAlert::LEVEL_INFO, $options);
+        return $this->send($message, SystemAlertLevel::Info->value, $options);
     }
 
     /**
@@ -50,7 +51,7 @@ class SystemAlertService
      */
     public function warning(string $message, array $options = []): SystemAlert
     {
-        return $this->send($message, SystemAlert::LEVEL_WARNING, $options);
+        return $this->send($message, SystemAlertLevel::Warning->value, $options);
     }
 
     /**
@@ -58,7 +59,7 @@ class SystemAlertService
      */
     public function critical(string $message, array $options = []): SystemAlert
     {
-        return $this->send($message, SystemAlert::LEVEL_CRITICAL, $options);
+        return $this->send($message, SystemAlertLevel::Critical->value, $options);
     }
 
     /**
@@ -84,7 +85,7 @@ class SystemAlertService
                         ->subject($subject);
 
                     // Set priority for critical alerts
-                    if ($alert->level === SystemAlert::LEVEL_CRITICAL) {
+                    if ($alert->level === SystemAlertLevel::Critical->value) {
                         $message->priority(1);
                     }
                 });
@@ -116,11 +117,11 @@ class SystemAlertService
         $logMessage = "[ALERT: {$alert->level}] {$alert->message}";
 
         match ($alert->level) {
-            SystemAlert::LEVEL_CRITICAL => Log::critical($logMessage, [
+            SystemAlertLevel::Critical->value => Log::critical($logMessage, [
                 'alert_id' => $alert->id,
                 'source' => $alert->source,
             ]),
-            SystemAlert::LEVEL_WARNING => Log::warning($logMessage, [
+            SystemAlertLevel::Warning->value => Log::warning($logMessage, [
                 'alert_id' => $alert->id,
                 'source' => $alert->source,
             ]),
@@ -151,8 +152,8 @@ class SystemAlertService
     protected function buildEmailSubject(SystemAlert $alert): string
     {
         $prefix = match ($alert->level) {
-            SystemAlert::LEVEL_CRITICAL => '[CRITICAL]',
-            SystemAlert::LEVEL_WARNING => '[WARNING]',
+            SystemAlertLevel::Critical->value => '[CRITICAL]',
+            SystemAlertLevel::Warning->value => '[WARNING]',
             default => '[INFO]',
         };
 

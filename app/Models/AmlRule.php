@@ -84,11 +84,8 @@ class AmlRule extends BaseModel
 
     /**
      * Scope to get only active rules.
-     *
-     * @param  Builder  $query
-     * @return Builder
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
@@ -96,11 +93,9 @@ class AmlRule extends BaseModel
     /**
      * Scope to filter rules by type.
      *
-     * @param  Builder  $query
      * @param  AmlRuleType|string  $type
-     * @return Builder
      */
-    public function scopeByType($query, $type)
+    public function scopeByType(Builder $query, $type): Builder
     {
         if ($type instanceof AmlRuleType) {
             $type = $type->value;

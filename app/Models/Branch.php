@@ -152,44 +152,32 @@ class Branch extends BaseModel
 
     /**
      * Scope a query to only include active branches.
-     *
-     * @param  Builder  $query
-     * @return Builder
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
     /**
      * Scope a query to only include main branch (head office).
-     *
-     * @param  Builder  $query
-     * @return Builder
      */
-    public function scopeMain($query)
+    public function scopeMain(Builder $query): Builder
     {
         return $query->where('is_main', true);
     }
 
     /**
      * Scope a query to only include branches (not head offices).
-     *
-     * @param  Builder  $query
-     * @return Builder
      */
-    public function scopeBranches($query)
+    public function scopeBranches(Builder $query): Builder
     {
         return $query->where('type', self::TYPE_BRANCH);
     }
 
     /**
      * Scope a query to only include head offices.
-     *
-     * @param  Builder  $query
-     * @return Builder
      */
-    public function scopeHeadOffices($query)
+    public function scopeHeadOffices(Builder $query): Builder
     {
         return $query->where('type', self::TYPE_HEAD_OFFICE);
     }

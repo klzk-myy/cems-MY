@@ -116,10 +116,8 @@ class Customer extends BaseModel
 
     /**
      * Get all transactions for this customer.
-     *
-     * @return HasMany
      */
-    public function transactions()
+    public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
     }
@@ -143,86 +141,56 @@ class Customer extends BaseModel
 
     /**
      * Get all notes associated with this customer.
-     *
-     * @return HasMany
      */
-    public function notes()
+    public function notes(): HasMany
     {
         return $this->hasMany(CustomerNote::class);
     }
 
     /**
      * Get all documents associated with this customer.
-     *
-     * @return HasMany
      */
-    public function documents()
+    public function documents(): HasMany
     {
         return $this->hasMany(CustomerDocument::class);
     }
 
     /**
      * Get risk assessment history for this customer.
-     *
-     * @return HasMany
      */
-    public function riskHistory()
+    public function riskHistory(): HasMany
     {
         return $this->hasMany(CustomerRiskHistory::class);
     }
 
     /**
      * Get risk score snapshots for this customer.
-     *
-     * @return HasMany
      */
-    public function riskScoreSnapshots()
+    public function riskScoreSnapshots(): HasMany
     {
         return $this->hasMany(RiskScoreSnapshot::class);
     }
 
     /**
      * Get the latest risk score snapshot for this customer.
-     *
-     * @return HasOne
      */
-    public function latestRiskSnapshot()
+    public function latestRiskSnapshot(): HasOne
     {
         return $this->hasOne(RiskScoreSnapshot::class)->latest('snapshot_date');
     }
 
     /**
-     * Get the latest risk level attribute.
-     * Returns the risk level from the latest snapshot or the customer's risk_rating.
-     */
-    public function getRiskLevelAttribute(): string
-    {
-        $snapshotRating = $this->latestRiskSnapshot?->overall_rating_label;
-        if ($snapshotRating) {
-            return $snapshotRating;
-        }
-
-        return $this->risk_rating instanceof RiskRating
-            ? $this->risk_rating->label()
-            : ($this->risk_rating ?? 'Unknown');
-    }
-
-    /**
      * Get PEP relations for this customer.
-     *
-     * @return HasMany
      */
-    public function pepRelations()
+    public function pepRelations(): HasMany
     {
         return $this->hasMany(CustomerRelation::class, 'customer_id');
     }
 
     /**
      * Get associate relations where this customer is the related party.
-     *
-     * @return HasMany
      */
-    public function associateRelations()
+    public function associateRelations(): HasMany
     {
         return $this->hasMany(CustomerRelation::class, 'related_customer_id');
     }

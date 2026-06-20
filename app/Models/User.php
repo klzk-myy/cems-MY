@@ -116,10 +116,8 @@ class User extends Authenticatable
 
     /**
      * Get the branch this user belongs to.
-     *
-     * @return BelongsTo
      */
-    public function branch()
+    public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }

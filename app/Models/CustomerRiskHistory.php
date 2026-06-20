@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RiskRating;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CustomerRiskHistory extends BaseModel
 {
@@ -27,12 +28,12 @@ class CustomerRiskHistory extends BaseModel
         'changed_at' => 'datetime',
     ];
 
-    public function customer()
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function assessor()
+    public function assessor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'changed_by');
     }

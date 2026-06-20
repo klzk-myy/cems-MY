@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EddTemplateType;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -38,12 +39,12 @@ class EddTemplate extends BaseModel
         return $this->hasMany(EnhancedDiligenceRecord::class);
     }
 
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
-    public function scopeByType($query, EddTemplateType $type)
+    public function scopeByType(Builder $query, EddTemplateType $type): Builder
     {
         return $query->where('type', $type);
     }

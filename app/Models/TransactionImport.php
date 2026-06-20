@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TransactionImportStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class TransactionImport extends BaseModel
@@ -48,7 +49,7 @@ class TransactionImport extends BaseModel
     /**
      * Scope: Get completed imports
      */
-    public function scopeCompleted($query)
+    public function scopeCompleted(Builder $query): Builder
     {
         return $query->where('status', TransactionImportStatus::Completed->value);
     }
@@ -56,7 +57,7 @@ class TransactionImport extends BaseModel
     /**
      * Scope: Get pending imports
      */
-    public function scopePending($query)
+    public function scopePending(Builder $query): Builder
     {
         return $query->where('status', TransactionImportStatus::Pending->value);
     }

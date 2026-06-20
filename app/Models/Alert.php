@@ -6,6 +6,7 @@ use App\Enums\AlertPriority;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Models\Compliance\ComplianceCase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -55,22 +56,22 @@ class Alert extends BaseModel
         return $this->belongsTo(ComplianceCase::class, 'case_id');
     }
 
-    public function scopeUnassigned($query)
+    public function scopeUnassigned(Builder $query): Builder
     {
         return $query->whereNull('assigned_to');
     }
 
-    public function scopeByPriority($query, AlertPriority $priority)
+    public function scopeByPriority(Builder $query, AlertPriority $priority): Builder
     {
         return $query->where('priority', $priority);
     }
 
-    public function scopeOpen($query)
+    public function scopeOpen(Builder $query): Builder
     {
         return $query->whereNull('case_id');
     }
 
-    public function scopeResolved($query)
+    public function scopeResolved(Builder $query): Builder
     {
         return $query->where('status', FlagStatus::Resolved);
     }

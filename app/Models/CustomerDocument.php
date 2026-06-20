@@ -102,11 +102,8 @@ class CustomerDocument extends BaseModel
 
     /**
      * Scope a query to only include verified documents.
-     *
-     * @param  Builder  $query
-     * @return Builder
      */
-    public function scopeVerified($query)
+    public function scopeVerified(Builder $query): Builder
     {
         return $query->whereNotNull('verified_by')->whereNotNull('verified_at');
     }
@@ -114,10 +111,9 @@ class CustomerDocument extends BaseModel
     /**
      * Scope a query to only include unverified documents.
      *
-     * @param  Builder  $query
      * @return \Illuminate\Database\Eloquent\Eloquent\Builder
      */
-    public function scopeUnverified($query)
+    public function scopeUnverified(Builder $query): Builder
     {
         return $query->whereNull('verified_by')->whereNull('verified_at');
     }
@@ -125,10 +121,9 @@ class CustomerDocument extends BaseModel
     /**
      * Scope a query to only include expired documents.
      *
-     * @param  Builder  $query
      * @return \Illuminate\Database\Eloquent\Eloquent\Builder
      */
-    public function scopeExpired($query)
+    public function scopeExpired(Builder $query): Builder
     {
         return $query->whereNotNull('expiry_date')->where('expiry_date', '<', now());
     }
@@ -136,10 +131,9 @@ class CustomerDocument extends BaseModel
     /**
      * Scope a query to only include documents expiring soon.
      *
-     * @param  Builder  $query
      * @return \Illuminate\Database\Eloquent\Eloquent\Builder
      */
-    public function scopeExpiringSoon($query)
+    public function scopeExpiringSoon(Builder $query): Builder
     {
         return $query->whereNotNull('expiry_date')
             ->where('expiry_date', '>', now())

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FlaggedTransaction extends BaseModel
 {
@@ -30,22 +31,22 @@ class FlaggedTransaction extends BaseModel
         'resolved_at' => 'datetime',
     ];
 
-    public function transaction()
+    public function transaction(): BelongsTo
     {
         return $this->belongsTo(Transaction::class);
     }
 
-    public function customer()
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function assignedTo()
+    public function assignedTo(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
-    public function reviewer()
+    public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }

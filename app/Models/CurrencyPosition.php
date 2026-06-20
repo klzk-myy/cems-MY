@@ -48,7 +48,7 @@ class CurrencyPosition extends BaseModel
         'last_revalued_at' => 'datetime',
     ];
 
-    public function currency()
+    public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code');
     }

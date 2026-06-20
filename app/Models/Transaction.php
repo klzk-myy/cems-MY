@@ -139,60 +139,48 @@ class Transaction extends TransactionModel
 
     /**
      * Get all flagged transactions related to this transaction.
-     *
-     * @return HasMany
      */
-    public function flags()
+    public function flags(): HasMany
     {
         return $this->hasMany(FlaggedTransaction::class);
     }
 
     /**
      * Get stock reservations for this transaction.
-     *
-     * @return HasMany
      */
-    public function stockReservations()
+    public function stockReservations(): HasMany
     {
         return $this->hasMany(StockReservation::class);
     }
 
     /**
      * Get the refund transaction if this transaction was refunded.
-     *
-     * @return HasOne
      */
-    public function refundTransaction()
+    public function refundTransaction(): HasOne
     {
         return $this->hasOne(Transaction::class, 'original_transaction_id');
     }
 
     /**
      * Get the original transaction if this is a refund.
-     *
-     * @return BelongsTo
      */
-    public function originalTransaction()
+    public function originalTransaction(): BelongsTo
     {
         return $this->belongsTo(Transaction::class, 'original_transaction_id');
     }
 
     /**
      * Get the user who cancelled this transaction.
-     *
-     * @return BelongsTo
      */
-    public function canceller()
+    public function canceller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cancelled_by');
     }
 
     /**
      * Get all transaction errors for this transaction.
-     *
-     * @return HasMany
      */
-    public function transactionErrors()
+    public function transactionErrors(): HasMany
     {
         return $this->hasMany(TransactionError::class);
     }

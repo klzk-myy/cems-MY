@@ -46,41 +46,6 @@ class BackupLog extends BaseModel
         'status' => BackupStatus::class,
     ];
 
-    /**
-     * Backup status constants (deprecated — use BackupStatus enum)
-     */
-    public const STATUS_PENDING = 'pending';
-
-    public const STATUS_RUNNING = 'running';
-
-    public const STATUS_COMPLETED = 'completed';
-
-    public const STATUS_FAILED = 'failed';
-
-    public const STATUS_VERIFIED = 'verified';
-
-    public const STATUS_VERIFICATION_FAILED = 'verification_failed';
-
-    /**
-     * Backup type constants
-     */
-    public const TYPE_DATABASE = 'database';
-
-    public const TYPE_FILES = 'files';
-
-    public const TYPE_FULL = 'full';
-
-    public const TYPE_ARCHIVE = 'archive';
-
-    public const TYPE_MANUAL = 'manual';
-
-    /**
-     * Disk constants
-     */
-    public const DISK_LOCAL = 'local';
-
-    public const DISK_S3 = 's3';
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
