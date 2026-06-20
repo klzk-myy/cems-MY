@@ -16,6 +16,10 @@ class MfaRecoveryCode extends BaseModel
         'used_at',
     ];
 
+    protected $hidden = [
+        'code_hash',
+    ];
+
     protected $casts = [
         'used' => 'boolean',
         'used_at' => 'datetime',
