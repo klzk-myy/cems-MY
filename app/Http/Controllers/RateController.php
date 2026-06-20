@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CopyPreviousRateRequest;
 use App\Http\Requests\OverrideRateRequest;
 use App\Models\Branch;
 use App\Models\ExchangeRateHistory;
@@ -67,7 +68,7 @@ class RateController extends Controller
         return response()->json($result);
     }
 
-    public function copyPrevious(Request $request): JsonResponse
+    public function copyPrevious(CopyPreviousRateRequest $request): JsonResponse
     {
         $user = Auth::user();
 
@@ -78,11 +79,8 @@ class RateController extends Controller
             ], 403);
         }
 
+        $validated = $request->validated();
         $branchId = $this->resolveBranchId($user, $request);
-
-        $validated = $request->validate([
-            'date' => 'nullable|date|before_or_equal:today',
-        ]);
 
         $targetDate = $validated['date'] ?? now()->subDay()->toDateString();
 

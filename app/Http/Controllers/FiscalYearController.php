@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\FiscalYearCloseRequest;
 use App\Http\Requests\StoreFiscalYearRequest;
 use App\Models\FiscalYear;
 use App\Services\Accounting\FiscalYearService;
@@ -59,12 +60,13 @@ class FiscalYearController extends Controller
     /**
      * Close a fiscal year.
      */
-    public function close(FiscalYear $year, Request $request): RedirectResponse
+    public function close(FiscalYear $year, FiscalYearCloseRequest $request): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
-        // Verify confirmation code
-        if ($request->confirm_code !== $year->year_code) {
+        $validated = $request->validated();
+
+        if ($validated['confirm_code'] !== $year->year_code) {
             return redirect()->back()->with('error', 'Year code confirmation failed.');
         }
 
