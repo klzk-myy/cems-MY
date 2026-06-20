@@ -104,36 +104,63 @@ class AnalyticsController extends Controller
         $startDate = $request->input('start_date', now()->subMonth()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->subMonth()->endOfMonth()->toDateString());
 
-        // Get currency positions with profit/loss
-        $positionModels = CurrencyPosition::with('currency')
-            ->get();
-
+        $positionModels = CurrencyPosition::with('currency')->get();
         $currencyCodes = $positionModels->pluck('currency_code')->unique();
         $rates = $this->getCurrentRates($currencyCodes);
 
-        $positions = $positionModels->map(function ($position) use ($startDate, $endDate, $rates) {
+        $allSells = Transaction::whereIn('currency_code', $currencyCodes)
+            ->where('type', TransactionType::Sell)
+            ->where('status', TransactionStatus::Completed)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->select('currency_code', 'rate', 'amount_foreign', 'amount_local')
+            ->get()
+            ->groupBy('currency_code');
+
+        $buyVolumes = Transaction::whereIn('currency_code', $currencyCodes)
+            ->where('type', TransactionType::Buy)
+            ->where('status', TransactionStatus::Completed)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->select('currency_code', DB::raw('SUM(amount_local) as buy_volume'))
+            ->groupBy('currency_code')
+            ->pluck('buy_volume', 'currency_code');
+
+        $positions = $positionModels->map(function ($position) use ($rates, $allSells, $buyVolumes) {
             $currentRate = $rates[$position->currency_code] ?? 0;
-            $stats = $this->calculateCurrencyProfitability(
-                $position,
-                $currentRate,
-                $startDate,
-                $endDate
+            $avgCost = (string) $position->average_cost;
+            $balance = (string) $position->quantity;
+
+            $unrealizedPnl = $this->mathService->multiply(
+                $this->mathService->subtract((string) $currentRate, $avgCost),
+                $balance
             );
+
+            $sells = $allSells->get($position->currency_code, collect());
+            $realizedPnl = '0';
+            $sellVolume = '0';
+            foreach ($sells as $sell) {
+                $gain = $this->mathService->multiply(
+                    $this->mathService->subtract((string) $sell->rate, $avgCost),
+                    (string) $sell->amount_foreign
+                );
+                $realizedPnl = $this->mathService->add($realizedPnl, $gain);
+                $sellVolume = $this->mathService->add($sellVolume, (string) $sell->amount_local);
+            }
+
+            $buyVolume = $buyVolumes->get($position->currency_code, '0');
 
             return [
                 'currency' => $position->currency,
                 'quantity' => $position->quantity,
                 'average_cost' => $position->average_cost,
                 'current_rate' => $currentRate,
-                'unrealized_gain_loss' => $stats['unrealized_pnl'],
-                'realized_pnl' => $stats['realized_pnl'],
-                'total_pnl' => $stats['total_pnl'],
-                'buy_volume' => $stats['buy_volume'],
-                'sell_volume' => $stats['sell_volume'],
+                'unrealized_gain_loss' => $unrealizedPnl,
+                'realized_pnl' => $realizedPnl,
+                'total_pnl' => $this->mathService->add($unrealizedPnl, $realizedPnl),
+                'buy_volume' => $buyVolume,
+                'sell_volume' => $sellVolume,
             ];
         });
 
-        // Calculate totals
         $totals = [
             'total_unrealized' => $positions->sum('unrealized_pnl'),
             'total_realized' => $positions->sum('realized_pnl'),
@@ -141,58 +168,6 @@ class AnalyticsController extends Controller
         ];
 
         return view('reports.profitability', compact('positions', 'totals', 'startDate', 'endDate'));
-    }
-
-    /**
-     * Calculate profitability for a currency
-     */
-    protected function calculateCurrencyProfitability(CurrencyPosition $position, float $currentRate, string $startDate, string $endDate): array
-    {
-        $avgCost = (string) $position->average_cost;
-        $balance = (string) $position->quantity;
-        $currencyCode = $position->currency_code;
-
-        // Unrealized P&L (on current balance)
-        $unrealizedPnl = $this->mathService->multiply(
-            $this->mathService->subtract((string) $currentRate, $avgCost),
-            $balance
-        );
-
-        // Sell transactions in period (used for both realized P&L and volume)
-        $sells = Transaction::where('currency_code', $currencyCode)
-            ->where('type', TransactionType::Sell)
-            ->where('status', TransactionStatus::Completed)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->select('rate', 'amount_foreign', 'amount_local')
-            ->get();
-
-        $realizedPnl = '0';
-        $sellVolume = '0';
-        foreach ($sells as $sell) {
-            $sellRate = (string) $sell->rate;
-            $sellAmount = (string) $sell->amount_foreign;
-            $gain = $this->mathService->multiply(
-                $this->mathService->subtract($sellRate, $avgCost),
-                $sellAmount
-            );
-            $realizedPnl = $this->mathService->add((string) $realizedPnl, $gain);
-            $sellVolume = $this->mathService->add($sellVolume, (string) $sell->amount_local);
-        }
-
-        // Buy volume in period
-        $buyVolume = Transaction::where('currency_code', $currencyCode)
-            ->where('type', TransactionType::Buy)
-            ->where('status', TransactionStatus::Completed)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('amount_local');
-
-        return [
-            'unrealized_pnl' => $unrealizedPnl,
-            'realized_pnl' => $realizedPnl,
-            'total_pnl' => $this->mathService->add($unrealizedPnl, $realizedPnl),
-            'buy_volume' => $buyVolume,
-            'sell_volume' => $sellVolume,
-        ];
     }
 
     /**
