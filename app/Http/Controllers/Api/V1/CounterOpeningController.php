@@ -7,10 +7,7 @@ use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
 use App\Http\Requests\Api\V1\Counter\InitiateOpeningRequest;
 use App\Models\Counter;
 use App\Models\User;
-use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\CounterOpeningWorkflowService;
-use App\Services\Branch\CounterService;
-use App\Services\Branch\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -26,9 +23,6 @@ class CounterOpeningController extends Controller
 {
     public function __construct(
         protected CounterOpeningWorkflowService $workflowService,
-        protected BranchPoolService $branchPoolService,
-        protected TellerAllocationService $tellerAllocationService,
-        protected CounterService $counterService,
     ) {}
 
     /**

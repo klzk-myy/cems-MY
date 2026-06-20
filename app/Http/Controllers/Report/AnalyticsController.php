@@ -14,7 +14,6 @@ use App\Models\ExchangeRate;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -23,7 +22,6 @@ class AnalyticsController extends Controller
 {
     public function __construct(
         protected MathService $mathService,
-        protected ThresholdService $thresholdService
     ) {}
 
     /**
