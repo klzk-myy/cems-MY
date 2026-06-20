@@ -5,13 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
-use App\Services\Accounting\CurrencyPositionService;
-use App\Services\AuditService;
-use App\Services\Compliance\ComplianceService;
-use App\Services\System\MathService;
 use App\Services\Transaction\TransactionApprovalService;
-use App\Services\Transaction\TransactionMonitoringService;
-use App\Services\Transaction\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -19,13 +13,7 @@ use Illuminate\Support\Facades\Log;
 class TransactionApprovalController extends Controller
 {
     public function __construct(
-        protected TransactionService $transactionService,
-        protected TransactionApprovalService $approvalService,
-        protected CurrencyPositionService $positionService,
-        protected ComplianceService $complianceService,
-        protected TransactionMonitoringService $monitoringService,
-        protected MathService $mathService,
-        protected AuditService $auditService
+        protected TransactionApprovalService $approvalService
     ) {}
 
     /**
