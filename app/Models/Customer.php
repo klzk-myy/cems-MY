@@ -90,6 +90,15 @@ class Customer extends BaseModel
     ];
 
     /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<string>
+     */
+    protected $hidden = [
+        'id_number_encrypted',
+    ];
+
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>

@@ -18,6 +18,15 @@ class DeviceComputations extends BaseModel
         'last_used_at',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<string>
+     */
+    protected $hidden = [
+        'device_fingerprint',
+    ];
+
     protected $casts = [
         'expires_at' => 'datetime',
         'last_used_at' => 'datetime',
