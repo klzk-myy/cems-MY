@@ -8,7 +8,6 @@ use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
 use App\Http\Requests\Api\V1\Rate\ValidateRateRequest;
 use App\Http\Requests\FetchRateRequest;
 use App\Http\Requests\OverrideRateRequest;
-use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Services\Transaction\RateManagementService;
 use Illuminate\Http\JsonResponse;
@@ -112,17 +111,18 @@ class RateController extends Controller
     {
         $validated = $request->validated();
 
-        $rate = ExchangeRate::updateOrCreate(
-            ['currency_code' => $currencyCode],
-            [
-                'rate_buy' => $validated['rate_buy'],
-                'rate_sell' => $validated['rate_sell'],
-                'source' => 'manual',
-                'fetched_at' => now(),
-            ]
+        $result = $this->rateService->overrideRate(
+            $currencyCode,
+            $validated['rate_buy'],
+            $validated['rate_sell'],
+            Auth::user()
         );
 
-        return response()->json(['success' => true, 'message' => 'Rate override saved.', 'data' => $rate]);
+        return response()->json([
+            'success' => $result->success,
+            'message' => $result->message,
+            'data' => $result,
+        ]);
     }
 
     /**
