@@ -105,6 +105,7 @@ class Transaction extends TransactionModel
         'rate' => MoneyCast::class.':6',
         'base_rate' => MoneyCast::class.':6',
         'rate_override' => 'boolean',
+        'is_refund' => 'boolean',
         'type' => \App\Enums\TransactionType::class,
         'status' => \App\Enums\TransactionStatus::class,
         'cdd_level' => \App\Enums\CddLevel::class,
