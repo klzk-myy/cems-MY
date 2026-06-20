@@ -17,7 +17,6 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ComplianceCase extends ComplianceModel
 {
@@ -48,6 +47,7 @@ class ComplianceCase extends ComplianceModel
         'status' => ComplianceCaseStatus::class,
         'severity' => FindingSeverity::class,
         'priority' => ComplianceCasePriority::class,
+        'resolution' => CaseResolution::class,
         'sla_deadline' => 'datetime',
         'escalated_at' => 'datetime',
         'resolved_at' => 'datetime',
@@ -215,14 +215,6 @@ class ComplianceCase extends ComplianceModel
     public function links(): HasMany
     {
         return $this->hasMany(ComplianceCaseLink::class, 'case_id');
-    }
-
-    /**
-     * Get the linked subject (polymorphic).
-     */
-    public function subject(): MorphTo
-    {
-        return $this->morphTo('subject', 'linked_type', 'linked_id');
     }
 
     /**
