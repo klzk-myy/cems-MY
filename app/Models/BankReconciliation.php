@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Enums\BankReconciliationStatus;
 use App\Enums\CheckStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,8 +33,8 @@ class BankReconciliation extends BaseModel
 
     protected $casts = [
         'statement_date' => 'date',
-        'debit' => 'decimal:2',
-        'credit' => 'decimal:2',
+        'debit' => MoneyCast::class,
+        'credit' => MoneyCast::class,
         'matched_at' => 'datetime',
         'check_date' => 'date',
         'status' => BankReconciliationStatus::class,

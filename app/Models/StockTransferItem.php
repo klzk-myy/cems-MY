@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -23,11 +24,11 @@ class StockTransferItem extends BaseModel
     ];
 
     protected $casts = [
-        'quantity' => 'decimal:4',
-        'rate' => 'decimal:6',
-        'value_myr' => 'decimal:2',
-        'quantity_received' => 'decimal:4',
-        'quantity_in_transit' => 'decimal:4',
+        'quantity' => MoneyCast::class,
+        'rate' => MoneyCast::class.':6',
+        'value_myr' => MoneyCast::class,
+        'quantity_received' => MoneyCast::class,
+        'quantity_in_transit' => MoneyCast::class,
     ];
 
     public function stockTransfer(): BelongsTo

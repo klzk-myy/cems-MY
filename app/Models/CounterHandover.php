@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class CounterHandover extends BaseModel
@@ -26,7 +27,7 @@ class CounterHandover extends BaseModel
     protected $casts = [
         'handover_time' => 'datetime',
         'physical_count_verified' => 'boolean',
-        'variance_myr' => 'decimal:2',
+        'variance_myr' => MoneyCast::class,
         'acknowledged_at' => 'datetime',
         'yellow_variance' => 'boolean',
     ];

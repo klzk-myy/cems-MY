@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Enums\StockReservationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,7 +22,7 @@ class StockReservation extends BaseModel
     ];
 
     protected $casts = [
-        'amount_foreign' => 'decimal:4',
+        'amount_foreign' => MoneyCast::class,
         'expires_at' => 'datetime',
         'status' => StockReservationStatus::class,
     ];
