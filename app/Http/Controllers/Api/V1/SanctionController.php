@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Sanction\SearchSanctionRequest;
 use App\Services\CustomerScreeningService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class SanctionController extends Controller
 {
@@ -36,7 +35,7 @@ class SanctionController extends Controller
     /**
      * Upload sanctions list file.
      */
-    public function upload(Request $request): JsonResponse
+    public function upload(): JsonResponse
     {
         return response()->json([
             'success' => false,

@@ -12,7 +12,6 @@ use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use App\Services\Compliance\SanctionsImportService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class SanctionListController extends Controller
 {
@@ -81,7 +80,7 @@ class SanctionListController extends Controller
         ]);
     }
 
-    public function triggerImport(Request $request, int $listId): JsonResponse
+    public function triggerImport(int $listId): JsonResponse
     {
         $list = SanctionList::findOrFail($listId);
 
