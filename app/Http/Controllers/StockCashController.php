@@ -55,11 +55,8 @@ class StockCashController extends Controller
             ->whereDate('date', today())
             ->get();
 
-        // Calculate summary stats using MathService for monetary values
-        $totalVariance = '0';
-        foreach ($todayBalances as $balance) {
-            $totalVariance = $this->mathService->add($totalVariance, (string) ($balance->variance ?? 0));
-        }
+        // Calculate summary stats using collection aggregates
+        $totalVariance = $todayBalances->sum('variance');
 
         $stats = [
             'total_currencies' => Currency::where('is_active', true)->count(),
@@ -84,14 +81,7 @@ class StockCashController extends Controller
         }
 
         $myrBalances = $myrQuery->get();
-        $myrCashInHand = '0';
-        foreach ($myrBalances as $balance) {
-            // Use closing_balance if closed, otherwise opening_balance
-            $balanceAmount = $balance->closed_at
-                ? ($balance->closing_balance ?? '0')
-                : ($balance->opening_balance ?? '0');
-            $myrCashInHand = $this->mathService->add($myrCashInHand, (string) $balanceAmount);
-        }
+        $myrCashInHand = $myrBalances->sum(fn ($b) => $b->closing_balance ?? $b->opening_balance);
 
         return view('pages.stock-cash.index', compact(
             'positions',
