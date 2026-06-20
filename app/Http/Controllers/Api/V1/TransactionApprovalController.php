@@ -83,7 +83,6 @@ class TransactionApprovalController extends Controller
                 'transaction_id' => $transaction->id,
                 'user_id' => auth()->id(),
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
