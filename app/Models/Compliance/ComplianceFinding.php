@@ -21,6 +21,7 @@ class ComplianceFinding extends BaseModel
     protected $fillable = [
         'finding_type',
         'severity',
+        'status',
         'subject_type',
         'subject_id',
         'details',
