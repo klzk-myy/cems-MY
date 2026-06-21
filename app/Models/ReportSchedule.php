@@ -5,6 +5,7 @@ namespace App\Models;
 use Cron\CronExpression;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ReportSchedule extends BaseModel
 {
