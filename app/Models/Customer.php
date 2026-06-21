@@ -87,6 +87,9 @@ class Customer extends BaseModel
         'frozen_at',
         'transactions_blocked',
         'rejection_reason',
+        'customer_type',
+        'pep_type',
+        'sanctions_screened_at',
     ];
 
     protected $hidden = [
@@ -114,6 +117,9 @@ class Customer extends BaseModel
         'frozen_at' => 'datetime',
         'transactions_blocked' => 'boolean',
         'id_type' => IdType::class,
+        'customer_type' => 'string',
+        'pep_type' => 'string',
+        'sanctions_screened_at' => 'datetime',
     ];
 
     /**

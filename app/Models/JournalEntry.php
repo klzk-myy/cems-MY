@@ -72,6 +72,8 @@ class JournalEntry extends AccountingModel
         'approval_notes',
         'cost_center_id',
         'department_id',
+        'branch_id',
+        'created_by',
     ];
 
     protected $casts = [

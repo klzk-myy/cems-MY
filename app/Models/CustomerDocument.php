@@ -50,6 +50,7 @@ class CustomerDocument extends BaseModel
         'verified_by',
         'verified_at',
         'expiry_date',
+        'status',
     ];
 
     /**
@@ -63,6 +64,7 @@ class CustomerDocument extends BaseModel
         'expiry_date' => 'date',
         'file_size' => 'integer',
         'document_type' => DocumentType::class,
+        'status' => 'string',
     ];
 
     /**

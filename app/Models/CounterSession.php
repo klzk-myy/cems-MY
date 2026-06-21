@@ -26,6 +26,8 @@ class CounterSession extends BaseModel
         'notes',
         'physical_count_verified',
         'handover_notes',
+        'requested_amount_myr',
+        'daily_limit_myr',
     ];
 
     protected $casts = [
@@ -33,6 +35,8 @@ class CounterSession extends BaseModel
         'closed_at' => 'datetime',
         'session_date' => 'date',
         'status' => CounterSessionStatus::class,
+        'requested_amount_myr' => 'decimal:2',
+        'daily_limit_myr' => 'decimal:2',
     ];
 
     public function counter(): BelongsTo
