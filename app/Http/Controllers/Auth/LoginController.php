@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginRequest;
 use App\Models\User;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
@@ -22,16 +23,13 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function login(Request $request): RedirectResponse
+    public function login(LoginRequest $request): RedirectResponse
     {
-        $request->validate([
-            'username' => 'required|string',
-            'password' => 'required',
-        ]);
+        $validated = $request->validated();
 
-        $user = User::where('username', $request->username)->first();
+        $user = User::where('username', $validated['username'])->first();
 
-        if ($user && $user->is_active && Hash::check($request->password, $user->password_hash)) {
+        if ($user && $user->is_active && Hash::check($validated['password'], $user->password_hash)) {
             Auth::login($user);
             $request->session()->regenerate();
 

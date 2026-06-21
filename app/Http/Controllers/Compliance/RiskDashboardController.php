@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RescreenCustomerRequest;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
@@ -56,13 +57,11 @@ class RiskDashboardController extends Controller
         ));
     }
 
-    public function rescreen(Request $request): RedirectResponse
+    public function rescreen(RescreenCustomerRequest $request): RedirectResponse
     {
-        $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-        ]);
+        $validated = $request->validated();
 
-        $result = $this->riskScoringService->rescreenCustomer($request->customer_id);
+        $result = $this->riskScoringService->rescreenCustomer($validated['customer_id']);
 
         return redirect()->back()
             ->with('success', sprintf(

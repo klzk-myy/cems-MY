@@ -3,6 +3,12 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AddCaseLinkRequest;
+use App\Http\Requests\LinkAlertToCaseRequest;
+use App\Http\Requests\MergeCaseRequest;
+use App\Http\Requests\StoreCaseFromAlertRequest;
+use App\Http\Requests\UpdateCaseStatusRequest;
+use App\Http\Requests\UploadCaseDocumentRequest;
 use App\Models\Alert;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceCaseDocument;
@@ -40,15 +46,12 @@ class CaseManagementController extends Controller
         return view('compliance.cases.index', compact('cases', 'summary'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreCaseFromAlertRequest $request): RedirectResponse
     {
-        $request->validate([
-            'alert_ids' => 'required|array|min:1',
-            'alert_ids.*' => 'exists:alerts,id',
-        ]);
+        $validated = $request->validated();
 
         $case = $this->caseManagementService->createFromAlerts(
-            $request->alert_ids,
+            $validated['alert_ids'],
             auth()->id()
         );
 
@@ -63,31 +66,26 @@ class CaseManagementController extends Controller
         return view('compliance.cases.show', compact('case'));
     }
 
-    public function update(Request $request, ComplianceCase $case): RedirectResponse
+    public function update(UpdateCaseStatusRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'status' => 'nullable|in:open,in_progress,pending_review,resolved,closed',
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         if ($request->has('status')) {
-            $case = $this->caseManagementService->updateStatus($case, $request->status);
+            $case = $this->caseManagementService->updateStatus($case, $validated['status']);
         }
 
         if ($request->has('notes')) {
-            $case->update(['notes' => $request->notes]);
+            $case->update(['notes' => $validated['notes']]);
         }
 
         return redirect()->back()->with('success', 'Case updated successfully');
     }
 
-    public function merge(Request $request, ComplianceCase $case): RedirectResponse
+    public function merge(MergeCaseRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'target_case_id' => 'required|exists:compliance_cases,id',
-        ]);
+        $validated = $request->validated();
 
-        $targetCase = ComplianceCase::findOrFail($request->target_case_id);
+        $targetCase = ComplianceCase::findOrFail($validated['target_case_id']);
 
         $mergedCase = $this->caseManagementService->mergeCases($case, $targetCase);
 
@@ -95,25 +93,19 @@ class CaseManagementController extends Controller
             ->with('success', 'Cases merged successfully');
     }
 
-    public function linkAlert(Request $request, ComplianceCase $case): RedirectResponse
+    public function linkAlert(LinkAlertToCaseRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'alert_id' => 'required|exists:alerts,id',
-        ]);
+        $validated = $request->validated();
 
-        $alert = Alert::findOrFail($request->alert_id);
+        $alert = Alert::findOrFail($validated['alert_id']);
 
         $this->caseManagementService->linkAlertToCase($alert, $case);
 
         return redirect()->back()->with('success', 'Alert linked to case');
     }
 
-    public function uploadDocument(Request $request, ComplianceCase $case): RedirectResponse
+    public function uploadDocument(UploadCaseDocumentRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
-        ]);
-
         $document = $this->caseManagementService->addDocument(
             $case->id,
             $request->file('file'),
@@ -134,14 +126,11 @@ class CaseManagementController extends Controller
         return redirect()->back()->with('success', 'Document verified');
     }
 
-    public function addLink(Request $request, ComplianceCase $case): RedirectResponse
+    public function addLink(AddCaseLinkRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $request->validate([
-            'linked_type' => 'required|string',
-            'linked_id' => 'required|integer',
-        ]);
+        $validated = $request->validated();
 
-        $this->caseManagementService->addLink($case->id, $request->linked_type, $request->linked_id);
+        $this->caseManagementService->addLink($case->id, $validated['linked_type'], $validated['linked_id']);
 
         return redirect()->back()->with('success', 'Link added');
     }
