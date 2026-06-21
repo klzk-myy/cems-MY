@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('enhanced_diligence_records', function (Blueprint $table) {
             $table->foreignId('edd_template_id')->nullable()->after('questionnaire_completed_by')
-                ->constrained('edd_templates')->nullOnDelete();
+                ->constrained('edd_questionnaire_templates')->nullOnDelete();
         });
     }
 

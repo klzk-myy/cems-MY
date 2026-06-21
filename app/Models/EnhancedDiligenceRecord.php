@@ -39,6 +39,10 @@ class EnhancedDiligenceRecord extends ComplianceModel
         'reviewed_at',
         'review_notes',
         'questionnaire_responses',
+        'questionnaire_completed_at',
+        'questionnaire_completed_by',
+        'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
@@ -48,6 +52,8 @@ class EnhancedDiligenceRecord extends ComplianceModel
         'responses' => 'array',
         'documents_received' => 'array',
         'reviewed_at' => 'datetime',
+        'questionnaire_completed_at' => 'datetime',
+        'approved_at' => 'datetime',
         'status' => EddStatus::class,
         'risk_level' => EddRiskLevel::class,
         'employment_status' => EmploymentStatus::class,
@@ -61,6 +67,16 @@ class EnhancedDiligenceRecord extends ComplianceModel
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function questionnaireCompletedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'questionnaire_completed_by');
     }
 
     /**
