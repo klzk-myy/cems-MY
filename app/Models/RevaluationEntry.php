@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RevaluationEntry extends BaseModel
 {
+    use HasFactory;
+
     protected $fillable = [
         'currency_code',
         'till_id',
