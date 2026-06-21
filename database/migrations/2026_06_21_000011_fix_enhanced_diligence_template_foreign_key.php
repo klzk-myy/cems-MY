@@ -73,12 +73,17 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('enhanced_diligence_records', function (Blueprint $table) {
+        $oldTableExists = Schema::hasTable('edd_templates');
+
+        Schema::table('enhanced_diligence_records', function (Blueprint $table) use ($oldTableExists) {
             $table->dropForeign(['edd_template_id']);
-            $table->foreign('edd_template_id')
-                ->references('id')
-                ->on('edd_templates')
-                ->nullOnDelete();
+
+            if ($oldTableExists) {
+                $table->foreign('edd_template_id')
+                    ->references('id')
+                    ->on('edd_templates')
+                    ->nullOnDelete();
+            }
         });
     }
 };
