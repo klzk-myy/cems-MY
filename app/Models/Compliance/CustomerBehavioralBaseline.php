@@ -5,7 +5,6 @@ namespace App\Models\Compliance;
 use App\Models\BaseModel;
 use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
