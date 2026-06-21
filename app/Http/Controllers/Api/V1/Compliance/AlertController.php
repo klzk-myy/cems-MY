@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Compliance\BulkAssignAlertRequest;
+use App\Http\Requests\Api\V1\Compliance\BulkResolveAlertRequest;
 use App\Models\Alert;
 use App\Services\Compliance\AlertTriageService;
 use Illuminate\Http\JsonResponse;
@@ -71,13 +73,9 @@ class AlertController extends Controller
     /**
      * Bulk assign alerts to a compliance officer.
      */
-    public function bulkAssign(Request $request): JsonResponse
+    public function bulkAssign(BulkAssignAlertRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'alert_ids' => 'required|array|min:1',
-            'alert_ids.*' => 'integer',
-            'user_id' => 'required|integer|exists:users,id',
-        ]);
+        $validated = $request->validated();
 
         $results = $this->alertTriageService->bulkAssign(
             $validated['alert_ids'],
@@ -94,13 +92,9 @@ class AlertController extends Controller
     /**
      * Bulk resolve multiple alerts.
      */
-    public function bulkResolve(Request $request): JsonResponse
+    public function bulkResolve(BulkResolveAlertRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'alert_ids' => 'required|array|min:1',
-            'alert_ids.*' => 'integer',
-            'notes' => 'nullable|string|max:1000',
-        ]);
+        $validated = $request->validated();
 
         $results = $this->alertTriageService->bulkResolve(
             $validated['alert_ids'],

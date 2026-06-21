@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Enums\EddStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Compliance\RejectEddRequest;
+use App\Http\Requests\Api\V1\Compliance\SubmitQuestionnaireRequest;
 use App\Models\Compliance\EddQuestionnaireTemplate;
 use App\Models\EnhancedDiligenceRecord;
 use Illuminate\Http\JsonResponse;
@@ -66,12 +68,9 @@ class EddController extends Controller
     /**
      * Submit questionnaire for an EDD record.
      */
-    public function submitQuestionnaire(Request $request, int $id): JsonResponse
+    public function submitQuestionnaire(SubmitQuestionnaireRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'responses' => 'required|array',
-            'responses.*' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $record = EnhancedDiligenceRecord::findOrFail($id);
 
@@ -119,11 +118,9 @@ class EddController extends Controller
     /**
      * Reject an EDD record.
      */
-    public function reject(Request $request, int $id): JsonResponse
+    public function reject(RejectEddRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'reason' => 'required|string|max:1000',
-        ]);
+        $validated = $request->validated();
 
         $record = EnhancedDiligenceRecord::findOrFail($id);
 

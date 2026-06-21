@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Compliance\LockRiskRequest;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Services\Compliance\RiskScoringEngine;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class RiskController extends Controller
 {
@@ -84,11 +84,9 @@ class RiskController extends Controller
     /**
      * Lock a customer's risk profile.
      */
-    public function lock(Request $request, string $customerId): JsonResponse
+    public function lock(LockRiskRequest $request, string $customerId): JsonResponse
     {
-        $validated = $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
 
