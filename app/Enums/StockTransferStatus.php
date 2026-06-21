@@ -11,7 +11,7 @@ enum StockTransferStatus: string
 {
     case Requested = 'Requested';
     case BranchManagerApproved = 'BranchManagerApproved';
-    case HqApproved = 'HqApproved';
+    case HqApproved = 'HQApproved';
     case InTransit = 'InTransit';
     case PartiallyReceived = 'PartiallyReceived';
     case Completed = 'Completed';
