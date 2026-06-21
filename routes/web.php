@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Accounting\BudgetController;
+use App\Http\Controllers\Accounting\JournalController;
+use App\Http\Controllers\Accounting\ReconciliationController;
+use App\Http\Controllers\Accounting\ReportController;
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\BranchClosingController;
 use App\Http\Controllers\Compliance\AlertTriageController;
@@ -269,24 +273,26 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     });
 
     Route::middleware('role:manager')->prefix('accounting')->name('accounting.')->group(function () {
-        Route::get('/', [AccountingController::class, 'index'])->name('index');
+        Route::get('/', [JournalController::class, 'index'])->name('index');
 
         // Journal Entry Management
-        Route::get('/journal', [AccountingController::class, 'index'])->name('journal');
-        Route::get('/journal/create', [AccountingController::class, 'create'])->name('journal.create');
-        Route::post('/journal', [AccountingController::class, 'store'])->name('journal.store');
-        Route::get('/journal/{entry}', [AccountingController::class, 'show'])->name('journal.show');
-        Route::post('/journal/{entry}/reverse', [AccountingController::class, 'reverse'])->name('journal.reverse');
+        Route::get('/journal', [JournalController::class, 'index'])->name('journal');
+        Route::get('/journal/create', [JournalController::class, 'create'])->name('journal.create');
+        Route::post('/journal', [JournalController::class, 'store'])->name('journal.store');
+        Route::get('/journal/{entry}', [JournalController::class, 'show'])->name('journal.show');
+        Route::post('/journal/{entry}/reverse', [JournalController::class, 'reverse'])->name('journal.reverse');
 
-        Route::get('/ledger', [AccountingController::class, 'ledger'])->name('ledger');
-        Route::get('/ledger/{accountCode}', [AccountingController::class, 'ledgerAccount'])->name('ledger.account');
+        // Ledger & Reports
+        Route::get('/ledger', [ReportController::class, 'ledger'])->name('ledger');
+        Route::get('/ledger/{accountCode}', [ReportController::class, 'ledgerAccount'])->name('ledger.account');
 
-        Route::get('/trial-balance', [AccountingController::class, 'trialBalance'])->name('trial-balance');
-        Route::get('/profit-loss', [AccountingController::class, 'profitLoss'])->name('profit-loss');
-        Route::get('/balance-sheet', [AccountingController::class, 'balanceSheet'])->name('balance-sheet');
-        Route::get('/cash-flow', [AccountingController::class, 'cashFlow'])->name('cash-flow');
-        Route::get('/ratios', [AccountingController::class, 'ratios'])->name('ratios');
+        Route::get('/trial-balance', [ReportController::class, 'trialBalance'])->name('trial-balance');
+        Route::get('/profit-loss', [ReportController::class, 'profitLoss'])->name('profit-loss');
+        Route::get('/balance-sheet', [ReportController::class, 'balanceSheet'])->name('balance-sheet');
+        Route::get('/cash-flow', [ReportController::class, 'cashFlow'])->name('cash-flow');
+        Route::get('/ratios', [ReportController::class, 'ratios'])->name('ratios');
 
+        // Periods & Fiscal Years (remain in AccountingController for now)
         Route::get('/periods', [AccountingController::class, 'periods'])->name('periods');
         Route::post('/periods/{period}/close', [AccountingController::class, 'closePeriod'])->name('period.close');
         Route::get('/fiscal-years', [AccountingController::class, 'fiscalYears'])->name('fiscal-years');
@@ -295,15 +301,19 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/revaluation', [AccountingController::class, 'revaluation'])->name('revaluation');
         Route::get('/revaluation/history', [AccountingController::class, 'revaluationHistory'])->name('revaluation.history');
         Route::post('/revaluation/run', [RevaluationController::class, 'run'])->name('revaluation.run');
-        Route::get('/reconciliation', [AccountingController::class, 'reconciliation'])->name('reconciliation');
-        Route::get('/reconciliation/report', [AccountingController::class, 'reconciliationReport'])->name('reconciliation.report');
-        Route::post('/reconciliation/import', [AccountingController::class, 'importBankStatement'])->name('reconciliation.import');
-        Route::post('/reconciliation/{reconciliation}/exception', [AccountingController::class, 'markAsException'])->name('reconciliation.exception');
-        Route::get('/reconciliation/export', [AccountingController::class, 'exportReconciliation'])->name('reconciliation.export');
-        Route::get('/budget', [AccountingController::class, 'budget'])->name('budget');
-        Route::post('/budget', [AccountingController::class, 'storeBudget'])->name('budget.store');
-        Route::put('/budget/{budget}', [AccountingController::class, 'updateBudget'])->name('budget.update');
-        Route::patch('/budget/{budget}', [AccountingController::class, 'updateBudget'])->name('budget.patch');
+
+        // Bank Reconciliation
+        Route::get('/reconciliation', [ReconciliationController::class, 'index'])->name('reconciliation');
+        Route::get('/reconciliation/report', [ReconciliationController::class, 'reconciliationReport'])->name('reconciliation.report');
+        Route::post('/reconciliation/import', [ReconciliationController::class, 'importBankStatement'])->name('reconciliation.import');
+        Route::post('/reconciliation/{reconciliation}/exception', [ReconciliationController::class, 'markAsException'])->name('reconciliation.exception');
+        Route::get('/reconciliation/export', [ReconciliationController::class, 'exportReconciliation'])->name('reconciliation.export');
+
+        // Budget
+        Route::get('/budget', [BudgetController::class, 'index'])->name('budget');
+        Route::post('/budget', [BudgetController::class, 'store'])->name('budget.store');
+        Route::put('/budget/{budget}', [BudgetController::class, 'update'])->name('budget.update');
+        Route::patch('/budget/{budget}', [BudgetController::class, 'update'])->name('budget.patch');
     });
 
     Route::middleware('role:manager,admin')->prefix('reports')->name('reports.')->group(function () {
