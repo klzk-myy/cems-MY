@@ -2,11 +2,22 @@
 
 namespace App\Providers;
 
-// use Illuminate\Support\Facades\Gate;
+use App\Models\Branch;
+use App\Models\Counter;
+use App\Models\Customer;
+use App\Models\JournalEntry;
 use App\Models\SystemLog;
 use App\Models\ThresholdAudit;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Policies\BranchPolicy;
+use App\Policies\CounterPolicy;
+use App\Policies\CustomerPolicy;
+use App\Policies\JournalEntryPolicy;
 use App\Policies\SystemLogPolicy;
 use App\Policies\ThresholdAuditPolicy;
+use App\Policies\TransactionPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -19,6 +30,12 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         SystemLog::class => SystemLogPolicy::class,
         ThresholdAudit::class => ThresholdAuditPolicy::class,
+        Transaction::class => TransactionPolicy::class,
+        Customer::class => CustomerPolicy::class,
+        Branch::class => BranchPolicy::class,
+        Counter::class => CounterPolicy::class,
+        User::class => UserPolicy::class,
+        JournalEntry::class => JournalEntryPolicy::class,
     ];
 
     /**
@@ -26,6 +43,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $this->registerPolicies();
     }
 }
