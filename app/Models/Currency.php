@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Traits\HasCodeAndName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Currency extends BaseModel
@@ -29,12 +30,12 @@ class Currency extends BaseModel
         'is_active' => 'boolean',
     ];
 
-    public function exchangeRates()
+    public function exchangeRates(): HasMany
     {
         return $this->hasMany(ExchangeRate::class, 'currency_code');
     }
 
-    public function transactions()
+    public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class, 'currency_code');
     }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -34,12 +35,12 @@ class ExchangeRate extends BaseModel
         return $this->belongsTo(Branch::class);
     }
 
-    public function scopeLatestRates($query)
+    public function scopeLatestRates(Builder $query): Builder
     {
         return $query->orderBy('fetched_at', 'desc');
     }
 
-    public function scopeForBranch($query, $branchId)
+    public function scopeForBranch(Builder $query, int $branchId): Builder
     {
         return $query->where('branch_id', $branchId);
     }

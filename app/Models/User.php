@@ -106,10 +106,8 @@ class User extends Authenticatable
 
     /**
      * Get all transactions created by this user.
-     *
-     * @return HasMany
      */
-    public function transactions()
+    public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
     }

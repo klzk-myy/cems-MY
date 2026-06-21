@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -38,12 +39,12 @@ class ExchangeRateHistory extends BaseModel
         return $this->belongsTo(Branch::class);
     }
 
-    public function scopeForCurrency($query, string $code)
+    public function scopeForCurrency(Builder $query, string $code): Builder
     {
         return $query->where('currency_code', $code);
     }
 
-    public function scopeForDateRange($query, string $from, string $to)
+    public function scopeForDateRange(Builder $query, string $from, string $to): Builder
     {
         return $query->whereBetween('effective_date', [$from, $to]);
     }
