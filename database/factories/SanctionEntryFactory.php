@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SanctionStatus;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -40,7 +41,7 @@ class SanctionEntryFactory extends Factory
             'normalized_name' => mb_strtolower(trim($name)),
             'soundex_code' => soundex($name),
             'metaphone_code' => metaphone($name),
-            'status' => 'active',
+            'status' => SanctionStatus::Active->value,
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CounterSessionStatus;
 use App\Models\CounterSession;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -20,7 +21,7 @@ class CounterSessionFactory extends Factory
         return [
             'session_date' => now()->toDateString(),
             'opened_at' => now(),
-            'status' => 'open',
+            'status' => CounterSessionStatus::Open->value,
         ];
     }
 }

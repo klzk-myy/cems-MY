@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\RiskTrend;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,7 +23,7 @@ class RiskScoreSnapshotFactory extends Factory
             'structuring_score' => 0,
             'geographic_score' => 0,
             'amount_score' => 0,
-            'trend' => 'stable',
+            'trend' => RiskTrend::Stable->value,
             'factors' => [],
         ];
     }

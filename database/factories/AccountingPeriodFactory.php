@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\AccountingPeriodStatus;
+use App\Enums\AccountingPeriodType;
 use App\Models\AccountingPeriod;
 use App\Models\FiscalYear;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -15,24 +17,24 @@ class AccountingPeriodFactory extends Factory
         return [
             'fiscal_year_id' => null,
             'period_code' => date('Y').'-01',
-            'period_type' => 'month',
+            'period_type' => AccountingPeriodType::Month->value,
             'start_date' => date('Y').'-01-01',
             'end_date' => date('Y').'-01-31',
-            'status' => 'open',
+            'status' => AccountingPeriodStatus::Open->value,
         ];
     }
 
     public function open(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'open',
+            'status' => AccountingPeriodStatus::Open->value,
         ]);
     }
 
     public function closed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'closed',
+            'status' => AccountingPeriodStatus::Closed->value,
         ]);
     }
 

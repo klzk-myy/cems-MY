@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\DocumentType;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Models\User;
@@ -15,7 +16,7 @@ class CustomerDocumentFactory extends Factory
     {
         return [
             'customer_id' => Customer::factory(),
-            'document_type' => 'MyKad',
+            'document_type' => DocumentType::MyKad->value,
             'file_path' => '/path/to/document.jpg',
             'file_hash' => fake()->sha1(),
             'file_size' => fake()->numberBetween(1000, 50000),
