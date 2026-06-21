@@ -3,29 +3,30 @@
 namespace App\Models;
 
 use App\Enums\RiskRating;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CustomerRiskHistory extends BaseModel
 {
+    use HasFactory;
+
     protected $table = 'customer_risk_history';
 
     protected $fillable = [
         'customer_id',
-        'previous_score',
+        'old_score',
         'new_score',
-        'previous_rating',
+        'old_rating',
         'new_rating',
         'change_reason',
-        'changed_by',
-        'changed_at',
+        'assessed_by',
     ];
 
     protected $casts = [
-        'previous_score' => 'integer',
+        'old_score' => 'integer',
         'new_score' => 'integer',
-        'previous_rating' => RiskRating::class,
+        'old_rating' => RiskRating::class,
         'new_rating' => RiskRating::class,
-        'changed_at' => 'datetime',
     ];
 
     public function customer(): BelongsTo
@@ -35,6 +36,6 @@ class CustomerRiskHistory extends BaseModel
 
     public function assessor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'changed_by');
+        return $this->belongsTo(User::class, 'assessed_by');
     }
 }
