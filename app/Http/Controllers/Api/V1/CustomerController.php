@@ -69,6 +69,8 @@ class CustomerController extends Controller
      */
     public function store(StoreCustomerRequest $request): JsonResponse
     {
+        $this->authorize('create', Customer::class);
+
         $validated = $request->validated();
 
         try {
@@ -108,6 +110,8 @@ class CustomerController extends Controller
             ], 404);
         }
 
+        $this->authorize('view', $customer);
+
         $stats = Transaction::query()
             ->selectRaw('COUNT(*) as total_transactions, SUM(amount_local) as total_volume, AVG(amount_local) as avg_transaction')
             ->where('customer_id', $id)
@@ -133,6 +137,8 @@ class CustomerController extends Controller
     public function update(UpdateCustomerRequest $request, int $id): JsonResponse
     {
         $customer = Customer::findOrFail($id);
+
+        $this->authorize('update', $customer);
 
         $validated = $request->validated();
 
@@ -164,12 +170,7 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
 
-        if (! auth()->user()->isManager()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Manager or Admin access required.',
-            ], 403);
-        }
+        $this->authorize('delete', $customer);
 
         if ($customer->transactions()->exists()) {
             return response()->json([

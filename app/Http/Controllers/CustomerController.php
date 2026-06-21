@@ -55,6 +55,8 @@ class CustomerController extends Controller
      */
     public function quickCreate(QuickCreateCustomerRequest $request): JsonResponse
     {
+        $this->authorize('create', Customer::class);
+
         $validated = $request->validated();
 
         try {
@@ -219,6 +221,8 @@ class CustomerController extends Controller
      */
     public function store(StoreCustomerRequest $request): RedirectResponse
     {
+        $this->authorize('create', Customer::class);
+
         $validated = $request->validated();
 
         try {
@@ -248,6 +252,8 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer): View
     {
+        $this->authorize('view', $customer);
+
         $customer->load(['documents', 'transactions' => function ($query) {
             $query->orderBy('created_at', 'desc')->limit(10);
         }]);
@@ -303,6 +309,8 @@ class CustomerController extends Controller
      */
     public function edit(Customer $customer): View
     {
+        $this->authorize('update', $customer);
+
         $idTypes = [
             'MyKad' => 'MyKad (Malaysian IC)',
             'Passport' => 'Passport',
@@ -342,6 +350,8 @@ class CustomerController extends Controller
      */
     public function update(UpdateCustomerRequest $request, Customer $customer): RedirectResponse
     {
+        $this->authorize('update', $customer);
+
         $validated = $request->validated();
 
         try {
@@ -366,9 +376,7 @@ class CustomerController extends Controller
      */
     public function destroy(Request $request, Customer $customer): RedirectResponse
     {
-        if (! auth()->user()->isManager() && ! auth()->user()->isAdmin()) {
-            abort(403, 'Unauthorized. Manager or Admin access required to delete customers.');
-        }
+        $this->authorize('delete', $customer);
 
         // Check if customer has transactions
         if ($customer->transactions()->exists()) {

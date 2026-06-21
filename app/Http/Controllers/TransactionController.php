@@ -108,6 +108,8 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request): RedirectResponse
     {
+        $this->authorize('create', Transaction::class);
+
         $validated = $request->validated();
 
         $validated['till_id'] = (string) $validated['counter_id'];
@@ -168,6 +170,8 @@ class TransactionController extends Controller
      */
     public function show(Transaction $transaction): View
     {
+        $this->authorize('view', $transaction);
+
         $transaction->load(['customer', 'user', 'approver', 'flags']);
 
         return view('transactions.show', compact('transaction'));

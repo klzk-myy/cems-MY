@@ -41,6 +41,8 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request): JsonResponse
     {
+        $this->authorize('create', Transaction::class);
+
         $validated = $request->validated();
 
         try {
@@ -79,6 +81,8 @@ class TransactionController extends Controller
     {
         $transaction = Transaction::with(['customer', 'user', 'approver', 'flags'])
             ->findOrFail($id);
+
+        $this->authorize('view', $transaction);
 
         return (new TransactionResource($transaction))->additional(['success' => true]);
     }
