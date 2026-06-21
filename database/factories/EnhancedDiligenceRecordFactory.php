@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;
+use App\Enums\EmploymentStatus;
 use App\Models\Customer;
 use App\Models\EnhancedDiligenceRecord;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -17,12 +19,12 @@ class EnhancedDiligenceRecordFactory extends Factory
             'customer_id' => Customer::factory(),
             'edd_reference' => 'EDD-'.now()->format('Ym').'-'.str_pad(fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
             'status' => EddStatus::PendingQuestionnaire,
-            'risk_level' => fake()->randomElement(['Low', 'Medium', 'High', 'Critical']),
+            'risk_level' => fake()->randomElement(EddRiskLevel::cases())->value,
             'source_of_funds' => fake()->randomElement(['Salary', 'Business', 'Investment', 'Inheritance', 'Gift', 'Other']),
             'source_of_funds_description' => fake()->optional()->sentence(),
             'purpose_of_transaction' => fake()->randomElement(['Investment', 'Business Payment', 'Personal', 'Education', 'Travel', 'Other']),
             'business_justification' => fake()->optional()->sentence(),
-            'employment_status' => fake()->randomElement(['Employed', 'Self-Employed', 'Business Owner', 'Retired', 'Unemployed']),
+            'employment_status' => fake()->randomElement(EmploymentStatus::cases())->value,
             'employer_name' => fake()->optional()->company(),
             'annual_income_range' => fake()->randomElement(['Below RM 30,000', 'RM 30,000 - RM 60,000', 'RM 60,000 - RM 100,000', 'RM 100,000 - RM 500,000', 'Above RM 500,000']),
             'estimated_net_worth' => fake()->randomElement(['Below RM 100,000', 'RM 100,000 - RM 500,000', 'RM 500,000 - RM 1,000,000', 'Above RM 1,000,000']),
