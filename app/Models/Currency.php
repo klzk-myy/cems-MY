@@ -39,4 +39,28 @@ class Currency extends BaseModel
     {
         return $this->hasMany(Transaction::class, 'currency_code');
     }
+
+    /**
+     * Get exchange rate histories for this currency.
+     */
+    public function exchangeRateHistories(): HasMany
+    {
+        return $this->hasMany(ExchangeRateHistory::class, 'currency_code');
+    }
+
+    /**
+     * Get revaluation entries for this currency.
+     */
+    public function revaluationEntries(): HasMany
+    {
+        return $this->hasMany(RevaluationEntry::class, 'currency_code');
+    }
+
+    /**
+     * Get stock transfer items for this currency.
+     */
+    public function stockTransferItems(): HasMany
+    {
+        return $this->hasMany(StockTransferItem::class, 'currency_code');
+    }
 }

@@ -140,6 +140,30 @@ class JournalEntry extends AccountingModel
     }
 
     /**
+     * Get account ledger entries for this journal entry.
+     */
+    public function accountLedgerEntries(): HasMany
+    {
+        return $this->ledgerEntries();
+    }
+
+    /**
+     * Get bank reconciliations associated with this journal entry.
+     */
+    public function bankReconciliations(): HasMany
+    {
+        return $this->hasMany(BankReconciliation::class, 'matched_to_journal_entry_id');
+    }
+
+    /**
+     * Get transactions that reference this journal entry.
+     */
+    public function matchedTransactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'journal_entry_id');
+    }
+
+    /**
      * Check if this journal entry has been posted.
      */
     public function isPosted(): bool
