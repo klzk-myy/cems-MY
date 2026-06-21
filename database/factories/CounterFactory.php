@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CounterStatus;
 use App\Models\Branch;
 use App\Models\Counter;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,7 +19,7 @@ class CounterFactory extends Factory
         return [
             'code' => 'C'.fake()->unique()->numberBetween(10, 99),
             'name' => 'Counter '.fake()->word(),
-            'status' => 'active',
+            'status' => CounterStatus::Active->value,
             'branch_id' => Branch::factory(),
         ];
     }

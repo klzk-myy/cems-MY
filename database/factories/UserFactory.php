@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -28,7 +29,7 @@ class UserFactory extends Factory
             'username' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
             'password_hash' => static::$password ??= Hash::make('password'),
-            'role' => 'teller',
+            'role' => UserRole::Teller->value,
             'branch_id' => Branch::factory(),
             'mfa_enabled' => false,
             'mfa_secret' => null,
@@ -44,6 +45,34 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Admin,
+        ]);
+    }
+
+    public function manager(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Manager,
+        ]);
+    }
+
+    public function complianceOfficer(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::ComplianceOfficer,
+        ]);
+    }
+
+    public function teller(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Teller,
         ]);
     }
 }

@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\AlertPriority;
 use App\Enums\ComplianceFlagType;
+use App\Enums\FlagStatus;
 use App\Models\Alert;
 use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,7 +22,7 @@ class AlertFactory extends Factory
             'risk_score' => $this->faker->numberBetween(0, 100),
             'reason' => $this->faker->sentence(),
             'source' => $this->faker->randomElement(['automated', 'manual']),
-            'status' => 'Open',
+            'status' => FlagStatus::Open->value,
         ];
     }
 

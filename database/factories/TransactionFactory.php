@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\Customer;
@@ -24,14 +26,17 @@ class TransactionFactory extends Factory
             'user_id' => User::factory(),
             'branch_id' => Branch::factory(),
             'till_id' => 'MAIN',
-            'type' => fake()->randomElement(['Buy', 'Sell']),
+            'type' => fake()->randomElement([
+                TransactionType::Buy->value,
+                TransactionType::Sell->value,
+            ]),
             'currency_code' => fn () => Currency::inRandomOrder()->first()?->code ?? Currency::factory()->create()->code,
             'amount_local' => $amountLocal,
             'amount_foreign' => $amountForeign,
             'rate' => $rate,
             'purpose' => fake()->sentence(3),
             'source_of_funds' => fake()->randomElement(['Salary', 'Business', 'Savings', 'Investment']),
-            'status' => 'Completed',
+            'status' => TransactionStatus::Completed->value,
             'hold_reason' => null,
             'approved_by' => null,
             'approved_at' => null,
@@ -42,28 +47,28 @@ class TransactionFactory extends Factory
     public function buy(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'Buy',
+            'type' => TransactionType::Buy->value,
         ]);
     }
 
     public function sell(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'Sell',
+            'type' => TransactionType::Sell->value,
         ]);
     }
 
     public function completed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'Completed',
+            'status' => TransactionStatus::Completed->value,
         ]);
     }
 
     public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'Pending',
+            'status' => TransactionStatus::Pending->value,
         ]);
     }
 
