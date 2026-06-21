@@ -14,6 +14,7 @@ use App\Http\Controllers\Compliance\SanctionListController;
 use App\Http\Controllers\Compliance\ScreeningController;
 use App\Http\Controllers\Compliance\UnifiedAlertController;
 use App\Http\Controllers\CounterController;
+use App\Http\Controllers\Customer\CustomerSearchController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FiscalYearController;
@@ -143,6 +144,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
         Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
         Route::post('/{customer}/notes', [CustomerController::class, 'storeNote'])->name('notes.store');
+        Route::get('/search', [CustomerSearchController::class, 'search'])->name('search');
+        Route::post('/quick-create', [CustomerSearchController::class, 'quickCreate'])->name('quick-create');
+        Route::get('/exchange-rates', [CustomerController::class, 'getExchangeRates'])->name('exchange-rates');
     });
 
     Route::prefix('counters')->name('counters.')->group(function () {

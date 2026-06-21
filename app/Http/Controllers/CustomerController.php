@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CddLevel;
-use App\Http\Requests\QuickCreateCustomerRequest;
-use App\Http\Requests\SearchCustomerRequest;
 use App\Http\Requests\StoreCustomerNoteRequest;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
@@ -15,7 +12,6 @@ use App\Services\Customer\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -31,73 +27,6 @@ class CustomerController extends Controller
         protected CustomerService $customerService,
         protected AuditService $auditService,
     ) {}
-
-    /**
-     * Search customers for transaction form autocomplete.
-     */
-    public function search(SearchCustomerRequest $request): JsonResponse
-    {
-        $validated = $request->validated();
-
-        $results = $this->customerService->searchCustomers($validated['query']);
-
-        return response()->json([
-            'success' => true,
-            'query' => $validated['query'],
-            'results' => $results,
-            'count' => count($results),
-        ]);
-    }
-
-    /**
-     * Quick create customer from transaction form.
-     * Used when customer not found in database.
-     */
-    public function quickCreate(QuickCreateCustomerRequest $request): JsonResponse
-    {
-        $this->authorize('create', Customer::class);
-
-        $validated = $request->validated();
-
-        try {
-            $customer = $this->customerService->createCustomer($validated, auth()->id());
-
-            // Get exchange rate for this customer's potential transactions
-            $exchangeRates = Cache::remember('exchange_rates_for_transactions', 300, fn () => ExchangeRate::all()
-                ->mapWithKeys(fn ($r) => [$r->currency_code => [
-                    'buy' => $r->rate_buy,
-                    'sell' => $r->rate_sell,
-                ]])
-                ->toArray()
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Customer created successfully',
-                'customer' => [
-                    'id' => $customer->id,
-                    'full_name' => $customer->full_name,
-                    'ic_number_masked' => $customer->ic_number,
-                    'nationality' => $customer->nationality,
-                    'risk_rating' => $customer->risk_rating,
-                    'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
-                    'is_pep' => $customer->pep_status,
-                    'is_sanctioned' => $customer->sanction_hit,
-                ],
-                'exchange_rates' => $exchangeRates,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Customer quick create failed', [
-                'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create customer. Please contact support.',
-            ], 500);
-        }
-    }
 
     /**
      * Get exchange rates for transaction form.
