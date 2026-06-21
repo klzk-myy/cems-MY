@@ -3,6 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\AccountingPeriod;
+use App\Models\AccountLedger;
 use App\Models\Alert;
 use App\Models\AmlRule;
 use App\Models\BackupLog;
@@ -13,11 +14,14 @@ use App\Models\BranchClosureWorkflow;
 use App\Models\BranchPool;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
+use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceCaseDocument;
 use App\Models\Compliance\ComplianceCaseLink;
 use App\Models\Compliance\ComplianceCaseNote;
+use App\Models\Compliance\ComplianceFinding;
 use App\Models\Compliance\CustomerBehavioralBaseline;
 use App\Models\Compliance\CustomerRiskProfile;
+use App\Models\Compliance\EddDocumentRequest;
 use App\Models\Compliance\EddQuestionnaireTemplate;
 use App\Models\CostCenter;
 use App\Models\Counter;
@@ -34,11 +38,14 @@ use App\Models\Department;
 use App\Models\DeviceComputations;
 use App\Models\EddTemplate;
 use App\Models\EmergencyClosure;
+use App\Models\EnhancedDiligenceRecord;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Models\FiscalYear;
 use App\Models\FlaggedTransaction;
 use App\Models\HighRiskCountry;
+use App\Models\JournalEntry;
+use App\Models\JournalLine;
 use App\Models\MfaRecoveryCode;
 use App\Models\PepApprovalRequest;
 use App\Models\ReportGenerated;
@@ -54,13 +61,18 @@ use App\Models\ScreeningResult;
 use App\Models\StockReservation;
 use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
+use App\Models\SystemAlert;
+use App\Models\SystemHealthCheck;
 use App\Models\SystemLog;
 use App\Models\TellerAllocation;
+use App\Models\TestResult;
 use App\Models\ThresholdAudit;
 use App\Models\TillBalance;
+use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Models\TransactionError;
 use App\Models\TransactionImport;
+use App\Models\User;
 use App\Models\UserNotificationPreference;
 use Tests\TestCase;
 
@@ -112,6 +124,7 @@ class ModelHierarchyTest extends TestCase
     {
         $models = [
             AccountingPeriod::class,
+            AccountLedger::class,
             Budget::class,
             ChartOfAccount::class,
             CostCenter::class,
@@ -120,6 +133,8 @@ class ModelHierarchyTest extends TestCase
             ExchangeRate::class,
             ExchangeRateHistory::class,
             FiscalYear::class,
+            JournalEntry::class,
+            JournalLine::class,
             RevaluationEntry::class,
         ];
 
@@ -137,13 +152,17 @@ class ModelHierarchyTest extends TestCase
     {
         $models = [
             AmlRule::class,
+            ComplianceCase::class,
             ComplianceCaseDocument::class,
             ComplianceCaseLink::class,
             ComplianceCaseNote::class,
+            ComplianceFinding::class,
             CustomerBehavioralBaseline::class,
             CustomerRiskProfile::class,
+            EddDocumentRequest::class,
             EddQuestionnaireTemplate::class,
             EddTemplate::class,
+            EnhancedDiligenceRecord::class,
             HighRiskCountry::class,
             PepApprovalRequest::class,
             SanctionEntry::class,
@@ -185,6 +204,7 @@ class ModelHierarchyTest extends TestCase
     public function test_transaction_models_extend_base_model(): void
     {
         $models = [
+            Transaction::class,
             TransactionConfirmation::class,
             TransactionError::class,
             TransactionImport::class,
@@ -216,7 +236,10 @@ class ModelHierarchyTest extends TestCase
             ReportGenerated::class,
             ReportRun::class,
             ReportSchedule::class,
+            SystemAlert::class,
+            SystemHealthCheck::class,
             SystemLog::class,
+            TestResult::class,
             UserNotificationPreference::class,
         ];
 
@@ -228,5 +251,12 @@ class ModelHierarchyTest extends TestCase
                 "{$model} should extend BaseModel"
             );
         }
+    }
+
+    public function test_user_model_extends_authenticatable(): void
+    {
+        $user = new User;
+
+        $this->assertInstanceOf(\Illuminate\Foundation\Auth\User::class, $user);
     }
 }
