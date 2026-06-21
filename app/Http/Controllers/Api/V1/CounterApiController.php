@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\Domain\SessionClosedException;
+use App\Exceptions\Domain\VarianceThresholdException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\CloseCounterRequest;
 use App\Models\Counter;
@@ -46,6 +48,16 @@ class CounterApiController extends Controller
                 'message' => 'Counter closed successfully',
                 'session' => $result['session'] ?? $session->fresh(),
             ]);
+        } catch (SessionClosedException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (VarianceThresholdException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Failed to close counter', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
 

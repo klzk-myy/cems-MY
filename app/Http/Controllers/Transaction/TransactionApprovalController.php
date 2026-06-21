@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Transaction;
 
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
+use App\Exceptions\Domain\DuplicateTransactionException;
+use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmTransactionRequest;
@@ -70,6 +72,10 @@ class TransactionApprovalController extends Controller
                 ->with('success', $result['message']);
 
         } catch (SelfApprovalException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (InsufficientStockException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (DuplicateTransactionException $e) {
             return back()->with('error', $e->getMessage());
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());

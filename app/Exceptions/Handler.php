@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Exceptions\Domain\DomainException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -40,6 +41,19 @@ class Handler extends ExceptionHandler
      */
     public function render(Request $request, Throwable $e): Response|JsonResponse|RedirectResponse|\Symfony\Component\HttpFoundation\Response
     {
+        // Handle domain exceptions with appropriate HTTP status codes
+        if ($e instanceof DomainException) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'code' => $e->getErrorCode(),
+                ], $e->getStatusCode());
+            }
+
+            return back()->with('error', $e->getMessage());
+        }
+
         // Log all unhandled exceptions with full details for debugging
         Log::error('Unhandled exception', [
             'exception' => $e,

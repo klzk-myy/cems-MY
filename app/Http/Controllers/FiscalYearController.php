@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\Domain\FiscalYearClosedException;
+use App\Exceptions\Domain\FiscalYearNotFoundException;
+use App\Exceptions\Domain\OpenPeriodsException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Http\Requests\StoreFiscalYearRequest;
 use App\Models\FiscalYear;
 use App\Services\Accounting\FiscalYearService;
@@ -75,6 +79,12 @@ class FiscalYearController extends Controller
             $result = $this->fiscalYearService->closeFiscalYear($year);
 
             return redirect()->back()->with('success', "Fiscal year {$year->year_code} closed successfully. Net income: {$result['net_income']}");
+        } catch (FiscalYearClosedException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        } catch (OpenPeriodsException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        } catch (PermissionDeniedException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         } catch (\InvalidArgumentException $e) {
             Log::error('FiscalYear close failed', ['exception' => $e, 'year_code' => $year->year_code]);
 
@@ -98,6 +108,8 @@ class FiscalYearController extends Controller
             $fiscalYears = FiscalYear::orderBy('year_code', 'desc')->get();
 
             return view('accounting.fiscal-years', compact('fiscalYears', 'yearReport'));
+        } catch (FiscalYearNotFoundException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         } catch (\Exception $e) {
             Log::error('FiscalYear report failed', ['exception' => $e, 'year_code' => $yearCode]);
 

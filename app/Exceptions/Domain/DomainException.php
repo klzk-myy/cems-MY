@@ -15,4 +15,9 @@ abstract class DomainException extends RuntimeException
     {
         return class_basename(static::class);
     }
+
+    public function getStatusCode(): int
+    {
+        return 422;
+    }
 }

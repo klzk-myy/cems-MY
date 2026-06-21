@@ -3,6 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TransactionStatus;
+use App\Exceptions\Domain\AllocationValidationException;
+use App\Exceptions\Domain\DuplicateTransactionException;
+use App\Exceptions\Domain\InsufficientStockException;
+use App\Exceptions\Domain\InvalidCurrencyException;
+use App\Exceptions\Domain\PepApprovalRequiredException;
+use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Http\Requests\IndexTransactionRequest;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Branch;
@@ -143,6 +149,18 @@ class TransactionController extends Controller
             return redirect()->route('transactions.show', $transaction)
                 ->with('success', 'Transaction completed successfully. Receipt #'.$transaction->id);
 
+        } catch (InvalidCurrencyException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        } catch (InsufficientStockException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        } catch (DuplicateTransactionException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        } catch (AllocationValidationException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        } catch (TillBalanceMissingException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        } catch (PepApprovalRequiredException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage())->withInput();
         } catch (\Exception $e) {
