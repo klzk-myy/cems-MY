@@ -7,8 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\QuickCreateCustomerRequest;
 use App\Http\Requests\SearchCustomerRequest;
 use App\Models\Customer;
+use App\Models\ExchangeRate;
 use App\Services\Customer\CustomerService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class CustomerSearchController extends Controller
 {
@@ -45,6 +47,14 @@ class CustomerSearchController extends Controller
 
         $customer = $this->customerService->createCustomer($validated, auth()->id());
 
+        $exchangeRates = Cache::remember('exchange_rates_for_transactions', 300, fn () => ExchangeRate::all()
+            ->mapWithKeys(fn ($r) => [$r->currency_code => [
+                'buy' => $r->rate_buy,
+                'sell' => $r->rate_sell,
+            ]])
+            ->toArray()
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Customer created successfully',
@@ -58,6 +68,7 @@ class CustomerSearchController extends Controller
                 'is_pep' => $customer->pep_status,
                 'is_sanctioned' => $customer->sanction_hit,
             ],
+            'exchange_rates' => $exchangeRates,
         ]);
     }
 }
