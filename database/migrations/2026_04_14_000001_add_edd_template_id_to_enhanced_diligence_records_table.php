@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * The foreign key was corrected to reference edd_questionnaire_templates
+     * to match the EnhancedDiligenceRecord::template() model relationship.
+     */
     public function up(): void
     {
         Schema::table('enhanced_diligence_records', function (Blueprint $table) {
