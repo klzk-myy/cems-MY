@@ -16,20 +16,27 @@ class EnhancedDiligenceRecordRelationshipTest extends TestCase
 
     public function test_it_belongs_to_related_entities(): void
     {
+        $customer = Customer::factory()->create();
+        $flaggedTransaction = FlaggedTransaction::factory()->create();
+        $template = EddQuestionnaireTemplate::factory()->create();
+        $reviewer = User::factory()->create();
+        $approver = User::factory()->create();
+        $questionnaireCompleter = User::factory()->create();
+
         $record = EnhancedDiligenceRecord::factory()->create([
-            'customer_id' => Customer::factory(),
-            'flagged_transaction_id' => FlaggedTransaction::factory(),
-            'edd_template_id' => EddQuestionnaireTemplate::factory(),
-            'reviewed_by' => User::factory(),
-            'approved_by' => User::factory(),
-            'questionnaire_completed_by' => User::factory(),
+            'customer_id' => $customer->id,
+            'flagged_transaction_id' => $flaggedTransaction->id,
+            'edd_template_id' => $template->id,
+            'reviewed_by' => $reviewer->id,
+            'approved_by' => $approver->id,
+            'questionnaire_completed_by' => $questionnaireCompleter->id,
         ]);
 
-        $this->assertInstanceOf(Customer::class, $record->customer);
-        $this->assertInstanceOf(FlaggedTransaction::class, $record->flaggedTransaction);
-        $this->assertInstanceOf(EddQuestionnaireTemplate::class, $record->template);
-        $this->assertInstanceOf(User::class, $record->reviewer);
-        $this->assertInstanceOf(User::class, $record->approvedBy);
-        $this->assertInstanceOf(User::class, $record->questionnaireCompletedBy);
+        $this->assertTrue($record->customer->is($customer));
+        $this->assertTrue($record->flaggedTransaction->is($flaggedTransaction));
+        $this->assertTrue($record->template->is($template));
+        $this->assertTrue($record->reviewer->is($reviewer));
+        $this->assertTrue($record->approvedBy->is($approver));
+        $this->assertTrue($record->questionnaireCompletedBy->is($questionnaireCompleter));
     }
 }

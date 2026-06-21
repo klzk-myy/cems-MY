@@ -7,8 +7,15 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * The foreign key was corrected to reference edd_questionnaire_templates
-     * to match the EnhancedDiligenceRecord::template() model relationship.
+     * Add edd_template_id to enhanced_diligence_records.
+     *
+     * NOTE: This migration was retrofitted to reference `edd_questionnaire_templates`
+     * instead of `edd_templates` so that fresh environments match the
+     * EnhancedDiligenceRecord::template() relationship, which points to
+     * App\Models\Compliance\EddQuestionnaireTemplate. The original migration
+     * incorrectly referenced `edd_templates`. Environments that already ran the
+     * original migration are repaired by
+     * 2026_06_21_000011_fix_enhanced_diligence_template_foreign_key.php.
      */
     public function up(): void
     {
