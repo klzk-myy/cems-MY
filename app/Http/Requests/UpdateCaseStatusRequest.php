@@ -11,11 +11,4 @@ class UpdateCaseStatusRequest extends AuthorizedFormRequest
             'notes' => 'nullable|string',
         ];
     }
-
-    public function messages(): array
-    {
-        return [
-            'status.in' => 'The selected status is not valid.',
-        ];
-    }
 }

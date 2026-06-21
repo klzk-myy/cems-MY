@@ -5,31 +5,27 @@ namespace App\Http\Controllers;
 use App\Enums\TransactionType;
 use App\Http\Requests\CloseTillRequest;
 use App\Http\Requests\OpenTillRequest;
+use App\Http\Requests\TillReconciliationRequest;
+use App\Http\Requests\TillReportRequest;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Services\Accounting\CurrencyPositionService;
+use App\Services\AuditService;
 use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StockCashController extends Controller
 {
-    protected MathService $mathService;
-
-    protected CurrencyPositionService $currencyPositionService;
-
-    protected TillService $tillService;
-
-    public function __construct(MathService $mathService, CurrencyPositionService $currencyPositionService, TillService $tillService)
-    {
-        $this->mathService = $mathService;
-        $this->currencyPositionService = $currencyPositionService;
-        $this->tillService = $tillService;
-    }
+    public function __construct(
+        protected MathService $mathService,
+        protected CurrencyPositionService $currencyPositionService,
+        protected TillService $tillService,
+        protected AuditService $auditService
+    ) {}
 
     /**
      * Display stock and cash management dashboard
@@ -59,11 +55,8 @@ class StockCashController extends Controller
             ->whereDate('date', today())
             ->get();
 
-        // Calculate summary stats using MathService for monetary values
-        $totalVariance = '0';
-        foreach ($todayBalances as $balance) {
-            $totalVariance = $this->mathService->add($totalVariance, (string) ($balance->variance ?? 0));
-        }
+        // Calculate summary stats using collection aggregates
+        $totalVariance = $todayBalances->sum('variance');
 
         $stats = [
             'total_currencies' => Currency::where('is_active', true)->count(),
@@ -88,14 +81,7 @@ class StockCashController extends Controller
         }
 
         $myrBalances = $myrQuery->get();
-        $myrCashInHand = '0';
-        foreach ($myrBalances as $balance) {
-            // Use closing_balance if closed, otherwise opening_balance
-            $balanceAmount = $balance->closed_at
-                ? ($balance->closing_balance ?? '0')
-                : ($balance->opening_balance ?? '0');
-            $myrCashInHand = $this->mathService->add($myrCashInHand, (string) $balanceAmount);
-        }
+        $myrCashInHand = $myrBalances->sum(fn ($b) => $b->closing_balance ?? $b->opening_balance);
 
         return view('pages.stock-cash.index', compact(
             'positions',
@@ -238,13 +224,10 @@ class StockCashController extends Controller
     /**
      * Get till report
      */
-    public function tillReport(Request $request): View|RedirectResponse
+    public function tillReport(TillReportRequest $request): View|RedirectResponse
     {
         $this->requireManagerOrAdmin();
-        $validated = $request->validate([
-            'till_id' => 'required|string',
-            'date' => 'nullable|date',
-        ]);
+        $validated = $request->validated();
 
         $date = $validated['date'] ?? today()->toDateString();
 
@@ -263,14 +246,11 @@ class StockCashController extends Controller
     /**
      * Generate till reconciliation report
      */
-    public function reconciliationReport(Request $request): View|RedirectResponse
+    public function reconciliationReport(TillReconciliationRequest $request): View|RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
-        $validated = $request->validate([
-            'date' => 'nullable|date',
-            'till_id' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         $date = $validated['date'] ?? today()->toDateString();
         $tillId = $validated['till_id'];

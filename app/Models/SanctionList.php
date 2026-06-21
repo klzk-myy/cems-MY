@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Enums\SanctionListType;
 use App\Enums\UpdateStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SanctionList extends BaseModel
@@ -60,17 +62,17 @@ class SanctionList extends BaseModel
         return $this->hasMany(SanctionImportLog::class, 'list_id');
     }
 
-    public function uploadedBy()
+    public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    public function autoUpdatedBy()
+    public function autoUpdatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'auto_updated_by');
     }
 
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }

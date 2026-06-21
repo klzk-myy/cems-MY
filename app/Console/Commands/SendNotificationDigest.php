@@ -6,7 +6,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Notifications\DatabaseNotification;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -17,6 +16,8 @@ use Illuminate\Support\Facades\Log;
  */
 class SendNotificationDigest extends Command
 {
+    use Concerns\HasNotificationTesting;
+
     /**
      * The name and signature of the console command.
      *
@@ -105,22 +106,6 @@ class SendNotificationDigest extends Command
             '30d' => now()->subDays(30),
             default => now()->subHours(24),
         };
-    }
-
-    /**
-     * Get target users for digest.
-     *
-     * @return Collection
-     */
-    protected function getTargetUsers(?int $userId = null)
-    {
-        $query = User::where('is_active', true);
-
-        if ($userId) {
-            $query->where('id', $userId);
-        }
-
-        return $query->get();
     }
 
     /**

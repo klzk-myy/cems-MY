@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Sanction\SearchSanctionRequest;
 use App\Services\CustomerScreeningService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class SanctionController extends Controller
 {
@@ -16,11 +16,9 @@ class SanctionController extends Controller
     /**
      * Search sanctions list by name.
      */
-    public function search(Request $request): JsonResponse
+    public function search(SearchSanctionRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|min:3',
-        ]);
+        $validated = $request->validated();
 
         $response = $this->screeningService->screenName($validated['name']);
 
@@ -37,7 +35,7 @@ class SanctionController extends Controller
     /**
      * Upload sanctions list file.
      */
-    public function upload(Request $request): JsonResponse
+    public function upload(): JsonResponse
     {
         return response()->json([
             'success' => false,

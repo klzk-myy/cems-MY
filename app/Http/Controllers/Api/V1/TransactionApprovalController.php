@@ -5,28 +5,15 @@ namespace App\Http\Controllers\Api\V1;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
-use App\Services\Accounting\CurrencyPositionService;
-use App\Services\AuditService;
-use App\Services\Compliance\ComplianceService;
-use App\Services\System\MathService;
 use App\Services\Transaction\TransactionApprovalService;
-use App\Services\Transaction\TransactionMonitoringService;
-use App\Services\Transaction\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class TransactionApprovalController extends Controller
 {
     public function __construct(
-        protected TransactionService $transactionService,
-        protected TransactionApprovalService $approvalService,
-        protected CurrencyPositionService $positionService,
-        protected ComplianceService $complianceService,
-        protected TransactionMonitoringService $monitoringService,
-        protected MathService $mathService,
-        protected AuditService $auditService
+        protected TransactionApprovalService $approvalService
     ) {}
 
     /**
@@ -38,8 +25,6 @@ class TransactionApprovalController extends Controller
      * - Double-entry accounting journal entries
      * - AML/Compliance monitoring before approval
      * - Audit logging
-     *
-     * @throws AccessDeniedHttpException
      */
     public function approve(Request $request, int $transactionId): JsonResponse
     {
@@ -50,7 +35,10 @@ class TransactionApprovalController extends Controller
         // Enforce branch-based authorization: managers can only approve transactions within their own branch
         $user = auth()->user();
         if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
-            throw new AccessDeniedHttpException('You can only approve transactions for your own branch.');
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only approve transactions for your own branch.',
+            ], 403);
         }
 
         try {
@@ -95,7 +83,6 @@ class TransactionApprovalController extends Controller
                 'transaction_id' => $transaction->id,
                 'user_id' => auth()->id(),
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([

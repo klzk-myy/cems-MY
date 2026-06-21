@@ -2,29 +2,32 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
+use App\Http\Concerns\BranchScoped;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\BranchClosingRequest;
 use App\Models\Branch;
 use App\Services\Branch\BranchClosingService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class BranchClosingController extends Controller
 {
+    use BranchScoped;
+
     public function __construct(
         protected BranchClosingService $branchClosingService,
     ) {}
 
-    public function initiate(Request $request, int $branchId): JsonResponse
+    public function initiate(BranchClosingRequest $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
-        $user = Auth::user();
 
-        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this branch.');
+        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
+            return $unauthorized;
         }
+
+        $user = Auth::user();
 
         $existingWorkflow = $this->branchClosingService->getActiveWorkflow($branch);
         if ($existingWorkflow) {
@@ -44,13 +47,12 @@ class BranchClosingController extends Controller
         ], 201);
     }
 
-    public function checklist(Request $request, int $branchId): JsonResponse
+    public function checklist(BranchClosingRequest $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
-        $user = Auth::user();
 
-        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this branch.');
+        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
+            return $unauthorized;
         }
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
@@ -74,13 +76,12 @@ class BranchClosingController extends Controller
         ]);
     }
 
-    public function finalize(Request $request, int $branchId): JsonResponse
+    public function finalize(BranchClosingRequest $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
-        $user = Auth::user();
 
-        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this branch.');
+        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
+            return $unauthorized;
         }
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
@@ -91,6 +92,8 @@ class BranchClosingController extends Controller
                 'message' => 'No active closure workflow found for this branch',
             ], 404);
         }
+
+        $user = Auth::user();
 
         try {
             $this->branchClosingService->finalize($workflow, $user);
@@ -108,34 +111,8 @@ class BranchClosingController extends Controller
         }
     }
 
-    public function show(Request $request, int $branchId): JsonResponse
+    public function show(BranchClosingRequest $request, int $branchId): JsonResponse
     {
-        $user = Auth::user();
-
-        if ($user->role !== UserRole::Admin && (int) $branchId !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this branch.');
-        }
-
-        $branch = Branch::findOrFail($branchId);
-
-        $workflow = $this->branchClosingService->getActiveWorkflow($branch);
-
-        if (! $workflow) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No active closure workflow found for this branch',
-            ], 404);
-        }
-
-        $checklist = $this->branchClosingService->getChecklist($workflow);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'workflow' => $workflow,
-                'checklist' => $checklist,
-                'can_finalize' => $this->branchClosingService->canFinalize($workflow),
-            ],
-        ]);
+        return $this->checklist($request, $branchId);
     }
 }

@@ -11,12 +11,4 @@ class LoginRequest extends AuthorizedFormRequest
             'password' => 'required',
         ];
     }
-
-    public function messages(): array
-    {
-        return [
-            'username.required' => 'Username is required.',
-            'password.required' => 'Password is required.',
-        ];
-    }
 }

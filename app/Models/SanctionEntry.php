@@ -13,8 +13,6 @@ class SanctionEntry extends BaseModel
 
     public $timestamps = false;
 
-    protected $with = [];
-
     protected $fillable = [
         'list_id',
         'list_source',
@@ -58,14 +56,9 @@ class SanctionEntry extends BaseModel
         $this->attributes['aliases'] = is_array($value) ? json_encode($value) : $value;
     }
 
-    public function getDetailsAttribute($value)
-    {
-        return $value;
-    }
-
     public function setDetailsAttribute($value)
     {
-        $this->attributes['details'] = is_string($value) ? $value : null;
+        $this->attributes['details'] = is_string($value) ? $value : (is_array($value) ? json_encode($value) : null);
     }
 
     public function setEntityTypeAttribute($value): void
@@ -74,6 +67,6 @@ class SanctionEntry extends BaseModel
             $value = $value->value;
         }
 
-        $this->attributes['entity_type'] = is_string($value) ? ucfirst($value) : $value;
+        $this->attributes['entity_type'] = $value;
     }
 }

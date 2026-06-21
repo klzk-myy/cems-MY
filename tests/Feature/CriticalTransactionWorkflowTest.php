@@ -18,6 +18,7 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -31,9 +32,7 @@ use Tests\TestCase;
  * - Concurrent transaction handling
  * - Threshold consistency
  */
-/**
- * @group slow
- */
+#[Group('slow')]
 class CriticalTransactionWorkflowTest extends TestCase
 {
     use DatabaseTransactions;

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\RiskRating;
 use App\Enums\RiskTrend;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -45,12 +46,12 @@ class RiskScoreSnapshot extends BaseModel
         return $this->belongsTo(Customer::class);
     }
 
-    public function scopeLatest($query)
+    public function scopeLatest(Builder $query): Builder
     {
         return $query->orderByDesc('snapshot_date');
     }
 
-    public function scopeNeedsRescreening($query)
+    public function scopeNeedsRescreening(Builder $query): Builder
     {
         return $query->where('next_screening_date', '<=', today());
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\MonthEndCloseRequest;
 use App\Services\Accounting\MonthEndCloseService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +16,7 @@ class MonthEndCloseController extends Controller
         protected MonthEndCloseService $monthEndCloseService
     ) {}
 
-    public function close(Request $request): JsonResponse
+    public function close(MonthEndCloseRequest $request): JsonResponse
     {
         $date = $request->input('date')
             ? Carbon::parse($request->input('date'))
@@ -33,13 +34,13 @@ class MonthEndCloseController extends Controller
         } catch (MonthEndPreCheckFailedException $e) {
             return response()->json([
                 'success' => false,
-                'error' => 'Pre-flight checks failed',
+                'message' => 'Pre-flight checks failed',
                 'failures' => $e->getFailures(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -57,7 +58,7 @@ class MonthEndCloseController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

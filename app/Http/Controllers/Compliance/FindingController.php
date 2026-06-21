@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Http\Concerns\FiltersComplianceFindings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DismissFindingRequest;
 use App\Models\Compliance\ComplianceFinding;
@@ -12,25 +13,13 @@ use Illuminate\View\View;
 
 class FindingController extends Controller
 {
+    use FiltersComplianceFindings;
+
     public function index(Request $request): View
     {
         $query = ComplianceFinding::query();
 
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-        if ($request->has('severity')) {
-            $query->where('severity', $request->input('severity'));
-        }
-        if ($request->has('type')) {
-            $query->where('finding_type', $request->input('type'));
-        }
-        if ($request->has('from_date')) {
-            $query->whereDate('generated_at', '>=', $request->input('from_date'));
-        }
-        if ($request->has('to_date')) {
-            $query->whereDate('generated_at', '<=', $request->input('to_date'));
-        }
+        $this->applyFindingFilters($query, $request);
 
         $perPage = $request->get('per_page', 20);
         $findingsPaginated = $query->orderBy('generated_at', 'desc')->paginate($perPage);
@@ -44,31 +33,7 @@ class FindingController extends Controller
             'generated_at' => $finding->generated_at?->toIso8601String(),
         ]);
 
-        $total = ComplianceFinding::count();
-        $newCount = ComplianceFinding::new()->count();
-
-        $bySeverity = ComplianceFinding::query()
-            ->selectRaw('severity, count(*) as count')
-            ->groupBy('severity')
-            ->pluck('count', 'severity');
-
-        $byStatus = ComplianceFinding::query()
-            ->selectRaw('status, count(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status');
-
-        $byType = ComplianceFinding::query()
-            ->selectRaw('finding_type, count(*) as count')
-            ->groupBy('finding_type')
-            ->pluck('count', 'finding_type');
-
-        $stats = [
-            'total' => $total,
-            'new' => $newCount,
-            'by_severity' => $bySeverity,
-            'by_status' => $byStatus,
-            'by_type' => $byType,
-        ];
+        $stats = $this->getFindingStats();
 
         $pagination = [
             'current_page' => $findingsPaginated->currentPage(),
@@ -88,17 +53,6 @@ class FindingController extends Controller
             return redirect()->route('compliance.findings.index')
                 ->with('error', 'Finding not found');
         }
-
-        $findingData = [
-            'id' => $finding->id,
-            'finding_type' => $finding->finding_type?->value,
-            'severity' => $finding->severity?->value,
-            'status' => $finding->status?->value,
-            'details' => $finding->details,
-            'generated_at' => $finding->generated_at?->toIso8601String(),
-            'subject_type' => $finding->subject_type,
-            'subject_id' => $finding->subject_id,
-        ];
 
         return view('compliance.findings.show', compact('finding'));
     }

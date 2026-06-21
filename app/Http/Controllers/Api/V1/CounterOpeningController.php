@@ -7,12 +7,8 @@ use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
 use App\Http\Requests\Api\V1\Counter\InitiateOpeningRequest;
 use App\Models\Counter;
 use App\Models\User;
-use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\CounterOpeningWorkflowService;
-use App\Services\Branch\CounterService;
-use App\Services\Branch\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -27,16 +23,13 @@ class CounterOpeningController extends Controller
 {
     public function __construct(
         protected CounterOpeningWorkflowService $workflowService,
-        protected BranchPoolService $branchPoolService,
-        protected TellerAllocationService $tellerAllocationService,
-        protected CounterService $counterService,
     ) {}
 
     /**
      * Get pending opening requests for a branch.
      * Manager/Admin only.
      */
-    public function pendingRequests(Request $request): JsonResponse
+    public function pendingRequests(): JsonResponse
     {
         $user = Auth::user();
 
@@ -129,7 +122,7 @@ class CounterOpeningController extends Controller
 
         $validated = $request->validated();
 
-        $teller = User::find($validated['teller_id']);
+        $teller = User::findOrFail($validated['teller_id']);
 
         // Verify teller belongs to same branch
         if ($teller->branch_id !== $counter->branch_id) {

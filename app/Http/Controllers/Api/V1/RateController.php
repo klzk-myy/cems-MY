@@ -6,13 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Rate\CheckRateSetRequest;
 use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
 use App\Http\Requests\Api\V1\Rate\ValidateRateRequest;
+use App\Http\Requests\Api\V1\RateHistoryRequest;
 use App\Http\Requests\FetchRateRequest;
 use App\Http\Requests\OverrideRateRequest;
-use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Services\Transaction\RateManagementService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -23,12 +22,9 @@ use Illuminate\Support\Facades\Auth;
  */
 class RateController extends Controller
 {
-    protected RateManagementService $rateService;
-
-    public function __construct(RateManagementService $rateService)
-    {
-        $this->rateService = $rateService;
-    }
+    public function __construct(
+        protected RateManagementService $rateService
+    ) {}
 
     /**
      * Get all current rates.
@@ -115,17 +111,18 @@ class RateController extends Controller
     {
         $validated = $request->validated();
 
-        $rate = ExchangeRate::updateOrCreate(
-            ['currency_code' => $currencyCode],
-            [
-                'rate_buy' => $validated['rate_buy'],
-                'rate_sell' => $validated['rate_sell'],
-                'source' => 'manual',
-                'fetched_at' => now(),
-            ]
+        $result = $this->rateService->overrideRate(
+            $currencyCode,
+            $validated['rate_buy'],
+            $validated['rate_sell'],
+            Auth::user()
         );
 
-        return response()->json(['message' => 'Rate override saved.', 'data' => $rate]);
+        return response()->json([
+            'success' => $result->success,
+            'message' => $result->message,
+            'data' => $result,
+        ]);
     }
 
     /**
@@ -174,7 +171,7 @@ class RateController extends Controller
     /**
      * Get rate history/trend for a currency.
      */
-    public function history(Request $request, string $currencyCode): JsonResponse
+    public function history(RateHistoryRequest $request, string $currencyCode): JsonResponse
     {
         $days = $request->get('days', 30);
 

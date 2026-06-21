@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StockTransferStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -71,17 +72,17 @@ class StockTransfer extends BaseModel
         return $this->hasMany(StockTransferItem::class);
     }
 
-    public function scopePending($query)
+    public function scopePending(Builder $query): Builder
     {
         return $query->where('status', StockTransferStatus::Requested);
     }
 
-    public function scopeInTransit($query)
+    public function scopeInTransit(Builder $query): Builder
     {
         return $query->where('status', StockTransferStatus::InTransit);
     }
 
-    public function scopeCompleted($query)
+    public function scopeCompleted(Builder $query): Builder
     {
         return $query->where('status', StockTransferStatus::Completed);
     }

@@ -28,11 +28,7 @@ class ComplianceScreeningJob implements ShouldQueue
 
         $customer = Customer::find($this->customerId);
         if ($customer) {
-            try {
-                $service->screenCustomer($customer, 'Compliance screening job');
-            } catch (\Exception $e) {
-                throw $e;
-            }
+            $service->screenCustomer($customer, 'Compliance screening job');
         }
 
         $durationMs = (microtime(true) - $start) * 1000;

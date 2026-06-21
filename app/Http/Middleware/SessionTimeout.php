@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 use Symfony\Component\HttpFoundation\Response;
 
 class SessionTimeout
@@ -36,16 +35,16 @@ class SessionTimeout
         }
 
         // Check if session has last activity timestamp
-        $lastActivity = Session::get('last_activity');
+        $lastActivity = $request->session()->get('last_activity');
 
         if ($lastActivity !== null) {
             $elapsed = time() - $lastActivity;
 
             if ($elapsed >= $timeoutSeconds) {
                 // Session has timed out
-                Session::forget('last_activity');
-                Session::forget('mfa_verified');
-                Session::forget('mfa_verified_at');
+                $request->session()->forget('last_activity');
+                $request->session()->forget('mfa_verified');
+                $request->session()->forget('mfa_verified_at');
 
                 auth()->logout();
                 $request->session()->invalidate();
@@ -64,7 +63,7 @@ class SessionTimeout
 
         // Update last activity timestamp (only for authenticated users)
         if (auth()->check()) {
-            Session::put('last_activity', time());
+            $request->session()->put('last_activity', time());
         }
 
         return $next($request);

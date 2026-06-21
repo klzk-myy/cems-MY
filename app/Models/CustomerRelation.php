@@ -28,6 +28,10 @@ class CustomerRelation extends BaseModel
         'additional_info',
     ];
 
+    protected $hidden = [
+        'id_number_encrypted',
+    ];
+
     protected $casts = [
         'date_of_birth' => 'date',
         'is_pep' => 'boolean',

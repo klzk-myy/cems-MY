@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CounterHandover extends BaseModel
 {
@@ -26,7 +28,7 @@ class CounterHandover extends BaseModel
     protected $casts = [
         'handover_time' => 'datetime',
         'physical_count_verified' => 'boolean',
-        'variance_myr' => 'decimal:2',
+        'variance_myr' => MoneyCast::class,
         'acknowledged_at' => 'datetime',
         'yellow_variance' => 'boolean',
     ];
@@ -36,22 +38,22 @@ class CounterHandover extends BaseModel
         return $this->counterSession;
     }
 
-    public function counterSession()
+    public function counterSession(): BelongsTo
     {
         return $this->belongsTo(CounterSession::class);
     }
 
-    public function fromUser()
+    public function fromUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'from_user_id');
     }
 
-    public function toUser()
+    public function toUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'to_user_id');
     }
 
-    public function supervisor()
+    public function supervisor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'supervisor_id');
     }

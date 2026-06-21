@@ -6,7 +6,9 @@ use App\Enums\CounterSessionStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
+use App\Http\Requests\AcknowledgeHandoverWebRequest;
 use App\Http\Requests\CloseCounterRequest;
+use App\Http\Requests\EmergencyCloseRequest;
 use App\Http\Requests\HandoverCounterRequest;
 use App\Http\Requests\OpenCounterRequest;
 use App\Models\Counter;
@@ -51,7 +53,7 @@ class CounterController extends Controller
         ];
 
         $availableCounters = $this->counterService->getAvailableCounters();
-        $currencies = Currency::where('is_active', true)->get();
+        $currencies = $this->getActiveCurrencies();
 
         return view('pages.counters.index', compact('counters', 'stats', 'availableCounters', 'currencies'));
     }
@@ -62,7 +64,7 @@ class CounterController extends Controller
     public function showOpen(Counter $counter): View
     {
         $availableCounters = $this->counterService->getAvailableCounters();
-        $currencies = Currency::where('is_active', true)->get();
+        $currencies = $this->getActiveCurrencies();
 
         return view('pages.counters.open', compact('counter', 'availableCounters', 'currencies'));
     }
@@ -117,7 +119,7 @@ class CounterController extends Controller
             abort(404, 'No open session found for this counter today.');
         }
 
-        $currencies = Currency::where('is_active', true)->get();
+        $currencies = $this->getActiveCurrencies();
 
         return view('counters.close', compact('counter', 'session', 'currencies'));
     }
@@ -207,7 +209,7 @@ class CounterController extends Controller
             ->orderBy('opened_at', 'desc')
             ->paginate(20)->withQueryString();
 
-        $users = User::where('is_active', true)->get();
+        $users = User::select('id', 'username', 'role')->where('is_active', true)->get();
 
         return view('counters.history', compact('counter', 'sessions', 'users'));
     }
@@ -224,15 +226,17 @@ class CounterController extends Controller
             abort(404, 'No open session found for this counter today.');
         }
 
-        $availableUsers = User::where('is_active', true)
+        $availableUsers = User::select('id', 'username', 'role')
+            ->where('is_active', true)
             ->where('id', '!=', auth()->id())
             ->get();
 
-        $supervisors = User::where('is_active', true)
+        $supervisors = User::select('id', 'username', 'role')
+            ->where('is_active', true)
             ->whereIn('role', [UserRole::Manager, UserRole::Admin])
             ->get();
 
-        $currencies = Currency::where('is_active', true)->get();
+        $currencies = $this->getActiveCurrencies();
 
         return view('counters.handover', compact('counter', 'session', 'availableUsers', 'supervisors', 'currencies'));
     }
@@ -322,12 +326,8 @@ class CounterController extends Controller
         return view('counters.emergency', compact('counter', 'session'));
     }
 
-    public function emergency(Request $request, Counter $counter): RedirectResponse
+    public function emergency(EmergencyCloseRequest $request, Counter $counter): RedirectResponse
     {
-        $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
-
         $user = auth()->user();
 
         try {
@@ -391,7 +391,7 @@ class CounterController extends Controller
         return view('counters.acknowledge-handover', compact('counter', 'handover'));
     }
 
-    public function acknowledgeHandover(Request $request, Counter $counter): RedirectResponse
+    public function acknowledgeHandover(AcknowledgeHandoverWebRequest $request, Counter $counter): RedirectResponse
     {
         $user = auth()->user();
         $today = now()->toDateString();
@@ -406,11 +406,6 @@ class CounterController extends Controller
             return back()->with('error', 'No pending handover to acknowledge');
         }
 
-        $request->validate([
-            'verified' => 'required|boolean',
-            'notes' => 'nullable|string|max:500',
-        ]);
-
         try {
             $this->counterHandoverService->acknowledgeHandover(
                 $handover,
@@ -424,5 +419,10 @@ class CounterController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', "Failed to acknowledge handover: {$e->getMessage()}");
         }
+    }
+
+    private function getActiveCurrencies()
+    {
+        return Currency::select('code', 'name')->where('is_active', true)->get();
     }
 }

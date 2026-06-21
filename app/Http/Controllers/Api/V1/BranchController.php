@@ -61,7 +61,7 @@ class BranchController extends Controller
      * Display a specific branch.
      * Accessible to admin OR user whose branch_id matches.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(int $id): JsonResponse
     {
         $branch = Branch::findOrFail($id);
         $user = Auth::user();
@@ -123,7 +123,7 @@ class BranchController extends Controller
      * Get counters for a branch.
      * Accessible to admin OR user whose branch_id matches.
      */
-    public function counters(Request $request, int $id): JsonResponse
+    public function counters(int $id): JsonResponse
     {
         $branch = Branch::findOrFail($id);
         $user = Auth::user();
@@ -147,7 +147,7 @@ class BranchController extends Controller
      * Get users for a branch.
      * Accessible to admin OR user whose branch_id matches.
      */
-    public function users(Request $request, int $id): JsonResponse
+    public function users(int $id): JsonResponse
     {
         $branch = Branch::findOrFail($id);
         $user = Auth::user();

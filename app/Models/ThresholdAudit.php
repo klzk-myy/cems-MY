@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ThresholdAudit extends BaseModel
 {
@@ -22,17 +24,17 @@ class ThresholdAudit extends BaseModel
         'changed_at' => 'datetime',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'changed_by');
     }
 
-    public function scopeCategory($query, string $category)
+    public function scopeCategory(Builder $query, string $category): Builder
     {
         return $query->where('category', $category);
     }
 
-    public function scopeKey($query, string $key)
+    public function scopeKey(Builder $query, string $key): Builder
     {
         return $query->where('key', $key);
     }

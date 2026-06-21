@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AddCaseLinkRequest;
+use App\Http\Requests\CreateCaseFromAlertsRequest;
 use App\Http\Requests\LinkAlertToCaseRequest;
-use App\Http\Requests\MergeCaseRequest;
-use App\Http\Requests\StoreCaseFromAlertRequest;
+use App\Http\Requests\MergeCasesRequest;
 use App\Http\Requests\UpdateCaseStatusRequest;
 use App\Http\Requests\UploadCaseDocumentRequest;
 use App\Models\Alert;
@@ -46,10 +46,8 @@ class CaseManagementController extends Controller
         return view('compliance.cases.index', compact('cases', 'summary'));
     }
 
-    public function store(StoreCaseFromAlertRequest $request): RedirectResponse
+    public function store(CreateCaseFromAlertsRequest $request): RedirectResponse
     {
-        $validated = $request->validated();
-
         $case = $this->caseManagementService->createFromAlerts(
             $validated['alert_ids'],
             auth()->id()
@@ -68,8 +66,6 @@ class CaseManagementController extends Controller
 
     public function update(UpdateCaseStatusRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $validated = $request->validated();
-
         if ($request->has('status')) {
             $case = $this->caseManagementService->updateStatus($case, $validated['status']);
         }
@@ -81,11 +77,9 @@ class CaseManagementController extends Controller
         return redirect()->back()->with('success', 'Case updated successfully');
     }
 
-    public function merge(MergeCaseRequest $request, ComplianceCase $case): RedirectResponse
+    public function merge(MergeCasesRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $validated = $request->validated();
-
-        $targetCase = ComplianceCase::findOrFail($validated['target_case_id']);
+        $targetCase = ComplianceCase::findOrFail($request->target_case_id);
 
         $mergedCase = $this->caseManagementService->mergeCases($case, $targetCase);
 
@@ -95,9 +89,7 @@ class CaseManagementController extends Controller
 
     public function linkAlert(LinkAlertToCaseRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $validated = $request->validated();
-
-        $alert = Alert::findOrFail($validated['alert_id']);
+        $alert = Alert::findOrFail($request->alert_id);
 
         $this->caseManagementService->linkAlertToCase($alert, $case);
 
@@ -128,9 +120,7 @@ class CaseManagementController extends Controller
 
     public function addLink(AddCaseLinkRequest $request, ComplianceCase $case): RedirectResponse
     {
-        $validated = $request->validated();
-
-        $this->caseManagementService->addLink($case->id, $validated['linked_type'], $validated['linked_id']);
+        $this->caseManagementService->addLink($case->id, $request->linked_type, $request->linked_id);
 
         return redirect()->back()->with('success', 'Link added');
     }
@@ -146,7 +136,7 @@ class CaseManagementController extends Controller
         return redirect()->back()->with('success', 'Link removed');
     }
 
-    public function escalate(Request $request, ComplianceCase $case): RedirectResponse
+    public function escalate(ComplianceCase $case): RedirectResponse
     {
         $this->caseManagementService->escalateCase($case);
 

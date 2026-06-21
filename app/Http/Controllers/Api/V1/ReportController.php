@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\RunReportRequest;
-use App\Services\Reporting\ExportService;
+use App\Http\Requests\Api\V1\Report\ExportReportRequest;
 use App\Services\Reporting\ReportingService;
 use App\Services\System\DocumentStorageService;
 use Illuminate\Http\JsonResponse;
@@ -13,7 +12,6 @@ class ReportController extends Controller
 {
     public function __construct(
         protected ReportingService $reportingService,
-        protected ExportService $exportService,
         protected DocumentStorageService $documentStorageService
     ) {}
 
@@ -47,7 +45,7 @@ class ReportController extends Controller
     /**
      * Export report data.
      */
-    public function export(RunReportRequest $request): JsonResponse
+    public function export(ExportReportRequest $request): JsonResponse
     {
         $validated = $request->validated();
 

@@ -2,10 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\Domain\FiscalYearClosedException;
-use App\Exceptions\Domain\FiscalYearNotFoundException;
-use App\Exceptions\Domain\OpenPeriodsException;
-use App\Exceptions\Domain\PermissionDeniedException;
+use App\Http\Requests\FiscalYearCloseRequest;
 use App\Http\Requests\StoreFiscalYearRequest;
 use App\Models\FiscalYear;
 use App\Services\Accounting\FiscalYearService;
@@ -16,12 +13,9 @@ use Illuminate\View\View;
 
 class FiscalYearController extends Controller
 {
-    protected FiscalYearService $fiscalYearService;
-
-    public function __construct(FiscalYearService $fiscalYearService)
-    {
-        $this->fiscalYearService = $fiscalYearService;
-    }
+    public function __construct(
+        protected FiscalYearService $fiscalYearService
+    ) {}
 
     /**
      * Display list of fiscal years.
@@ -66,12 +60,13 @@ class FiscalYearController extends Controller
     /**
      * Close a fiscal year.
      */
-    public function close(FiscalYear $year, Request $request): RedirectResponse
+    public function close(FiscalYear $year, FiscalYearCloseRequest $request): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
-        // Verify confirmation code
-        if ($request->confirm_code !== $year->year_code) {
+        $validated = $request->validated();
+
+        if ($validated['confirm_code'] !== $year->year_code) {
             return redirect()->back()->with('error', 'Year code confirmation failed.');
         }
 

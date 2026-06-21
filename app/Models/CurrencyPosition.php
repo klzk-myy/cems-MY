@@ -22,23 +22,33 @@ class CurrencyPosition extends BaseModel
     protected $fillable = [
         'currency_code',
         'branch_id',
-        'till_id',
+        'quantity',
+        'average_cost',
+        'total_cost',
+        'current_rate',
+        'current_value',
+        'unrealized_gain_loss',
+        'last_revalued_at',
+        // Legacy aliases for backwards compatibility
         'balance',
         'avg_cost_rate',
         'last_valuation_rate',
         'unrealized_pnl',
         'last_valuation_at',
+        'till_id',
     ];
 
     protected $casts = [
-        'balance' => MoneyCast::class,
-        'avg_cost_rate' => MoneyCast::class.':6',
-        'last_valuation_rate' => MoneyCast::class.':6',
-        'unrealized_pnl' => MoneyCast::class,
-        'last_valuation_at' => 'datetime',
+        'quantity' => MoneyCast::class,
+        'average_cost' => MoneyCast::class.':6',
+        'total_cost' => MoneyCast::class,
+        'current_rate' => MoneyCast::class.':6',
+        'current_value' => MoneyCast::class,
+        'unrealized_gain_loss' => MoneyCast::class,
+        'last_revalued_at' => 'datetime',
     ];
 
-    public function currency()
+    public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code');
     }
@@ -51,84 +61,121 @@ class CurrencyPosition extends BaseModel
         return $this->belongsTo(Branch::class);
     }
 
-    public function counter(): BelongsTo
-    {
-        return $this->belongsTo(Counter::class, 'till_id');
-    }
-
     /**
-     * Alias for balance — used by views expecting "quantity".
+     * Alias for quantity — used by views expecting "balance".
      */
-    public function getQuantityAttribute(): string
+    public function getBalanceAttribute(): string
     {
-        return $this->balance;
+        return $this->quantity;
     }
 
     /**
-     * Alias for avg_cost_rate — used by views expecting "avg_cost".
+     * Alias for average_cost — used by views expecting "avg_cost_rate".
+     */
+    public function getAvgCostRateAttribute(): string
+    {
+        return $this->average_cost ?? '0';
+    }
+
+    /**
+     * Alias for average_cost — used by views expecting "avg_cost".
      */
     public function getAvgCostAttribute(): string
     {
-        return $this->avg_cost_rate ?? '0';
+        return $this->average_cost ?? '0';
     }
 
     /**
-     * Alias for avg_cost_rate — used by views expecting "average_cost".
+     * Alias for current_rate — used by views expecting "last_valuation_rate".
      */
-    public function getAverageCostAttribute(): string
+    public function getLastValuationRateAttribute(): string
     {
-        return $this->avg_cost_rate ?? '0';
+        return $this->current_rate ?? '0';
     }
 
     /**
-     * Computed market value in MYR: balance × last_valuation_rate.
-     * Falls back to avg_cost_rate if last_valuation_rate is null (never been revalued).
+     * Alias for unrealized_gain_loss — used by views expecting "unrealized_pnl".
+     */
+    public function getUnrealizedPnlAttribute(): string
+    {
+        return $this->unrealized_gain_loss;
+    }
+
+    /**
+     * Alias for last_revalued_at — used by views expecting "last_valuation_at".
+     */
+    public function getLastValuationAtAttribute(): ?string
+    {
+        return $this->last_revalued_at;
+    }
+
+    /**
+     * Computed market value in MYR: quantity × current_rate.
+     * Falls back to average_cost if current_rate is null (never been revalued).
      */
     public function getMarketValueAttribute(): string
     {
-        $rate = $this->last_valuation_rate;
+        $rate = $this->current_rate;
 
         if (! $rate || $this->mathService->compare($rate, '0') === 0) {
-            $rate = $this->avg_cost_rate;
+            $rate = $this->average_cost;
         }
 
         if (! $rate || $this->mathService->compare($rate, '0') === 0) {
             return '0';
         }
 
-        return $this->mathService->multiply($this->balance, $rate);
+        return $this->mathService->multiply($this->quantity, $rate);
     }
 
     /**
-     * Alias for unrealized_pnl — used by views expecting "unrealized_pl".
+     * Alias for unrealized_gain_loss — used by views expecting "unrealized_pl".
      */
     public function getUnrealizedPlAttribute(): string
     {
-        return $this->unrealized_pnl;
+        return $this->unrealized_gain_loss;
     }
 
     /**
-     * Alias for last_valuation_rate — used by views expecting "current_rate".
-     */
-    public function getCurrentRateAttribute(): string
-    {
-        return $this->last_valuation_rate ?? '0';
-    }
-
-    /**
-     * Previous rate for revaluation view — returns avg_cost_rate as baseline.
+     * Previous rate for revaluation view — returns average_cost as baseline.
      */
     public function getPreviousRateAttribute(): string
     {
-        return $this->avg_cost_rate ?? '0';
+        return $this->average_cost ?? '0';
     }
 
-    /**
-     * Whether this position needs revaluation (always false — revaluation
-     * status is per-month, not per-position; computed at service level).
-     */
-    public function getNeedsRevaluationAttribute(): bool
+    // Legacy mutators
+
+    public function setBalanceAttribute($value): void
     {
-        return false;
+        $this->attributes['quantity'] = $value;
+    }
+
+    public function setAvgCostRateAttribute($value): void
+    {
+        $this->attributes['average_cost'] = $value;
+    }
+
+    public function setLastValuationRateAttribute($value): void
+    {
+        $this->attributes['current_rate'] = $value;
+    }
+
+    public function setUnrealizedPnlAttribute($value): void
+    {
+        $this->attributes['unrealized_gain_loss'] = $value;
+    }
+
+    public function setLastValuationAtAttribute($value): void
+    {
+        $this->attributes['last_revalued_at'] = $value;
+    }
+
+    public function setTillIdAttribute($value): void
+    {
+        // Only set branch_id if not already set explicitly
+        if (! isset($this->attributes['branch_id']) || $this->attributes['branch_id'] === null) {
+            $this->attributes['branch_id'] = $value;
+        }
     }
 }

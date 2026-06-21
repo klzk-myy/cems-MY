@@ -31,15 +31,6 @@ class SystemHealthCheck extends SystemModel
     }
 
     /**
-     * Status constants
-     */
-    public const STATUS_OK = 'ok';
-
-    public const STATUS_WARNING = 'warning';
-
-    public const STATUS_CRITICAL = 'critical';
-
-    /**
      * Scope for successful checks
      */
     public function scopeOk($query)
@@ -132,9 +123,9 @@ class SystemHealthCheck extends SystemModel
     public function getStatusColorClass(): string
     {
         return match ($this->status) {
-            self::STATUS_OK => 'green',
-            self::STATUS_WARNING => 'yellow',
-            self::STATUS_CRITICAL => 'red',
+            SystemHealthCheckStatus::Ok => 'green',
+            SystemHealthCheckStatus::Warning => 'yellow',
+            SystemHealthCheckStatus::Critical => 'red',
             default => 'gray',
         };
     }
@@ -147,9 +138,9 @@ class SystemHealthCheck extends SystemModel
         $statusValue = $this->status instanceof SystemHealthCheckStatus ? $this->status->value : $this->status;
 
         return match ($statusValue) {
-            self::STATUS_OK => 'status-active',
-            self::STATUS_WARNING => 'status-pending',
-            self::STATUS_CRITICAL => 'status-flagged',
+            SystemHealthCheckStatus::Ok->value => 'status-active',
+            SystemHealthCheckStatus::Warning->value => 'status-pending',
+            SystemHealthCheckStatus::Critical->value => 'status-flagged',
             default => 'status-inactive',
         };
     }

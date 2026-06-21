@@ -6,12 +6,11 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\Counter\EmergencyCloseRequest;
+use App\Http\Requests\Api\V1\Counter\InitiateEmergencyCloseRequest;
 use App\Models\Counter;
 use App\Models\EmergencyClosure;
 use App\Services\Branch\EmergencyCounterService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EmergencyCounterController extends Controller
@@ -20,8 +19,10 @@ class EmergencyCounterController extends Controller
         protected EmergencyCounterService $emergencyService
     ) {}
 
-    public function initiateClose(EmergencyCloseRequest $request, int $counterId): JsonResponse
+    public function initiateClose(InitiateEmergencyCloseRequest $request, int $counterId): JsonResponse
     {
+        $validated = $request->validated();
+
         $counter = Counter::find($counterId);
         if (! $counter) {
             return response()->json([
@@ -33,14 +34,17 @@ class EmergencyCounterController extends Controller
         $user = Auth::user();
 
         if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this resource.');
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to access this resource.',
+            ], 403);
         }
 
         try {
             $closure = $this->emergencyService->initiateEmergencyClose(
                 $counter,
                 $user,
-                $request->input('reason')
+                $validated['reason']
             );
 
             return response()->json([
@@ -79,7 +83,10 @@ class EmergencyCounterController extends Controller
         $user = Auth::user();
 
         if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this resource.');
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to access this resource.',
+            ], 403);
         }
 
         $closure = EmergencyClosure::find($closureId);
@@ -98,7 +105,7 @@ class EmergencyCounterController extends Controller
         ]);
     }
 
-    public function acknowledge(Request $request, int $counterId, int $closureId): JsonResponse
+    public function acknowledge(int $counterId, int $closureId): JsonResponse
     {
         $counter = Counter::find($counterId);
         if (! $counter) {
@@ -119,7 +126,10 @@ class EmergencyCounterController extends Controller
         $user = Auth::user();
 
         if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
-            abort(403, 'You do not have permission to access this resource.');
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to access this resource.',
+            ], 403);
         }
 
         if (! $user->isManager()) {

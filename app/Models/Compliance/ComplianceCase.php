@@ -14,10 +14,10 @@ use App\Models\Bases\ComplianceModel;
 use App\Models\FlaggedTransaction;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ComplianceCase extends ComplianceModel
 {
@@ -48,6 +48,7 @@ class ComplianceCase extends ComplianceModel
         'status' => ComplianceCaseStatus::class,
         'severity' => FindingSeverity::class,
         'priority' => ComplianceCasePriority::class,
+        'resolution' => CaseResolution::class,
         'sla_deadline' => 'datetime',
         'escalated_at' => 'datetime',
         'resolved_at' => 'datetime',
@@ -218,14 +219,6 @@ class ComplianceCase extends ComplianceModel
     }
 
     /**
-     * Get the linked subject (polymorphic).
-     */
-    public function subject(): MorphTo
-    {
-        return $this->morphTo('subject', 'linked_type', 'linked_id');
-    }
-
-    /**
      * Get the statuses considered active for this model.
      *
      * @return array<int, ComplianceCaseStatus>
@@ -258,7 +251,7 @@ class ComplianceCase extends ComplianceModel
     /**
      * Scope: Filter cases under review.
      */
-    public function scopeUnderReview($query)
+    public function scopeUnderReview(Builder $query): Builder
     {
         return $query->where('status', ComplianceCaseStatus::UnderReview->value);
     }
@@ -266,7 +259,7 @@ class ComplianceCase extends ComplianceModel
     /**
      * Scope: Filter cases by assignee.
      */
-    public function scopeByAssignee($query, int $userId)
+    public function scopeByAssignee(Builder $query, int $userId): Builder
     {
         return $query->where('assigned_to', $userId);
     }
@@ -274,7 +267,7 @@ class ComplianceCase extends ComplianceModel
     /**
      * Scope: Filter overdue cases.
      */
-    public function scopeOverdue($query)
+    public function scopeOverdue(Builder $query): Builder
     {
         return $query->where('sla_deadline', '<', now())
             ->where('status', '!=', ComplianceCaseStatus::Closed->value);

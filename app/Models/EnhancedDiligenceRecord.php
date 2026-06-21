@@ -45,6 +45,8 @@ class EnhancedDiligenceRecord extends ComplianceModel
         'source_of_funds_documents' => 'array',
         'supporting_documents' => 'array',
         'questionnaire_responses' => 'array',
+        'responses' => 'array',
+        'documents_received' => 'array',
         'reviewed_at' => 'datetime',
         'status' => EddStatus::class,
         'risk_level' => EddRiskLevel::class,

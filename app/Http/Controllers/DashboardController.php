@@ -116,9 +116,13 @@ class DashboardController extends Controller
 
         $flags = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
+        $counts = FlaggedTransaction::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
         $stats = [
-            'open' => FlaggedTransaction::where('status', 'Open')->count(),
-            'under_review' => FlaggedTransaction::where('status', 'Under_Review')->count(),
+            'open' => $counts->get('Open', 0),
+            'under_review' => $counts->get('Under_Review', 0),
             'resolved_today' => FlaggedTransaction::where('status', 'Resolved')
                 ->whereDate('resolved_at', today())
                 ->count(),
@@ -264,7 +268,7 @@ class DashboardController extends Controller
      */
     private function ensureComplianceOfficerAccess(User $user, string $message = ''): void
     {
-        if (! $user->isComplianceOfficer()) {
+        if (! $user->isAdmin() && ! $user->isComplianceOfficer()) {
             abort(403, $message);
         }
     }

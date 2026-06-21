@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Report;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LmcaGenerateRequest;
+use App\Http\Requests\LmcaReportRequest;
+use App\Http\Requests\Msb2ReportRequest;
+use App\Http\Requests\QuarterlyLvrGenerateRequest;
+use App\Http\Requests\QuarterlyLvrRequest;
 use App\Http\Requests\StoreMsb2ReportRequest;
+use App\Http\Requests\UpdateReportStatusRequest;
 use App\Models\ReportGenerated;
 use App\Services\Reporting\ReportingService;
 use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,19 +23,10 @@ use Illuminate\View\View;
 
 class RegulatoryReportController extends Controller
 {
-    protected ReportingService $reportingService;
-
-    protected MathService $mathService;
-
-    protected ThresholdService $thresholdService;
-
     public function __construct(
-        ReportingService $reportingService,
-        MathService $mathService,
-    ) {
-        $this->reportingService = $reportingService;
-        $this->mathService = $mathService;
-    }
+        protected ReportingService $reportingService,
+        protected MathService $mathService,
+    ) {}
 
     protected function getQuarterStart(string $quarter): Carbon
     {
@@ -47,16 +43,11 @@ class RegulatoryReportController extends Controller
         return $this->getQuarterStart($quarter)->copy()->addMonths(3)->subDay()->endOfDay();
     }
 
-    public function msb2(Request $request): View
+    public function msb2(Msb2ReportRequest $request): View
     {
         $this->requireManagerOrAdmin();
 
-        // Validate date parameter
-        $validated = $request->validate([
-            'date' => 'nullable|date_format:Y-m-d',
-        ]);
-
-        $date = $validated['date'] ?? now()->subDay()->toDateString();
+        $date = $request->validated('date', now()->subDay()->toDateString());
 
         // Check existing report
         $reportGenerated = ReportGenerated::where('report_type', 'MSB2')
@@ -131,7 +122,7 @@ class RegulatoryReportController extends Controller
         ]);
     }
 
-    public function updateMSB2Status(Request $request): JsonResponse
+    public function updateMSB2Status(UpdateReportStatusRequest $request): JsonResponse
     {
         return $this->updateReportStatus('MSB2', $request);
     }
@@ -139,15 +130,11 @@ class RegulatoryReportController extends Controller
     /**
      * BNM Form LMCA - Monthly regulatory report
      */
-    public function lmca(Request $request): View
+    public function lmca(LmcaReportRequest $request): View
     {
         $this->requireManagerOrAdmin();
 
-        $validated = $request->validate([
-            'month' => 'nullable|date_format:Y-m',
-        ]);
-
-        $month = $validated['month'] ?? now()->format('Y-m');
+        $month = $request->validated('month', now()->format('Y-m'));
 
         $reportGenerated = ReportGenerated::where('report_type', 'LMCA')
             ->where('period_start', now()->parse($month)->startOfMonth())
@@ -161,15 +148,11 @@ class RegulatoryReportController extends Controller
     /**
      * Generate BNM Form LMCA CSV
      */
-    public function lmcaGenerate(Request $request): JsonResponse
+    public function lmcaGenerate(LmcaGenerateRequest $request): JsonResponse
     {
         $this->requireManagerOrAdmin();
 
-        $validated = $request->validate([
-            'month' => 'required|date_format:Y-m',
-        ]);
-
-        $month = $validated['month'];
+        $month = $request->validated('month');
         $filepath = $this->reportingService->generateFormLMCACsv($month);
 
         ReportGenerated::create([
@@ -191,26 +174,20 @@ class RegulatoryReportController extends Controller
     /**
      * Update LMCA report status (mark as submitted)
      */
-    public function updateLMCAStatus(Request $request): JsonResponse
+    public function updateLMCAStatus(UpdateReportStatusRequest $request): JsonResponse
     {
         return $this->updateReportStatus('LMCA', $request);
     }
 
-    private function updateReportStatus(string $reportType, Request $request): JsonResponse
+    private function updateReportStatus(string $reportType, UpdateReportStatusRequest $request): JsonResponse
     {
         $this->requireManagerOrAdmin();
 
+        $validated = $request->validated();
+
         if ($reportType === 'MSB2') {
-            $validated = $request->validate([
-                'date' => 'required|date_format:Y-m-d',
-                'status' => 'required|in:Submitted',
-            ]);
             $periodStart = now()->parse($validated['date'])->startOfDay();
         } else {
-            $validated = $request->validate([
-                'month' => 'required|date_format:Y-m',
-                'status' => 'required|in:Submitted',
-            ]);
             $periodStart = now()->parse($validated['month'])->startOfMonth();
         }
 
@@ -239,15 +216,11 @@ class RegulatoryReportController extends Controller
     /**
      * Quarterly Large Value Report
      */
-    public function quarterlyLvr(Request $request): View
+    public function quarterlyLvr(QuarterlyLvrRequest $request): View
     {
         $this->requireManagerOrAdmin();
 
-        $validated = $request->validate([
-            'quarter' => 'nullable|date_format:Y-q',
-        ]);
-
-        $quarter = $validated['quarter'] ?? now()->format('Y').'-Q'.(int) ceil((int) now()->format('n') / 3);
+        $quarter = $request->validated('quarter', now()->format('Y').'-Q'.(int) ceil((int) now()->format('n') / 3));
 
         $reportGenerated = ReportGenerated::where('report_type', 'QLVR')
             ->where('period_start', $this->getQuarterStart($quarter))
@@ -261,15 +234,11 @@ class RegulatoryReportController extends Controller
     /**
      * Generate Quarterly Large Value Report CSV
      */
-    public function quarterlyLvrGenerate(Request $request): JsonResponse
+    public function quarterlyLvrGenerate(QuarterlyLvrGenerateRequest $request): JsonResponse
     {
         $this->requireManagerOrAdmin();
 
-        $validated = $request->validate([
-            'quarter' => 'required|date_format:Y-q',
-        ]);
-
-        $quarter = $validated['quarter'];
+        $quarter = $request->validated('quarter');
         $filepath = $this->reportingService->generateQuarterlyLargeValueCsv($quarter);
 
         ReportGenerated::create([

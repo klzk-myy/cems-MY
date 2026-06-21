@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\SystemAlertLevel;
 use App\Models\SystemAlert;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -51,9 +52,9 @@ class SystemHealthAlertNotification extends Notification implements ShouldQueue
         $mailMessage = (new MailMessage);
 
         // Set message style based on level
-        if ($level === SystemAlert::LEVEL_CRITICAL) {
+        if ($level === SystemAlertLevel::Critical->value) {
             $mailMessage->error();
-        } elseif ($level === SystemAlert::LEVEL_WARNING) {
+        } elseif ($level === SystemAlertLevel::Warning->value) {
             $mailMessage->line('warning');
         }
 
@@ -112,8 +113,8 @@ class SystemHealthAlertNotification extends Notification implements ShouldQueue
     protected function getSubject(): string
     {
         $prefix = match ($this->systemAlert->level) {
-            SystemAlert::LEVEL_CRITICAL => '[CRITICAL]',
-            SystemAlert::LEVEL_WARNING => '[WARNING]',
+            SystemAlertLevel::Critical->value => '[CRITICAL]',
+            SystemAlertLevel::Warning->value => '[WARNING]',
             default => '[INFO]',
         };
 
@@ -126,8 +127,8 @@ class SystemHealthAlertNotification extends Notification implements ShouldQueue
     protected function isEmailWorthy(): bool
     {
         return in_array($this->systemAlert->level, [
-            SystemAlert::LEVEL_WARNING,
-            SystemAlert::LEVEL_CRITICAL,
+            SystemAlertLevel::Warning->value,
+            SystemAlertLevel::Critical->value,
         ]);
     }
 

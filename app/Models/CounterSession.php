@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\CounterSessionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CounterSession extends BaseModel
 {
@@ -33,32 +35,32 @@ class CounterSession extends BaseModel
         'status' => CounterSessionStatus::class,
     ];
 
-    public function counter()
+    public function counter(): BelongsTo
     {
         return $this->belongsTo(Counter::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function tellerAllocation()
+    public function tellerAllocation(): BelongsTo
     {
         return $this->belongsTo(TellerAllocation::class);
     }
 
-    public function openedByUser()
+    public function openedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'opened_by');
     }
 
-    public function closedByUser()
+    public function closedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'closed_by');
     }
 
-    public function handovers()
+    public function handovers(): HasMany
     {
         return $this->hasMany(CounterHandover::class);
     }

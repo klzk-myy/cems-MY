@@ -8,11 +8,6 @@ trait HasStatus
 {
     protected string $statusColumn = 'status';
 
-    public function initializeHasStatus(): void
-    {
-        $this->mergeFillable([$this->statusColumn]);
-    }
-
     /** @return array<int|string|BackedEnum> */
     protected function activeStatusValues(): array
     {

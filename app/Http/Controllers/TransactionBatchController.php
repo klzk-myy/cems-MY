@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TransactionImportStatus;
-use App\Http\Requests\Api\V1\ImportBankStatementRequest;
+use App\Http\Requests\BatchUploadRequest;
 use App\Models\TransactionImport;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
@@ -36,7 +36,7 @@ class TransactionBatchController extends Controller
      */
     public function showBatchUpload(): View
     {
-        $recentImports = TransactionImport::where('user_id', auth()->id())
+        $recentImports = TransactionImport::where('imported_by', auth()->id())
             ->orderBy('created_at', 'desc')
             ->take(10)
             ->get();
@@ -47,7 +47,7 @@ class TransactionBatchController extends Controller
     /**
      * Process batch upload
      */
-    public function processBatchUpload(ImportBankStatementRequest $request): RedirectResponse
+    public function processBatchUpload(BatchUploadRequest $request): RedirectResponse
     {
         $file = $request->file('csv_file');
 
@@ -77,7 +77,7 @@ class TransactionBatchController extends Controller
 
         // Create import record with total_rows
         $import = TransactionImport::create([
-            'user_id' => auth()->id(),
+            'imported_by' => auth()->id(),
             'filename' => $path,
             'original_filename' => $file->getClientOriginalName(),
             'total_rows' => $rowCount,
@@ -93,7 +93,7 @@ class TransactionBatchController extends Controller
         } catch (\Exception $e) {
             $this->logger->error('Transaction import failed', ['exception' => $e, 'import_id' => $import->id]);
             $import->update([
-                'status' => 'failed',
+                'status' => TransactionImportStatus::Failed->value,
                 'completed_at' => now(),
             ]);
 
@@ -106,8 +106,7 @@ class TransactionBatchController extends Controller
      */
     public function showImportResults(TransactionImport $import): View
     {
-        // Authorization check - only owner can view (managers can only view their own imports)
-        if ($import->user_id !== auth()->id()) {
+        if ($import->imported_by !== auth()->id()) {
             abort(403, 'Unauthorized. You can only view your own import results.');
         }
 
@@ -136,8 +135,8 @@ class TransactionBatchController extends Controller
      */
     public function downloadErrors(TransactionImport $import): RedirectResponse|StreamedResponse
     {
-        if ($import->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized. You can only view your own import results.');
+        if ($import->imported_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You can only view your own import errors.');
         }
 
         $errors = $import->getErrors();

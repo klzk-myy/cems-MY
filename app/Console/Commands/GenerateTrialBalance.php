@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\ReportGenerated;
+use App\Console\Commands\Concerns\HasReportFormatting;
 use App\Services\Accounting\AccountingService;
 use App\Services\System\MathService;
 use Carbon\Carbon;
@@ -10,6 +10,8 @@ use Illuminate\Console\Command;
 
 class GenerateTrialBalance extends Command
 {
+    use HasReportFormatting;
+
     protected $signature = 'report:trial-balance {--date= : Specific date (Y-m-d), defaults to last closed period}';
 
     protected $description = 'Generate trial balance report for accounting period';
@@ -25,44 +27,30 @@ class GenerateTrialBalance extends Command
         try {
             $reportData = $accountingService->generateTrialBalance($date);
 
-            $filename = 'TrialBalance_'.$date->format('Y-m-d').'.csv';
-            $filepath = storage_path('app/reports/'.$filename);
-
-            if (! is_dir(dirname($filepath))) {
-                mkdir(dirname($filepath), 0755, true);
-            }
-
-            $handle = fopen($filepath, 'w');
-            fputcsv($handle, ['Account Code', 'Account Name', 'Debit', 'Credit']);
+            $filename = $this->getReportFilename('TrialBalance', 'report');
+            $filepath = $this->getReportPath($filename);
 
             $totalDebit = '0';
             $totalCredit = '0';
+            $math = app(MathService::class);
+            $csvContent = "Account Code,Account Name,Debit,Credit\n";
 
             foreach ($reportData as $row) {
-                fputcsv($handle, [
+                $csvContent .= implode(',', [
                     $row['account_code'],
                     $row['account_name'],
                     number_format((float) $row['debit'], 2),
                     number_format((float) $row['credit'], 2),
-                ]);
-                $math = app(MathService::class);
+                ])."\n";
                 $totalDebit = $math->add($totalDebit, $row['debit']);
                 $totalCredit = $math->add($totalCredit, $row['credit']);
             }
 
-            // Totals row
-            fputcsv($handle, ['', 'TOTAL', number_format((float) $totalDebit, 2), number_format((float) $totalCredit, 2)]);
-            fclose($handle);
+            $csvContent .= implode(',', ['', 'TOTAL', number_format((float) $totalDebit, 2), number_format((float) $totalCredit, 2)])."\n";
 
-            ReportGenerated::create([
-                'report_type' => 'TrialBalance',
-                'period_start' => $date->startOfMonth(),
-                'period_end' => $date->endOfMonth(),
-                'generated_by' => 1,
-                'generated_at' => now(),
-                'file_format' => 'CSV',
-                'status' => 'Generated',
-            ]);
+            $this->saveReportCsv($filepath, $csvContent);
+
+            $this->createReportRecord('TrialBalance', $date->startOfMonth(), $date->endOfMonth());
 
             $this->info("Trial Balance generated: {$filepath}");
 

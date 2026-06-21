@@ -2,12 +2,10 @@
 
 namespace App\Services\Accounting;
 
-use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\CurrencyPosition;
 use App\Models\RevaluationEntry;
-use App\Models\User;
 use App\Services\AuditService;
 use App\Services\System\MathService;
 use App\Services\Transaction\RateApiService;
@@ -15,7 +13,6 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class RevaluationService
 {
@@ -27,33 +24,34 @@ class RevaluationService
         protected RateApiService $rateApiService,
         protected AccountingService $accountingService,
         protected AuditService $auditService,
+        protected RevaluationNotificationService $notificationService,
     ) {}
 
     /**
-     * Run revaluation for all currency positions in a till.
+     * Run revaluation for all currency positions in a branch.
      *
      * Calculates gain/loss for each currency position by comparing current
-     * market rate with the last valuation rate, then updates position records.
+     * market rate with the current rate, then updates position records.
      *
      * @param  int  $postedBy  User ID performing the revaluation
-     * @param  string|null  $tillId  Till identifier (defaults to 'MAIN')
+     * @param  string|null  $branchId  Branch identifier (defaults to 'HQ')
      * @return array Array containing:
      *               - date: string Revaluation date (Y-m-d format)
-     *               - till_id: string Till identifier
+     *               - branch_id: string Branch identifier
      *               - positions_revalued: int Number of positions processed
      *               - entries: array List of revaluation entry details
      */
-    public function runRevaluation(int $postedBy, ?string $tillId = null): array
+    public function runRevaluation(int $postedBy, ?string $branchId = null): array
     {
-        $tillId = $tillId ?? 'MAIN';
+        $branchId = $branchId ?? 'HQ';
         $revaluationDate = now()->toDateString();
         $results = [];
 
         // Pre-fetch all exchange rates in a single API call to avoid N+1 per position
         $this->rateApiService->fetchLatestRates();
 
-        $positions = CurrencyPosition::where('till_id', $tillId)
-            ->where('balance', '!=', 0)
+        $positions = CurrencyPosition::where('branch_id', $branchId)
+            ->where('quantity', '!=', '0')
             ->get();
 
         foreach ($positions as $position) {
@@ -67,7 +65,7 @@ class RevaluationService
         $this->auditService->logPositionEvent('position_revaluation_run', [
             'new' => [
                 'date' => $revaluationDate,
-                'till_id' => $tillId,
+                'branch_id' => $branchId,
                 'positions_revalued' => count($results),
             ],
         ]);
@@ -79,7 +77,7 @@ class RevaluationService
 
         return [
             'date' => $revaluationDate,
-            'till_id' => $tillId,
+            'branch_id' => $branchId,
             'positions_revalued' => count($results),
             'entries' => $results,
         ];
@@ -103,40 +101,40 @@ class RevaluationService
             return null;
         }
 
-        $oldRate = $position->last_valuation_rate ?? $position->avg_cost_rate;
+        $oldRate = $position->current_rate ?? $position->average_cost;
         $gainLoss = $this->mathService->calculateRevaluationPnl(
-            $position->balance,
+            $position->quantity,
             $oldRate,
             $newRate
         );
 
         return DB::transaction(function () use ($position, $oldRate, $newRate, $gainLoss, $date, $postedBy) {
             // Prevent double-counting: check if position was already revalued at this rate
-            if ($position->last_valuation_rate !== null && $this->mathService->compare($position->last_valuation_rate, $newRate) === 0) {
+            if ($position->current_rate !== null && $this->mathService->compare($position->current_rate, $newRate) === 0) {
                 return null;
             }
 
             // Create revaluation entry
             $entry = RevaluationEntry::create([
                 'currency_code' => $position->currency_code,
-                'till_id' => $position->till_id,
+                'branch_id' => $position->branch_id,
                 'old_rate' => $oldRate,
                 'new_rate' => $newRate,
-                'position_amount' => $position->balance,
+                'position_amount' => $position->quantity,
                 'gain_loss_amount' => $gainLoss,
                 'revaluation_date' => $date,
                 'posted_by' => $postedBy,
             ]);
 
             // Update position
-            $cumulativePnl = $this->mathService->add(
-                $position->unrealized_pnl ?? '0',
+            $cumulativeGainLoss = $this->mathService->add(
+                $position->unrealized_gain_loss ?? '0',
                 $gainLoss
             );
             $position->update([
-                'last_valuation_rate' => $newRate,
-                'unrealized_pnl' => $cumulativePnl,
-                'last_valuation_at' => now(),
+                'current_rate' => $newRate,
+                'unrealized_gain_loss' => $cumulativeGainLoss,
+                'last_revalued_at' => now(),
             ]);
 
             return [
@@ -245,11 +243,11 @@ class RevaluationService
         $errors = [];
 
         foreach ($positions as $position) {
-            if ($this->mathService->compare($position->balance, '0') <= 0) {
+            if ($this->mathService->compare($position->quantity, '0') <= 0) {
                 continue;
             }
 
-            $oldRate = $position->last_valuation_rate ?? $position->avg_cost_rate;
+            $oldRate = $position->current_rate ?? $position->average_cost;
             $newRate = $this->getCurrentRate($position->currency_code) ?? $oldRate;
 
             if (! $newRate) {
@@ -257,7 +255,7 @@ class RevaluationService
             }
 
             $gainLoss = $this->mathService->calculateRevaluationPnl(
-                $position->balance,
+                $position->quantity,
                 $oldRate,
                 $newRate
             );
@@ -271,10 +269,10 @@ class RevaluationService
                 DB::transaction(function () use ($position, $oldRate, $newRate, $gainLoss, $date, $postedBy) {
                     $revaluationEntry = RevaluationEntry::create([
                         'currency_code' => $position->currency_code,
-                        'till_id' => $position->till_id,
+                        'branch_id' => $position->branch_id,
                         'old_rate' => $oldRate,
                         'new_rate' => $newRate,
-                        'position_amount' => $position->balance,
+                        'position_amount' => $position->quantity,
                         'gain_loss_amount' => $gainLoss,
                         'revaluation_date' => $date,
                         'posted_by' => $postedBy,
@@ -311,9 +309,9 @@ class RevaluationService
                     );
 
                     $position->update([
-                        'unrealized_pnl' => $this->mathService->add($position->unrealized_pnl ?? '0', $gainLoss),
-                        'last_valuation_rate' => $newRate,
-                        'last_valuation_at' => now(),
+                        'unrealized_gain_loss' => $this->mathService->add($position->unrealized_gain_loss ?? '0', $gainLoss),
+                        'current_rate' => $newRate,
+                        'last_revalued_at' => now(),
                     ]);
 
                     return [
@@ -442,63 +440,6 @@ class RevaluationService
             'entries_count' => $entries->count(),
             'currencies' => $entries->pluck('currency_code')->toArray(),
         ];
-    }
-
-    /**
-     * Send revaluation completion notification to recipients.
-     *
-     * Sends email notifications to all active users with revaluation
-     * summary information. Attachments are included if a report path
-     * is provided in the results.
-     *
-     * @param  array  $results  Revaluation results array containing:
-     *                          - date: string Revaluation date
-     *                          - positions_updated: int Number of positions updated
-     *                          - net_pnl: string Net profit/loss
-     *                          - report_path: string|null Path to report file
-     */
-    public function sendRevaluationNotification(array $results): void
-    {
-        $recipients = $this->getNotificationRecipients();
-
-        foreach ($recipients as $recipient) {
-            try {
-                Mail::raw("Revaluation Complete\n\nDate: {$results['date']}\nPositions Updated: {$results['positions_updated']}\nNet P&L: {$results['net_pnl']}", function ($message) use ($recipient, $results) {
-                    $message->to($recipient['email'])
-                        ->subject('Monthly Revaluation Complete - '.now()->format('F Y'));
-
-                    if (! empty($results['report_path'])) {
-                        $message->attach($results['report_path']);
-                    }
-                });
-            } catch (\Exception $e) {
-                Log::error('Failed to send revaluation notification', [
-                    'recipient' => $recipient['email'],
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-    }
-
-    /**
-     * Get list of users to notify about revaluation completion.
-     *
-     * Retrieves only authorized users (managers, accountants, compliance officers)
-     * who should receive sensitive financial P&L data. Regular tellers are excluded.
-     *
-     * @return array Array of user data arrays with email addresses
-     */
-    protected function getNotificationRecipients(): array
-    {
-        // Only managers, accountants, and compliance officers should receive P&L data
-        return User::where('is_active', true)
-            ->whereIn('role', [
-                UserRole::Manager->value,
-                UserRole::ComplianceOfficer->value,
-                UserRole::Admin->value,
-            ])
-            ->get()
-            ->toArray();
     }
 
     /**

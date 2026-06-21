@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\Api\V1\Rate;
 
-use App\Http\Requests\AuthorizedFormRequest;
+use App\Http\Requests\ApiFormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 
-class UpdateRateRequest extends AuthorizedFormRequest
+class UpdateRateRequest extends ApiFormRequest
 {
     /**
      * Get the validation rules that apply to the request.

@@ -2,12 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Models\ReportGenerated;
+use App\Console\Commands\Concerns\HasReportFormatting;
 use App\Services\Reporting\ReportingService;
 use Illuminate\Console\Command;
 
 class GeneratePositionLimitReport extends Command
 {
+    use HasReportFormatting;
+
     protected $signature = 'report:position-limit';
 
     protected $description = 'Generate daily position limit utilization report';
@@ -19,15 +21,7 @@ class GeneratePositionLimitReport extends Command
         try {
             $filepath = $reportingService->generatePositionLimitCsv();
 
-            ReportGenerated::create([
-                'report_type' => 'PLR',
-                'period_start' => now()->startOfDay(),
-                'period_end' => now()->endOfDay(),
-                'generated_by' => 1,
-                'generated_at' => now(),
-                'file_format' => 'CSV',
-                'status' => 'Generated',
-            ]);
+            $this->createReportRecord('PLR', now()->startOfDay(), now()->endOfDay());
 
             $this->info("Position Limit Report generated: {$filepath}");
 

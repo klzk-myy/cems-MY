@@ -40,8 +40,8 @@ return new class extends Migration
         }
 
         // 2. currency_positions table - unique composite index
-        if (! $indexExists('currency_positions', 'currency_positions_currency_till_unique')) {
-            DB::statement('CREATE UNIQUE INDEX currency_positions_currency_till_unique ON currency_positions (currency_code, till_id)');
+        if (! $indexExists('currency_positions', 'currency_positions_currency_branch_unique')) {
+            DB::statement('CREATE UNIQUE INDEX currency_positions_currency_branch_unique ON currency_positions (currency_code, branch_id)');
         }
 
         // 3. flagged_transactions table - composite indexes for review queue
@@ -68,7 +68,7 @@ return new class extends Migration
         if ($driver === 'sqlite') {
             DB::statement('DROP INDEX IF EXISTS transactions_currency_created_idx');
             DB::statement('DROP INDEX IF EXISTS transactions_status_created_idx');
-            DB::statement('DROP INDEX IF EXISTS currency_positions_currency_till_unique');
+            DB::statement('DROP INDEX IF EXISTS currency_positions_currency_branch_unique');
             DB::statement('DROP INDEX IF EXISTS flagged_transactions_flag_type_created_idx');
             DB::statement('DROP INDEX IF EXISTS flagged_transactions_status_created_idx');
             DB::statement('DROP INDEX IF EXISTS system_logs_user_action_created_idx');
@@ -78,7 +78,7 @@ return new class extends Migration
 
         DB::statement('DROP INDEX transactions_currency_created_idx ON transactions');
         DB::statement('DROP INDEX transactions_status_created_idx ON transactions');
-        DB::statement('DROP INDEX currency_positions_currency_till_unique ON currency_positions');
+        DB::statement('DROP INDEX currency_positions_currency_branch_unique ON currency_positions');
         DB::statement('DROP INDEX flagged_transactions_flag_type_created_idx ON flagged_transactions');
         DB::statement('DROP INDEX flagged_transactions_status_created_idx ON flagged_transactions');
         DB::statement('DROP INDEX system_logs_user_action_created_idx ON system_logs');

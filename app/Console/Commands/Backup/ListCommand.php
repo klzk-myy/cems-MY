@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Backup;
 
+use App\Enums\BackupStatus;
 use App\Models\BackupLog;
 use App\Services\System\BackupService;
 use Illuminate\Console\Command;
@@ -56,12 +57,12 @@ class ListCommand extends Command
         $rows = [];
         foreach ($logs as $log) {
             $status = match ($log->status) {
-                BackupLog::STATUS_COMPLETED => '<fg=green>✓ Completed</>',
-                BackupLog::STATUS_VERIFIED => '<fg=green>✓ Verified</>',
-                BackupLog::STATUS_FAILED => '<fg=red>✗ Failed</>',
-                BackupLog::STATUS_RUNNING => '<fg=yellow>⋯ Running</>',
-                BackupLog::STATUS_VERIFICATION_FAILED => '<fg=red>✗ Verification Failed</>',
-                default => '<fg=gray>? '.$log->status.'</>',
+                BackupStatus::Completed => '<fg=green>✓ Completed</>',
+                BackupStatus::Verified => '<fg=green>✓ Verified</>',
+                BackupStatus::Failed => '<fg=red>✗ Failed</>',
+                BackupStatus::Running => '<fg=yellow>⋯ Running</>',
+                BackupStatus::VerificationFailed => '<fg=red>✗ Verification Failed</>',
+                default => '<fg=gray>? '.$log->status->value.'</>',
             };
 
             $rows[] = [

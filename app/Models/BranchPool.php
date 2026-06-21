@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,8 +19,8 @@ class BranchPool extends BaseModel
     ];
 
     protected $casts = [
-        'available_balance' => 'decimal:4',
-        'allocated_balance' => 'decimal:4',
+        'available_balance' => MoneyCast::class,
+        'allocated_balance' => MoneyCast::class,
     ];
 
     protected MathService $mathService;

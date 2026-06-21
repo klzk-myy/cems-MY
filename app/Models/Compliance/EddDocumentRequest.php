@@ -21,6 +21,7 @@ class EddDocumentRequest extends BaseModel
         'edd_record_id',
         'document_type',
         'file_path',
+        'status',
         'rejection_reason',
         'uploaded_at',
         'verified_at',

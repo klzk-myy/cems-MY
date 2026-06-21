@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\Notification;
  */
 class TestNotification extends Command
 {
+    use Concerns\HasNotificationTesting;
+
     protected $signature = 'notifications:test
                             {type : Notification type to test (transaction_flagged, case_assigned, data_breach, large_transaction, sanctions_match, system_health, all)}
                             {--user= : User ID to send test notification to}
@@ -54,7 +56,7 @@ class TestNotification extends Command
             return 1;
         }
 
-        $user = $this->getTargetUser($userId);
+        $user = $this->getTargetUsers($userId)->first();
 
         if (! $user) {
             $this->error('No target user found.');
@@ -75,15 +77,6 @@ class TestNotification extends Command
         $this->displayResults($results);
 
         return count(array_filter($results, fn ($r) => ! $r['success'])) > 0 ? 1 : 0;
-    }
-
-    protected function getTargetUser(?int $userId): ?User
-    {
-        if ($userId) {
-            return User::find($userId);
-        }
-
-        return User::where('is_active', true)->first();
     }
 
     protected function sendAllNotifications(User $user, ?string $channel, bool $dryRun): array

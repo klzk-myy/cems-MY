@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Enums\BackupStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -46,47 +45,6 @@ class BackupLog extends BaseModel
         'metadata' => 'array',
         'status' => BackupStatus::class,
     ];
-
-    protected $dates = [
-        'started_at',
-        'completed_at',
-        'verified_at',
-    ];
-
-    /**
-     * Backup status constants (deprecated — use BackupStatus enum)
-     */
-    public const STATUS_PENDING = 'pending';
-
-    public const STATUS_RUNNING = 'running';
-
-    public const STATUS_COMPLETED = 'completed';
-
-    public const STATUS_FAILED = 'failed';
-
-    public const STATUS_VERIFIED = 'verified';
-
-    public const STATUS_VERIFICATION_FAILED = 'verification_failed';
-
-    /**
-     * Backup type constants
-     */
-    public const TYPE_DATABASE = 'database';
-
-    public const TYPE_FILES = 'files';
-
-    public const TYPE_FULL = 'full';
-
-    public const TYPE_ARCHIVE = 'archive';
-
-    public const TYPE_MANUAL = 'manual';
-
-    /**
-     * Disk constants
-     */
-    public const DISK_LOCAL = 'local';
-
-    public const DISK_S3 = 's3';
 
     public function user(): BelongsTo
     {

@@ -18,6 +18,10 @@ class DeviceComputations extends BaseModel
         'last_used_at',
     ];
 
+    protected $hidden = [
+        'device_fingerprint',
+    ];
+
     protected $casts = [
         'expires_at' => 'datetime',
         'last_used_at' => 'datetime',

@@ -59,9 +59,7 @@ class RiskDashboardController extends Controller
 
     public function rescreen(RescreenCustomerRequest $request): RedirectResponse
     {
-        $validated = $request->validated();
-
-        $result = $this->riskScoringService->rescreenCustomer($validated['customer_id']);
+        $result = $this->riskScoringService->rescreenCustomer($request->customer_id);
 
         return redirect()->back()
             ->with('success', sprintf(
@@ -107,13 +105,21 @@ class RiskDashboardController extends Controller
     private function getAlertVolumeTrend(): array
     {
         $months = $this->getLastSixMonths();
+        $start = $months->first()->copy()->startOfMonth();
+        $end = $months->last()->copy()->endOfMonth();
+        $format = DB::getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', created_at)"
+            : "DATE_FORMAT(created_at, '%Y-%m')";
+
+        $counts = Alert::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw("{$format} as month, COUNT(*) as count")
+            ->groupBy('month')
+            ->pluck('count', 'month');
 
         return [
             'labels' => $months->map(fn ($date) => $date->format('M'))->toArray(),
-            'values' => $months->map(fn ($date) => Alert::whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->count())
-                ->toArray(),
+            'values' => $months->map(fn ($date) => (int) ($counts[$date->format('Y-m')] ?? 0))->toArray(),
         ];
     }
 

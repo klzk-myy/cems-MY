@@ -24,12 +24,11 @@ use App\Services\Accounting\CurrencyPositionService;
 use App\Services\System\MathService;
 use App\Services\Transaction\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-/**
- * @group slow
- */
+#[Group('slow')]
 class TransactionServiceTest extends TestCase
 {
     use RefreshDatabase;

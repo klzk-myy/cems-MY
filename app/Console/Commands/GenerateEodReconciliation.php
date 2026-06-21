@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\HasReportFormatting;
 use App\Services\EodReconciliationService;
 use App\Services\Reporting\ExportService;
 use Carbon\Carbon;
@@ -15,6 +16,8 @@ use Illuminate\Console\Command;
  */
 class GenerateEodReconciliation extends Command
 {
+    use HasReportFormatting;
+
     protected $signature = 'report:eod
         {--date= : Specific date (Y-m-d), defaults to yesterday}
         {--branch= : Optional branch ID filter}
@@ -87,7 +90,7 @@ class GenerateEodReconciliation extends Command
 
         $pdf->setPaper('A4', 'portrait');
 
-        $path = storage_path('app/reports/'.$filename.'.pdf');
+        $path = $this->getReportPath($filename.'.pdf');
 
         // Ensure directory exists
         $directory = dirname($path);

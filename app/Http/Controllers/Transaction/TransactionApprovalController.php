@@ -8,7 +8,7 @@ use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ConfirmTransactionRequest;
+use App\Http\Requests\ConfirmTransactionApprovalRequest;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Models\User;
@@ -178,7 +178,7 @@ class TransactionApprovalController extends Controller
      * Managers confirm or reject large transactions. Self-confirmation is
      * prohibited to maintain segregation of duties for AML/CFT compliance.
      */
-    public function confirm(ConfirmTransactionRequest $request, Transaction $transaction): RedirectResponse
+    public function confirm(ConfirmTransactionApprovalRequest $request, Transaction $transaction): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -213,18 +213,6 @@ class TransactionApprovalController extends Controller
         try {
             if ($validated['confirmation_action'] === 'confirm') {
                 $confirmation->markConfirmed(auth()->id(), $validated['notes'] ?? null);
-
-                $updated = Transaction::where('id', $transaction->id)
-                    ->where('status', TransactionStatus::PendingApproval)
-                    ->update([
-                        'status' => TransactionStatus::PendingApproval,
-                    ]);
-
-                if (! $updated) {
-                    DB::rollBack();
-
-                    return back()->with('error', 'Transaction could not be updated. Status may have changed.');
-                }
 
                 $transaction->refresh();
 

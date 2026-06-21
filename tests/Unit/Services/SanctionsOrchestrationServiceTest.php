@@ -10,12 +10,11 @@ use App\Services\Compliance\SanctionsOrchestrationService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-/**
- * @group slow
- */
+#[Group('slow')]
 class SanctionsOrchestrationServiceTest extends TestCase
 {
     use RefreshDatabase;

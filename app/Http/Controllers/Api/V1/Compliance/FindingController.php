@@ -2,36 +2,25 @@
 
 namespace App\Http\Controllers\Api\V1\Compliance;
 
+use App\Http\Concerns\FiltersComplianceFindings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\DismissFindingRequest;
+use App\Http\Requests\Api\V1\Compliance\FindingIndexRequest;
 use App\Models\Compliance\ComplianceFinding;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class FindingController extends Controller
 {
+    use FiltersComplianceFindings;
+
     /**
      * List compliance findings with filtering.
      */
-    public function index(Request $request): JsonResponse
+    public function index(FindingIndexRequest $request): JsonResponse
     {
         $query = ComplianceFinding::query();
 
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-        if ($request->has('severity')) {
-            $query->where('severity', $request->input('severity'));
-        }
-        if ($request->has('type')) {
-            $query->where('finding_type', $request->input('type'));
-        }
-        if ($request->has('date_from')) {
-            $query->whereDate('generated_at', '>=', $request->input('date_from'));
-        }
-        if ($request->has('date_to')) {
-            $query->whereDate('generated_at', '<=', $request->input('date_to'));
-        }
+        $this->applyFindingFilters($query, $request);
 
         $perPage = $request->get('per_page', 20);
         $findings = $query->orderBy('generated_at', 'desc')->paginate($perPage);
@@ -77,33 +66,9 @@ class FindingController extends Controller
      */
     public function stats(): JsonResponse
     {
-        $total = ComplianceFinding::count();
-        $newCount = ComplianceFinding::new()->count();
-
-        $bySeverity = ComplianceFinding::query()
-            ->selectRaw('severity, count(*) as count')
-            ->groupBy('severity')
-            ->pluck('count', 'severity');
-
-        $byStatus = ComplianceFinding::query()
-            ->selectRaw('status, count(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status');
-
-        $byType = ComplianceFinding::query()
-            ->selectRaw('finding_type, count(*) as count')
-            ->groupBy('finding_type')
-            ->pluck('count', 'finding_type');
-
         return response()->json([
             'success' => true,
-            'data' => [
-                'total' => $total,
-                'new' => $newCount,
-                'by_severity' => $bySeverity,
-                'by_status' => $byStatus,
-                'by_type' => $byType,
-            ],
+            'data' => $this->getFindingStats(),
         ]);
     }
 }

@@ -15,6 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureMfaVerified
 {
+    public function __construct(
+        protected MfaService $mfaService
+    ) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
@@ -23,10 +27,8 @@ class EnsureMfaVerified
             return redirect()->route('login');
         }
 
-        $mfaService = app(MfaService::class);
-
         // If MFA is not globally enabled, skip
-        if (! $mfaService->isGloballyEnabled()) {
+        if (! $this->mfaService->isGloballyEnabled()) {
             return $next($request);
         }
 
@@ -36,7 +38,7 @@ class EnsureMfaVerified
         }
 
         // Check if MFA is required for this user's role
-        if (! $mfaService->isMfaRequiredForRole($user)) {
+        if (! $this->mfaService->isMfaRequiredForRole($user)) {
             return $next($request);
         }
 
@@ -62,8 +64,8 @@ class EnsureMfaVerified
         }
 
         // Check trusted device bypass
-        $fingerprint = $mfaService->generateDeviceFingerprint();
-        if ($mfaService->hasTrustedDevice($user, $fingerprint)) {
+        $fingerprint = $this->mfaService->generateDeviceFingerprint();
+        if ($this->mfaService->hasTrustedDevice($user, $fingerprint)) {
             $this->sessionPut($request, 'mfa_verified', true);
             $this->sessionPut($request, 'mfa_verified_at', now()->timestamp);
 

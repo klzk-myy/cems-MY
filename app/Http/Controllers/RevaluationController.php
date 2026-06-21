@@ -11,12 +11,9 @@ use Illuminate\View\View;
 
 class RevaluationController extends Controller
 {
-    protected RevaluationService $revaluationService;
-
-    public function __construct(RevaluationService $revaluationService)
-    {
-        $this->revaluationService = $revaluationService;
-    }
+    public function __construct(
+        protected RevaluationService $revaluationService
+    ) {}
 
     public function index(): View
     {

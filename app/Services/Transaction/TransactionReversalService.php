@@ -165,7 +165,7 @@ class TransactionReversalService
     public function reversePositions(Transaction $transaction): void
     {
         $position = CurrencyPosition::where('currency_code', $transaction->currency_code)
-            ->where('till_id', $transaction->till_id)
+            ->where('branch_id', $transaction->branch_id)
             ->lockForUpdate()
             ->first();
 
@@ -173,7 +173,7 @@ class TransactionReversalService
             Log::warning('No position found for reversal', [
                 'transaction_id' => $transaction->id,
                 'currency_code' => $transaction->currency_code,
-                'till_id' => $transaction->till_id,
+                'branch_id' => $transaction->branch_id,
             ]);
 
             return;
@@ -188,7 +188,7 @@ class TransactionReversalService
             $transaction->amount_foreign,
             $transaction->rate,
             $reversalType->value,
-            $transaction->till_id
+            $transaction->branch_id
         );
 
         Log::info('Positions reversed for transaction', [

@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1\Compliance;
 
+use App\Enums\AlertPriority;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Compliance\AlertIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\BulkAssignAlertRequest;
 use App\Http\Requests\Api\V1\Compliance\BulkResolveAlertRequest;
 use App\Models\Alert;
 use App\Services\Compliance\AlertTriageService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class AlertController extends Controller
 {
@@ -19,7 +20,7 @@ class AlertController extends Controller
     /**
      * List alerts for triage.
      */
-    public function index(Request $request): JsonResponse
+    public function index(AlertIndexRequest $request): JsonResponse
     {
         $query = Alert::with(['customer', 'flaggedTransaction', 'assignedTo'])
             ->whereNull('case_id');
@@ -129,9 +130,22 @@ class AlertController extends Controller
     {
         $alerts = Alert::with(['customer', 'flaggedTransaction'])
             ->whereNull('case_id')
-            ->get()
-            ->filter(fn ($alert) => $alert->isOverdue())
-            ->values();
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->where('priority', AlertPriority::Critical->value)
+                        ->where('created_at', '<', now()->subHours(AlertPriority::Critical->slaHours()));
+                })->orWhere(function ($q) {
+                    $q->where('priority', AlertPriority::High->value)
+                        ->where('created_at', '<', now()->subHours(AlertPriority::High->slaHours()));
+                })->orWhere(function ($q) {
+                    $q->where('priority', AlertPriority::Medium->value)
+                        ->where('created_at', '<', now()->subHours(AlertPriority::Medium->slaHours()));
+                })->orWhere(function ($q) {
+                    $q->where('priority', AlertPriority::Low->value)
+                        ->where('created_at', '<', now()->subHours(AlertPriority::Low->slaHours()));
+                });
+            })
+            ->get();
 
         return response()->json([
             'success' => true,

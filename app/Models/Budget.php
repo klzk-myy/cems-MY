@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -19,8 +20,8 @@ class Budget extends BaseModel
     ];
 
     protected $casts = [
-        'budget_amount' => 'decimal:2',
-        'actual_amount' => 'decimal:2',
+        'budget_amount' => MoneyCast::class,
+        'actual_amount' => MoneyCast::class,
     ];
 
     public function account(): BelongsTo

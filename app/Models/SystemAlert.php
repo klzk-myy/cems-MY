@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\SystemAlertLevel;
 use App\Models\Bases\SystemModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SystemAlert extends SystemModel
 {
@@ -26,15 +27,6 @@ class SystemAlert extends SystemModel
         'created_at' => 'datetime',
         'level' => SystemAlertLevel::class,
     ];
-
-    /**
-     * Alert level constants
-     */
-    public const LEVEL_INFO = 'info';
-
-    public const LEVEL_WARNING = 'warning';
-
-    public const LEVEL_CRITICAL = 'critical';
 
     /**
      * Scope for info level alerts
@@ -116,7 +108,7 @@ class SystemAlert extends SystemModel
     /**
      * Get the user who acknowledged the alert
      */
-    public function acknowledgedBy()
+    public function acknowledgedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'acknowledged_by');
     }
@@ -127,9 +119,9 @@ class SystemAlert extends SystemModel
     public function getStatusColorClass(): string
     {
         return match ($this->level) {
-            self::LEVEL_CRITICAL => 'red',
-            self::LEVEL_WARNING => 'yellow',
-            self::LEVEL_INFO => 'blue',
+            SystemAlertLevel::Critical => 'red',
+            SystemAlertLevel::Warning => 'yellow',
+            SystemAlertLevel::Info => 'blue',
             default => 'gray',
         };
     }
@@ -139,12 +131,12 @@ class SystemAlert extends SystemModel
      */
     public function getStatusBadgeClassAttribute(): string
     {
-        $levelValue = $this->level instanceof SystemAlertLevel ? $this->level->value : $this->level;
+        $level = $this->level instanceof SystemAlertLevel ? $this->level : SystemAlertLevel::tryFrom($this->level) ?? SystemAlertLevel::Info;
 
-        return match ($levelValue) {
-            self::LEVEL_CRITICAL => 'status-flagged',
-            self::LEVEL_WARNING => 'status-pending',
-            self::LEVEL_INFO => 'status-active',
+        return match ($level) {
+            SystemAlertLevel::Critical => 'status-flagged',
+            SystemAlertLevel::Warning => 'status-pending',
+            SystemAlertLevel::Info => 'status-active',
             default => 'status-inactive',
         };
     }
@@ -154,12 +146,12 @@ class SystemAlert extends SystemModel
      */
     public function getStatusLabelAttribute(): string
     {
-        $levelValue = $this->level instanceof SystemAlertLevel ? $this->level->value : $this->level;
+        $level = $this->level instanceof SystemAlertLevel ? $this->level : SystemAlertLevel::tryFrom($this->level) ?? SystemAlertLevel::Info;
 
-        return match ($levelValue) {
-            self::LEVEL_CRITICAL => 'Critical',
-            self::LEVEL_WARNING => 'Warning',
-            self::LEVEL_INFO => 'Info',
+        return match ($level) {
+            SystemAlertLevel::Critical => 'Critical',
+            SystemAlertLevel::Warning => 'Warning',
+            SystemAlertLevel::Info => 'Info',
             default => 'Unknown',
         };
     }

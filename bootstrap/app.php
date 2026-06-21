@@ -2,7 +2,6 @@
 
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CheckRole;
-use App\Http\Middleware\CheckRoleAny;
 use App\Http\Middleware\EnsureBranchScope;
 use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\IpBlocker;
@@ -69,7 +68,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle' => ThrottleRequests::class,
             'verified' => EnsureEmailIsVerified::class,
             'role' => CheckRole::class,
-            'role.any' => CheckRoleAny::class,
             'mfa.verified' => EnsureMfaVerified::class,
             'session.timeout' => SessionTimeout::class,
             'security.headers' => SecurityHeaders::class,

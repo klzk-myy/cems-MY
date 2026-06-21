@@ -141,12 +141,15 @@ class UnifiedAlertController extends Controller
             $query->whereDate('generated_at', '<=', $toDate);
         }
 
-        $findings = $query->orderBy('generated_at', 'desc')->get();
-
         if ($customerSearch) {
             $customerIds = Customer::where('full_name', 'like', "%{$customerSearch}%")->pluck('id');
-            $findings = $findings->filter(fn ($f) => $f->subject_type === 'Customer' && in_array($f->subject_id, $customerIds->toArray()));
+            $query->where(function ($q) use ($customerIds) {
+                $q->where('subject_type', 'Customer')
+                    ->whereIn('subject_id', $customerIds);
+            });
         }
+
+        $findings = $query->orderBy('generated_at', 'desc')->get();
 
         $items = $findings->map(fn ($finding) => [
             'id' => 'F-'.$finding->id,

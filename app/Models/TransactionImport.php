@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TransactionImportStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class TransactionImport extends BaseModel
@@ -10,21 +11,29 @@ class TransactionImport extends BaseModel
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'filename',
         'original_filename',
+        'file_hash',
+        'file_size',
+        'status',
         'total_rows',
+        'processed_rows',
         'success_count',
         'error_count',
-        'errors',
-        'status',
-        'started_at',
+        'error_details',
+        'imported_by',
+        'imported_at',
         'completed_at',
     ];
 
     protected $casts = [
-        'errors' => 'array',
-        'started_at' => 'datetime',
+        'file_size' => 'integer',
+        'total_rows' => 'integer',
+        'processed_rows' => 'integer',
+        'success_count' => 'integer',
+        'error_count' => 'integer',
+        'error_details' => 'array',
+        'imported_at' => 'datetime',
         'completed_at' => 'datetime',
         'status' => TransactionImportStatus::class,
     ];
@@ -32,15 +41,15 @@ class TransactionImport extends BaseModel
     /**
      * Relationship: The user who imported the file
      */
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'imported_by');
     }
 
     /**
      * Scope: Get completed imports
      */
-    public function scopeCompleted($query)
+    public function scopeCompleted(Builder $query): Builder
     {
         return $query->where('status', TransactionImportStatus::Completed->value);
     }
@@ -48,7 +57,7 @@ class TransactionImport extends BaseModel
     /**
      * Scope: Get pending imports
      */
-    public function scopePending($query)
+    public function scopePending(Builder $query): Builder
     {
         return $query->where('status', TransactionImportStatus::Pending->value);
     }
@@ -66,7 +75,7 @@ class TransactionImport extends BaseModel
      */
     public function getErrors(): array
     {
-        return $this->errors ?? [];
+        return $this->error_details ?? [];
     }
 
     /**

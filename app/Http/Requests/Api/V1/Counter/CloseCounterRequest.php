@@ -2,12 +2,10 @@
 
 namespace App\Http\Requests\Api\V1\Counter;
 
-use App\Http\Requests\AuthorizedFormRequest;
+use App\Http\Requests\ApiFormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
-class CloseCounterRequest extends AuthorizedFormRequest
+class CloseCounterRequest extends ApiFormRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -21,17 +19,5 @@ class CloseCounterRequest extends AuthorizedFormRequest
             'closing_floats.*' => 'numeric|min:0',
             'notes' => 'nullable|string|max:500',
         ];
-    }
-
-    /**
-     * Return the original counter-close validation error envelope.
-     */
-    protected function failedValidation(Validator $validator): void
-    {
-        throw new HttpResponseException(response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $validator->errors(),
-        ], 422));
     }
 }

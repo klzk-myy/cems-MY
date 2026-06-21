@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\Compliance\FilterAuditTrailRequest;
+use App\Http\Requests\Api\V1\Compliance\AuditTrailExportRequest;
+use App\Http\Requests\Api\V1\Compliance\AuditTrailRequest;
 use App\Services\Compliance\ComplianceReportingService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -60,7 +61,7 @@ class DashboardController extends Controller
     /**
      * Get audit trail for compliance actions.
      */
-    public function auditTrail(FilterAuditTrailRequest $request): JsonResponse
+    public function auditTrail(AuditTrailRequest $request): JsonResponse
     {
         $filters = $request->validated();
 
@@ -81,7 +82,7 @@ class DashboardController extends Controller
     /**
      * Export audit trail as CSV.
      */
-    public function auditTrailExport(FilterAuditTrailRequest $request): StreamedResponse
+    public function auditTrailExport(AuditTrailExportRequest $request): StreamedResponse
     {
         $filters = $request->validated();
 

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\Compliance\LockRiskRequest;
+use App\Http\Requests\Api\V1\Compliance\LockRiskProfileRequest;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Services\Compliance\RiskScoringEngine;
 use Illuminate\Http\JsonResponse;
@@ -19,16 +19,7 @@ class RiskController extends Controller
      */
     public function show(string $customerId): JsonResponse
     {
-        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)
-            ->with('customer')
-            ->first();
-
-        if (! $profile) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Risk profile not found.',
-            ], 404);
-        }
+        $profile = $this->findProfileOrFail($customerId);
 
         return response()->json([
             'success' => true,
@@ -84,18 +75,11 @@ class RiskController extends Controller
     /**
      * Lock a customer's risk profile.
      */
-    public function lock(LockRiskRequest $request, string $customerId): JsonResponse
+    public function lock(LockRiskProfileRequest $request, string $customerId): JsonResponse
     {
         $validated = $request->validated();
 
-        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
-
-        if (! $profile) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Risk profile not found.',
-            ], 404);
-        }
+        $profile = $this->findProfileOrFail($customerId);
 
         $profile->lock(auth()->id(), $validated['reason']);
 
@@ -111,14 +95,7 @@ class RiskController extends Controller
      */
     public function unlock(string $customerId): JsonResponse
     {
-        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
-
-        if (! $profile) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Risk profile not found.',
-            ], 404);
-        }
+        $profile = $this->findProfileOrFail($customerId);
 
         $profile->unlock();
 
@@ -148,5 +125,16 @@ class RiskController extends Controller
                 'by_tier' => $distribution,
             ],
         ]);
+    }
+
+    private function findProfileOrFail(string $customerId): CustomerRiskProfile
+    {
+        $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
+
+        if (! $profile) {
+            abort(404, 'Risk profile not found.');
+        }
+
+        return $profile;
     }
 }

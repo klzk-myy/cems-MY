@@ -95,21 +95,17 @@ class SendNotificationJob implements ShouldBeUnique, ShouldQueue
             'queue' => $this->queue ?? 'default',
         ]);
 
-        try {
-            // If custom channels are provided, temporarily modify the notification's via method
-            if ($this->channels) {
-                $this->sendWithCustomChannels();
-            } else {
-                // Use notification's default channels via Laravel's notification system
-                NotificationFacade::send($this->notifiable, $this->notification);
-            }
-
-            Log::debug('SendNotificationJob completed', [
-                'notification' => get_class($this->notification),
-            ]);
-        } catch (\Exception $e) {
-            throw $e;
+        // If custom channels are provided, temporarily modify the notification's via method
+        if ($this->channels) {
+            $this->sendWithCustomChannels();
+        } else {
+            // Use notification's default channels via Laravel's notification system
+            NotificationFacade::send($this->notifiable, $this->notification);
         }
+
+        Log::debug('SendNotificationJob completed', [
+            'notification' => get_class($this->notification),
+        ]);
     }
 
     /**

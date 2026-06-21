@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\ApproveAllocationRequest;
-use App\Http\Requests\Api\V1\ModifyAllocationRequest;
-use App\Http\Requests\Api\V1\MyActiveAllocationRequest;
-use App\Http\Requests\Api\V1\RejectAllocationRequest;
+use App\Http\Requests\Api\V1\TellerAllocation\ApproveAllocationRequest;
+use App\Http\Requests\Api\V1\TellerAllocation\ModifyAllocationRequest;
+use App\Http\Requests\Api\V1\TellerAllocation\MyActiveAllocationRequest;
+use App\Http\Requests\Api\V1\TellerAllocation\RejectAllocationRequest;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Branch\TellerAllocationService;
@@ -22,12 +22,9 @@ use Illuminate\Support\Facades\Log;
  */
 class TellerAllocationController extends Controller
 {
-    protected TellerAllocationService $allocationService;
-
-    public function __construct(TellerAllocationService $allocationService)
-    {
-        $this->allocationService = $allocationService;
-    }
+    public function __construct(
+        protected TellerAllocationService $allocationService
+    ) {}
 
     /**
      * Get pending allocations for the authenticated user's branch.
