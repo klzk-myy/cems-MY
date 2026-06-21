@@ -4,14 +4,13 @@ namespace App\Http\Requests;
 
 use App\Enums\TransactionStatus;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Transaction Index Request
  *
  * Validates query parameters for the transaction listing endpoint.
  */
-class IndexTransactionRequest extends FormRequest
+class IndexTransactionRequest extends AuthorizedFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

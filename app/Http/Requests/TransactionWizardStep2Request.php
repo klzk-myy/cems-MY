@@ -3,9 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Enums\CddLevel;
-use Illuminate\Foundation\Http\FormRequest;
 
-class TransactionWizardStep2Request extends FormRequest
+class TransactionWizardStep2Request extends AuthorizedFormRequest
 {
     public function authorize(): bool
     {

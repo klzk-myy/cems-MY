@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Enums\UserRole;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Store Counter Session Request
@@ -12,7 +11,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Validates counter session opening data.
  * Applies to authenticated tellers, managers, and admins.
  */
-class StoreCounterSessionRequest extends FormRequest
+class StoreCounterSessionRequest extends AuthorizedFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

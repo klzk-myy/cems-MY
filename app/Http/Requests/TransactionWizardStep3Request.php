@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class TransactionWizardStep3Request extends FormRequest
+class TransactionWizardStep3Request extends AuthorizedFormRequest
 {
     public function authorize(): bool
     {

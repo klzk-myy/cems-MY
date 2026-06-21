@@ -1,0 +1,176 @@
+:root {
+  --color-canvas-val: #ffffff;
+  --color-canvas-subtle-val: #f7f7f8;
+  --color-ink-val: #171717;
+  --color-ink-muted-val: #6b6b6b;
+  --color-border-val: #e5e5e5;
+  --color-primary-val: #0a0a0a;
+  --color-primary-hover-val: #262626;
+  --color-accent-val: #d4a843;
+
+  --color-surface-val: #ffffff;
+  --color-surface-subtle-val: #f7f7f8;
+  --color-surface-raised-val: #ffffff;
+  --color-surface-inverted-val: #171717;
+
+  --color-success-val: #22c55e;
+  --color-success-subtle-val: #f0fdf4;
+  --color-success-border-val: #bbf7d0;
+  --color-success-text-val: #15803d;
+  --color-warning-val: #f59e0b;
+  --color-warning-subtle-val: #fffbeb;
+  --color-warning-border-val: #fde68a;
+  --color-warning-text-val: #b45309;
+  --color-danger-val: #ef4444;
+  --color-danger-subtle-val: #fef2f2;
+  --color-danger-border-val: #fecaca;
+  --color-danger-text-val: #b91c1c;
+  --color-info-val: #3b82f6;
+  --color-info-subtle-val: #eff6ff;
+  --color-info-border-val: #bfdbfe;
+  --color-info-text-val: #1d4ed8;
+
+  --color-on-primary-val: #ffffff;
+  --color-on-danger-val: #ffffff;
+  --color-on-success-val: #ffffff;
+  --color-on-warning-val: #ffffff;
+  --color-on-info-val: #ffffff;
+
+  --color-danger-hover-val: #b91c1c;
+  --color-success-hover-val: #15803d;
+  --color-warning-hover-val: #b45309;
+  --color-info-hover-val: #1d4ed8;
+
+  --color-sidebar-val: #171717;
+  --color-sidebar-hover-val: #262626;
+  --color-sidebar-border-val: #2d2d2d;
+  --color-sidebar-text-val: #ffffff;
+  --color-sidebar-text-muted-val: #9ca3af;
+  --color-sidebar-ring-val: #4b5563;
+
+  --sidebar-border-val: #2d2d2d;
+  --sidebar-hover-val: #262626;
+  --sidebar-text-val: #ffffff;
+  --sidebar-text-muted-val: #9ca3af;
+}
+
+.dark {
+  --color-canvas-val: #171717;
+  --color-canvas-subtle-val: #262626;
+  --color-ink-val: #f7f7f8;
+  --color-ink-muted-val: #9ca3af;
+  --color-border-val: #2d2d2d;
+  --color-primary-val: #f7f7f8;
+  --color-primary-hover-val: #e5e5e5;
+  --color-accent-val: #d4a843;
+
+  --color-surface-val: #262626;
+  --color-surface-subtle-val: #171717;
+  --color-surface-raised-val: #262626;
+  --color-surface-inverted-val: #f7f7f8;
+
+  --color-success-val: #4ade80;
+  --color-success-subtle-val: #14532d;
+  --color-success-border-val: #166534;
+  --color-success-text-val: #bbf7d0;
+  --color-warning-val: #fbbf24;
+  --color-warning-subtle-val: #78350f;
+  --color-warning-border-val: #92400e;
+  --color-warning-text-val: #fde68a;
+  --color-danger-val: #f87171;
+  --color-danger-subtle-val: #7f1d1d;
+  --color-danger-border-val: #991b1b;
+  --color-danger-text-val: #fecaca;
+  --color-info-val: #60a5fa;
+  --color-info-subtle-val: #1e3a8a;
+  --color-info-border-val: #1e40af;
+  --color-info-text-val: #bfdbfe;
+
+  --color-on-primary-val: #171717;
+  --color-on-danger-val: #171717;
+  --color-on-success-val: #171717;
+  --color-on-warning-val: #171717;
+  --color-on-info-val: #171717;
+
+  --color-danger-hover-val: #f87171;
+  --color-success-hover-val: #4ade80;
+  --color-warning-hover-val: #fbbf24;
+  --color-info-hover-val: #60a5fa;
+
+  --color-sidebar-val: #0a0a0a;
+  --color-sidebar-hover-val: #262626;
+  --color-sidebar-border-val: #2d2d2d;
+  --color-sidebar-text-val: #f7f7f8;
+  --color-sidebar-text-muted-val: #9ca3af;
+  --color-sidebar-ring-val: #6b7280;
+
+  --sidebar-border-val: #2d2d2d;
+  --sidebar-hover-val: #262626;
+  --sidebar-text-val: #ffffff;
+  --sidebar-text-muted-val: #9ca3af;
+}
+
+@theme inline {
+  --color-canvas: var(--color-canvas-val);
+  --color-canvas-subtle: var(--color-canvas-subtle-val);
+  --color-ink: var(--color-ink-val);
+  --color-ink-muted: var(--color-ink-muted-val);
+  --color-border: var(--color-border-val);
+  --color-primary: var(--color-primary-val);
+  --color-primary-hover: var(--color-primary-hover-val);
+  --color-accent: var(--color-accent-val);
+
+  --color-surface: var(--color-surface-val);
+  --color-surface-subtle: var(--color-surface-subtle-val);
+  --color-surface-raised: var(--color-surface-raised-val);
+  --color-surface-inverted: var(--color-surface-inverted-val);
+
+  --color-success: var(--color-success-val);
+  --color-success-subtle: var(--color-success-subtle-val);
+  --color-success-border: var(--color-success-border-val);
+  --color-success-text: var(--color-success-text-val);
+  --color-warning: var(--color-warning-val);
+  --color-warning-subtle: var(--color-warning-subtle-val);
+  --color-warning-border: var(--color-warning-border-val);
+  --color-warning-text: var(--color-warning-text-val);
+  --color-danger: var(--color-danger-val);
+  --color-danger-subtle: var(--color-danger-subtle-val);
+  --color-danger-border: var(--color-danger-border-val);
+  --color-danger-text: var(--color-danger-text-val);
+  --color-info: var(--color-info-val);
+  --color-info-subtle: var(--color-info-subtle-val);
+  --color-info-border: var(--color-info-border-val);
+  --color-info-text: var(--color-info-text-val);
+
+  --color-on-primary: var(--color-on-primary-val);
+  --color-on-danger: var(--color-on-danger-val);
+  --color-on-success: var(--color-on-success-val);
+  --color-on-warning: var(--color-on-warning-val);
+  --color-on-info: var(--color-on-info-val);
+
+  --color-danger-hover: var(--color-danger-hover-val);
+  --color-success-hover: var(--color-success-hover-val);
+  --color-warning-hover: var(--color-warning-hover-val);
+  --color-info-hover: var(--color-info-hover-val);
+
+  --color-sidebar: var(--color-sidebar-val);
+  --color-sidebar-hover: var(--color-sidebar-hover-val);
+  --color-sidebar-border: var(--color-sidebar-border-val);
+  --color-sidebar-text: var(--color-sidebar-text-val);
+  --color-sidebar-text-muted: var(--color-sidebar-text-muted-val);
+  --color-sidebar-ring: var(--color-sidebar-ring-val);
+
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --sidebar-border: var(--sidebar-border-val);
+  --sidebar-hover: var(--sidebar-hover-val);
+  --sidebar-text: var(--sidebar-text-val);
+  --sidebar-text-muted: var(--sidebar-text-muted-val);
+}
+
+@custom-variant dark (&:where(.dark, .dark *));

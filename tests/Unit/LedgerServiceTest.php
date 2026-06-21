@@ -278,4 +278,50 @@ class LedgerServiceTest extends TestCase
         $this->assertEquals('8000.0000', $resultAll['total_revenue']);
         $this->assertEquals('3000.0000', $resultBranch2['total_revenue']);
     }
+
+    #[Test]
+    public function get_trial_balance_executes_under_20_queries(): void
+    {
+        $today = now()->toDateString();
+        // Create some ledger entries
+        $this->createLedgerEntry('1000', $today, '1000.00', '0.00', '1000.00');
+        $this->createLedgerEntry('2000', $today, '0.00', '500.00', '500.00');
+
+        DB::enableQueryLog();
+        $this->service->getTrialBalance($today);
+        $queryCount = count(DB::getQueryLog());
+
+        $this->assertLessThanOrEqual(20, $queryCount, "Expected <= 20 queries for getTrialBalance, got $queryCount");
+    }
+
+    #[Test]
+    public function get_profit_and_loss_executes_under_20_queries(): void
+    {
+        $today = now()->toDateString();
+        // Create ledger entries for revenue and expense accounts
+        $this->createLedgerEntry('4000', $today, '0.00', '5000.00', '5000.00'); // Revenue
+        $this->createLedgerEntry('5000', $today, '2000.00', '0.00', '2000.00'); // Expense
+
+        DB::enableQueryLog();
+        $this->service->getProfitAndLoss($today, $today);
+        $queryCount = count(DB::getQueryLog());
+
+        $this->assertLessThanOrEqual(20, $queryCount, "Expected <= 20 queries for getProfitAndLoss, got $queryCount");
+    }
+
+    #[Test]
+    public function get_balance_sheet_executes_under_20_queries(): void
+    {
+        $today = now()->toDateString();
+        // Create ledger entries for asset, liability, equity
+        $this->createLedgerEntry('1000', $today, '10000.00', '0.00', '10000.00'); // Asset
+        $this->createLedgerEntry('2000', $today, '0.00', '3000.00', '3000.00'); // Liability
+        $this->createLedgerEntry('3000', $today, '0.00', '7000.00', '7000.00'); // Equity
+
+        DB::enableQueryLog();
+        $this->service->getBalanceSheet($today);
+        $queryCount = count(DB::getQueryLog());
+
+        $this->assertLessThanOrEqual(20, $queryCount, "Expected <= 20 queries for getBalanceSheet, got $queryCount");
+    }
 }

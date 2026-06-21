@@ -4,12 +4,11 @@ namespace App\Http\Requests;
 
 use App\Enums\TransactionType;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Validates web transaction creation data extracted from TransactionController.
  */
-class StoreTransactionRequest extends FormRequest
+class StoreTransactionRequest extends AuthorizedFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

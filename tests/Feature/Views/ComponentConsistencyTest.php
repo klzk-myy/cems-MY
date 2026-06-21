@@ -47,6 +47,8 @@ class ComponentConsistencyTest extends TestCase
             'link' => ['components.link', ['href' => '/dashboard', 'slot' => 'Dashboard']],
             'status-dot' => ['components.status-dot', ['color' => 'success', 'slot' => '']],
             'icon-circle' => ['components.icon-circle', ['color' => 'info', 'slot' => '']],
+            'navigation' => ['components.navigation', []],
+            'app-layout' => ['components.app-layout', ['title' => 'Test', 'slot' => 'Test']],
         ];
     }
 
