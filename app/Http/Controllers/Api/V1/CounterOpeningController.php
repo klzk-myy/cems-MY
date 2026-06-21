@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
+use App\Http\Requests\Api\V1\Counter\InitiateOpeningRequest;
 use App\Models\Counter;
 use App\Models\User;
 use App\Services\Branch\BranchPoolService;
@@ -57,7 +59,7 @@ class CounterOpeningController extends Controller
      * Initiate opening request - teller requests float allocation.
      * POST /api/v1/counters/{counter}/opening-request
      */
-    public function initiateOpeningRequest(Request $request, int $counterId): JsonResponse
+    public function initiateOpeningRequest(InitiateOpeningRequest $request, int $counterId): JsonResponse
     {
         $user = Auth::user();
 
@@ -77,10 +79,7 @@ class CounterOpeningController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'requested_floats' => 'required|array',
-            'requested_floats.*' => 'required|numeric|min:0.0001',
-        ]);
+        $validated = $request->validated();
 
         try {
             $allocations = $this->workflowService->initiateOpeningRequest(
@@ -108,7 +107,7 @@ class CounterOpeningController extends Controller
      * Approve and open counter - manager approves allocation and opens counter.
      * POST /api/v1/counters/{counter}/approve-and-open
      */
-    public function approveAndOpen(Request $request, int $counterId): JsonResponse
+    public function approveAndOpen(ApproveAndOpenRequest $request, int $counterId): JsonResponse
     {
         $user = Auth::user();
 
@@ -128,13 +127,7 @@ class CounterOpeningController extends Controller
             ], 404);
         }
 
-        $validated = $request->validate([
-            'teller_id' => 'required|integer|exists:users,id',
-            'approved_floats' => 'required|array',
-            'approved_floats.*' => 'required|numeric|min:0',
-            'daily_limits' => 'nullable|array',
-            'daily_limits.*' => 'nullable|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         $teller = User::find($validated['teller_id']);
 
