@@ -6,6 +6,7 @@ use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ConfirmTransactionRequest;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Models\User;
@@ -171,7 +172,7 @@ class TransactionApprovalController extends Controller
      * Managers confirm or reject large transactions. Self-confirmation is
      * prohibited to maintain segregation of duties for AML/CFT compliance.
      */
-    public function confirm(Request $request, Transaction $transaction): RedirectResponse
+    public function confirm(ConfirmTransactionRequest $request, Transaction $transaction): RedirectResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -200,10 +201,7 @@ class TransactionApprovalController extends Controller
                 ->with('error', 'Confirmation has expired. Please request a new confirmation.');
         }
 
-        $validated = $request->validate([
-            'confirmation_action' => 'required|in:confirm,reject',
-            'notes' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         DB::beginTransaction();
         try {

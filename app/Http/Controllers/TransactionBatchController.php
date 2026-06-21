@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TransactionImportStatus;
+use App\Http\Requests\Api\V1\ImportBankStatementRequest;
 use App\Models\TransactionImport;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
@@ -12,7 +13,6 @@ use App\Services\System\MathService;
 use App\Services\Transaction\TransactionImportService;
 use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Psr\Log\LoggerInterface;
@@ -47,12 +47,8 @@ class TransactionBatchController extends Controller
     /**
      * Process batch upload
      */
-    public function processBatchUpload(Request $request): RedirectResponse
+    public function processBatchUpload(ImportBankStatementRequest $request): RedirectResponse
     {
-        $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:2048',
-        ]);
-
         $file = $request->file('csv_file');
 
         // Store file
