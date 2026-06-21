@@ -3,10 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\TransactionType;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
-class TransactionWizardStep1Request extends FormRequest
+class TransactionWizardStep1Request extends AuthorizedFormRequest
 {
     public function authorize(): bool
     {

@@ -8,7 +8,7 @@
 
 <nav x-data="{ collapsed: {{ $collapsed ? 'true' : 'false' }} }" 
      :class="collapsed ? 'w-20' : 'w-64'"
-     class="bg-sidebar text-sidebar-text min-h-screen flex flex-col transition-all duration-300">
+     class="bg-sidebar text-sidebar-text min-h-screen flex flex-col transition-all duration-300" {{ $attributes }}>
     
     {{-- Brand --}}
     <div class="p-4 border-b border-sidebar-border flex items-center justify-between">

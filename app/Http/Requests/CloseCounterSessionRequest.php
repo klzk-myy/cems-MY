@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Enums\UserRole;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Close Counter Session Request
@@ -12,7 +11,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Validates counter session closing data.
  * Applies to authenticated tellers, managers, and admins.
  */
-class CloseCounterSessionRequest extends FormRequest
+class CloseCounterSessionRequest extends AuthorizedFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
