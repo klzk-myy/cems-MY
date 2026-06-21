@@ -15,7 +15,7 @@ class ChartOfAccountFactory extends Factory
     public function definition(): array
     {
         return [
-            'account_code' => fake()->unique()->numerify('####'),
+            'account_code' => fake()->unique()->numerify('#####'),
             'account_name' => fake()->words(3, true),
             'account_type' => fake()->randomElement(['Asset', 'Liability', 'Equity', 'Revenue', 'Expense', 'Off-Balance']),
             'account_class' => fake()->word(),

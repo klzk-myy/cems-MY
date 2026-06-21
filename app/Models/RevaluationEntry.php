@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RevaluationEntry extends BaseModel
 {
+    use HasFactory;
+
     protected $fillable = [
         'currency_code',
         'till_id',
@@ -16,6 +19,7 @@ class RevaluationEntry extends BaseModel
         'gain_loss_amount',
         'revaluation_date',
         'posted_by',
+        'posted_at',
     ];
 
     protected $casts = [
@@ -24,6 +28,7 @@ class RevaluationEntry extends BaseModel
         'position_amount' => MoneyCast::class,
         'gain_loss_amount' => MoneyCast::class,
         'revaluation_date' => 'date',
+        'posted_at' => 'datetime',
     ];
 
     public function currency(): BelongsTo

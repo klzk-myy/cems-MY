@@ -72,6 +72,8 @@ class JournalEntry extends AccountingModel
         'approval_notes',
         'cost_center_id',
         'department_id',
+        'branch_id',
+        'created_by',
     ];
 
     protected $casts = [
@@ -137,6 +139,30 @@ class JournalEntry extends AccountingModel
     public function ledgerEntries(): HasMany
     {
         return $this->hasMany(AccountLedger::class);
+    }
+
+    /**
+     * Get account ledger entries for this journal entry.
+     */
+    public function accountLedgerEntries(): HasMany
+    {
+        return $this->ledgerEntries();
+    }
+
+    /**
+     * Get bank reconciliations associated with this journal entry.
+     */
+    public function bankReconciliations(): HasMany
+    {
+        return $this->hasMany(BankReconciliation::class, 'matched_to_journal_entry_id');
+    }
+
+    /**
+     * Get transactions that reference this journal entry.
+     */
+    public function matchedTransactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'journal_entry_id');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\FiscalYearStatus;
 use App\Models\FiscalYear;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,7 +18,7 @@ class FiscalYearFactory extends Factory
             'year_code' => (string) $year,
             'start_date' => "{$year}-01-01",
             'end_date' => "{$year}-12-31",
-            'status' => 'Open',
+            'status' => FiscalYearStatus::Open->value,
         ];
     }
 
@@ -33,7 +34,7 @@ class FiscalYearFactory extends Factory
     public function closed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'Closed',
+            'status' => FiscalYearStatus::Closed->value,
         ]);
     }
 }

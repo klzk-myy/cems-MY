@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Compliance\BranchClosureWorkflow;
 use App\Models\Traits\HasCodeAndName;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -180,5 +181,29 @@ class Branch extends BaseModel
     public function scopeHeadOffices(Builder $query): Builder
     {
         return $query->where('type', self::TYPE_HEAD_OFFICE);
+    }
+
+    /**
+     * Get closure workflows for this branch.
+     */
+    public function closureWorkflows(): HasMany
+    {
+        return $this->hasMany(BranchClosureWorkflow::class);
+    }
+
+    /**
+     * Get exchange rates for this branch.
+     */
+    public function exchangeRates(): HasMany
+    {
+        return $this->hasMany(ExchangeRate::class);
+    }
+
+    /**
+     * Get exchange rate histories for this branch.
+     */
+    public function exchangeRateHistories(): HasMany
+    {
+        return $this->hasMany(ExchangeRateHistory::class);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Branch;
@@ -40,7 +41,7 @@ class TransactionFactory extends Factory
             'hold_reason' => null,
             'approved_by' => null,
             'approved_at' => null,
-            'cdd_level' => 'Standard',
+            'cdd_level' => CddLevel::Standard->value,
         ];
     }
 

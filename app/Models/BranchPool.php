@@ -16,11 +16,13 @@ class BranchPool extends BaseModel
         'currency_code',
         'available_balance',
         'allocated_balance',
+        'total_balance',
     ];
 
     protected $casts = [
         'available_balance' => MoneyCast::class,
         'allocated_balance' => MoneyCast::class,
+        'total_balance' => 'decimal:2',
     ];
 
     protected MathService $mathService;

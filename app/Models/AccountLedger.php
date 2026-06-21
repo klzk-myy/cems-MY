@@ -38,6 +38,7 @@ class AccountLedger extends AccountingModel
 
     protected $fillable = [
         'account_code',
+        'branch_id',
         'entry_date',
         'journal_entry_id',
         'debit',

@@ -17,11 +17,13 @@ class ExchangeRateHistory extends BaseModel
         'effective_date',
         'created_by',
         'notes',
+        'spread_applied',
     ];
 
     protected $casts = [
         'rate' => 'decimal:6',
         'effective_date' => 'date',
+        'spread_applied' => 'decimal:6',
     ];
 
     public function currency(): BelongsTo

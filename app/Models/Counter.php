@@ -19,6 +19,7 @@ class Counter extends BaseModel
         'name',
         'status',
         'branch_id',
+        'assigned_teller_id',
     ];
 
     protected $casts = [

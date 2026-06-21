@@ -6,6 +6,8 @@ use App\Casts\MoneyCast;
 use App\Enums\CddLevel;
 use App\Enums\IdType;
 use App\Enums\RiskRating;
+use App\Models\Compliance\CustomerBehavioralBaseline;
+use App\Models\Compliance\CustomerRiskProfile;
 use App\Services\Customer\CustomerService;
 use App\Services\System\EncryptionService;
 use Illuminate\Database\Eloquent\Builder;
@@ -85,6 +87,9 @@ class Customer extends BaseModel
         'frozen_at',
         'transactions_blocked',
         'rejection_reason',
+        'customer_type',
+        'pep_type',
+        'sanctions_screened_at',
     ];
 
     protected $hidden = [
@@ -112,6 +117,9 @@ class Customer extends BaseModel
         'frozen_at' => 'datetime',
         'transactions_blocked' => 'boolean',
         'id_type' => IdType::class,
+        'customer_type' => 'string',
+        'pep_type' => 'string',
+        'sanctions_screened_at' => 'datetime',
     ];
 
     /**
@@ -193,6 +201,38 @@ class Customer extends BaseModel
     public function associateRelations(): HasMany
     {
         return $this->hasMany(CustomerRelation::class, 'related_customer_id');
+    }
+
+    /**
+     * Get behavioral baselines for this customer.
+     */
+    public function behavioralBaselines(): HasMany
+    {
+        return $this->hasMany(CustomerBehavioralBaseline::class);
+    }
+
+    /**
+     * Get risk profiles for this customer.
+     */
+    public function riskProfiles(): HasMany
+    {
+        return $this->hasMany(CustomerRiskProfile::class);
+    }
+
+    /**
+     * Get PEP approval requests for this customer.
+     */
+    public function pepApprovalRequests(): HasMany
+    {
+        return $this->hasMany(PepApprovalRequest::class);
+    }
+
+    /**
+     * Get sanctions analyses for this customer.
+     */
+    public function sanctionsAnalyses(): HasMany
+    {
+        return $this->hasMany(SanctionsAnalysis::class);
     }
 
     /**

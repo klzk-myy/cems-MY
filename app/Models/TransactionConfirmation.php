@@ -21,6 +21,8 @@ class TransactionConfirmation extends BaseModel
         'confirmed_at',
         'confirmation_token',
         'expires_at',
+        'user_id',
+        'notes',
     ];
 
     protected $casts = [

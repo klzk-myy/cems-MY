@@ -39,6 +39,7 @@ class JournalLine extends AccountingModel
         'debit',
         'credit',
         'description',
+        'branch_id',
     ];
 
     protected $casts = [

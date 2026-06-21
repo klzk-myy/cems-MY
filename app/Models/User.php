@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Models\Compliance\ComplianceCase;
+use App\Models\Compliance\ComplianceCaseDocument;
+use App\Models\Compliance\ComplianceCaseNote;
 use App\Services\System\MfaService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -316,5 +319,29 @@ class User extends Authenticatable
             'broadcast', 'push' => $preference->isPushEnabled(),
             default => true,
         };
+    }
+
+    /**
+     * Get all compliance cases assigned to this user.
+     */
+    public function assignedComplianceCases(): HasMany
+    {
+        return $this->hasMany(ComplianceCase::class, 'assigned_to');
+    }
+
+    /**
+     * Get all compliance documents uploaded by this user.
+     */
+    public function uploadedComplianceDocuments(): HasMany
+    {
+        return $this->hasMany(ComplianceCaseDocument::class, 'uploaded_by');
+    }
+
+    /**
+     * Get all compliance case notes authored by this user.
+     */
+    public function complianceCaseNotes(): HasMany
+    {
+        return $this->hasMany(ComplianceCaseNote::class, 'author_id');
     }
 }

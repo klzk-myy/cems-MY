@@ -17,12 +17,14 @@ class ExchangeRate extends BaseModel
         'rate_sell',
         'source',
         'fetched_at',
+        'spread_applied',
     ];
 
     protected $casts = [
         'rate_buy' => 'decimal:4',
         'rate_sell' => 'decimal:4',
         'fetched_at' => 'datetime',
+        'spread_applied' => 'decimal:6',
     ];
 
     public function currency(): BelongsTo

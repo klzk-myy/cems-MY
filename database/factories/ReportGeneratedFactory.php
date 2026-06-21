@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ReportGeneratedStatus;
 use App\Models\ReportGenerated;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -26,7 +27,7 @@ class ReportGeneratedFactory extends Factory
             'generated_at' => now(),
             'file_format' => 'CSV',
             'file_path' => fake()->optional()->filePath(),
-            'status' => 'Generated',
+            'status' => ReportGeneratedStatus::Generated->value,
         ];
     }
 }

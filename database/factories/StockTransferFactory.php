@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\StockTransferStatus;
 use App\Models\StockTransfer;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,8 +19,34 @@ class StockTransferFactory extends Factory
      */
     public function definition(): array
     {
+        static $transferNumberCounter = 0;
+
         return [
-            //
+            'transfer_number' => 'TRF-'.now()->format('Ymd').'-'.str_pad(++$transferNumberCounter, 4, '0', STR_PAD_LEFT),
+            'type' => $this->faker->randomElement(['Standard', 'Emergency', 'Scheduled', 'Return']),
+            'status' => $this->faker->randomElement([
+                StockTransferStatus::Requested->value,
+                StockTransferStatus::BranchManagerApproved->value,
+                StockTransferStatus::HqApproved->value,
+                StockTransferStatus::InTransit->value,
+                StockTransferStatus::PartiallyReceived->value,
+                StockTransferStatus::Completed->value,
+                StockTransferStatus::Cancelled->value,
+                StockTransferStatus::Rejected->value,
+            ]),
+            'source_branch_name' => $this->faker->city().' Branch',
+            'destination_branch_name' => $this->faker->city().' Branch',
+            'requested_by' => User::factory(),
+            'requested_at' => $this->faker->dateTimeThisMonth(),
+            'branch_manager_approved_by' => User::factory(),
+            'branch_manager_approved_at' => $this->faker->optional()->dateTime(),
+            'hq_approved_by' => User::factory(),
+            'hq_approved_at' => $this->faker->optional()->dateTime(),
+            'dispatched_at' => $this->faker->optional()->dateTime(),
+            'completed_at' => $this->faker->optional()->dateTime(),
+            'notes' => $this->faker->optional()->sentence(),
+            'cancellation_reason' => $this->faker->optional()->sentence(),
+            'total_value_myr' => $this->faker->randomFloat(2, 1000, 100000),
         ];
     }
 }

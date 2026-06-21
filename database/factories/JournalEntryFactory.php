@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\JournalEntryStatus;
+use App\Enums\ReferenceType;
 use App\Models\Branch;
 use App\Models\JournalEntry;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -19,8 +21,8 @@ class JournalEntryFactory extends Factory
             'period_id' => null,
             'entry_date' => now()->toDateString(),
             'description' => fake()->sentence(),
-            'status' => 'Draft',
-            'reference_type' => 'Manual',
+            'status' => JournalEntryStatus::Draft->value,
+            'reference_type' => ReferenceType::Manual->value,
             'reference_id' => null,
             'posted_by' => null,
             'created_by' => null,

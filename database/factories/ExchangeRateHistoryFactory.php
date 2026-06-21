@@ -2,7 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
+use App\Models\Currency;
 use App\Models\ExchangeRateHistory;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +21,12 @@ class ExchangeRateHistoryFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'branch_id' => Branch::factory(),
+            'currency_code' => Currency::factory(),
+            'rate' => $this->faker->randomFloat(6, 0.1, 10),
+            'effective_date' => $this->faker->date(),
+            'created_by' => User::factory(),
+            'notes' => $this->faker->optional()->sentence(),
         ];
     }
 }
