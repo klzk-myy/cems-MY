@@ -34,6 +34,11 @@ class Budget extends BaseModel
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function period(): BelongsTo
+    {
+        return $this->belongsTo(AccountingPeriod::class, 'period_code', 'period_code');
+    }
+
     public function getVariance(): float
     {
         return (float) $this->budget_amount - (float) $this->actual_amount;

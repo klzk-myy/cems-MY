@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\TestResultStatus;
 use App\Models\Bases\SystemModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TestResult extends SystemModel
 {
@@ -29,6 +30,11 @@ class TestResult extends SystemModel
         'started_at',
         'completed_at',
     ];
+
+    public function executedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'executed_by');
+    }
 
     protected $casts = [
         'duration' => 'float',

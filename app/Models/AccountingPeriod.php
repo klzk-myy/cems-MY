@@ -70,6 +70,11 @@ class AccountingPeriod extends BaseModel
         return $this->belongsTo(User::class, 'closed_by');
     }
 
+    public function fiscalYear(): BelongsTo
+    {
+        return $this->belongsTo(FiscalYear::class);
+    }
+
     /**
      * Check if the accounting period is open.
      *

@@ -18,6 +18,7 @@ class TillBalance extends BaseModel
         'till_id',
         'currency_code',
         'branch_id',
+        'teller_allocation_id',
         'opening_balance',
         'closing_balance',
         'variance',
@@ -62,6 +63,11 @@ class TillBalance extends BaseModel
     public function counter(): BelongsTo
     {
         return $this->belongsTo(Counter::class, 'till_id');
+    }
+
+    public function tellerAllocation(): BelongsTo
+    {
+        return $this->belongsTo(TellerAllocation::class);
     }
 
     /**
