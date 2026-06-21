@@ -22,6 +22,7 @@ class CurrencyPosition extends BaseModel
     protected $fillable = [
         'currency_code',
         'branch_id',
+        'till_id',
         'quantity',
         'average_cost',
         'total_cost',
@@ -29,13 +30,6 @@ class CurrencyPosition extends BaseModel
         'current_value',
         'unrealized_gain_loss',
         'last_revalued_at',
-        // Legacy aliases for backwards compatibility
-        'balance',
-        'avg_cost_rate',
-        'last_valuation_rate',
-        'unrealized_pnl',
-        'last_valuation_at',
-        'till_id',
     ];
 
     protected $casts = [
