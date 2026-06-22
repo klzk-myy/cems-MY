@@ -56,7 +56,7 @@ class LedgerServiceTest extends TestCase
             [
                 'start_date' => $date,
                 'end_date' => $date,
-                'status' => 'open',
+                'status' => 'Open',
             ]
         );
     }

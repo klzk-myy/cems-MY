@@ -349,8 +349,8 @@ class SetupController extends Controller
 
     private function createOpeningBalance(array $balanceData): void
     {
-        $fiscalYear = FiscalYear::where('status', 'open')->first();
-        $period = AccountingPeriod::where('status', 'open')->first();
+        $fiscalYear = FiscalYear::where('status', 'Open')->first();
+        $period = AccountingPeriod::where('status', 'Open')->first();
         $adminUser = User::where('role', 'admin')->first();
 
         if (! $fiscalYear || ! $period || ! $adminUser) {

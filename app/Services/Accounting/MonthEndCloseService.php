@@ -84,7 +84,7 @@ class MonthEndCloseService
 
         if ($period) {
             $openPeriods = AccountingPeriod::forDate($date->toDateString())
-                ->where('status', 'open')
+                ->where('status', 'Open')
                 ->where('id', '!=', $period->id)
                 ->count();
 
@@ -135,7 +135,7 @@ class MonthEndCloseService
             }
 
             $period->update([
-                'status' => 'closed',
+                'status' => 'Closed',
                 'closed_at' => now(),
                 'closed_by' => auth()->id(),
             ]);
@@ -149,7 +149,7 @@ class MonthEndCloseService
                     'start_date' => $nextMonth->startOfMonth()->toDateString(),
                     'end_date' => $nextMonth->endOfMonth()->toDateString(),
                     'period_type' => 'month',
-                    'status' => 'open',
+                    'status' => 'Open',
                     'fiscal_year_id' => $period->fiscal_year_id ?? null,
                 ]);
             }

@@ -80,7 +80,7 @@ class LedgerServiceBalanceTest extends TestCase
             'period_code' => now()->format('Y-m'),
             'start_date' => now()->startOfMonth()->toDateString(),
             'end_date' => now()->endOfMonth()->toDateString(),
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         // Create a journal entry using factory (required for foreign key)

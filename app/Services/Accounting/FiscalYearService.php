@@ -248,7 +248,7 @@ class FiscalYearService
      */
     protected function validateAllPeriodsClosed(FiscalYear $year): void
     {
-        $openPeriods = $year->periods()->where('status', 'open')->count();
+        $openPeriods = $year->periods()->where('status', 'Open')->count();
 
         if ($openPeriods > 0) {
             throw new OpenPeriodsException($openPeriods);

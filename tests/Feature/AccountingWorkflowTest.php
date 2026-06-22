@@ -304,7 +304,7 @@ class AccountingWorkflowTest extends TestCase
             'period_type' => 'month',
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
-            'status' => 'closed',
+            'status' => 'Closed',
         ]);
 
         // Create journal entry with debit to expense and credit to income summary
@@ -447,7 +447,7 @@ class AccountingWorkflowTest extends TestCase
             'period_type' => 'month',
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
-            'status' => 'closed',
+            'status' => 'Closed',
         ]);
 
         // Create journal entry with large expense (net loss)

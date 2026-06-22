@@ -103,7 +103,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
@@ -151,7 +151,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
@@ -198,7 +198,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
@@ -246,7 +246,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
@@ -301,7 +301,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
@@ -371,7 +371,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
@@ -441,7 +441,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
@@ -487,7 +487,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
@@ -533,7 +533,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
@@ -668,7 +668,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'open',
+            'status' => 'Open',
         ]);
 
         $user = User::factory()->create();
