@@ -8,7 +8,6 @@ use App\Http\Requests\Api\V1\TellerAllocation\ModifyAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\MyActiveAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\RejectAllocationRequest;
 use App\Models\TellerAllocation;
-use App\Models\User;
 use App\Services\Branch\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
