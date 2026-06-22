@@ -65,8 +65,8 @@ class SoftDeletesMigrationTest extends TestCase
         // Should set deleted_at
         $this->assertNotNull($model->fresh()->deleted_at);
 
-        // Should be excluded from default queries
-        $this->assertDatabaseMissing($table, ['id' => $model->id]); // whereNull deleted_at
+        // Should be excluded from default queries (where deleted_at is null)
+        $this->assertDatabaseMissing($table, ['id' => $model->id, 'deleted_at' => null]);
         $this->assertFalse($modelClass::where('id', $model->id)->exists());
 
         // Should appear in withTrashed
@@ -102,8 +102,6 @@ class SoftDeletesMigrationTest extends TestCase
      */
     private function hasColumn(string $table, string $column): bool
     {
-        $schema = \DB::select("SHOW COLUMNS FROM {$table} WHERE Field = ?", [$column]);
-
-        return count($schema) > 0;
+        return \Schema::hasColumn($table, $column);
     }
 }

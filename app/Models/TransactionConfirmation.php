@@ -17,11 +17,12 @@ class TransactionConfirmation extends BaseModel
 
     protected $fillable = [
         'transaction_id',
-        'confirmed_by',
-        'confirmed_at',
+        'user_id',
+        'status',
         'confirmation_token',
         'expires_at',
-        'user_id',
+        'confirmed_by',
+        'confirmed_at',
         'notes',
     ];
 

@@ -136,35 +136,12 @@ class TransactionApprovalController extends Controller
      */
     public function showConfirm(Transaction $transaction): View|RedirectResponse
     {
-        if (! $this->requiresConfirmation($transaction)) {
+        if (! $this->confirmationService->requiresConfirmation($transaction)) {
             return redirect()->route('transactions.show', $transaction)
                 ->with('error', 'This transaction does not require confirmation.');
         }
 
-        $confirmation = TransactionConfirmation::where('transaction_id', $transaction->id)
-            ->whereIn('status', [TransactionConfirmationStatus::Pending->value, TransactionConfirmationStatus::Confirmed->value])
-            ->first();
-
-        if (! $confirmation) {
-            $confirmationToken = bin2hex(random_bytes(32));
-            $confirmation = TransactionConfirmation::create([
-                'transaction_id' => $transaction->id,
-                'user_id' => auth()->id(),
-                'status' => TransactionConfirmationStatus::Pending->value,
-                'confirmation_token' => $confirmationToken,
-                'expires_at' => now()->addMinutes(30),
-            ]);
-
-            $this->auditService->logWithSeverity('confirmation_requested', [
-                'user_id' => auth()->id(),
-                'entity_type' => 'Transaction',
-                'entity_id' => $transaction->id,
-                'new_values' => [
-                    'confirmation_id' => $confirmation->id,
-                    'amount_local' => $transaction->amount_local,
-                ],
-            ], 'INFO');
-        }
+        $confirmation = $this->confirmationService->requestConfirmation($transaction, auth()->id());
 
         $transaction->load(['customer', 'user']);
 
@@ -217,8 +194,8 @@ class TransactionApprovalController extends Controller
         } catch (\Exception $e) {
             Log::error('Transaction confirmation failed', [
                 'confirmation_id' => $confirmation->id,
-                'transaction_id' => $transaction->id,
-                'user_id' => auth()->id(),
+                'transaction_id' => $confirmation->transaction_id,
+                'user_id' => $userId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -228,10 +205,10 @@ class TransactionApprovalController extends Controller
     }
 
     /**
-     * Check if the transaction requires manager confirmation.
+     * Ensure the authenticated user is allowed to manage the transaction branch.
      *
-     * Confirmation is required when the local amount is greater than or equal
-     * to the configured structured-transaction threshold.
+     * Managers can only approve or reject transactions within their own branch.
+     * Admins are exempt from this restriction.
      */
     protected function requiresConfirmation(Transaction $transaction): bool
     {
