@@ -5,6 +5,7 @@ namespace App\Services\Reporting;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Services\System\MathService;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Financial Ratio Service
@@ -193,11 +194,11 @@ class FinancialRatioService
      */
     protected function getCurrentAssets(string $asOfDate, ?int $branchId = null): string
     {
-        $total = '0';
-        $assetAccounts = ChartOfAccount::where('account_type', 'Asset')->get();
+        $accountCodes = ChartOfAccount::where('account_type', 'Asset')->pluck('account_code')->toArray();
+        $balances = $this->getLatestBalances($accountCodes, $asOfDate, $branchId);
 
-        foreach ($assetAccounts as $account) {
-            $balance = $this->getAccountBalance($account->account_code, $asOfDate, $branchId);
+        $total = '0';
+        foreach ($balances as $balance) {
             $total = $this->mathService->add($total, $balance);
         }
 
@@ -212,11 +213,11 @@ class FinancialRatioService
      */
     protected function getCurrentLiabilities(string $asOfDate, ?int $branchId = null): string
     {
-        $total = '0';
-        $liabilityAccounts = ChartOfAccount::where('account_type', 'Liability')->get();
+        $accountCodes = ChartOfAccount::where('account_type', 'Liability')->pluck('account_code')->toArray();
+        $balances = $this->getLatestBalances($accountCodes, $asOfDate, $branchId);
 
-        foreach ($liabilityAccounts as $account) {
-            $balance = $this->getAccountBalance($account->account_code, $asOfDate, $branchId);
+        $total = '0';
+        foreach ($balances as $balance) {
             $total = $this->mathService->add($total, $balance);
         }
 
@@ -233,18 +234,20 @@ class FinancialRatioService
     {
         $total = '0';
         // Inventory accounts (2000-2499 range)
-        $inventoryAccounts = ChartOfAccount::where('account_class', 'Inventory')->get();
+        $inventoryAccounts = ChartOfAccount::where('account_class', 'Inventory')->pluck('account_code')->toArray();
 
-        foreach ($inventoryAccounts as $account) {
-            $balance = $this->getAccountBalance($account->account_code, $asOfDate, $branchId);
-            $total = $this->mathService->add($total, $balance);
+        if (! empty($inventoryAccounts)) {
+            $balances = $this->getLatestBalances($inventoryAccounts, $asOfDate, $branchId);
+            foreach ($balances as $balance) {
+                $total = $this->mathService->add($total, $balance);
+            }
         }
 
         // If no inventory accounts with class, use 2000 range
         if ($this->mathService->compare($total, '0') === 0) {
-            $inventoryAccounts = ChartOfAccount::whereBetween('account_code', ['2000', '2499'])->get();
-            foreach ($inventoryAccounts as $account) {
-                $balance = $this->getAccountBalance($account->account_code, $asOfDate, $branchId);
+            $rangeAccounts = ChartOfAccount::whereBetween('account_code', ['2000', '2499'])->pluck('account_code')->toArray();
+            $balances = $this->getLatestBalances($rangeAccounts, $asOfDate, $branchId);
+            foreach ($balances as $balance) {
                 $total = $this->mathService->add($total, $balance);
             }
         }
@@ -260,12 +263,12 @@ class FinancialRatioService
      */
     protected function getCashBalance(string $asOfDate, ?int $branchId = null): string
     {
-        $total = '0';
         // Cash accounts (1000-1499 range)
-        $cashAccounts = ChartOfAccount::whereBetween('account_code', ['1000', '1499'])->get();
+        $accountCodes = ChartOfAccount::whereBetween('account_code', ['1000', '1499'])->pluck('account_code')->toArray();
+        $balances = $this->getLatestBalances($accountCodes, $asOfDate, $branchId);
 
-        foreach ($cashAccounts as $account) {
-            $balance = $this->getAccountBalance($account->account_code, $asOfDate, $branchId);
+        $total = '0';
+        foreach ($balances as $balance) {
             $total = $this->mathService->add($total, $balance);
         }
 
@@ -281,28 +284,24 @@ class FinancialRatioService
      */
     protected function getTotalRevenue(string $fromDate, string $toDate, ?int $branchId = null): string
     {
-        $total = '0';
-        $revenueAccounts = ChartOfAccount::where('account_type', 'Revenue')->get();
+        $accountCodes = ChartOfAccount::where('account_type', 'Revenue')->pluck('account_code')->toArray();
 
-        foreach ($revenueAccounts as $account) {
-            $creditsQuery = AccountLedger::where('account_code', $account->account_code)
-                ->whereBetween('entry_date', [$fromDate, $toDate]);
-            $debitsQuery = AccountLedger::where('account_code', $account->account_code)
-                ->whereBetween('entry_date', [$fromDate, $toDate]);
-
-            if ($branchId !== null) {
-                $creditsQuery->where('branch_id', $branchId);
-                $debitsQuery->where('branch_id', $branchId);
-            }
-
-            $credits = $creditsQuery->sum('credit');
-            $debits = $debitsQuery->sum('debit');
-            // Revenue has credit balance, so credits - debits
-            $balance = $this->mathService->subtract((string) $credits, (string) $debits);
-            $total = $this->mathService->add($total, $balance);
+        if (empty($accountCodes)) {
+            return '0';
         }
 
-        return $total;
+        $query = AccountLedger::query()
+            ->whereIn('account_code', $accountCodes)
+            ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->selectRaw('SUM(credit - debit) as net');
+
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $balance = (string) $query->value('net');
+
+        return $balance;
     }
 
     /**
@@ -314,29 +313,24 @@ class FinancialRatioService
      */
     protected function getTotalCOGS(string $fromDate, string $toDate, ?int $branchId = null): string
     {
-        $total = '0';
-        // COGS accounts (6000-6499 range)
-        $cogsAccounts = ChartOfAccount::whereBetween('account_code', ['6000', '6499'])->get();
+        $accountCodes = ChartOfAccount::whereBetween('account_code', ['6000', '6499'])->pluck('account_code')->toArray();
 
-        foreach ($cogsAccounts as $account) {
-            $debitsQuery = AccountLedger::where('account_code', $account->account_code)
-                ->whereBetween('entry_date', [$fromDate, $toDate]);
-            $creditsQuery = AccountLedger::where('account_code', $account->account_code)
-                ->whereBetween('entry_date', [$fromDate, $toDate]);
-
-            if ($branchId !== null) {
-                $debitsQuery->where('branch_id', $branchId);
-                $creditsQuery->where('branch_id', $branchId);
-            }
-
-            $debits = $debitsQuery->sum('debit');
-            $credits = $creditsQuery->sum('credit');
-            // COGS has debit balance, so debits - credits
-            $balance = $this->mathService->subtract((string) $debits, (string) $credits);
-            $total = $this->mathService->add($total, $balance);
+        if (empty($accountCodes)) {
+            return '0';
         }
 
-        return $total;
+        $query = AccountLedger::query()
+            ->whereIn('account_code', $accountCodes)
+            ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->selectRaw('SUM(debit - credit) as net');
+
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $balance = (string) $query->value('net');
+
+        return $balance;
     }
 
     /**
@@ -363,28 +357,24 @@ class FinancialRatioService
      */
     protected function getTotalExpenses(string $fromDate, string $toDate, ?int $branchId = null): string
     {
-        $total = '0';
-        $expenseAccounts = ChartOfAccount::where('account_type', 'Expense')->get();
+        $accountCodes = ChartOfAccount::where('account_type', 'Expense')->pluck('account_code')->toArray();
 
-        foreach ($expenseAccounts as $account) {
-            $debitsQuery = AccountLedger::where('account_code', $account->account_code)
-                ->whereBetween('entry_date', [$fromDate, $toDate]);
-            $creditsQuery = AccountLedger::where('account_code', $account->account_code)
-                ->whereBetween('entry_date', [$fromDate, $toDate]);
-
-            if ($branchId !== null) {
-                $debitsQuery->where('branch_id', $branchId);
-                $creditsQuery->where('branch_id', $branchId);
-            }
-
-            $debits = $debitsQuery->sum('debit');
-            $credits = $creditsQuery->sum('credit');
-            // Expense has debit balance
-            $balance = $this->mathService->subtract((string) $debits, (string) $credits);
-            $total = $this->mathService->add($total, $balance);
+        if (empty($accountCodes)) {
+            return '0';
         }
 
-        return $total;
+        $query = AccountLedger::query()
+            ->whereIn('account_code', $accountCodes)
+            ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->selectRaw('SUM(debit - credit) as net');
+
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $balance = (string) $query->value('net');
+
+        return $balance;
     }
 
     /**
@@ -395,11 +385,11 @@ class FinancialRatioService
      */
     protected function getTotalEquity(string $asOfDate, ?int $branchId = null): string
     {
-        $total = '0';
-        $equityAccounts = ChartOfAccount::where('account_type', 'Equity')->get();
+        $accountCodes = ChartOfAccount::where('account_type', 'Equity')->pluck('account_code')->toArray();
+        $balances = $this->getLatestBalances($accountCodes, $asOfDate, $branchId);
 
-        foreach ($equityAccounts as $account) {
-            $balance = $this->getAccountBalance($account->account_code, $asOfDate, $branchId);
+        $total = '0';
+        foreach ($balances as $balance) {
             $total = $this->mathService->add($total, $balance);
         }
 
@@ -426,6 +416,43 @@ class FinancialRatioService
     protected function getTotalLiabilities(string $asOfDate, ?int $branchId = null): string
     {
         return $this->getCurrentLiabilities($asOfDate, $branchId);
+    }
+
+    /**
+     * Get the latest running balance for each account code as of a date.
+     *
+     * @param  array<int, string>  $accountCodes
+     * @return array<string, string>
+     */
+    protected function getLatestBalances(array $accountCodes, string $asOfDate, ?int $branchId = null): array
+    {
+        if (empty($accountCodes)) {
+            return [];
+        }
+
+        $query = AccountLedger::query()
+            ->select('account_code')
+            ->selectRaw('MAX(id) as max_id')
+            ->whereIn('account_code', $accountCodes)
+            ->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);
+
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $maxIds = $query->groupBy('account_code')->pluck('max_id', 'account_code');
+
+        if ($maxIds->isEmpty()) {
+            return [];
+        }
+
+        // Use a direct query to avoid eager loading the 'account' relationship (ChartOfAccount),
+        // which would add extra queries. We only need running_balance.
+        $balances = DB::table('account_ledger')
+            ->whereIn('id', $maxIds->values())
+            ->pluck('running_balance', 'account_code');
+
+        return $balances->mapWithKeys(fn ($balance, $code) => [$code => (string) $balance])->toArray();
     }
 
     /**
