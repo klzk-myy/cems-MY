@@ -61,8 +61,9 @@ class CounterOpeningWorkflowService
             foreach ($approvedAmounts as $currency => $amount) {
                 $allocation = TellerAllocation::where('user_id', $teller->id)
                     ->where('currency_code', $currency)
-                    ->whereDate('session_date', $today)
                     ->where('status', TellerAllocationStatus::PENDING->value)
+                    ->whereDate('session_date', '<=', $today)
+                    ->orderByDesc('session_date')
                     ->first();
 
                 if (! $allocation) {

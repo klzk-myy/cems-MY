@@ -234,4 +234,30 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->assertEquals($this->tellerB->id, $allocation->user_id);
         $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocation->status);
     }
+
+    #[Test]
+    public function approve_and_open_finds_pending_allocation_across_date_boundary(): void
+    {
+        $requestAmount = '50000.0000';
+
+        $requests = $this->workflowService->initiateOpeningRequest(
+            $this->tellerA,
+            $this->counter,
+            ['USD' => $requestAmount]
+        );
+
+        $allocation = $requests[0];
+        // Simulate allocation from yesterday to test date-boundary tolerance
+        $allocation->update(['session_date' => now()->subDay()->toDateString()]);
+
+        $session = $this->workflowService->approveAndOpen(
+            $this->manager,
+            $this->counter,
+            $this->tellerA,
+            ['USD' => '45000.0000'],
+            ['USD' => '200000.0000']
+        );
+
+        $this->assertNotNull($session);
+    }
 }
