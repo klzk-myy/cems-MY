@@ -25,6 +25,6 @@ class HighRiskCountry extends BaseModel
 
     protected $casts = [
         'list_date' => 'date',
-        // 'risk_level' => HighRiskCountryRiskLevel::class, // temporarily disabled for factory test
+        'risk_level' => HighRiskCountryRiskLevel::class,
     ];
 }
