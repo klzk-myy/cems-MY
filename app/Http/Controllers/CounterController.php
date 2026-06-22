@@ -267,6 +267,13 @@ class CounterController extends Controller
         if (! $supervisor) {
             return back()->with('error', 'Supervisor not found.');
         }
+
+        // Enforce same-branch membership for all involved users
+        $expectedBranchId = $counter->branch_id;
+        if ($fromUser->branch_id !== $expectedBranchId || $toUser->branch_id !== $expectedBranchId || $supervisor->branch_id !== $expectedBranchId) {
+            return back()->with('error', 'All users must belong to the counter branch.');
+        }
+
         $physicalCounts = $request->input('physical_counts');
 
         try {
