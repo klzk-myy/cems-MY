@@ -19,7 +19,6 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Category</label>
-                    {{-- TODO: Wire to a category field/model when one exists. --}}
                     <p class="text-sm text-ink">{{ $finding->category?->label() ?? $finding->category ?? 'Compliance' }}</p>
                 </div>
                 <div>
