@@ -29,6 +29,17 @@ class TestTransactionScenarios extends Command
 
     protected $counters = [];
 
+    private function branchIdForCode(string $code): int
+    {
+        $branch = Branch::where('code', $code)->first();
+
+        if (! $branch) {
+            throw new \InvalidArgumentException("Branch with code [{$code}] not found.");
+        }
+
+        return $branch->id;
+    }
+
     public function handle(): int
     {
         $this->info('=== CEMS-MY CDD/Risk Test Scenarios ===');
@@ -324,7 +335,7 @@ class TestTransactionScenarios extends Command
                 'date_of_birth' => '1990-01-15',
                 'customer_type' => $scenario['customer_type'],
                 'nationality' => $scenario['nationality'],
-                'branch_id' => Branch::where('code', $scenario['branch'])->first()->id,
+                'branch_id' => $this->branchIdForCode($scenario['branch']),
                 'risk_rating' => $scenario['is_pep'] ? 'high' : ($scenario['is_high_risk_country'] ? 'high' : 'medium'),
                 'pep_status' => $scenario['is_pep'],
                 'is_pep_associate' => false,
@@ -348,7 +359,7 @@ class TestTransactionScenarios extends Command
 
         $transaction = Transaction::create([
             'counter_id' => $counter->id,
-            'branch_id' => Branch::where('code', $scenario['branch'])->first()->id,
+            'branch_id' => $this->branchIdForCode($scenario['branch']),
             'user_id' => $teller->id,
             'customer_id' => $customer->id,
             'type' => $scenario['type'] === 'Buy' ? TransactionType::Buy : TransactionType::Sell,
