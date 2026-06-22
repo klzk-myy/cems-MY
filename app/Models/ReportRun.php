@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\ReportStatus;
+use App\Enums\ReportRunStatus;
 use App\Enums\ReportType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,7 +28,7 @@ class ReportRun extends BaseModel
 
     protected $casts = [
         'parameters' => 'array',
-        'status' => ReportStatus::class,
+        'status' => ReportRunStatus::class,
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
         'row_count' => 'integer',
@@ -48,12 +48,12 @@ class ReportRun extends BaseModel
 
     public function scopeSuccessful($query)
     {
-        return $query->where('status', ReportStatus::Completed);
+        return $query->where('status', ReportRunStatus::Completed);
     }
 
     public function scopeFailed($query)
     {
-        return $query->where('status', ReportStatus::Failed);
+        return $query->where('status', ReportRunStatus::Failed);
     }
 
     public function getDownloadUrl(): ?string
@@ -80,14 +80,14 @@ class ReportRun extends BaseModel
 
     public function markAsRunning(): void
     {
-        $this->status = ReportStatus::Running;
+        $this->status = ReportRunStatus::Running;
         $this->started_at = now();
         $this->save();
     }
 
     public function markAsCompleted(string $filePath, int $rowCount): void
     {
-        $this->status = ReportStatus::Completed;
+        $this->status = ReportRunStatus::Completed;
         $this->completed_at = now();
         $this->file_path = $filePath;
         $this->row_count = $rowCount;
@@ -96,7 +96,7 @@ class ReportRun extends BaseModel
 
     public function markAsFailed(string $errorMessage): void
     {
-        $this->status = ReportStatus::Failed;
+        $this->status = ReportRunStatus::Failed;
         $this->completed_at = now();
         $this->error_message = $errorMessage;
         $this->save();

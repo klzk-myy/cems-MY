@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\ReportStatus;
+use App\Enums\ReportRunStatus;
 use App\Enums\ReportType;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
@@ -16,15 +16,15 @@ class ReportRunFactory extends Factory
     public function definition(): array
     {
         $status = $this->faker->randomElement([
-            ReportStatus::Scheduled,
-            ReportStatus::Running,
-            ReportStatus::Completed,
-            ReportStatus::Failed,
+            ReportRunStatus::Scheduled,
+            ReportRunStatus::Running,
+            ReportRunStatus::Completed,
+            ReportRunStatus::Failed,
         ]);
 
         $startedAt = $this->faker->dateTimeBetween('-1 month', 'now');
         $completedAt = match ($status->value) {
-            ReportStatus::Completed->value, ReportStatus::Failed->value => clone $startedAt,
+            ReportRunStatus::Completed->value, ReportRunStatus::Failed->value => clone $startedAt,
             default => null,
         };
         if ($completedAt) {
@@ -43,10 +43,10 @@ class ReportRunFactory extends Factory
             'status' => $status,
             'started_at' => $startedAt,
             'completed_at' => $completedAt,
-            'file_path' => $status === ReportStatus::Completed ? 'reports/'.$this->faker->unique()->word.'.csv' : null,
+            'file_path' => $status === ReportRunStatus::Completed ? 'reports/'.$this->faker->unique()->word.'.csv' : null,
             'generated_by' => User::factory(),
             'row_count' => $status === ReportStatus::Completed ? $this->faker->numberBetween(100, 10000) : null,
-            'error_message' => $status === ReportStatus::Failed ? $this->faker->sentence() : null,
+            'error_message' => $status === ReportRunStatus::Failed ? $this->faker->sentence() : null,
             'downloaded_count' => $status === ReportStatus::Completed ? $this->faker->numberBetween(0, 50) : 0,
         ];
     }
@@ -54,7 +54,7 @@ class ReportRunFactory extends Factory
     public function scheduled(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => ReportStatus::Scheduled,
+            'status' => ReportRunStatus::Scheduled,
             'started_at' => null,
             'completed_at' => null,
             'file_path' => null,
@@ -64,7 +64,7 @@ class ReportRunFactory extends Factory
     public function running(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => ReportStatus::Running,
+            'status' => ReportRunStatus::Running,
             'completed_at' => null,
             'file_path' => null,
         ]);
@@ -73,7 +73,7 @@ class ReportRunFactory extends Factory
     public function completed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => ReportStatus::Completed,
+            'status' => ReportRunStatus::Completed,
             'started_at' => now()->subHour(),
             'completed_at' => now(),
             'file_path' => 'reports/'.$this->faker->unique()->word.'.csv',
@@ -85,7 +85,7 @@ class ReportRunFactory extends Factory
     public function failed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => ReportStatus::Failed,
+            'status' => ReportRunStatus::Failed,
             'completed_at' => now(),
             'file_path' => null,
             'row_count' => null,

@@ -2,7 +2,7 @@
 
 namespace App\Services\Reporting;
 
-use App\Enums\ReportStatus;
+use App\Enums\ReportRunStatus;
 use App\Events\ReportGenerated;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
@@ -34,7 +34,7 @@ class ReportSchedulingService
             'schedule_id' => $scheduleId,
             'report_type' => $type,
             'parameters' => $params,
-            'status' => ReportStatus::Running,
+            'status' => ReportRunStatus::Running,
             'started_at' => now(),
             'generated_by' => $userId,
         ]);
@@ -108,7 +108,7 @@ class ReportSchedulingService
         $totalRuns = ReportRun::count();
         $successfulRuns = ReportRun::successful()->count();
         $failedRuns = ReportRun::failed()->count();
-        $scheduledRuns = ReportRun::where('status', ReportStatus::Scheduled)->count();
+        $scheduledRuns = ReportRun::where('status', ReportRunStatus::Scheduled)->count();
 
         $recentRuns = ReportRun::with('generatedBy')
             ->orderByDesc('created_at')
@@ -303,7 +303,7 @@ class ReportSchedulingService
             ->where('created_at', '>=', now()->subDays(7))
             ->get();
 
-        $successfulScheduled = $recentRuns->filter(fn ($r) => $r->schedule_id && $r->status === ReportStatus::Completed
+        $successfulScheduled = $recentRuns->filter(fn ($r) => $r->schedule_id && $r->status === ReportRunStatus::Completed
         )->count();
 
         return ($successfulScheduled / $totalSchedules) * 100;

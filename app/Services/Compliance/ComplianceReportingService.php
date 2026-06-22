@@ -5,7 +5,7 @@ namespace App\Services\Compliance;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\EddStatus;
 use App\Enums\FindingSeverity;
-use App\Enums\ReportStatus;
+use App\Enums\ReportGeneratedStatus;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceFinding;
 use App\Models\Compliance\CustomerRiskProfile;
@@ -372,7 +372,7 @@ class ComplianceReportingService
 
         return [
             'pending_count' => $pendingCount,
-            'pending_reports' => $reports->where('status', ReportStatus::Pending->value)->values()->toArray(),
+            'pending_reports' => $reports->where('status', ReportGeneratedStatus::Pending->value)->values()->toArray(),
             'recent_reports' => $reports->take(10)->values()->toArray(),
         ];
     }

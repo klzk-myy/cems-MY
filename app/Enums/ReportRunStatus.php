@@ -2,15 +2,32 @@
 
 namespace App\Enums;
 
-enum ReportStatus: string
+enum ReportRunStatus: string
 {
     case Scheduled = 'scheduled';
     case Running = 'running';
     case Completed = 'completed';
     case Failed = 'failed';
-    case Pending = 'Pending';
-    case Generated = 'Generated';
-    case Submitted = 'Submitted';
+
+    public function isScheduled(): bool
+    {
+        return $this === self::Scheduled;
+    }
+
+    public function isRunning(): bool
+    {
+        return $this === self::Running;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this === self::Completed;
+    }
+
+    public function isFailed(): bool
+    {
+        return $this === self::Failed;
+    }
 
     public function label(): string
     {
