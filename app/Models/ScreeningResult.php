@@ -5,10 +5,11 @@ namespace App\Models;
 use App\Enums\MatchType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ScreeningResult extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $with = ['customer', 'transaction', 'sanctionEntry'];
 

@@ -6,10 +6,11 @@ use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FlaggedTransaction extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $with = ['transaction', 'customer', 'assignedTo', 'reviewer'];
 
