@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\AccountType;
 use App\Enums\UserRole;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
@@ -43,10 +44,8 @@ class BudgetServiceTest extends TestCase
         $periodCode = now()->format('Y-m');
 
         // Create a budget for testing
-        $account = ChartOfAccount::where('account_type', 'Expense')->first();
-        if (! $account) {
-            $this->markTestSkipped('No expense account found');
-        }
+        $account = ChartOfAccount::where('account_type', AccountType::Expense)->first();
+        $this->assertNotNull($account, 'EnhancedChartOfAccountsSeeder should create an expense account');
 
         Budget::factory()->create([
             'account_code' => $account->account_code,
@@ -71,10 +70,8 @@ class BudgetServiceTest extends TestCase
     {
         $periodCode = now()->format('Y-m');
 
-        $account = ChartOfAccount::where('account_type', 'Expense')->first();
-        if (! $account) {
-            $this->markTestSkipped('No expense account found');
-        }
+        $account = ChartOfAccount::where('account_type', AccountType::Expense)->first();
+        $this->assertNotNull($account, 'EnhancedChartOfAccountsSeeder should create an expense account');
 
         Budget::factory()->create([
             'account_code' => $account->account_code,
@@ -100,10 +97,8 @@ class BudgetServiceTest extends TestCase
     {
         $periodCode = now()->format('Y-m');
 
-        $account = ChartOfAccount::where('account_type', 'Expense')->first();
-        if (! $account) {
-            $this->markTestSkipped('No expense account found');
-        }
+        $account = ChartOfAccount::where('account_type', AccountType::Expense)->first();
+        $this->assertNotNull($account, 'EnhancedChartOfAccountsSeeder should create an expense account');
 
         Budget::factory()->create([
             'account_code' => $account->account_code,
@@ -124,12 +119,10 @@ class BudgetServiceTest extends TestCase
     {
         $periodCode = now()->format('Y-m');
 
-        $expenseAccount = ChartOfAccount::where('account_type', 'Expense')->first();
-        $revenueAccount = ChartOfAccount::where('account_type', 'Revenue')->first();
-
-        if (! $expenseAccount || ! $revenueAccount) {
-            $this->markTestSkipped('No expense or revenue account found');
-        }
+        $expenseAccount = ChartOfAccount::where('account_type', AccountType::Expense)->first();
+        $revenueAccount = ChartOfAccount::where('account_type', AccountType::Revenue)->first();
+        $this->assertNotNull($expenseAccount, 'EnhancedChartOfAccountsSeeder should create an expense account');
+        $this->assertNotNull($revenueAccount, 'EnhancedChartOfAccountsSeeder should create a revenue account');
 
         Budget::factory()->create([
             'account_code' => $expenseAccount->account_code,
@@ -180,10 +173,8 @@ class BudgetServiceTest extends TestCase
     {
         $periodCode = now()->format('Y-m');
 
-        $account = ChartOfAccount::where('account_type', 'Expense')->first();
-        if (! $account) {
-            $this->markTestSkipped('No expense account found');
-        }
+        $account = ChartOfAccount::where('account_type', AccountType::Expense)->first();
+        $this->assertNotNull($account, 'EnhancedChartOfAccountsSeeder should create an expense account');
 
         $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
@@ -202,10 +193,8 @@ class BudgetServiceTest extends TestCase
     {
         $periodCode = now()->format('Y-m');
 
-        $account = ChartOfAccount::where('account_type', 'Expense')->first();
-        if (! $account) {
-            $this->markTestSkipped('No expense account found');
-        }
+        $account = ChartOfAccount::where('account_type', AccountType::Expense)->first();
+        $this->assertNotNull($account, 'EnhancedChartOfAccountsSeeder should create an expense account');
 
         $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
@@ -223,10 +212,8 @@ class BudgetServiceTest extends TestCase
     {
         $periodCode = now()->format('Y-m');
 
-        $account = ChartOfAccount::where('account_type', 'Expense')->first();
-        if (! $account) {
-            $this->markTestSkipped('No expense account found');
-        }
+        $account = ChartOfAccount::where('account_type', AccountType::Expense)->first();
+        $this->assertNotNull($account, 'EnhancedChartOfAccountsSeeder should create an expense account');
 
         $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
