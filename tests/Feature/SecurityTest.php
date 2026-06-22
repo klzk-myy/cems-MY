@@ -173,7 +173,7 @@ class SecurityTest extends TestCase
     #[Test]
     public function session_regenerated_on_login(): void
     {
-        $user = User::factory()->create(['password' => bcrypt('Secret12345!')]);
+        $user = User::factory()->create(['password_hash' => bcrypt('Secret12345!')]);
 
         $sessionBefore = session()->getId();
 
@@ -211,7 +211,7 @@ class SecurityTest extends TestCase
     {
         $user = User::factory()->create([
             'is_active' => false,
-            'password' => bcrypt('Secret12345!'),
+            'password_hash' => bcrypt('Secret12345!'),
         ]);
 
         $response = $this->post('/login', [

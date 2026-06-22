@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Queue;
 
 class HealthCheckController extends Controller
 {

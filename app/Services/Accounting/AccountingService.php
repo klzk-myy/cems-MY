@@ -387,4 +387,28 @@ class AccountingService implements AccountingServiceInterface
         // This gives us the actual spending in the period
         return $this->mathService->subtract($totalDebits, $totalCredits);
     }
+
+    /**
+     * Get account activity for many account codes in a single query.
+     *
+     * @param  array<int, string>  $accountCodes
+     * @return array<string, string>
+     */
+    public function getAccountsActivity(array $accountCodes, string $fromDate, string $toDate): array
+    {
+        if (empty($accountCodes)) {
+            return [];
+        }
+
+        $rows = AccountLedger::query()
+            ->select('account_code')
+            ->selectRaw('SUM(debit - credit) as activity')
+            ->whereIn('account_code', $accountCodes)
+            ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->groupBy('account_code')
+            ->pluck('activity', 'account_code')
+            ->toArray();
+
+        return array_map('strval', $rows);
+    }
 }

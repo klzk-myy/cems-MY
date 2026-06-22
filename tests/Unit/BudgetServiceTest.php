@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Enums\AccountType;
 use App\Enums\UserRole;
+use App\Models\AccountingPeriod;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
 use App\Models\User;
@@ -224,5 +225,31 @@ class BudgetServiceTest extends TestCase
         ]);
 
         $this->assertFalse($budget->isOverBudget());
+    }
+
+    #[Test]
+    public function update_actuals_calculates_activity_for_all_budgets(): void
+    {
+        $period = AccountingPeriod::factory()->create([
+            'period_code' => '2099-02',
+            'start_date' => '2099-02-01',
+            'end_date' => '2099-02-28',
+        ]);
+
+        $account = ChartOfAccount::where('account_type', 'Expense')->first()
+            ?? ChartOfAccount::factory()->create(['account_type' => 'Expense']);
+
+        Budget::factory()->create([
+            'account_code' => $account->account_code,
+            'period_code' => $period->period_code,
+            'created_by' => $this->adminUser->id,
+        ]);
+
+        \DB::enableQueryLog();
+        $this->budgetService->updateActuals($period->period_code);
+        $queries = count(\DB::getQueryLog());
+        \DB::disableQueryLog();
+
+        $this->assertLessThanOrEqual(5, $queries, "Expected <= 5 queries for batched updateActuals, got {$queries}");
     }
 }

@@ -451,52 +451,6 @@ class LedgerService
     }
 
     /**
-     * Get balances for multiple accounts in a single batch query.
-     *
-     * Retrieves the running balance from the latest ledger entry for each account
-     * using a subquery to find the most recent entry per account code.
-     *
-     * @param  array  $accountCodes  Array of account codes to query
-     * @param  string  $asOfDate  Date for balance calculation (YYYY-MM-DD format)
-     * @param  int|null  $branchId  Optional branch ID to filter by
-     * @return array<string, string> Account code => balance string
-     */
-    protected function getBatchAccountBalances(array $accountCodes, string $asOfDate, ?int $branchId = null): array
-    {
-        if (empty($accountCodes)) {
-            return [];
-        }
-
-        $subQuery = AccountLedger::selectRaw('account_code, MAX(id) as max_id')
-            ->whereIn('account_code', $accountCodes)
-            ->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);
-
-        if ($branchId !== null) {
-            $subQuery->where('branch_id', $branchId);
-        }
-
-        $subQuery->groupBy('account_code');
-
-        $maxIds = $subQuery->pluck('max_id', 'account_code');
-
-        if ($maxIds->isEmpty()) {
-            return [];
-        }
-
-        $entries = AccountLedger::whereIn('id', $maxIds->values())
-            ->get()
-            ->keyBy('account_code');
-
-        $balances = [];
-        foreach ($accountCodes as $code) {
-            $entry = $entries->get($code);
-            $balances[$code] = $entry ? (string) $entry->running_balance : '0';
-        }
-
-        return $balances;
-    }
-
-    /**
      * Calculate the opening balance for an account as of a specific date.
      *
      * Retrieves the running balance from the last ledger entry before the given date.

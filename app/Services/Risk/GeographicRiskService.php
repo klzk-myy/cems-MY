@@ -4,7 +4,6 @@ namespace App\Services\Risk;
 
 use App\Models\Customer;
 use App\Models\HighRiskCountry;
-use App\Models\Transaction;
 
 class GeographicRiskService
 {

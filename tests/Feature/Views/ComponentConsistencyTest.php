@@ -44,10 +44,17 @@ class ComponentConsistencyTest extends TestCase
             'radio-group' => ['components.radio-group', ['name' => 'risk_level', 'options' => ['low' => 'Low'], 'slot' => '']],
             'empty-state-div' => ['components.empty-state', ['as' => 'div', 'slot' => '']],
             'verify-card' => ['pages.mfa.verify', []],
+
             'status-dot' => ['components.status-dot', ['color' => 'success', 'slot' => '']],
             'icon-circle' => ['components.icon-circle', ['color' => 'info', 'slot' => '']],
             'navigation' => ['components.navigation', []],
             'app-layout' => ['components.app-layout', ['title' => 'Test', 'slot' => 'Test']],
+
+            // Additional components
+            'page-header' => ['components.page-header', ['title' => 'Test', 'slot' => '']],
+            'stat-grid' => ['components.stat-grid', ['slot' => '']],
+            'input' => ['components.input', ['name' => 'email']],
+            'select' => ['components.select', ['name' => 'status', 'slot' => '']],
         ];
     }
 

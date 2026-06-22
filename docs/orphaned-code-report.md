@@ -8,37 +8,23 @@
 
 | Layer | Candidates | Confidence |
 |-------|-----------|------------|
-| PHP Classes & Methods | 3 orphaned services | High |
+| PHP Classes & Methods | 0 (all cleared) | High |
 | Routes | 0 broken/orphaned | High |
 | Blade Views | 11 orphaned views | High |
 | Database Schema | 0 orphaned tables/columns | Medium |
-| Enums & Config | 1 orphaned enum | High |
+| Enums & Config | 0 (all cleared) | High |
 | Frontend Assets | 0 orphaned files | Medium |
 
 ---
 
 ## 1. PHP Classes & Methods
 
-### `app/Services/AmlRuleService.php`
-- **Orphaned:** Entire class — zero references in app/, tests/, routes/, config/, or resources/
-- **Confidence:** High (GitNexus graph verified with cross-repo grep)
-- **Risk:** Low
-- **Suggested action:** Remove
+No orphaned PHP classes remain. The previously identified orphaned services have been removed.
 
-### `app/Services/CashFlowService.php`
-- **Orphaned:** Entire class — zero references outside its own file
-- **Confidence:** High (grep across entire codebase found only self-references)
-- **Risk:** Low
-- **Suggested action:** Remove
-
-### `app/Services/PerformanceAlertingService.php`
-- **Orphaned:** Entire class — zero references in app code (only a test file references it)
-- **Confidence:** High
-- **Risk:** Low
-- **Suggested action:** Remove (or keep if alerts will be implemented)
-
-### Methods (filtering notes)
-- 493 methods returned with zero CALLS edges in graph. After filtering false positives (model dynamic access, command `handle()`, job dispatch, event listeners, constructor injection, policies, form requests, blade components), the only truly orphaned methods belong to the 3 classes above.
+### Removed Items
+- `app/Services/AmlRuleService.php` (deleted)
+- `app/Services/CashFlowService.php` (deleted)
+- `app/Services/PerformanceAlertingService.php` (deleted)
 
 ---
 
@@ -119,11 +105,10 @@ All tables and columns in the schema are referenced somewhere in application cod
 
 ## 5. Enums & Config
 
-### Enum: `CustomerIdType`
-- **File:** `app/Enums/CustomerIdType.php`
-- **Usage:** Zero references outside its own file
-- **Confidence:** High
-- **Suggested action:** Remove
+No orphaned enums remain. The previously identified `CustomerIdType` enum has been deleted.
+
+### Removed Items
+- `app/Enums/CustomerIdType.php` (deleted)
 
 ### Config keys
 - **Keys flagged:** 138 "unused" but majority are false positives (Laravel framework internals accessed via `env()`, facades, or array helpers rather than `config('...')`)
@@ -139,38 +124,33 @@ All tables and columns in the schema are referenced somewhere in application cod
 
 ---
 
-## Re-scan Results (2026-06-11)
+## Re-scan Results (2026-06-22)
 
-A follow-up scan was executed to validate findings:
-
-| Layer | Result |
-|-------|--------|
-| Blade components (9) | **False positives** — used via `<x-badge>`, `<x-button>`, `<x-card>`, etc. Confirmed across 60+ views |
-| Orphaned views (11) | **Partially false positives** — `auth.change-password` is rendered via route; `customers.kyc` may be dynamically routed. Remaining views need individual verification |
-| Orphaned services (3) | Still valid — `AmlRuleService`, `CashFlowService`, `PerformanceAlertingService` have zero callers |
-| Orphaned enum (1) | Still valid — `CustomerIdType` has zero references |
+Follow-up scans confirm that all previously identified orphaned services and the enum have been resolved through deletion.
 
 ## Action Plan
 
+### Completed Cleanup
+The following orphaned items have been successfully removed:
+- `app/Services/AmlRuleService.php`
+- `app/Services/CashFlowService.php`
+- `app/Services/PerformanceAlertingService.php`
+- `app/Enums/CustomerIdType.php`
+- `resources/views/components/link.blade.php` (additional cleanup)
+
+### Pending Review
 | Tag | Count | Items |
 |-----|-------|-------|
-| **SAFE TO DELETE** | 4 | `AmlRuleService`, `CashFlowService`, `PerformanceAlertingService`, `CustomerIdType` enum |
 | **NEEDS REVIEW** | 11 | Orphaned views (verify each is truly unused before deleting) |
 | **BROKEN ROUTE** | 0 | — |
 
 ### Recommended Next Steps
 
-1. **Review SAFE TO DELETE items** — Remove in a cleanup PR:
-   - Delete `app/Services/AmlRuleService.php`
-   - Delete `app/Services/CashFlowService.php`
-   - Delete `app/Services/PerformanceAlertingService.php`
-   - Delete `app/Enums/CustomerIdType.php`
-
-2. **Review NEEDS REVIEW views** — For each of the 11 views:
+1. **Review NEEDS REVIEW views** — For each of the 11 views:
    - Check if it's rendered via a named route or controller that the scan missed
    - Check git history for when it was last modified
    - Check if any other Blade file includes it via dynamic name (`@include($variable)`)
 
-3. **Update scanner script** — Add `<x-*>` component detection to `scripts/find-orphaned-views.php` to eliminate false positives
+2. **Update scanner script** — Add `<x-*>` component detection to `scripts/find-orphaned-views.php` to eliminate false positives
 
-4. **Run test suite** after any deletions to confirm nothing breaks
+3. **Run test suite** after any deletions to confirm nothing breaks

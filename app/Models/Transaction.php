@@ -61,6 +61,10 @@ class Transaction extends TransactionModel
      * calling create()/update() with these fields.
      */
     protected $fillable = [
+        'customer_id',
+        'user_id',
+        'branch_id',
+        'currency_code',
         'counter_id',
         'till_id',
         'type',
@@ -92,6 +96,11 @@ class Transaction extends TransactionModel
         'deferred_journal_entry_id',
         'journal_entries_created_at',
         'has_deferred_accounting',
+        'approved_by',
+        'approved_at',
+        'approval_sync_failed',
+        'approval_sync_failed_at',
+        'approval_sync_error',
     ];
 
     /**
@@ -114,6 +123,13 @@ class Transaction extends TransactionModel
         'transition_history' => 'array',
         'journal_entries_created_at' => 'datetime',
         'has_deferred_accounting' => 'boolean',
+        'customer_id' => 'integer',
+        'user_id' => 'integer',
+        'branch_id' => 'integer',
+        'approved_by' => 'integer',
+        'approved_at' => 'datetime',
+        'approval_sync_failed' => 'boolean',
+        'approval_sync_failed_at' => 'datetime',
     ];
 
     protected function activeStatusValues(): array

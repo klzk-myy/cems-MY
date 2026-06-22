@@ -4,6 +4,7 @@ use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\EnsureBranchScope;
 use App\Http\Middleware\EnsureMfaVerified;
+use App\Http\Middleware\EnsureSetupAccessible;
 use App\Http\Middleware\IpBlocker;
 use App\Http\Middleware\PerformanceTrackingMiddleware;
 use App\Http\Middleware\QueryLogging;
@@ -77,6 +78,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle.export' => 'throttle:export',
             'throttle.sensitive' => 'throttle:sensitive',
             'strict.ratelimit' => StrictRateLimit::class,
+            'setup.accessible' => EnsureSetupAccessible::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

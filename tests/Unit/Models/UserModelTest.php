@@ -31,7 +31,8 @@ class UserModelTest extends TestCase
 
     public function test_password_is_hashed_and_read_via_password_attribute(): void
     {
-        $user = User::factory()->make(['password' => 'secret']);
+        $user = new User;
+        $user->password = 'secret';
 
         $this->assertNotEquals('secret', $user->password_hash);
         $this->assertSame($user->password_hash, $user->password);

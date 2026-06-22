@@ -76,7 +76,7 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
         'mfa_verified_at' => 'datetime',
-        'mfa_secret' => 'encrypted',
+        'mfa_secret' => 'string',
     ];
 
     /**

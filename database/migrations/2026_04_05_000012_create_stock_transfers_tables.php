@@ -15,7 +15,7 @@ return new class extends Migration
             $table->enum('status', [
                 'Requested',
                 'BranchManagerApproved',
-                'HQApproved',
+                'HqApproved',
                 'InTransit',
                 'PartiallyReceived',
                 'Completed',

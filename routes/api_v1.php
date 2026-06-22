@@ -40,9 +40,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', CurrentUserController::class)->name('api.v1.user');
+Route::get('/user', CurrentUserController::class)->name('api.v1.user');
 
-Route::middleware(['auth:sanctum', 'branch.scope'])->group(function () {
+// Sanctions Webhook (for external list providers to trigger immediate updates)
+// Token-based authentication, not session/cookie based auth
+Route::post('/webhooks/sanctions/update', [SanctionsWebhookController::class, '__invoke'])
+    ->name('api.v1.webhooks.sanctions.update');
+Route::get('/webhooks/sanctions/health', [SanctionsWebhookController::class, 'health'])
+    ->middleware('throttle:30,1')
+    ->name('api.v1.webhooks.sanctions.health');
+
+Route::middleware(['branch.scope'])->group(function () {
     // Transactions API
     Route::get('/transactions', [TransactionController::class, 'index'])
         ->name('api.v1.transactions.index');

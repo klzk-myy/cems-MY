@@ -94,60 +94,60 @@
                         @switch($user->role->value)
                             @case('teller')
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Can create transactions</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Rate override limit: +/-0.5%</span>
                                 </li>
                                 @break
                             @case('manager')
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Can create transactions</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Can approve transactions</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Can manage counters</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Rate override limit: +/-2.0%</span>
                                 </li>
                                 @break
                             @case('compliance_officer')
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Can review flagged transactions</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Can access compliance reports</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                 </li>
                                 @break
                             @case('admin')
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Full system access</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Can manage users</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Can manage system settings</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-success-text mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Unlimited rate override</span>
                                 </li>
                                 @break

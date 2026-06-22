@@ -43,9 +43,9 @@
                     <div class="flex items-center justify-between p-4 bg-canvas-subtle rounded-lg">
                         <div class="flex items-center gap-3">
                             @if($checklist['counters_closed'])
-                                <svg class="w-5 h-5 text-success-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <x-icon name="check" class="w-5 h-5 text-success-text" />
                             @else
-                                <svg class="w-5 h-5 text-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                <x-icon name="x" class="w-5 h-5 text-danger-text" />
                             @endif
                             <span class="text-sm font-medium text-ink">Counters Closed</span>
                         </div>
@@ -57,9 +57,9 @@
                     <div class="flex items-center justify-between p-4 bg-canvas-subtle rounded-lg">
                         <div class="flex items-center gap-3">
                             @if($checklist['allocations_returned'])
-                                <svg class="w-5 h-5 text-success-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <x-icon name="check" class="w-5 h-5 text-success-text" />
                             @else
-                                <svg class="w-5 h-5 text-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                <x-icon name="x" class="w-5 h-5 text-danger-text" />
                             @endif
                             <span class="text-sm font-medium text-ink">Teller Allocations Returned</span>
                         </div>
@@ -71,9 +71,9 @@
                     <div class="flex items-center justify-between p-4 bg-canvas-subtle rounded-lg">
                         <div class="flex items-center gap-3">
                             @if($checklist['transfers_complete'])
-                                <svg class="w-5 h-5 text-success-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <x-icon name="check" class="w-5 h-5 text-success-text" />
                             @else
-                                <svg class="w-5 h-5 text-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                <x-icon name="x" class="w-5 h-5 text-danger-text" />
                             @endif
                             <span class="text-sm font-medium text-ink">Transfers Complete</span>
                         </div>
@@ -85,9 +85,9 @@
                     <div class="flex items-center justify-between p-4 bg-canvas-subtle rounded-lg">
                         <div class="flex items-center gap-3">
                             @if($checklist['documents_finalized'])
-                                <svg class="w-5 h-5 text-success-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <x-icon name="check" class="w-5 h-5 text-success-text" />
                             @else
-                                <svg class="w-5 h-5 text-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                <x-icon name="x" class="w-5 h-5 text-danger-text" />
                             @endif
                             <span class="text-sm font-medium text-ink">Documents Finalized</span>
                         </div>
@@ -100,14 +100,14 @@
 
             <div class="flex items-center justify-between">
                 @if($workflow->status === 'initiated')
-                    <form method="POST" action="{{ route('branch-closing.settle', $branch) }}">
+                    <form method="POST" action="{{ route('branches.closing.settle', $branch) }}">
                         @csrf
                         <x-button variant="primary" type="submit">Mark as Settled</x-button>
                     </form>
                 @endif
 
                 @if($canFinalize)
-                    <form method="POST" action="{{ route('branch-closing.finalize', $branch) }}">
+                    <form method="POST" action="{{ route('branches.closing.finalize', $branch) }}">
                         @csrf
                         <x-button variant="primary" type="submit">Finalize Closure</x-button>
                     </form>
@@ -118,7 +118,7 @@
         @else
             <x-empty-state message="No active closure workflow for this branch.">
                 <x-slot:actions>
-                    <form method="POST" action="{{ route('branch-closing.initiate', $branch) }}" class="inline">
+                    <form method="POST" action="{{ route('branches.closing.initiate', $branch) }}" class="inline">
                         @csrf
                         <x-button variant="primary" type="submit">Initiate Closure Workflow</x-button>
                     </form>
