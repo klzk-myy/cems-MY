@@ -164,22 +164,26 @@ php artisan test --filter="Ledger|Home|Dashboard" --compact
 - [x] Zero `markTestSkipped()` calls in `BudgetServiceTest.php`.
 - [x] All budget tests pass.
 
-### Task 3.2: K6 Load Test Decision
+### Task 3.2: Remove K6AvailabilityTest
 
-**Objective:** Decide whether to install `k6` or remove the smoke test.
+**Objective:** Remove the K6 availability test since load testing is a CI/infrastructure concern, not a PHPUnit concern.
 
-**File:** `tests/Load/K6AvailabilityTest.php`
+**File:** `tests/Load/K6AvailabilityTest.php` (removed)
 
-**Options:**
-- Install `k6` in CI and local dev; unskip the test.
-- Convert it to a manual check and remove the PHPUnit file.
+**Rationale:** The test only checks if `k6` is installed and always skips when absent. Load testing should be handled by CI infrastructure rather than as a PHPUnit test.
+
+**Implementation:**
+- Deleted `tests/Load/K6AvailabilityTest.php`
+- Load tests directory now only contains `transaction-load-test.js` for manual/CI execution
 
 **Acceptance:**
-- [x] Test either passes in CI or is removed.
+- [x] Test file removed
+- [x] Remaining load tests (if any) still pass
 
 **Verification:**
 ```bash
-php artisan test --filter="Budget|K6" --compact
+php artisan test tests/Load --compact
+# Expected: No tests found or PASS
 ```
 
 ---
