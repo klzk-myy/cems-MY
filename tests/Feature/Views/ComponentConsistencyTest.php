@@ -49,6 +49,12 @@ class ComponentConsistencyTest extends TestCase
             'icon-circle' => ['components.icon-circle', ['color' => 'info', 'slot' => '']],
             'navigation' => ['components.navigation', []],
             'app-layout' => ['components.app-layout', ['title' => 'Test', 'slot' => 'Test']],
+
+            // Additional components
+            'page-header' => ['components.page-header', ['title' => 'Test', 'slot' => '']],
+            'stat-grid' => ['components.stat-grid', ['slot' => '']],
+            'input' => ['components.input', ['name' => 'email']],
+            'select' => ['components.select', ['name' => 'status', 'slot' => '']],
         ];
     }
 
