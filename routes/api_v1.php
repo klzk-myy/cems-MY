@@ -346,6 +346,7 @@ Route::middleware(['branch.scope'])->group(function () {
             ->name('api.v1.allocations.return-to-pool');
         // Get specific allocation details
         Route::get('/{allocationId}', [TellerAllocationController::class, 'show'])
+            ->middleware('role:manager,admin')
             ->name('api.v1.allocations.show');
     });
 
