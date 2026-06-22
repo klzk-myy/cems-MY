@@ -41,6 +41,7 @@ class ComplianceCase extends ComplianceModel
         'resolution_notes',
         'metadata',
         'created_via',
+        'customer_id',
     ];
 
     protected $casts = [

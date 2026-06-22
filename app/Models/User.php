@@ -49,7 +49,6 @@ class User extends Authenticatable
         'branch_id',
         'username',
         'email',
-        'password',
         'password_hash',
         'is_active',
         'last_login_at',
@@ -77,6 +76,7 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
         'mfa_verified_at' => 'datetime',
+        'mfa_secret' => 'string',
     ];
 
     /**

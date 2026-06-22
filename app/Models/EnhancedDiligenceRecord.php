@@ -43,6 +43,7 @@ class EnhancedDiligenceRecord extends ComplianceModel
         'questionnaire_completed_by',
         'approved_by',
         'approved_at',
+        'customer_id',
     ];
 
     protected $casts = [
