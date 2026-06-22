@@ -363,14 +363,6 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->name('closing.finalize');
     });
 
-    // Alias group for views that use the legacy branch-closing.* route names
-    Route::middleware(['role:admin'])->prefix('branch-closing')->name('branch-closing.')->group(function () {
-        Route::get('/{branch}', [BranchClosingController::class, 'show'])->name('show');
-        Route::post('/{branch}/initiate', [BranchClosingController::class, 'initiate'])->name('initiate');
-        Route::post('/{branch}/settle', [BranchClosingController::class, 'settle'])->name('settle');
-        Route::post('/{branch}/finalize', [BranchClosingController::class, 'finalize'])->name('finalize');
-    });
-
     Route::middleware(['role:admin'])->prefix('test-results')->name('test-results.')->group(function () {
         Route::get('/compare', [TestResultsController::class, 'compare'])->name('compare');
         Route::get('/', [TestResultsController::class, 'index'])->name('index');
