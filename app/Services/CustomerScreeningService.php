@@ -18,6 +18,7 @@ use App\ValueObjects\ScreeningMatch;
 use App\ValueObjects\ScreeningResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class CustomerScreeningService implements CustomerScreeningServiceInterface
 {
@@ -161,19 +162,21 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
 
     public function handleConfirmedMatch(Customer $customer, string $listType): array
     {
-        // Freeze customer's funds and properties per pd-00.md 27.6.1(a)
-        $customer->freeze("confirmed_{$listType}_match");
+        DB::transaction(function () use ($customer, $listType) {
+            // Freeze customer's funds and properties per pd-00.md 27.6.1(a)
+            $customer->freeze("confirmed_{$listType}_match");
 
-        // Block transactions to prevent dissipation per pd-00.md 27.6.1(b)
-        $this->blockCustomerTransactions($customer);
+            // Block transactions to prevent dissipation per pd-00.md 27.6.1(b)
+            $this->blockCustomerTransactions($customer);
 
-        // Reject potential customer per pd-00.md 27.6.2 (if not yet active)
-        if (! $customer->is_active) {
-            $this->rejectCustomer($customer, "positive_{$listType}_match");
-        }
+            // Reject potential customer per pd-00.md 27.6.2 (if not yet active)
+            if (! $customer->is_active) {
+                $this->rejectCustomer($customer, "positive_{$listType}_match");
+            }
 
-        // pd-00.md 27.7.1 - Report positive name match to BNM FIU and IGP
-        $this->reportToBnmFiu($customer, $listType);
+            // pd-00.md 27.7.1 - Report positive name match to BNM FIU and IGP
+            $this->reportToBnmFiu($customer, $listType);
+        });
 
         return [
             'action' => 'frozen_blocked_reported',

@@ -225,14 +225,23 @@ class User extends Authenticatable
     }
 
     /**
-     * Get notification preference for a specific notification type.
-     * Creates default preference if not exists.
+     * Get notification preference for a specific notification type (pure getter).
+     * Returns null if no preference exists.
      */
-    public function getNotificationPreference(string $type): UserNotificationPreference
+    public function getNotificationPreference(string $type): ?UserNotificationPreference
     {
-        $preference = $this->notificationPreferences()
+        return $this->notificationPreferences()
             ->where('notification_type', $type)
             ->first();
+    }
+
+    /**
+     * Get or create notification preference for a specific notification type.
+     * Ensures a preference record exists by creating with defaults if missing.
+     */
+    public function getOrCreateNotificationPreference(string $type): UserNotificationPreference
+    {
+        $preference = $this->getNotificationPreference($type);
 
         if (! $preference) {
             $defaults = UserNotificationPreference::getDefaultPreferences()[$type] ?? [
@@ -252,6 +261,22 @@ class User extends Authenticatable
         }
 
         return $preference;
+    }
+
+    /**
+     * Check if a notification channel is enabled for this user.
+     */
+    public function isNotificationChannelEnabled(string $type, string $channel): bool
+    {
+        $preference = $this->getOrCreateNotificationPreference($type);
+
+        return match ($channel) {
+            'mail', 'email' => $preference->isEmailEnabled(),
+            'sms' => $preference->isSmsEnabled(),
+            'database', 'in_app' => $preference->isInAppEnabled(),
+            'broadcast', 'push' => $preference->isPushEnabled(),
+            default => true,
+        };
     }
 
     /**
@@ -303,22 +328,6 @@ class User extends Authenticatable
         }
 
         return false;
-    }
-
-    /**
-     * Check if a notification channel is enabled for this user.
-     */
-    public function isNotificationChannelEnabled(string $type, string $channel): bool
-    {
-        $preference = $this->getNotificationPreference($type);
-
-        return match ($channel) {
-            'mail', 'email' => $preference->isEmailEnabled(),
-            'sms' => $preference->isSmsEnabled(),
-            'database', 'in_app' => $preference->isInAppEnabled(),
-            'broadcast', 'push' => $preference->isPushEnabled(),
-            default => true,
-        };
     }
 
     /**

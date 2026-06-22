@@ -60,7 +60,9 @@ class TransactionController extends Controller
 
         $query = Transaction::with(['customer', 'currency', 'user', 'branch'])
             ->when($validated['search'] ?? null, function ($q, string $search) {
-                return $q->where('reference', 'like', "%{$search}%");
+                $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+
+                return $q->whereRaw('reference like ? escape \'\\\'', ["%{$escaped}%"]);
             })
             ->when($validated['status'] ?? null, function ($q, string $status) {
                 return $q->where('status', $status);

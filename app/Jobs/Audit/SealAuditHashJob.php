@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SealAuditHashJob implements ShouldQueue
@@ -25,60 +26,50 @@ class SealAuditHashJob implements ShouldQueue
 
     public function handle(AuditService $auditService): void
     {
-        // Use atomic update to prevent race condition
-        // Only seal if entry_hash is still null (not already sealed)
-        $affected = SystemLog::where('id', $this->logId)
-            ->whereNull('entry_hash')
-            ->lockForUpdate()
-            ->update([
-                // Will be set in transaction below
-            ]);
+        DB::transaction(function () use ($auditService) {
+            // Step 1: Lock the predecessor first (if exists) to ensure consistent lock ordering
+            $predecessorId = SystemLog::where('id', '<', $this->logId)
+                ->whereNotNull('entry_hash')
+                ->orderBy('id', 'desc')
+                ->value('id');
 
-        if ($affected === 0) {
-            // Log was deleted or already sealed by another job
-            return;
-        }
+            if ($predecessorId) {
+                // Lock the predecessor row
+                SystemLog::where('id', $predecessorId)->lockForUpdate()->first();
+            }
 
-        // Re-fetch the log within the same transaction context
-        $log = SystemLog::find($this->logId);
+            // Step 2: Lock the target log entry and verify it's not already sealed
+            $log = SystemLog::where('id', $this->logId)
+                ->whereNull('entry_hash')
+                ->lockForUpdate()
+                ->first();
 
-        if (! $log) {
-            return;
-        }
+            if (! $log) {
+                // Already sealed or deleted; nothing to do
+                return;
+            }
 
-        // Get the previous log's sealed hash
-        // Use WITH share lock to prevent concurrent modifications
-        $previousLog = SystemLog::where('id', '<', $log->id)
-            ->whereNotNull('entry_hash')
-            ->orderBy('id', 'desc')
-            ->lockForUpdate()
-            ->first();
+            // Get the predecessor's hash (already locked, so stable)
+            $previousHash = $predecessorId
+                ? SystemLog::find($predecessorId)->entry_hash
+                : null;
 
-        $previousHash = $previousLog?->entry_hash;
+            // Compute this entry's hash
+            $entryHash = $auditService->computeEntryHash(
+                $log->created_at->toIso8601String(),
+                $log->user_id,
+                $log->action,
+                $log->entity_type,
+                $log->entity_id,
+                $previousHash
+            );
 
-        // Compute this entry's hash
-        $entryHash = $auditService->computeEntryHash(
-            $log->created_at->toIso8601String(),
-            $log->user_id,
-            $log->action,
-            $log->entity_type,
-            $log->entity_id,
-            $previousHash
-        );
-
-        // Atomically seal the entry with optimistic locking
-        $sealed = SystemLog::where('id', $log->id)
-            ->whereNull('entry_hash')
-            ->update([
+            // Seal the entry
+            $log->update([
                 'previous_hash' => $previousHash,
                 'entry_hash' => $entryHash,
             ]);
-
-        if ($sealed === 0) {
-            Log::warning('SealAuditHashJob: Lost race condition, entry already sealed', [
-                'log_id' => $log->id,
-            ]);
-        }
+        });
     }
 
     public function failed(\Throwable $exception): void

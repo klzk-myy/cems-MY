@@ -262,11 +262,13 @@ class CaseManagementService
      */
     public function updateStatus(ComplianceCase $case, ComplianceCaseStatus $status): ComplianceCase
     {
-        $case->update(['status' => $status]);
+        DB::transaction(function () use ($case, $status) {
+            $case->update(['status' => $status]);
 
-        if ($status === ComplianceCaseStatus::Closed) {
-            $case->update(['resolved_at' => now()]);
-        }
+            if ($status === ComplianceCaseStatus::Closed) {
+                $case->update(['resolved_at' => now()]);
+            }
+        });
 
         return $case->fresh();
     }

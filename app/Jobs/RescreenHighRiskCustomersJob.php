@@ -34,7 +34,7 @@ class RescreenHighRiskCustomersJob implements ShouldQueue
         $query->chunkById(100, function ($customers) use ($service, &$totalCount) {
             foreach ($customers as $customer) {
                 try {
-                    $service->screenCustomer($customer, 'Scheduled high-risk rescreening');
+                    $service->screenCustomer($customer);
                     $totalCount++;
                 } catch (\Exception $e) {
                     Log::error('RescreenHighRiskCustomersJob: Failed to rescreen customer', [

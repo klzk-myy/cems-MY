@@ -26,14 +26,36 @@ class AuthorizationTest extends TestCase
     // ─── Transaction Policy ───────────────────────────────────────────
 
     #[Test]
-    public function transaction_policy_allows_any_user_to_view(): void
+    public function transaction_policy_allows_branch_user_to_view(): void
     {
         $policy = new TransactionPolicy;
-        $teller = User::factory()->create(['role' => UserRole::Teller]);
-        $transaction = Transaction::factory()->create();
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branch->id]);
+        $transaction = Transaction::factory()->create(['branch_id' => $branch->id]);
 
         $this->assertTrue($policy->viewAny($teller));
         $this->assertTrue($policy->view($teller, $transaction));
+    }
+
+    #[Test]
+    public function transaction_policy_denies_user_without_branch_to_view_any(): void
+    {
+        $policy = new TransactionPolicy;
+        $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => null]);
+
+        $this->assertFalse($policy->viewAny($teller));
+    }
+
+    #[Test]
+    public function transaction_policy_denies_branch_user_to_view_other_branch_transaction(): void
+    {
+        $policy = new TransactionPolicy;
+        $branch1 = Branch::factory()->create();
+        $branch2 = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branch1->id]);
+        $transaction = Transaction::factory()->create(['branch_id' => $branch2->id]);
+
+        $this->assertFalse($policy->view($teller, $transaction));
     }
 
     #[Test]
@@ -133,14 +155,40 @@ class AuthorizationTest extends TestCase
     // ─── Customer Policy ──────────────────────────────────────────────
 
     #[Test]
-    public function customer_policy_allows_any_user_to_view(): void
+    public function customer_policy_allows_branch_user_to_view(): void
     {
         $policy = new CustomerPolicy;
-        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branch->id]);
+        // Create customer with a transaction in teller's branch
         $customer = Customer::factory()->create();
+        Transaction::factory()->create(['customer_id' => $customer->id, 'branch_id' => $branch->id]);
 
         $this->assertTrue($policy->viewAny($teller));
         $this->assertTrue($policy->view($teller, $customer));
+    }
+
+    #[Test]
+    public function customer_policy_denies_user_without_branch_to_view_any(): void
+    {
+        $policy = new CustomerPolicy;
+        $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => null]);
+
+        $this->assertFalse($policy->viewAny($teller));
+    }
+
+    #[Test]
+    public function customer_policy_denies_branch_user_to_view_customer_without_transaction_in_their_branch(): void
+    {
+        $policy = new CustomerPolicy;
+        $branch1 = Branch::factory()->create();
+        $branch2 = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branch1->id]);
+        $customer = Customer::factory()->create();
+        // Create transaction in branch2 only
+        Transaction::factory()->create(['customer_id' => $customer->id, 'branch_id' => $branch2->id]);
+
+        $this->assertFalse($policy->view($teller, $customer));
     }
 
     #[Test]

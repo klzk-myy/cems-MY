@@ -73,6 +73,7 @@ class TransactionApiTest extends TestCase
         $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
             'user_id' => $teller->id,
+            'branch_id' => $branch->id,
             'approved_by' => $approver->id,
             'till_id' => $counter->code,
             'currency_code' => 'USD',

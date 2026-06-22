@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\TransactionImportStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TransactionImport extends BaseModel
 {

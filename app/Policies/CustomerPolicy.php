@@ -10,18 +10,28 @@ class CustomerPolicy
 {
     /**
      * Determine whether the user can view any customers.
+     * Users can view customers if they are assigned to a branch (or are admin).
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->role === UserRole::Admin || $user->branch_id !== null;
     }
 
     /**
      * Determine whether the user can view the customer.
+     * Enforces branch isolation: non-admins can only view customers who have
+     * at least one transaction in their branch.
      */
     public function view(User $user, Customer $customer): bool
     {
-        return true;
+        if ($user->role === UserRole::Admin) {
+            return true;
+        }
+
+        // Check if the customer has any transaction in the user's branch
+        return $customer->transactions()
+            ->where('branch_id', $user->branch_id)
+            ->exists();
     }
 
     /**

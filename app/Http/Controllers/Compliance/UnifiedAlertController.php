@@ -23,6 +23,8 @@ class UnifiedAlertController extends Controller
         $customerSearch = $request->get('customer');
         $fromDate = $request->get('from_date');
         $toDate = $request->get('to_date');
+        $page = max(1, (int) $request->get('page', 1));
+        $perPage = 25;
 
         $items = [];
         $stats = ['total' => 0, 'critical' => 0, 'pending' => 0, 'resolved_today' => 0];
@@ -47,14 +49,18 @@ class UnifiedAlertController extends Controller
 
         usort($items, fn ($a, $b) => $b['date']->timestamp - $a['date']->timestamp);
 
-        $perPage = 25;
-        $paginatedItems = array_slice($items, 0, $perPage);
+        $total = count($items);
+        $offset = ($page - 1) * $perPage;
+        $paginatedItems = array_slice($items, $offset, $perPage);
         $pagination = [
-            'current_page' => 1,
-            'last_page' => ceil(count($items) / $perPage),
+            'current_page' => $page,
+            'last_page' => max(1, (int) ceil($total / $perPage)),
             'per_page' => $perPage,
-            'total' => count($items),
+            'total' => $total,
         ];
+
+        // Replace full items array with the paginated slice for the view
+        $items = $paginatedItems;
 
         return view('compliance.unified.index', compact('items', 'stats', 'pagination', 'request'));
     }
@@ -85,7 +91,7 @@ class UnifiedAlertController extends Controller
             $query->whereDate('created_at', '<=', $toDate);
         }
 
-        $alerts = $query->orderBy('created_at', 'desc')->get();
+        $alerts = $query->orderBy('created_at', 'desc')->limit(500)->get();
 
         $items = $alerts->map(fn ($alert) => [
             'id' => 'A-'.$alert->id,
@@ -149,7 +155,7 @@ class UnifiedAlertController extends Controller
             });
         }
 
-        $findings = $query->orderBy('generated_at', 'desc')->get();
+        $findings = $query->orderBy('generated_at', 'desc')->limit(500)->get();
 
         $items = $findings->map(fn ($finding) => [
             'id' => 'F-'.$finding->id,

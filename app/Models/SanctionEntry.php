@@ -60,13 +60,4 @@ class SanctionEntry extends BaseModel
     {
         $this->attributes['details'] = is_string($value) ? $value : (is_array($value) ? json_encode($value) : null);
     }
-
-    public function setEntityTypeAttribute($value): void
-    {
-        if ($value instanceof EntityType) {
-            $value = $value->value;
-        }
-
-        $this->attributes['entity_type'] = $value;
-    }
 }

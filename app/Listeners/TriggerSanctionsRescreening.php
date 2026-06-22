@@ -16,6 +16,7 @@ use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\CustomerScreeningService;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TriggerSanctionsRescreening
@@ -185,18 +186,20 @@ class TriggerSanctionsRescreening
             ->whereIn('status', $pendingStatuses)
             ->get();
 
-        foreach ($transactions as $transaction) {
-            $transaction->update(['status' => TransactionStatus::PendingApproval]);
+        DB::transaction(function () use ($transactions, $customer, $reason) {
+            foreach ($transactions as $transaction) {
+                $transaction->update(['status' => TransactionStatus::PendingApproval]);
 
-            FlaggedTransaction::create([
-                'customer_id' => $customer->id,
-                'transaction_id' => $transaction->id,
-                'flag_type' => ComplianceFlagType::SanctionMatch,
-                'flag_reason' => $reason,
-                'status' => FlagStatus::Open,
-                'severity' => 'critical',
-            ]);
-        }
+                FlaggedTransaction::create([
+                    'customer_id' => $customer->id,
+                    'transaction_id' => $transaction->id,
+                    'flag_type' => ComplianceFlagType::SanctionMatch,
+                    'flag_reason' => $reason,
+                    'status' => FlagStatus::Open,
+                    'severity' => 'critical',
+                ]);
+            }
+        });
 
         if ($transactions->isNotEmpty()) {
             Log::warning('Pending transactions placed for compliance review due to sanctions match', [

@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Views;
 
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,17 +19,21 @@ class BrokenFormsFixTest extends TestCase
 
     protected User $manager;
 
+    protected Branch $branch;
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::factory()->create();
-        $this->manager = User::factory()->create(['role' => 'manager']);
+        $this->branch = Branch::factory()->create();
+        $this->user = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->manager = User::factory()->create(['role' => 'manager', 'branch_id' => $this->branch->id]);
     }
 
     #[Test]
     public function customer_note_form_has_action_and_method(): void
     {
         $customer = Customer::factory()->create();
+        Transaction::factory()->create(['customer_id' => $customer->id, 'branch_id' => $this->branch->id]);
 
         $response = $this->actingAs($this->user)->get(route('customers.show', $customer));
 
@@ -40,6 +46,7 @@ class BrokenFormsFixTest extends TestCase
     public function customer_note_can_be_stored(): void
     {
         $customer = Customer::factory()->create();
+        Transaction::factory()->create(['customer_id' => $customer->id, 'branch_id' => $this->branch->id]);
 
         $response = $this->actingAs($this->user)->post(route('customers.notes.store', $customer), [
             'note' => 'Test note content',
@@ -92,6 +99,7 @@ class BrokenFormsFixTest extends TestCase
     public function customer_note_is_displayed_after_creation(): void
     {
         $customer = Customer::factory()->create();
+        Transaction::factory()->create(['customer_id' => $customer->id, 'branch_id' => $this->branch->id]);
 
         $this->actingAs($this->user)->post(route('customers.notes.store', $customer), [
             'note' => 'Displayed note',

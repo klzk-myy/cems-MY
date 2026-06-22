@@ -16,8 +16,6 @@ class CustomerResource extends JsonResource
             'id' => $this->id,
             'full_name' => $this->full_name,
             'id_type' => $this->id_type,
-            'id_number_encrypted' => $this->id_number_encrypted,
-            'id_number_hash' => $this->id_number_hash,
             'id_number_masked' => $this->id_number_masked,
             'nationality' => $this->nationality,
             'date_of_birth' => $this->date_of_birth?->toIso8601String(),

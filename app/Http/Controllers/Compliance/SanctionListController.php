@@ -61,7 +61,11 @@ class SanctionListController extends Controller
 
         $query = SanctionEntry::with('sanctionList')
             ->when($request->list_id, fn ($q, $id) => $q->where('list_id', $id))
-            ->when($request->search, fn ($q, $search) => $q->where('entity_name', 'like', "%{$search}%"))
+            ->when($request->search, function ($q, $search) {
+                $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+
+                return $q->whereRaw('entity_name like ? escape \'\\\'', ["%{$escaped}%"]);
+            })
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->orderBy('entity_name');
 

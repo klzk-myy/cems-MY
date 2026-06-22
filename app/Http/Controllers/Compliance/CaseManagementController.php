@@ -48,6 +48,8 @@ class CaseManagementController extends Controller
 
     public function store(CreateCaseFromAlertsRequest $request): RedirectResponse
     {
+        $validated = $request->validated();
+
         $case = $this->caseManagementService->createFromAlerts(
             $validated['alert_ids'],
             auth()->id()
@@ -66,6 +68,8 @@ class CaseManagementController extends Controller
 
     public function update(UpdateCaseStatusRequest $request, ComplianceCase $case): RedirectResponse
     {
+        $validated = $request->validated();
+
         if ($request->has('status')) {
             $case = $this->caseManagementService->updateStatus($case, $validated['status']);
         }

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\ThresholdAudit;
 use App\Models\User;
 
@@ -13,7 +14,8 @@ class ThresholdAuditPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['admin', 'compliance', 'auditor']) ||
+        return $user->role === UserRole::Admin ||
+               $user->role === UserRole::ComplianceOfficer ||
                $user->can('access_compliance_dashboard');
     }
 
@@ -23,7 +25,8 @@ class ThresholdAuditPolicy
      */
     public function view(User $user, ThresholdAudit $thresholdAudit): bool
     {
-        return $user->hasRole(['admin', 'compliance', 'auditor']) ||
+        return $user->role === UserRole::Admin ||
+               $user->role === UserRole::ComplianceOfficer ||
                $user->can('access_compliance_dashboard');
     }
 

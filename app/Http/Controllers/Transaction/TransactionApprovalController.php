@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Transaction;
 
-use App\Enums\TransactionConfirmationStatus;
-use App\Enums\TransactionStatus;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\SelfApprovalException;
@@ -19,12 +17,12 @@ use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionApprovalService;
+use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionMonitoringService;
 use App\Services\Transaction\TransactionService;
 use App\Services\Transaction\TransactionStateMachine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -39,7 +37,8 @@ class TransactionApprovalController extends Controller
         protected MathService $mathService,
         protected AccountingService $accountingService,
         protected AuditService $auditService,
-        protected ThresholdService $thresholdService
+        protected ThresholdService $thresholdService,
+        protected TransactionConfirmationService $confirmationService
     ) {}
 
     /**
@@ -209,57 +208,20 @@ class TransactionApprovalController extends Controller
 
         $validated = $request->validated();
 
-        DB::beginTransaction();
         try {
-            if ($validated['confirmation_action'] === 'confirm') {
-                $confirmation->markConfirmed(auth()->id(), $validated['notes'] ?? null);
+            $result = $this->confirmationService->confirm($confirmation, $validated, auth()->id());
 
-                $transaction->refresh();
-
-                $this->auditService->logWithSeverity('transaction_confirmed', [
-                    'user_id' => auth()->id(),
-                    'entity_type' => 'Transaction',
-                    'entity_id' => $transaction->id,
-                    'new_values' => [
-                        'confirmation_id' => $confirmation->id,
-                        'confirmed_by' => auth()->id(),
-                    ],
-                ], 'INFO');
-
-                DB::commit();
-
-                return redirect()->route('transactions.show', $transaction)
-                    ->with('success', 'Transaction confirmed and pending final approval.');
-
-            } else {
-                $confirmation->markRejected(auth()->id(), $validated['notes'] ?? null);
-
-                $transaction->update([
-                    'status' => TransactionStatus::Cancelled,
-                    'cancelled_at' => now(),
-                    'cancelled_by' => auth()->id(),
-                    'cancellation_reason' => 'Rejected during confirmation: '.($validated['notes'] ?? 'No reason provided'),
-                ]);
-
-                $this->auditService->logWithSeverity('transaction_rejected', [
-                    'user_id' => auth()->id(),
-                    'entity_type' => 'Transaction',
-                    'entity_id' => $transaction->id,
-                    'new_values' => [
-                        'confirmation_id' => $confirmation->id,
-                        'rejected_by' => auth()->id(),
-                        'reason' => $validated['notes'] ?? 'No reason provided',
-                    ],
-                ], 'WARNING');
-
-                DB::commit();
-
-                return redirect()->route('transactions.show', $transaction)
-                    ->with('warning', 'Transaction has been rejected.');
-            }
+            return redirect()->route('transactions.show', $transaction)
+                ->with($result['success'] ? 'success' : 'error', $result['message']);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            Log::error('Transaction confirmation failed', [
+                'confirmation_id' => $confirmation->id,
+                'transaction_id' => $transaction->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return back()->with('error', 'Confirmation failed: '.$e->getMessage());
         }
