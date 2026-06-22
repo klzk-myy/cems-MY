@@ -383,7 +383,7 @@ Route::middleware(['branch.scope'])->group(function () {
     });
 
     // Branch Closing Workflow API
-    Route::prefix('branches/{branchId}/closing')->group(function () {
+    Route::prefix('branches/{branchId}/closing')->middleware('role:manager,admin')->group(function () {
         Route::post('/initiate', [BranchClosingController::class, 'initiate'])
             ->name('api.v1.branches.closing.initiate');
         Route::get('/checklist', [BranchClosingController::class, 'checklist'])
