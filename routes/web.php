@@ -341,7 +341,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/compliance-summary', [AnalyticsController::class, 'complianceSummary'])->name('compliance-summary');
     });
 
-    Route::middleware(['auth', 'role:admin', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
+    Route::middleware(['role:admin', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::get('/create', [UserController::class, 'create'])->name('create');
         Route::post('/', [UserController::class, 'store'])->name('store');
@@ -351,7 +351,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
     });
 
-    Route::middleware(['auth', 'role:admin'])->prefix('branches')->name('branches.')->group(function () {
+    Route::middleware(['role:admin'])->prefix('branches')->name('branches.')->group(function () {
         // Branch Closing Workflow
         Route::get('/{branch}/closing', [BranchClosingController::class, 'show'])
             ->name('closing.show');
@@ -364,7 +364,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     });
 
     // Alias group for views that use the legacy branch-closing.* route names
-    Route::middleware(['auth', 'role:admin'])->prefix('branch-closing')->name('branch-closing.')->group(function () {
+    Route::middleware(['role:admin'])->prefix('branch-closing')->name('branch-closing.')->group(function () {
         Route::get('/{branch}', [BranchClosingController::class, 'show'])->name('show');
         Route::post('/{branch}/initiate', [BranchClosingController::class, 'initiate'])->name('initiate');
         Route::post('/{branch}/settle', [BranchClosingController::class, 'settle'])->name('settle');
