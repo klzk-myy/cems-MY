@@ -36,6 +36,7 @@ use App\Http\Controllers\Transaction\TransactionCancellationController;
 use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
+use App\Http\Middleware\EnsureSetupAccessible;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -47,7 +48,7 @@ Route::get('/health', [HealthCheckController::class, 'index'])
 
 Route::middleware(['auth', 'role:admin'])->get('/test/query-log', [TestQueryLogController::class, 'index']);
 
-Route::prefix('setup')->name('setup.')->group(function () {
+Route::prefix('setup')->name('setup.')->middleware([EnsureSetupAccessible::class])->group(function () {
     Route::get('/', [SetupController::class, 'index'])->name('index');
     Route::get('/wizard', [SetupController::class, 'wizard'])->name('wizard');
     Route::post('/quick', [SetupController::class, 'quickSetup'])->name('quick');
