@@ -72,7 +72,6 @@ class BudgetService
      */
     public function updateActuals(string $periodCode): void
     {
-        // Get the period to determine date range
         $period = AccountingPeriod::where('period_code', $periodCode)->first();
 
         if (! $period) {
@@ -80,14 +79,19 @@ class BudgetService
         }
 
         $budgets = Budget::where('period_code', $periodCode)->get();
+
+        if ($budgets->isEmpty()) {
+            return;
+        }
+
+        $activity = $this->accountingService->getAccountsActivity(
+            $budgets->pluck('account_code')->unique()->toArray(),
+            $period->start_date->toDateString(),
+            $period->end_date->toDateString()
+        );
+
         foreach ($budgets as $budget) {
-            // Get actual activity for the account within the period date range
-            $actual = $this->accountingService->getAccountActivity(
-                $budget->account_code,
-                $period->start_date->toDateString(),
-                $period->end_date->toDateString()
-            );
-            $budget->update(['actual_amount' => $actual]);
+            $budget->update(['actual_amount' => $activity[$budget->account_code] ?? '0']);
         }
     }
 
