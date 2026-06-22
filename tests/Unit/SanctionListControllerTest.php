@@ -32,7 +32,7 @@ class SanctionListControllerTest extends TestCase
         $data = [
             'entity_name' => $entry->entity_name,
             'entity_type' => $entry->entity_type?->value ?? 'Individual',
-            'listing_date' => '2024-03-15',
+            'date_listed' => '2024-03-15',
             'list_source' => $entry->list_source,
         ];
 
