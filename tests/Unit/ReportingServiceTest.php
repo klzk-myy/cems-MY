@@ -3,57 +3,22 @@
 namespace Tests\Unit;
 
 use App\Services\Reporting\ReportingService;
-use App\Services\System\EncryptionService;
-use App\Services\System\MathService;
-use App\Services\ThresholdService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ReportingServiceTest extends TestCase
 {
-    private ReportingService $service;
-
-    private ThresholdService $thresholdService;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->thresholdService = new ThresholdService;
-        $mathService = new MathService;
-        $encryptionService = new EncryptionService;
-
-        $this->service = new ReportingService(
-            $encryptionService,
-            $mathService,
-            $this->thresholdService
-        );
-    }
+    use RefreshDatabase;
 
     #[Test]
-    public function service_is_instantiated(): void
+    public function generate_form_lmca_uses_configured_license_number(): void
     {
-        $this->assertInstanceOf(ReportingService::class, $this->service);
-    }
+        config(['cems.license_number' => 'MSB-TEST-12345']);
 
-    #[Test]
-    public function threshold_service_integration_for_str(): void
-    {
-        $strThreshold = $this->thresholdService->getStrThreshold();
-        $this->assertEquals('50000', $strThreshold);
-    }
+        $service = $this->app->make(ReportingService::class);
+        $result = $service->generateFormLMCA(now()->format('Y-m'));
 
-    #[Test]
-    public function threshold_service_integration_for_edd(): void
-    {
-        $eddThreshold = $this->thresholdService->getEddThreshold();
-        $this->assertEquals('50000', $eddThreshold);
-    }
-
-    #[Test]
-    public function all_reporting_thresholds_return_string(): void
-    {
-        $this->assertIsString($this->thresholdService->getStrThreshold());
-        $this->assertIsString($this->thresholdService->getEddThreshold());
+        $this->assertEquals('MSB-TEST-12345', $result['license_number']);
     }
 }

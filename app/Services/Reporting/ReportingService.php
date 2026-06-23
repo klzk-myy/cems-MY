@@ -253,7 +253,7 @@ class ReportingService implements ReportingServiceInterface
             ->count();
 
         return [
-            'license_number' => config('app.license_number', 'MSB-XXXXXXX'),
+            'license_number' => config('cems.license_number', 'MSB-XXXXXXX'),
             'reporting_period' => $month,
             'report_date' => now()->format('Y-m-d'),
             'currencies' => $currencyData,
