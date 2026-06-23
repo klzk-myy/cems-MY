@@ -14,9 +14,9 @@
                     <x-select
                         name="id_type"
                         label="ID Type"
-                        :options="['IC' => 'NRIC / IC', 'PASSPORT' => 'Passport', 'OTHERS' => 'Other ID']"
+                        :options="['MyKad' => 'MyKad (Malaysian IC)', 'Passport' => 'Passport', 'Others' => 'Other ID']"
                         placeholder="-- Select --"
-                        selected="{{ old('id_type', $customer->id_type ?? '') }}"
+                        selected="{{ old('id_type', $customer->id_type?->value ?? $customer->id_type ?? '') }}"
                         required
                     />
                     <div>
@@ -46,10 +46,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth', $customer->date_of_birth ?? '') }}" />
                     <x-select
-                        name="risk_level"
-                        label="Risk Level"
-                        :options="['low' => 'Low', 'medium' => 'Medium', 'high' => 'High']"
-                        selected="{{ old('risk_level', $customer->risk_level ?? '') }}"
+                        name="risk_rating"
+                        label="Risk Rating"
+                        :options="['Low' => 'Low', 'Medium' => 'Medium', 'High' => 'High']"
+                        selected="{{ old('risk_rating', $customer->risk_rating?->value ?? $customer->risk_rating ?? '') }}"
                     />
                 </div>
 

@@ -8,7 +8,7 @@
 
         <x-filter-bar method="GET">
             <x-input name="search" value="{{ request('search') }}" placeholder="Search by name or ID..." inline />
-            <x-select name="risk_level" :options="['' => 'All Risk Levels', 'low' => 'Low', 'medium' => 'Medium', 'high' => 'High']" :selected="request('risk_level')" inline />
+            <x-select name="risk_rating" :options="['' => 'All Risk Ratings', 'Low' => 'Low', 'Medium' => 'Medium', 'High' => 'High']" :selected="request('risk_rating')" inline />
             <x-select name="nationality" :options="['' => 'All Nationalities', 'MY' => 'Malaysian', 'SG' => 'Singaporean', 'OTHER' => 'Other']" :selected="request('nationality')" inline />
             <x-button type="submit" variant="primary">Filter</x-button>
         </x-filter-bar>
@@ -34,8 +34,14 @@
                             <td class="px-4 py-3 text-sm">{{ $customer->id_number_masked }}</td>
                             <td class="px-4 py-3 text-sm">{{ $customer->nationality }}</td>
                             <td class="px-4 py-3">
-                                <x-badge :variant="strtolower($customer->risk_level ?? 'gray')">
-                                    {{ $customer->risk_level ?? 'Unknown' }}
+                                <x-badge :variant="(
+                                    $customer->risk_rating instanceof \App\Enums\RiskRating
+                                        ? match (strtolower($customer->risk_rating->value)) { 'high' => 'danger', 'medium' => 'warning', default => 'success' }
+                                        : 'success'
+                                )">
+                                    {{ $customer->risk_rating instanceof \App\Enums\RiskRating
+                                        ? $customer->risk_rating->value
+                                        : ($customer->risk_rating ?? 'Unknown') }}
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-sm">

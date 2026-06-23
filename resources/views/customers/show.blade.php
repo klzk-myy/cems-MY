@@ -20,18 +20,16 @@
                         <div>
                             <h2 class="text-lg font-semibold">{{ $customer->full_name ?? 'Ahmad bin Abu' }}</h2>
                             @php
-                                $riskLevel = $customer->risk_level ?? 'medium';
-                                if (is_object($riskLevel) && enum_exists(get_class($riskLevel))) {
-                                    $riskLevel = $riskLevel->value;
-                                }
-                                $riskVariant = match (strtolower($riskLevel)) {
+                                $riskValue = $customer->risk_rating instanceof \App\Enums\RiskRating ? $customer->risk_rating->value : ($customer->risk_rating ?? 'Medium');
+
+                                $riskVariant = match (strtolower($riskValue)) {
                                     'high' => 'danger',
                                     'medium' => 'warning',
                                     default => 'success',
                                 };
                             @endphp
                             <x-badge :variant="$riskVariant">
-                                {{ ucfirst($riskLevel) }} Risk
+                                {{ ucfirst($riskValue) }} Risk
                             </x-badge>
                         </div>
                     </div>

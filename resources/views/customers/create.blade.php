@@ -14,7 +14,7 @@
                         <x-select
                             name="id_type"
                             label="ID Type"
-                            :options="['IC' => 'NRIC / IC', 'PASSPORT' => 'Passport', 'MILITARY' => 'Military ID']"
+                            :options="['MyKad' => 'MyKad (Malaysian IC)', 'Passport' => 'Passport', 'Others' => 'Other ID']"
                             placeholder="-- Select --"
                             required
                         />
@@ -38,12 +38,7 @@
 
                     <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth') }}" />
 
-                    <x-radio-group
-                        name="risk_level"
-                        label="Risk Level"
-                        :options="['low' => 'Low', 'medium' => 'Medium', 'high' => 'High']"
-                        :selected="old('risk_level')"
-                    />
+
                 </div>
 
                 <div class="px-6 py-4 border-t border-border flex items-center justify-end gap-3">

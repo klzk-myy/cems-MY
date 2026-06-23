@@ -184,7 +184,7 @@ class Customer extends BaseModel
      */
     public function latestRiskSnapshot(): HasOne
     {
-        return $this->hasOne(RiskScoreSnapshot::class)->latest('snapshot_date');
+        return $this->hasOne(RiskScoreSnapshot::class)->latestOfMany('snapshot_date');
     }
 
     /**

@@ -165,10 +165,7 @@ class CustomerController extends Controller
 
         $query->orderBy($sortBy, $sortDir);
 
-        // Use withCount for aggregated data only - avoid N+1 by not eager loading full relationships
-        $query->with(['documents', 'latestRiskSnapshot'])
-            ->withCount(['documents']);
-
+        // Avoid unnecessary eager loading; index view only uses direct attributes
         $customers = $query->paginate(20)->withQueryString();
 
         // Get filter options
