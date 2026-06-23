@@ -98,28 +98,47 @@ class QueryLoggingService
 
     private function detectNPlusOne(array $queries, Request $request): void
     {
-        $queryCounts = [];
+        $patterns = [];
 
         foreach ($queries as $query) {
             $pattern = $this->normalizeQuery($query['query']);
+            $id = $this->extractFirstIntegerBinding($query['query'], $query['bindings'] ?? []);
 
-            if (! isset($queryCounts[$pattern])) {
-                $queryCounts[$pattern] = 0;
+            if (! isset($patterns[$pattern])) {
+                $patterns[$pattern] = ['count' => 0, 'ids' => []];
             }
 
-            $queryCounts[$pattern]++;
+            $patterns[$pattern]['count']++;
+            if ($id !== null) {
+                $patterns[$pattern]['ids'][$id] = true;
+            }
         }
 
-        foreach ($queryCounts as $pattern => $count) {
-            if ($count > 1) {
+        foreach ($patterns as $pattern => $data) {
+            if ($data['count'] >= 3 && count($data['ids']) >= 2) {
                 Log::warning('Potential N+1 query detected', [
                     'pattern' => $pattern,
-                    'count' => $count,
+                    'count' => $data['count'],
+                    'unique_ids' => count($data['ids']),
                     'url' => $request->fullUrl(),
                     'method' => $request->method(),
                 ]);
             }
         }
+    }
+
+    private function extractFirstIntegerBinding(string $sql, array $bindings): ?int
+    {
+        foreach ($bindings as $binding) {
+            if (is_int($binding)) {
+                return $binding;
+            }
+            if (is_string($binding) && ctype_digit($binding)) {
+                return (int) $binding;
+            }
+        }
+
+        return null;
     }
 
     private function normalizeQuery(string $query): string
