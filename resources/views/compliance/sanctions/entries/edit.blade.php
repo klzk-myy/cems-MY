@@ -17,7 +17,7 @@
                     <x-select name="entity_type" label="Entity Type *" :options="['Individual' => 'Individual', 'Organization' => 'Organization', 'Vessel' => 'Vessel', 'Aircraft' => 'Aircraft']" selected="{{ old('entity_type', $sanctionEntry->entity_type?->value ?? $sanctionEntry->entity_type) }}" required />
                     <x-input name="reference_number" label="Reference Number" value="{{ old('reference_number', $sanctionEntry->reference_number) }}" />
                     <x-input name="nationality" label="Nationality" value="{{ old('nationality', $sanctionEntry->nationality) }}" />
-                    <x-input type="date" name="date_listed" label="Date Listed" value="{{ old('date_listed', $sanctionEntry->listing_date?->format('Y-m-d')) }}" />
+                    <x-input type="date" name="listing_date" label="Date Listed" value="{{ old('listing_date', $sanctionEntry->listing_date?->format('Y-m-d')) }}" />
                     <x-input name="address" label="Address" value="{{ old('address', $sanctionEntry->address) }}" />
                     <x-input name="city" label="City" value="{{ old('city', $sanctionEntry->city) }}" />
                     <x-input name="country" label="Country" value="{{ old('country', $sanctionEntry->country) }}" />
