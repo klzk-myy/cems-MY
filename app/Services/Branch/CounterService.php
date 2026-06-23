@@ -524,16 +524,18 @@ class CounterService
 
         $resolved = [];
 
-        // Map string codes directly
         foreach ($stringCodes as $code) {
             $resolved[$code] = $code;
         }
 
-        // Look up numeric IDs
         if (! empty($numericIds)) {
+            // Cast to ints for query
+            $numericIds = array_map('intval', $numericIds);
             $currencies = Currency::whereIn('id', $numericIds)->pluck('code', 'id');
             foreach ($currencies as $id => $code) {
-                $resolved[$code] = $code; // Always use string code as key
+                $resolved[$id] = $code;         // int key
+                $resolved[(string) $id] = $code; // string numeric key
+                $resolved[$code] = $code;
             }
         }
 
@@ -554,16 +556,15 @@ class CounterService
 
         $resolved = [];
 
-        // Map string codes directly
         foreach ($stringCodes as $code) {
             $resolved[$code] = $code;
         }
 
-        // Look up numeric IDs
         if (! empty($numericIds)) {
             $currencies = Currency::whereIn('id', $numericIds)->pluck('code', 'id');
             foreach ($currencies as $id => $code) {
-                $resolved[$code] = $code; // Always use string code as key
+                $resolved[$id] = $code;
+                $resolved[$code] = $code;
             }
         }
 
