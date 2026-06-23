@@ -153,17 +153,19 @@ class SharedComponentFormsTest extends TestCase
     }
 
     #[Test]
-    public function customer_create_uses_radio_group(): void
+    public function customer_create_uses_select_for_id_type_and_no_risk_radios(): void
     {
         $path = $this->getViewPath('customers.create');
         $content = file_get_contents($path);
 
-        // Raw radio inputs should be replaced
+        // Ensure old risk_level radio group is not present
         $this->assertStringNotContainsString('type="radio"', $content);
+        $this->assertStringNotContainsString('name="risk_level"', $content);
 
-        // Check radio-group component is present with correct name
-        $this->assertStringContainsString('<x-radio-group', $content);
-        $this->assertStringContainsString('name="risk_level"', $content);
+        // Ensure id_type uses the select component
+        $this->assertStringNotContainsString('<select name="id_type"', $content);
+        $this->assertStringContainsString('<x-select', $content);
+        $this->assertStringContainsString('name="id_type"', $content);
     }
 
     #[Test]
