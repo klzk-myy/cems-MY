@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class StockTransfer extends BaseModel
 {
@@ -178,8 +179,39 @@ class StockTransfer extends BaseModel
     {
         $prefix = 'TRF-';
         $date = now()->format('Ymd');
-        $sequence = str_pad(self::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
 
-        return "{$prefix}{$date}-{$sequence}";
+        $maxRetries = 3;
+        $attempt = 0;
+
+        while (true) {
+            $attempt++;
+            DB::beginTransaction();
+
+            try {
+                // Lock today's records to prevent concurrent generation of same sequence
+                $count = self::whereDate('created_at', today())->lockForUpdate()->count();
+                $sequence = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+                $transferNumber = "{$prefix}{$date}-{$sequence}";
+
+                // Double-check for uniqueness
+                if (self::where('transfer_number', $transferNumber)->exists()) {
+                    if ($attempt >= $maxRetries) {
+                        throw new \RuntimeException("Failed to generate unique transfer number after {$maxRetries} attempts");
+                    }
+                    DB::rollBack();
+
+                    continue;
+                }
+
+                DB::commit();
+
+                return $transferNumber;
+            } catch (\Exception $e) {
+                DB::rollBack();
+                if ($attempt >= $maxRetries) {
+                    throw $e;
+                }
+            }
+        }
     }
 }
