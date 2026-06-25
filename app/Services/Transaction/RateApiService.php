@@ -37,6 +37,10 @@ class RateApiService
 
     public function fetchLatestRates(?int $branchId = null): array
     {
+        if (empty($this->apiKey)) {
+            throw new \RuntimeException('EXCHANGE_RATE_API_KEY is not configured. Set it in .env');
+        }
+
         $cacheKey = $branchId ? "exchange_rates_branch_{$branchId}" : 'exchange_rates';
 
         return Cache::remember($cacheKey, $this->cacheDuration, function () use ($branchId) {
