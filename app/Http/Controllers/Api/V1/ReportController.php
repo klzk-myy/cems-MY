@@ -27,6 +27,12 @@ class ReportController extends Controller
             ], 403);
         }
 
+        // Sanitize filename to prevent path traversal
+        $filename = basename($filename);
+        if (str_contains($filename, '..') || str_contains($filename, '/') || str_contains($filename, '\\')) {
+            abort(400, 'Invalid filename.');
+        }
+
         $filepath = "reports/{$filename}";
 
         if (! $this->documentStorageService->exists($filepath)) {
