@@ -195,7 +195,7 @@ class TransactionApprovalController extends Controller
             Log::error('Transaction confirmation failed', [
                 'confirmation_id' => $confirmation->id,
                 'transaction_id' => $confirmation->transaction_id,
-                'user_id' => $userId,
+                'user_id' => auth()->id(),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
