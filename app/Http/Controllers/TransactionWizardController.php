@@ -150,7 +150,11 @@ class TransactionWizardController extends Controller
         );
 
         try {
-            $transaction = $this->transactionService->createTransaction($transactionData);
+            $transaction = $this->transactionService->createTransaction(
+                $transactionData,
+                auth()->id(),
+                request()->ip()
+            );
 
             // Clear wizard session
             $this->wizardSessionService->forget($sessionId);
