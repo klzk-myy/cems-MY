@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use App\Enums\BankReconciliationStatus;
 use App\Enums\CheckStatus;
+use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -66,9 +67,11 @@ class BankReconciliation extends BaseModel
         return $query->where('status', BankReconciliationStatus::Exception->value);
     }
 
-    public function getAmount(): float
+    public function getAmount(): string
     {
-        return (float) $this->debit - (float) $this->credit;
+        $math = app(MathService::class);
+
+        return $math->subtract((string) $this->debit, (string) $this->credit);
     }
 
     /**
