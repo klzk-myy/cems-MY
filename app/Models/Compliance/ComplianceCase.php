@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class ComplianceCase extends ComplianceModel
 {
@@ -82,23 +83,46 @@ class ComplianceCase extends ComplianceModel
      */
     public static function generateCaseNumber(): string
     {
-        $year = date('Y');
+        $year = now()->year;
         $prefix = "CASE-{$year}-";
 
-        // Get the latest case number for this year
-        $latestCase = static::where('case_number', 'like', "{$prefix}%")
-            ->orderBy('case_number', 'desc')
-            ->first();
+        $maxRetries = 3;
+        $attempt = 0;
 
-        if ($latestCase) {
-            // Extract the sequence number and increment
-            $lastSequence = (int) substr($latestCase->case_number, -5);
-            $nextSequence = $lastSequence + 1;
-        } else {
-            $nextSequence = 1;
+        while (true) {
+            $attempt++;
+            DB::beginTransaction();
+
+            try {
+                // Lock the latest case number for this year to prevent race conditions
+                $latest = static::where('case_number', 'like', "{$prefix}%")
+                    ->orderBy('case_number', 'desc')
+                    ->lockForUpdate()
+                    ->first();
+
+                $nextSequence = $latest ? ((int) substr($latest->case_number, -5)) + 1 : 1;
+                $caseNumber = $prefix.str_pad($nextSequence, 5, '0', STR_PAD_LEFT);
+
+                // Double-check for uniqueness (in case another transaction slipped through)
+                if (static::where('case_number', $caseNumber)->exists()) {
+                    if ($attempt >= $maxRetries) {
+                        throw new \RuntimeException("Failed to generate unique case number after {$maxRetries} attempts");
+                    }
+                    DB::rollBack();
+
+                    continue;
+                }
+
+                DB::commit();
+
+                return $caseNumber;
+            } catch (\Exception $e) {
+                DB::rollBack();
+                if ($attempt >= $maxRetries) {
+                    throw $e;
+                }
+            }
         }
-
-        return $prefix.str_pad($nextSequence, 5, '0', STR_PAD_LEFT);
     }
 
     /**
