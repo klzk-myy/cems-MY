@@ -150,11 +150,11 @@ class PatternRiskService
 
                     $sellForeign = ltrim((string) $sell->amount_foreign, '-');
                     $buyForeign = ltrim((string) $buy->amount_foreign, '-');
-                    $roundTripAmount = $this->math->compare($sellForeign, $buyForeign) <= 0
+                    $roundTripAmount = $this->mathService->compare($sellForeign, $buyForeign) <= 0
                         ? $sellForeign
                         : $buyForeign;
 
-                    if ($this->math->compare((string) $roundTripAmount, $threshold) < 0) {
+                    if ($this->mathService->compare((string) $roundTripAmount, $threshold) < 0) {
                         continue;
                     }
 
