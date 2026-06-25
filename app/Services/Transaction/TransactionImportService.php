@@ -198,7 +198,7 @@ class TransactionImportService
                 if ($data['type'] === TransactionType::Sell->value) {
                     $position = $this->positionService->getPositionWithLock(
                         $data['currency_code'],
-                        $data['till_id']
+                        $tillBalance->branch_id
                     );
 
                     if (! $position || $this->mathService->compare($position->balance, $amountForeign) < 0) {
