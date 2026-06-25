@@ -35,18 +35,26 @@ class AppKeyRotationTest extends TestCase
     }
 
     /**
-     * Test that Laravel config uses the correct key from .env.
+     * Test that Laravel config uses the correct key from the current environment's .env file.
      */
     public function test_laravel_uses_correct_app_key(): void
     {
         $envKey = config('app.key');
         $this->assertNotEmpty($envKey, 'App key should be configured');
 
-        // Read from .env to verify it matches
-        $envContent = file_get_contents(base_path('.env'));
+        // Determine which .env file is active based on APP_ENV
+        $environment = app()->environment();
+        $envFile = match ($environment) {
+            'testing' => base_path('.env.testing'),
+            default => base_path('.env'),
+        };
+
+        $this->assertFileExists($envFile, "Environment file {$envFile} should exist");
+
+        $envContent = file_get_contents($envFile);
         \preg_match('/^APP_KEY=(.+)$/m', $envContent, $matches);
         $envKeyValue = trim($matches[1] ?? '');
 
-        $this->assertSame($envKey, $envKeyValue, 'Config key should match .env');
+        $this->assertSame($envKey, $envKeyValue, "Config key should match {$envFile}");
     }
 }
