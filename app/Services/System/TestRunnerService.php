@@ -80,10 +80,10 @@ class TestRunnerService
         $basePath = base_path();
 
         if ($suite === 'full') {
-            return "cd {$basePath} && php artisan test";
+            return 'cd '.escapeshellarg($basePath).' && php artisan test';
         }
 
-        return "cd {$basePath} && php artisan test --filter={$suite}";
+        return 'cd '.escapeshellarg($basePath).' && php artisan test --filter='.escapeshellarg($suite);
     }
 
     /**
