@@ -173,6 +173,13 @@ class TransactionImportService
                 $holdReason = implode(', ', $holdCheck->reasons);
             }
 
+            // Enforce auto-approve threshold: if amount exceeds threshold, require approval
+            $threshold = $this->thresholdService->getAutoApproveThreshold();
+            if ($this->mathService->compare($amountLocal, $threshold) >= 0) {
+                $status = TransactionStatus::PendingApproval->value;
+                $holdReason = $holdReason ?: 'Transaction amount exceeds auto-approve threshold';
+            }
+
             // For sell transactions, check stock availability
             if ($data['type'] === TransactionType::Sell->value) {
                 $position = $this->positionService->getPosition(
