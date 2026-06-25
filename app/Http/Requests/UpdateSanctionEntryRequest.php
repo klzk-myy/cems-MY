@@ -12,7 +12,7 @@ class UpdateSanctionEntryRequest extends AuthorizedFormRequest
             'entity_type' => 'required|in:Individual,Organization,Vessel,Aircraft',
             'reference_number' => 'nullable|string|max:255',
             'nationality' => 'nullable|string|max:255',
-            'listing_date' => 'nullable|date',
+            'date_listed' => 'nullable|date',
             'aliases' => 'nullable|string',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:255',

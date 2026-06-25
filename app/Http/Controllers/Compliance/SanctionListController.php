@@ -189,7 +189,7 @@ class SanctionListController extends Controller
             'aliases' => $validated['aliases'] ?? null,
             'nationality' => $validated['nationality'] ?? null,
             'reference_number' => $validated['reference_number'] ?? null,
-            'listing_date' => $validated['listing_date'] ?? null,
+            'listing_date' => $validated['date_listed'] ?? null,
             'address' => $validated['address'] ?? null,
             'city' => $validated['city'] ?? null,
             'country' => $validated['country'] ?? null,
