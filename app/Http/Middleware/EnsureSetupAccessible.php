@@ -25,7 +25,7 @@ class EnsureSetupAccessible
             && ExchangeRate::exists()
             && Branch::exists();
 
-        if ($setupComplete && app()->environment('production')) {
+        if ($setupComplete) {
             abort(404);
         }
 
