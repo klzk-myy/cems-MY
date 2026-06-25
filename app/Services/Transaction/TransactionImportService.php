@@ -180,23 +180,33 @@ class TransactionImportService
                 $holdReason = $holdReason ?: 'Transaction amount exceeds auto-approve threshold';
             }
 
-            // For sell transactions, check stock availability
-            if ($data['type'] === TransactionType::Sell->value) {
-                $position = $this->positionService->getPosition(
-                    $data['currency_code'],
-                    $data['till_id']
-                );
-
-                if (! $position || $this->mathService->compare($position->balance, $amountForeign) < 0) {
-                    $availableBalance = $position ? $position->balance : '0';
-                    throw new \Exception("Insufficient stock. Available: {$availableBalance} {$data['currency_code']}");
-                }
-            }
-
             // Create transaction within database transaction
             DB::beginTransaction();
 
             try {
+                // Check idempotency to prevent duplicates
+                if (! empty($data['idempotency_key'])) {
+                    $existing = Transaction::where('idempotency_key', $data['idempotency_key'])->exists();
+                    if ($existing) {
+                        $this->successCount++;
+
+                        continue 2;
+                    }
+                }
+
+                // For sell transactions, check stock availability with lock
+                if ($data['type'] === TransactionType::Sell->value) {
+                    $position = $this->positionService->getPositionWithLock(
+                        $data['currency_code'],
+                        $data['till_id']
+                    );
+
+                    if (! $position || $this->mathService->compare($position->balance, $amountForeign) < 0) {
+                        $availableBalance = $position ? $position->balance : '0';
+                        throw new \Exception("Insufficient stock. Available: {$availableBalance} {$data['currency_code']}");
+                    }
+                }
+
                 // Create transaction record
                 $transaction = Transaction::create([
                     'customer_id' => $data['customer_id'],
