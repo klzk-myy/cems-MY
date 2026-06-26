@@ -129,9 +129,6 @@
                                     <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
                                     <span class="text-sm text-ink-muted">Can access compliance reports</span>
                                 </li>
-                                <li class="flex items-start">
-                                    <x-icon name="check" class="w-5 h-5 text-success-text mr-2 shrink-0" />
-                                </li>
                                 @break
                             @case('admin')
                                 <li class="flex items-start">

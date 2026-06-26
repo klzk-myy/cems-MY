@@ -51,8 +51,8 @@
                                     <x-badge variant="gray">{{ ucfirst($run->status->value) }}</x-badge>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-sm font-medium text-success-text">{{ $run->tests_passed ?? 0 }}</td>
-                            <td class="px-4 py-3 text-sm font-medium text-danger-text">{{ $run->tests_failed ?? 0 }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-success-text">{{ $run->passed ?? 0 }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-danger-text">{{ $run->failed ?? 0 }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $run->duration ? number_format($run->duration, 2) . 's' : 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $run->created_at->format('M d, Y H:i') }}</td>
                             <td class="px-4 py-3 whitespace-nowrap">

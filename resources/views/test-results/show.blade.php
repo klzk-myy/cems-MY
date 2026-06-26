@@ -27,13 +27,13 @@
                 </x-badge>
             </x-stat-card>
 
-            <x-stat-card label="Total Tests" :value="number_format($testResult->tests_total ?? 0)" />
-            <x-stat-card label="Passed" :value="number_format($testResult->tests_passed ?? 0)" color="green" />
-            <x-stat-card label="Failed" :value="number_format($testResult->tests_failed ?? 0)" color="red" />
+            <x-stat-card label="Total Tests" :value="number_format($testResult->total_tests ?? 0)" />
+            <x-stat-card label="Passed" :value="number_format($testResult->passed ?? 0)" color="green" />
+            <x-stat-card label="Failed" :value="number_format($testResult->failed ?? 0)" color="red" />
             <x-stat-card label="Duration" :value="$testResult->duration ? number_format($testResult->duration, 2) . 's' : 'N/A'" />
         </x-stat-grid>
 
-        @if($testResult->tests_failed > 0 && !empty($testResult->failures))
+        @if(($testResult->failed ?? 0) > 0 && !empty($testResult->failures))
             <x-card title="Failed Tests ({{ count($testResult->failures) }})">
                 @foreach($testResult->failures as $index => $failure)
                     <x-card-section>
@@ -51,7 +51,7 @@
             </x-card>
         @endif
 
-        @if($testResult->tests_errors > 0 && !empty($testResult->errors))
+        @if(count($testResult->errors ?? []) > 0 && !empty($testResult->errors))
             <x-card title="Errors ({{ count($testResult->errors) }})">
                 @foreach($testResult->errors as $index => $error)
                     <x-card-section>
@@ -94,15 +94,15 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-ink-muted">Branch</dt>
-                        <dd class="mt-1 text-sm text-ink">{{ $testResult->branch ?? 'N/A' }}</dd>
+                        <dd class="mt-1 text-sm text-ink">{{ $testResult->git_branch ?? 'N/A' }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-ink-muted">Commit</dt>
-                        <dd class="mt-1 text-sm text-ink font-mono">{{ $testResult->commit_hash ?? 'N/A' }}</dd>
+                        <dd class="mt-1 text-sm text-ink font-mono">{{ $testResult->git_commit ?? 'N/A' }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-ink-muted">Runner</dt>
-                        <dd class="mt-1 text-sm text-ink">{{ $testResult->runner ?? 'N/A' }}</dd>
+                        <dd class="mt-1 text-sm text-ink">{{ $testResult->executed_by ?? 'N/A' }}</dd>
                     </div>
                 </dl>
             </x-card-section>
@@ -116,7 +116,7 @@
                             <h3 class="text-sm font-medium text-ink">Previous Run</h3>
                             <p class="mt-1 text-sm text-ink-muted">
                                 Run #{{ $previousRun->id }} &bull; {{ $previousRun->created_at->format('M d, Y H:i') }}
-                                &bull; {{ $previousRun->tests_passed ?? 0 }}/{{ $previousRun->tests_total ?? 0 }} passed
+                                &bull; {{ $previousRun->passed ?? 0 }}/{{ $previousRun->total_tests ?? 0 }} passed
                             </p>
                         </div>
                         <x-button variant="secondary" href="{{ route('test-results.show', $previousRun->id) }}">

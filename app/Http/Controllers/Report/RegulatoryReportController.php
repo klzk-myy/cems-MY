@@ -117,7 +117,7 @@ class RegulatoryReportController extends Controller
         ];
 
         // Calculate next business day
-        $nextBusinessDay = now()->parse($date)->addWeekday()->format('Y-m-d');
+        $nextBusinessDay = Carbon::parse($date)->addWeekday()->format('Y-m-d');
         $isToday = $date === now()->toDateString();
 
         return view('reports.msb2.index', compact('date', 'summary', 'stats', 'reportGenerated', 'nextBusinessDay', 'isToday'));
@@ -155,7 +155,7 @@ class RegulatoryReportController extends Controller
 
     public function updateMSB2Status(UpdateReportStatusRequest $request): JsonResponse
     {
-        return $this->updateReportStatus('MSB2', $request);
+        return $this->updateReportStatus(ReportType::Msb2, $request);
     }
 
     /**
@@ -168,7 +168,7 @@ class RegulatoryReportController extends Controller
         $month = $request->validated('month', now()->format('Y-m'));
 
         $reportGenerated = ReportGenerated::where('report_type', 'LMCA')
-            ->where('period_start', now()->parse($month)->startOfMonth())
+            ->where('period_start', Carbon::parse($month)->startOfMonth())
             ->first();
 
         $reportData = $this->reportingService->generateFormLMCA($month);
@@ -210,19 +210,23 @@ class RegulatoryReportController extends Controller
         return $this->updateReportStatus('LMCA', $request);
     }
 
-    private function updateReportStatus(string $reportType, UpdateReportStatusRequest $request): JsonResponse
+    private function updateReportStatus(ReportType|string $reportType, UpdateReportStatusRequest $request): JsonResponse
     {
         $this->requireManagerOrAdmin();
 
         $validated = $request->validated();
 
-        if ($reportType === 'MSB2') {
-            $periodStart = now()->parse($validated['date'])->startOfDay();
+        $isMsb2 = $reportType instanceof ReportType
+            ? $reportType === ReportType::Msb2
+            : strtoupper($reportType) === 'MSB2';
+
+        if ($isMsb2) {
+            $periodStart = Carbon::parse($validated['date'])->startOfDay();
         } else {
-            $periodStart = now()->parse($validated['month'])->startOfMonth();
+            $periodStart = Carbon::parse($validated['month'])->startOfMonth();
         }
 
-        $report = ReportGenerated::where('report_type', $reportType)
+        $report = ReportGenerated::where('report_type', $reportType instanceof ReportType ? $reportType->value : $reportType)
             ->where('period_start', $periodStart)
             ->first();
 

@@ -20,7 +20,7 @@
 | Pages checked | 46 |
 | Unique broken pages found | 7 |
 | Pages fixed | 7 |
-| Full test suite | **1,198 passed**, 5 skipped, 1 deprecated |
+| Full test suite | **1,204 passed**, 5 skipped, 1 deprecated |
 | `APP_DEBUG` | restored to `false` |
 
 ## Issues Found & Fixes
@@ -80,11 +80,18 @@
 
 - `app/Http/Controllers/Report/AnalyticsController.php`
 - `app/Http/Controllers/Report/RegulatoryReportController.php`
+- `app/Services/Contracts/CustomerServiceInterface.php`
+- `app/Services/Customer/CustomerService.php`
 - `app/Services/System/TestRunnerService.php`
-- `resources/views/reports/msb2/index.blade.php`
 - `config/blade-icons.php` (new)
 - `resources/svg/check.svg` (new)
-- `resources/svg/x.svg` (new)
+- `resources/views/pages/transactions/index.blade.php`
+- `resources/views/reports/msb2/index.blade.php`
+- `resources/views/test-results/index.blade.php`
+- `resources/views/test-results/show.blade.php`
+- `resources/views/test-results/compare.blade.php`
+- `resources/views/test-results/statistics.blade.php`
+- `resources/views/users/show.blade.php`
 - `tests/Feature/AdminReportSmokeTest.php` (new)
 
 ## Verification
@@ -107,7 +114,7 @@ http://local.host/users/1                     200
 php artisan test --compact
 ```
 
-Result: **1,198 passed**, 5 skipped, 1 deprecated.
+Result: **1,204 passed**, 5 skipped, 1 deprecated.
 
 ## Conclusion
 

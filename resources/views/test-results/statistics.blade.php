@@ -67,8 +67,8 @@
                                         <x-badge variant="gray">{{ $suiteData['last_run']->status->label() }}</x-badge>
                                 @endswitch
                             </td>
-                            <td class="px-4 py-3 text-sm font-medium text-success-text">{{ $suiteData['last_run']->tests_passed ?? 0 }}</td>
-                            <td class="px-4 py-3 text-sm font-medium text-danger-text">{{ $suiteData['last_run']->tests_failed ?? 0 }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-success-text">{{ $suiteData['last_run']->passed ?? 0 }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-danger-text">{{ $suiteData['last_run']->failed ?? 0 }}</td>
                             <td class="px-4 py-3 text-sm font-medium {{ $suiteData['pass_rate'] >= 80 ? 'text-success-text' : ($suiteData['pass_rate'] >= 50 ? 'text-warning-text' : 'text-danger-text') }}">
                                 {{ $suiteData['pass_rate'] }}%
                             </td>

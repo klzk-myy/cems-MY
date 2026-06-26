@@ -53,6 +53,31 @@ class AdminReportSmokeTest extends TestCase
     }
 
     #[Test]
+    public function msb2_status_update_updates_generated_report(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $date = now()->subDay()->toDateString();
+
+        ReportGenerated::factory()->create([
+            'report_type' => ReportType::Msb2->value,
+            'period_start' => $date,
+            'period_end' => $date,
+            'generated_by' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)->postJson('/api/v1/reports/msb2/status', [
+            'date' => $date,
+            'status' => 'Submitted',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('reports_generated', [
+            'report_type' => ReportType::Msb2->value,
+            'status' => 'Submitted',
+        ]);
+    }
+
+    #[Test]
     public function test_results_page_loads_for_admin(): void
     {
         $admin = User::factory()->admin()->create();
@@ -70,6 +95,82 @@ class AdminReportSmokeTest extends TestCase
         $response->assertSee('Avg Pass Rate');
         $response->assertSee('100%');
         $response->assertSee('bg-success-subtle');
+        $response->assertSee('10');
+        $response->assertSee('0');
+    }
+
+    #[Test]
+    public function test_results_show_page_loads_for_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $run = TestResult::factory()->create([
+            'status' => TestResultStatus::Passed->value,
+            'total_tests' => 10,
+            'passed' => 8,
+            'failed' => 2,
+            'git_branch' => 'main',
+            'git_commit' => 'abc1234',
+            'executed_by' => 'ci',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('test-results.show', $run));
+
+        $response->assertOk();
+        $response->assertSee('Run #'.$run->id);
+        $response->assertSee('10');
+        $response->assertSee('8');
+        $response->assertSee('2');
+        $response->assertSee('main');
+        $response->assertSee('abc1234');
+        $response->assertSee('ci');
+    }
+
+    #[Test]
+    public function test_results_statistics_page_loads_for_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+        TestResult::factory()->create([
+            'test_suite' => 'full',
+            'status' => TestResultStatus::Passed->value,
+            'total_tests' => 10,
+            'passed' => 10,
+            'failed' => 0,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('test-results.statistics'));
+
+        $response->assertOk();
+        $response->assertSee('Test Statistics');
+        $response->assertSee('full');
+        $response->assertSee('10');
+    }
+
+    #[Test]
+    public function test_results_compare_page_loads_for_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $run1 = TestResult::factory()->create([
+            'status' => TestResultStatus::Passed->value,
+            'total_tests' => 10,
+            'passed' => 10,
+            'failed' => 0,
+        ]);
+        $run2 = TestResult::factory()->create([
+            'status' => TestResultStatus::Failed->value,
+            'total_tests' => 10,
+            'passed' => 8,
+            'failed' => 2,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('test-results.compare', [
+            'run1' => $run1->id,
+            'run2' => $run2->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee("Run #{$run1->id} vs Run #{$run2->id}");
+        $response->assertSee('Passed');
+        $response->assertSee('Failed');
     }
 
     #[Test]
@@ -210,5 +311,7 @@ class AdminReportSmokeTest extends TestCase
         $response = $this->actingAs($admin)->get(route('customers.edit', $customer));
 
         $response->assertOk();
+        $response->assertSee($customer->full_name);
+        $response->assertSee('Edit Customer');
     }
 }
