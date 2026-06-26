@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Enums\StockTransferStatus;
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
@@ -9,6 +10,7 @@ use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Customer;
+use App\Models\StockTransfer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
@@ -16,6 +18,7 @@ use App\Models\User;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Customer\CustomerService;
 use App\Services\System\MathService;
+use App\Services\Transaction\StockTransferService;
 use App\Services\Transaction\TransactionCancellationService;
 use App\Services\Transaction\TransactionReversalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -198,5 +201,22 @@ class CriticalTransactionFixesTest extends TestCase
         $this->actingAs($admin)
             ->get(route('transactions.cancel', $transaction))
             ->assertOk();
+    }
+
+    public function test_stock_transfer_marks_received_when_all_items_received(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $transfer = StockTransfer::factory()->hasItems(2)->create([
+            'status' => StockTransferStatus::InTransit,
+        ]);
+        $items = $transfer->items;
+
+        $service = app(StockTransferService::class, ['requester' => $admin]);
+        $service->receiveItems($transfer, $items->map(fn ($item) => [
+            'id' => $item->id,
+            'quantity_received' => $item->quantity,
+        ])->all());
+
+        $this->assertSame(StockTransferStatus::Received->value, $transfer->fresh()->status->value);
     }
 }

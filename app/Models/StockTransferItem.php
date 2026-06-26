@@ -40,4 +40,25 @@ class StockTransferItem extends BaseModel
     {
         return $this->belongsTo(Currency::class, 'currency_code');
     }
+
+    public function isFullyReceived(): bool
+    {
+        $received = $this->quantity_received ?? '0';
+
+        return bccomp((string) $received, (string) $this->quantity, 4) >= 0;
+    }
+
+    public function hasVariance(): bool
+    {
+        $received = $this->quantity_received ?? '0';
+
+        return bccomp((string) $received, (string) $this->quantity, 4) !== 0;
+    }
+
+    public function getVarianceAttribute(): string
+    {
+        $received = $this->quantity_received ?? '0';
+
+        return bcsub((string) $this->quantity, (string) $received, 4);
+    }
 }
