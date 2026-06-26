@@ -92,6 +92,7 @@
         @else
             <x-card title="Select a Date">
                 <x-table>
+                    <x-slot:thead></x-slot:thead>
                     <x-slot:tbody>
                         <x-empty-state message="Choose a date above to view the MSB2 daily transaction summary." :colspan="1" />
                     </x-slot:tbody>

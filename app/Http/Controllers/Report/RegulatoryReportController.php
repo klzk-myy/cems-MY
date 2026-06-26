@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Report;
 
+use App\Enums\ReportType;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
@@ -50,39 +51,69 @@ class RegulatoryReportController extends Controller
         $date = $request->validated('date', now()->subDay()->toDateString());
 
         // Check existing report
-        $reportGenerated = ReportGenerated::where('report_type', 'MSB2')
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::Msb2)
             ->whereDate('period_start', $date)
             ->first();
 
         // Get summary data using query builder
         $summary = DB::table('transactions')
-            ->select(
-                'currency_code',
-                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume_foreign', [TransactionType::Buy->value]),
-                DB::raw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_amount_myr', [TransactionType::Buy->value]),
-                DB::raw('COUNT(CASE WHEN type = ? THEN 1 END) as buy_count', [TransactionType::Buy->value]),
-                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume_foreign', [TransactionType::Sell->value]),
-                DB::raw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_amount_myr', [TransactionType::Sell->value]),
-                DB::raw('COUNT(CASE WHEN type = ? THEN 1 END) as sell_count', [TransactionType::Sell->value])
-            )
+            ->selectRaw('
+                currency_code,
+                SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume_foreign,
+                SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_amount_myr,
+                COUNT(CASE WHEN type = ? THEN 1 END) as buy_count,
+                SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume_foreign,
+                SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_amount_myr,
+                COUNT(CASE WHEN type = ? THEN 1 END) as sell_count
+            ', [
+                TransactionType::Buy->value,
+                TransactionType::Buy->value,
+                TransactionType::Buy->value,
+                TransactionType::Sell->value,
+                TransactionType::Sell->value,
+                TransactionType::Sell->value,
+            ])
             ->whereDate('created_at', $date)
             ->where('status', TransactionStatus::Completed)
             ->groupBy('currency_code')
             ->orderBy('currency_code')
-            ->get();
+            ->get()
+            ->keyBy('currency_code')
+            ->map(function ($row) {
+                return [
+                    'buy_count' => (int) $row->buy_count,
+                    'buy_volume' => (string) $row->buy_volume_foreign,
+                    'buy_amount_myr' => (string) $row->buy_amount_myr,
+                    'sell_count' => (int) $row->sell_count,
+                    'sell_volume' => (string) $row->sell_volume_foreign,
+                    'sell_amount_myr' => (string) $row->sell_amount_myr,
+                    'net_volume' => $this->mathService->subtract(
+                        (string) $row->buy_volume_foreign,
+                        (string) $row->sell_volume_foreign
+                    ),
+                ];
+            });
+
+        $totalBuyMyr = (string) $summary->sum(function ($row) {
+            return $row['buy_amount_myr'];
+        });
+        $totalSellMyr = (string) $summary->sum(function ($row) {
+            return $row['sell_amount_myr'];
+        });
+        $totalTransactions = $summary->sum(function ($row) {
+            return $row['buy_count'] + $row['sell_count'];
+        });
+        $totalVolume = $this->mathService->add($totalBuyMyr, $totalSellMyr);
 
         // Calculate totals using MathService for precision
         $stats = [
-            'total_transactions' => $this->mathService->add(
-                (string) $summary->sum('buy_count'),
-                (string) $summary->sum('sell_count')
-            ),
-            'total_buy_myr' => $this->mathService->add('0', (string) $summary->sum('buy_amount_myr')),
-            'total_sell_myr' => $this->mathService->add('0', (string) $summary->sum('sell_amount_myr')),
-            'net_position' => $this->mathService->subtract(
-                $this->mathService->add('0', (string) $summary->sum('buy_amount_myr')),
-                $this->mathService->add('0', (string) $summary->sum('sell_amount_myr'))
-            ),
+            'total_transactions' => (int) $totalTransactions,
+            'total_buy_volume' => $totalBuyMyr,
+            'total_sell_volume' => $totalSellMyr,
+            'net_position' => $this->mathService->subtract($totalBuyMyr, $totalSellMyr),
+            'avg_transaction_value' => $this->mathService->compare((string) $totalTransactions, '0') > 0
+                ? $this->mathService->divide($totalVolume, (string) $totalTransactions)
+                : '0',
         ];
 
         // Calculate next business day
@@ -100,7 +131,7 @@ class RegulatoryReportController extends Controller
         $report = $this->reportingService->generateMSB2Data($date);
 
         ReportGenerated::create([
-            'report_type' => 'MSB2',
+            'report_type' => ReportType::Msb2,
             'period_start' => $date,
             'period_end' => $date,
             'generated_by' => auth()->id(),

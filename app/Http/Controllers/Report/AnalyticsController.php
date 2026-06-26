@@ -14,6 +14,7 @@ use App\Models\ExchangeRate;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\System\MathService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -34,7 +35,6 @@ class AnalyticsController extends Controller
         $year = $request->input('year', now()->year);
         $currency = $request->input('currency', 'all');
 
-        // Query monthly data
         $query = Transaction::whereYear('created_at', $year)
             ->where('status', TransactionStatus::Completed);
 
@@ -42,54 +42,65 @@ class AnalyticsController extends Controller
             $query->where('currency_code', $currency);
         }
 
-        $monthlyData = $query->select(
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('COUNT(*) as count'),
-            DB::raw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_volume', [TransactionType::Buy->value]),
-            DB::raw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_volume', [TransactionType::Sell->value]),
-            DB::raw('SUM(amount_local) as total_volume')
-        )
-            ->groupBy('month')
+        $monthColumn = $this->monthColumn('created_at');
+
+        $monthlyData = $query->selectRaw("
+            {$monthColumn} as month,
+            COUNT(*) as count,
+            SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_volume,
+            SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_volume,
+            SUM(amount_local) as total_volume
+        ", [
+            TransactionType::Buy->value,
+            TransactionType::Sell->value,
+        ])
+            ->groupBy(DB::raw($monthColumn))
             ->orderBy('month')
-            ->get();
+            ->get()
+            ->map(function ($row) {
+                $volume = (string) $row->total_volume;
+                $count = (int) $row->count;
 
-        // Calculate trends
-        $trends = $this->calculateTrends($monthlyData);
+                return [
+                    'month' => (int) $row->month,
+                    'count' => $count,
+                    'volume' => $volume,
+                    'avg_value' => $count > 0
+                        ? $this->mathService->divide($volume, (string) $count)
+                        : '0',
+                    'mom_change' => null,
+                ];
+            })
+            ->values()
+            ->all();
 
-        // Get available currencies
+        $previousVolume = null;
+        foreach ($monthlyData as $index => $data) {
+            if ($previousVolume !== null && $this->mathService->compare($previousVolume, '0') > 0) {
+                $change = $this->mathService->multiply(
+                    $this->mathService->divide(
+                        $this->mathService->subtract($data['volume'], $previousVolume),
+                        $previousVolume
+                    ),
+                    '100'
+                );
+                $monthlyData[$index]['mom_change'] = $change;
+            }
+            $previousVolume = $data['volume'];
+        }
+
+        $monthlyData = collect($monthlyData);
+
+        $trends = $monthlyData->map(fn ($data) => [
+            'month' => $data['month'],
+            'count' => $data['count'],
+            'volume' => $data['volume'],
+            'change' => $data['mom_change'],
+        ])->all();
+
         $currencies = Currency::where('is_active', true)->pluck('code');
 
         return view('reports.monthly-trends', compact('monthlyData', 'trends', 'year', 'currency', 'currencies'));
-    }
-
-    /**
-     * Calculate month-over-month trends
-     */
-    protected function calculateTrends(array $data): array
-    {
-        $trends = [];
-        $previousVolume = null;
-
-        foreach ($data as $row) {
-            $trend = null;
-            if ($previousVolume !== null && $previousVolume > 0) {
-                $diff = $this->mathService->subtract((string) $row->total_volume, (string) $previousVolume);
-                $trend = $this->mathService->multiply(
-                    $this->mathService->divide($diff, (string) $previousVolume),
-                    '100'
-                );
-            }
-            $trends[$row->month] = [
-                'volume' => $row->total_volume,
-                'trend' => $trend,
-                'direction' => $this->mathService->compare($trend, '0') > 0
-                    ? 'up'
-                    : ($this->mathService->compare($trend, '0') < 0 ? 'down' : 'neutral'),
-            ];
-            $previousVolume = $row->total_volume;
-        }
-
-        return $trends;
     }
 
     /**
@@ -101,99 +112,80 @@ class AnalyticsController extends Controller
 
         $startDate = $request->input('start_date', now()->subMonth()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->subMonth()->endOfMonth()->toDateString());
+        $startAt = Carbon::parse($startDate)->startOfDay();
+        $endAt = Carbon::parse($endDate)->endOfDay();
 
         $positionModels = CurrencyPosition::with('currency')->get();
-        $currencyCodes = $positionModels->pluck('currency_code')->unique();
+        $currencyCodes = $positionModels->pluck('currency_code')->unique()->values()->toArray();
         $rates = $this->getCurrentRates($currencyCodes);
 
         $allSells = Transaction::whereIn('currency_code', $currencyCodes)
             ->where('type', TransactionType::Sell)
             ->where('status', TransactionStatus::Completed)
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('created_at', [$startAt, $endAt])
             ->select('currency_code', 'rate', 'amount_foreign', 'amount_local')
             ->get()
             ->groupBy('currency_code');
 
-        $buyVolumes = Transaction::whereIn('currency_code', $currencyCodes)
-            ->where('type', TransactionType::Buy)
-            ->where('status', TransactionStatus::Completed)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->select('currency_code', DB::raw('SUM(amount_local) as buy_volume'))
-            ->groupBy('currency_code')
-            ->pluck('buy_volume', 'currency_code');
-
-        $positions = $positionModels->map(function ($position) use ($rates, $allSells, $buyVolumes) {
-            $currentRate = $rates[$position->currency_code] ?? 0;
+        $positions = $positionModels->map(function ($position) use ($rates, $allSells) {
+            $currentRate = $rates[$position->currency_code] ?? '0';
             $avgCost = (string) $position->average_cost;
             $balance = (string) $position->quantity;
 
             $unrealizedPnl = $this->mathService->multiply(
-                $this->mathService->subtract((string) $currentRate, $avgCost),
+                $this->mathService->subtract($currentRate, $avgCost),
                 $balance
             );
 
             $sells = $allSells->get($position->currency_code, collect());
             $realizedPnl = '0';
-            $sellVolume = '0';
             foreach ($sells as $sell) {
                 $gain = $this->mathService->multiply(
                     $this->mathService->subtract((string) $sell->rate, $avgCost),
                     (string) $sell->amount_foreign
                 );
                 $realizedPnl = $this->mathService->add($realizedPnl, $gain);
-                $sellVolume = $this->mathService->add($sellVolume, (string) $sell->amount_local);
             }
 
-            $buyVolume = $buyVolumes->get($position->currency_code, '0');
-
             return [
-                'currency' => $position->currency,
-                'quantity' => $position->quantity,
-                'average_cost' => $position->average_cost,
-                'current_rate' => $currentRate,
-                'unrealized_gain_loss' => $unrealizedPnl,
+                'currency' => $position->currency?->display_name ?? $position->currency_code,
+                'position' => $balance,
+                'avg_buy_rate' => $avgCost,
+                'avg_sell_rate' => $currentRate,
                 'realized_pnl' => $realizedPnl,
+                'unrealized_pnl' => $unrealizedPnl,
                 'total_pnl' => $this->mathService->add($unrealizedPnl, $realizedPnl),
-                'buy_volume' => $buyVolume,
-                'sell_volume' => $sellVolume,
             ];
         });
 
-        $totals = [
-            'total_unrealized' => $positions->sum('unrealized_pnl'),
-            'total_realized' => $positions->sum('realized_pnl'),
-            'total_pnl' => $positions->sum('total_pnl'),
-        ];
+        $totals = $positions->reduce(function (array $carry, array $position): array {
+            return [
+                'realized_pnl' => $this->mathService->add($carry['realized_pnl'], $position['realized_pnl']),
+                'unrealized_pnl' => $this->mathService->add($carry['unrealized_pnl'], $position['unrealized_pnl']),
+                'total_pnl' => $this->mathService->add($carry['total_pnl'], $position['total_pnl']),
+            ];
+        }, [
+            'realized_pnl' => '0',
+            'unrealized_pnl' => '0',
+            'total_pnl' => '0',
+        ]);
 
         return view('reports.profitability', compact('positions', 'totals', 'startDate', 'endDate'));
     }
 
     /**
-     * Get current exchange rate for a single currency
-     */
-    protected function getCurrentRate(string $currencyCode): float
-    {
-        $rate = ExchangeRate::where('currency_code', $currencyCode)
-            ->where('is_active', true)
-            ->latest()
-            ->first();
-
-        return $rate ? (float) $rate->rate : 0;
-    }
-
-    /**
      * Get current exchange rates for multiple currencies (batch)
      *
-     * @return array<string, float>
+     * @return array<string, string>
      */
     protected function getCurrentRates(array $currencyCodes): array
     {
         return ExchangeRate::whereIn('currency_code', $currencyCodes)
-            ->where('is_active', true)
-            ->latest()
+            ->orderBy('fetched_at', 'desc')
             ->get()
+            ->unique('currency_code')
             ->keyBy('currency_code')
-            ->map(fn ($rate) => (float) $rate->rate)
+            ->map(fn ($rate) => (string) $rate->rate_sell)
             ->toArray();
     }
 
@@ -212,11 +204,15 @@ class AnalyticsController extends Controller
             ->take(50)
             ->get()
             ->map(function ($customer) {
+                $riskRating = $customer->risk_rating;
+
                 return [
-                    'customer' => $customer,
+                    'name' => $customer->full_name,
+                    'customer_code' => sprintf('CUST-%06d', $customer->id),
+                    'id_number' => $customer->id_number_masked,
                     'transaction_count' => $customer->transactions_count,
                     'total_volume' => $customer->transactions_sum_amount_local,
-                    'avg_transaction' => $customer->transactions_count > 0
+                    'avg_value' => $customer->transactions_count > 0
                         ? $this->mathService->divide(
                             (string) $customer->transactions_sum_amount_local,
                             (string) $customer->transactions_count
@@ -224,14 +220,26 @@ class AnalyticsController extends Controller
                         : '0',
                     'first_transaction' => $customer->transactions_min_created_at,
                     'last_transaction' => $customer->transactions_max_created_at,
-                    'risk_rating' => $customer->risk_rating,
+                    'risk_rating' => $this->normalizeRiskRating($riskRating),
                 ];
             });
 
         // Risk distribution
-        $riskDistribution = Customer::select('risk_rating', DB::raw('COUNT(*) as count'))
+        $riskCounts = Customer::select('risk_rating', DB::raw('COUNT(*) as count'))
             ->groupBy('risk_rating')
-            ->get();
+            ->get()
+            ->mapWithKeys(function ($row) {
+                $rating = $this->normalizeRiskRating($row->risk_rating);
+
+                return [$rating => $row->count];
+            });
+
+        $riskDistribution = [
+            'total' => $riskCounts->sum(),
+            'high' => $riskCounts->get('high', 0),
+            'medium' => $riskCounts->get('medium', 0),
+            'low' => $riskCounts->get('low', 0),
+        ];
 
         return view('reports.customer-analysis', compact('topCustomers', 'riskDistribution'));
     }
@@ -245,21 +253,34 @@ class AnalyticsController extends Controller
 
         $startDate = $request->input('start_date', today()->subMonth()->toDateString());
         $endDate = $request->input('end_date', today()->toDateString());
+        $startAt = Carbon::parse($startDate)->startOfDay();
+        $endAt = Carbon::parse($endDate)->endOfDay();
 
         // Flagged transactions
-        $flaggedStats = FlaggedTransaction::whereBetween('created_at', [$startDate, $endDate])
+        $flaggedStatsRaw = FlaggedTransaction::whereBetween('created_at', [$startAt, $endAt])
             ->select('flag_type', DB::raw('COUNT(*) as count'))
             ->groupBy('flag_type')
             ->get();
 
+        $flaggedStats = [
+            'total' => $flaggedStatsRaw->sum('count'),
+            'by_type' => $flaggedStatsRaw->mapWithKeys(function ($row) {
+                $type = $row->flag_type instanceof \BackedEnum
+                    ? $row->flag_type->value
+                    : (string) $row->flag_type;
+
+                return [$type => $row->count];
+            }),
+        ];
+
         // EDD required count
         $eddCount = Transaction::where('cdd_level', CddLevel::Enhanced)
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('created_at', [$startAt, $endAt])
             ->count();
 
         // Suspicious activity
         $suspiciousCount = FlaggedTransaction::whereIn('flag_type', [ComplianceFlagType::Structuring, ComplianceFlagType::SanctionMatch])
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('created_at', [$startAt, $endAt])
             ->count();
 
         return view('reports.compliance-summary', compact(
@@ -269,5 +290,29 @@ class AnalyticsController extends Controller
             'startDate',
             'endDate'
         ));
+    }
+
+    /**
+     * Get a database-agnostic month extraction expression.
+     */
+    protected function monthColumn(string $column): string
+    {
+        $wrapped = DB::connection()->getQueryGrammar()->wrap($column);
+
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%m', {$wrapped})"
+            : "MONTH({$wrapped})";
+    }
+
+    /**
+     * Normalize a risk rating value to a lowercase string.
+     */
+    protected function normalizeRiskRating(mixed $riskRating): string
+    {
+        $value = $riskRating instanceof \BackedEnum
+            ? $riskRating->value
+            : (string) $riskRating;
+
+        return $value !== '' ? strtolower($value) : 'unknown';
     }
 }

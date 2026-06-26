@@ -224,8 +224,9 @@ class TestRunnerService
 
         return [
             'total_runs' => $runs->count(),
-            'passed_runs' => $runs->where('status', 'passed')->count(),
-            'failed_runs' => $runs->where('status', 'failed')->count(),
+            'passed' => $runs->where('status', 'passed')->count(),
+            'failed' => $runs->where('status', 'failed')->count(),
+            'pass_rate' => round($runs->avg('pass_rate') ?? 0, 2),
             'avg_duration' => $runs->avg('duration') ?? 0,
             'avg_pass_rate' => $runs->avg('pass_rate') ?? 0,
             'trend' => $this->calculateTrend($runs),

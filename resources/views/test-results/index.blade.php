@@ -10,7 +10,7 @@
             <x-stat-card label="Total Runs (30d)" :value="number_format($statistics['total_runs'])" color="blue" />
             <x-stat-card label="Passed" :value="number_format($statistics['passed'])" color="green" />
             <x-stat-card label="Failed" :value="number_format($statistics['failed'])" color="red" />
-            <x-stat-card label="Pass Rate" :value="$statistics['pass_rate'] . '%'" color="purple" />
+            <x-stat-card label="Avg Pass Rate" :value="$statistics['pass_rate'] . '%'" color="purple" />
         </x-stat-grid>
 
         <x-filter-bar>
@@ -48,7 +48,7 @@
                                 @elseif($run->status === 'error')
                                     <x-badge variant="warning">Error</x-badge>
                                 @else
-                                    <x-badge variant="gray">{{ ucfirst($run->status) }}</x-badge>
+                                    <x-badge variant="gray">{{ ucfirst($run->status->value) }}</x-badge>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-sm font-medium text-success-text">{{ $run->tests_passed ?? 0 }}</td>
