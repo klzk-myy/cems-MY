@@ -10,6 +10,7 @@
 /storage/framework/sessions
 .env
 .env.*
+!.env.example
 .env.*.bak
 *.bak
 *.backup
@@ -38,10 +39,10 @@ boost.json
 /.kilo
 /.claude
 **/.mimocode/
+**/.gitnexusignore
 /load-tests
 /.mcp.json
 /docker
-.env.example
 .env.testing
 .phpunit.xml
 playwright.config.js
@@ -54,9 +55,11 @@ opencode.json
 .codex
 /storage/framework/views
 
-# Root markdown files: only README.md is tracked
+# Root markdown files: only README.md, AGENTS.md, and CLAUDE.md are tracked
 /*.md
 !README.md
+!AGENTS.md
+!CLAUDE.md
 
 # Docs directories are ephemeral; keep existing tracked docs but ignore new ones
 **/docs/
