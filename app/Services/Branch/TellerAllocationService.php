@@ -96,6 +96,10 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 ->lockForUpdate()
                 ->first();
 
+            if (! $locked) {
+                throw new \RuntimeException('Allocation no longer exists.');
+            }
+
             $branch = $locked->branch;
 
             if ($isIncrease) {
