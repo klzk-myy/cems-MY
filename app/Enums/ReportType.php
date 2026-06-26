@@ -26,4 +26,22 @@ enum ReportType: string
             self::BalanceSheet => 'Balance Sheet',
         };
     }
+
+    /**
+     * Machine-safe identifier used in generated filenames.
+     * Preserves the legacy naming convention where possible.
+     */
+    public function filenameKey(): string
+    {
+        return match ($this) {
+            self::Msb2 => 'MSB2',
+            self::Lmca => 'LMCA',
+            self::Qlvr => 'QLVR',
+            self::Plr => 'PLR',
+            self::TrialBalance => 'TrialBalance',
+            self::MonthEnd => 'MONTH_END',
+            self::ProfitLoss => 'PL',
+            self::BalanceSheet => 'BalanceSheet',
+        };
+    }
 }

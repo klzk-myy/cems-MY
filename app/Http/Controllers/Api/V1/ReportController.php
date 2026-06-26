@@ -57,6 +57,8 @@ class ReportController extends Controller
         $validated = $request->validated();
         $reportType = ReportType::from($validated['report_type']);
 
+        // Only MSB2 export is currently implemented. Other report types are
+        // accepted for normalization purposes and return an empty data set.
         $data = match ($reportType) {
             ReportType::Msb2 => $this->reportingService->generateMSB2Data($validated['period']),
             default => ['data' => []],
