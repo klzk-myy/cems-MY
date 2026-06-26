@@ -167,7 +167,7 @@ class RegulatoryReportController extends Controller
 
         $month = $request->validated('month', now()->format('Y-m'));
 
-        $reportGenerated = ReportGenerated::where('report_type', 'LMCA')
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::Lmca)
             ->where('period_start', Carbon::parse($month)->startOfMonth())
             ->first();
 
@@ -187,7 +187,7 @@ class RegulatoryReportController extends Controller
         $filepath = $this->reportingService->generateFormLMCACsv($month);
 
         ReportGenerated::create([
-            'report_type' => 'LMCA',
+            'report_type' => ReportType::Lmca,
             'period_start' => now()->parse($month)->startOfMonth(),
             'period_end' => now()->parse($month)->endOfMonth(),
             'generated_by' => auth()->id(),
@@ -207,26 +207,22 @@ class RegulatoryReportController extends Controller
      */
     public function updateLMCAStatus(UpdateReportStatusRequest $request): JsonResponse
     {
-        return $this->updateReportStatus('LMCA', $request);
+        return $this->updateReportStatus(ReportType::Lmca, $request);
     }
 
-    private function updateReportStatus(ReportType|string $reportType, UpdateReportStatusRequest $request): JsonResponse
+    private function updateReportStatus(ReportType $reportType, UpdateReportStatusRequest $request): JsonResponse
     {
         $this->requireManagerOrAdmin();
 
         $validated = $request->validated();
 
-        $isMsb2 = $reportType instanceof ReportType
-            ? $reportType === ReportType::Msb2
-            : strtoupper($reportType) === 'MSB2';
-
-        if ($isMsb2) {
+        if ($reportType === ReportType::Msb2) {
             $periodStart = Carbon::parse($validated['date'])->startOfDay();
         } else {
             $periodStart = Carbon::parse($validated['month'])->startOfMonth();
         }
 
-        $report = ReportGenerated::where('report_type', $reportType instanceof ReportType ? $reportType->value : $reportType)
+        $report = ReportGenerated::where('report_type', $reportType)
             ->where('period_start', $periodStart)
             ->first();
 
@@ -257,7 +253,7 @@ class RegulatoryReportController extends Controller
 
         $quarter = $request->validated('quarter', now()->format('Y').'-Q'.(int) ceil((int) now()->format('n') / 3));
 
-        $reportGenerated = ReportGenerated::where('report_type', 'QLVR')
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::Qlvr)
             ->where('period_start', $this->getQuarterStart($quarter))
             ->first();
 
@@ -277,7 +273,7 @@ class RegulatoryReportController extends Controller
         $filepath = $this->reportingService->generateQuarterlyLargeValueCsv($quarter);
 
         ReportGenerated::create([
-            'report_type' => 'QLVR',
+            'report_type' => ReportType::Qlvr,
             'period_start' => $this->getQuarterStart($quarter),
             'period_end' => $this->getQuarterEnd($quarter),
             'generated_by' => auth()->id(),
@@ -299,7 +295,7 @@ class RegulatoryReportController extends Controller
     {
         $this->requireManagerOrAdmin();
 
-        $reportGenerated = ReportGenerated::where('report_type', 'PLR')
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::Plr)
             ->whereDate('period_start', now()->toDateString())
             ->first();
 
@@ -318,7 +314,7 @@ class RegulatoryReportController extends Controller
         $filepath = $this->reportingService->generatePositionLimitCsv();
 
         ReportGenerated::create([
-            'report_type' => 'PLR',
+            'report_type' => ReportType::Plr,
             'period_start' => now()->startOfDay(),
             'period_end' => now()->endOfDay(),
             'generated_by' => auth()->id(),
