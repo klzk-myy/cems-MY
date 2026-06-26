@@ -57,32 +57,36 @@ class BranchPoolService
     {
         $amount = (string) $amount;
 
-        $pool = BranchPool::where('branch_id', $branch->id)
-            ->where('currency_code', $currencyCode)
-            ->lockForUpdate()
-            ->first();
+        return DB::transaction(function () use ($branch, $currencyCode, $amount) {
+            $pool = BranchPool::where('branch_id', $branch->id)
+                ->where('currency_code', $currencyCode)
+                ->lockForUpdate()
+                ->first();
 
-        if (! $pool) {
-            return false;
-        }
+            if (! $pool) {
+                return false;
+            }
 
-        return $pool->allocate($amount);
+            return $pool->allocate($amount);
+        });
     }
 
     public function deallocateFromTeller(Branch $branch, string $currencyCode, float|string $amount): bool
     {
         $amount = (string) $amount;
 
-        $pool = BranchPool::where('branch_id', $branch->id)
-            ->where('currency_code', $currencyCode)
-            ->lockForUpdate()
-            ->first();
+        return DB::transaction(function () use ($branch, $currencyCode, $amount) {
+            $pool = BranchPool::where('branch_id', $branch->id)
+                ->where('currency_code', $currencyCode)
+                ->lockForUpdate()
+                ->first();
 
-        if (! $pool) {
-            return false;
-        }
+            if (! $pool) {
+                return false;
+            }
 
-        return $pool->deallocate($amount);
+            return $pool->deallocate($amount);
+        });
     }
 
     public function replenish(Branch $branch, string $currencyCode, float|string $amount, int $approvedBy): BranchPool
