@@ -504,9 +504,11 @@ class TransactionService implements TransactionServiceInterface
             ]);
         }
 
-        // Update MYR balance - always add (cash in on Sell, cash out on Buy is recorded separately)
+        // Update MYR balance - cash in on Sell, cash out on Buy
         $myrTotal = $myrBalance->transaction_total ?? '0';
-        $newMyrTotal = $this->mathService->add($myrTotal, $amountLocal);
+        $newMyrTotal = $type === TransactionType::Buy->value
+            ? $this->mathService->subtract($myrTotal, $amountLocal)
+            : $this->mathService->add($myrTotal, $amountLocal);
 
         $myrBalance->update(['transaction_total' => $newMyrTotal]);
     }
