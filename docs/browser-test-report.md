@@ -93,6 +93,22 @@
 - `resources/views/test-results/statistics.blade.php`
 - `resources/views/users/show.blade.php`
 - `tests/Feature/AdminReportSmokeTest.php` (new)
+- `app/Support/DbDate.php` (new)
+- `database/migrations/2026_06_27_000000_normalize_report_types.php` (new)
+- `tests/Unit/Support/DbDateTest.php` (new)
+
+## Follow-up: Report Type Normalization
+
+The code review identified that `ReportType` was only partially adopted:
+- `RegulatoryReportController` mixed enum values with uppercase string literals.
+- Console commands and `MonthEndCloseService` wrote non-canonical values (`LMCA`, `QLVR`, `PLR`, `TrialBalance`, `MONTH_END`).
+- `ReportGeneratedFactory` produced values that violated the model's enum cast.
+
+The follow-up work (branch `report-type-normalization`) resolved this by:
+1. Expanding `App\Enums\ReportType` to cover every generated-report type.
+2. Migrating existing `reports_generated.report_type` rows to canonical lowercase values.
+3. Updating all controllers, commands, services, factories, API validation, and tests to use the enum.
+4. Extracting `App\Support\DbDate::monthColumn()` for DB-agnostic month extraction.
 
 ## Verification
 
