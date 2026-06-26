@@ -157,6 +157,8 @@ return [
 
     'encryption_iterations' => (int) env('ENCRYPTION_ITERATIONS', 100000),
 
+    'allow_derived_encryption_salt' => env('ALLOW_DERIVED_ENCRYPTION_SALT', false),
+
     /*
     |--------------------------------------------------------------------------
     | Maintenance Mode Driver

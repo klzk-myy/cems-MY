@@ -155,12 +155,13 @@ class RiskCalculationServiceTest extends TestCase
     public function calculate_structuring_risk_with_three_transactions_same_hour(): void
     {
         $customer = Customer::factory()->create();
+        $baseTime = now()->startOfHour()->addMinutes(10);
         for ($i = 0; $i < 3; $i++) {
             Transaction::factory()
                 ->for($customer)
                 ->create([
                     'amount_local' => '2000',
-                    'created_at' => now()->addMinutes($i),
+                    'created_at' => $baseTime->copy()->addMinutes($i),
                     'status' => TransactionStatus::Completed,
                 ]);
         }
@@ -174,12 +175,13 @@ class RiskCalculationServiceTest extends TestCase
     public function calculate_structuring_risk_max_is_30(): void
     {
         $customer = Customer::factory()->create();
+        $baseTime = now()->startOfHour()->addMinutes(10);
         for ($i = 0; $i < 10; $i++) {
             Transaction::factory()
                 ->for($customer)
                 ->create([
                     'amount_local' => '2000',
-                    'created_at' => now()->addMinutes($i),
+                    'created_at' => $baseTime->copy()->addMinutes($i),
                     'status' => TransactionStatus::Completed,
                 ]);
         }

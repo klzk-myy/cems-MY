@@ -40,6 +40,7 @@
         <env name="REDIS_PASSWORD" value=""/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="ENCRYPTION_KEY" value="test_32_char_encryption_key_here"/>
+        <env name="ALLOW_DERIVED_ENCRYPTION_SALT" value="true"/>
         <env name="SECURITY_IP_BLOCKING_ENABLED" value="false"/>
         <env name="XDEBUG_MODE" value="off"/>
     </php>

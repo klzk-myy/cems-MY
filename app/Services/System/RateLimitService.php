@@ -49,7 +49,7 @@ class RateLimitService
         // Check if IP is in block cache
         $cacheKey = self::IP_BLOCK_PREFIX.$ip;
 
-        return Cache::store()->has($cacheKey);
+        return Cache::store(config('ratelimit.store'))->has($cacheKey);
     }
 
     /**
@@ -120,7 +120,7 @@ class RateLimitService
         $actualDuration = min($duration * (2 ** $blockCount), $maxDuration);
 
         $cacheKey = self::IP_BLOCK_PREFIX.$ip;
-        $cache = Cache::store();
+        $cache = Cache::store(config('ratelimit.store'));
         $cache->put($cacheKey, [
             'blocked_at' => now()->toDateTimeString(),
             'duration_minutes' => $actualDuration,
@@ -148,7 +148,7 @@ class RateLimitService
     public function unblockIp(string $ip): bool
     {
         $cacheKey = self::IP_BLOCK_PREFIX.$ip;
-        $cache = Cache::store();
+        $cache = Cache::store(config('ratelimit.store'));
 
         if ($cache->has($cacheKey)) {
             $cache->forget($cacheKey);
@@ -180,11 +180,11 @@ class RateLimitService
         $threshold = config('security.ip_blocking.failed_attempts_threshold', 10);
 
         // Increment failed attempts counter
-        $attempts = Cache::store('redis')->increment($cacheKey);
+        $attempts = Cache::store(config('ratelimit.store'))->increment($cacheKey);
 
         // Set TTL on first attempt
         if ($attempts === 1) {
-            Cache::store('redis')->put($cacheKey, $attempts, now()->addMinutes($window));
+            Cache::store(config('ratelimit.store'))->put($cacheKey, $attempts, now()->addMinutes($window));
         }
 
         // Auto-block if threshold exceeded
@@ -200,7 +200,7 @@ class RateLimitService
     {
         $cacheKey = self::FAILED_ATTEMPTS_PREFIX.$ip;
 
-        return (int) Cache::store()->get($cacheKey, 0);
+        return (int) Cache::store(config('ratelimit.store'))->get($cacheKey, 0);
     }
 
     /**
@@ -209,7 +209,7 @@ class RateLimitService
     public function clearFailedAttempts(string $ip): void
     {
         $cacheKey = self::FAILED_ATTEMPTS_PREFIX.$ip;
-        Cache::store()->forget($cacheKey);
+        Cache::store(config('ratelimit.store'))->forget($cacheKey);
     }
 
     /**
@@ -218,7 +218,7 @@ class RateLimitService
     public function getIpBlockInfo(string $ip): ?array
     {
         $cacheKey = self::IP_BLOCK_PREFIX.$ip;
-        $data = Cache::store()->get($cacheKey);
+        $data = Cache::store(config('ratelimit.store'))->get($cacheKey);
 
         if (! $data) {
             return null;
@@ -238,7 +238,7 @@ class RateLimitService
      */
     public function getBlockedIps(): array
     {
-        $blockedIps = Cache::store()->get(self::BLOCKED_IPS_INDEX, []);
+        $blockedIps = Cache::store(config('ratelimit.store'))->get(self::BLOCKED_IPS_INDEX, []);
         $blocked = [];
 
         foreach ($blockedIps as $ip) {
@@ -273,7 +273,7 @@ class RateLimitService
 
         // Store hit for alert analysis
         $cacheKey = self::RATE_LIMIT_HITS_PREFIX.$ip;
-        $hits = Cache::store()->get($cacheKey, []);
+        $hits = Cache::store(config('ratelimit.store'))->get($cacheKey, []);
         $hits[] = [
             'timestamp' => now()->toDateTimeString(),
             'limiter' => $limiterName,
@@ -287,7 +287,7 @@ class RateLimitService
             return now()->parse($hit['timestamp'])->greaterThanOrEqualTo($cutoff);
         });
 
-        Cache::store()->put($cacheKey, $hits, now()->addMinutes($window));
+        Cache::store(config('ratelimit.store'))->put($cacheKey, $hits, now()->addMinutes($window));
 
         // Check if alert threshold is exceeded
         $this->checkAlertThreshold($ip, $hits);
@@ -318,7 +318,7 @@ class RateLimitService
     public function getRateLimitStats(string $ip): array
     {
         $cacheKey = self::RATE_LIMIT_HITS_PREFIX.$ip;
-        $hits = Cache::store()->get($cacheKey, []);
+        $hits = Cache::store(config('ratelimit.store'))->get($cacheKey, []);
 
         return [
             'ip' => $ip,
@@ -353,7 +353,7 @@ class RateLimitService
         $key = $userId ? "{$limiterName}:user:{$userId}" : "{$limiterName}:ip:{$ip}";
         $cacheKey = self::BURST_PREFIX.$key;
 
-        $burst = Cache::store()->get($cacheKey, []);
+        $burst = Cache::store(config('ratelimit.store'))->get($cacheKey, []);
         $now = now();
 
         // Remove old entries outside the burst window (1 second)
@@ -368,7 +368,7 @@ class RateLimitService
 
         // Add current request to burst
         $burst[] = $now;
-        Cache::store()->put($cacheKey, $burst, now()->addSeconds(1));
+        Cache::store(config('ratelimit.store'))->put($cacheKey, $burst, now()->addSeconds(1));
 
         return true;
     }

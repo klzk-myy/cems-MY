@@ -62,8 +62,9 @@ opencode.json
 !CLAUDE.md
 !IMPLEMENTATION_PLAN.md
 
-# Docs directories are ephemeral; keep existing tracked docs but ignore new ones
-**/docs/
+# Ephemeral Superpowers docs are ignored; other docs remain tracked
+/docs/superpowers/plans/
+/docs/superpowers/specs/
 
 /browser-test.sh
 /run-tests.sh

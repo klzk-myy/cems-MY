@@ -186,10 +186,11 @@ class CustomerRiskScoringServiceTest extends TestCase
     public function calculate_structuring_score_with_three_transactions_same_hour(): void
     {
         $customer = Customer::factory()->create();
+        $baseTime = now()->startOfHour()->addMinutes(10);
         for ($i = 0; $i < 3; $i++) {
             Transaction::factory()
                 ->for($customer)
-                ->create(['amount_local' => '2000', 'created_at' => now()->addMinutes($i)]);
+                ->create(['amount_local' => '2000', 'created_at' => $baseTime->copy()->addMinutes($i)]);
         }
 
         $reflection = new \ReflectionClass($this->service);
@@ -205,10 +206,11 @@ class CustomerRiskScoringServiceTest extends TestCase
     public function calculate_structuring_score_max_is_30(): void
     {
         $customer = Customer::factory()->create();
+        $baseTime = now()->startOfHour()->addMinutes(10);
         for ($i = 0; $i < 10; $i++) {
             Transaction::factory()
                 ->for($customer)
-                ->create(['amount_local' => '2000', 'created_at' => now()->addMinutes($i)]);
+                ->create(['amount_local' => '2000', 'created_at' => $baseTime->copy()->addMinutes($i)]);
         }
 
         $reflection = new \ReflectionClass($this->service);

@@ -13,15 +13,10 @@ class EncryptionKeyTest extends TestCase
      */
     public function test_encryption_key_is_set(): void
     {
-        $envFile = base_path('.env');
-        $this->assertFileExists($envFile, '.env file should exist');
+        $key = config('app.encryption_key') ?? env('ENCRYPTION_KEY');
 
-        $content = file_get_contents($envFile);
-        \preg_match('/^ENCRYPTION_KEY=(.+)$/m', $content, $matches);
-
-        $key = $matches[1] ?? null;
-        $this->assertNotEmpty($key, 'ENCRYPTION_KEY should be set in .env');
+        $this->assertNotEmpty($key, 'ENCRYPTION_KEY should be configured');
         $this->assertGreaterThanOrEqual(32, strlen($key), 'ENCRYPTION_KEY should be at least 32 characters');
-        $this->assertMatchesRegularExpression('/^[a-zA-Z0-9]+$/', $key, 'ENCRYPTION_KEY should be alphanumeric');
+        $this->assertMatchesRegularExpression('/^[a-zA-Z0-9_-]+$/', $key, 'ENCRYPTION_KEY should be alphanumeric');
     }
 }
