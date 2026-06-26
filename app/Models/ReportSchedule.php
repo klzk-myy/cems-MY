@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReportType;
 use Cron\CronExpression;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,7 @@ class ReportSchedule extends BaseModel
     ];
 
     protected $casts = [
+        'report_type' => ReportType::class,
         'parameters' => 'array',
         'is_active' => 'boolean',
         'last_run_at' => 'datetime',
@@ -76,10 +78,10 @@ class ReportSchedule extends BaseModel
     public static function getReportTypes(): array
     {
         return [
-            'msb2' => 'MSB2 Daily Summary',
-            'lmca' => 'LMCA - Monthly Report',
-            'qlvr' => 'QLVR - Quarterly Large Value Report',
-            'position_limit' => 'Position Limit Report',
+            ReportType::Msb2->value => ReportType::Msb2->label(),
+            ReportType::Lmca->value => ReportType::Lmca->label(),
+            ReportType::Qlvr->value => ReportType::Qlvr->label(),
+            ReportType::Plr->value => ReportType::Plr->label(),
         ];
     }
 

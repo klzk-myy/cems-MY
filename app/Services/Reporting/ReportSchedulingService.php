@@ -3,6 +3,7 @@
 namespace App\Services\Reporting;
 
 use App\Enums\ReportRunStatus;
+use App\Enums\ReportType;
 use App\Events\ReportGenerated;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
@@ -25,7 +26,7 @@ class ReportSchedulingService
      * Generate a report and track the run.
      */
     public function generateReport(
-        string $type,
+        ReportType $type,
         array $params,
         int $userId,
         ?int $scheduleId = null
@@ -58,14 +59,14 @@ class ReportSchedulingService
     /**
      * Execute the actual report generation.
      */
-    protected function executeReport(string $type, array $params): string
+    protected function executeReport(ReportType $type, array $params): string
     {
         return match ($type) {
-            'msb2' => $this->reportingService->generateMSB2($params['date'] ?? now()->toDateString()),
-            'lmca' => $this->reportingService->generateFormLMCACsv($params['month'] ?? now()->format('Y-m')),
-            'qlvr' => $this->reportingService->generateQuarterlyLargeValueCsv($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
-            'position_limit' => $this->reportingService->generatePositionLimitCsv(),
-            default => throw new \InvalidArgumentException("Unknown report type: $type"),
+            ReportType::Msb2 => $this->reportingService->generateMSB2($params['date'] ?? now()->toDateString()),
+            ReportType::Lmca => $this->reportingService->generateFormLMCACsv($params['month'] ?? now()->format('Y-m')),
+            ReportType::Qlvr => $this->reportingService->generateQuarterlyLargeValueCsv($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
+            ReportType::Plr => $this->reportingService->generatePositionLimitCsv(),
+            default => throw new \InvalidArgumentException('Unsupported report type: '.$type->value),
         };
     }
 
@@ -153,8 +154,12 @@ class ReportSchedulingService
      */
     public function createSchedule(array $data): ReportSchedule
     {
+        $reportType = $data['report_type'] instanceof ReportType
+            ? $data['report_type']
+            : ReportType::from($data['report_type']);
+
         $schedule = ReportSchedule::create([
-            'report_type' => $data['report_type'],
+            'report_type' => $reportType,
             'cron_expression' => $data['cron_expression'],
             'parameters' => $data['parameters'] ?? [],
             'is_active' => $data['is_active'] ?? true,
@@ -173,6 +178,12 @@ class ReportSchedulingService
      */
     public function updateSchedule(ReportSchedule $schedule, array $data): ReportSchedule
     {
+        if (isset($data['report_type'])) {
+            $schedule->report_type = $data['report_type'] instanceof ReportType
+                ? $data['report_type']
+                : ReportType::from($data['report_type']);
+        }
+
         if (isset($data['cron_expression'])) {
             $schedule->cron_expression = $data['cron_expression'];
         }
@@ -198,14 +209,14 @@ class ReportSchedulingService
     /**
      * Get preview data for a report type.
      */
-    public function getPreviewData(string $type, array $params): array
+    public function getPreviewData(ReportType $type, array $params): array
     {
         return match ($type) {
-            'msb2' => $this->reportingService->generateMSB2Data($params['date'] ?? now()->toDateString()),
-            'lmca' => $this->reportingService->generateFormLMCA($params['month'] ?? now()->format('Y-m')),
-            'qlvr' => $this->reportingService->generateQuarterlyLargeValueReport($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
-            'position_limit' => $this->reportingService->generatePositionLimitReport(),
-            default => throw new \InvalidArgumentException("Unknown report type: $type"),
+            ReportType::Msb2 => $this->reportingService->generateMSB2Data($params['date'] ?? now()->toDateString()),
+            ReportType::Lmca => $this->reportingService->generateFormLMCA($params['month'] ?? now()->format('Y-m')),
+            ReportType::Qlvr => $this->reportingService->generateQuarterlyLargeValueReport($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
+            ReportType::Plr => $this->reportingService->generatePositionLimitReport(),
+            default => throw new \InvalidArgumentException('Unsupported report type: '.$type->value),
         };
     }
 
