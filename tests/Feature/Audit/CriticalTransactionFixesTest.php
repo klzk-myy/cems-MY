@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
@@ -10,6 +11,7 @@ use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
+use App\Models\TransactionConfirmation;
 use App\Models\User;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Customer\CustomerService;
@@ -136,5 +138,22 @@ class CriticalTransactionFixesTest extends TestCase
         $transaction->save();
 
         return $transaction;
+    }
+
+    public function test_confirmation_page_loads_without_enum_error(): void
+    {
+        $branch = Branch::factory()->create();
+        $manager = User::factory()->for($branch)->create(['role' => UserRole::Manager]);
+        $transaction = Transaction::factory()->for($branch)->state([
+            'status' => TransactionStatus::PendingApproval,
+            'amount_local' => '75000.00',
+        ])->create();
+        TransactionConfirmation::factory()->for($transaction)->create([
+            'status' => TransactionConfirmationStatus::Pending,
+        ]);
+
+        $this->actingAs($manager)
+            ->get(route('transactions.confirm.show', $transaction))
+            ->assertOk();
     }
 }
