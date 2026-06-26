@@ -4,14 +4,14 @@ namespace Tests\Feature\Audit;
 
 use Tests\TestCase;
 
-class EncryptionKeyTest extends TestCase
+class AppKeyTest extends TestCase
 {
     /**
      * Test that APP_KEY is set and is a 32-byte base64-encoded key.
      *
      * This key is the foundation for Laravel encryption and PII field encryption.
      */
-    public function test_app_encryption_key_is_set(): void
+    public function test_app_key_is_set(): void
     {
         $key = config('app.key');
 
