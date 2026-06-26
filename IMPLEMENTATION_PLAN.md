@@ -41,7 +41,7 @@ Several audit tests parse `.env` directly with `file_get_contents(base_path('.en
 - `tests/Feature/Audit/DebugModeTest.php`
 - `tests/Feature/Audit/DatabaseCredentialsTest.php`
 - `tests/Feature/Audit/AppKeyRotationTest.php`
-- `tests/Feature/Audit/EncryptionKeyTest.php`
+- `tests/Feature/Audit/AppKeyTest.php`
 - Any other audit test that reads `.env` directly.
 
 ### Verification
@@ -194,7 +194,7 @@ A focused code review of the range `6213292d..HEAD` identified one critical conf
 
 ### Files to Change
 - `config/app.php`
-- `tests/Unit/EncryptionServiceTest.php` or `tests/Feature/Audit/EncryptionKeyTest.php`
+- `tests/Unit/EncryptionServiceTest.php` or `tests/Feature/Audit/AppKeyTest.php`
 
 ### Verification
 - `php artisan test --compact tests/Unit/EncryptionServiceTest.php`
