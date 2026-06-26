@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class UserModelTest extends TestCase
@@ -32,9 +33,10 @@ class UserModelTest extends TestCase
     public function test_password_is_hashed_and_read_via_password_attribute(): void
     {
         $user = new User;
-        $user->password = 'secret';
+        $password = Str::random(16);
+        $user->password = $password;
 
-        $this->assertNotEquals('secret', $user->password_hash);
+        $this->assertNotEquals($password, $user->password_hash);
         $this->assertSame($user->password_hash, $user->password);
     }
 
