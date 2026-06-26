@@ -55,11 +55,12 @@ opencode.json
 .codex
 /storage/framework/views
 
-# Root markdown files: only README.md, AGENTS.md, and CLAUDE.md are tracked
+# Root markdown files: only README.md, AGENTS.md, CLAUDE.md, and IMPLEMENTATION_PLAN.md are tracked
 /*.md
 !README.md
 !AGENTS.md
 !CLAUDE.md
+!IMPLEMENTATION_PLAN.md
 
 # Docs directories are ephemeral; keep existing tracked docs but ignore new ones
 **/docs/
