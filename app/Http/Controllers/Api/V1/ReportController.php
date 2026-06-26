@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\ReportType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Report\ExportReportRequest;
 use App\Services\Reporting\ReportingService;
@@ -54,13 +55,14 @@ class ReportController extends Controller
     public function export(ExportReportRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        $reportType = ReportType::from($validated['report_type']);
 
-        $data = match ($validated['report_type']) {
-            'msb2' => $this->reportingService->generateMSB2Data($validated['period']),
+        $data = match ($reportType) {
+            ReportType::Msb2 => $this->reportingService->generateMSB2Data($validated['period']),
             default => ['data' => []],
         };
 
-        $filename = "{$validated['report_type']}_{$validated['period']}.".strtolower($validated['format']);
+        $filename = "{$reportType->value}_{$validated['period']}.".strtolower($validated['format']);
 
         return response()->json([
             'success' => true,
