@@ -72,4 +72,24 @@ class ConcurrencyFixesTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $service->approveAllocation($allocation, $manager, '500.00');
     }
+
+    public function test_return_to_pool_is_idempotent_under_lock(): void
+    {
+        $branch = Branch::factory()->create();
+        $allocation = TellerAllocation::factory()->for($branch)->active()->create([
+            'currency_code' => 'USD',
+            'current_balance' => '100.00',
+        ]);
+        BranchPool::factory()->for($branch)->create([
+            'currency_code' => 'USD',
+            'available_balance' => '0.00',
+            'allocated_balance' => '100.00',
+        ]);
+
+        $service = app(TellerAllocationService::class);
+        $service->returnToPool($allocation);
+
+        $this->expectException(\RuntimeException::class);
+        $service->returnToPool($allocation);
+    }
 }

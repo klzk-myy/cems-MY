@@ -146,17 +146,25 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
     public function returnToPool(TellerAllocation $allocation): TellerAllocation
     {
-        $branch = $allocation->branch;
+        return DB::transaction(function () use ($allocation) {
+            $locked = TellerAllocation::where('id', $allocation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $returnAmount = $allocation->current_balance;
+            if ($locked->status->value !== TellerAllocationStatus::ACTIVE->value) {
+                throw new \RuntimeException('Allocation is not active');
+            }
 
-        if ($this->mathService->compare($returnAmount, '0') > 0) {
-            $this->branchPoolService->deallocateFromTeller($branch, $allocation->currency_code, $returnAmount);
-        }
+            $returnAmount = $locked->current_balance;
 
-        $allocation->returnToPool();
+            if ($this->mathService->compare($returnAmount, '0') > 0) {
+                $this->branchPoolService->deallocateFromTeller($locked->branch, $locked->currency_code, $returnAmount);
+            }
 
-        return $allocation;
+            $locked->returnToPool();
+
+            return $locked;
+        });
     }
 
     public function forceReturnAllOpen(): int
