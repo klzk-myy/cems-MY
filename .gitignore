@@ -9,8 +9,12 @@
 /storage/framework/cache
 /storage/framework/sessions
 .env
-.env.backup
-.env.browser
+.env.*
+.env.*.bak
+*.bak
+*.backup
+*~
+*.orig
 .phpunit.result.cache
 .phpunit.cache
 Homestead.json
@@ -33,6 +37,7 @@ boost.json
 /.worktree
 /.kilo
 /.claude
+**/.mimocode/
 /load-tests
 /.mcp.json
 /docker
@@ -47,18 +52,15 @@ vite.config.js
 Thumbs.db
 opencode.json
 .codex
-  fau.md
-  AUDIT_REPORT.md
-  MVC_COMPLIANCE_GAP_ANALYSIS.md
-  FINAL_SUMMARY.md
-  DEPLOYMENT_READINESS.md
-  FIXES_SUMMARY.md
-  setup-step2-snapshot.md
 /storage/framework/views
 
 # Root markdown files: only README.md is tracked
 /*.md
 !README.md
+
+# Docs directories are ephemeral; keep existing tracked docs but ignore new ones
+**/docs/
+
 /browser-test.sh
 /run-tests.sh
 cems_my
