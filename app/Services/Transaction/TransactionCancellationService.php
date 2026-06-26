@@ -84,7 +84,7 @@ class TransactionCancellationService
      */
     public function requestCancellation(Transaction $transaction, User $requester, string $reason): bool
     {
-        if (! $requester->role->isManager()) {
+        if (! $requester->role->isManager() && ! $requester->role->isAdmin()) {
             Log::warning('Non-manager attempted transaction cancellation request', [
                 'transaction_id' => $transaction->id,
                 'user_id' => $requester->id,

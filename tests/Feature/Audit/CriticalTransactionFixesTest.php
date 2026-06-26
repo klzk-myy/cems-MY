@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Customer\CustomerService;
 use App\Services\System\MathService;
+use App\Services\Transaction\TransactionCancellationService;
 use App\Services\Transaction\TransactionReversalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -171,5 +172,20 @@ class CriticalTransactionFixesTest extends TestCase
         $service->reverse($transaction, $manager, 'oops');
 
         $this->assertSame(0, Transaction::where('is_refund', true)->count());
+    }
+
+    public function test_admin_can_request_cancellation(): void
+    {
+        $branch = Branch::factory()->create();
+        $admin = User::factory()->for($branch)->create(['role' => UserRole::Admin]);
+        $transaction = Transaction::factory()->for($branch)->state([
+            'status' => TransactionStatus::Completed,
+        ])->create();
+        $transaction->status = TransactionStatus::Completed;
+        $transaction->save();
+
+        $service = app(TransactionCancellationService::class);
+        $this->assertTrue($service->requestCancellation($transaction, $admin, 'reason'));
+        $this->assertSame(TransactionStatus::PendingCancellation->value, $transaction->fresh()->status->value);
     }
 }
