@@ -2,11 +2,14 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Enums\ReportType;
+use App\Enums\RiskRating;
 use App\Enums\StockTransferStatus;
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
+use App\Models\AccountingPeriod;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Customer;
@@ -15,9 +18,11 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Models\User;
+use App\Services\Accounting\MonthEndCloseService;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Customer\CustomerService;
 use App\Services\CustomerScreeningService;
+use App\Services\Reporting\ReportingService;
 use App\Services\System\MathService;
 use App\Services\Transaction\StockTransferService;
 use App\Services\Transaction\TransactionCancellationService;
@@ -58,7 +63,7 @@ class CriticalTransactionFixesTest extends TestCase
     {
         $branch = Branch::factory()->create();
         $teller = User::factory()->for($branch)->create(['role' => UserRole::Manager]);
-        $customer = Customer::factory()->create();
+        $customer = Customer::factory()->create(['risk_rating' => RiskRating::Low->value]);
         $till = Counter::factory()->for($branch)->create();
 
         TillBalance::factory()->for($till)->create([
@@ -112,7 +117,7 @@ class CriticalTransactionFixesTest extends TestCase
     {
         $branch = Branch::factory()->create();
         $teller = User::factory()->for($branch)->create(['role' => UserRole::Manager]);
-        $customer = Customer::factory()->create();
+        $customer = Customer::factory()->create(['risk_rating' => RiskRating::Low->value]);
         $till = Counter::factory()->for($branch)->create();
 
         TillBalance::factory()->for($till)->create([
@@ -235,5 +240,24 @@ class CriticalTransactionFixesTest extends TestCase
         $analysis = $reflection->invoke($service, $related);
 
         $this->assertSame('500', (string) $analysis['total_amount_myrr']);
+    }
+
+    public function test_month_end_report_recorded_as_failed_when_generation_fails(): void
+    {
+        $period = AccountingPeriod::factory()->create();
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $this->mock(ReportingService::class, function ($mock) {
+            $mock->shouldReceive('generateFormLMCACsv')->andThrow(new \Exception('LMCA failed'));
+        });
+
+        $service = app(MonthEndCloseService::class);
+        $service->generateReports($period->start_date);
+
+        $this->assertDatabaseHas('reports_generated', [
+            'report_type' => ReportType::MonthEnd->value,
+            'status' => 'Failed',
+        ]);
     }
 }

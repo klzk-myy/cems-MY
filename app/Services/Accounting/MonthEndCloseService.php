@@ -107,11 +107,13 @@ class MonthEndCloseService
 
         try {
             $lmcaPath = $this->reportingService->generateFormLMCACsv($month);
-            $reports['lmca'] = ['status' => 'generated', 'path' => $lmcaPath];
+            $reports['lmca'] = ['status' => 'success', 'path' => $lmcaPath];
         } catch (\Exception $e) {
             Log::error('LMCA report generation failed', ['error' => $e->getMessage()]);
             $reports['lmca'] = ['status' => 'failed', 'error' => $e->getMessage()];
         }
+
+        $allSuccessful = collect($reports)->every(fn ($report) => ($report['status'] ?? 'failed') === 'success');
 
         ReportGenerated::create([
             'report_type' => ReportType::MonthEnd,
@@ -120,7 +122,7 @@ class MonthEndCloseService
             'generated_by' => auth()->id() ?? 1,
             'generated_at' => now(),
             'file_format' => 'CSV',
-            'status' => 'Generated',
+            'status' => $allSuccessful ? 'Generated' : 'Failed',
         ]);
 
         return $reports;
