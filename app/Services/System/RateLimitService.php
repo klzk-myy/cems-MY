@@ -7,7 +7,6 @@ namespace App\Services\System;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 
 /**
  * Service for managing rate limiting and IP blocking.
@@ -29,6 +28,9 @@ class RateLimitService
     /** @var string Cache prefix for burst tracking */
     private const BURST_PREFIX = 'burst:';
 
+    /** @var string Cache key for blocked IPs index (list of all blocked IPs) */
+    private const BLOCKED_IPS_INDEX = 'ip_block:all';
+
     /**
      * Check if an IP address is currently blocked.
      */
@@ -44,10 +46,10 @@ class RateLimitService
             return false;
         }
 
-        // Check if IP is in block cache (Redis for fast lookup)
+        // Check if IP is in block cache
         $cacheKey = self::IP_BLOCK_PREFIX.$ip;
 
-        return Cache::store('redis')->has($cacheKey);
+        return Cache::store()->has($cacheKey);
     }
 
     /**
@@ -118,11 +120,19 @@ class RateLimitService
         $actualDuration = min($duration * (2 ** $blockCount), $maxDuration);
 
         $cacheKey = self::IP_BLOCK_PREFIX.$ip;
-        Cache::store('redis')->put($cacheKey, [
+        $cache = Cache::store();
+        $cache->put($cacheKey, [
             'blocked_at' => now()->toDateTimeString(),
             'duration_minutes' => $actualDuration,
             'block_count' => $blockCount + 1,
         ], now()->addMinutes($actualDuration));
+
+        // Maintain an index of all blocked IPs for getBlockedIps()
+        $blockedList = $cache->get(self::BLOCKED_IPS_INDEX, []);
+        if (! in_array($ip, $blockedList, true)) {
+            $blockedList[] = $ip;
+            $cache->put(self::BLOCKED_IPS_INDEX, $blockedList, now()->addMinutes($maxDuration));
+        }
 
         Log::warning('IP address blocked due to security policy', [
             'ip' => $ip,
@@ -138,9 +148,19 @@ class RateLimitService
     public function unblockIp(string $ip): bool
     {
         $cacheKey = self::IP_BLOCK_PREFIX.$ip;
+        $cache = Cache::store();
 
-        if (Cache::store('redis')->has($cacheKey)) {
-            Cache::store('redis')->forget($cacheKey);
+        if ($cache->has($cacheKey)) {
+            $cache->forget($cacheKey);
+
+            // Remove IP from the blocked IPs index
+            $blockedList = $cache->get(self::BLOCKED_IPS_INDEX, []);
+            $blockedList = array_values(array_filter($blockedList, fn ($bip) => $bip !== $ip));
+            if (! empty($blockedList)) {
+                $cache->put(self::BLOCKED_IPS_INDEX, $blockedList, now()->addDay());
+            } else {
+                $cache->forget(self::BLOCKED_IPS_INDEX);
+            }
 
             Log::info('IP address unblocked', ['ip' => $ip]);
 
@@ -180,7 +200,7 @@ class RateLimitService
     {
         $cacheKey = self::FAILED_ATTEMPTS_PREFIX.$ip;
 
-        return (int) Cache::store('redis')->get($cacheKey, 0);
+        return (int) Cache::store()->get($cacheKey, 0);
     }
 
     /**
@@ -189,7 +209,7 @@ class RateLimitService
     public function clearFailedAttempts(string $ip): void
     {
         $cacheKey = self::FAILED_ATTEMPTS_PREFIX.$ip;
-        Cache::store('redis')->forget($cacheKey);
+        Cache::store()->forget($cacheKey);
     }
 
     /**
@@ -198,7 +218,7 @@ class RateLimitService
     public function getIpBlockInfo(string $ip): ?array
     {
         $cacheKey = self::IP_BLOCK_PREFIX.$ip;
-        $data = Cache::store('redis')->get($cacheKey);
+        $data = Cache::store()->get($cacheKey);
 
         if (! $data) {
             return null;
@@ -218,13 +238,10 @@ class RateLimitService
      */
     public function getBlockedIps(): array
     {
-        $pattern = config('cache.prefix').':'.self::IP_BLOCK_PREFIX.'*';
-        $keys = Redis::keys($pattern);
+        $blockedIps = Cache::store()->get(self::BLOCKED_IPS_INDEX, []);
         $blocked = [];
 
-        foreach ($keys as $key) {
-            // Remove cache prefix from key
-            $ip = str_replace(config('cache.prefix').':'.self::IP_BLOCK_PREFIX, '', $key);
+        foreach ($blockedIps as $ip) {
             $info = $this->getIpBlockInfo($ip);
             if ($info) {
                 $blocked[] = $info;
@@ -256,7 +273,7 @@ class RateLimitService
 
         // Store hit for alert analysis
         $cacheKey = self::RATE_LIMIT_HITS_PREFIX.$ip;
-        $hits = Cache::store('redis')->get($cacheKey, []);
+        $hits = Cache::store()->get($cacheKey, []);
         $hits[] = [
             'timestamp' => now()->toDateTimeString(),
             'limiter' => $limiterName,
@@ -270,7 +287,7 @@ class RateLimitService
             return now()->parse($hit['timestamp'])->greaterThanOrEqualTo($cutoff);
         });
 
-        Cache::store('redis')->put($cacheKey, $hits, now()->addMinutes($window));
+        Cache::store()->put($cacheKey, $hits, now()->addMinutes($window));
 
         // Check if alert threshold is exceeded
         $this->checkAlertThreshold($ip, $hits);
@@ -301,7 +318,7 @@ class RateLimitService
     public function getRateLimitStats(string $ip): array
     {
         $cacheKey = self::RATE_LIMIT_HITS_PREFIX.$ip;
-        $hits = Cache::store('redis')->get($cacheKey, []);
+        $hits = Cache::store()->get($cacheKey, []);
 
         return [
             'ip' => $ip,
@@ -336,7 +353,7 @@ class RateLimitService
         $key = $userId ? "{$limiterName}:user:{$userId}" : "{$limiterName}:ip:{$ip}";
         $cacheKey = self::BURST_PREFIX.$key;
 
-        $burst = Cache::store('redis')->get($cacheKey, []);
+        $burst = Cache::store()->get($cacheKey, []);
         $now = now();
 
         // Remove old entries outside the burst window (1 second)
@@ -351,7 +368,7 @@ class RateLimitService
 
         // Add current request to burst
         $burst[] = $now;
-        Cache::store('redis')->put($cacheKey, $burst, now()->addSeconds(1));
+        Cache::store()->put($cacheKey, $burst, now()->addSeconds(1));
 
         return true;
     }

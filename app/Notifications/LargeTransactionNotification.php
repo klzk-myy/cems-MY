@@ -106,25 +106,50 @@ class LargeTransactionNotification extends Notification implements ShouldQueue
 
     /**
      * Format the transaction amount for display.
+     * Uses string-safe formatting to avoid float precision loss on large amounts.
      */
     protected function formatAmount(): string
     {
-        $amount = $this->transaction->amount;
+        $amount = (string) $this->transaction->amount;
         $currency = $this->transaction->currency?->code ?? 'MYR';
 
-        return number_format($amount, 2).' '.$currency;
+        // Split into integer and decimal parts to avoid float cast precision loss
+        $parts = explode('.', $amount, 2);
+        $intPart = $parts[0] ?? '0';
+        $decPart = isset($parts[1]) ? str_pad(substr($parts[1], 0, 2), 2, '0') : '00';
+
+        // Add thousands separator using string manipulation for precision safety
+        $intFormatted = '';
+        $len = strlen($intPart);
+        for ($i = 0; $i < $len; $i++) {
+            if ($i > 0 && ($len - $i) % 3 === 0) {
+                $intFormatted .= ',';
+            }
+            $intFormatted .= $intPart[$i];
+        }
+
+        return $intFormatted.'.'.$decPart.' '.$currency;
     }
 
     /**
      * Determine if email should be sent based on user preferences.
+     * Caches preferences per user to avoid N+1 queries in batch scenarios.
      */
     protected function shouldSendEmail(User $notifiable): bool
     {
-        $preference = $notifiable->notificationPreferences()
-            ->where('notification_type', 'large_transaction')
-            ->first();
+        static $preferences = [];
 
-        return $preference?->email_enabled ?? true;
+        $userId = $notifiable->id;
+
+        if (! array_key_exists($userId, $preferences)) {
+            $preference = $notifiable->notificationPreferences()
+                ->where('notification_type', 'large_transaction')
+                ->first();
+
+            $preferences[$userId] = $preference?->email_enabled ?? true;
+        }
+
+        return $preferences[$userId];
     }
 
     /**

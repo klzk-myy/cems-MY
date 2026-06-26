@@ -380,12 +380,13 @@ class TransactionStateMachine
         $this->transaction->status = $status;
         $this->transaction->transition_history = $this->history;
 
-        // Apply metadata based on forced status
-        if ($status === TransactionStatus::Cancelled) {
-            $this->transaction->cancelled_at = now();
-            $this->transaction->cancelled_by = auth()->id();
-            $this->transaction->cancellation_reason = $reason;
-        }
+        // Apply ALL metadata via the shared method so that all status types
+        // (Approved, Cancelled, Failed, Rejected, Reversed) get their respective
+        // audit fields populated consistently, not just Cancelled.
+        $this->applyTransitionMetadata($from, $status, [
+            'reason' => $reason,
+            'user_id' => auth()->id(),
+        ]);
 
         $saved = $this->transaction->save();
 

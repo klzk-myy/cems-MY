@@ -16,12 +16,12 @@ class TransactionImportIdempotencyTest extends TestCase
 
         $content = file_get_contents($file);
         $this->assertStringContainsString(
-            "if (!empty(\$data['idempotency_key']))",
+            "if (! empty(\$data['idempotency_key']))",
             $content,
             'Idempotency key check should be present'
         );
         $this->assertStringContainsString(
-            "Transaction::where('idempotency_key', \$data['idempotency_key'])->exists()",
+            "\$existing = Transaction::where('idempotency_key', \$data['idempotency_key'])->exists();",
             $content,
             'Should check for existing transaction with same idempotency key'
         );

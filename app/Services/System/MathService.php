@@ -202,10 +202,33 @@ class MathService implements MathServiceInterface
      */
     public function round(string $number, int $precision = 0): string
     {
+        // BCMath half-up rounding without float casts.
+        //
+        // Algorithm:
+        //   1. Multiply number by 10^precision (shift decimal right)
+        //   2. Add 0.5 for positive numbers, subtract 0.5 for negatives (half-up)
+        //   3. Truncate to integer (BCMath truncates toward zero at scale 0)
+        //   4. Divide by 10^precision (shift decimal back)
+        //
+        // Example: round('123.4567', 2)
+        //   multiplier = 100
+        //   multiplied = 12345.67 + 0.5 → truncated to 12346 → / 100 = 123.46
         $multiplier = bcpow('10', (string) $precision, $this->scale);
-        $multiplied = bcmul($number, $multiplier, $this->scale);
-        $rounded = round((float) $multiplied);
 
-        return bcdiv((string) $rounded, $multiplier, $precision);
+        // Use extra precision to preserve the rounding digit after multiplication
+        $workingScale = max($this->scale, $precision + 2);
+        $multiplied = bcmul($number, $multiplier, $workingScale);
+
+        // Apply half-up: add 0.5 for positive, subtract 0.5 for negative
+        if (bccomp($multiplied, '0', $workingScale) >= 0) {
+            $adjusted = bcadd($multiplied, '0.5', $workingScale);
+        } else {
+            $adjusted = bcsub($multiplied, '0.5', $workingScale);
+        }
+
+        // Truncate to integer (BCMath truncates toward zero at scale 0)
+        $truncated = bcadd($adjusted, '0', 0);
+
+        return bcdiv($truncated, $multiplier, $precision);
     }
 }

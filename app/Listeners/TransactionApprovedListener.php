@@ -27,7 +27,7 @@ class TransactionApprovedListener implements ShouldQueue
         ]);
 
         $this->notifyTellerAndManager($transaction);
-        $this->auditApprovalEvent($transaction);
+        $this->auditApprovalEvent($event);
     }
 
     protected function notifyTellerAndManager($transaction): void
@@ -70,13 +70,15 @@ class TransactionApprovedListener implements ShouldQueue
         }
     }
 
-    protected function auditApprovalEvent($transaction): void
+    protected function auditApprovalEvent(TransactionApproved $event): void
     {
+        $transaction = $event->transaction;
+
         try {
             $this->auditService->logWithSeverity(
                 'transaction_approved_notification_sent',
                 [
-                    'user_id' => auth()->id(),
+                    'user_id' => $event->approverId,
                     'entity_type' => 'Transaction',
                     'entity_id' => $transaction->id,
                     'new_values' => [

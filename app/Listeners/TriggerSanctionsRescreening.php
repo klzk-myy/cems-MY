@@ -119,9 +119,12 @@ class TriggerSanctionsRescreening
                 ]);
             })
             // OR customers with recent activity in last 30 days
-                ->orWhereNotNull('last_transaction_at')
-                ->where('last_transaction_at', '>=', now()->subDays(30));
+                ->orWhere(function ($recentQuery) {
+                    $recentQuery->whereNotNull('last_transaction_at')
+                        ->where('last_transaction_at', '>=', now()->subDays(30));
+                });
         })
+            // OR high-risk customers regardless of activity
             ->orWhere('risk_rating', 'High')
             ->with('transactions')
             ->get();

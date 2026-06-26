@@ -265,6 +265,7 @@ Route::middleware(['branch.scope'])->group(function () {
         Route::get('/sanctions/entries', [SanctionListController::class, 'entries'])
             ->name('api.v1.sanctions.entries');
         Route::post('/sanctions/import/trigger/{list}', [SanctionListController::class, 'triggerImport'])
+            ->middleware('throttle:5,10') // 5 imports per 10-minute window
             ->name('api.v1.sanctions.import.trigger');
         Route::get('/sanctions/import/logs', [SanctionListController::class, 'importLogs'])
             ->name('api.v1.sanctions.import.logs');

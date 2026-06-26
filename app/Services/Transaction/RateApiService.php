@@ -28,7 +28,7 @@ class RateApiService
     {
         $this->mathService = $mathService ?? new MathService;
         $this->apiKey = config('services.exchange_rate_api.key') ?? '';
-        $this->baseUrl = 'https://api.exchangerate-api.com/v4';
+        $this->baseUrl = config('services.exchange_rate_api.base_url', 'https://api.exchangerate-api.com/v4');
         $this->spread = config('thresholds.rates.spread', '0.02');
         $this->maxDeviationPercent = config('thresholds.rates.max_deviation_percent', '0.05');
         $this->precision = (int) config('thresholds.rates.precision', 4);

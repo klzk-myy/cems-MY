@@ -275,22 +275,27 @@ class BackupService
 
     /**
      * Restore database from SQL dump
+     *
+     * Uses MYSQL_PWD environment variable instead of inline -p{PASSWORD} argument
+     * to prevent password exposure via /proc or shell history (security harden).
      */
     protected function restoreDatabase(string $sqlFile): void
     {
         $dbConfig = config('database.connections.mysql');
 
         $command = sprintf(
-            'mysql -h %s -P %s -u %s %s %s < %s',
+            'mysql -h %s -P %s -u %s %s < %s',
             escapeshellarg($dbConfig['host'] ?? 'localhost'),
             escapeshellarg($dbConfig['port'] ?? '3306'),
             escapeshellarg($dbConfig['username'] ?? 'root'),
-            $dbConfig['password'] ? '-p'.escapeshellarg($dbConfig['password']) : '',
             escapeshellarg($dbConfig['database']),
             escapeshellarg($sqlFile)
         );
 
-        $result = Process::run($command);
+        $password = $dbConfig['password'] ?? '';
+        $result = $password
+            ? Process::timeout(300)->env(['MYSQL_PWD' => $password])->run($command)
+            : Process::timeout(300)->run($command);
 
         if (! $result->successful()) {
             throw new \RuntimeException('Database restore failed: '.$result->errorOutput());

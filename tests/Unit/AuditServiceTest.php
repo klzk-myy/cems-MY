@@ -192,13 +192,22 @@ class AuditServiceTest extends TestCase
         // Entry should have null hash initially
         $this->assertNull($log2->entry_hash);
 
-        // Dispatch and run the seal job synchronously for the second entry
+        // Dispatch and run the seal job for the first entry first,
+        // since SealAuditHashJob queries for the predecessor by non-null entry_hash.
+        // If log1 isn't sealed yet, the predecessor query won't find it.
+        SealAuditHashJob::dispatchSync($log1->id);
+
+        // Dispatch and run the seal job for the second entry
         SealAuditHashJob::dispatchSync($log2->id);
 
         // Entry should now be sealed with previous_hash pointing to log1's hash
         $log2->refresh();
         $this->assertNotNull($log2->entry_hash);
         $this->assertNotNull($log2->previous_hash);
+
+        // Verify the chain links correctly
+        $log1->refresh();
+        $this->assertEquals($log1->entry_hash, $log2->previous_hash);
     }
 
     #[Test]

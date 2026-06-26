@@ -12,7 +12,7 @@ class SetupService
     public function seedCoreData(array $config): void
     {
         $admin = User::create([
-            'username' => 'admin',
+            'username' => $config['admin_username'] ?? 'admin',
             'email' => $config['admin_email'],
             'password_hash' => Hash::make($config['admin_password']),
             'role' => 'admin',

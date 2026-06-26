@@ -126,6 +126,7 @@ class CounterService
             $tillBalances = TillBalance::where('till_id', (string) $session->counter_id)
                 ->where('date', $session->session_date)
                 ->whereNull('closed_at')
+                ->orderBy('currency_code')
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('currency_code');
@@ -329,6 +330,7 @@ class CounterService
             $allBalances = TillBalance::where('till_id', (string) $session->counter_id)
                 ->where('date', $session->session_date)
                 ->whereIn('currency_code', $currencyCodes)
+                ->orderBy('currency_code')
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('currency_code');

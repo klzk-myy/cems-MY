@@ -158,14 +158,15 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo(storage_path('logs/sanctions-status-check.log'));
 
         // UN Consolidated sanctions list - Daily at 1 AM
-        $schedule->job(new ImportSanctionsJob)
+        // Uses lazy-resolved slug to avoid eager DB queries at app boot
+        $schedule->job(new ImportSanctionsJob(listSlug: 'un_consolidated'))
             ->dailyAt('01:00')
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/sanctions-import-un.log'));
 
         // MOHA Malaysia sanctions list - Weekly on Sunday at 2 AM
-        $schedule->job(new ImportSanctionsJob)
+        $schedule->job(new ImportSanctionsJob(listSlug: 'moha_malaysia'))
             ->weeklyOn(0, '02:00')
             ->withoutOverlapping()
             ->onOneServer()

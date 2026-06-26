@@ -8,6 +8,7 @@ use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Services\Accounting\LedgerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -69,6 +70,9 @@ class LedgerServiceBalanceTest extends TestCase
     #[Test]
     public function trial_balance_filters_by_branch(): void
     {
+        // Clear cached trial balance data from previous test to ensure fresh query
+        Cache::tags(['ledger', 'trial-balance'])->flush();
+
         $ledgerService = $this->app->make(LedgerService::class);
 
         // Create branch-specific ledger entries

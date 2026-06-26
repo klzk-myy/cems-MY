@@ -13,7 +13,7 @@ class SessionSecureTest extends TestCase
     {
         $configFile = file_get_contents(base_path('config/session.php'));
         $this->assertStringContainsString(
-            "'secure' => env('SESSION_SECURE_COOKIE', \$_ENV['APP_ENV'] === 'production')",
+            "'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production')",
             $configFile,
             'Session secure config should fallback to production environment check'
         );

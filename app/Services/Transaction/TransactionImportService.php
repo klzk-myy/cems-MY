@@ -189,8 +189,9 @@ class TransactionImportService
                     $existing = Transaction::where('idempotency_key', $data['idempotency_key'])->exists();
                     if ($existing) {
                         $this->successCount++;
+                        DB::rollBack();
 
-                        continue 2;
+                        return;
                     }
                 }
 

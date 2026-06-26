@@ -63,7 +63,11 @@ class ThresholdService implements ThresholdServiceInterface
     public const FALLBACK_AML_AMOUNT = '50000';
 
     /**
-     * Set a threshold value in config and audit the change.
+     * Set a threshold value in config, persist to database, and audit the change.
+     *
+     * The value is both stored in config (for the duration of this request) and
+     * persisted in the threshold_audits table (for cross-request durability via
+     * the get() method).
      *
      * @param  string  $category  The threshold category (e.g., 'approval', 'cdd')
      * @param  string  $key  The threshold key (e.g., 'auto_approve', 'manager')
@@ -73,38 +77,83 @@ class ThresholdService implements ThresholdServiceInterface
      */
     public function set(string $category, string $key, string|int|float $value, ?string $reason = null): bool
     {
-        $oldValue = config("thresholds.{$category}.{$key}");
+        // Get the effective old value (respecting any previously persisted override)
+        $oldValue = $this->get($category, $key);
 
         // If value is same, do not audit or update
         if ((string) $oldValue === (string) $value) {
             return false;
         }
 
-        // Update the config value
+        // Update the config value (immediate, for current request)
         config(["thresholds.{$category}.{$key}" => $value]);
 
-        // Audit the change
+        // Audit the change (persists to DB for cross-request durability)
         $this->auditChange($category, $key, (string) $oldValue, (string) $value, $reason);
 
         return true;
     }
 
     /**
-     * Get a threshold value from config, with fallback to constant.
+     * Get a threshold value with persistence chain:
+     *   1. Database (persisted overrides from previous set() calls)
+     *   2. Config (env variables and config file defaults)
+     *   3. Fallback constant
+     *
+     * IMPORTANT: Config values from config/thresholds.php always have non-null
+     * defaults (e.g. env('THRESHOLD_AUTO_APPROVE', '10000')). If we checked config
+     * before the database, the DB override would never be read — the env default
+     * always wins. Checking the DB first ensures runtime threshold changes made
+     * via set() actually take effect across requests.
      */
     public function get(string $category, string $key, ?string $fallbackConstant = null): string|int|float
     {
-        $value = config("thresholds.{$category}.{$key}");
+        // 1. Check database for persisted overrides from previous set() calls
+        $persisted = $this->getPersistedValue($category, $key);
+        if ($persisted !== null) {
+            // Warm the config cache for subsequent calls in this request
+            config(["thresholds.{$category}.{$key}" => $persisted]);
 
+            return $persisted;
+        }
+
+        // 2. Check config (env variables + config file defaults)
+        $value = config("thresholds.{$category}.{$key}");
         if ($value !== null) {
             return $value;
         }
 
+        // 3. Fall back to constant defaults
         if ($fallbackConstant !== null) {
             return $this->getFallbackValue($fallbackConstant);
         }
 
         throw new \RuntimeException("Threshold not found: {$category}.{$key}");
+    }
+
+    /**
+     * Retrieve the most recently persisted value from the threshold_audits table.
+     *
+     * Returns null if no override has ever been recorded for this key.
+     */
+    protected function getPersistedValue(string $category, string $key): ?string
+    {
+        try {
+            $latest = ThresholdAudit::where('category', $category)
+                ->where('key', $key)
+                ->latest('changed_at')
+                ->first();
+
+            return $latest ? (string) $latest->new_value : null;
+        } catch (\Exception $e) {
+            Log::warning('Failed to read persisted threshold from database', [
+                'category' => $category,
+                'key' => $key,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     /**

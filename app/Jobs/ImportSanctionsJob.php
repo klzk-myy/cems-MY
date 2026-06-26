@@ -23,11 +23,13 @@ class ImportSanctionsJob implements ShouldQueue
 
     public function __construct(
         public ?SanctionList $sanctionList = null,
+        public ?string $listSlug = null,
     ) {}
 
     public function handle(SanctionsImportService $service): void
     {
-        $list = $this->sanctionList ?? SanctionList::active()->autoUpdatable()->first();
+        // Resolve list: explicit slug takes priority, then explicit model, then fallback
+        $list = $this->resolveList();
 
         if (! $list) {
             Log::warning('ImportSanctionsJob: No active auto-updatable sanctions list found');
@@ -48,20 +50,41 @@ class ImportSanctionsJob implements ShouldQueue
         ]);
     }
 
+    /**
+     * Resolve the SanctionList to import.
+     * Priority: listSlug > sanctionList > first active auto-updatable.
+     * Slug is resolved lazily at job execution time to avoid eager DB queries at app boot.
+     */
+    protected function resolveList(): ?SanctionList
+    {
+        if ($this->listSlug !== null) {
+            return SanctionList::where('slug', $this->listSlug)->first();
+        }
+
+        if ($this->sanctionList !== null) {
+            return $this->sanctionList;
+        }
+
+        return SanctionList::active()->autoUpdatable()->first();
+    }
+
     public function failed(\Throwable $exception): void
     {
+        $listId = $this->sanctionList?->id ?? $this->listSlug;
         Log::critical('ImportSanctionsJob: Import failed permanently', [
-            'list_id' => $this->sanctionList?->id,
+            'list_id' => $listId,
             'error' => $exception->getMessage(),
         ]);
     }
 
     public function tags(): array
     {
+        $listId = $this->sanctionList?->id ?? $this->listSlug ?? 'unknown';
+
         return [
             'sanctions',
             'sanctions-import',
-            'list-'.$this->sanctionList?->id,
+            'list-'.$listId,
         ];
     }
 }

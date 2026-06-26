@@ -16,7 +16,16 @@ class SealAuditHashJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 3;
+    public int $tries = 5;
+
+    /**
+     * Backoff strategy for retries when unsealed predecessor entries are found.
+     * Exponential backoff: 5s, 15s, 45s, 135s
+     */
+    public function backoff(): array
+    {
+        return [5, 15, 45, 135];
+    }
 
     public int $timeout = 60;
 
@@ -36,6 +45,22 @@ class SealAuditHashJob implements ShouldQueue
             if ($predecessorId) {
                 // Lock the predecessor row
                 SystemLog::where('id', $predecessorId)->lockForUpdate()->first();
+
+                // Guard: Check that no unsealed entries exist between predecessor and current entry.
+                // If unsealed entries are found, the immediate predecessor has not been sealed yet,
+                // and chaining to a farther predecessor would corrupt the hash chain (fork).
+                // Release the transaction and retry with backoff to let the missing seal finish.
+                $unsealedBetween = SystemLog::where('id', '>', $predecessorId)
+                    ->where('id', '<', $this->logId)
+                    ->whereNull('entry_hash')
+                    ->exists();
+
+                if ($unsealedBetween) {
+                    throw new \RuntimeException(
+                        "Unsealed entries exist between predecessor {$predecessorId} and target {$this->logId}. ".
+                        'Retrying after intermediate entries are sealed.'
+                    );
+                }
             }
 
             // Step 2: Lock the target log entry and verify it's not already sealed

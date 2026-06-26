@@ -16,6 +16,9 @@ trait CreatesApplication
 
         $app->make(Kernel::class)->bootstrap();
 
+        // Redis password override moved to bootstrap/app.php — it runs before any
+        // service provider registers its Redis connection, preventing AUTH errors.
+
         return $app;
     }
 }

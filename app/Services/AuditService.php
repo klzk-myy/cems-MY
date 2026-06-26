@@ -169,18 +169,24 @@ class AuditService implements AuditServiceInterface
      */
     public function verifyChainIntegrity(?int $limit = null): array
     {
-        $query = SystemLog::whereNotNull('entry_hash')->orderBy('id', 'asc');
-
         if ($limit !== null) {
-            // Get the last N entries and verify backwards
-            $totalCount = SystemLog::count();
-            $query = SystemLog::whereNotNull('entry_hash')
+            // Get the last N entries with hashes, then re-sort ascending for chain verification.
+            // Using a subquery to get the last N IDs prevents the broken ORDER BY DESC, ASC issue.
+            $lastIds = SystemLog::whereNotNull('entry_hash')
                 ->orderBy('id', 'desc')
                 ->limit($limit)
-                ->orderBy('id', 'asc');
+                ->pluck('id');
+
+            $entries = SystemLog::whereIn('id', $lastIds)
+                ->whereNotNull('entry_hash')
+                ->orderBy('id', 'asc')
+                ->get();
+        } else {
+            $entries = SystemLog::whereNotNull('entry_hash')
+                ->orderBy('id', 'asc')
+                ->get();
         }
 
-        $entries = $query->get();
         $previousHash = null;
 
         foreach ($entries as $entry) {

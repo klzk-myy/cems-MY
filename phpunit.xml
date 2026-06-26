@@ -36,6 +36,8 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="CACHE_DRIVER" value="array"/>
         <env name="REDIS_CLIENT" value="phpredis"/>
+        <env name="REDIS_HOST" value="127.0.0.1"/>
+        <env name="REDIS_PASSWORD" value=""/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="ENCRYPTION_KEY" value="test_32_char_encryption_key_here"/>
         <env name="SECURITY_IP_BLOCKING_ENABLED" value="false"/>

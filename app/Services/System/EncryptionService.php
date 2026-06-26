@@ -2,6 +2,8 @@
 
 namespace App\Services\System;
 
+use Illuminate\Support\Facades\Log;
+
 class EncryptionService
 {
     protected string $key;
@@ -14,7 +16,24 @@ class EncryptionService
         }
 
         // Use PBKDF2 for secure key derivation with proper salt and iteration count
-        $salt = config('app.encryption_salt', 'cems-default-salt');
+        $salt = config('app.encryption_salt');
+
+        // SECURITY: If no encryption salt is configured, generate a random one.
+        // The hardcoded default 'cems-default-salt' is NOT used because it is a
+        // predictable, low-entropy value that weakens PBKDF2 derivation. Using
+        // a per-installation random salt ensures unique keys even with the same
+        // APP_KEY, protecting against pre-computed rainbow table attacks.
+        //
+        // NOTE: Auto-generated salt changes on every app restart, which means
+        // previously encrypted data cannot be decrypted after restart until the
+        // salt is persisted in .env as APP_ENCRYPTION_SALT. This is intentional:
+        // it ensures operators configure a proper salt rather than silently
+        // relying on a weak default.
+        if (empty($salt)) {
+            $salt = bin2hex(random_bytes(32));
+            Log::critical('APP_ENCRYPTION_SALT is not configured! Generated a random salt, but previously encrypted data WILL NOT be decryptable after restart. Set APP_ENCRYPTION_SALT in .env to a 64-character hex string to ensure consistent key derivation across restarts.');
+        }
+
         $iterations = config('app.encryption_iterations', 100000);
 
         // Derive a proper 32-byte key using PBKDF2 (AES-256-CBC requires 32 bytes)

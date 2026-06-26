@@ -112,7 +112,8 @@ class BudgetServiceTest extends TestCase
         $report = $this->budgetService->getBudgetReport($periodCode);
 
         // Variance should be budget - actual = 5000 - 3000 = 2000
-        $this->assertEquals('2000', $report['items'][0]['variance']);
+        // MathService returns bcmath-precision strings (4 decimal places)
+        $this->assertEquals('2000.0000', $report['items'][0]['variance']);
     }
 
     #[Test]
@@ -186,7 +187,8 @@ class BudgetServiceTest extends TestCase
         ]);
 
         $variance = $budget->getVariance();
-        $this->assertEquals(2000.00, $variance);
+        // MathService returns bcmath-precision strings (4 decimal places)
+        $this->assertEquals('2000.0000', $variance);
     }
 
     #[Test]

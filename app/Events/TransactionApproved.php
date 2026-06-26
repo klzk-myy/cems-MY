@@ -12,8 +12,11 @@ class TransactionApproved
 
     public Transaction $transaction;
 
-    public function __construct(Transaction $transaction)
+    public ?int $approverId = null;
+
+    public function __construct(Transaction $transaction, ?int $approverId = null)
     {
         $this->transaction = $transaction;
+        $this->approverId = $approverId;
     }
 }

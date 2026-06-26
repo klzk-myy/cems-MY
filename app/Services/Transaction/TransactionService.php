@@ -303,35 +303,10 @@ class TransactionService implements TransactionServiceInterface
         }
 
         $transaction = DB::transaction(function () use ($data, $userId, $tillBalance, $amountForeign, $rate, $amountLocal, $cddLevel, $status, $holdReason, $approvedBy, &$allocationForUpdate) {
-            // For Sell transactions, acquire position lock FIRST to prevent race conditions
-            // where two concurrent transactions could both pass the duplicate check
-            // before either acquires the lock
-            if ($data['type'] === TransactionType::Sell->value) {
-                $this->positionService->getPositionWithLock($data['currency_code'], $tillBalance->branch_id);
-
-                // Verify sufficient stock for Sell transactions IMMEDIATELY after acquiring lock
-                // This prevents race conditions where another transaction could modify the position
-                // Use getAvailableBalance which accounts for pending reservations
-                $availableBalance = $this->positionService->getAvailableBalance(
-                    $data['currency_code'],
-                    $tillBalance->branch_id
-                );
-                if ($this->mathService->compare($availableBalance, $amountForeign) < 0) {
-                    throw new InsufficientStockException(
-                        $data['currency_code'],
-                        $amountForeign,
-                        $availableBalance
-                    );
-                }
-            } elseif ($data['type'] === TransactionType::Buy->value) {
-                // For Buy transactions, acquire position lock to prevent race conditions
-                // where concurrent transactions could cause inconsistent position updates.
-                // Unlike Sell, Buy does not require stock validation (we are acquiring currency).
-                $this->positionService->getPositionWithLock($data['currency_code'], $tillBalance->branch_id);
-            }
-
-            // Check for duplicate transaction via idempotency key (inside transaction to prevent race)
-            // Check this FIRST, before recent duplicate window, as idempotency is the strongest guarantee
+            // STEP 1: Check for duplicate transaction via idempotency key FIRST
+            // This is checked BEFORE acquiring the position lock to avoid needless lock
+            // contention when a request is a known duplicate. If the idempotency key
+            // already exists, return immediately without acquiring any locks.
             if (! empty($data['idempotency_key'])) {
                 $existingByKey = Transaction::where('idempotency_key', $data['idempotency_key'])->first();
                 if ($existingByKey) {
@@ -339,8 +314,8 @@ class TransactionService implements TransactionServiceInterface
                 }
             }
 
-            // Check for recent similar transaction (potential double-submit)
-            // Moved inside DB transaction to ensure check and insert are atomic
+            // STEP 2: Check for recent similar transaction (potential double-submit) BEFORE lock
+            // Early detection allows returning without acquiring position lock
             $recentWindow = now()->subSeconds(30);
             $recentAmount = Transaction::where('user_id', $userId)
                 ->where('created_at', '>=', $recentWindow)
@@ -362,6 +337,26 @@ class TransactionService implements TransactionServiceInterface
                 );
 
                 throw new DuplicateTransactionException;
+            }
+
+            // STEP 3: Acquire position lock (only for actual new transactions)
+            // For Sell transactions, also verify sufficient stock immediately after lock
+            if ($data['type'] === TransactionType::Sell->value) {
+                $this->positionService->getPositionWithLock($data['currency_code'], $tillBalance->branch_id);
+
+                $availableBalance = $this->positionService->getAvailableBalance(
+                    $data['currency_code'],
+                    $tillBalance->branch_id
+                );
+                if ($this->mathService->compare($availableBalance, $amountForeign) < 0) {
+                    throw new InsufficientStockException(
+                        $data['currency_code'],
+                        $amountForeign,
+                        $availableBalance
+                    );
+                }
+            } elseif ($data['type'] === TransactionType::Buy->value) {
+                $this->positionService->getPositionWithLock($data['currency_code'], $tillBalance->branch_id);
             }
 
             $transaction = Transaction::create([
@@ -624,16 +619,28 @@ class TransactionService implements TransactionServiceInterface
 
         try {
             $result = DB::transaction(function () use ($transaction, $approverId, $amlResult) {
-                // Optimistic locking with pessimistic lock to prevent race conditions
+                // Pessimistic lock to prevent concurrent approvals, with optimistic version check
+                // lockForUpdate() prevents other transactions from modifying this row concurrently.
+                // After acquiring the lock, we verify the version hasn't changed since the caller
+                // loaded the model, providing a clear error if the data is stale.
                 $lockedTransaction = Transaction::where('id', $transaction->id)
                     ->where('status', TransactionStatus::PendingApproval)
-                    ->where('version', $transaction->version)
                     ->lockForUpdate()
                     ->first();
 
                 if (! $lockedTransaction) {
                     throw new \RuntimeException(
                         'Transaction was already processed or modified by another user.'
+                    );
+                }
+
+                // Verify version match after acquiring lock (optimistic concurrency guard)
+                // This detects stale data: if the in-memory model has a different version
+                // than the locked DB row, the caller was operating on outdated data.
+                if ((int) $lockedTransaction->version !== (int) $transaction->version) {
+                    throw new \RuntimeException(
+                        'Transaction was modified by another user since you loaded it. '.
+                        'Please refresh the record and try again.'
                     );
                 }
 
@@ -795,7 +802,7 @@ class TransactionService implements TransactionServiceInterface
                 ]);
 
                 // Dispatch event for async compliance processing
-                Event::dispatch(new TransactionApproved($lockedTransaction));
+                Event::dispatch(new TransactionApproved($lockedTransaction, $approverId));
 
                 return [
                     'success' => true,

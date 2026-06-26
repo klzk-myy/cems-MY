@@ -38,7 +38,7 @@ class SessionTimeout
         $lastActivity = $request->session()->get('last_activity');
 
         if ($lastActivity !== null) {
-            $elapsed = time() - $lastActivity;
+            $elapsed = now()->timestamp - $lastActivity;
 
             if ($elapsed >= $timeoutSeconds) {
                 // Session has timed out
@@ -63,7 +63,7 @@ class SessionTimeout
 
         // Update last activity timestamp (only for authenticated users)
         if (auth()->check()) {
-            $request->session()->put('last_activity', time());
+            $request->session()->put('last_activity', now()->timestamp);
         }
 
         return $next($request);

@@ -32,6 +32,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Note: Redis password override for tests is handled in tests/CreatesApplication.php
+        // after app bootstrap. The runningUnitTests() check is unavailable during
+        // AppServiceProvider::boot() because 'unitTesting' is set after provider boot.
+
         $this->registerMorphMap();
         $this->registerCarbonMacros();
         $this->registerBladeDirectives();
