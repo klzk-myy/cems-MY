@@ -112,6 +112,8 @@ Route::middleware(['branch.scope'])->group(function () {
         ->name('api.v1.reports.msb2');
     Route::post('/reports/msb2/status', [RegulatoryReportController::class, 'updateMSB2Status'])
         ->name('api.v1.reports.msb2.status');
+    Route::post('/reports/lmca/status', [RegulatoryReportController::class, 'updateLMCAStatus'])
+        ->name('api.v1.reports.lmca.status');
     Route::get('/reports/download/{filename}', [ReportController::class, 'download'])
         ->name('api.v1.reports.download');
 

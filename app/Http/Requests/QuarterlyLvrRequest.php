@@ -7,7 +7,7 @@ class QuarterlyLvrRequest extends AuthorizedFormRequest
     public function rules(): array
     {
         return [
-            'quarter' => 'nullable|date_format:Y-q',
+            'quarter' => ['nullable', 'regex:/^\d{4}-Q[1-4]$/'],
         ];
     }
 }

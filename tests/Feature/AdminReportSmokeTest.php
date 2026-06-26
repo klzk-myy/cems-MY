@@ -78,6 +78,87 @@ class AdminReportSmokeTest extends TestCase
     }
 
     #[Test]
+    public function lmca_report_page_loads_for_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $month = now()->subMonth()->format('Y-m');
+
+        ReportGenerated::factory()->create([
+            'report_type' => ReportType::Lmca->value,
+            'period_start' => Carbon::parse($month)->startOfMonth(),
+            'period_end' => Carbon::parse($month)->endOfMonth(),
+            'generated_by' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('reports.lmca', ['month' => $month]));
+
+        $response->assertOk();
+        $response->assertSee('Form LMCA');
+    }
+
+    #[Test]
+    public function quarterly_lvr_report_page_loads_for_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $quarter = now()->format('Y').'-Q'.(int) ceil((int) now()->format('n') / 3);
+
+        ReportGenerated::factory()->create([
+            'report_type' => ReportType::Qlvr->value,
+            'period_start' => Carbon::create(now()->year, 1, 1)->startOfMonth(),
+            'period_end' => Carbon::create(now()->year, 3, 31)->endOfDay(),
+            'generated_by' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('reports.quarterly-lvr', ['quarter' => $quarter]));
+
+        $response->assertOk();
+        $response->assertSee('Quarterly Large Value Report');
+    }
+
+    #[Test]
+    public function position_limit_report_page_loads_for_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        ReportGenerated::factory()->create([
+            'report_type' => ReportType::Plr->value,
+            'period_start' => now()->startOfDay(),
+            'period_end' => now()->endOfDay(),
+            'generated_by' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('reports.position-limit'));
+
+        $response->assertOk();
+        $response->assertSee('Position Limit Report');
+    }
+
+    #[Test]
+    public function lmca_status_update_updates_generated_report(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $month = now()->subMonth()->format('Y-m');
+
+        ReportGenerated::factory()->create([
+            'report_type' => ReportType::Lmca->value,
+            'period_start' => Carbon::parse($month)->startOfMonth(),
+            'period_end' => Carbon::parse($month)->endOfMonth(),
+            'generated_by' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)->postJson('/api/v1/reports/lmca/status', [
+            'month' => $month,
+            'status' => 'Submitted',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('reports_generated', [
+            'report_type' => ReportType::Lmca->value,
+            'status' => 'Submitted',
+        ]);
+    }
+
+    #[Test]
     public function test_results_page_loads_for_admin(): void
     {
         $admin = User::factory()->admin()->create();

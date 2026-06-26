@@ -7,7 +7,7 @@ class QuarterlyLvrGenerateRequest extends AuthorizedFormRequest
     public function rules(): array
     {
         return [
-            'quarter' => 'required|date_format:Y-q',
+            'quarter' => ['required', 'regex:/^\d{4}-Q[1-4]$/'],
         ];
     }
 }
