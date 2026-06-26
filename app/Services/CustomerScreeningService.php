@@ -411,7 +411,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
             ->get();
 
         $transactionCount = $transactions->count();
-        $totalAmount = $transactions->sum('amount_myrr');
+        $totalAmount = $transactions->sum('amount_local');
 
         // Store analysis via customer relation additional_info
         $analysis = [

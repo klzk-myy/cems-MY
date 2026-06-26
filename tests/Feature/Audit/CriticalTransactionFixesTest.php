@@ -17,6 +17,7 @@ use App\Models\TransactionConfirmation;
 use App\Models\User;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Customer\CustomerService;
+use App\Services\CustomerScreeningService;
 use App\Services\System\MathService;
 use App\Services\Transaction\StockTransferService;
 use App\Services\Transaction\TransactionCancellationService;
@@ -218,5 +219,21 @@ class CriticalTransactionFixesTest extends TestCase
         ])->all());
 
         $this->assertSame(StockTransferStatus::Received->value, $transfer->fresh()->status->value);
+    }
+
+    public function test_related_party_analysis_sums_local_amount(): void
+    {
+        $related = Customer::factory()->create();
+        Transaction::factory()->for($related)->create([
+            'amount_local' => '500.00',
+            'created_at' => now()->subMonth(),
+        ]);
+
+        $service = app(CustomerScreeningService::class);
+        $reflection = new \ReflectionMethod($service, 'analyzeRelatedPartyTransactions');
+        $reflection->setAccessible(true);
+        $analysis = $reflection->invoke($service, $related);
+
+        $this->assertSame('500', (string) $analysis['total_amount_myrr']);
     }
 }
