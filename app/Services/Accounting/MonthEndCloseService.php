@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\ReportType;
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Models\AccountingPeriod;
 use App\Models\JournalEntry;
@@ -113,7 +114,7 @@ class MonthEndCloseService
         }
 
         ReportGenerated::create([
-            'report_type' => 'MONTH_END',
+            'report_type' => ReportType::MonthEnd,
             'period_start' => $date->copy()->startOfMonth(),
             'period_end' => $date->copy()->endOfMonth(),
             'generated_by' => auth()->id() ?? 1,
@@ -171,7 +172,7 @@ class MonthEndCloseService
             $date->endOfMonth()->toDateString(),
         ])->count();
 
-        $reportGenerated = ReportGenerated::where('report_type', 'MONTH_END')
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::MonthEnd->value)
             ->whereBetween('period_start', [$date->startOfMonth(), $date->endOfMonth()])
             ->whereBetween('period_end', [$date->startOfMonth(), $date->endOfMonth()])
             ->exists();
