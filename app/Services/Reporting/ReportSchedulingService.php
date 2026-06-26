@@ -66,7 +66,6 @@ class ReportSchedulingService
             ReportType::Lmca => $this->reportingService->generateFormLMCACsv($params['month'] ?? now()->format('Y-m')),
             ReportType::Qlvr => $this->reportingService->generateQuarterlyLargeValueCsv($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
             ReportType::Plr => $this->reportingService->generatePositionLimitCsv(),
-            default => throw new \InvalidArgumentException('Unsupported report type: '.$type->value),
         };
     }
 
@@ -216,7 +215,6 @@ class ReportSchedulingService
             ReportType::Lmca => $this->reportingService->generateFormLMCA($params['month'] ?? now()->format('Y-m')),
             ReportType::Qlvr => $this->reportingService->generateQuarterlyLargeValueReport($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
             ReportType::Plr => $this->reportingService->generatePositionLimitReport(),
-            default => throw new \InvalidArgumentException('Unsupported report type: '.$type->value),
         };
     }
 

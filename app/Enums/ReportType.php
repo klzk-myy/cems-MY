@@ -44,4 +44,12 @@ enum ReportType: string
             self::BalanceSheet => 'BalanceSheet',
         };
     }
+
+    /**
+     * Comma-separated list of all canonical values for validation rules.
+     */
+    public static function validationRule(): string
+    {
+        return implode(',', array_map(fn (self $type) => $type->value, self::cases()));
+    }
 }
