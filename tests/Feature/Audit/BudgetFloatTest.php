@@ -12,7 +12,7 @@ class BudgetFloatTest extends TestCase
         $this->assertFileExists($file);
 
         $content = file_get_contents($file);
-        $this->assertStringContainsString('app(\\App\\Services\\System\\MathService::class)', $content);
+        $this->assertStringContainsString('app(MathService::class)', $content);
         $this->assertStringNotContainsString('(float) $this->budget_amount', $content);
         $this->assertStringNotContainsString('(float) $this->actual_amount', $content);
     }
