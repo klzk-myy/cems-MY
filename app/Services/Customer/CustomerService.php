@@ -243,8 +243,12 @@ class CustomerService implements CustomerServiceInterface
     /**
      * Decrypt a customer's encrypted id_number.
      */
-    public function decryptIdNumber(Customer $customer): string
+    public function decryptIdNumber(Customer $customer): ?string
     {
+        if (empty($customer->id_number_encrypted)) {
+            return null;
+        }
+
         return $this->encryptionService->decrypt($customer->id_number_encrypted);
     }
 

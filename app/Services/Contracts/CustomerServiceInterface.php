@@ -20,7 +20,7 @@ interface CustomerServiceInterface
 
     public function searchCustomers(string $query): array;
 
-    public function decryptIdNumber(Customer $customer): string;
+    public function decryptIdNumber(Customer $customer): ?string;
 
     public function decryptAddress(Customer $customer): string;
 }

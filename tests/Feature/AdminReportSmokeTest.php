@@ -200,4 +200,15 @@ class AdminReportSmokeTest extends TestCase
         $response->assertSee($transaction->type->label());
         $response->assertSee($transaction->status->label());
     }
+
+    #[Test]
+    public function customer_edit_page_loads_for_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $customer = Customer::factory()->create();
+
+        $response = $this->actingAs($admin)->get(route('customers.edit', $customer));
+
+        $response->assertOk();
+    }
 }
