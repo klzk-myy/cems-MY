@@ -307,7 +307,7 @@ class CustomerService implements CustomerServiceInterface
     protected function screenCustomer(Customer $customer, string $fullName): void
     {
         $sanctionMatches = $this->screeningService->screenName($fullName);
-        $hasSanctionHit = ! empty($sanctionMatches);
+        $hasSanctionHit = ! $sanctionMatches->isClear();
 
         // Update sanction status, risk rating, AND deactivate if hit found
         if ($hasSanctionHit) {
