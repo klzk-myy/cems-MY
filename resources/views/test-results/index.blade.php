@@ -41,11 +41,11 @@
                             <td class="px-4 py-3 text-sm font-medium text-ink">#{{ $run->id }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $run->test_suite ?? 'N/A' }}</td>
                             <td class="px-4 py-3 whitespace-nowrap">
-                                @if($run->status === 'passed')
+                                @if($run->status->value === 'passed')
                                     <x-badge variant="success">Passed</x-badge>
-                                @elseif($run->status === 'failed')
+                                @elseif($run->status->value === 'failed')
                                     <x-badge variant="danger">Failed</x-badge>
-                                @elseif($run->status === 'error')
+                                @elseif($run->status->value === 'error')
                                     <x-badge variant="warning">Error</x-badge>
                                 @else
                                     <x-badge variant="gray">{{ ucfirst($run->status->value) }}</x-badge>

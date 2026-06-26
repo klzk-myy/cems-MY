@@ -35,7 +35,7 @@
 
 ### 3. `/test-results` — 500 undefined statistics keys
 **Root cause:** `TestRunnerService::getStatistics()` returned `avg_pass_rate`/`total_runs`, but the Blade view expected `passed`, `failed`, and `pass_rate`.
-**Fix:** Added the missing keys to the returned array while keeping the old keys for backward compatibility.
+**Fix:** Added the missing keys (`passed`, `failed`, `pass_rate`) to the returned array. No other consumers relied on the previous key names.
 
 ### 4. `/reports/monthly-trends` — 500 SQL + view shape mismatch
 **Root cause:**

@@ -69,6 +69,7 @@ class AdminReportSmokeTest extends TestCase
         $response->assertSee('Test Results');
         $response->assertSee('Avg Pass Rate');
         $response->assertSee('100%');
+        $response->assertSee('bg-success-subtle');
     }
 
     #[Test]
