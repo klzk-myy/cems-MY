@@ -13,7 +13,7 @@ class DbDateTest extends TestCase
     {
         config(['database.default' => 'sqlite']);
 
-        $this->assertSame("strftime('%m', created_at)", DbDate::monthColumn('created_at'));
+        $this->assertSame("strftime('%m', \"created_at\")", DbDate::monthColumn('created_at'));
     }
 
     #[Test]
@@ -21,6 +21,6 @@ class DbDateTest extends TestCase
     {
         config(['database.default' => 'mysql']);
 
-        $this->assertSame('MONTH(created_at)', DbDate::monthColumn('created_at'));
+        $this->assertSame('MONTH(`created_at`)', DbDate::monthColumn('created_at'));
     }
 }

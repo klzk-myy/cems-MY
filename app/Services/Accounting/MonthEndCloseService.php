@@ -172,7 +172,7 @@ class MonthEndCloseService
             $date->endOfMonth()->toDateString(),
         ])->count();
 
-        $reportGenerated = ReportGenerated::where('report_type', ReportType::MonthEnd->value)
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::MonthEnd)
             ->whereBetween('period_start', [$date->startOfMonth(), $date->endOfMonth()])
             ->whereBetween('period_end', [$date->startOfMonth(), $date->endOfMonth()])
             ->exists();

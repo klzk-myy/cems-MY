@@ -22,7 +22,7 @@ trait HasReportFormatting
 
     protected function getReportFilename(ReportType $type, string $suffix): string
     {
-        return $type->label().'_'.now()->format('Y-m-d').'_'.$suffix.'.csv';
+        return $type->value.'_'.now()->format('Y-m-d').'_'.$suffix.'.csv';
     }
 
     protected function getReportPath(string $filename): string

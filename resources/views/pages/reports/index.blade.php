@@ -35,7 +35,7 @@
                     <x-slot:tbody>
                         @foreach($recentReports as $report)
                             <tr class="hover:bg-canvas-subtle">
-                                <td class="px-4 py-3 text-sm">{{ $report->report_type }}</td>
+                                <td class="px-4 py-3 text-sm">{{ $report->report_type->label() }}</td>
                                 <td class="px-4 py-3 text-sm">{{ $report->generatedBy->name ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 text-sm">{{ $report->generated_at?->format('M d, Y H:i') }}</td>
                             </tr>

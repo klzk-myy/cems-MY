@@ -48,7 +48,7 @@ class ReportGenerated extends BaseModel
         return $this->belongsTo(User::class, 'submitted_by');
     }
 
-    public function scopeByType($query, string $type)
+    public function scopeByType($query, ReportType|string $type)
     {
         return $query->where('report_type', $type);
     }
@@ -58,7 +58,7 @@ class ReportGenerated extends BaseModel
         return $query->whereBetween('period_start', [$start, $end]);
     }
 
-    public function scopeLatestVersion($query, string $reportType, $periodStart)
+    public function scopeLatestVersion($query, ReportType|string $reportType, $periodStart)
     {
         return $query->where('report_type', $reportType)
             ->where('period_start', $periodStart)
