@@ -274,7 +274,7 @@ class TransactionController extends Controller
      */
     private function ensureCanShowCancel(Transaction $transaction, User $user): ?RedirectResponse
     {
-        if (! $user->role->isManager()) {
+        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
             abort(403, 'Only managers and admins can cancel transactions.');
         }
 

@@ -188,4 +188,15 @@ class CriticalTransactionFixesTest extends TestCase
         $this->assertTrue($service->requestCancellation($transaction, $admin, 'reason'));
         $this->assertSame(TransactionStatus::PendingCancellation->value, $transaction->fresh()->status->value);
     }
+
+    public function test_admin_can_access_cancel_form(): void
+    {
+        $branch = Branch::factory()->create();
+        $admin = User::factory()->for($branch)->create(['role' => UserRole::Admin]);
+        $transaction = Transaction::factory()->for($branch)->create();
+
+        $this->actingAs($admin)
+            ->get(route('transactions.cancel', $transaction))
+            ->assertOk();
+    }
 }
