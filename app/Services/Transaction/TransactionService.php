@@ -623,7 +623,7 @@ class TransactionService implements TransactionServiceInterface
         }
 
         try {
-            return DB::transaction(function () use ($transaction, $approverId, $amlResult) {
+            $result = DB::transaction(function () use ($transaction, $approverId, $amlResult) {
                 // Optimistic locking with pessimistic lock to prevent race conditions
                 $lockedTransaction = Transaction::where('id', $transaction->id)
                     ->where('status', TransactionStatus::PendingApproval)
