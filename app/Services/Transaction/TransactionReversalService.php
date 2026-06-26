@@ -248,7 +248,9 @@ class TransactionReversalService
 
         if ($myrTillBalance) {
             $myrTotal = $myrTillBalance->transaction_total ?? '0';
-            $newMyrTotal = $this->mathService->subtract($myrTotal, $transaction->amount_local);
+            $newMyrTotal = $transaction->type->isBuy()
+                ? $this->mathService->add($myrTotal, $transaction->amount_local)
+                : $this->mathService->subtract($myrTotal, $transaction->amount_local);
             $myrTillBalance->update(['transaction_total' => $newMyrTotal]);
         }
 

@@ -2,16 +2,19 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\TillBalance;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Customer\CustomerService;
 use App\Services\System\MathService;
+use App\Services\Transaction\TransactionReversalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -80,5 +83,58 @@ class CriticalTransactionFixesTest extends TestCase
         ], $teller->id, '127.0.0.1');
 
         $this->assertSame('530.0000', TillBalance::where('till_id', $till->id)->where('currency_code', 'MYR')->first()->transaction_total);
+    }
+
+    public function test_reversing_buy_restores_myr_till_balance(): void
+    {
+        $transaction = $this->createCompletedBuyTransaction();
+        $before = TillBalance::where('till_id', $transaction->till_id)->where('currency_code', 'MYR')->first()->transaction_total;
+
+        $manager = User::factory()->for($transaction->branch)->create(['role' => UserRole::Manager]);
+        $service = app(TransactionReversalService::class);
+        $service->reverse($transaction, $manager, 'customer request');
+
+        $after = TillBalance::where('till_id', $transaction->till_id)->where('currency_code', 'MYR')->first()->transaction_total;
+        $this->assertSame(
+            $this->mathService->add($before, $transaction->amount_local),
+            $after
+        );
+    }
+
+    private function createCompletedBuyTransaction(): Transaction
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->for($branch)->create(['role' => UserRole::Manager]);
+        $customer = Customer::factory()->create();
+        $till = Counter::factory()->for($branch)->create();
+
+        TillBalance::factory()->for($till)->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'date' => today(),
+            'transaction_total' => '0',
+        ]);
+        TillBalance::factory()->for($till)->create([
+            'currency_code' => 'MYR',
+            'branch_id' => $branch->id,
+            'date' => today(),
+            'transaction_total' => '1000.00',
+        ]);
+
+        $transaction = Transaction::factory()->buy()->create([
+            'customer_id' => $customer->id,
+            'user_id' => $teller->id,
+            'branch_id' => $branch->id,
+            'till_id' => $till->id,
+            'currency_code' => 'USD',
+            'amount_foreign' => '100.00',
+            'amount_local' => '470.00',
+            'rate' => '4.70',
+        ]);
+
+        $transaction->status = TransactionStatus::Completed;
+        $transaction->save();
+
+        return $transaction;
     }
 }
