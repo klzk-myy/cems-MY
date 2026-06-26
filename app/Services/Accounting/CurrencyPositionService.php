@@ -382,29 +382,22 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      */
     public function getAvailableBalance(string $currencyCode, string $locationId): string
     {
-        $cacheKey = "position:{$locationId}:{$currencyCode}:available";
+        return DB::transaction(function () use ($currencyCode, $locationId) {
+            $position = CurrencyPosition::where('currency_code', $currencyCode)
+                ->where('branch_id', $locationId)
+                ->lockForUpdate()
+                ->first();
+            $quantity = $position ? $position->quantity : '0';
 
-        return Cache::remember($cacheKey, now()->addMinute(), function () use ($currencyCode, $locationId) {
-            return DB::transaction(function () use ($currencyCode, $locationId) {
-                // Lock the position to prevent race conditions
-                $position = CurrencyPosition::where('currency_code', $currencyCode)
-                    ->where('branch_id', $locationId)
-                    ->lockForUpdate()
-                    ->first();
-                $quantity = $position ? $position->quantity : '0';
+            $reserved = StockReservation::where('currency_code', $currencyCode)
+                ->where('till_id', $locationId)
+                ->where('status', StockReservationStatus::Pending)
+                ->where('expires_at', '>', now())
+                ->sum('amount_foreign');
 
-                // Query reservations within same transaction (reservations stored with till_id)
-                $reserved = StockReservation::where('currency_code', $currencyCode)
-                    ->where('till_id', $locationId)
-                    ->where('status', StockReservationStatus::Pending)
-                    ->where('expires_at', '>', now())
-                    ->sum('amount_foreign');
+            $result = $this->mathService->subtract($quantity, (string) $reserved);
 
-                $result = $this->mathService->subtract($quantity, (string) $reserved);
-
-                // Return with 6 decimal places for consistency with test expectations
-                return $this->mathService->round($result, 6);
-            });
+            return $this->mathService->round($result, 6);
         });
     }
 
@@ -420,6 +413,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             'transaction_id' => $transaction->id,
             'currency_code' => $transaction->currency_code,
             'branch_id' => $transaction->branch_id,
+            'till_id' => $transaction->till_id,
             'amount_foreign' => $transaction->amount_foreign,
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),

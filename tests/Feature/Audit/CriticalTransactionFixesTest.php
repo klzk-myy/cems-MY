@@ -12,12 +12,14 @@ use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
 use App\Models\Counter;
+use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\StockTransfer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Models\User;
+use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\MonthEndCloseService;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Customer\CustomerService;
@@ -259,5 +261,28 @@ class CriticalTransactionFixesTest extends TestCase
             'report_type' => ReportType::MonthEnd->value,
             'status' => 'Failed',
         ]);
+    }
+
+    public function test_available_balance_reflects_new_reservation_without_cache_delay(): void
+    {
+        $branch = Branch::factory()->create();
+        CurrencyPosition::factory()->for($branch)->create([
+            'currency_code' => 'USD',
+            'quantity' => '1000.00',
+        ]);
+
+        $service = app(CurrencyPositionService::class);
+        $first = $service->getAvailableBalance('USD', (string) $branch->id);
+        $this->assertSame('1000.000000', $first);
+
+        $transaction = Transaction::factory()->for($branch)->create([
+            'currency_code' => 'USD',
+            'amount_foreign' => '200.00',
+            'till_id' => (string) $branch->id,
+        ]);
+        $service->reserveStock($transaction);
+
+        $second = $service->getAvailableBalance('USD', (string) $branch->id);
+        $this->assertSame('800.000000', $second);
     }
 }

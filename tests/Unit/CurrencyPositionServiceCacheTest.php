@@ -13,31 +13,30 @@ class CurrencyPositionServiceCacheTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected int $branchId;
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->createTestBranch();
+        $this->branchId = $this->createTestBranch()->id;
     }
 
     #[Test]
-    public function get_available_balance_uses_cache()
+    public function get_available_balance_does_not_use_cache()
     {
-        // Create a position
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TEST-TILL-001',
+            'branch_id' => $this->branchId,
             'balance' => '1000.00',
         ]);
 
         Cache::shouldReceive('remember')
-            ->once()
-            ->andReturn('1000.00');
+            ->never();
 
         $service = app(CurrencyPositionService::class);
-        // getAvailableBalance expects tillId as string? Our method takes string $tillId, but we'll pass '1' (string) or 1 will be cast
-        $balance = $service->getAvailableBalance('USD', 1);
+        $balance = $service->getAvailableBalance('USD', (string) $this->branchId);
 
-        $this->assertEquals('1000.00', $balance);
+        $this->assertSame('1000.000000', $balance);
     }
 
     #[Test]
@@ -45,16 +44,15 @@ class CurrencyPositionServiceCacheTest extends TestCase
     {
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TEST-TILL-001',
+            'branch_id' => $this->branchId,
             'balance' => '1000.00',
         ]);
 
         Cache::shouldReceive('forget')
             ->once()
-            ->with('position:TEST-TILL-001:USD:available');
+            ->with("position:{$this->branchId}:USD:available");
 
         $service = app(CurrencyPositionService::class);
-        // Call updatePosition with required parameters: amount, rate, type, tillId
-        $service->updatePosition('USD', '500.00', '1.25', 'Buy', 'TEST-TILL-001');
+        $service->updatePosition('USD', '500.00', '1.25', 'Buy', (string) $this->branchId);
     }
 }
