@@ -59,15 +59,23 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
     public function approveAllocation(TellerAllocation $allocation, User $approver, string $approvedAmount, ?string $dailyLimitMyr = null): TellerAllocation
     {
-        $branch = $allocation->branch;
+        return DB::transaction(function () use ($allocation, $approver, $approvedAmount, $dailyLimitMyr) {
+            $locked = TellerAllocation::where('id', $allocation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if (! $this->branchPoolService->allocateToTeller($branch, $allocation->currency_code, $approvedAmount)) {
-            throw new Exception('Failed to allocate from branch pool');
-        }
+            if (! $locked->isPending()) {
+                throw new \RuntimeException('Allocation is not pending approval');
+            }
 
-        $allocation->approve($approver, $approvedAmount, $dailyLimitMyr);
+            if (! $this->branchPoolService->allocateToTeller($locked->branch, $locked->currency_code, $approvedAmount)) {
+                throw new Exception('Failed to allocate from branch pool');
+            }
 
-        return $allocation;
+            $locked->approve($approver, $approvedAmount, $dailyLimitMyr);
+
+            return $locked;
+        });
     }
 
     public function activateAllocation(TellerAllocation $allocation): TellerAllocation
