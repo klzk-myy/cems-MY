@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ReportGeneratedStatus;
+use App\Enums\ReportType;
 use App\Models\ReportGenerated;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -13,8 +14,7 @@ class ReportGeneratedFactory extends Factory
 
     public function definition(): array
     {
-        $reportTypes = ['MSB2', 'trial_balance', 'pl', 'balance_sheet'];
-        $reportType = fake()->randomElement($reportTypes);
+        $reportType = $this->faker->randomElement(ReportType::cases());
 
         $periodStart = fake()->dateTimeBetween('-1 year', 'now');
         $periodEnd = fake()->dateTimeBetween($periodStart, '+1 month');
