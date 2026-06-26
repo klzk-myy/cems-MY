@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Console\Commands\Concerns\HasReportFormatting;
+use App\Enums\ReportType;
 use App\Services\Reporting\ReportingService;
 use Illuminate\Console\Command;
 
@@ -21,7 +22,7 @@ class GeneratePositionLimitReport extends Command
         try {
             $filepath = $reportingService->generatePositionLimitCsv();
 
-            $this->createReportRecord('PLR', now()->startOfDay(), now()->endOfDay());
+            $this->createReportRecord(ReportType::Plr, now()->startOfDay(), now()->endOfDay());
 
             $this->info("Position Limit Report generated: {$filepath}");
 

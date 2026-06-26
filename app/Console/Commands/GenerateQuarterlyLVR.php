@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Console\Commands\Concerns\HasReportFormatting;
+use App\Enums\ReportType;
 use App\Services\Reporting\ReportingService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -24,7 +25,7 @@ class GenerateQuarterlyLVR extends Command
         try {
             $filepath = $reportingService->generateQuarterlyLargeValueCsv($quarter);
 
-            $this->createReportRecord('QLVR', $this->getQuarterStart($quarter), $this->getQuarterEnd($quarter));
+            $this->createReportRecord(ReportType::Qlvr, $this->getQuarterStart($quarter), $this->getQuarterEnd($quarter));
 
             $this->info("Quarterly LVR generated: {$filepath}");
 

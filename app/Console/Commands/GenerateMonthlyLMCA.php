@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Console\Commands\Concerns\HasReportFormatting;
+use App\Enums\ReportType;
 use App\Services\Reporting\ReportingService;
 use Illuminate\Console\Command;
 
@@ -23,7 +24,7 @@ class GenerateMonthlyLMCA extends Command
         try {
             $filepath = $reportingService->generateFormLMCACsv($month);
 
-            $this->createReportRecord('LMCA', now()->parse($month)->startOfMonth(), now()->parse($month)->endOfMonth());
+            $this->createReportRecord(ReportType::Lmca, now()->parse($month)->startOfMonth(), now()->parse($month)->endOfMonth());
 
             $this->info("Form LMCA generated: {$filepath}");
 

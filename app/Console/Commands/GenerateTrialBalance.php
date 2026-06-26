@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Console\Commands\Concerns\HasReportFormatting;
+use App\Enums\ReportType;
 use App\Services\Accounting\AccountingService;
 use App\Services\System\MathService;
 use Carbon\Carbon;
@@ -27,7 +28,7 @@ class GenerateTrialBalance extends Command
         try {
             $reportData = $accountingService->generateTrialBalance($date);
 
-            $filename = $this->getReportFilename('TrialBalance', 'report');
+            $filename = $this->getReportFilename(ReportType::TrialBalance, 'report');
             $filepath = $this->getReportPath($filename);
 
             $totalDebit = '0';
@@ -50,7 +51,7 @@ class GenerateTrialBalance extends Command
 
             $this->saveReportCsv($filepath, $csvContent);
 
-            $this->createReportRecord('TrialBalance', $date->startOfMonth(), $date->endOfMonth());
+            $this->createReportRecord(ReportType::TrialBalance, $date->startOfMonth(), $date->endOfMonth());
 
             $this->info("Trial Balance generated: {$filepath}");
 

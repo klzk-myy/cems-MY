@@ -2,11 +2,12 @@
 
 namespace App\Console\Commands\Concerns;
 
+use App\Enums\ReportType;
 use App\Models\ReportGenerated;
 
 trait HasReportFormatting
 {
-    protected function createReportRecord(string $type, string $periodStart, string $periodEnd, string $format = 'CSV'): ReportGenerated
+    protected function createReportRecord(ReportType $type, string $periodStart, string $periodEnd, string $format = 'CSV'): ReportGenerated
     {
         return ReportGenerated::create([
             'report_type' => $type,
@@ -19,9 +20,9 @@ trait HasReportFormatting
         ]);
     }
 
-    protected function getReportFilename(string $type, string $suffix): string
+    protected function getReportFilename(ReportType $type, string $suffix): string
     {
-        return $type.'_'.now()->format('Y-m-d').'_'.$suffix.'.csv';
+        return $type->label().'_'.now()->format('Y-m-d').'_'.$suffix.'.csv';
     }
 
     protected function getReportPath(string $filename): string
