@@ -9,7 +9,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
 - php - 8.3.30
-- laravel/framework (LARAVEL) - v10
+- laravel/framework (LARAVEL) - v11
 - laravel/horizon (HORIZON) - v5
 - laravel/prompts (PROMPTS) - v0
 - laravel/sanctum (SANCTUM) - v3
@@ -41,6 +41,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 ## Documentation Files
 - You must only create documentation files if explicitly requested by the user.
+- `docs/superpowers/plans/` and `docs/superpowers/specs/` are ephemeral Superpowers artifacts and are intentionally ignored. Do not restore old plan/spec docs without explicit user approval.
 
 === boost rules ===
 
@@ -172,18 +173,18 @@ protected function isAccessible(User $user, ?string $path = null): bool
 ### Vite Error
 - If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
 
-=== laravel/v10 rules ===
+=== laravel/v11 rules ===
 
-## Laravel 10
+## Laravel 11
 
 - Use the `search-docs` tool to get version-specific documentation.
 - Middleware typically live in `app/Http/Middleware/` and service providers in `app/Providers/`.
-- Laravel 10 has a `bootstrap/app.php` file that creates the application instance and binds kernel contracts, but does not use it for application configuration like Laravel 11:
-    - Middleware registration is in `app/Http/Kernel.php`
-    - Exception handling is in `app/Exceptions/Handler.php`
-    - Console commands and schedule registration is in `app/Console/Kernel.php`
-    - Rate limits likely exist in `RouteServiceProvider` or `app/Http/Kernel.php`
-- When using Eloquent model casts, you must use `protected $casts = [];` and not the `casts()` method. The `casts()` method isn't available on models in Laravel 10.
+- Laravel 11 uses `bootstrap/app.php` for application configuration:
+    - Middleware registration is in `bootstrap/app.php` via `->withMiddleware()`
+    - Exception handling is in `bootstrap/app.php` via `->withExceptions()`
+    - Console commands and schedule registration are in `bootstrap/app.php` via `->withCommands()` and `->withSchedule()`
+    - Rate limits are typically registered in `bootstrap/app.php` or `app/Providers/RouteServiceProvider.php`
+- Eloquent model casts can be defined using either `protected $casts = [];` or the `casts()` method; follow the convention already used by the model you are editing.
 
 === pint/core rules ===
 

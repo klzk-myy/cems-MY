@@ -4,10 +4,19 @@ namespace App\Services;
 
 use App\Models\ThresholdAudit;
 use App\Services\Contracts\ThresholdServiceInterface;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 
 class ThresholdService implements ThresholdServiceInterface
 {
+    /**
+     * In-memory cache of persisted threshold values for the current request.
+     * Prevents repeated database queries when the same threshold is read multiple times.
+     *
+     * @var array<string, string|null>
+     */
+    private array $persistedValueCache = [];
+
     /**
      * Fallback constants for backward compatibility.
      * These match the values in the original service constants.
@@ -91,6 +100,9 @@ class ThresholdService implements ThresholdServiceInterface
         // Audit the change (persists to DB for cross-request durability)
         $this->auditChange($category, $key, (string) $oldValue, (string) $value, $reason);
 
+        // Clear the in-memory cache so the next get() reads the freshly persisted value.
+        unset($this->persistedValueCache["{$category}.{$key}"]);
+
         return true;
     }
 
@@ -138,19 +150,32 @@ class ThresholdService implements ThresholdServiceInterface
      */
     protected function getPersistedValue(string $category, string $key): ?string
     {
+        $cacheKey = "{$category}.{$key}";
+
+        if (array_key_exists($cacheKey, $this->persistedValueCache)) {
+            return $this->persistedValueCache[$cacheKey];
+        }
+
         try {
             $latest = ThresholdAudit::where('category', $category)
                 ->where('key', $key)
                 ->latest('changed_at')
                 ->first();
 
-            return $latest ? (string) $latest->new_value : null;
-        } catch (\Exception $e) {
-            Log::warning('Failed to read persisted threshold from database', [
+            $value = $latest ? (string) $latest->new_value : null;
+            $this->persistedValueCache[$cacheKey] = $value;
+
+            return $value;
+        } catch (QueryException $e) {
+            Log::critical('Failed to read persisted threshold from database', [
                 'category' => $category,
                 'key' => $key,
                 'error' => $e->getMessage(),
             ]);
+
+            // Fall back to config defaults rather than failing the entire request.
+            // Operators should be alerted via the critical log entry.
+            $this->persistedValueCache[$cacheKey] = null;
 
             return null;
         }

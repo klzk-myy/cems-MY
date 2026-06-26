@@ -153,7 +153,7 @@ return [
     |
     */
 
-    'encryption_salt' => env('ENCRYPTION_SALT'),
+    'encryption_salt' => env('APP_ENCRYPTION_SALT'),
 
     'encryption_iterations' => (int) env('ENCRYPTION_ITERATIONS', 100000),
 

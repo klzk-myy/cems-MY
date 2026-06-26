@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\System;
 
+use Illuminate\Cache\RedisStore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -112,6 +113,10 @@ class RateLimitService
      */
     public function blockIp(string $ip, ?int $durationMinutes = null): void
     {
+        if (! config('security.ip_blocking.enabled', true)) {
+            return;
+        }
+
         $duration = $durationMinutes ?? config('security.ip_blocking.block_duration_minutes', 60);
         $maxDuration = config('security.ip_blocking.max_block_duration_minutes', 1440);
 
@@ -127,11 +132,19 @@ class RateLimitService
             'block_count' => $blockCount + 1,
         ], now()->addMinutes($actualDuration));
 
-        // Maintain an index of all blocked IPs for getBlockedIps()
-        $blockedList = $cache->get(self::BLOCKED_IPS_INDEX, []);
-        if (! in_array($ip, $blockedList, true)) {
-            $blockedList[] = $ip;
-            $cache->put(self::BLOCKED_IPS_INDEX, $blockedList, now()->addMinutes($maxDuration));
+        // Maintain an index of all blocked IPs for getBlockedIps().
+        // Use a Redis set for atomic add/remove when Redis is the store;
+        // fall back to a cached array for non-Redis drivers (e.g. array cache in tests).
+        $store = $cache->getStore();
+        if ($store instanceof RedisStore) {
+            $store->connection()->sadd(self::BLOCKED_IPS_INDEX, $ip);
+            $store->connection()->expire(self::BLOCKED_IPS_INDEX, $maxDuration * 60);
+        } else {
+            $blockedList = $cache->get(self::BLOCKED_IPS_INDEX, []);
+            if (! in_array($ip, $blockedList, true)) {
+                $blockedList[] = $ip;
+                $cache->put(self::BLOCKED_IPS_INDEX, $blockedList, now()->addMinutes($maxDuration));
+            }
         }
 
         Log::warning('IP address blocked due to security policy', [
@@ -153,13 +166,18 @@ class RateLimitService
         if ($cache->has($cacheKey)) {
             $cache->forget($cacheKey);
 
-            // Remove IP from the blocked IPs index
-            $blockedList = $cache->get(self::BLOCKED_IPS_INDEX, []);
-            $blockedList = array_values(array_filter($blockedList, fn ($bip) => $bip !== $ip));
-            if (! empty($blockedList)) {
-                $cache->put(self::BLOCKED_IPS_INDEX, $blockedList, now()->addDay());
+            // Remove IP from the blocked IPs index atomically when Redis is available.
+            $store = $cache->getStore();
+            if ($store instanceof RedisStore) {
+                $store->connection()->srem(self::BLOCKED_IPS_INDEX, $ip);
             } else {
-                $cache->forget(self::BLOCKED_IPS_INDEX);
+                $blockedList = $cache->get(self::BLOCKED_IPS_INDEX, []);
+                $blockedList = array_values(array_filter($blockedList, fn ($bip) => $bip !== $ip));
+                if (! empty($blockedList)) {
+                    $cache->put(self::BLOCKED_IPS_INDEX, $blockedList, now()->addDay());
+                } else {
+                    $cache->forget(self::BLOCKED_IPS_INDEX);
+                }
             }
 
             Log::info('IP address unblocked', ['ip' => $ip]);
@@ -175,6 +193,10 @@ class RateLimitService
      */
     public function recordFailedAttempt(string $ip): void
     {
+        if (! config('security.ip_blocking.enabled', true)) {
+            return;
+        }
+
         $cacheKey = self::FAILED_ATTEMPTS_PREFIX.$ip;
         $window = config('security.ip_blocking.time_window_minutes', 5);
         $threshold = config('security.ip_blocking.failed_attempts_threshold', 10);
@@ -238,7 +260,15 @@ class RateLimitService
      */
     public function getBlockedIps(): array
     {
-        $blockedIps = Cache::store(config('ratelimit.store'))->get(self::BLOCKED_IPS_INDEX, []);
+        $cache = Cache::store(config('ratelimit.store'));
+        $store = $cache->getStore();
+
+        if ($store instanceof RedisStore) {
+            $blockedIps = $store->connection()->smembers(self::BLOCKED_IPS_INDEX);
+        } else {
+            $blockedIps = $cache->get(self::BLOCKED_IPS_INDEX, []);
+        }
+
         $blocked = [];
 
         foreach ($blockedIps as $ip) {

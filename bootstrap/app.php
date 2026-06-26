@@ -36,32 +36,6 @@ use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 
-// Testing environment bootstrap fix:
-//
-// PHP's variables_order=GPCS on this system (missing 'E'), so $_ENV is never
-// populated from environment variables. Laravel's Env::get() checks $_ENV first:
-//   $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key) ?? $default
-// When $_ENV is empty, Env::get() relies on $_SERVER or getenv(). PHPUnit sets
-// env vars via putenv() (updates getenv), but the CLI 'APP_ENV=testing' prefix
-// is the only way $_SERVER gets it. If running without the CLI prefix (e.g.
-// via an IDE or CI), $_SERVER won't have APP_ENV either.
-//
-// To guarantee Dotenv loads .env.testing, explicitly set APP_ENV=testing across
-// ALL three sources here, before any config files are loaded.
-//
-// Also force REDIS_PASSWORD to empty so config/database.php loads with
-// password=null (env('REDIS_PASSWORD') ?: null), preventing Redis AUTH errors
-// on job dispatch (Horizon's StoreJob listener connects to Redis).
-if (getenv('APP_ENV') === 'testing' || ($_SERVER['APP_ENV'] ?? null) === 'testing') {
-    putenv('APP_ENV=testing');
-    $_ENV['APP_ENV'] = 'testing';
-    $_SERVER['APP_ENV'] = 'testing';
-
-    putenv('REDIS_PASSWORD=');
-    $_ENV['REDIS_PASSWORD'] = '';
-    $_SERVER['REDIS_PASSWORD'] = '';
-}
-
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',

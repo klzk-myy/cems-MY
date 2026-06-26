@@ -804,14 +804,19 @@ class TransactionService implements TransactionServiceInterface
                 // Dispatch event for async compliance processing
                 Event::dispatch(new TransactionApproved($lockedTransaction, $approverId));
 
+                // Invalidate dashboard cache only after the transaction commits successfully.
+                // This keeps the invalidation logically tied to the approval while avoiding
+                // a scenario where the cache is cleared but the DB transaction later rolls back.
+                DB::afterCommit(function () {
+                    $this->cacheTagsService->invalidate('dashboard');
+                });
+
                 return [
                     'success' => true,
                     'message' => 'Transaction approved and completed successfully.',
                     'transaction' => $lockedTransaction->fresh(),
                 ];
             });
-
-            $this->cacheTagsService->invalidate('dashboard');
 
             return $result;
         } catch (InsufficientStockException $e) {

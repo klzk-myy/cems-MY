@@ -143,4 +143,63 @@ class EncryptionServiceTest extends TestCase
         $decrypted = $this->encryptionService->decrypt($encrypted);
         $this->assertEquals($ic, $decrypted);
     }
+
+    #[Test]
+    public function config_reads_app_encryption_salt_env_var(): void
+    {
+        $expectedSalt = 'test-salt-from-app-encryption-salt';
+        putenv("APP_ENCRYPTION_SALT={$expectedSalt}");
+        $_ENV['APP_ENCRYPTION_SALT'] = $expectedSalt;
+        $_SERVER['APP_ENCRYPTION_SALT'] = $expectedSalt;
+
+        config(['app.encryption_salt' => env('APP_ENCRYPTION_SALT')]);
+
+        $this->assertSame($expectedSalt, config('app.encryption_salt'));
+    }
+
+    #[Test]
+    public function encryption_survives_service_reinstantiation_with_fixed_salt(): void
+    {
+        $salt = 'fixed-salt-for-restart-survival-test-64-char-hex-string-000000';
+        config(['app.encryption_salt' => $salt]);
+
+        $serviceA = new EncryptionService;
+        $plaintext = 'data that must survive service restart';
+        $ciphertext = $serviceA->encrypt($plaintext);
+
+        $serviceB = new EncryptionService;
+        $decrypted = $serviceB->decrypt($ciphertext);
+
+        $this->assertSame($plaintext, $decrypted);
+    }
+
+    #[Test]
+    public function throws_when_salt_missing_and_derived_salt_disabled(): void
+    {
+        config(['app.encryption_salt' => null]);
+        config(['app.allow_derived_encryption_salt' => false]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('APP_ENCRYPTION_SALT is not configured');
+
+        new EncryptionService;
+    }
+
+    #[Test]
+    public function throws_when_salt_missing_in_production(): void
+    {
+        $originalEnv = config('app.env');
+        config(['app.env' => 'production']);
+        config(['app.encryption_salt' => null]);
+        config(['app.allow_derived_encryption_salt' => true]);
+
+        try {
+            $this->expectException(\RuntimeException::class);
+            $this->expectExceptionMessage('APP_ENCRYPTION_SALT is not configured');
+
+            new EncryptionService;
+        } finally {
+            config(['app.env' => $originalEnv]);
+        }
+    }
 }

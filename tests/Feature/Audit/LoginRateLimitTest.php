@@ -2,16 +2,17 @@
 
 namespace Tests\Feature\Audit;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class LoginRateLimitTest extends TestCase
 {
     public function test_login_route_has_throttle_middleware(): void
     {
-        $file = base_path('routes/auth.php');
-        $this->assertFileExists($file);
+        $route = Route::getRoutes()->match(Request::create('/login', 'POST'));
 
-        $content = file_get_contents($file);
-        $this->assertStringContainsString("->middleware('throttle:login')", $content, 'Login POST should have throttle:login middleware');
+        $this->assertNotNull($route);
+        $this->assertContains('throttle:login', $route->gatherMiddleware());
     }
 }

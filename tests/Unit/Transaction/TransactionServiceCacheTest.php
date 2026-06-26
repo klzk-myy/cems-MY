@@ -8,35 +8,36 @@ use Tests\TestCase;
 class TransactionServiceCacheTest extends TestCase
 {
     #[Test]
-    public function approve_transaction_moves_cache_invalidation_inside_transaction(): void
+    public function approve_transaction_invalidates_dashboard_cache_after_db_commit(): void
     {
         $file = base_path('app/Services/Transaction/TransactionService.php');
         $this->assertFileExists($file);
 
         $content = file_get_contents($file);
 
-        // Verify cache invalidation occurs inside DB::transaction closure
+        // Verify cache invalidation is deferred until after the DB transaction commits.
+        // This ensures the invalidation only runs when the approval is durable.
         $this->assertStringContainsString(
-            'Event::dispatch(new TransactionApproved($lockedTransaction, $approverId));',
+            "DB::afterCommit(function () {\n",
             $content,
-            'Should dispatch TransactionApproved event with approver ID'
+            'Cache invalidation should be deferred via DB::afterCommit'
         );
 
         $this->assertStringContainsString(
-            '$this->cacheTagsService->invalidate(\'dashboard\')',
+            "\$this->cacheTagsService->invalidate('dashboard');",
             $content,
-            'Should invalidate dashboard cache'
+            'Dashboard cache should be invalidated after commit'
         );
 
-        // Verify order: event dispatch should come before cache invalidate
-        $eventPos = strpos($content, 'Event::dispatch(new TransactionApproved');
-        $cachePos = strpos($content, '$this->cacheTagsService->invalidate(\'dashboard\')');
-        $this->assertNotFalse($eventPos, 'Event dispatch not found');
-        $this->assertNotFalse($cachePos, 'Cache invalidate not found');
-        $this->assertLessThan($cachePos, $eventPos, 'Event should be dispatched before cache invalidation');
+        $afterCommitPos = strpos($content, 'DB::afterCommit(function () {');
+        $invalidatePos = strpos($content, "\$this->cacheTagsService->invalidate('dashboard')");
 
-        // Verify the return statement comes after cache invalidation
-        $returnPos = strpos($content, 'return $result;', $cachePos);
-        $this->assertNotFalse($returnPos, 'Return statement should follow cache invalidation');
+        $this->assertNotFalse($afterCommitPos, 'DB::afterCommit not found');
+        $this->assertNotFalse($invalidatePos, 'Cache invalidate not found');
+        $this->assertGreaterThan(
+            $afterCommitPos,
+            $invalidatePos,
+            'Cache invalidation should be inside the DB::afterCommit callback'
+        );
     }
 }

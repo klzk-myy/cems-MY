@@ -13,16 +13,19 @@ class TransactionServiceCacheInvalidationTest extends TestCase
 
         $content = file_get_contents($file);
 
-        // Ensure invalidate call exists
-        $this->assertStringContainsString('$this->cacheTagsService->invalidate(\'dashboard\');', $content);
+        // Ensure cache invalidation is deferred until after the DB transaction commits.
+        $this->assertStringContainsString('DB::afterCommit(function () {', $content);
+        $this->assertStringContainsString("\$this->cacheTagsService->invalidate('dashboard');", $content);
 
-        // Ensure invalidate appears after DB::transaction closure (after the "});")
-        $posClose = strpos($content, '});');
-        $posInvalidate = strpos($content, '$this->cacheTagsService->invalidate(\'dashboard\');');
-        $this->assertGreaterThan($posClose, $posInvalidate, 'Cache invalidation should occur after DB::transaction closure');
+        $afterCommitPos = strpos($content, 'DB::afterCommit(function () {');
+        $invalidatePos = strpos($content, "\$this->cacheTagsService->invalidate('dashboard');");
 
-        // Ensure invalidate appears after event dispatch within the closure (proves it's outside)
-        $posDispatch = strpos($content, 'Event::dispatch(new TransactionApproved');
-        $this->assertGreaterThan($posDispatch, $posInvalidate, 'Cache invalidation should occur after event dispatch, i.e., outside the transaction');
+        $this->assertNotFalse($afterCommitPos, 'DB::afterCommit not found');
+        $this->assertNotFalse($invalidatePos, 'Cache invalidate not found');
+        $this->assertGreaterThan(
+            $afterCommitPos,
+            $invalidatePos,
+            'Dashboard cache invalidation should be inside the DB::afterCommit callback'
+        );
     }
 }
