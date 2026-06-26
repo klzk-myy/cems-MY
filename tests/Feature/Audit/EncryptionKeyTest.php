@@ -7,16 +7,19 @@ use Tests\TestCase;
 class EncryptionKeyTest extends TestCase
 {
     /**
-     * Test that ENCRYPTION_KEY is set and is a 32+ character string.
+     * Test that APP_KEY is set and is a 32-byte base64-encoded key.
      *
-     * This key is used for PII field encryption and must be a strong random value.
+     * This key is the foundation for Laravel encryption and PII field encryption.
      */
-    public function test_encryption_key_is_set(): void
+    public function test_app_encryption_key_is_set(): void
     {
-        $key = config('app.encryption_key') ?? env('ENCRYPTION_KEY');
+        $key = config('app.key');
 
-        $this->assertNotEmpty($key, 'ENCRYPTION_KEY should be configured');
-        $this->assertGreaterThanOrEqual(32, strlen($key), 'ENCRYPTION_KEY should be at least 32 characters');
-        $this->assertMatchesRegularExpression('/^[a-zA-Z0-9_-]+$/', $key, 'ENCRYPTION_KEY should be alphanumeric');
+        $this->assertNotEmpty($key, 'APP_KEY should be configured');
+        $this->assertMatchesRegularExpression('/^base64:[a-zA-Z0-9+\/]+={0,2}$/', $key, 'APP_KEY should be a base64-encoded key');
+
+        $rawKey = base64_decode(substr($key, 7), true);
+        $this->assertNotFalse($rawKey, 'APP_KEY should be valid base64');
+        $this->assertSame(32, strlen($rawKey), 'APP_KEY should decode to 32 bytes');
     }
 }
