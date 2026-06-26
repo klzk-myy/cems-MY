@@ -14,6 +14,7 @@ use App\Models\ExchangeRate;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\System\MathService;
+use App\Support\DbDate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ class AnalyticsController extends Controller
             $query->where('currency_code', $currency);
         }
 
-        $monthColumn = $this->monthColumn('created_at');
+        $monthColumn = DbDate::monthColumn('created_at');
 
         $monthlyData = $query->selectRaw("
             {$monthColumn} as month,
@@ -290,18 +291,6 @@ class AnalyticsController extends Controller
             'startDate',
             'endDate'
         ));
-    }
-
-    /**
-     * Get a database-agnostic month extraction expression.
-     */
-    protected function monthColumn(string $column): string
-    {
-        $wrapped = DB::connection()->getQueryGrammar()->wrap($column);
-
-        return DB::connection()->getDriverName() === 'sqlite'
-            ? "strftime('%m', {$wrapped})"
-            : "MONTH({$wrapped})";
     }
 
     /**
