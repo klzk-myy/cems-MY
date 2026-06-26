@@ -16,7 +16,7 @@ class AppKeyTest extends TestCase
         $key = config('app.key');
 
         $this->assertNotEmpty($key, 'APP_KEY should be configured');
-        $this->assertMatchesRegularExpression('/^base64:[a-zA-Z0-9+\/]+={0,2}$/', $key, 'APP_KEY should be a base64-encoded key');
+        $this->assertMatchesRegularExpression('/^base64:[A-Za-z0-9+\/]{43}=$/', $key, 'APP_KEY should be a base64-encoded key');
 
         $rawKey = base64_decode(substr($key, 7), true);
         $this->assertNotFalse($rawKey, 'APP_KEY should be valid base64');
