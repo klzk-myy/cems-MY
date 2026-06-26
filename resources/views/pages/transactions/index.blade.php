@@ -8,7 +8,7 @@
 
         <x-filter-bar method="GET">
             <x-input type="text" name="search" placeholder="Search by reference..." value="{{ request('search') }}" class="flex-1" inline />
-            <x-select name="status" :options="['' => 'All Status'] + $transactions->pluck('status', 'status')->unique()->toArray()" :selected="request('status')" inline />
+            <x-select name="status" :options="['' => 'All Status'] + $transactions->pluck('status.value', 'status.value')->unique()->toArray()" :selected="request('status')" inline />
             <x-button type="submit" variant="primary">Filter</x-button>
         </x-filter-bar>
 
@@ -33,15 +33,15 @@
                             <td class="px-4 py-3">{{ $transaction->created_at->format('M d, Y H:i') }}</td>
                             <td class="px-4 py-3">{{ $transaction->customer->full_name ?? 'N/A' }}</td>
                             <td class="px-4 py-3">
-                                <x-badge variant="{{ $transaction->type === 'Buy' ? 'success' : 'danger' }}">
-                                    {{ $transaction->type }}
+                                <x-badge variant="{{ $transaction->type->value === 'Buy' ? 'success' : 'danger' }}">
+                                    {{ $transaction->type->label() }}
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</td>
-                            <td class="px-4 py-3">{{ number_format($transaction->rate_used, 4) }}</td>
+                            <td class="px-4 py-3">{{ number_format($transaction->rate, 4) }}</td>
                             <td class="px-4 py-3">
-                                <x-badge variant="{{ $transaction->status === 'Completed' ? 'success' : ($transaction->status === 'Pending' ? 'warning' : 'gray') }}">
-                                    {{ $transaction->status }}
+                                <x-badge variant="{{ $transaction->status->value === 'Completed' ? 'success' : ($transaction->status->value === 'Pending' ? 'warning' : 'gray') }}">
+                                    {{ $transaction->status->label() }}
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3">

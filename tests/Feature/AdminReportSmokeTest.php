@@ -185,4 +185,19 @@ class AdminReportSmokeTest extends TestCase
         $response->assertOk();
         $response->assertSee($user->username);
     }
+
+    #[Test]
+    public function transactions_index_loads_for_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $transaction = Transaction::factory()->completed()->create([
+            'branch_id' => $admin->branch_id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('transactions.index'));
+
+        $response->assertOk();
+        $response->assertSee($transaction->type->label());
+        $response->assertSee($transaction->status->label());
+    }
 }
