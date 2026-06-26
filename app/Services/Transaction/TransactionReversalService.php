@@ -33,32 +33,34 @@ class TransactionReversalService
     public function reverse(Transaction $transaction, User $requester, string $reason): bool
     {
         return DB::transaction(function () use ($transaction, $requester, $reason) {
-            $refundTransaction = $this->createRefundTransaction($transaction, $requester->id);
+            // 1. Enforce the state transition FIRST. If it fails, nothing else happens.
+            $lockedTransaction = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            $this->reversePositions($transaction);
-
-            $this->reverseTillBalance($transaction);
-
-            $this->createReversingJournalEntries($transaction, $requester->id);
-
-            $this->reverseTellerAllocation($transaction);
-
-            $stateMachine = new TransactionStateMachine($transaction);
-            $result = $stateMachine->transitionTo(TransactionStatus::Reversed, [
+            $stateMachine = new TransactionStateMachine($lockedTransaction);
+            if (! $stateMachine->transitionTo(TransactionStatus::Reversed, [
                 'reason' => $reason,
                 'user_id' => $requester->id,
-            ]);
-
-            if ($result) {
-                Log::info('Transaction reversal processed', [
-                    'transaction_id' => $transaction->id,
-                    'refund_transaction_id' => $refundTransaction->id,
-                    'reversed_by' => $requester->id,
-                    'reason' => $reason,
-                ]);
+            ])) {
+                throw new \RuntimeException('Failed to transition transaction to Reversed');
             }
 
-            return $result;
+            // 2. Compensating side effects only run after the transition succeeds.
+            $refundTransaction = $this->createRefundTransaction($lockedTransaction, $requester->id);
+            $this->reversePositions($lockedTransaction);
+            $this->reverseTillBalance($lockedTransaction);
+            $this->createReversingJournalEntries($lockedTransaction, $requester->id);
+            $this->reverseTellerAllocation($lockedTransaction);
+
+            Log::info('Transaction reversal processed', [
+                'transaction_id' => $lockedTransaction->id,
+                'refund_transaction_id' => $refundTransaction->id,
+                'reversed_by' => $requester->id,
+                'reason' => $reason,
+            ]);
+
+            return true;
         });
     }
 

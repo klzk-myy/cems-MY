@@ -156,4 +156,20 @@ class CriticalTransactionFixesTest extends TestCase
             ->get(route('transactions.confirm.show', $transaction))
             ->assertOk();
     }
+
+    public function test_reversal_does_not_create_refund_when_transition_fails(): void
+    {
+        $branch = Branch::factory()->create();
+        $manager = User::factory()->for($branch)->create(['role' => UserRole::Manager]);
+        $transaction = Transaction::factory()->for($branch)->create();
+        $transaction->status = TransactionStatus::Reversed;
+        $transaction->save();
+
+        $service = app(TransactionReversalService::class);
+
+        $this->expectException(\RuntimeException::class);
+        $service->reverse($transaction, $manager, 'oops');
+
+        $this->assertSame(0, Transaction::where('is_refund', true)->count());
+    }
 }
