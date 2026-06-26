@@ -20,16 +20,18 @@ class BranchPoolService
 
     public function getOrCreateForBranch(Branch $branch, string $currencyCode): BranchPool
     {
-        return BranchPool::firstOrCreate(
-            [
-                'branch_id' => $branch->id,
-                'currency_code' => $currencyCode,
-            ],
-            [
-                'available_balance' => '0.0000',
-                'allocated_balance' => '0.0000',
-            ]
-        );
+        return DB::transaction(function () use ($branch, $currencyCode) {
+            return BranchPool::firstOrCreate(
+                [
+                    'branch_id' => $branch->id,
+                    'currency_code' => $currencyCode,
+                ],
+                [
+                    'available_balance' => '0.0000',
+                    'allocated_balance' => '0.0000',
+                ]
+            );
+        });
     }
 
     public function getPoolBalance(Branch $branch, string $currencyCode): array

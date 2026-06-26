@@ -37,4 +37,16 @@ class ConcurrencyFixesTest extends TestCase
         // Only ~3 of 30-dollar allocations should succeed
         $this->assertSame(3, $results->filter(fn ($r) => $r->run())->count());
     }
+
+    public function test_concurrent_get_or_create_branch_pool_does_not_duplicate(): void
+    {
+        $branch = Branch::factory()->create();
+
+        $created = collect(range(1, 5))->map(fn () => app(BranchPoolService::class)->getOrCreateForBranch($branch, 'USD')
+        );
+
+        $this->assertSame(1, BranchPool::where('branch_id', $branch->id)
+            ->where('currency_code', 'USD')
+            ->count());
+    }
 }
