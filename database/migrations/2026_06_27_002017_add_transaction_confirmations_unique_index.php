@@ -9,10 +9,10 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * Prevents duplicate confirmation records per transaction. The application
-     * logic only creates Pending/Confirmed confirmations, so this unique index
-     * ensures only one such confirmation exists per transaction at the DB level.
-     * Concurrent requests are serialised via row-level locking in the service.
+     * Prevents duplicate confirmation records per transaction. Rejected confirmations
+     * are deleted by the service, so the unique index on transaction_id protects
+     * against concurrent pending/confirmed rows while still allowing a new request
+     * after a rejection.
      */
     public function up(): void
     {

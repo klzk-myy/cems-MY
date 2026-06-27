@@ -181,6 +181,10 @@ class TransactionConfirmationService
 
         DB::commit();
 
+        // Delete the rejected confirmation so a future request can create a new one.
+        // The unique index on transaction_id only protects non-deleted rows.
+        $confirmation->delete();
+
         return [
             'success' => true,
             'message' => 'Transaction has been rejected.',

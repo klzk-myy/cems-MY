@@ -4,6 +4,8 @@ namespace Tests\Feature\Audit;
 
 use App\Enums\JournalEntryStatus;
 use App\Enums\RiskRating;
+use App\Enums\TransactionConfirmationStatus;
+use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Models\Branch;
@@ -223,6 +225,32 @@ class ConcurrencyFixesTest extends TestCase
         $second = $service->requestConfirmation($transaction, $manager->id);
 
         $this->assertSame($first->id, $second->id);
+    }
+
+    public function test_new_confirmation_can_be_requested_after_rejection(): void
+    {
+        $branch = Branch::factory()->create();
+        $manager = User::factory()->for($branch)->manager()->create();
+        $teller = User::factory()->for($branch)->teller()->create();
+        $customer = Customer::factory()->create();
+
+        $transaction = Transaction::factory()->for($branch)->for($customer)->create([
+            'type' => TransactionType::Buy->value,
+            'status' => TransactionStatus::PendingApproval->value,
+            'amount_local' => '50000.00',
+        ]);
+
+        $service = app(TransactionConfirmationService::class);
+
+        $first = $service->requestConfirmation($transaction, $teller->id);
+        $this->assertSame(TransactionConfirmationStatus::Pending->value, $first->status->value);
+
+        $this->actingAs($manager);
+        $service->confirm($first, ['confirmation_action' => 'reject'], $manager->id);
+
+        $second = $service->requestConfirmation($transaction, $teller->id);
+        $this->assertSame(TransactionConfirmationStatus::Pending->value, $second->status->value);
+        $this->assertNotSame($first->id, $second->id);
     }
 
     public function test_rate_limit_counter_never_resets_to_one_after_first_attempt(): void
