@@ -4,9 +4,11 @@ namespace Tests\Feature\Audit;
 
 use App\Models\SystemLog;
 use App\Services\Reporting\ExportService;
+use App\Services\Reporting\ReportingService;
 use App\Services\System\LogRotationService;
 use App\Services\System\RateLimitService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class EdgeCaseFixesTest extends TestCase
@@ -46,5 +48,13 @@ class EdgeCaseFixesTest extends TestCase
 
         $this->assertGreaterThanOrEqual(1, $deleted);
         $this->assertFileDoesNotExist($path);
+    }
+
+    public function test_msb2_report_generation_succeeds(): void
+    {
+        $filePath = app(ReportingService::class)->generateMSB2(today()->subDay()->toDateString());
+
+        $this->assertIsString($filePath);
+        $this->assertFileExists(Storage::path($filePath));
     }
 }

@@ -55,6 +55,9 @@ class ReportingService implements ReportingServiceInterface
         }
 
         $csv = fopen(Storage::path($filepath), 'w');
+        if (! $csv) {
+            throw new \RuntimeException("Failed to open report file for writing: {$filepath}");
+        }
 
         fputcsv($csv, [
             'Date',
