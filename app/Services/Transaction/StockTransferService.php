@@ -145,8 +145,14 @@ class StockTransferService
         }
 
         DB::transaction(function () use ($transfer, $items) {
+            $itemIds = collect($items)->pluck('id');
+            $existingItems = $transfer->items()
+                ->whereIn('id', $itemIds)
+                ->get()
+                ->keyBy('id');
+
             foreach ($items as $itemData) {
-                $item = $transfer->items()->where('id', $itemData['id'])->first();
+                $item = $existingItems->get($itemData['id']);
                 if ($item) {
                     $item->update([
                         'quantity_received' => $itemData['quantity_received'],
