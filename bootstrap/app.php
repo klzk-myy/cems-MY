@@ -34,7 +34,6 @@ use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Http\Middleware\SetCacheHeaders;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Session\Middleware\AuthenticateSession;
-use Illuminate\Session\Middleware\StartSession;
 
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -49,10 +48,6 @@ $app = Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
             QueryLogging::class,
             PerformanceTrackingMiddleware::class,
-        ]);
-
-        $middleware->api(prepend: [
-            StartSession::class,
         ]);
 
         $middleware->alias([

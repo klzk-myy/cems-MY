@@ -17,4 +17,15 @@ class SecurityHardeningTest extends TestCase
             ->get('/dashboard')
             ->assertHeader('Content-Security-Policy');
     }
+
+    public function test_api_routes_do_not_set_session_cookie(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('test')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson(route('api.v1.user'));
+
+        $this->assertEmpty($response->headers->getCookies());
+    }
 }
