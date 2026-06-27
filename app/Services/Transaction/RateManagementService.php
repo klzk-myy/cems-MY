@@ -273,13 +273,16 @@ class RateManagementService implements RateManagementServiceInterface
             ];
         }
 
+        $currencyCodes = $historicalRates->pluck('currency_code')->unique();
+
+        $exchangeRates = ExchangeRate::whereIn('currency_code', $currencyCodes)
+            ->when($branchId !== null, fn ($q) => $q->forBranch($branchId))
+            ->get()
+            ->keyBy('currency_code');
+
         $copied = [];
         foreach ($historicalRates as $histRate) {
-            $query = ExchangeRate::where('currency_code', $histRate->currency_code);
-            if ($branchId !== null) {
-                $query->forBranch($branchId);
-            }
-            $exchangeRate = $query->first();
+            $exchangeRate = $exchangeRates->get($histRate->currency_code);
 
             if ($exchangeRate) {
                 $oldBuy = $exchangeRate->rate_buy;
