@@ -4,6 +4,7 @@ namespace Tests\Feature\Audit;
 
 use App\Enums\UserRole;
 use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -68,6 +69,18 @@ class ApiSecurityFixesTest extends TestCase
 
         $this->actingAs($teller, 'sanctum')
             ->getJson(route('api.v1.compliance.findings.index'))
+            ->assertForbidden();
+    }
+
+    public function test_teller_cannot_lock_customer_risk_profile(): void
+    {
+        $teller = User::factory()->for(Branch::factory()->create())->create([
+            'role' => UserRole::Teller,
+        ]);
+        $customer = Customer::factory()->create();
+
+        $this->actingAs($teller, 'sanctum')
+            ->postJson(route('api.v1.risk.lock', $customer))
             ->assertForbidden();
     }
 }

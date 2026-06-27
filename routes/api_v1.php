@@ -217,18 +217,14 @@ Route::middleware(['branch.scope'])->group(function () {
     });
 
     // Risk API
-    Route::get('/risk/portfolio', [RiskController::class, 'portfolio'])
-        ->name('api.v1.risk.portfolio');
-    Route::get('/risk/{customerId}', [RiskController::class, 'show'])
-        ->name('api.v1.risk.show');
-    Route::get('/risk/{customerId}/history', [RiskController::class, 'history'])
-        ->name('api.v1.risk.history');
-    Route::post('/risk/{customerId}/recalculate', [RiskController::class, 'recalculate'])
-        ->name('api.v1.risk.recalculate');
-    Route::post('/risk/{customerId}/lock', [RiskController::class, 'lock'])
-        ->name('api.v1.risk.lock');
-    Route::post('/risk/{customerId}/unlock', [RiskController::class, 'unlock'])
-        ->name('api.v1.risk.unlock');
+    Route::prefix('risk')->middleware('role:compliance,admin')->group(function () {
+        Route::get('/portfolio', [RiskController::class, 'portfolio'])->name('api.v1.risk.portfolio');
+        Route::get('/{customerId}', [RiskController::class, 'show'])->name('api.v1.risk.show');
+        Route::get('/{customerId}/history', [RiskController::class, 'history'])->name('api.v1.risk.history');
+        Route::post('/{customerId}/recalculate', [RiskController::class, 'recalculate'])->name('api.v1.risk.recalculate');
+        Route::post('/{customerId}/lock', [RiskController::class, 'lock'])->name('api.v1.risk.lock');
+        Route::post('/{customerId}/unlock', [RiskController::class, 'unlock'])->name('api.v1.risk.unlock');
+    });
 
     // EOD Reconciliation API - Manager or Compliance Officer
     Route::prefix('eod')->group(function () {
