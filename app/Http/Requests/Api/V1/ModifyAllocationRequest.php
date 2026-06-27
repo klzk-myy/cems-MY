@@ -8,6 +8,11 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ModifyAllocationRequest extends AuthorizedFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [

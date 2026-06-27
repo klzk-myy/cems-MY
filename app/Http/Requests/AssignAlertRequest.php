@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 class AssignAlertRequest extends AuthorizedFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [

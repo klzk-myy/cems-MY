@@ -14,6 +14,11 @@ class UpdateBudgetRequest extends AuthorizedFormRequest
      *
      * @return array<string, string>
      */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [

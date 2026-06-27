@@ -3,6 +3,7 @@
 namespace Tests\Feature\Audit;
 
 use App\Enums\UserRole;
+use App\Http\Requests\AuthorizedFormRequest;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Customer;
@@ -148,5 +149,18 @@ class ApiSecurityFixesTest extends TestCase
         $user->save();
 
         $this->assertNotSame('hacked', $user->password_hash);
+    }
+
+    public function test_default_form_request_fails_closed(): void
+    {
+        $request = new class extends AuthorizedFormRequest
+        {
+            public function rules(): array
+            {
+                return [];
+            }
+        };
+
+        $this->assertFalse($request->authorize());
     }
 }
