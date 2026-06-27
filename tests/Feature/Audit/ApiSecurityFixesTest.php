@@ -126,6 +126,23 @@ class ApiSecurityFixesTest extends TestCase
             ->assertJsonMissing(['id' => $branchBTransaction->id]);
     }
 
+    public function test_admin_with_branch_id_can_view_all_customer_history(): void
+    {
+        $branchA = Branch::factory()->create();
+        $branchB = Branch::factory()->create();
+
+        $admin = User::factory()->for($branchA)->admin()->create();
+        $customer = Customer::factory()->create();
+        $transaction = Transaction::factory()->for($branchB)->for($customer)->create();
+
+        $this->actingAs($admin);
+
+        $response = $this->getJson(route('api.v1.customers.history', $customer));
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.id', $transaction->id);
+    }
+
     public function test_teller_cannot_close_counter(): void
     {
         $branch = Branch::factory()->create();

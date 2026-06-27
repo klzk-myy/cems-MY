@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Customer\SearchCustomerRequest;
 use App\Http\Requests\Api\V1\Customer\UploadDocumentRequest;
@@ -205,7 +204,7 @@ class CustomerController extends Controller
         $this->authorize('view', $customer);
 
         $transactions = $customer->transactions()
-            ->when(auth()->user()->role !== UserRole::Admin, function ($query) {
+            ->when(! auth()->user()->isAdmin(), function ($query) {
                 $query->where('branch_id', auth()->user()->branch_id);
             })
             ->orderBy('created_at', 'desc')
