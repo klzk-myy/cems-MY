@@ -260,7 +260,7 @@ class FiscalYearService
      */
     protected function closeRevenueToIncomeSummary(string $total, string $entryDate, int $userId): JournalEntry
     {
-        $entryNumber = 'CE-'.date('Ym', strtotime($entryDate)).'-001';
+        $entryNumber = $this->generateEntryNumber($entryDate);
 
         $entry = JournalEntry::create([
             'entry_number' => $entryNumber,
@@ -309,7 +309,7 @@ class FiscalYearService
      */
     protected function closeExpensesToIncomeSummary(string $total, string $entryDate, int $userId): JournalEntry
     {
-        $entryNumber = 'CE-'.date('Ym', strtotime($entryDate)).'-002';
+        $entryNumber = $this->generateEntryNumber($entryDate, '002');
 
         $entry = JournalEntry::create([
             'entry_number' => $entryNumber,
@@ -357,7 +357,7 @@ class FiscalYearService
      */
     protected function closeIncomeSummaryToRetained(string $netIncome, string $entryDate, int $userId): JournalEntry
     {
-        $entryNumber = 'CE-'.date('Ym', strtotime($entryDate)).'-003';
+        $entryNumber = $this->generateEntryNumber($entryDate, '003');
 
         $entry = JournalEntry::create([
             'entry_number' => $entryNumber,
@@ -540,6 +540,19 @@ class FiscalYearService
         return $account->account_type instanceof AccountType
             ? $account->account_type->isDebitNormal()
             : in_array($account->account_type, ['Asset', 'Expense']);
+    }
+
+    /**
+     * Generate a closing entry number for a date.
+     */
+    public function generateEntryNumber(string $entryDate, string $suffix = '001'): string
+    {
+        $timestamp = strtotime($entryDate);
+        if ($timestamp === false) {
+            throw new \InvalidArgumentException("Invalid entry date: {$entryDate}");
+        }
+
+        return 'CE-'.date('Ym', $timestamp).'-'.$suffix;
     }
 
     /**

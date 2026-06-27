@@ -508,7 +508,12 @@ class BackupService
         }
 
         // Sort by date descending
-        usort($backups, fn ($a, $b) => strtotime($b['date']) - strtotime($a['date']));
+        usort($backups, function ($a, $b) {
+            $ta = strtotime($a['date']) ?: 0;
+            $tb = strtotime($b['date']) ?: 0;
+
+            return $tb <=> $ta;
+        });
 
         return $backups;
     }

@@ -5,6 +5,7 @@ namespace Tests\Feature\Audit;
 use App\Enums\SystemHealthCheckStatus;
 use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
+use App\Services\Accounting\FiscalYearService;
 use App\Services\AuditService;
 use App\Services\Reporting\ExportService;
 use App\Services\Reporting\ReportingService;
@@ -94,5 +95,12 @@ class EdgeCaseFixesTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         app(ReportingService::class)->generateQuarterlyLargeValueReport('not-a-quarter');
+    }
+
+    public function test_fiscal_year_rejects_invalid_entry_date(): void
+    {
+        $service = app(FiscalYearService::class);
+        $this->expectException(\InvalidArgumentException::class);
+        $service->generateEntryNumber('not-a-date');
     }
 }
