@@ -10,6 +10,7 @@ use App\Services\AuditService;
 use App\Services\Reporting\ExportService;
 use App\Services\Reporting\ReportingService;
 use App\Services\System\LogRotationService;
+use App\Services\System\MfaService;
 use App\Services\System\RateLimitService;
 use App\Services\System\SystemHealthService;
 use Illuminate\Database\Events\QueryExecuted;
@@ -102,5 +103,12 @@ class EdgeCaseFixesTest extends TestCase
         $service = app(FiscalYearService::class);
         $this->expectException(\InvalidArgumentException::class);
         $service->generateEntryNumber('not-a-date');
+    }
+
+    public function test_base32_decode_rejects_invalid_characters(): void
+    {
+        $service = app(MfaService::class);
+        $this->expectException(\InvalidArgumentException::class);
+        $service->base32Decode('JBSWY3DPEHPK3PXP!');
     }
 }
