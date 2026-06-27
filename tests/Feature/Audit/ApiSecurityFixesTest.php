@@ -4,6 +4,7 @@ namespace Tests\Feature\Audit;
 
 use App\Enums\UserRole;
 use App\Models\Branch;
+use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
@@ -122,5 +123,16 @@ class ApiSecurityFixesTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $branchATransaction->id)
             ->assertJsonMissing(['id' => $branchBTransaction->id]);
+    }
+
+    public function test_teller_cannot_close_counter(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->for($branch)->create(['role' => UserRole::Teller]);
+        $counter = Counter::factory()->for($branch)->create();
+
+        $this->actingAs($teller)
+            ->post(route('counters.close', $counter))
+            ->assertForbidden();
     }
 }
