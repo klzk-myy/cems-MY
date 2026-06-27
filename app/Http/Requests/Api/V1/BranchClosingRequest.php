@@ -6,6 +6,11 @@ use App\Http\Requests\ApiFormRequest;
 
 class BranchClosingRequest extends ApiFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return match ($this->route()->getActionMethod()) {

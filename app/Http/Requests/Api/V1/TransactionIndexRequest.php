@@ -6,6 +6,11 @@ use App\Http\Requests\ApiFormRequest;
 
 class TransactionIndexRequest extends ApiFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [
