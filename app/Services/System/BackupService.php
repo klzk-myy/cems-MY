@@ -452,11 +452,13 @@ class BackupService
             $s3Disk = Storage::disk('s3');
             $archivePath = 'archives/'.basename($log->file_path);
 
-            $s3Disk->put(
-                $archivePath,
-                file_get_contents($sourcePath),
-                ['StorageClass' => 'GLACIER']
-            );
+            $contents = file_get_contents($sourcePath);
+
+            if ($contents === false) {
+                throw new \RuntimeException("Failed to read backup file: {$sourcePath}");
+            }
+
+            $s3Disk->put($archivePath, $contents, ['StorageClass' => 'GLACIER']);
 
             // Update log
             $log->update([
