@@ -6,7 +6,6 @@ use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Services\System\MathService;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class RateApiService
@@ -103,24 +102,18 @@ class RateApiService
     {
         $now = now();
 
-        foreach ($rates as $currencyCode => $rateData) {
-            $query = ExchangeRate::where('currency_code', $currencyCode);
-            if ($branchId !== null) {
-                $query->forBranch($branchId);
-            }
-
-            DB::transaction(function () use ($query, $currencyCode, $branchId, $rateData, $now) {
-                $query->updateOrCreate(
-                    ['currency_code' => $currencyCode, 'branch_id' => $branchId],
-                    [
-                        'rate_buy' => $rateData['buy'],
-                        'rate_sell' => $rateData['sell'],
-                        'source' => 'api',
-                        'fetched_at' => $now,
-                    ]
-                );
-            });
-        }
+        ExchangeRate::upsert(
+            collect($rates)->map(fn ($rateData, $currencyCode) => [
+                'currency_code' => $currencyCode,
+                'branch_id' => $branchId,
+                'rate_buy' => $rateData['buy'],
+                'rate_sell' => $rateData['sell'],
+                'source' => 'api',
+                'fetched_at' => $now,
+            ])->values()->all(),
+            ['currency_code', 'branch_id'],
+            ['rate_buy', 'rate_sell', 'source', 'fetched_at']
+        );
     }
 
     protected function logRatesToHistory(array $rates, ?int $branchId = null): void
@@ -128,25 +121,25 @@ class RateApiService
         $today = now()->toDateString();
         $userId = auth()->id() ?? 1;
 
-        foreach ($rates as $currencyCode => $rateData) {
-            $query = ExchangeRateHistory::forCurrency($currencyCode)
-                ->whereDate('effective_date', $today);
+        $existing = ExchangeRateHistory::where('branch_id', $branchId)
+            ->whereIn('currency_code', array_keys($rates))
+            ->whereDate('effective_date', $today)
+            ->pluck('currency_code')
+            ->flip();
 
-            if ($branchId !== null) {
-                $query->where('branch_id', $branchId);
-            }
+        $rows = collect($rates)
+            ->reject(fn ($_, $currencyCode) => $existing->has($currencyCode))
+            ->map(fn ($rateData, $currencyCode) => [
+                'currency_code' => $currencyCode,
+                'branch_id' => $branchId,
+                'rate' => $rateData['mid'],
+                'effective_date' => $today,
+                'created_by' => $userId,
+                'notes' => "API fetch - Buy: {$rateData['buy']}, Sell: {$rateData['sell']}".($branchId ? " (Branch: {$branchId})" : ''),
+            ])->values()->all();
 
-            $exists = $query->exists();
-
-            if (! $exists) {
-                ExchangeRateHistory::create([
-                    'currency_code' => $currencyCode,
-                    'rate' => $rateData['mid'],
-                    'effective_date' => $today,
-                    'created_by' => $userId,
-                    'notes' => "API fetch - Buy: {$rateData['buy']}, Sell: {$rateData['sell']}".($branchId ? " (Branch: {$branchId})" : ''),
-                ]);
-            }
+        if (! empty($rows)) {
+            ExchangeRateHistory::insert($rows);
         }
     }
 
