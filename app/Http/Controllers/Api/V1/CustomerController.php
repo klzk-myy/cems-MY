@@ -137,10 +137,8 @@ class CustomerController extends Controller
      * Update a customer.
      * Note: risk_rating is auto-determined by risk scoring engine, not manually settable.
      */
-    public function update(UpdateCustomerRequest $request, int $id): JsonResponse
+    public function update(UpdateCustomerRequest $request, Customer $customer): JsonResponse
     {
-        $customer = Customer::findOrFail($id);
-
         $this->authorize('update', $customer);
 
         $validated = $request->validated();
@@ -156,7 +154,7 @@ class CustomerController extends Controller
             Log::error('Customer API update failed', [
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
-                'customer_id' => $id,
+                'customer_id' => $customer->id,
             ]);
 
             return response()->json([
