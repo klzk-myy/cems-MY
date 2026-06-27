@@ -161,12 +161,12 @@ class TransactionConfirmationService
     {
         $confirmation->markRejected($userId, $notes);
 
-        $confirmation->transaction->update([
-            'status' => TransactionStatus::Cancelled,
-            'cancelled_at' => now(),
-            'cancelled_by' => $userId,
-            'cancellation_reason' => 'Rejected during confirmation: '.($notes ?? 'No reason provided'),
-        ]);
+        $transaction = $confirmation->transaction;
+        $transaction->status = TransactionStatus::Cancelled;
+        $transaction->cancelled_at = now();
+        $transaction->cancelled_by = $userId;
+        $transaction->cancellation_reason = 'Rejected during confirmation: '.($notes ?? 'No reason provided');
+        $transaction->save();
 
         $this->auditService->logWithSeverity('transaction_rejected', [
             'user_id' => $userId,

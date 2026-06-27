@@ -336,13 +336,15 @@ class TestTransactionScenarios extends Command
                 'customer_type' => $scenario['customer_type'],
                 'nationality' => $scenario['nationality'],
                 'branch_id' => $this->branchIdForCode($scenario['branch']),
-                'risk_rating' => $scenario['is_pep'] ? 'high' : ($scenario['is_high_risk_country'] ? 'high' : 'medium'),
                 'pep_status' => $scenario['is_pep'],
                 'is_pep_associate' => false,
-                'sanction_hit' => false,
                 'is_active' => true,
                 'created_by' => $this->tellers[$scenario['branch']]->id,
             ]);
+
+            $customer->risk_rating = $scenario['is_pep'] ? 'high' : ($scenario['is_high_risk_country'] ? 'high' : 'medium');
+            $customer->sanction_hit = false;
+            $customer->save();
         }
 
         // Mark PEP status
@@ -368,11 +370,13 @@ class TestTransactionScenarios extends Command
             'rate' => $scenario['rate'],
             'amount_local' => $myrAmount,
             'myr_at_closing' => $myrAmount,
-            'status' => TransactionStatus::PendingApproval,
             'reference_no' => 'TXN-'.$scenario['id'].'-'.uniqid(),
             'idempotency_key' => uniqid(),
             'cdd_level' => $scenario['expected_cdd'],
         ]);
+
+        $transaction->status = TransactionStatus::PendingApproval;
+        $transaction->save();
 
         // Store result
         $this->results[] = [

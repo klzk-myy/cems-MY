@@ -5,7 +5,9 @@ namespace Database\Factories;
 use App\Enums\CddLevel;
 use App\Enums\RiskRating;
 use App\Models\Customer;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 class CustomerFactory extends Factory
 {
@@ -22,23 +24,53 @@ class CustomerFactory extends Factory
             'address' => fake()->address(),
             'phone' => fake()->phoneNumber(),
             'email' => fake()->optional()->safeEmail(),
-            'cdd_level' => fake()->randomElement(CddLevel::cases()),
             'pep_status' => false,
-            'risk_score' => fake()->numberBetween(0, 100),
-            'risk_rating' => fake()->randomElement([
+            'is_active' => true,
+        ];
+    }
+
+    public function make($attributes = [], ?Model $parent = null): Customer|Collection
+    {
+        $raw = $this->raw();
+        $result = parent::make($attributes, $parent);
+        $customers = $result instanceof Collection
+            ? $result
+            : new Collection([$result]);
+
+        $workflowFields = [
+            'risk_score',
+            'risk_rating',
+            'risk_assessed_at',
+            'cdd_level',
+            'is_frozen',
+            'freeze_reason',
+            'frozen_at',
+            'transactions_blocked',
+            'rejection_reason',
+            'sanction_hit',
+        ];
+
+        $customers->each(function (Customer $customer) use ($raw, $workflowFields) {
+            foreach ($workflowFields as $field) {
+                if (array_key_exists($field, $raw)) {
+                    $customer->{$field} = $raw[$field];
+                }
+            }
+
+            $customer->risk_score ??= fake()->numberBetween(0, 100);
+            $customer->risk_rating ??= fake()->randomElement([
                 RiskRating::Low->value,
                 RiskRating::Medium->value,
                 RiskRating::High->value,
-            ]),
-            'risk_assessed_at' => now(),
-            'last_transaction_at' => null,
-            'is_frozen' => false,
-            'freeze_reason' => null,
-            'frozen_at' => null,
-            'transactions_blocked' => false,
-            'rejection_reason' => null,
-            'is_active' => true,
-        ];
+            ]);
+            $customer->risk_assessed_at ??= now();
+            $customer->cdd_level ??= fake()->randomElement(CddLevel::cases());
+            $customer->is_frozen ??= false;
+            $customer->transactions_blocked ??= false;
+            $customer->sanction_hit ??= false;
+        });
+
+        return $result;
     }
 
     public function frozen(): static

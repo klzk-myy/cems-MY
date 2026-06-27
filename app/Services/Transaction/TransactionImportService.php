@@ -220,11 +220,13 @@ class TransactionImportService
                     'rate' => $rate,
                     'purpose' => $data['purpose'],
                     'source_of_funds' => $data['source_of_funds'],
-                    'status' => $status,
-                    'hold_reason' => $holdReason,
-                    'approved_by' => $approvedBy,
                     'cdd_level' => $cddLevel,
                 ]);
+
+                $transaction->status = $status;
+                $transaction->hold_reason = $holdReason;
+                $transaction->approved_by = $approvedBy;
+                $transaction->save();
 
                 // Update currency position (if not pending approval)
                 if ($status === TransactionStatus::Completed->value) {

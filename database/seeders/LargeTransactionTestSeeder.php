@@ -64,7 +64,7 @@ class LargeTransactionTestSeeder extends Seeder
                 $createdAt = fake()->dateTimeBetween('-90 days', '-30 days');
             }
 
-            Transaction::create([
+            $transaction = Transaction::create([
                 'customer_id' => $customer->id,
                 'user_id' => $teller->id,
                 'type' => $type,
@@ -72,7 +72,6 @@ class LargeTransactionTestSeeder extends Seeder
                 'amount_foreign' => $amountForeign,
                 'amount_local' => $amountLocal,
                 'rate' => $rate,
-                'status' => fake()->randomElement($statuses),
                 'cdd_level' => fake()->randomElement($cddLevels),
                 'purpose' => fake()->randomElement($purposes),
                 'source_of_funds' => fake()->randomElement($sourceOfFunds),
@@ -81,6 +80,9 @@ class LargeTransactionTestSeeder extends Seeder
                 'created_at' => $createdAt,
                 'updated_at' => $createdAt,
             ]);
+
+            $transaction->status = fake()->randomElement($statuses);
+            $transaction->save();
 
             $transactionsCreated++;
         }
@@ -114,7 +116,7 @@ class LargeTransactionTestSeeder extends Seeder
 
         // Ensure at least one customer exists
         if (Customer::count() === 0) {
-            Customer::create([
+            $customer = Customer::create([
                 'full_name' => 'Test Customer',
                 'id_type' => 'MyKad',
                 'id_number_encrypted' => encrypt('900101-01-1234'),
@@ -123,22 +125,26 @@ class LargeTransactionTestSeeder extends Seeder
                 'address' => '123 Test Street',
                 'phone' => '+60123456789',
                 'pep_status' => false,
-                'sanction_hit' => false,
-                'risk_rating' => 'Low',
                 'is_active' => true,
             ]);
+
+            $customer->sanction_hit = false;
+            $customer->risk_rating = 'Low';
+            $customer->save();
         }
 
         // Ensure at least one user exists
         if (User::count() === 0) {
-            User::create([
-                'name' => 'Test Teller',
+            $user = User::create([
+                'username' => 'Test Teller',
                 'email' => 'teller@test.com',
-                'password' => bcrypt('password'),
-                'role' => UserRole::Teller,
+                'role' => 'teller',
                 'branch_id' => 1,
                 'is_active' => true,
             ]);
+
+            $user->password_hash = bcrypt('password');
+            $user->save();
         }
     }
 }

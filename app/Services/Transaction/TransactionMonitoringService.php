@@ -118,7 +118,8 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
             if ($holdCheck->requiresHold
                 && $lockedTransaction->status->isCompleted()
                 && $lockedTransaction->approved_by === null) {
-                $lockedTransaction->update(['status' => TransactionStatus::PendingApproval]);
+                $lockedTransaction->status = TransactionStatus::PendingApproval;
+                $lockedTransaction->save();
                 foreach ($holdCheck->reasons as $reason) {
                     $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::EddRequired, $reason);
                 }

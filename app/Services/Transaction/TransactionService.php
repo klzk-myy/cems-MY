@@ -373,13 +373,15 @@ class TransactionService implements TransactionServiceInterface
                 'purpose' => $data['purpose'],
                 'source_of_funds' => $data['source_of_funds'],
                 'source_of_wealth' => $data['source_of_wealth'] ?? null,
-                'status' => $status,
-                'hold_reason' => $holdReason,
-                'approved_by' => $approvedBy,
                 'cdd_level' => $cddLevel,
                 'idempotency_key' => $data['idempotency_key'] ?? null,
-                'version' => 0,
             ]);
+
+            $transaction->status = $status;
+            $transaction->hold_reason = $holdReason;
+            $transaction->approved_by = $approvedBy;
+            $transaction->version = 0;
+            $transaction->save();
 
             // If transaction requires approval (>= RM 3,000 and no compliance hold),
             // reserve stock immediately so it cannot be oversold
@@ -704,13 +706,12 @@ class TransactionService implements TransactionServiceInterface
                 ];
 
                 // Perform the update with proper history and version increment
-                $lockedTransaction->update([
-                    'status' => TransactionStatus::Completed,
-                    'approved_by' => $approverId,
-                    'approved_at' => $nowIso,
-                    'transition_history' => $history,
-                    'version' => $lockedTransaction->version + 1,
-                ]);
+                $lockedTransaction->status = TransactionStatus::Completed;
+                $lockedTransaction->approved_by = $approverId;
+                $lockedTransaction->approved_at = $nowIso;
+                $lockedTransaction->transition_history = $history;
+                $lockedTransaction->version = $lockedTransaction->version + 1;
+                $lockedTransaction->save();
 
                 // Refresh the model to get updated version
                 $lockedTransaction->refresh();

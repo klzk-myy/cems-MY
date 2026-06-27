@@ -10,7 +10,9 @@ use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 class TransactionFactory extends Factory
 {
@@ -37,12 +39,44 @@ class TransactionFactory extends Factory
             'rate' => $rate,
             'purpose' => fake()->sentence(3),
             'source_of_funds' => fake()->randomElement(['Salary', 'Business', 'Savings', 'Investment']),
-            'status' => TransactionStatus::Completed->value,
-            'hold_reason' => null,
-            'approved_by' => null,
-            'approved_at' => null,
             'cdd_level' => CddLevel::Standard->value,
         ];
+    }
+
+    public function make($attributes = [], ?Model $parent = null): Transaction|Collection
+    {
+        $raw = $this->raw();
+        $result = parent::make($attributes, $parent);
+        $transactions = $result instanceof Collection
+            ? $result
+            : new Collection([$result]);
+
+        $workflowFields = [
+            'status',
+            'approved_by',
+            'approved_at',
+            'hold_reason',
+            'version',
+            'transition_history',
+            'is_refund',
+            'cancelled_at',
+            'cancelled_by',
+            'cancellation_reason',
+        ];
+
+        $transactions->each(function (Transaction $transaction) use ($raw, $workflowFields) {
+            foreach ($workflowFields as $field) {
+                if (array_key_exists($field, $raw)) {
+                    $transaction->{$field} = $raw[$field];
+                }
+            }
+
+            $transaction->status ??= TransactionStatus::Completed;
+            $transaction->version ??= 0;
+            $transaction->transition_history ??= [];
+        });
+
+        return $result;
     }
 
     public function buy(): static

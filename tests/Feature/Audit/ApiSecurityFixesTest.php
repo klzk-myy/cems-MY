@@ -135,4 +135,16 @@ class ApiSecurityFixesTest extends TestCase
             ->post(route('counters.close', $counter))
             ->assertForbidden();
     }
+
+    public function test_password_hash_is_not_mass_assignable(): void
+    {
+        $user = User::create([
+            'branch_id' => Branch::factory()->create()->id,
+            'username' => 'testuser',
+            'email' => 'test@example.com',
+            'password_hash' => 'hacked',
+        ]);
+
+        $this->assertNotSame('hacked', $user->password_hash);
+    }
 }

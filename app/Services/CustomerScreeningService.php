@@ -187,15 +187,13 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
 
     private function blockCustomerTransactions(Customer $customer): void
     {
-        $customer->update(['transactions_blocked' => true]);
+        $customer->transactions_blocked = true;
+        $customer->save();
     }
 
     private function rejectCustomer(Customer $customer, string $reason): void
     {
-        $customer->update([
-            'is_active' => false,
-            'rejection_reason' => $reason,
-        ]);
+        $customer->reject($reason);
     }
 
     /**

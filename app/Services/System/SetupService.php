@@ -14,11 +14,13 @@ class SetupService
         $admin = User::create([
             'username' => $config['admin_username'] ?? 'admin',
             'email' => $config['admin_email'],
-            'password_hash' => Hash::make($config['admin_password']),
             'role' => 'admin',
             'mfa_enabled' => false,
             'is_active' => true,
         ]);
+
+        $admin->password_hash = Hash::make($config['admin_password']);
+        $admin->save();
 
         Artisan::call('db:seed', [
             '--class' => 'CurrencySeeder',

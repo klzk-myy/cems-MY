@@ -54,11 +54,12 @@ class CustomerService implements CustomerServiceInterface
             // Encrypt sensitive fields
             $encryptedData = $this->encryptCustomerData($data);
 
-            // Initial risk always 'Low' - risk scoring module determines actual risk
-            $encryptedData['risk_rating'] = 'Low';
-
             // Create customer
             $customer = Customer::create($encryptedData);
+
+            // Initial risk always 'Low' - risk scoring module determines actual risk
+            $customer->risk_rating = 'Low';
+            $customer->save();
 
             // Screen against sanctions list (may upgrade to High if hit)
             $this->screenCustomer($customer, $data['full_name']);
@@ -311,11 +312,10 @@ class CustomerService implements CustomerServiceInterface
 
         // Update sanction status, risk rating, AND deactivate if hit found
         if ($hasSanctionHit) {
-            $customer->update([
-                'risk_rating' => 'High',
-                'sanction_hit' => true,
-                'is_active' => false, // Require Manager/Compliance approval to activate
-            ]);
+            $customer->risk_rating = 'High';
+            $customer->sanction_hit = true;
+            $customer->is_active = false; // Require Manager/Compliance approval to activate
+            $customer->save();
 
             // Log sanction hit
             $this->auditService->logWithSeverity(

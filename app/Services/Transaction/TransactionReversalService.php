@@ -140,14 +140,16 @@ class TransactionReversalService
             'rate' => $original->rate,
             'purpose' => 'Reversal: '.($original->purpose ?? 'Transaction reversal'),
             'source_of_funds' => $original->source_of_funds,
-            'status' => $status,
-            'hold_reason' => $holdReason,
             'cdd_level' => $original->cdd_level,
             'original_transaction_id' => $original->id,
-            'is_refund' => true,
-            'approved_by' => $status->isCompleted() ? $approvedBy : null,
-            'approved_at' => $status->isCompleted() ? now() : null,
         ]);
+
+        $refund->status = $status;
+        $refund->hold_reason = $holdReason;
+        $refund->is_refund = true;
+        $refund->approved_by = $status->isCompleted() ? $approvedBy : null;
+        $refund->approved_at = $status->isCompleted() ? now() : null;
+        $refund->save();
 
         $this->auditService->logWithSeverity(
             'refund_compliance_check',

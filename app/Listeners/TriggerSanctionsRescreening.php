@@ -191,7 +191,8 @@ class TriggerSanctionsRescreening
 
         DB::transaction(function () use ($transactions, $customer, $reason) {
             foreach ($transactions as $transaction) {
-                $transaction->update(['status' => TransactionStatus::PendingApproval]);
+                $transaction->status = TransactionStatus::PendingApproval;
+                $transaction->save();
 
                 FlaggedTransaction::create([
                     'customer_id' => $customer->id,
