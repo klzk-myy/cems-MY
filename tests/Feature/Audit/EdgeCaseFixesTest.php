@@ -3,6 +3,7 @@
 namespace Tests\Feature\Audit;
 
 use App\Models\SystemLog;
+use App\Services\Reporting\ExportService;
 use App\Services\System\LogRotationService;
 use App\Services\System\RateLimitService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,5 +33,18 @@ class EdgeCaseFixesTest extends TestCase
         $this->assertFileExists($result['path']);
         $this->assertSame(0, SystemLog::where('created_at', '<', $cutoff)->count());
         $this->assertSame(1, SystemLog::count());
+    }
+
+    public function test_export_service_counts_only_deleted_files(): void
+    {
+        $service = app(ExportService::class);
+        $path = $service->getExportPath('stale_report.csv');
+        file_put_contents($path, 'data');
+        touch($path, now()->subDay()->timestamp);
+
+        $deleted = $service->cleanupOldReports(0);
+
+        $this->assertGreaterThanOrEqual(1, $deleted);
+        $this->assertFileDoesNotExist($path);
     }
 }
