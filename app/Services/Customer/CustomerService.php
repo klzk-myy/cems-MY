@@ -104,7 +104,7 @@ class CustomerService implements CustomerServiceInterface
             $customer->update($encryptedData);
 
             // Risk rating is no longer mass-assignable; set it explicitly when provided.
-            if (array_key_exists('risk_rating', $data)) {
+            if (array_key_exists('risk_rating', $data) && filled($data['risk_rating'])) {
                 $customer->risk_rating = $data['risk_rating'];
                 $customer->save();
             }
