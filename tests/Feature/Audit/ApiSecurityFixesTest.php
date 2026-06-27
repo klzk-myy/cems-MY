@@ -142,13 +142,15 @@ class ApiSecurityFixesTest extends TestCase
         $user = User::create([
             'branch_id' => Branch::factory()->create()->id,
             'username' => 'testuser',
-            'email' => 'test@example.com',
-            'password_hash' => 'hacked',
+            'email' => 'test_mass_assign@example.com',
+            'password' => 'RealPass123!', // triggers mutator
+            'password_hash' => 'hacked', // ignored by mass assignment
         ]);
         $user->role = UserRole::Teller;
         $user->save();
 
         $this->assertNotSame('hacked', $user->password_hash);
+        $this->assertTrue(password_verify('RealPass123!', $user->password_hash));
     }
 
     public function test_default_form_request_fails_closed(): void
