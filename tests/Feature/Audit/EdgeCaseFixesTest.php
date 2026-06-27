@@ -3,13 +3,18 @@
 namespace Tests\Feature\Audit;
 
 use App\Enums\SystemHealthCheckStatus;
+use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
+use App\Services\AuditService;
 use App\Services\Reporting\ExportService;
 use App\Services\Reporting\ReportingService;
 use App\Services\System\LogRotationService;
 use App\Services\System\RateLimitService;
 use App\Services\System\SystemHealthService;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -66,5 +71,22 @@ class EdgeCaseFixesTest extends TestCase
         $result = $service->checkDiskSpace('/nonexistent_path_for_test');
 
         $this->assertSame(SystemHealthCheckStatus::Warning->value, $result['status']);
+    }
+
+    public function test_seal_job_throws_when_predecessor_missing(): void
+    {
+        $predecessor = SystemLog::factory()->create(['entry_hash' => 'existing_hash']);
+        $log = SystemLog::factory()->create(['entry_hash' => null]);
+        $predecessorId = $predecessor->id;
+
+        Event::listen(QueryExecuted::class, function (QueryExecuted $event) use ($predecessorId): void {
+            if (str_contains($event->sql, 'entry_hash') && str_contains($event->sql, 'order by')) {
+                DB::delete('delete from system_logs where id = ?', [$predecessorId]);
+                Event::forget(QueryExecuted::class);
+            }
+        });
+
+        $this->expectException(\RuntimeException::class);
+        (new SealAuditHashJob($log->id))->handle(app(AuditService::class));
     }
 }

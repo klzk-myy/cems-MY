@@ -42,9 +42,13 @@ class SealAuditHashJob implements ShouldQueue
                 ->orderBy('id', 'desc')
                 ->value('id');
 
+            $predecessor = null;
             if ($predecessorId) {
-                // Lock the predecessor row
-                SystemLog::where('id', $predecessorId)->lockForUpdate()->first();
+                $predecessor = SystemLog::where('id', $predecessorId)->lockForUpdate()->first();
+
+                if (! $predecessor) {
+                    throw new \RuntimeException("Predecessor log {$predecessorId} disappeared.");
+                }
 
                 // Guard: Check that no unsealed entries exist between predecessor and current entry.
                 // If unsealed entries are found, the immediate predecessor has not been sealed yet,
@@ -75,9 +79,7 @@ class SealAuditHashJob implements ShouldQueue
             }
 
             // Get the predecessor's hash (already locked, so stable)
-            $previousHash = $predecessorId
-                ? SystemLog::find($predecessorId)->entry_hash
-                : null;
+            $previousHash = $predecessor?->entry_hash ?? null;
 
             // Compute this entry's hash
             $entryHash = $auditService->computeEntryHash(
