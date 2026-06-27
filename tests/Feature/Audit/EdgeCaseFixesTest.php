@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Enums\SystemHealthCheckStatus;
 use App\Models\SystemLog;
 use App\Services\Reporting\ExportService;
 use App\Services\Reporting\ReportingService;
 use App\Services\System\LogRotationService;
 use App\Services\System\RateLimitService;
+use App\Services\System\SystemHealthService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -56,5 +58,13 @@ class EdgeCaseFixesTest extends TestCase
 
         $this->assertIsString($filePath);
         $this->assertFileExists(Storage::path($filePath));
+    }
+
+    public function test_disk_health_handles_zero_total_space(): void
+    {
+        $service = app(SystemHealthService::class);
+        $result = $service->checkDiskSpace('/nonexistent_path_for_test');
+
+        $this->assertSame(SystemHealthCheckStatus::Warning->value, $result['status']);
     }
 }

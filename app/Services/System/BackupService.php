@@ -332,13 +332,22 @@ class BackupService
         $localDisk = Storage::disk('local');
         $freeSpace = disk_free_space(storage_path());
         $totalSpace = disk_total_space(storage_path());
-        $usedPercentage = (($totalSpace - $freeSpace) / $totalSpace) * 100;
 
-        $results['storage_space'] = [
-            'passed' => $usedPercentage < 90,
-            'message' => sprintf('Storage usage: %.1f%%', $usedPercentage),
-            'free_space_gb' => round($freeSpace / 1024 / 1024 / 1024, 2),
-        ];
+        if ($totalSpace <= 0) {
+            $results['storage_space'] = [
+                'passed' => false,
+                'message' => 'Unable to determine storage size.',
+                'free_space_gb' => round($freeSpace / 1024 / 1024 / 1024, 2),
+            ];
+        } else {
+            $usedPercentage = (($totalSpace - $freeSpace) / $totalSpace) * 100;
+
+            $results['storage_space'] = [
+                'passed' => $usedPercentage < 90,
+                'message' => sprintf('Storage usage: %.1f%%', $usedPercentage),
+                'free_space_gb' => round($freeSpace / 1024 / 1024 / 1024, 2),
+            ];
+        }
 
         // Check 3: Backup directory writable
         $backupPath = storage_path('app/'.config('backup.backup.name'));

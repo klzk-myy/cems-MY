@@ -2,6 +2,7 @@
 
 namespace App\Services\System;
 
+use App\Enums\SystemHealthCheckStatus;
 use App\Enums\TestResultStatus;
 use App\Models\SystemHealthCheck;
 use App\Models\TestResult;
@@ -44,7 +45,7 @@ class SystemHealthService
             $responseTime = round((microtime(true) - $start) * 1000, 2);
 
             return [
-                'status' => SystemHealthCheck::STATUS_OK,
+                'status' => SystemHealthCheckStatus::Ok->value,
                 'message' => "Database connection successful ({$responseTime}ms)",
                 'details' => [
                     'driver' => DB::connection()->getDriverName(),
@@ -54,7 +55,7 @@ class SystemHealthService
             ];
         } catch (\Exception $e) {
             return [
-                'status' => SystemHealthCheck::STATUS_CRITICAL,
+                'status' => SystemHealthCheckStatus::Critical->value,
                 'message' => 'Database connection failed: '.$e->getMessage(),
                 'details' => [
                     'error' => $e->getMessage(),
@@ -84,7 +85,7 @@ class SystemHealthService
                 $driver = config('cache.default');
 
                 return [
-                    'status' => SystemHealthCheck::STATUS_OK,
+                    'status' => SystemHealthCheckStatus::Ok->value,
                     'message' => "Cache ({$driver}) operational ({$responseTime}ms)",
                     'details' => [
                         'driver' => $driver,
@@ -94,7 +95,7 @@ class SystemHealthService
             }
 
             return [
-                'status' => SystemHealthCheck::STATUS_WARNING,
+                'status' => SystemHealthCheckStatus::Warning->value,
                 'message' => 'Cache read/write mismatch',
                 'details' => [
                     'expected' => $testValue,
@@ -103,7 +104,7 @@ class SystemHealthService
             ];
         } catch (\Exception $e) {
             return [
-                'status' => SystemHealthCheck::STATUS_CRITICAL,
+                'status' => SystemHealthCheckStatus::Critical->value,
                 'message' => 'Cache unavailable: '.$e->getMessage(),
                 'details' => [
                     'error' => $e->getMessage(),
@@ -130,7 +131,7 @@ class SystemHealthService
                 $responseTime = round((microtime(true) - $start) * 1000, 2);
 
                 return [
-                    'status' => SystemHealthCheck::STATUS_OK,
+                    'status' => SystemHealthCheckStatus::Ok->value,
                     'message' => "Queue (Redis) operational ({$responseTime}ms)",
                     'details' => [
                         'driver' => $driver,
@@ -144,7 +145,7 @@ class SystemHealthService
                 $count = DB::table('jobs')->count();
 
                 return [
-                    'status' => SystemHealthCheck::STATUS_OK,
+                    'status' => SystemHealthCheckStatus::Ok->value,
                     'message' => "Queue (Database) operational ({$count} jobs)",
                     'details' => [
                         'driver' => $driver,
@@ -156,7 +157,7 @@ class SystemHealthService
             // For sync queue (development)
             if ($driver === 'sync') {
                 return [
-                    'status' => SystemHealthCheck::STATUS_WARNING,
+                    'status' => SystemHealthCheckStatus::Warning->value,
                     'message' => 'Queue running in sync mode (development only)',
                     'details' => [
                         'driver' => $driver,
@@ -165,7 +166,7 @@ class SystemHealthService
             }
 
             return [
-                'status' => SystemHealthCheck::STATUS_OK,
+                'status' => SystemHealthCheckStatus::Ok->value,
                 'message' => "Queue ({$driver}) operational",
                 'details' => [
                     'driver' => $driver,
@@ -173,7 +174,7 @@ class SystemHealthService
             ];
         } catch (\Exception $e) {
             return [
-                'status' => SystemHealthCheck::STATUS_CRITICAL,
+                'status' => SystemHealthCheckStatus::Critical->value,
                 'message' => 'Queue check failed: '.$e->getMessage(),
                 'details' => [
                     'error' => $e->getMessage(),
@@ -185,12 +186,21 @@ class SystemHealthService
     /**
      * Check disk space
      */
-    public function checkDiskSpace(): array
+    public function checkDiskSpace(?string $path = null): array
     {
         try {
-            $path = storage_path();
+            $path = $path ?? storage_path();
             $freeSpace = disk_free_space($path);
             $totalSpace = disk_total_space($path);
+
+            if ($totalSpace <= 0) {
+                return [
+                    'status' => SystemHealthCheckStatus::Warning->value,
+                    'message' => 'Unable to determine disk size.',
+                    'details' => ['error' => 'disk_total_space returned zero'],
+                ];
+            }
+
             $usedSpace = $totalSpace - $freeSpace;
             $usagePercent = round(($usedSpace / $totalSpace) * 100, 2);
 
@@ -199,14 +209,14 @@ class SystemHealthService
             $totalGB = round($totalSpace / (1024 * 1024 * 1024), 2);
             $usedGB = round($usedSpace / (1024 * 1024 * 1024), 2);
 
-            $status = SystemHealthCheck::STATUS_OK;
+            $status = SystemHealthCheckStatus::Ok->value;
             $message = "Disk usage: {$usagePercent}% ({$freeGB}GB free)";
 
             if ($usagePercent > 95) {
-                $status = SystemHealthCheck::STATUS_CRITICAL;
+                $status = SystemHealthCheckStatus::Critical->value;
                 $message = "CRITICAL: Disk usage at {$usagePercent}% (only {$freeGB}GB free)";
             } elseif ($usagePercent > 85) {
-                $status = SystemHealthCheck::STATUS_WARNING;
+                $status = SystemHealthCheckStatus::Warning->value;
                 $message = "WARNING: Disk usage at {$usagePercent}% ({$freeGB}GB free)";
             }
 
@@ -222,7 +232,7 @@ class SystemHealthService
             ];
         } catch (\Exception $e) {
             return [
-                'status' => SystemHealthCheck::STATUS_WARNING,
+                'status' => SystemHealthCheckStatus::Warning->value,
                 'message' => 'Disk space check failed: '.$e->getMessage(),
                 'details' => [
                     'error' => $e->getMessage(),
@@ -249,17 +259,17 @@ class SystemHealthService
             $peakMB = round($peakUsage / (1024 * 1024), 2);
             $limitMB = $memoryLimitBytes > 0 ? round($memoryLimitBytes / (1024 * 1024), 2) : 'unlimited';
 
-            $status = SystemHealthCheck::STATUS_OK;
+            $status = SystemHealthCheckStatus::Ok->value;
             $message = "Memory: {$currentMB}MB current, {$peakMB}MB peak";
 
             if ($memoryLimitBytes > 0) {
                 $usagePercent = round(($currentUsage / $memoryLimitBytes) * 100, 2);
 
                 if ($usagePercent > 95) {
-                    $status = SystemHealthCheck::STATUS_CRITICAL;
+                    $status = SystemHealthCheckStatus::Critical->value;
                     $message = "CRITICAL: Memory usage at {$usagePercent}% ({$currentMB}MB / {$limitMB}MB)";
                 } elseif ($usagePercent > 80) {
-                    $status = SystemHealthCheck::STATUS_WARNING;
+                    $status = SystemHealthCheckStatus::Warning->value;
                     $message = "WARNING: Memory usage at {$usagePercent}% ({$currentMB}MB / {$limitMB}MB)";
                 } else {
                     $message .= " ({$usagePercent}% of {$limitMB}MB limit)";
@@ -278,7 +288,7 @@ class SystemHealthService
             ];
         } catch (\Exception $e) {
             return [
-                'status' => SystemHealthCheck::STATUS_WARNING,
+                'status' => SystemHealthCheckStatus::Warning->value,
                 'message' => 'Memory check failed: '.$e->getMessage(),
                 'details' => [
                     'error' => $e->getMessage(),
@@ -297,7 +307,7 @@ class SystemHealthService
 
             if (! $lastRun) {
                 return [
-                    'status' => SystemHealthCheck::STATUS_WARNING,
+                    'status' => SystemHealthCheckStatus::Warning->value,
                     'message' => 'No test results found',
                     'details' => [
                         'last_run' => null,
@@ -305,21 +315,21 @@ class SystemHealthService
                 ];
             }
 
-            $status = SystemHealthCheck::STATUS_OK;
+            $status = SystemHealthCheckStatus::Ok->value;
             $message = "Last test run: {$lastRun->pass_rate}% pass rate";
 
             if ($lastRun->status === TestResultStatus::Failed) {
-                $status = SystemHealthCheck::STATUS_CRITICAL;
+                $status = SystemHealthCheckStatus::Critical->value;
                 $message = "CRITICAL: Last test run failed ({$lastRun->failed} failures)";
             } elseif ($lastRun->pass_rate < 90) {
-                $status = SystemHealthCheck::STATUS_WARNING;
+                $status = SystemHealthCheckStatus::Warning->value;
                 $message = "WARNING: Test pass rate low ({$lastRun->pass_rate}%)";
             }
 
             // Check if tests are stale (> 24 hours)
             $hoursAgo = $lastRun->created_at->diffInHours(now());
-            if ($hoursAgo > 24 && $status === SystemHealthCheck::STATUS_OK) {
-                $status = SystemHealthCheck::STATUS_WARNING;
+            if ($hoursAgo > 24 && $status === SystemHealthCheckStatus::Ok->value) {
+                $status = SystemHealthCheckStatus::Warning->value;
                 $message .= " (stale: {$hoursAgo}h ago)";
             }
 
@@ -339,7 +349,7 @@ class SystemHealthService
             ];
         } catch (\Exception $e) {
             return [
-                'status' => SystemHealthCheck::STATUS_WARNING,
+                'status' => SystemHealthCheckStatus::Warning->value,
                 'message' => 'Test status check failed: '.$e->getMessage(),
                 'details' => [
                     'error' => $e->getMessage(),
