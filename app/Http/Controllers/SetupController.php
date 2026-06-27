@@ -21,7 +21,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class SetupController extends Controller
@@ -304,12 +303,12 @@ class SetupController extends Controller
             $user = User::create([
                 'username' => $setupData['admin']['admin_name'],
                 'email' => $setupData['admin']['admin_email'],
+                'password' => $setupData['admin']['admin_password'],
                 'mfa_enabled' => false,
                 'is_active' => true,
             ]);
 
             $user->role = 'admin';
-            $user->password_hash = Hash::make($setupData['admin']['admin_password']);
             $user->save();
         }
 

@@ -196,4 +196,15 @@ class ApiSecurityFixesTest extends TestCase
             ])
             ->assertForbidden();
     }
+
+    public function test_user_creation_fails_without_password_hash(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        User::create([
+            'username' => 'nopassword',
+            'email' => 'nopassword@example.com',
+            'role' => UserRole::Teller->value,
+        ]);
+    }
 }

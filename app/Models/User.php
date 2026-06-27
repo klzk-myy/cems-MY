@@ -15,7 +15,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -83,13 +82,16 @@ class User extends Authenticatable
     /**
      * Ensure a password hash is always present before creation so the column
      * remains protected from mass assignment while still satisfying the NOT NULL
-     * constraint. Real callers must overwrite this with the user's actual hash.
+     * constraint. Real callers must provide a password via the mutator.
      */
     protected static function booted(): void
     {
         static::creating(function (User $user) {
             if (empty($user->password_hash)) {
-                $user->password_hash = Hash::make(Str::random(32));
+                throw new \InvalidArgumentException(
+                    'A password hash must be provided when creating a User. '
+                    .'Use the password mutator or set password_hash explicitly before saving.'
+                );
             }
         });
     }
