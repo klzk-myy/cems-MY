@@ -103,6 +103,8 @@ class TransactionImportService
                 'till_id' => isset($row[7]) && ! empty(trim($row[7])) ? trim($row[7]) : 'MAIN',
             ];
 
+            $data['idempotency_key'] = md5(json_encode($data));
+
             // Validate required fields
             if (empty($data['customer_id']) || empty($data['type']) || empty($data['currency_code']) ||
                 empty($data['amount_foreign']) || empty($data['rate']) || empty($data['purpose']) ||
