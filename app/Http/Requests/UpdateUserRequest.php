@@ -9,7 +9,7 @@ class UpdateUserRequest extends AuthorizedFormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('update', $this->route('user'));
     }
 
     public function rules(): array

@@ -163,4 +163,37 @@ class ApiSecurityFixesTest extends TestCase
 
         $this->assertFalse($request->authorize());
     }
+
+    public function test_non_admin_cannot_create_user_via_form_request(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->for($branch)->teller()->create();
+
+        $this->actingAs($teller)
+            ->post(route('users.store'), [
+                'username' => 'newuser',
+                'email' => 'new@example.com',
+                'password' => 'StrongPass123!',
+                'password_confirmation' => 'StrongPass123!',
+                'role' => 'teller',
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_non_manager_cannot_update_customer_via_form_request(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->for($branch)->teller()->create();
+        $customer = Customer::factory()->create();
+
+        $this->actingAs($teller)
+            ->putJson(route('api.v1.customers.update', $customer), [
+                'full_name' => 'Changed Name',
+                'id_type' => 'MyKad',
+                'id_number' => '900123-01-2345',
+                'date_of_birth' => '1990-01-01',
+                'nationality' => 'Malaysian',
+            ])
+            ->assertForbidden();
+    }
 }

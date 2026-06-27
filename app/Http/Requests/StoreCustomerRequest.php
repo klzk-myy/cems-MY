@@ -2,11 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Customer;
+
 class StoreCustomerRequest extends AuthorizedFormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('create', Customer::class);
     }
 
     public function rules(): array

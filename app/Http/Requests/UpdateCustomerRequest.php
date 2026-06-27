@@ -6,7 +6,7 @@ class UpdateCustomerRequest extends AuthorizedFormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('update', $this->route('customer'));
     }
 
     public function rules(): array
