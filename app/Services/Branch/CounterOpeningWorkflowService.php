@@ -77,7 +77,7 @@ class CounterOpeningWorkflowService
                 }
 
                 $dailyLimit = $dailyLimits[$currency] ?? null;
-                $this->tellerAllocationService->approveAllocation($allocation, $manager, $amount, $dailyLimit);
+                $allocation = $this->tellerAllocationService->approveAllocation($allocation, $manager, $amount, $dailyLimit);
                 $this->tellerAllocationService->activateAllocation($allocation);
 
                 $tellerAllocations[] = $allocation;

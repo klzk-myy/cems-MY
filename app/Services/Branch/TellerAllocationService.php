@@ -74,7 +74,9 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
             $locked->approve($approver, $approvedAmount, $dailyLimitMyr);
 
-            return $locked;
+            $allocation->refresh();
+
+            return $allocation;
         });
     }
 
