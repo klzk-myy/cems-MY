@@ -70,16 +70,12 @@ class SanctionsOrchestrationService
             ];
         }
 
-        try {
-            $result = $this->importService->importWithData($list, $data, $manual);
+        $result = $this->importService->importWithData($list, $data, $manual);
 
-            if ($downloadResult['filepath'] && file_exists($downloadResult['filepath'])) {
-                $this->downloadService->archiveFile($downloadResult['filepath'], $list->list_type->value ?? 'unknown');
-            }
-
-            return array_merge($result, ['success' => true]);
-        } catch (\Exception $e) {
-            throw $e;
+        if ($downloadResult['filepath'] && file_exists($downloadResult['filepath'])) {
+            $this->downloadService->archiveFile($downloadResult['filepath'], $list->list_type->value ?? 'unknown');
         }
+
+        return array_merge($result, ['success' => true]);
     }
 }
