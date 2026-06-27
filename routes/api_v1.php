@@ -108,14 +108,16 @@ Route::middleware(['branch.scope'])->group(function () {
         ->name('api.v1.sanctions.upload');
 
     // Reports API
-    Route::post('/reports/msb2', [RegulatoryReportController::class, 'generateMSB2'])
-        ->name('api.v1.reports.msb2');
-    Route::post('/reports/msb2/status', [RegulatoryReportController::class, 'updateMSB2Status'])
-        ->name('api.v1.reports.msb2.status');
-    Route::post('/reports/lmca/status', [RegulatoryReportController::class, 'updateLMCAStatus'])
-        ->name('api.v1.reports.lmca.status');
-    Route::get('/reports/download/{filename}', [ReportController::class, 'download'])
-        ->name('api.v1.reports.download');
+    Route::prefix('reports')->middleware('role:manager,admin')->group(function () {
+        Route::post('/msb2', [RegulatoryReportController::class, 'generateMSB2'])
+            ->name('api.v1.reports.msb2');
+        Route::post('/msb2/status', [RegulatoryReportController::class, 'updateMSB2Status'])
+            ->name('api.v1.reports.msb2.status');
+        Route::post('/lmca/status', [RegulatoryReportController::class, 'updateLMCAStatus'])
+            ->name('api.v1.reports.lmca.status');
+        Route::get('/download/{filename}', [ReportController::class, 'download'])
+            ->name('api.v1.reports.download');
+    });
 
     // Compliance Findings API
     Route::prefix('compliance')->group(function () {

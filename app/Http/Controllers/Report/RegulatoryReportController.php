@@ -144,6 +144,8 @@ class RegulatoryReportController extends Controller
 
     public function generateMSB2(StoreMsb2ReportRequest $request): JsonResponse
     {
+        $this->requireManagerOrAdmin();
+
         $filepath = $this->reportingService->generateMSB2($request->validated('date'));
 
         return response()->json([
