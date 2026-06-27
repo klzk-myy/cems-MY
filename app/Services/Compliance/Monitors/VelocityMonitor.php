@@ -47,8 +47,11 @@ class VelocityMonitor extends BaseMonitor
             ->havingRaw('SUM(amount_local) >= ?', [$this->warningThreshold])
             ->get();
 
+        $customerIds = $customerData->pluck('customer_id')->unique();
+        $customers = Customer::whereIn('id', $customerIds)->get()->keyBy('id');
+
         foreach ($customerData as $data) {
-            $finding = $this->createFindingFromData($data);
+            $finding = $this->createFindingFromData($data, $customers->get($data->customer_id));
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -57,15 +60,13 @@ class VelocityMonitor extends BaseMonitor
         return $findings;
     }
 
-    protected function createFindingFromData($data): ?array
+    protected function createFindingFromData($data, ?Customer $customer): ?array
     {
         $customerId = $data->customer_id;
         $amount24h = (string) $data->total_amount;
         $transactionCount = $data->transaction_count;
 
         if ($this->math->compare($amount24h, $this->threshold) >= 0) {
-            $customer = Customer::find($customerId);
-
             return $this->createFinding(
                 type: FindingType::VelocityExceeded,
                 severity: FindingSeverity::High,
@@ -83,8 +84,6 @@ class VelocityMonitor extends BaseMonitor
         }
 
         if ($this->math->compare($amount24h, $this->warningThreshold) >= 0) {
-            $customer = Customer::find($customerId);
-
             return $this->createFinding(
                 type: FindingType::VelocityExceeded,
                 severity: FindingSeverity::Medium,

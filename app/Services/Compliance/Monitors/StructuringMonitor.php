@@ -47,8 +47,11 @@ class StructuringMonitor extends BaseMonitor
             ->havingRaw('COUNT(*) >= ?', [$this->minTransactions])
             ->get();
 
+        $customerIds = $customerData->pluck('customer_id')->unique();
+        $customers = Customer::whereIn('id', $customerIds)->get()->keyBy('id');
+
         foreach ($customerData as $data) {
-            $finding = $this->createFindingFromData($data);
+            $finding = $this->createFindingFromData($data, $customers->get($data->customer_id));
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -57,15 +60,13 @@ class StructuringMonitor extends BaseMonitor
         return $findings;
     }
 
-    protected function createFindingFromData($data): ?array
+    protected function createFindingFromData($data, ?Customer $customer): ?array
     {
         $customerId = $data->customer_id;
         $transactionCount = $data->transaction_count;
         $totalAmount = (string) $data->total_amount;
 
         if ($transactionCount >= $this->minTransactions) {
-            $customer = Customer::find($customerId);
-
             return $this->createFinding(
                 type: FindingType::StructuringPattern,
                 severity: FindingSeverity::High,
