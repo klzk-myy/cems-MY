@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AccountingPeriodStatus;
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\UnbalancedJournalEntriesException;
 use App\Models\AccountingPeriod;
@@ -74,7 +75,7 @@ class PeriodCloseService
 
             // Step 3: Update period status
             $period->update([
-                'status' => 'closed',
+                'status' => AccountingPeriodStatus::Closed->value,
                 'closed_at' => now(),
                 'closed_by' => $closedBy,
             ]);
