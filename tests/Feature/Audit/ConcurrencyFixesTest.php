@@ -248,6 +248,9 @@ class ConcurrencyFixesTest extends TestCase
         $this->actingAs($manager);
         $service->confirm($first, ['confirmation_action' => 'reject'], $manager->id);
 
+        // Ensure the rejected confirmation was deleted
+        $this->assertDatabaseMissing('transaction_confirmations', ['id' => $first->id]);
+
         $second = $service->requestConfirmation($transaction, $teller->id);
         $this->assertSame(TransactionConfirmationStatus::Pending->value, $second->status->value);
         $this->assertNotSame($first->id, $second->id);

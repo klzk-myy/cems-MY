@@ -168,6 +168,10 @@ class TransactionConfirmationService
         $transaction->cancellation_reason = 'Rejected during confirmation: '.($notes ?? 'No reason provided');
         $transaction->save();
 
+        // Delete the rejected confirmation so a future request can create a new one.
+        // The unique index on transaction_id only protects non-deleted rows.
+        $confirmation->delete();
+
         $this->auditService->logWithSeverity('transaction_rejected', [
             'user_id' => $userId,
             'entity_type' => 'Transaction',
@@ -180,10 +184,6 @@ class TransactionConfirmationService
         ], 'WARNING');
 
         DB::commit();
-
-        // Delete the rejected confirmation so a future request can create a new one.
-        // The unique index on transaction_id only protects non-deleted rows.
-        $confirmation->delete();
 
         return [
             'success' => true,
