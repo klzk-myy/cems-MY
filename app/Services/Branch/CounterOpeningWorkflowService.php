@@ -56,18 +56,21 @@ class CounterOpeningWorkflowService
     {
         return DB::transaction(function () use ($manager, $counter, $teller, $approvedAmounts, $dailyLimits) {
             $today = now()->toDateString();
+            $currencyCodes = array_keys($approvedAmounts);
+
+            $allocations = TellerAllocation::where('user_id', $teller->id)
+                ->where('branch_id', $teller->branch_id)
+                ->where('counter_id', $counter->id)
+                ->whereIn('currency_code', $currencyCodes)
+                ->where('status', TellerAllocationStatus::PENDING->value)
+                ->whereDate('session_date', '<=', $today)
+                ->orderByDesc('session_date')
+                ->get()
+                ->keyBy('currency_code');
 
             $tellerAllocations = [];
             foreach ($approvedAmounts as $currency => $amount) {
-                $allocation = TellerAllocation::where('user_id', $teller->id)
-                    ->where('branch_id', $teller->branch_id)
-                    ->where('counter_id', $counter->id)
-                    ->where('currency_code', $currency)
-                    ->where('status', TellerAllocationStatus::PENDING->value)
-                    ->whereDate('session_date', '<=', $today)
-                    ->orderByDesc('session_date')
-                    ->first();
-
+                $allocation = $allocations->get($currency);
                 if (! $allocation) {
                     throw new Exception("No pending allocation found for {$currency}");
                 }
