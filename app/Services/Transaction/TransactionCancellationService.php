@@ -103,10 +103,13 @@ class TransactionCancellationService
             return false;
         }
 
-        return DB::transaction(function () use ($transaction, $requester, $reason) {
-            $stateMachine = new TransactionStateMachine($transaction);
+        $result = DB::transaction(function () use ($transaction, $requester, $reason) {
+            $lockedTransaction = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $stateMachine = new TransactionStateMachine($lockedTransaction);
 
-            $previousStatus = $transaction->status;
+            $previousStatus = $lockedTransaction->status;
 
             $result = $stateMachine->transitionTo(TransactionStatus::PendingCancellation, [
                 'reason' => $reason,
@@ -115,13 +118,13 @@ class TransactionCancellationService
 
             if ($result) {
                 Log::info('Transaction cancellation requested', [
-                    'transaction_id' => $transaction->id,
+                    'transaction_id' => $lockedTransaction->id,
                     'requested_by' => $requester->id,
                     'reason' => $reason,
                     'previous_status' => $previousStatus->value,
                 ]);
 
-                $this->notifyPendingCancellation($transaction, $requester, $reason);
+                $this->notifyPendingCancellation($lockedTransaction, $requester, $reason);
 
                 $this->auditService->logTransaction(
                     'cancellation_requested',
@@ -139,6 +142,10 @@ class TransactionCancellationService
 
             return $result;
         });
+
+        $transaction->refresh();
+
+        return $result;
     }
 
     /**
@@ -184,20 +191,23 @@ class TransactionCancellationService
             return false;
         }
 
-        return DB::transaction(function () use ($transaction, $approver, $reason) {
-            $stateMachine = new TransactionStateMachine($transaction);
+        $result = DB::transaction(function () use ($transaction, $approver, $reason) {
+            $lockedTransaction = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $stateMachine = new TransactionStateMachine($lockedTransaction);
 
-            $previousStatus = $transaction->status;
+            $previousStatus = $lockedTransaction->status;
 
-            $hasReservation = StockReservation::where('transaction_id', $transaction->id)
+            $hasReservation = StockReservation::where('transaction_id', $lockedTransaction->id)
                 ->where('status', StockReservationStatus::Pending)
                 ->exists();
 
             if ($previousStatus->isCompleted()) {
-                $this->reversalService->reversePositions($transaction);
-                $this->reversalService->reverseTillBalance($transaction);
-                $this->reverseTellerAllocation($transaction);
-                $this->reversalService->createReversingJournalEntries($transaction, $approver->id);
+                $this->reversalService->reversePositions($lockedTransaction);
+                $this->reversalService->reverseTillBalance($lockedTransaction);
+                $this->reverseTellerAllocation($lockedTransaction);
+                $this->reversalService->createReversingJournalEntries($lockedTransaction, $approver->id);
             }
 
             $result = $stateMachine->transitionTo(TransactionStatus::Cancelled, [
@@ -208,17 +218,17 @@ class TransactionCancellationService
 
             if ($result) {
                 if ($hasReservation) {
-                    $this->stockReleaseService->releaseReservation($transaction);
+                    $this->stockReleaseService->releaseReservation($lockedTransaction);
                 }
                 Log::info('Transaction cancellation approved', [
-                    'transaction_id' => $transaction->id,
+                    'transaction_id' => $lockedTransaction->id,
                     'approved_by' => $approver->id,
                     'reason' => $reason,
                 ]);
 
                 $this->auditService->logTransaction(
                     'cancellation_approved',
-                    $transaction->id,
+                    $lockedTransaction->id,
                     [
                         'old' => ['status' => $previousStatus->value],
                         'new' => [
@@ -229,11 +239,15 @@ class TransactionCancellationService
                     ]
                 );
 
-                Event::dispatch(new TransactionCancelled($transaction, $reason, $approver->id));
+                Event::dispatch(new TransactionCancelled($lockedTransaction, $reason, $approver->id));
             }
 
             return $result;
         });
+
+        $transaction->refresh();
+
+        return $result;
     }
 
     /**
@@ -268,27 +282,30 @@ class TransactionCancellationService
             return false;
         }
 
-        return DB::transaction(function () use ($transaction, $rejector, $reason) {
-            $previousStatus = $transaction->status;
-            $previousHistory = $transaction->transition_history ?? [];
+        $updated = DB::transaction(function () use ($transaction, $rejector, $reason) {
+            $lockedTransaction = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $previousStatus = $lockedTransaction->status;
+            $previousHistory = $lockedTransaction->transition_history ?? [];
 
-            $targetStatus = $this->determinePreviousStatus($transaction);
+            $targetStatus = $this->determinePreviousStatus($lockedTransaction);
 
             if (! $targetStatus) {
                 Log::warning('Cannot determine previous status for cancellation rejection', [
-                    'transaction_id' => $transaction->id,
+                    'transaction_id' => $lockedTransaction->id,
                 ]);
 
                 $targetStatus = TransactionStatus::Completed;
             }
 
-            if ($targetStatus === $transaction->status) {
+            if ($targetStatus === $lockedTransaction->status) {
                 Log::warning('Reject cancellation target status is same as current', [
-                    'transaction_id' => $transaction->id,
-                    'current_status' => $transaction->status->value,
+                    'transaction_id' => $lockedTransaction->id,
+                    'current_status' => $lockedTransaction->status->value,
                 ]);
 
-                $history = $transaction->transition_history ?? [];
+                $history = $lockedTransaction->transition_history ?? [];
                 $foundPendingCancellation = false;
                 $fallbackStatus = null;
                 foreach ($history as $entry) {
@@ -300,7 +317,7 @@ class TransactionCancellationService
                     if ($foundPendingCancellation) {
                         try {
                             $candidate = TransactionStatus::from($entry['from']);
-                            if ($candidate !== $transaction->status) {
+                            if ($candidate !== $lockedTransaction->status) {
                                 $fallbackStatus = $candidate;
                                 break;
                             }
@@ -312,18 +329,18 @@ class TransactionCancellationService
                 $targetStatus = $fallbackStatus ?? TransactionStatus::Completed;
             }
 
-            $oldStatus = $transaction->status;
-            $transaction->status = $targetStatus;
-            $transaction->version = $transaction->version + 1;
-            $transaction->transition_history = $this->appendStateHistoryEntry($transaction, $oldStatus, $targetStatus, [
+            $oldStatus = $lockedTransaction->status;
+            $lockedTransaction->status = $targetStatus;
+            $lockedTransaction->version = $lockedTransaction->version + 1;
+            $lockedTransaction->transition_history = $this->appendStateHistoryEntry($lockedTransaction, $oldStatus, $targetStatus, [
                 'reason' => "Cancellation rejected: {$reason}",
                 'user_id' => $rejector->id,
             ]);
-            $updated = $transaction->save();
+            $updated = $lockedTransaction->save();
 
             if ($updated) {
                 Log::info('Transaction cancellation rejected', [
-                    'transaction_id' => $transaction->id,
+                    'transaction_id' => $lockedTransaction->id,
                     'rejected_by' => $rejector->id,
                     'reason' => $reason,
                     'previous_status' => $previousStatus->value,
@@ -332,7 +349,7 @@ class TransactionCancellationService
 
                 $this->auditService->logTransaction(
                     'cancellation_rejected',
-                    $transaction->id,
+                    $lockedTransaction->id,
                     [
                         'old' => ['status' => $previousStatus->value],
                         'new' => [
@@ -346,6 +363,10 @@ class TransactionCancellationService
 
             return $updated;
         });
+
+        $transaction->refresh();
+
+        return $updated;
     }
 
     /**

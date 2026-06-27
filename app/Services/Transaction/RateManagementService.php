@@ -9,8 +9,10 @@ use App\Services\AuditService;
 use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\DTOs\RateOverrideResult;
 use App\Services\System\MathService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class RateManagementService implements RateManagementServiceInterface
 {
@@ -93,16 +95,43 @@ class RateManagementService implements RateManagementServiceInterface
             );
         }
 
-        $query = ExchangeRate::where('currency_code', $currencyCode);
-        if ($branchId !== null) {
-            $query->forBranch($branchId);
-        }
-        $exchangeRate = $query->lockForUpdate()->first();
+        return DB::transaction(function () use ($currencyCode, $newBuyRate, $newSellRate, $approvedBy, $reason, $branchId) {
+            $query = ExchangeRate::where('currency_code', $currencyCode);
+            if ($branchId !== null) {
+                $query->forBranch($branchId);
+            }
+            $exchangeRate = $query->lockForUpdate()->first();
 
-        if (! $exchangeRate) {
-            $exchangeRate = ExchangeRate::create([
-                'branch_id' => $branchId,
-                'currency_code' => $currencyCode,
+            if (! $exchangeRate) {
+                try {
+                    $exchangeRate = ExchangeRate::create([
+                        'branch_id' => $branchId,
+                        'currency_code' => $currencyCode,
+                        'rate_buy' => $newBuyRate,
+                        'rate_sell' => $newSellRate,
+                        'source' => 'manual_override',
+                        'fetched_at' => now(),
+                    ]);
+                } catch (UniqueConstraintViolationException $e) {
+                    $exchangeRate = $query->lockForUpdate()->firstOrFail();
+                }
+
+                // Invalidate cache
+                $cacheKey = 'rate:'.$currencyCode.($branchId ? ':'.$branchId : '');
+                Cache::forget($cacheKey);
+
+                return new RateOverrideResult(
+                    success: true,
+                    message: "Rate for {$currencyCode} created successfully",
+                    previousRate: null,
+                    newRate: $newBuyRate,
+                );
+            }
+
+            $oldBuyRate = $exchangeRate->rate_buy;
+            $oldSellRate = $exchangeRate->rate_sell;
+
+            $exchangeRate->update([
                 'rate_buy' => $newBuyRate,
                 'rate_sell' => $newSellRate,
                 'source' => 'manual_override',
@@ -113,52 +142,31 @@ class RateManagementService implements RateManagementServiceInterface
             $cacheKey = 'rate:'.$currencyCode.($branchId ? ':'.$branchId : '');
             Cache::forget($cacheKey);
 
+            app(AuditService::class)->log(
+                'rate_overridden',
+                $approvedBy->id,
+                'ExchangeRate',
+                $exchangeRate->id,
+                [
+                    'old_buy_rate' => $oldBuyRate,
+                    'old_sell_rate' => $oldSellRate,
+                    'new_buy_rate' => $newBuyRate,
+                    'new_sell_rate' => $newSellRate,
+                    'reason' => $reason,
+                ],
+                [
+                    'currency_code' => $currencyCode,
+                    'branch_id' => $branchId,
+                ]
+            );
+
             return new RateOverrideResult(
                 success: true,
-                message: "Rate for {$currencyCode} created successfully",
-                previousRate: null,
+                message: "Rate for {$currencyCode} overridden successfully",
+                previousRate: $oldBuyRate,
                 newRate: $newBuyRate,
             );
-        }
-
-        $oldBuyRate = $exchangeRate->rate_buy;
-        $oldSellRate = $exchangeRate->rate_sell;
-
-        $exchangeRate->update([
-            'rate_buy' => $newBuyRate,
-            'rate_sell' => $newSellRate,
-            'source' => 'manual_override',
-            'fetched_at' => now(),
-        ]);
-
-        // Invalidate cache
-        $cacheKey = 'rate:'.$currencyCode.($branchId ? ':'.$branchId : '');
-        Cache::forget($cacheKey);
-
-        app(AuditService::class)->log(
-            'rate_overridden',
-            $approvedBy->id,
-            'ExchangeRate',
-            $exchangeRate->id,
-            [
-                'old_buy_rate' => $oldBuyRate,
-                'old_sell_rate' => $oldSellRate,
-                'new_buy_rate' => $newBuyRate,
-                'new_sell_rate' => $newSellRate,
-                'reason' => $reason,
-            ],
-            [
-                'currency_code' => $currencyCode,
-                'branch_id' => $branchId,
-            ]
-        );
-
-        return new RateOverrideResult(
-            success: true,
-            message: "Rate for {$currencyCode} overridden successfully",
-            previousRate: $oldBuyRate,
-            newRate: $newBuyRate,
-        );
+        });
     }
 
     public function validateTransactionRate(

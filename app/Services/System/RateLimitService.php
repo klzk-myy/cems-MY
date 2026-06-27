@@ -201,13 +201,10 @@ class RateLimitService
         $window = config('security.ip_blocking.time_window_minutes', 5);
         $threshold = config('security.ip_blocking.failed_attempts_threshold', 10);
 
-        // Increment failed attempts counter
-        $attempts = Cache::store(config('ratelimit.store'))->increment($cacheKey);
-
-        // Set TTL on first attempt
-        if ($attempts === 1) {
-            Cache::store(config('ratelimit.store'))->put($cacheKey, $attempts, now()->addMinutes($window));
-        }
+        // Seed counter atomically and then increment to avoid a TTL-reset race
+        $store = Cache::store(config('ratelimit.store'));
+        $store->add($cacheKey, 0, now()->addMinutes($window));
+        $attempts = $store->increment($cacheKey);
 
         // Auto-block if threshold exceeded
         if ($attempts >= $threshold) {

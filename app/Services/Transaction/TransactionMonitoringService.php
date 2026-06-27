@@ -34,23 +34,26 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
     public function monitorTransaction(Transaction $transaction): array
     {
         return DB::transaction(function () use ($transaction) {
+            $lockedTransaction = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
             $flags = [];
 
             // Velocity check - 24h cumulative threshold
             $velocityCheck = $this->complianceService->checkVelocity(
-                $transaction->customer_id,
-                $transaction->amount_local
+                $lockedTransaction->customer_id,
+                $lockedTransaction->amount_local
             );
             if ($velocityCheck['threshold_exceeded']) {
-                $flags[] = $this->createFlag($transaction, ComplianceFlagType::Velocity, "24h velocity exceeded: RM {$velocityCheck['with_new_transaction']}");
+                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::Velocity, "24h velocity exceeded: RM {$velocityCheck['with_new_transaction']}");
                 // Calculate count before logging (avoid N+1)
-                $transactionCount = Transaction::where('customer_id', $transaction->customer_id)
+                $transactionCount = Transaction::where('customer_id', $lockedTransaction->customer_id)
                     ->where('created_at', '>=', now()->subHours(24))
                     ->count();
-                $this->auditService->logAmlMonitorEvent('aml_velocity_alert_triggered', $transaction->id, [
+                $this->auditService->logAmlMonitorEvent('aml_velocity_alert_triggered', $lockedTransaction->id, [
                     'entity_type' => 'Transaction',
                     'new' => [
-                        'customer_id' => $transaction->customer_id,
+                        'customer_id' => $lockedTransaction->customer_id,
                         'velocity_amount' => $velocityCheck['with_new_transaction'],
                         'transaction_count' => $transactionCount,
                     ],
@@ -58,12 +61,12 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
             }
 
             // Structuring detection - multiple small transactions
-            if ($this->complianceService->checkStructuring($transaction->customer_id)) {
-                $flags[] = $this->createFlag($transaction, ComplianceFlagType::Structuring, 'Potential structuring: 3+ transactions under RM '.number_format((float) $this->thresholdService->getStandardCddThreshold()).' within 1 hour');
-                $this->auditService->logAmlMonitorEvent('aml_structuring_detected', $transaction->id, [
+            if ($this->complianceService->checkStructuring($lockedTransaction->customer_id)) {
+                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::Structuring, 'Potential structuring: 3+ transactions under RM '.number_format((float) $this->thresholdService->getStandardCddThreshold()).' within 1 hour');
+                $this->auditService->logAmlMonitorEvent('aml_structuring_detected', $lockedTransaction->id, [
                     'entity_type' => 'Transaction',
                     'new' => [
-                        'customer_id' => $transaction->customer_id,
+                        'customer_id' => $lockedTransaction->customer_id,
                         'pattern' => 'aggregate_transactions',
                     ],
                 ]);
@@ -71,37 +74,37 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
             // Aggregate transaction check - related transactions exceeding threshold
             $aggregateCheck = $this->complianceService->checkAggregateTransactions(
-                $transaction->customer_id,
-                $transaction->amount_local
+                $lockedTransaction->customer_id,
+                $lockedTransaction->amount_local
             );
             if ($aggregateCheck['has_aggregate_concern']) {
                 $flags[] = $this->createFlag(
-                    $transaction,
+                    $lockedTransaction,
                     ComplianceFlagType::LargeAmount,
                     "Aggregate concern: RM {$aggregateCheck['total_aggregate']} across {$aggregateCheck['transaction_count']} transactions in 24h"
                 );
             }
 
             // Unusual pattern detection
-            if ($this->isUnusualPattern($transaction)) {
-                $flags[] = $this->createFlag($transaction, ComplianceFlagType::ManualReview, 'Transaction deviates 200% from customer average');
+            if ($this->isUnusualPattern($lockedTransaction)) {
+                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::ManualReview, 'Transaction deviates 200% from customer average');
             }
 
             // High-risk country transaction
-            if ($this->isHighRiskCountry($transaction)) {
-                $flags[] = $this->createFlag($transaction, ComplianceFlagType::HighRiskCountry, 'High-risk country transaction: '.$transaction->customer->nationality);
+            if ($this->isHighRiskCountry($lockedTransaction)) {
+                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::HighRiskCountry, 'High-risk country transaction: '.$lockedTransaction->customer->nationality);
             }
 
             // Profile deviation check
-            if ($this->isProfileDeviation($transaction)) {
-                $flags[] = $this->createFlag($transaction, ComplianceFlagType::ProfileDeviation, 'Transaction volume exceeds customer profile');
+            if ($this->isProfileDeviation($lockedTransaction)) {
+                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::ProfileDeviation, 'Transaction volume exceeds customer profile');
             }
 
             // Duration threshold check for large transactions on hold
-            $durationCheck = $this->complianceService->checkTransactionDuration($transaction);
+            $durationCheck = $this->complianceService->checkTransactionDuration($lockedTransaction);
             if ($durationCheck['has_duration_concern']) {
                 $flags[] = $this->createFlag(
-                    $transaction,
+                    $lockedTransaction,
                     ComplianceFlagType::EddRequired,
                     "Duration threshold exceeded: {$durationCheck['hours_on_hold']} hours on hold (threshold: {$durationCheck['threshold_hours']} hours) - {$durationCheck['severity']}"
                 );
@@ -109,23 +112,23 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
             // Hold decision
             $holdCheck = $this->complianceService->requiresHold(
-                $transaction->amount_local,
-                $transaction->customer
+                $lockedTransaction->amount_local,
+                $lockedTransaction->customer
             );
             if ($holdCheck->requiresHold
-                && $transaction->status->isCompleted()
-                && $transaction->approved_by === null) {
-                $transaction->update(['status' => TransactionStatus::PendingApproval]);
+                && $lockedTransaction->status->isCompleted()
+                && $lockedTransaction->approved_by === null) {
+                $lockedTransaction->update(['status' => TransactionStatus::PendingApproval]);
                 foreach ($holdCheck->reasons as $reason) {
-                    $flags[] = $this->createFlag($transaction, ComplianceFlagType::EddRequired, $reason);
+                    $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::EddRequired, $reason);
                 }
             }
 
             return [
-                'transaction_id' => $transaction->id,
+                'transaction_id' => $lockedTransaction->id,
                 'flags_created' => count($flags),
                 'flags' => $flags,
-                'status' => $transaction->status,
+                'status' => $lockedTransaction->status,
             ];
         });
     }

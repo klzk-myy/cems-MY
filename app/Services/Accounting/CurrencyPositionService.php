@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Contracts\CurrencyPositionServiceInterface;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -70,16 +71,9 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 ->lockForUpdate()
                 ->first();
 
-            // Create position if it doesn't exist
+            // Create position if it doesn't exist (race-safe)
             if ($position === null) {
-                $position = new CurrencyPosition([
-                    'currency_code' => $currencyCode,
-                    'branch_id' => $branchId,
-                    'quantity' => '0',
-                    'average_cost' => $rate,
-                    'current_rate' => $rate,
-                ]);
-                $position->save();
+                $position = $this->getOrCreatePosition((int) $branchId, $currencyCode, $rate);
             }
 
             $oldBalance = $position->quantity;
@@ -134,6 +128,35 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         Cache::forget($cacheKey);
 
         return $position;
+    }
+
+    public function getOrCreatePosition(int $branchId, string $currencyCode, string $rate): CurrencyPosition
+    {
+        return DB::transaction(function () use ($branchId, $currencyCode, $rate) {
+            $position = CurrencyPosition::where('currency_code', $currencyCode)
+                ->where('branch_id', $branchId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($position) {
+                return $position;
+            }
+
+            try {
+                return CurrencyPosition::create([
+                    'currency_code' => $currencyCode,
+                    'branch_id' => $branchId,
+                    'quantity' => '0',
+                    'average_cost' => $rate,
+                    'current_rate' => $rate,
+                ]);
+            } catch (UniqueConstraintViolationException $e) {
+                return CurrencyPosition::where('currency_code', $currencyCode)
+                    ->where('branch_id', $branchId)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            }
+        });
     }
 
     /**
@@ -435,6 +458,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     {
         $reservation = StockReservation::where('transaction_id', $transactionId)
             ->where('status', StockReservationStatus::Pending)
+            ->lockForUpdate()
             ->first();
 
         if ($reservation === null || $reservation->isExpired()) {
@@ -457,6 +481,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     {
         $reservation = StockReservation::where('transaction_id', $transactionId)
             ->where('status', StockReservationStatus::Pending)
+            ->lockForUpdate()
             ->first();
 
         if ($reservation === null) {

@@ -6,6 +6,7 @@ use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Services\System\MathService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class RateApiService
@@ -108,15 +109,17 @@ class RateApiService
                 $query->forBranch($branchId);
             }
 
-            $query->updateOrCreate(
-                ['currency_code' => $currencyCode, 'branch_id' => $branchId],
-                [
-                    'rate_buy' => $rateData['buy'],
-                    'rate_sell' => $rateData['sell'],
-                    'source' => 'api',
-                    'fetched_at' => $now,
-                ]
-            );
+            DB::transaction(function () use ($query, $currencyCode, $branchId, $rateData, $now) {
+                $query->updateOrCreate(
+                    ['currency_code' => $currencyCode, 'branch_id' => $branchId],
+                    [
+                        'rate_buy' => $rateData['buy'],
+                        'rate_sell' => $rateData['sell'],
+                        'source' => 'api',
+                        'fetched_at' => $now,
+                    ]
+                );
+            });
         }
     }
 

@@ -16,6 +16,7 @@ use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Http\Traits\ValidatorMethods;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
+use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
@@ -401,14 +402,17 @@ class TransactionService implements TransactionServiceInterface
                 // Update teller allocation if this was a teller transaction
                 if ($allocationForUpdate) {
                     $isBuy = ($data['type'] === TransactionType::Buy->value);
-                    // Buy: money changer buys foreign currency FROM customer → allocation increases
-                    // Sell: money changer sells foreign currency TO customer → allocation decreases
+                    // Re-fetch allocation with lock to prevent concurrent modification
+                    $lockedAllocation = TellerAllocation::where('id', $allocationForUpdate->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
                     if ($isBuy) {
-                        $allocationForUpdate->add($amountForeign);
+                        $lockedAllocation->add($amountForeign);
                     } else {
-                        $allocationForUpdate->deduct($amountForeign);
+                        $lockedAllocation->deduct($amountForeign);
                     }
-                    $allocationForUpdate->addDailyUsed($amountLocal);
+                    $lockedAllocation->addDailyUsed($amountLocal);
                 }
 
                 $this->createAccountingEntries($transaction);
@@ -772,6 +776,10 @@ class TransactionService implements TransactionServiceInterface
                         $lockedTransaction->currency_code
                     );
                     if ($allocationForUpdate) {
+                        $allocationForUpdate = TellerAllocation::where('id', $allocationForUpdate->id)
+                            ->lockForUpdate()
+                            ->firstOrFail();
+
                         if ($lockedTransaction->type->isBuy()) {
                             $allocationForUpdate->add((string) $lockedTransaction->amount_foreign);
                         } else {

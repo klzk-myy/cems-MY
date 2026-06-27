@@ -155,8 +155,8 @@ class AccountingService implements AccountingServiceInterface
         $rejectedBy = $rejectedBy ?? auth()->id();
 
         return DB::transaction(function () use ($entry, $rejectionNotes) {
-            // Re-fetch to ensure we see the latest committed state
-            $entry = JournalEntry::find($entry->id);
+            // Re-fetch with a row lock to serialize concurrent reject attempts
+            $entry = JournalEntry::where('id', $entry->id)->lockForUpdate()->firstOrFail();
 
             if (! $entry->isPending()) {
                 throw new \InvalidArgumentException('Only pending entries can be rejected');
@@ -226,8 +226,8 @@ class AccountingService implements AccountingServiceInterface
         $reversedBy = $reversedBy ?? auth()->id();
 
         return DB::transaction(function () use ($originalEntry, $reason, $reversedBy) {
-            // Re-fetch to ensure we see the latest committed state
-            $originalEntry = JournalEntry::find($originalEntry->id);
+            // Re-fetch with a row lock to serialize concurrent reverse attempts
+            $originalEntry = JournalEntry::where('id', $originalEntry->id)->lockForUpdate()->firstOrFail();
 
             // Validation 1: Check if entry is already reversed
             if ($originalEntry->isReversed()) {

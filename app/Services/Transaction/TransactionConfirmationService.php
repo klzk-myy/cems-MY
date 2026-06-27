@@ -43,40 +43,47 @@ class TransactionConfirmationService
      */
     public function requestConfirmation(Transaction $transaction, int $userId): TransactionConfirmation
     {
-        // Check for existing pending or confirmed confirmation
-        $existing = TransactionConfirmation::where('transaction_id', $transaction->id)
-            ->whereIn('status', [
-                TransactionConfirmationStatus::Pending->value,
-                TransactionConfirmationStatus::Confirmed->value,
-            ])
-            ->first();
+        return DB::transaction(function () use ($transaction, $userId) {
+            // Lock the transaction row to serialise concurrent confirmation requests
+            $lockedTransaction = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($existing) {
-            return $existing;
-        }
+            // Check for existing pending or confirmed confirmation
+            $existing = TransactionConfirmation::where('transaction_id', $lockedTransaction->id)
+                ->whereIn('status', [
+                    TransactionConfirmationStatus::Pending->value,
+                    TransactionConfirmationStatus::Confirmed->value,
+                ])
+                ->first();
 
-        // Create new confirmation request
-        $confirmationToken = bin2hex(random_bytes(32));
+            if ($existing) {
+                return $existing;
+            }
 
-        $confirmation = TransactionConfirmation::create([
-            'transaction_id' => $transaction->id,
-            'user_id' => $userId,
-            'status' => TransactionConfirmationStatus::Pending->value,
-            'confirmation_token' => $confirmationToken,
-            'expires_at' => now()->addMinutes(30),
-        ]);
+            // Create new confirmation request
+            $confirmationToken = bin2hex(random_bytes(32));
 
-        $this->auditService->logWithSeverity('confirmation_requested', [
-            'user_id' => $userId,
-            'entity_type' => 'Transaction',
-            'entity_id' => $transaction->id,
-            'new_values' => [
-                'confirmation_id' => $confirmation->id,
-                'amount_local' => $transaction->amount_local,
-            ],
-        ], 'INFO');
+            $confirmation = TransactionConfirmation::create([
+                'transaction_id' => $lockedTransaction->id,
+                'user_id' => $userId,
+                'status' => TransactionConfirmationStatus::Pending->value,
+                'confirmation_token' => $confirmationToken,
+                'expires_at' => now()->addMinutes(30),
+            ]);
 
-        return $confirmation;
+            $this->auditService->logWithSeverity('confirmation_requested', [
+                'user_id' => $userId,
+                'entity_type' => 'Transaction',
+                'entity_id' => $lockedTransaction->id,
+                'new_values' => [
+                    'confirmation_id' => $confirmation->id,
+                    'amount_local' => $lockedTransaction->amount_local,
+                ],
+            ], 'INFO');
+
+            return $confirmation;
+        });
     }
 
     /**

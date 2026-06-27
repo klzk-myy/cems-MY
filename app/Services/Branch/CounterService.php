@@ -223,15 +223,21 @@ class CounterService
         ?string $notes = null,
         ?User $supervisor = null
     ): CounterSession {
-        $allocation = $session->tellerAllocation;
+        return DB::transaction(function () use ($session, $user, $closingFloats, $notes, $supervisor) {
+            $closedSession = $this->closeSession($session, $user, $closingFloats, $notes, $supervisor);
 
-        $closedSession = $this->closeSession($session, $user, $closingFloats, $notes, $supervisor);
+            // Return teller allocation to pool if one exists for this session
+            $allocation = TellerAllocation::where('user_id', $user->id)
+                ->where('counter_id', $session->counter_id)
+                ->where('status', TellerAllocationStatus::ACTIVE)
+                ->first();
 
-        if ($allocation) {
-            $allocation->returnToPool();
-        }
+            if ($allocation) {
+                $allocation->returnToPool();
+            }
 
-        return $closedSession;
+            return $closedSession;
+        });
     }
 
     /**
@@ -294,20 +300,21 @@ class CounterService
             throw new SessionOwnershipException;
         }
 
-        // Validate toUser is not already at another counter (with lock to prevent race condition)
-        $existingSession = CounterSession::where('user_id', $toUser->id)
-            ->where('status', CounterSessionStatus::Open->value)
-            ->lockForUpdate()
-            ->first();
-
-        if ($existingSession && $existingSession->id !== $session->id) {
-            throw new UserAlreadyAtCounterException($toUser->id);
-        }
-
         $now = now();
         $today = $now->toDateString();
 
         return DB::transaction(function () use ($session, $fromUser, $toUser, $supervisor, $physicalCounts, $now, $today) {
+            // Validate toUser is not already at another counter (with lock to prevent race condition)
+            // Lock is held inside transaction to prevent concurrent handovers assigning toUser twice
+            $existingSession = CounterSession::where('user_id', $toUser->id)
+                ->where('status', CounterSessionStatus::Open->value)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingSession && $existingSession->id !== $session->id) {
+                throw new UserAlreadyAtCounterException($toUser->id);
+            }
+
             // Pre-fetch all currencies to avoid N+1
             $currencies = $this->resolveCurrenciesForCounts($physicalCounts);
 

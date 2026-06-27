@@ -7,6 +7,7 @@ use App\Enums\TransactionType;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\JournalEntry;
+use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
@@ -32,7 +33,7 @@ class TransactionReversalService
 
     public function reverse(Transaction $transaction, User $requester, string $reason): bool
     {
-        return DB::transaction(function () use ($transaction, $requester, $reason) {
+        $result = DB::transaction(function () use ($transaction, $requester, $reason) {
             // 1. Enforce the state transition FIRST. If it fails, nothing else happens.
             $lockedTransaction = Transaction::where('id', $transaction->id)
                 ->lockForUpdate()
@@ -62,6 +63,10 @@ class TransactionReversalService
 
             return true;
         });
+
+        $transaction->refresh();
+
+        return $result;
     }
 
     public function canReverse(Transaction $transaction): bool
@@ -304,6 +309,10 @@ class TransactionReversalService
                 $transaction->currency_code
             );
             if ($allocation) {
+                $allocation = TellerAllocation::where('id', $allocation->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
                 if ($transaction->type->isBuy()) {
                     $allocation->deduct((string) $transaction->amount_foreign);
                     $allocation->subtractDailyUsed((string) $transaction->amount_local);
