@@ -43,7 +43,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', CurrentUserController::class)->name('api.v1.user');
 
-    Route::middleware(['branch.scope', 'stateful'])->group(function () {
+    Route::middleware(['branch.scope'])->group(function () {
         // Transactions API
         Route::get('/transactions', [TransactionController::class, 'index'])
             ->name('api.v1.transactions.index');

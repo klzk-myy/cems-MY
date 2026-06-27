@@ -28,4 +28,15 @@ class SecurityHardeningTest extends TestCase
 
         $this->assertEmpty($response->headers->getCookies());
     }
+
+    public function test_branch_scoped_api_routes_do_not_set_session_cookie(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('test')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson(route('api.v1.customers.index'));
+
+        $this->assertEmpty($response->headers->getCookies());
+    }
 }
