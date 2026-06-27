@@ -169,67 +169,59 @@ class AuditService implements AuditServiceInterface
      */
     public function verifyChainIntegrity(?int $limit = null): array
     {
+        $previousHash = null;
+        $checked = 0;
+        $broken = null;
+
+        $query = SystemLog::whereNotNull('entry_hash')->orderBy('id', 'asc');
+
         if ($limit !== null) {
-            // Get the last N entries with hashes, then re-sort ascending for chain verification.
-            // Using a subquery to get the last N IDs prevents the broken ORDER BY DESC, ASC issue.
             $lastIds = SystemLog::whereNotNull('entry_hash')
                 ->orderBy('id', 'desc')
                 ->limit($limit)
                 ->pluck('id');
 
-            $entries = SystemLog::whereIn('id', $lastIds)
-                ->whereNotNull('entry_hash')
-                ->orderBy('id', 'asc')
-                ->get();
-        } else {
-            $entries = SystemLog::whereNotNull('entry_hash')
-                ->orderBy('id', 'asc')
-                ->get();
+            $query->whereIn('id', $lastIds);
         }
 
-        $previousHash = null;
+        $query->chunkById(1000, function ($entries) use (&$previousHash, &$checked, &$broken) {
+            foreach ($entries as $entry) {
+                // Verify the previous_hash chain link using timing-safe comparison
+                if (! hash_equals((string) $previousHash, (string) $entry->previous_hash)) {
+                    $broken = ['valid' => false, 'broken_at' => $entry->id, 'message' => 'Previous hash mismatch.'];
 
-        foreach ($entries as $entry) {
-            // Skip entries without hash (migrated data)
-            if (empty($entry->entry_hash)) {
-                continue;
+                    return false;
+                }
+
+                // Recompute the entry hash and verify it matches
+                $recomputedHash = $this->computeEntryHash(
+                    $entry->created_at->toIso8601String(),
+                    $entry->user_id,
+                    $entry->action,
+                    $entry->entity_type,
+                    $entry->entity_id,
+                    $entry->previous_hash
+                );
+
+                if (! hash_equals($recomputedHash, (string) $entry->entry_hash)) {
+                    $broken = ['valid' => false, 'broken_at' => $entry->id, 'message' => 'Entry hash mismatch.'];
+
+                    return false;
+                }
+
+                $previousHash = $entry->entry_hash;
+                $checked++;
             }
+        });
 
-            // Verify the previous_hash chain link using timing-safe comparison
-            if (! hash_equals((string) $previousHash, (string) $entry->previous_hash)) {
-                return [
-                    'valid' => false,
-                    'broken_at' => $entry->id,
-                    'message' => "Chain broken at entry {$entry->id}: previous_hash mismatch. Expected ".
-                        ($previousHash ?? 'null').', got '.($entry->previous_hash ?? 'null'),
-                ];
-            }
-
-            // Recompute the entry hash and verify it matches
-            $recomputedHash = $this->computeEntryHash(
-                $entry->created_at->toIso8601String(),
-                $entry->user_id,
-                $entry->action,
-                $entry->entity_type,
-                $entry->entity_id,
-                $entry->previous_hash
-            );
-
-            if (! hash_equals($recomputedHash, (string) $entry->entry_hash)) {
-                return [
-                    'valid' => false,
-                    'broken_at' => $entry->id,
-                    'message' => "Hash mismatch at entry {$entry->id}: stored hash appears to have been tampered with.",
-                ];
-            }
-
-            $previousHash = $entry->entry_hash;
+        if ($broken) {
+            return $broken;
         }
 
         return [
             'valid' => true,
             'broken_at' => null,
-            'message' => "Chain integrity verified: {$entries->count()} entries checked.",
+            'message' => "Chain integrity verified: {$checked} entries checked.",
         ];
     }
 
