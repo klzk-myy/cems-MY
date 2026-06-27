@@ -100,4 +100,27 @@ class ApiSecurityFixesTest extends TestCase
             ->getJson(route('api.v1.customers.history', $customerB))
             ->assertForbidden();
     }
+
+    public function test_teller_sees_only_own_branch_transactions_in_customer_history(): void
+    {
+        $branchA = Branch::factory()->create();
+        $branchB = Branch::factory()->create();
+        $tellerA = User::factory()->for($branchA)->create(['role' => UserRole::Teller]);
+        $customer = Customer::factory()->create();
+
+        $branchATransaction = Transaction::factory()->for($customer)->for($branchA)->create([
+            'user_id' => $tellerA->id,
+        ]);
+        $branchBTransaction = Transaction::factory()->for($customer)->for($branchB)->create([
+            'user_id' => $tellerA->id,
+        ]);
+
+        $response = $this->actingAs($tellerA, 'sanctum')
+            ->getJson(route('api.v1.customers.history', $customer));
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $branchATransaction->id)
+            ->assertJsonMissing(['id' => $branchBTransaction->id]);
+    }
 }
