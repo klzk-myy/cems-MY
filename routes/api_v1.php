@@ -121,14 +121,30 @@ Route::middleware(['branch.scope'])->group(function () {
 
     // Compliance Findings API
     Route::prefix('compliance')->group(function () {
-        Route::get('/findings', [FindingController::class, 'index'])
-            ->name('api.v1.compliance.findings.index');
-        Route::get('/findings/stats', [FindingController::class, 'stats'])
-            ->name('api.v1.compliance.findings.stats');
-        Route::get('/findings/{id}', [FindingController::class, 'show'])
-            ->name('api.v1.compliance.findings.show');
-        Route::post('/findings/{id}/dismiss', [FindingController::class, 'dismiss'])
-            ->name('api.v1.compliance.findings.dismiss');
+        Route::middleware('role:compliance,admin')->group(function () {
+            Route::get('/findings', [FindingController::class, 'index'])
+                ->name('api.v1.compliance.findings.index');
+            Route::get('/findings/stats', [FindingController::class, 'stats'])
+                ->name('api.v1.compliance.findings.stats');
+            Route::get('/findings/{id}', [FindingController::class, 'show'])
+                ->name('api.v1.compliance.findings.show');
+            Route::post('/findings/{id}/dismiss', [FindingController::class, 'dismiss'])
+                ->name('api.v1.compliance.findings.dismiss');
+
+            // Dashboard API
+            Route::get('/dashboard', [DashboardController::class, 'kpis'])
+                ->name('api.v1.compliance.dashboard.kpis');
+            Route::get('/calendar', [DashboardController::class, 'calendar'])
+                ->name('api.v1.compliance.dashboard.calendar');
+            Route::get('/case-aging', [DashboardController::class, 'caseAging'])
+                ->name('api.v1.compliance.dashboard.case-aging');
+            Route::get('/audit-trail', [DashboardController::class, 'auditTrail'])
+                ->name('api.v1.compliance.dashboard.audit-trail');
+            Route::get('/audit-trail/export', [DashboardController::class, 'auditTrailExport'])
+                ->name('api.v1.compliance.dashboard.audit-trail.export');
+            Route::get('/reports/auto', [DashboardController::class, 'autoReports'])
+                ->name('api.v1.compliance.dashboard.auto-reports');
+        });
 
         // Alerts API
         Route::get('/alerts', [AlertController::class, 'index'])
@@ -198,20 +214,6 @@ Route::middleware(['branch.scope'])->group(function () {
         Route::post('/edd/{id}/reject', [EddController::class, 'reject'])
             ->middleware('role:compliance')
             ->name('api.v1.compliance.edd.reject');
-
-        // Dashboard API
-        Route::get('/dashboard', [DashboardController::class, 'kpis'])
-            ->name('api.v1.compliance.dashboard.kpis');
-        Route::get('/calendar', [DashboardController::class, 'calendar'])
-            ->name('api.v1.compliance.dashboard.calendar');
-        Route::get('/case-aging', [DashboardController::class, 'caseAging'])
-            ->name('api.v1.compliance.dashboard.case-aging');
-        Route::get('/audit-trail', [DashboardController::class, 'auditTrail'])
-            ->name('api.v1.compliance.dashboard.audit-trail');
-        Route::get('/audit-trail/export', [DashboardController::class, 'auditTrailExport'])
-            ->name('api.v1.compliance.dashboard.audit-trail.export');
-        Route::get('/reports/auto', [DashboardController::class, 'autoReports'])
-            ->name('api.v1.compliance.dashboard.auto-reports');
     });
 
     // Risk API

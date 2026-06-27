@@ -59,4 +59,15 @@ class ApiSecurityFixesTest extends TestCase
             ],
         ];
     }
+
+    public function test_teller_cannot_list_compliance_findings(): void
+    {
+        $teller = User::factory()->for(Branch::factory()->create())->create([
+            'role' => UserRole::Teller,
+        ]);
+
+        $this->actingAs($teller, 'sanctum')
+            ->getJson(route('api.v1.compliance.findings.index'))
+            ->assertForbidden();
+    }
 }
