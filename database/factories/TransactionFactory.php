@@ -64,10 +64,10 @@ class TransactionFactory extends Factory
             'cancellation_reason',
         ];
 
-        $transactions->each(function (Transaction $transaction) use ($raw, $workflowFields) {
+        $transactions->each(function (Transaction $transaction) use ($attributes, $workflowFields) {
             foreach ($workflowFields as $field) {
-                if (array_key_exists($field, $raw)) {
-                    $transaction->{$field} = $raw[$field];
+                if (array_key_exists($field, $attributes)) {
+                    $transaction->{$field} = $attributes[$field];
                 }
             }
 
