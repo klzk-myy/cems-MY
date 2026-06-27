@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\SystemHealthCheckStatus;
 use App\Models\Bases\SystemModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 
 class SystemHealthCheck extends SystemModel
 {
@@ -84,9 +85,18 @@ class SystemHealthCheck extends SystemModel
             'tests',
         ];
 
+        $latestIds = self::whereIn('check_name', $checkNames)
+            ->select('check_name', DB::raw('MAX(id) as max_id'))
+            ->groupBy('check_name')
+            ->pluck('max_id', 'check_name');
+
+        $checks = self::whereIn('id', $latestIds->values())
+            ->get()
+            ->keyBy('check_name');
+
         $results = [];
         foreach ($checkNames as $name) {
-            $results[$name] = self::checkName($name)->latest()->first();
+            $results[$name] = $checks->get($name);
         }
 
         return $results;

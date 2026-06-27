@@ -142,12 +142,10 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
     public function batchScreen(array $customerIds): Collection
     {
         $results = new Collection;
+        $customers = Customer::whereIn('id', $customerIds)->get();
 
-        foreach ($customerIds as $customerId) {
-            $customer = Customer::find($customerId);
-            if ($customer) {
-                $results->push($this->screenCustomer($customer));
-            }
+        foreach ($customers as $customer) {
+            $results->push($this->screenCustomer($customer));
         }
 
         return $results;
@@ -187,15 +185,13 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
 
     private function blockCustomerTransactions(Customer $customer): void
     {
-        $customer->update(['transactions_blocked' => true]);
+        $customer->transactions_blocked = true;
+        $customer->save();
     }
 
     private function rejectCustomer(Customer $customer, string $reason): void
     {
-        $customer->update([
-            'is_active' => false,
-            'rejection_reason' => $reason,
-        ]);
+        $customer->reject($reason);
     }
 
     /**
@@ -411,7 +407,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
             ->get();
 
         $transactionCount = $transactions->count();
-        $totalAmount = $transactions->sum('amount_myrr');
+        $totalAmount = $transactions->sum('amount_local');
 
         // Store analysis via customer relation additional_info
         $analysis = [

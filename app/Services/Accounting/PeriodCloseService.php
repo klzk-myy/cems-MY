@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AccountingPeriodStatus;
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\UnbalancedJournalEntriesException;
 use App\Models\AccountingPeriod;
@@ -74,7 +75,7 @@ class PeriodCloseService
 
             // Step 3: Update period status
             $period->update([
-                'status' => 'closed',
+                'status' => AccountingPeriodStatus::Closed->value,
                 'closed_at' => now(),
                 'closed_by' => $closedBy,
             ]);
@@ -133,68 +134,83 @@ class PeriodCloseService
     protected function createClosingEntries(AccountingPeriod $period, int $closedBy): array
     {
         $entries = [];
-
         $asOfDate = $period->end_date->toDateString();
 
-        // Get revenue accounts
+        $revenueSummaryAccount = $this->getValidatedAccountCode('accounting.revenue_summary_account', '4000');
+        $expenseSummaryAccount = $this->getValidatedAccountCode('accounting.expense_summary_account', '5000');
+        $retainedEarningsAccount = $this->getValidatedAccountCode('accounting.retained_earnings_account', '3100');
+
         $revenues = ChartOfAccount::where('account_type', 'Revenue')->get();
+        $expenses = ChartOfAccount::where('account_type', 'Expense')->get();
+
         $revenueBalances = $this->getBatchBalances($revenues->pluck('account_code')->toArray(), $asOfDate);
+        $expenseBalances = $this->getBatchBalances($expenses->pluck('account_code')->toArray(), $asOfDate);
+
+        $closingLines = [];
         $totalRevenue = '0';
+        $totalExpenses = '0';
+
         foreach ($revenues as $account) {
             $balance = $revenueBalances[$account->account_code] ?? '0';
+            if ($this->mathService->compare($balance, '0') === 0) {
+                continue;
+            }
+
             $totalRevenue = $this->mathService->add($totalRevenue, $balance);
+            // Debit revenue account to zero it, credit revenue summary
+            $closingLines[] = ['account_code' => $account->account_code, 'debit' => $balance, 'credit' => 0];
         }
 
-        // Get expense accounts
-        $expenses = ChartOfAccount::where('account_type', 'Expense')->get();
-        $expenseBalances = $this->getBatchBalances($expenses->pluck('account_code')->toArray(), $asOfDate);
-        $totalExpenses = '0';
+        if ($this->mathService->compare($totalRevenue, '0') !== 0) {
+            $closingLines[] = ['account_code' => $revenueSummaryAccount, 'debit' => 0, 'credit' => $totalRevenue];
+        }
+
         foreach ($expenses as $account) {
             $balance = $expenseBalances[$account->account_code] ?? '0';
+            if ($this->mathService->compare($balance, '0') === 0) {
+                continue;
+            }
+
             $totalExpenses = $this->mathService->add($totalExpenses, $balance);
+            // Credit expense account to zero it, debit expense summary
+            $closingLines[] = ['account_code' => $account->account_code, 'debit' => 0, 'credit' => $balance];
         }
 
-        // Calculate net income
+        if ($this->mathService->compare($totalExpenses, '0') !== 0) {
+            $closingLines[] = ['account_code' => $expenseSummaryAccount, 'debit' => $totalExpenses, 'credit' => 0];
+        }
+
         $netIncome = $this->mathService->subtract($totalRevenue, $totalExpenses);
 
-        // Only create entry if there's activity
         if ($this->mathService->compare($netIncome, '0') !== 0) {
-            // Validate and get configured account codes
-            $revenueSummaryAccount = $this->getValidatedAccountCode('accounting.revenue_summary_account', '4000');
-            $expenseSummaryAccount = $this->getValidatedAccountCode('accounting.expense_summary_account', '5000');
-            $retainedEarningsAccount = $this->getValidatedAccountCode('accounting.retained_earnings_account', '3100');
-
-            $entry = $this->accountingService->createJournalEntry(
-                [
-                    [
-                        'account_code' => $revenueSummaryAccount,
-                        'debit' => $totalRevenue,
-                        'credit' => 0,
-                    ],
-                    [
-                        'account_code' => $expenseSummaryAccount,
-                        'debit' => 0,
-                        'credit' => $totalExpenses,
-                    ],
-                    [
-                        'account_code' => $retainedEarningsAccount,
-                        'debit' => $this->mathService->compare($netIncome, '0') < 0 ? $this->mathService->multiply($netIncome, '-1') : 0,
-                        'credit' => $this->mathService->compare($netIncome, '0') > 0 ? $netIncome : 0,
-                    ],
-                ],
-                'Period_Close',
-                $period->id,
-                "Period close for {$period->period_code} - Net Income: RM {$netIncome}",
-                $period->end_date->toDateString(),
-                $closedBy
-            );
-
-            $entry->update(['period_id' => $period->id]);
-
-            $entries[] = $entry;
+            if ($this->mathService->compare($netIncome, '0') > 0) {
+                // Profit: debit revenue summary, credit retained earnings
+                $closingLines[] = ['account_code' => $revenueSummaryAccount, 'debit' => $netIncome, 'credit' => 0];
+                $closingLines[] = ['account_code' => $retainedEarningsAccount, 'debit' => 0, 'credit' => $netIncome];
+            } else {
+                // Loss: debit retained earnings, credit expense summary
+                $loss = $this->mathService->multiply($netIncome, '-1');
+                $closingLines[] = ['account_code' => $retainedEarningsAccount, 'debit' => $loss, 'credit' => 0];
+                $closingLines[] = ['account_code' => $expenseSummaryAccount, 'debit' => 0, 'credit' => $loss];
+            }
         }
 
-        return $entries;
+        if (empty($closingLines)) {
+            return [];
+        }
+
+        $entry = $this->accountingService->createJournalEntry(
+            $closingLines,
+            'Period_Close',
+            $period->id,
+            "Period close for {$period->period_code} - Net Income: RM {$netIncome}",
+            $period->end_date->toDateString(),
+            $closedBy
+        );
+
+        $entry->update(['period_id' => $period->id]);
+
+        return [$entry];
     }
 
     /**

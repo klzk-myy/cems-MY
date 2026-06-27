@@ -6,6 +6,11 @@ use App\Http\Requests\AuthorizedFormRequest;
 
 class SetupMfaRequest extends AuthorizedFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [

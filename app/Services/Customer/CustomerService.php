@@ -54,11 +54,12 @@ class CustomerService implements CustomerServiceInterface
             // Encrypt sensitive fields
             $encryptedData = $this->encryptCustomerData($data);
 
-            // Initial risk always 'Low' - risk scoring module determines actual risk
-            $encryptedData['risk_rating'] = 'Low';
-
             // Create customer
             $customer = Customer::create($encryptedData);
+
+            // Initial risk always 'Low' - risk scoring module determines actual risk
+            $customer->risk_rating = 'Low';
+            $customer->save();
 
             // Screen against sanctions list (may upgrade to High if hit)
             $this->screenCustomer($customer, $data['full_name']);
@@ -101,6 +102,12 @@ class CustomerService implements CustomerServiceInterface
 
             // Update customer
             $customer->update($encryptedData);
+
+            // Risk rating is no longer mass-assignable; set it explicitly when provided.
+            if (array_key_exists('risk_rating', $data) && filled($data['risk_rating'])) {
+                $customer->risk_rating = $data['risk_rating'];
+                $customer->save();
+            }
 
             // Re-screen against sanctions if name changed
             if (isset($data['full_name']) && $data['full_name'] !== $customer->full_name) {
@@ -307,15 +314,14 @@ class CustomerService implements CustomerServiceInterface
     protected function screenCustomer(Customer $customer, string $fullName): void
     {
         $sanctionMatches = $this->screeningService->screenName($fullName);
-        $hasSanctionHit = ! empty($sanctionMatches);
+        $hasSanctionHit = ! $sanctionMatches->isClear();
 
         // Update sanction status, risk rating, AND deactivate if hit found
         if ($hasSanctionHit) {
-            $customer->update([
-                'risk_rating' => 'High',
-                'sanction_hit' => true,
-                'is_active' => false, // Require Manager/Compliance approval to activate
-            ]);
+            $customer->risk_rating = 'High';
+            $customer->sanction_hit = true;
+            $customer->is_active = false; // Require Manager/Compliance approval to activate
+            $customer->save();
 
             // Log sanction hit
             $this->auditService->logWithSeverity(

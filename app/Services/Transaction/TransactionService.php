@@ -16,6 +16,7 @@ use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Http\Traits\ValidatorMethods;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
+use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
@@ -372,13 +373,15 @@ class TransactionService implements TransactionServiceInterface
                 'purpose' => $data['purpose'],
                 'source_of_funds' => $data['source_of_funds'],
                 'source_of_wealth' => $data['source_of_wealth'] ?? null,
-                'status' => $status,
-                'hold_reason' => $holdReason,
-                'approved_by' => $approvedBy,
                 'cdd_level' => $cddLevel,
                 'idempotency_key' => $data['idempotency_key'] ?? null,
-                'version' => 0,
             ]);
+
+            $transaction->status = $status;
+            $transaction->hold_reason = $holdReason;
+            $transaction->approved_by = $approvedBy;
+            $transaction->version = 0;
+            $transaction->save();
 
             // If transaction requires approval (>= RM 3,000 and no compliance hold),
             // reserve stock immediately so it cannot be oversold
@@ -401,14 +404,17 @@ class TransactionService implements TransactionServiceInterface
                 // Update teller allocation if this was a teller transaction
                 if ($allocationForUpdate) {
                     $isBuy = ($data['type'] === TransactionType::Buy->value);
-                    // Buy: money changer buys foreign currency FROM customer → allocation increases
-                    // Sell: money changer sells foreign currency TO customer → allocation decreases
+                    // Re-fetch allocation with lock to prevent concurrent modification
+                    $lockedAllocation = TellerAllocation::where('id', $allocationForUpdate->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
                     if ($isBuy) {
-                        $allocationForUpdate->add($amountForeign);
+                        $lockedAllocation->add($amountForeign);
                     } else {
-                        $allocationForUpdate->deduct($amountForeign);
+                        $lockedAllocation->deduct($amountForeign);
                     }
-                    $allocationForUpdate->addDailyUsed($amountLocal);
+                    $lockedAllocation->addDailyUsed($amountLocal);
                 }
 
                 $this->createAccountingEntries($transaction);
@@ -504,9 +510,11 @@ class TransactionService implements TransactionServiceInterface
             ]);
         }
 
-        // Update MYR balance - always add (cash in on Sell, cash out on Buy is recorded separately)
+        // Update MYR balance - cash in on Sell, cash out on Buy
         $myrTotal = $myrBalance->transaction_total ?? '0';
-        $newMyrTotal = $this->mathService->add($myrTotal, $amountLocal);
+        $newMyrTotal = $type === TransactionType::Buy->value
+            ? $this->mathService->subtract($myrTotal, $amountLocal)
+            : $this->mathService->add($myrTotal, $amountLocal);
 
         $myrBalance->update(['transaction_total' => $newMyrTotal]);
     }
@@ -698,13 +706,12 @@ class TransactionService implements TransactionServiceInterface
                 ];
 
                 // Perform the update with proper history and version increment
-                $lockedTransaction->update([
-                    'status' => TransactionStatus::Completed,
-                    'approved_by' => $approverId,
-                    'approved_at' => $nowIso,
-                    'transition_history' => $history,
-                    'version' => $lockedTransaction->version + 1,
-                ]);
+                $lockedTransaction->status = TransactionStatus::Completed;
+                $lockedTransaction->approved_by = $approverId;
+                $lockedTransaction->approved_at = $nowIso;
+                $lockedTransaction->transition_history = $history;
+                $lockedTransaction->version = $lockedTransaction->version + 1;
+                $lockedTransaction->save();
 
                 // Refresh the model to get updated version
                 $lockedTransaction->refresh();
@@ -770,6 +777,10 @@ class TransactionService implements TransactionServiceInterface
                         $lockedTransaction->currency_code
                     );
                     if ($allocationForUpdate) {
+                        $allocationForUpdate = TellerAllocation::where('id', $allocationForUpdate->id)
+                            ->lockForUpdate()
+                            ->firstOrFail();
+
                         if ($lockedTransaction->type->isBuy()) {
                             $allocationForUpdate->add((string) $lockedTransaction->amount_foreign);
                         } else {

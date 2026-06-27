@@ -144,7 +144,8 @@ class KycDocumentExpiryServiceTest extends TestCase
     #[Test]
     public function standard_cdd_requires_proof_of_address(): void
     {
-        $this->customer->update(['cdd_level' => CddLevel::Standard]);
+        $this->customer->cdd_level = CddLevel::Standard;
+        $this->customer->save();
 
         CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
@@ -163,7 +164,8 @@ class KycDocumentExpiryServiceTest extends TestCase
     #[Test]
     public function standard_cdd_no_block_when_all_documents_present(): void
     {
-        $this->customer->update(['cdd_level' => CddLevel::Standard]);
+        $this->customer->cdd_level = CddLevel::Standard;
+        $this->customer->save();
 
         CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
@@ -193,7 +195,8 @@ class KycDocumentExpiryServiceTest extends TestCase
     #[Test]
     public function enhanced_cdd_requires_passport(): void
     {
-        $this->customer->update(['cdd_level' => CddLevel::Enhanced]);
+        $this->customer->cdd_level = CddLevel::Enhanced;
+        $this->customer->save();
 
         CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,
@@ -223,7 +226,8 @@ class KycDocumentExpiryServiceTest extends TestCase
     #[Test]
     public function enhanced_cdd_no_block_when_all_documents_present(): void
     {
-        $this->customer->update(['cdd_level' => CddLevel::Enhanced]);
+        $this->customer->cdd_level = CddLevel::Enhanced;
+        $this->customer->save();
 
         CustomerDocument::factory()->create([
             'customer_id' => $this->customer->id,

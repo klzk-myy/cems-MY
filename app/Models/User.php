@@ -15,6 +15,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * User Model
@@ -38,7 +40,7 @@ use Illuminate\Support\Facades\Hash;
  */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -49,7 +51,6 @@ class User extends Authenticatable
         'branch_id',
         'username',
         'email',
-        'password_hash',
         'is_active',
         'last_login_at',
     ];
@@ -78,6 +79,20 @@ class User extends Authenticatable
         'mfa_verified_at' => 'datetime',
         'mfa_secret' => 'string',
     ];
+
+    /**
+     * Ensure a password hash is always present before creation so the column
+     * remains protected from mass assignment while still satisfying the NOT NULL
+     * constraint. Real callers must overwrite this with the user's actual hash.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (empty($user->password_hash)) {
+                $user->password_hash = Hash::make(Str::random(32));
+            }
+        });
+    }
 
     /**
      * Get the password for authentication.

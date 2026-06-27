@@ -7,6 +7,7 @@ use App\Enums\TransactionType;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\JournalEntry;
+use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
@@ -32,34 +33,40 @@ class TransactionReversalService
 
     public function reverse(Transaction $transaction, User $requester, string $reason): bool
     {
-        return DB::transaction(function () use ($transaction, $requester, $reason) {
-            $refundTransaction = $this->createRefundTransaction($transaction, $requester->id);
+        $result = DB::transaction(function () use ($transaction, $requester, $reason) {
+            // 1. Enforce the state transition FIRST. If it fails, nothing else happens.
+            $lockedTransaction = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            $this->reversePositions($transaction);
-
-            $this->reverseTillBalance($transaction);
-
-            $this->createReversingJournalEntries($transaction, $requester->id);
-
-            $this->reverseTellerAllocation($transaction);
-
-            $stateMachine = new TransactionStateMachine($transaction);
-            $result = $stateMachine->transitionTo(TransactionStatus::Reversed, [
+            $stateMachine = new TransactionStateMachine($lockedTransaction);
+            if (! $stateMachine->transitionTo(TransactionStatus::Reversed, [
                 'reason' => $reason,
                 'user_id' => $requester->id,
-            ]);
-
-            if ($result) {
-                Log::info('Transaction reversal processed', [
-                    'transaction_id' => $transaction->id,
-                    'refund_transaction_id' => $refundTransaction->id,
-                    'reversed_by' => $requester->id,
-                    'reason' => $reason,
-                ]);
+            ])) {
+                throw new \RuntimeException('Failed to transition transaction to Reversed');
             }
 
-            return $result;
+            // 2. Compensating side effects only run after the transition succeeds.
+            $refundTransaction = $this->createRefundTransaction($lockedTransaction, $requester->id);
+            $this->reversePositions($lockedTransaction);
+            $this->reverseTillBalance($lockedTransaction);
+            $this->createReversingJournalEntries($lockedTransaction, $requester->id);
+            $this->reverseTellerAllocation($lockedTransaction);
+
+            Log::info('Transaction reversal processed', [
+                'transaction_id' => $lockedTransaction->id,
+                'refund_transaction_id' => $refundTransaction->id,
+                'reversed_by' => $requester->id,
+                'reason' => $reason,
+            ]);
+
+            return true;
         });
+
+        $transaction->refresh();
+
+        return $result;
     }
 
     public function canReverse(Transaction $transaction): bool
@@ -133,14 +140,16 @@ class TransactionReversalService
             'rate' => $original->rate,
             'purpose' => 'Reversal: '.($original->purpose ?? 'Transaction reversal'),
             'source_of_funds' => $original->source_of_funds,
-            'status' => $status,
-            'hold_reason' => $holdReason,
             'cdd_level' => $original->cdd_level,
             'original_transaction_id' => $original->id,
-            'is_refund' => true,
-            'approved_by' => $status->isCompleted() ? $approvedBy : null,
-            'approved_at' => $status->isCompleted() ? now() : null,
         ]);
+
+        $refund->status = $status;
+        $refund->hold_reason = $holdReason;
+        $refund->is_refund = true;
+        $refund->approved_by = $status->isCompleted() ? $approvedBy : null;
+        $refund->approved_at = $status->isCompleted() ? now() : null;
+        $refund->save();
 
         $this->auditService->logWithSeverity(
             'refund_compliance_check',
@@ -248,7 +257,9 @@ class TransactionReversalService
 
         if ($myrTillBalance) {
             $myrTotal = $myrTillBalance->transaction_total ?? '0';
-            $newMyrTotal = $this->mathService->subtract($myrTotal, $transaction->amount_local);
+            $newMyrTotal = $transaction->type->isBuy()
+                ? $this->mathService->add($myrTotal, $transaction->amount_local)
+                : $this->mathService->subtract($myrTotal, $transaction->amount_local);
             $myrTillBalance->update(['transaction_total' => $newMyrTotal]);
         }
 
@@ -300,6 +311,10 @@ class TransactionReversalService
                 $transaction->currency_code
             );
             if ($allocation) {
+                $allocation = TellerAllocation::where('id', $allocation->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
                 if ($transaction->type->isBuy()) {
                     $allocation->deduct((string) $transaction->amount_foreign);
                     $allocation->subtractDailyUsed((string) $transaction->amount_local);

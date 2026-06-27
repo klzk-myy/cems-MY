@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Transaction;
 
+use App\Enums\TransactionConfirmationStatus;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\SelfApprovalException;

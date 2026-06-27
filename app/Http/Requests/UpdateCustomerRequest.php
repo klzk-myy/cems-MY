@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 class UpdateCustomerRequest extends AuthorizedFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [
@@ -26,7 +31,7 @@ class UpdateCustomerRequest extends AuthorizedFormRequest
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^(\+?6?01)[0-9]{8,9}$/'],
             'email' => ['nullable', 'email', 'max:255'],
             'pep_status' => 'sometimes|boolean',
-            'risk_rating' => ['required', 'in:Low,Medium,High'],
+            'risk_rating' => ['nullable', 'in:Low,Medium,High'],
             'occupation' => 'nullable|string|max:255',
             'employer_name' => 'nullable|string|max:255',
             'employer_address' => 'nullable|string|max:500',

@@ -140,13 +140,19 @@ class StockTransferService
             throw new \RuntimeException('Only admin can receive items');
         }
 
-        if ($transfer->status !== StockTransferStatus::InTransit->value) {
+        if ($transfer->status !== StockTransferStatus::InTransit) {
             throw new \RuntimeException('Transfer must be in transit to receive items');
         }
 
         DB::transaction(function () use ($transfer, $items) {
+            $itemIds = collect($items)->pluck('id');
+            $existingItems = $transfer->items()
+                ->whereIn('id', $itemIds)
+                ->get()
+                ->keyBy('id');
+
             foreach ($items as $itemData) {
-                $item = $transfer->items()->where('id', $itemData['id'])->first();
+                $item = $existingItems->get($itemData['id']);
                 if ($item) {
                     $item->update([
                         'quantity_received' => $itemData['quantity_received'],
@@ -181,10 +187,13 @@ class StockTransferService
                 }
             }
 
+            $transfer->load('items');
             $allFullyReceived = $transfer->items->every(fn ($item) => $item->isFullyReceived());
-            if (! $allFullyReceived) {
-                $transfer->update(['status' => StockTransferStatus::PartiallyReceived->value]);
-            }
+            $transfer->update([
+                'status' => $allFullyReceived
+                    ? StockTransferStatus::Received->value
+                    : StockTransferStatus::PartiallyReceived->value,
+            ]);
         });
     }
 

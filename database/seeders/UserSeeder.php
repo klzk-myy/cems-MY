@@ -38,16 +38,18 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
-            User::firstOrCreate(
-                ['email' => $userData['email']],
-                [
+            $user = User::firstOrNew(['email' => $userData['email']]);
+
+            if (! $user->exists) {
+                $user->fill([
                     'username' => $userData['username'],
-                    'password_hash' => Hash::make($userData['password']), // Directly set hashed password
-                    'role' => $userData['role'],
                     'mfa_enabled' => false,
                     'is_active' => true,
-                ]
-            );
+                ]);
+                $user->role = $userData['role'];
+                $user->password_hash = Hash::make($userData['password']); // Directly set hashed password
+                $user->save();
+            }
         }
 
         $this->command->info('Created users:');

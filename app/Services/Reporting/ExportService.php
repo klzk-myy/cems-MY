@@ -19,11 +19,14 @@ class ExportService
     {
         $path = $this->basePath.'/'.$filename;
 
-        if (! file_exists($this->basePath)) {
-            mkdir($this->basePath, 0755, true);
+        if (! file_exists($this->basePath) && ! mkdir($this->basePath, 0755, true) && ! is_dir($this->basePath)) {
+            throw new \RuntimeException("Failed to create reports directory: {$this->basePath}");
         }
 
         $handle = fopen($path, 'w+');
+        if (! $handle) {
+            throw new \RuntimeException("Failed to open CSV file for writing: {$path}");
+        }
 
         if (! empty($data)) {
             fputcsv($handle, array_keys($data[0]));
@@ -114,8 +117,7 @@ class ExportService
 
         $files = glob($this->basePath.'/*');
         foreach ($files as $file) {
-            if (is_file($file) && filemtime($file) < $cutoff->timestamp) {
-                unlink($file);
+            if (is_file($file) && filemtime($file) < $cutoff->timestamp && unlink($file)) {
                 $deleted++;
             }
         }

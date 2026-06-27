@@ -3,6 +3,7 @@
 namespace App\Services\System;
 
 use App\Models\TestResult;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class TestRunnerService
@@ -259,12 +260,18 @@ class TestRunnerService
     public function getLatestBySuite(): array
     {
         $suites = ['full', 'Navigation', 'Transaction', 'User', 'Branch', 'Api', 'Compliance', 'Accounting'];
-        $results = [];
 
-        foreach ($suites as $suite) {
-            $results[$suite] = TestResult::suite($suite)->latest()->first();
-        }
+        $latestIds = TestResult::whereIn('test_suite', $suites)
+            ->select('test_suite', DB::raw('MAX(id) as max_id'))
+            ->groupBy('test_suite')
+            ->pluck('max_id', 'test_suite');
 
-        return $results;
+        $runs = TestResult::whereIn('id', $latestIds->values())
+            ->get()
+            ->keyBy('test_suite');
+
+        return collect($suites)
+            ->mapWithKeys(fn ($suite) => [$suite => $runs->get($suite)])
+            ->all();
     }
 }

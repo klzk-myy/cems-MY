@@ -72,13 +72,16 @@ class SecurityHeaders
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $nonce = base64_encode(random_bytes(16));
+        $request->attributes->set('csp_nonce', $nonce);
+
         $response = $next($request);
 
         // Apply security headers
         $this->applySecurityHeaders($response);
 
         // Apply Content Security Policy
-        $this->applyCsp($response);
+        $this->applyCsp($response, $nonce);
 
         // Apply HSTS in production
         $this->applyHsts($response);
@@ -104,15 +107,15 @@ class SecurityHeaders
     /**
      * Apply Content Security Policy.
      */
-    protected function applyCsp(Response $response): void
+    protected function applyCsp(Response $response, ?string $nonce = null): void
     {
         // Use Content-Security-Policy-Report-Only in development
         // Exclude upgrade-insecure-requests in Report-Only mode as it's not valid there
         if (app()->environment('local', 'development')) {
-            $csp = $this->buildCsp(true);
+            $csp = $this->buildCsp(true, $nonce);
             $response->headers->set('Content-Security-Policy-Report-Only', $csp);
         } else {
-            $csp = $this->buildCsp(false);
+            $csp = $this->buildCsp(false, $nonce);
             $response->headers->set('Content-Security-Policy', $csp);
         }
     }
@@ -122,24 +125,31 @@ class SecurityHeaders
      *
      * @param  bool  $reportOnly  Whether building for Report-Only mode
      */
-    protected function buildCsp(bool $reportOnly = false): string
+    protected function buildCsp(bool $reportOnly = false, ?string $nonce = null): string
     {
-        $directives = [];
+        $directives = $this->cspDirectives;
 
-        foreach ($this->cspDirectives as $directive => $value) {
+        if ($nonce !== null) {
+            $directives['script-src'] = "'self' 'nonce-{$nonce}' 'unsafe-inline'";
+            $directives['style-src'] = "'self' 'nonce-{$nonce}' 'unsafe-inline'";
+        }
+
+        $parts = [];
+
+        foreach ($directives as $directive => $value) {
             // Skip upgrade-insecure-requests in Report-Only mode (not valid there)
             if ($reportOnly && $directive === 'upgrade-insecure-requests') {
                 continue;
             }
 
             if ($value === '') {
-                $directives[] = $directive;
+                $parts[] = $directive;
             } else {
-                $directives[] = "{$directive} {$value}";
+                $parts[] = "{$directive} {$value}";
             }
         }
 
-        return implode('; ', $directives);
+        return implode('; ', $parts);
     }
 
     /**

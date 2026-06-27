@@ -152,22 +152,27 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     Route::prefix('counters')->name('counters.')->group(function () {
         Route::get('/', [CounterController::class, 'index'])->name('index');
-        Route::get('/{counter}/open', [CounterController::class, 'showOpen'])->name('open');
-        Route::post('/{counter}/open', [CounterController::class, 'open'])->name('open.store');
-        Route::get('/{counter}/close', [CounterController::class, 'showClose'])->name('close.show');
-        Route::post('/{counter}/close', [CounterController::class, 'close'])->name('close');
-        Route::get('/{counter}/status', [CounterController::class, 'status'])->name('status');
-        Route::get('/{counter}/history', [CounterController::class, 'history'])->name('history');
-        Route::get('/{counter}/handover', [CounterController::class, 'showHandover'])->name('handover.show');
-        Route::post('/{counter}/handover', [CounterController::class, 'handover'])->name('handover');
-        Route::get('/{counter}/handover/acknowledge', [CounterController::class, 'showAcknowledgeHandover'])->name('handover.acknowledge.show');
-        Route::post('/{counter}/handover/acknowledge', [CounterController::class, 'acknowledgeHandover'])->name('handover.acknowledge');
 
-        Route::get('/{counter}/emergency', [CounterController::class, 'showEmergency'])->name('emergency');
-        Route::post('/{counter}/emergency', [CounterController::class, 'emergency'])->name('emergency.store');
-        Route::post('/{counter}/emergency-close', [CounterController::class, 'emergency'])->name('emergency-close');
-        Route::get('/{counter}/emergency-closure/{closure}', [CounterController::class, 'showEmergencyClosure'])
-            ->name('emergency-closure');
+        Route::middleware('role:teller,manager,admin')->group(function () {
+            Route::get('/{counter}/open', [CounterController::class, 'showOpen'])->name('open');
+            Route::post('/{counter}/open', [CounterController::class, 'open'])->name('open.store');
+            Route::get('/{counter}/status', [CounterController::class, 'status'])->name('status');
+            Route::get('/{counter}/history', [CounterController::class, 'history'])->name('history');
+            Route::get('/{counter}/handover', [CounterController::class, 'showHandover'])->name('handover.show');
+            Route::post('/{counter}/handover', [CounterController::class, 'handover'])->name('handover');
+            Route::get('/{counter}/handover/acknowledge', [CounterController::class, 'showAcknowledgeHandover'])->name('handover.acknowledge.show');
+            Route::post('/{counter}/handover/acknowledge', [CounterController::class, 'acknowledgeHandover'])->name('handover.acknowledge');
+        });
+
+        Route::middleware('role:manager,admin')->group(function () {
+            Route::get('/{counter}/close', [CounterController::class, 'showClose'])->name('close.show');
+            Route::post('/{counter}/close', [CounterController::class, 'close'])->name('close');
+            Route::get('/{counter}/emergency', [CounterController::class, 'showEmergency'])->name('emergency');
+            Route::post('/{counter}/emergency', [CounterController::class, 'emergency'])->name('emergency.store');
+            Route::post('/{counter}/emergency-close', [CounterController::class, 'emergency'])->name('emergency-close');
+            Route::get('/{counter}/emergency-closure/{closure}', [CounterController::class, 'showEmergencyClosure'])
+                ->name('emergency-closure');
+        });
     });
 
     Route::prefix('stock-cash')->name('stock-cash.')->group(function () {

@@ -18,6 +18,7 @@ return new class extends Migration
                 'HqApproved',
                 'InTransit',
                 'PartiallyReceived',
+                'Received',
                 'Completed',
                 'Cancelled',
                 'Rejected',

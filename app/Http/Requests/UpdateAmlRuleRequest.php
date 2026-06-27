@@ -6,6 +6,11 @@ use App\Enums\AmlRuleType;
 
 class UpdateAmlRuleRequest extends AuthorizedFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         $ruleId = $this->route('rule')?->id ?? $this->route('id');

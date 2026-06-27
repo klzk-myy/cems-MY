@@ -36,7 +36,7 @@ class CustomerBlindIndexTest extends TestCase
     {
         $plaintextId = 'A12345678';
 
-        $customer = new Customer([
+        $customer = Customer::factory()->make([
             'full_name' => 'Test Customer',
             'id_type' => 'MyKad',
             'id_number_encrypted' => app(EncryptionService::class)->encrypt($plaintextId),

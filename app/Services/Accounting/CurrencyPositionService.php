@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Contracts\CurrencyPositionServiceInterface;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -70,16 +71,9 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 ->lockForUpdate()
                 ->first();
 
-            // Create position if it doesn't exist
+            // Create position if it doesn't exist (race-safe)
             if ($position === null) {
-                $position = new CurrencyPosition([
-                    'currency_code' => $currencyCode,
-                    'branch_id' => $branchId,
-                    'quantity' => '0',
-                    'average_cost' => $rate,
-                    'current_rate' => $rate,
-                ]);
-                $position->save();
+                $position = $this->getOrCreatePosition((int) $branchId, $currencyCode, $rate);
             }
 
             $oldBalance = $position->quantity;
@@ -134,6 +128,35 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         Cache::forget($cacheKey);
 
         return $position;
+    }
+
+    public function getOrCreatePosition(int $branchId, string $currencyCode, string $rate): CurrencyPosition
+    {
+        return DB::transaction(function () use ($branchId, $currencyCode, $rate) {
+            $position = CurrencyPosition::where('currency_code', $currencyCode)
+                ->where('branch_id', $branchId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($position) {
+                return $position;
+            }
+
+            try {
+                return CurrencyPosition::create([
+                    'currency_code' => $currencyCode,
+                    'branch_id' => $branchId,
+                    'quantity' => '0',
+                    'average_cost' => $rate,
+                    'current_rate' => $rate,
+                ]);
+            } catch (UniqueConstraintViolationException $e) {
+                return CurrencyPosition::where('currency_code', $currencyCode)
+                    ->where('branch_id', $branchId)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            }
+        });
     }
 
     /**
@@ -382,29 +405,22 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      */
     public function getAvailableBalance(string $currencyCode, string $locationId): string
     {
-        $cacheKey = "position:{$locationId}:{$currencyCode}:available";
+        return DB::transaction(function () use ($currencyCode, $locationId) {
+            $position = CurrencyPosition::where('currency_code', $currencyCode)
+                ->where('branch_id', $locationId)
+                ->lockForUpdate()
+                ->first();
+            $quantity = $position ? $position->quantity : '0';
 
-        return Cache::remember($cacheKey, now()->addMinute(), function () use ($currencyCode, $locationId) {
-            return DB::transaction(function () use ($currencyCode, $locationId) {
-                // Lock the position to prevent race conditions
-                $position = CurrencyPosition::where('currency_code', $currencyCode)
-                    ->where('branch_id', $locationId)
-                    ->lockForUpdate()
-                    ->first();
-                $quantity = $position ? $position->quantity : '0';
+            $reserved = StockReservation::where('currency_code', $currencyCode)
+                ->where('till_id', $locationId)
+                ->where('status', StockReservationStatus::Pending)
+                ->where('expires_at', '>', now())
+                ->sum('amount_foreign');
 
-                // Query reservations within same transaction (reservations stored with till_id)
-                $reserved = StockReservation::where('currency_code', $currencyCode)
-                    ->where('till_id', $locationId)
-                    ->where('status', StockReservationStatus::Pending)
-                    ->where('expires_at', '>', now())
-                    ->sum('amount_foreign');
+            $result = $this->mathService->subtract($quantity, (string) $reserved);
 
-                $result = $this->mathService->subtract($quantity, (string) $reserved);
-
-                // Return with 6 decimal places for consistency with test expectations
-                return $this->mathService->round($result, 6);
-            });
+            return $this->mathService->round($result, 6);
         });
     }
 
@@ -420,6 +436,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             'transaction_id' => $transaction->id,
             'currency_code' => $transaction->currency_code,
             'branch_id' => $transaction->branch_id,
+            'till_id' => $transaction->till_id,
             'amount_foreign' => $transaction->amount_foreign,
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),
@@ -441,6 +458,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     {
         $reservation = StockReservation::where('transaction_id', $transactionId)
             ->where('status', StockReservationStatus::Pending)
+            ->lockForUpdate()
             ->first();
 
         if ($reservation === null || $reservation->isExpired()) {
@@ -463,6 +481,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     {
         $reservation = StockReservation::where('transaction_id', $transactionId)
             ->where('status', StockReservationStatus::Pending)
+            ->lockForUpdate()
             ->first();
 
         if ($reservation === null) {

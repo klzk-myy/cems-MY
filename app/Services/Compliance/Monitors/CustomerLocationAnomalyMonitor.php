@@ -6,7 +6,6 @@ use App\Enums\FindingSeverity;
 use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
-use App\Models\Transaction;
 use App\Services\ThresholdService;
 
 /**
@@ -37,8 +36,17 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
 
         // Get customers with foreign nationality who have recent high-value transactions
         $foreignCustomers = Customer::where('is_active', true)
-            ->where('nationality', '!=', 'Malaysian')
-            ->where('nationality', '!=', 'Malaysia')
+            ->whereNotIn('nationality', ['Malaysian', 'Malaysia'])
+            ->whereHas('transactions', function ($query) use ($cutoffTime) {
+                $query->where('created_at', '>=', $cutoffTime)
+                    ->where('status', '!=', TransactionStatus::Cancelled->value)
+                    ->where('amount_local', '>=', $this->highValueThreshold);
+            })
+            ->with(['transactions' => function ($query) use ($cutoffTime) {
+                $query->where('created_at', '>=', $cutoffTime)
+                    ->where('status', '!=', TransactionStatus::Cancelled->value)
+                    ->where('amount_local', '>=', $this->highValueThreshold);
+            }])
             ->get();
 
         foreach ($foreignCustomers as $customer) {
@@ -56,12 +64,8 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
      */
     protected function checkCustomerLocationAnomaly(Customer $customer, $cutoffTime): ?array
     {
-        // Get recent high-value transactions for this customer
-        $recentTransactions = Transaction::where('customer_id', $customer->id)
-            ->where('created_at', '>=', $cutoffTime)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->where('amount_local', '>=', $this->highValueThreshold)
-            ->get();
+        // Use the eager-loaded transactions filtered in run()
+        $recentTransactions = $customer->transactions;
 
         if ($recentTransactions->isEmpty()) {
             return null;

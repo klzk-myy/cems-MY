@@ -301,14 +301,16 @@ class SetupController extends Controller
         $this->runMigrations();
 
         if (isset($setupData['admin'])) {
-            User::create([
+            $user = User::create([
                 'username' => $setupData['admin']['admin_name'],
                 'email' => $setupData['admin']['admin_email'],
-                'password_hash' => Hash::make($setupData['admin']['admin_password']),
-                'role' => 'admin',
                 'mfa_enabled' => false,
                 'is_active' => true,
             ]);
+
+            $user->role = 'admin';
+            $user->password_hash = Hash::make($setupData['admin']['admin_password']);
+            $user->save();
         }
 
         Artisan::call('db:seed', ['--class' => 'CurrencySeeder', '--force' => true]);

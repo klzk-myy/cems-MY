@@ -40,11 +40,13 @@ class UserService
         $user = User::create([
             'username' => $data['username'],
             'email' => $data['email'],
-            'password_hash' => Hash::make($data['password']),
-            'role' => $data['role'],
             'mfa_enabled' => false,
             'is_active' => true,
         ]);
+
+        $user->role = $data['role'];
+        $user->password_hash = Hash::make($data['password']);
+        $user->save();
 
         // Log user creation
         $this->auditService->log(
@@ -83,9 +85,11 @@ class UserService
         $user->update([
             'username' => $data['username'],
             'email' => $data['email'],
-            'role' => $data['role'],
             'is_active' => $data['is_active'],
         ]);
+
+        $user->role = $data['role'];
+        $user->save();
 
         // Log user update
         $this->auditService->log(
@@ -158,9 +162,8 @@ class UserService
      */
     public function resetPassword(User $user, string $newPassword, int $resetBy): User
     {
-        $user->update([
-            'password_hash' => Hash::make($newPassword),
-        ]);
+        $user->password_hash = Hash::make($newPassword);
+        $user->save();
 
         // Log password reset
         $this->auditService->log(

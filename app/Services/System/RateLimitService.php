@@ -82,28 +82,30 @@ class RateLimitService
     /**
      * Check if an IP is within a CIDR range.
      */
-    private function ipInCidr(string $ip, string $cidr): bool
+    public function ipInCidr(string $ip, string $cidr): bool
     {
-        if (! str_contains($cidr, '/')) {
-            return $ip === $cidr;
-        }
-
-        [$subnet, $mask] = explode('/', $cidr);
-
-        // Validate IP addresses
-        if (! filter_var($ip, FILTER_VALIDATE_IP) || ! filter_var($subnet, FILTER_VALIDATE_IP)) {
+        if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             return false;
         }
 
-        // Convert IP to long integers
+        $parts = explode('/', $cidr, 2);
+        if (count($parts) !== 2) {
+            return false;
+        }
+
+        [$subnet, $mask] = $parts;
+
+        if (! filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return false;
+        }
+
+        if (! is_numeric($mask) || $mask < 0 || $mask > 32) {
+            return false;
+        }
+
         $ipLong = ip2long($ip);
         $subnetLong = ip2long($subnet);
         $maskLong = -1 << (32 - (int) $mask);
-
-        // Check if subnet is valid for the mask
-        if (($subnetLong & $maskLong) !== $subnetLong) {
-            return false;
-        }
 
         return ($ipLong & $maskLong) === ($subnetLong & $maskLong);
     }
@@ -201,13 +203,10 @@ class RateLimitService
         $window = config('security.ip_blocking.time_window_minutes', 5);
         $threshold = config('security.ip_blocking.failed_attempts_threshold', 10);
 
-        // Increment failed attempts counter
-        $attempts = Cache::store(config('ratelimit.store'))->increment($cacheKey);
-
-        // Set TTL on first attempt
-        if ($attempts === 1) {
-            Cache::store(config('ratelimit.store'))->put($cacheKey, $attempts, now()->addMinutes($window));
-        }
+        // Seed counter atomically and then increment to avoid a TTL-reset race
+        $store = Cache::store(config('ratelimit.store'));
+        $store->add($cacheKey, 0, now()->addMinutes($window));
+        $attempts = $store->increment($cacheKey);
 
         // Auto-block if threshold exceeded
         if ($attempts >= $threshold) {

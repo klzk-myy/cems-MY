@@ -6,6 +6,11 @@ use App\Enums\ReportType;
 
 class CreateReportScheduleRequest extends AuthorizedFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [

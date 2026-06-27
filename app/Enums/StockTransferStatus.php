@@ -14,6 +14,7 @@ enum StockTransferStatus: string
     case HqApproved = 'HqApproved';
     case InTransit = 'InTransit';
     case PartiallyReceived = 'PartiallyReceived';
+    case Received = 'Received';
     case Completed = 'Completed';
     case Cancelled = 'Cancelled';
     case Rejected = 'Rejected';
@@ -29,6 +30,7 @@ enum StockTransferStatus: string
             self::HqApproved => 'HQ Approved',
             self::InTransit => 'In Transit',
             self::PartiallyReceived => 'Partially Received',
+            self::Received => 'Received',
             self::Completed => 'Completed',
             self::Rejected => 'Rejected',
             self::Cancelled => 'Cancelled',
@@ -46,6 +48,7 @@ enum StockTransferStatus: string
             self::HqApproved => 'badge-success',
             self::InTransit => 'badge-primary',
             self::PartiallyReceived => 'badge-info',
+            self::Received => 'badge-success',
             self::Completed => 'badge-success',
             self::Rejected => 'badge-danger',
             self::Cancelled => 'badge-secondary',

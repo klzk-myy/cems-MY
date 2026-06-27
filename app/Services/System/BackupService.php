@@ -332,13 +332,22 @@ class BackupService
         $localDisk = Storage::disk('local');
         $freeSpace = disk_free_space(storage_path());
         $totalSpace = disk_total_space(storage_path());
-        $usedPercentage = (($totalSpace - $freeSpace) / $totalSpace) * 100;
 
-        $results['storage_space'] = [
-            'passed' => $usedPercentage < 90,
-            'message' => sprintf('Storage usage: %.1f%%', $usedPercentage),
-            'free_space_gb' => round($freeSpace / 1024 / 1024 / 1024, 2),
-        ];
+        if ($totalSpace <= 0) {
+            $results['storage_space'] = [
+                'passed' => false,
+                'message' => 'Unable to determine storage size.',
+                'free_space_gb' => round($freeSpace / 1024 / 1024 / 1024, 2),
+            ];
+        } else {
+            $usedPercentage = (($totalSpace - $freeSpace) / $totalSpace) * 100;
+
+            $results['storage_space'] = [
+                'passed' => $usedPercentage < 90,
+                'message' => sprintf('Storage usage: %.1f%%', $usedPercentage),
+                'free_space_gb' => round($freeSpace / 1024 / 1024 / 1024, 2),
+            ];
+        }
 
         // Check 3: Backup directory writable
         $backupPath = storage_path('app/'.config('backup.backup.name'));
@@ -443,11 +452,13 @@ class BackupService
             $s3Disk = Storage::disk('s3');
             $archivePath = 'archives/'.basename($log->file_path);
 
-            $s3Disk->put(
-                $archivePath,
-                file_get_contents($sourcePath),
-                ['StorageClass' => 'GLACIER']
-            );
+            $contents = file_get_contents($sourcePath);
+
+            if ($contents === false) {
+                throw new \RuntimeException("Failed to read backup file: {$sourcePath}");
+            }
+
+            $s3Disk->put($archivePath, $contents, ['StorageClass' => 'GLACIER']);
 
             // Update log
             $log->update([
@@ -497,7 +508,12 @@ class BackupService
         }
 
         // Sort by date descending
-        usort($backups, fn ($a, $b) => strtotime($b['date']) - strtotime($a['date']));
+        usort($backups, function ($a, $b) {
+            $ta = strtotime($a['date']) ?: 0;
+            $tb = strtotime($b['date']) ?: 0;
+
+            return $tb <=> $ta;
+        });
 
         return $backups;
     }

@@ -7,6 +7,11 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 class CloseCounterRequest extends ApiFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

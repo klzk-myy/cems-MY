@@ -78,38 +78,19 @@ class ComplianceReportingService
      */
     protected function getEddStatusCounts(): array
     {
-        $all = EnhancedDiligenceRecord::all();
-        $now = now();
-        $thirtyDaysAgo = $now->copy()->subDays(30);
+        $closedStatuses = [
+            EddStatus::Expired->value,
+            EddStatus::Rejected->value,
+            EddStatus::Approved->value,
+        ];
 
-        // Active = not closed (not Expired, Rejected, or Approved)
-        $active = $all->filter(function ($edd) {
-            $status = $edd->status instanceof EddStatus ? $edd->status->value : $edd->status;
+        $active = EnhancedDiligenceRecord::whereNotIn('status', $closedStatuses)->count();
 
-            return ! in_array($status, [
-                EddStatus::Expired->value,
-                EddStatus::Rejected->value,
-                EddStatus::Approved->value,
-            ]);
-        })->count();
+        $due30Days = EnhancedDiligenceRecord::whereNotIn('status', $closedStatuses)
+            ->where('created_at', '<', now()->subDays(30))
+            ->count();
 
-        // Due <30 days = pending records created more than 30 days ago
-        // (assuming they should have been completed by now)
-        $due30Days = $all->filter(function ($edd) use ($thirtyDaysAgo) {
-            $status = $edd->status instanceof EddStatus ? $edd->status->value : $edd->status;
-            if (in_array($status, [EddStatus::Expired->value, EddStatus::Rejected->value, EddStatus::Approved->value])) {
-                return false;
-            }
-            $created = $edd->created_at instanceof Carbon ? $edd->created_at : Carbon::parse($edd->created_at);
-
-            return $created->lt($thirtyDaysAgo);
-        })->count();
-
-        $expired = $all->filter(function ($edd) {
-            $status = $edd->status instanceof EddStatus ? $edd->status->value : $edd->status;
-
-            return $status === EddStatus::Expired->value;
-        })->count();
+        $expired = EnhancedDiligenceRecord::where('status', EddStatus::Expired->value)->count();
 
         return [
             'active' => $active,

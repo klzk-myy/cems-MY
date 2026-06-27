@@ -11,6 +11,7 @@ enum ReportGeneratedStatus: string
 {
     case Pending = 'Pending';
     case Generated = 'Generated';
+    case Failed = 'Failed';
     case Submitted = 'Submitted';
     case Archived = 'Archived';
 
@@ -54,6 +55,7 @@ enum ReportGeneratedStatus: string
         return match ($this) {
             self::Pending => 'Pending',
             self::Generated => 'Generated',
+            self::Failed => 'Failed',
             self::Submitted => 'Submitted',
             self::Archived => 'Archived',
         };
@@ -67,6 +69,7 @@ enum ReportGeneratedStatus: string
         return match ($this) {
             self::Pending => 'warning',
             self::Generated => 'info',
+            self::Failed => 'danger',
             self::Submitted => 'success',
             self::Archived => 'secondary',
         };

@@ -70,23 +70,13 @@ class Customer extends BaseModel
         'pep_role_ended_at',
         'current_role_domain',
         'former_pep_domain',
-        'sanction_hit',
         'is_pep_associate',
-        'risk_score',
-        'risk_rating',
-        'cdd_level',
         'is_active',
         'occupation',
         'employer_name',
         'employer_address',
         'annual_volume_estimate',
-        'risk_assessed_at',
         'last_transaction_at',
-        'is_frozen',
-        'freeze_reason',
-        'frozen_at',
-        'transactions_blocked',
-        'rejection_reason',
         'customer_type',
         'pep_type',
         'sanctions_screened_at',
@@ -271,28 +261,25 @@ class Customer extends BaseModel
 
     public function freeze(string $reason): void
     {
-        $this->update([
-            'is_frozen' => true,
-            'freeze_reason' => $reason,
-            'frozen_at' => now(),
-        ]);
+        $this->is_frozen = true;
+        $this->freeze_reason = $reason;
+        $this->frozen_at = now();
+        $this->save();
     }
 
     public function unfreeze(): void
     {
-        $this->update([
-            'is_frozen' => false,
-            'freeze_reason' => null,
-            'frozen_at' => null,
-        ]);
+        $this->is_frozen = false;
+        $this->freeze_reason = null;
+        $this->frozen_at = null;
+        $this->save();
     }
 
     public function reject(string $reason): void
     {
-        $this->update([
-            'is_active' => false,
-            'rejection_reason' => $reason,
-        ]);
+        $this->is_active = false;
+        $this->rejection_reason = $reason;
+        $this->save();
     }
 
     /**

@@ -153,7 +153,7 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/webhooks.php'));
 
             Route::prefix('api/v1')
-                ->middleware(['api', 'auth:sanctum'])
+                ->middleware(['api'])
                 ->group(base_path('routes/api_v1.php'));
 
             Route::middleware('web')

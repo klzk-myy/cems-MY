@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reports_generated', function (Blueprint $table) {
-            $table->enum('status', ['Generated', 'Submitted', 'Pending'])->default('Generated')->after('file_format');
+            $table->enum('status', ['Generated', 'Submitted', 'Pending', 'Failed'])->default('Generated')->after('file_format');
             $table->timestamp('submitted_at')->nullable()->after('status');
             $table->foreignId('submitted_by')->nullable()->constrained('users')->after('submitted_at');
         });

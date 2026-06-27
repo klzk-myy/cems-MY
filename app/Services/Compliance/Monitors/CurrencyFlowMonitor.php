@@ -5,7 +5,6 @@ namespace App\Services\Compliance\Monitors;
 use App\Enums\FindingSeverity;
 use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
-use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -36,14 +35,15 @@ class CurrencyFlowMonitor extends BaseMonitor
         $findings = [];
         $cutoffTime = now()->subDays($this->thresholdService->getCurrencyFlowLookbackDays());
 
-        // Get all customers with transactions in the lookback period
-        $customerIds = Transaction::where('created_at', '>=', $cutoffTime)
+        $grouped = Transaction::with('customer')
+            ->where('created_at', '>=', $cutoffTime)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->distinct('customer_id')
-            ->pluck('customer_id');
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->groupBy('customer_id');
 
-        foreach ($customerIds as $customerId) {
-            $finding = $this->checkCustomerRoundTripping($customerId);
+        foreach ($grouped as $customerId => $recentTransactions) {
+            $finding = $this->checkCustomerRoundTripping($customerId, $recentTransactions);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -55,16 +55,10 @@ class CurrencyFlowMonitor extends BaseMonitor
     /**
      * Check a customer for currency round-tripping patterns.
      */
-    protected function checkCustomerRoundTripping(int $customerId): ?array
+    protected function checkCustomerRoundTripping(int $customerId, $recentTransactions): ?array
     {
         $cutoffTime = now()->subHours(self::TIME_WINDOW_HOURS);
-
-        // Get recent transactions
-        $recentTransactions = Transaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', $cutoffTime)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->orderBy('created_at', 'asc')
-            ->get();
+        $recentTransactions = $recentTransactions->where('created_at', '>=', $cutoffTime);
 
         if ($recentTransactions->count() < 2) {
             return null;
@@ -77,7 +71,7 @@ class CurrencyFlowMonitor extends BaseMonitor
             return null;
         }
 
-        $customer = Customer::find($customerId);
+        $customer = $recentTransactions->first()->customer;
 
         return $this->createFinding(
             type: FindingType::CurrencyFlowAnomaly,

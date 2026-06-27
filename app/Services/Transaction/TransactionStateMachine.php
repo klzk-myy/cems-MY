@@ -108,6 +108,9 @@ class TransactionStateMachine
     /**
      * Transition the transaction to a new status.
      *
+     * IMPORTANT: The caller MUST have loaded $this->transaction with lockForUpdate()
+     * inside an active database transaction before calling this method.
+     *
      * @param  TransactionStatus  $to  The target status
      * @param  array  $context  Optional context (reason, user_id, etc.)
      * @return bool True if the transition was successful
@@ -186,6 +189,9 @@ class TransactionStateMachine
         if ($to === TransactionStatus::Reversed) {
             $this->transaction->reversal_reason = $context['reason'] ?? null;
         }
+
+        // Optimistic concurrency version bump
+        $this->transaction->version = ($this->transaction->version ?? 0) + 1;
     }
 
     /**

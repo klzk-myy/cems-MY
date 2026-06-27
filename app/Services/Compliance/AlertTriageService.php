@@ -277,10 +277,11 @@ class AlertTriageService
     public function bulkAssign(array $alertIds, int $userId): array
     {
         $results = ['success' => 0, 'failed' => 0, 'errors' => []];
+        $alerts = Alert::whereIn('id', $alertIds)->get()->keyBy('id');
 
         foreach ($alertIds as $alertId) {
             try {
-                $alert = Alert::find($alertId);
+                $alert = $alerts->get($alertId);
                 if (! $alert) {
                     $results['failed']++;
                     $results['errors'][] = "Alert {$alertId} not found";
@@ -318,10 +319,11 @@ class AlertTriageService
     {
         return DB::transaction(function () use ($alertIds, $resolvedBy, $notes) {
             $results = ['success' => 0, 'failed' => 0, 'errors' => []];
+            $alerts = Alert::whereIn('id', $alertIds)->get()->keyBy('id');
 
             foreach ($alertIds as $alertId) {
                 try {
-                    $alert = Alert::find($alertId);
+                    $alert = $alerts->get($alertId);
                     if (! $alert) {
                         $results['failed']++;
                         $results['errors'][] = "Alert {$alertId} not found";
@@ -359,10 +361,11 @@ class AlertTriageService
     {
         return DB::transaction(function () use ($alertIds, $case) {
             $results = ['success' => 0, 'failed' => 0, 'errors' => []];
+            $alerts = Alert::whereIn('id', $alertIds)->get()->keyBy('id');
 
             foreach ($alertIds as $alertId) {
                 try {
-                    $alert = Alert::find($alertId);
+                    $alert = $alerts->get($alertId);
                     if (! $alert) {
                         $results['failed']++;
                         $results['errors'][] = "Alert {$alertId} not found";

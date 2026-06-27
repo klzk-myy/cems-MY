@@ -18,6 +18,7 @@ use App\Models\JournalLine;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\System\MathService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -256,11 +257,24 @@ class FiscalYearService
     }
 
     /**
+     * Get aggregated closing balances for a set of account codes.
+     */
+    protected function getClosingBalancesForAccounts(array $accountCodes, string $entryDate): Collection
+    {
+        return AccountLedger::whereRaw('DATE(entry_date) <= ?', [$entryDate])
+            ->whereIn('account_code', $accountCodes)
+            ->select('account_code', DB::raw('SUM(debit) as total_debit'), DB::raw('SUM(credit) as total_credit'))
+            ->groupBy('account_code')
+            ->get()
+            ->keyBy('account_code');
+    }
+
+    /**
      * Close revenue accounts to income summary.
      */
     protected function closeRevenueToIncomeSummary(string $total, string $entryDate, int $userId): JournalEntry
     {
-        $entryNumber = 'CE-'.date('Ym', strtotime($entryDate)).'-001';
+        $entryNumber = $this->generateEntryNumber($entryDate);
 
         $entry = JournalEntry::create([
             'entry_number' => $entryNumber,
@@ -276,8 +290,14 @@ class FiscalYearService
 
         // Debit each revenue account
         $revenueAccounts = ChartOfAccount::where('account_type', 'Revenue')->get();
+        $balances = $this->getClosingBalancesForAccounts($revenueAccounts->pluck('account_code')->toArray(), $entryDate);
+
         foreach ($revenueAccounts as $account) {
-            $balance = $this->getAccountBalanceForClosing($account->account_code, $entryDate, 'credit');
+            $row = $balances->get($account->account_code);
+            $balance = $row
+                ? $this->mathService->subtract((string) $row->total_credit, (string) $row->total_debit)
+                : '0';
+
             if ($this->mathService->compare($balance, '0') !== 0) {
                 JournalLine::create([
                     'journal_entry_id' => $entry->id,
@@ -309,7 +329,7 @@ class FiscalYearService
      */
     protected function closeExpensesToIncomeSummary(string $total, string $entryDate, int $userId): JournalEntry
     {
-        $entryNumber = 'CE-'.date('Ym', strtotime($entryDate)).'-002';
+        $entryNumber = $this->generateEntryNumber($entryDate, '002');
 
         $entry = JournalEntry::create([
             'entry_number' => $entryNumber,
@@ -324,8 +344,14 @@ class FiscalYearService
 
         // Credit each expense account
         $expenseAccounts = ChartOfAccount::where('account_type', 'Expense')->get();
+        $balances = $this->getClosingBalancesForAccounts($expenseAccounts->pluck('account_code')->toArray(), $entryDate);
+
         foreach ($expenseAccounts as $account) {
-            $balance = $this->getAccountBalanceForClosing($account->account_code, $entryDate, 'debit');
+            $row = $balances->get($account->account_code);
+            $balance = $row
+                ? $this->mathService->subtract((string) $row->total_debit, (string) $row->total_credit)
+                : '0';
+
             if ($this->mathService->compare($balance, '0') !== 0) {
                 JournalLine::create([
                     'journal_entry_id' => $entry->id,
@@ -357,7 +383,7 @@ class FiscalYearService
      */
     protected function closeIncomeSummaryToRetained(string $netIncome, string $entryDate, int $userId): JournalEntry
     {
-        $entryNumber = 'CE-'.date('Ym', strtotime($entryDate)).'-003';
+        $entryNumber = $this->generateEntryNumber($entryDate, '003');
 
         $entry = JournalEntry::create([
             'entry_number' => $entryNumber,
@@ -540,6 +566,19 @@ class FiscalYearService
         return $account->account_type instanceof AccountType
             ? $account->account_type->isDebitNormal()
             : in_array($account->account_type, ['Asset', 'Expense']);
+    }
+
+    /**
+     * Generate a closing entry number for a date.
+     */
+    public function generateEntryNumber(string $entryDate, string $suffix = '001'): string
+    {
+        $timestamp = strtotime($entryDate);
+        if ($timestamp === false) {
+            throw new \InvalidArgumentException("Invalid entry date: {$entryDate}");
+        }
+
+        return 'CE-'.date('Ym', $timestamp).'-'.$suffix;
     }
 
     /**

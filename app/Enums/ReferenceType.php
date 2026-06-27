@@ -13,6 +13,7 @@ enum ReferenceType: string
     case OpeningBalance = 'Opening Balance';
     case Reversal = 'Reversal';
     case Test = 'Test';
+    case PeriodClose = 'Period_Close';
 
     public function label(): string
     {
@@ -26,6 +27,7 @@ enum ReferenceType: string
             self::OpeningBalance => 'Opening Balance',
             self::Reversal => 'Reversal',
             self::Test => 'Test',
+            self::PeriodClose => 'Period Close',
         };
     }
 }

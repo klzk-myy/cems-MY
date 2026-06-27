@@ -103,6 +103,8 @@ class TransactionImportService
                 'till_id' => isset($row[7]) && ! empty(trim($row[7])) ? trim($row[7]) : 'MAIN',
             ];
 
+            $data['idempotency_key'] = md5(json_encode($data));
+
             // Validate required fields
             if (empty($data['customer_id']) || empty($data['type']) || empty($data['currency_code']) ||
                 empty($data['amount_foreign']) || empty($data['rate']) || empty($data['purpose']) ||
@@ -220,11 +222,13 @@ class TransactionImportService
                     'rate' => $rate,
                     'purpose' => $data['purpose'],
                     'source_of_funds' => $data['source_of_funds'],
-                    'status' => $status,
-                    'hold_reason' => $holdReason,
-                    'approved_by' => $approvedBy,
                     'cdd_level' => $cddLevel,
                 ]);
+
+                $transaction->status = $status;
+                $transaction->hold_reason = $holdReason;
+                $transaction->approved_by = $approvedBy;
+                $transaction->save();
 
                 // Update currency position (if not pending approval)
                 if ($status === TransactionStatus::Completed->value) {

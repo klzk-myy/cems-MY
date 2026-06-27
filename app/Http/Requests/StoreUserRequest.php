@@ -7,6 +7,11 @@ use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends AuthorizedFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [

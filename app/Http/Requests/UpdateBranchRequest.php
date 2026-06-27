@@ -6,6 +6,11 @@ use Illuminate\Validation\Rule;
 
 class UpdateBranchRequest extends AuthorizedFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [

@@ -9,7 +9,6 @@ use App\Services\AuditService;
 use App\Services\System\MathService;
 use App\Services\Transaction\StockTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -24,10 +23,10 @@ class StockTransferServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::create([
+        $this->user = User::factory()->create([
             'username' => 'test_user',
             'email' => 'test@example.com',
-            'password_hash' => Hash::make('password'),
+            'password' => 'password',
             'role' => UserRole::Manager,
         ]);
         $this->stockTransferService = new StockTransferService(new MathService, new AuditService, $this->user);

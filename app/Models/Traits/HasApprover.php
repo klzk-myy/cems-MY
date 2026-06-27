@@ -10,7 +10,6 @@ trait HasApprover
 {
     public function initializeHasApprover(): void
     {
-        $this->mergeFillable(['approved_by', 'approved_at']);
         $this->mergeCasts(['approved_at' => 'datetime']);
     }
 
@@ -21,9 +20,9 @@ trait HasApprover
 
     public function approve(User $user, ?Carbon $at = null): bool
     {
-        return $this->update([
-            'approved_by' => $user->id,
-            'approved_at' => $at ?? now(),
-        ]);
+        $this->approved_by = $user->id;
+        $this->approved_at = $at ?? now();
+
+        return $this->save();
     }
 }

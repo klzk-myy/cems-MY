@@ -41,7 +41,7 @@ class TransactionCancellationFlowTest extends TestCase
         $counter = $this->setupOpenTill($teller, 'USD', '1000.00');
 
         // Create a completed transaction
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -69,7 +69,7 @@ class TransactionCancellationFlowTest extends TestCase
         $counter = $this->setupOpenTill($teller, 'USD', '1000.00');
 
         // Create an old completed transaction (beyond 24 hour window)
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -85,11 +85,12 @@ class TransactionCancellationFlowTest extends TestCase
             'updated_at' => now()->subDays(2),
         ]);
 
-        // Manager trying to cancel old transaction - controller returns back() with error
+        $transaction->refresh();
+
         $response = $this->actingAs($manager)->get("/transactions/{$transaction->id}/cancel");
-        // Returns 200 with back() since it's an old transaction (controller returns back()->with())
-        // For a fresh request (not coming from previous page), back() returns 200 with view
-        $response->assertStatus(200);
+        // Old completed transactions are outside the cancellation window and are rejected.
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'This transaction is outside the cancellation window.');
     }
 
     #[Test]
@@ -101,7 +102,7 @@ class TransactionCancellationFlowTest extends TestCase
         $counter = $this->setupOpenTill($teller, 'USD', '1000.00');
 
         // Create a transaction with PendingApproval status (can be tested for cancellation restrictions)
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -137,7 +138,7 @@ class TransactionCancellationFlowTest extends TestCase
         $customer = $this->createTestCustomer();
         $counter = $this->setupOpenTill($teller, 'USD', '1000.00');
 
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -176,7 +177,7 @@ class TransactionCancellationFlowTest extends TestCase
         ]);
 
         // Create a completed transaction
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Sell,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -223,7 +224,7 @@ class TransactionCancellationFlowTest extends TestCase
         ]);
 
         // Create a completed transaction
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Sell,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -263,7 +264,7 @@ class TransactionCancellationFlowTest extends TestCase
 
         // Create an already completed transaction with cancelled_at set
         // Note: The DB constraint only allows certain status values
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Sell,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -308,7 +309,7 @@ class TransactionCancellationFlowTest extends TestCase
         ]);
 
         // Create a completed transaction by the teller
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Sell,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -344,7 +345,7 @@ class TransactionCancellationFlowTest extends TestCase
         ]);
 
         // Create a completed transaction
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Sell,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -380,7 +381,7 @@ class TransactionCancellationFlowTest extends TestCase
         ]);
 
         // Create a completed transaction by teller1
-        $transaction = Transaction::create([
+        $transaction = Transaction::factory()->create([
             'type' => TransactionType::Sell,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',

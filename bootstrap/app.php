@@ -34,7 +34,7 @@ use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Http\Middleware\SetCacheHeaders;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Session\Middleware\AuthenticateSession;
-use Illuminate\Session\Middleware\StartSession;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -49,10 +49,6 @@ $app = Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
             QueryLogging::class,
             PerformanceTrackingMiddleware::class,
-        ]);
-
-        $middleware->api(prepend: [
-            StartSession::class,
         ]);
 
         $middleware->alias([
@@ -75,6 +71,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
             'ip.blocker' => IpBlocker::class,
             'strict.ratelimit' => StrictRateLimit::class,
             'setup.accessible' => EnsureSetupAccessible::class,
+            'stateful' => EnsureFrontendRequestsAreStateful::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -426,7 +426,7 @@ class MfaService
     /**
      * Base32 decode data.
      */
-    private function base32Decode(string $data): string
+    public function base32Decode(string $data): string
     {
         $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
         $data = strtoupper(str_replace(['=', ' '], '', $data));
@@ -435,7 +435,7 @@ class MfaService
         foreach (str_split($data) as $char) {
             $index = strpos($alphabet, $char);
             if ($index === false) {
-                continue;
+                throw new \InvalidArgumentException('Invalid base32 character in MFA secret: '.$char);
             }
             $binary .= str_pad(decbin($index), 5, '0', STR_PAD_LEFT);
         }

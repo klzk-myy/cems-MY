@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 class SetupRequest extends AuthorizedFormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         $step = $this->input('step', $this->route()->getActionMethod());

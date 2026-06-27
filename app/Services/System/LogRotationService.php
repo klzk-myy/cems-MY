@@ -29,49 +29,59 @@ class LogRotationService
         $retentionDays = $retentionDays ?? $this->defaultRetentionDays;
         $cutoffDate = Carbon::now()->subDays($retentionDays);
 
-        $logsToArchive = SystemLog::where('created_at', '<', $cutoffDate)->get();
-
-        if ($logsToArchive->isEmpty()) {
-            return [
-                'archived' => 0,
-                'file' => null,
-                'message' => 'No logs to archive',
-            ];
-        }
-
-        // Create archive filename
         $archiveFilename = 'system_logs_archive_'.now()->format('Y_m_d_His').'.json';
         $archivePath = storage_path('app/archives/'.$archiveFilename);
+        $archiveDir = dirname($archivePath);
 
-        // Ensure directory exists
-        if (! file_exists(dirname($archivePath))) {
-            mkdir(dirname($archivePath), 0755, true);
+        if (! file_exists($archiveDir) && ! mkdir($archiveDir, 0755, true) && ! is_dir($archiveDir)) {
+            throw new \RuntimeException("Failed to create archive directory: {$archiveDir}");
         }
 
-        // Write logs to JSON file
-        $archiveData = $logsToArchive->map(function ($log) {
-            return [
-                'id' => $log->id,
-                'user_id' => $log->user_id,
-                'action' => $log->action,
-                'severity' => $log->severity,
-                'entity_type' => $log->entity_type,
-                'entity_id' => $log->entity_id,
-                'old_values' => $log->old_values,
-                'new_values' => $log->new_values,
-                'ip_address' => $log->ip_address,
-                'user_agent' => $log->user_agent,
-                'session_id' => $log->session_id,
-                'created_at' => $log->created_at->toDateTimeString(),
-            ];
-        });
+        $handle = fopen($archivePath, 'w');
+        if (! $handle) {
+            throw new \RuntimeException("Failed to open archive file: {$archivePath}");
+        }
 
-        file_put_contents($archivePath, json_encode($archiveData, JSON_PRETTY_PRINT));
+        fwrite($handle, '[');
+        $first = true;
+        $ids = [];
 
-        // Delete archived logs from database
-        $archivedCount = SystemLog::where('created_at', '<', $cutoffDate)->delete();
+        SystemLog::where('created_at', '<', $cutoffDate)
+            ->orderBy('id')
+            ->lazyById()
+            ->each(function ($log) use ($handle, &$first, &$ids) {
+                $ids[] = $log->id;
+                fwrite($handle, ($first ? '' : ',').json_encode([
+                    'id' => $log->id,
+                    'user_id' => $log->user_id,
+                    'action' => $log->action,
+                    'severity' => $log->severity,
+                    'entity_type' => $log->entity_type,
+                    'entity_id' => $log->entity_id,
+                    'old_values' => $log->old_values,
+                    'new_values' => $log->new_values,
+                    'ip_address' => $log->ip_address,
+                    'user_agent' => $log->user_agent,
+                    'session_id' => $log->session_id,
+                    'created_at' => $log->created_at->toDateTimeString(),
+                ]));
+                $first = false;
+            });
 
-        // Log the archive action
+        fwrite($handle, ']');
+        if (fclose($handle) === false) {
+            throw new \RuntimeException("Failed to close archive file: {$archivePath}");
+        }
+
+        if (! is_file($archivePath) || filesize($archivePath) === 0) {
+            throw new \RuntimeException("Archive file was not written: {$archivePath}");
+        }
+
+        $archivedCount = 0;
+        foreach (array_chunk($ids, 1000) as $chunk) {
+            $archivedCount += SystemLog::whereIn('id', $chunk)->delete();
+        }
+
         $this->auditService->log(
             'logs_archived',
             null,
