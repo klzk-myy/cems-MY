@@ -7,37 +7,31 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        // Production safety: if duplicate (branch_id, currency_code) rows exist,
-        // keep the most recently updated row and delete the rest before adding
-        // the unique constraint.
-        $duplicates = DB::table('exchange_rates')
-            ->selectRaw('branch_id, currency_code, MAX(updated_at) as max_updated_at, COUNT(*) as count')
-            ->groupBy('branch_id', 'currency_code')
-            ->having('count', '>', 1)
-            ->get();
+        DB::transaction(function () {
+            // Merge duplicates: keep the row with the highest id (most recent)
+            $duplicates = DB::table('exchange_rates')
+                ->selectRaw('branch_id, currency_code, MAX(id) as max_id, COUNT(*) as count')
+                ->groupBy('branch_id', 'currency_code')
+                ->having('count', '>', 1)
+                ->get();
 
-        foreach ($duplicates as $duplicate) {
-            DB::table('exchange_rates')
-                ->where('branch_id', $duplicate->branch_id)
-                ->where('currency_code', $duplicate->currency_code)
-                ->whereRaw('COALESCE(updated_at, created_at) < ?', [$duplicate->max_updated_at])
-                ->delete();
-        }
+            foreach ($duplicates as $duplicate) {
+                DB::table('exchange_rates')
+                    ->where('branch_id', $duplicate->branch_id)
+                    ->where('currency_code', $duplicate->currency_code)
+                    ->where('id', '!=', $duplicate->max_id)
+                    ->delete();
+            }
 
-        Schema::table('exchange_rates', function (Blueprint $table) {
-            $table->dropIndex(['branch_id', 'currency_code']);
-            $table->unique(['branch_id', 'currency_code'], 'exchange_rates_branch_currency_unique');
+            Schema::table('exchange_rates', function (Blueprint $table) {
+                $table->dropIndex(['branch_id', 'currency_code']);
+                $table->unique(['branch_id', 'currency_code'], 'exchange_rates_branch_currency_unique');
+            });
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('exchange_rates', function (Blueprint $table) {
