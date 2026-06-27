@@ -66,6 +66,7 @@ class CounterOpeningWorkflowService
                 ->whereDate('session_date', '<=', $today)
                 ->orderByDesc('session_date')
                 ->get()
+                ->unique('currency_code')
                 ->keyBy('currency_code');
 
             $tellerAllocations = [];
