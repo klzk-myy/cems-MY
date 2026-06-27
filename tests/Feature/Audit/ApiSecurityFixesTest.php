@@ -5,6 +5,7 @@ namespace Tests\Feature\Audit;
 use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -81,6 +82,22 @@ class ApiSecurityFixesTest extends TestCase
 
         $this->actingAs($teller, 'sanctum')
             ->postJson(route('api.v1.risk.lock', $customer))
+            ->assertForbidden();
+    }
+
+    public function test_teller_cannot_view_other_branch_customer_history(): void
+    {
+        $branchA = Branch::factory()->create();
+        $branchB = Branch::factory()->create();
+        $tellerA = User::factory()->for($branchA)->create(['role' => UserRole::Teller]);
+        $customerB = Customer::factory()->create();
+
+        Transaction::factory()->for($customerB)->for($branchB)->create([
+            'user_id' => $tellerA->id,
+        ]);
+
+        $this->actingAs($tellerA, 'sanctum')
+            ->getJson(route('api.v1.customers.history', $customerB))
             ->assertForbidden();
     }
 }

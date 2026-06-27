@@ -203,6 +203,7 @@ class CustomerController extends Controller
     public function customerHistory(int $id): TransactionCollection
     {
         $customer = Customer::findOrFail($id);
+        $this->authorize('view', $customer);
 
         $transactions = $customer->transactions()
             ->orderBy('created_at', 'desc')
