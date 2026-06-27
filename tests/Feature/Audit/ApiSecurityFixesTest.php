@@ -151,7 +151,7 @@ class ApiSecurityFixesTest extends TestCase
         $this->assertNotSame('hacked', $user->password_hash);
     }
 
-    public function test_unauthorized_form_request_subclass_is_denied(): void
+    public function test_default_form_request_fails_closed(): void
     {
         $request = new class extends AuthorizedFormRequest
         {
