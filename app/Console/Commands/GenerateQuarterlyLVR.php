@@ -52,12 +52,19 @@ class GenerateQuarterlyLVR extends Command
 
     protected function getQuarterStart(string $quarter): Carbon
     {
-        $parts = explode('-', $quarter);
-        $year = (int) $parts[0];
-        $q = (int) substr($parts[1], 1);
-        $startMonth = (($q - 1) * 3) + 1;
+        [$year, $quarterNumber] = $this->parseQuarter($quarter);
+        $startMonth = ($quarterNumber - 1) * 3 + 1;
 
         return Carbon::create($year, $startMonth, 1)->startOfMonth();
+    }
+
+    private function parseQuarter(string $quarter): array
+    {
+        if (! preg_match('/^(\d{4})-Q([1-4])$/', $quarter, $matches)) {
+            throw new \InvalidArgumentException("Invalid quarter format: {$quarter}. Expected YYYY-QN.");
+        }
+
+        return [(int) $matches[1], (int) $matches[2]];
     }
 
     protected function getQuarterEnd(string $quarter): Carbon

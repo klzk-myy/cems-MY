@@ -89,4 +89,10 @@ class EdgeCaseFixesTest extends TestCase
         $this->expectException(\RuntimeException::class);
         (new SealAuditHashJob($log->id))->handle(app(AuditService::class));
     }
+
+    public function test_invalid_quarter_throws(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        app(ReportingService::class)->generateQuarterlyLargeValueReport('not-a-quarter');
+    }
 }

@@ -321,11 +321,8 @@ class ReportingService implements ReportingServiceInterface
 
     public function generateQuarterlyLargeValueReport(string $quarter): array
     {
-        $parts = explode('-', $quarter);
-        $year = (int) $parts[0];
-        $q = (int) substr($parts[1], 1);
-
-        $startMonth = (($q - 1) * 3) + 1;
+        [$year, $quarterNumber] = $this->parseQuarter($quarter);
+        $startMonth = ($quarterNumber - 1) * 3 + 1;
         $startDate = Carbon::create($year, $startMonth, 1)->startOfMonth();
         $endDate = $startDate->copy()->addMonths(3)->subDay();
 
@@ -508,5 +505,14 @@ class ReportingService implements ReportingServiceInterface
         fclose($csv);
 
         return $filepath;
+    }
+
+    private function parseQuarter(string $quarter): array
+    {
+        if (! preg_match('/^(\d{4})-Q([1-4])$/', $quarter, $matches)) {
+            throw new \InvalidArgumentException("Invalid quarter format: {$quarter}. Expected YYYY-QN.");
+        }
+
+        return [(int) $matches[1], (int) $matches[2]];
     }
 }
