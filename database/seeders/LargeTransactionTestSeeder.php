@@ -138,11 +138,11 @@ class LargeTransactionTestSeeder extends Seeder
             $user = User::create([
                 'username' => 'Test Teller',
                 'email' => 'teller@test.com',
-                'role' => 'teller',
                 'branch_id' => 1,
                 'is_active' => true,
             ]);
 
+            $user->role = 'teller';
             $user->password_hash = bcrypt('password');
             $user->save();
         }

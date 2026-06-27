@@ -40,11 +40,11 @@ class UserService
         $user = User::create([
             'username' => $data['username'],
             'email' => $data['email'],
-            'role' => $data['role'],
             'mfa_enabled' => false,
             'is_active' => true,
         ]);
 
+        $user->role = $data['role'];
         $user->password_hash = Hash::make($data['password']);
         $user->save();
 
@@ -85,9 +85,11 @@ class UserService
         $user->update([
             'username' => $data['username'],
             'email' => $data['email'],
-            'role' => $data['role'],
             'is_active' => $data['is_active'],
         ]);
+
+        $user->role = $data['role'];
+        $user->save();
 
         // Log user update
         $this->auditService->log(

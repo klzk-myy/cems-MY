@@ -119,14 +119,16 @@ abstract class TestCase extends BaseTestCase
      */
     protected function createTestCustomer(array $attributes = []): Customer
     {
-        return Customer::create(array_merge([
+        return Customer::factory()->create(array_merge([
             'full_name' => 'Test Customer',
             'id_type' => 'MyKad',
             'id_number_encrypted' => encrypt('123456789012'),
             'nationality' => 'MY',
             'date_of_birth' => '1990-01-01',
             'risk_rating' => 'Low',
+            'risk_score' => 10,
             'cdd_level' => 'Simplified',
+            'sanction_hit' => false,
             'is_active' => true,
         ], $attributes));
     }

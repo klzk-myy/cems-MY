@@ -43,10 +43,10 @@ class UserSeeder extends Seeder
             if (! $user->exists) {
                 $user->fill([
                     'username' => $userData['username'],
-                    'role' => $userData['role'],
                     'mfa_enabled' => false,
                     'is_active' => true,
                 ]);
+                $user->role = $userData['role'];
                 $user->password_hash = Hash::make($userData['password']); // Directly set hashed password
                 $user->save();
             }

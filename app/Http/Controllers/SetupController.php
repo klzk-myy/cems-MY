@@ -304,11 +304,11 @@ class SetupController extends Controller
             $user = User::create([
                 'username' => $setupData['admin']['admin_name'],
                 'email' => $setupData['admin']['admin_email'],
-                'role' => 'admin',
                 'mfa_enabled' => false,
                 'is_active' => true,
             ]);
 
+            $user->role = 'admin';
             $user->password_hash = Hash::make($setupData['admin']['admin_password']);
             $user->save();
         }

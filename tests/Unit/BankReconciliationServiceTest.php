@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Services\Accounting\BankReconciliationService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -27,10 +26,10 @@ class BankReconciliationServiceTest extends TestCase
     {
         parent::setUp();
         $this->bankReconciliationService = new BankReconciliationService(new MathService);
-        $this->user = User::create([
+        $this->user = User::factory()->create([
             'username' => 'test_user',
             'email' => 'test@example.com',
-            'password_hash' => Hash::make('password'),
+            'password' => 'password',
             'role' => 'teller',
         ]);
     }

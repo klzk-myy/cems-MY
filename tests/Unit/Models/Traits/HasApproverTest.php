@@ -28,7 +28,7 @@ class HasApproverTest extends TestCase
     }
 
     #[Test]
-    public function it_adds_approval_fields_to_fillable_and_casts(): void
+    public function it_keeps_approval_fields_guarded_and_casts_approved_at(): void
     {
         $model = new class extends BaseModel
         {
@@ -37,8 +37,8 @@ class HasApproverTest extends TestCase
             protected $table = 'approver_owners';
         };
 
-        $this->assertContains('approved_by', $model->getFillable());
-        $this->assertContains('approved_at', $model->getFillable());
+        $this->assertNotContains('approved_by', $model->getFillable());
+        $this->assertNotContains('approved_at', $model->getFillable());
         $this->assertArrayHasKey('approved_at', $model->getCasts());
     }
 

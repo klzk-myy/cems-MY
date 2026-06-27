@@ -103,6 +103,12 @@ class CustomerService implements CustomerServiceInterface
             // Update customer
             $customer->update($encryptedData);
 
+            // Risk rating is no longer mass-assignable; set it explicitly when provided.
+            if (array_key_exists('risk_rating', $data)) {
+                $customer->risk_rating = $data['risk_rating'];
+                $customer->save();
+            }
+
             // Re-screen against sanctions if name changed
             if (isset($data['full_name']) && $data['full_name'] !== $customer->full_name) {
                 $this->screenCustomer($customer, $data['full_name']);

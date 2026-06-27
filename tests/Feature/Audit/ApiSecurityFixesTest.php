@@ -144,6 +144,8 @@ class ApiSecurityFixesTest extends TestCase
             'email' => 'test@example.com',
             'password_hash' => 'hacked',
         ]);
+        $user->role = UserRole::Teller;
+        $user->save();
 
         $this->assertNotSame('hacked', $user->password_hash);
     }

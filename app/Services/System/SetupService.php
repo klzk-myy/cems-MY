@@ -14,11 +14,11 @@ class SetupService
         $admin = User::create([
             'username' => $config['admin_username'] ?? 'admin',
             'email' => $config['admin_email'],
-            'role' => 'admin',
             'mfa_enabled' => false,
             'is_active' => true,
         ]);
 
+        $admin->role = 'admin';
         $admin->password_hash = Hash::make($config['admin_password']);
         $admin->save();
 

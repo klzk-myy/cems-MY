@@ -26,9 +26,9 @@ try {
     $manager = User::create([
         'username' => 'manager_test',
         'email' => 'manager@test.com',
-        'role' => 'manager',
         'is_active' => true,
     ]);
+    $manager->role = 'manager';
     $manager->password_hash = Hash::make('password');
     $manager->save();
     Log::info('Manager created', ['user_id' => $manager->id, 'role' => 'manager']);
@@ -40,10 +40,10 @@ try {
         $teller = User::create([
             'username' => 'teller_'.strtolower($branch->code),
             'email' => 'teller.'.strtolower($branch->code).'@test.com',
-            'role' => 'teller',
             'branch_id' => $branch->id,
             'is_active' => true,
         ]);
+        $teller->role = 'teller';
         $teller->password_hash = Hash::make('password');
         $teller->save();
         $tellers[$branch->id] = $teller;
