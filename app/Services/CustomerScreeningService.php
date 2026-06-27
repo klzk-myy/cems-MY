@@ -142,12 +142,10 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
     public function batchScreen(array $customerIds): Collection
     {
         $results = new Collection;
+        $customers = Customer::whereIn('id', $customerIds)->get();
 
-        foreach ($customerIds as $customerId) {
-            $customer = Customer::find($customerId);
-            if ($customer) {
-                $results->push($this->screenCustomer($customer));
-            }
+        foreach ($customers as $customer) {
+            $results->push($this->screenCustomer($customer));
         }
 
         return $results;
