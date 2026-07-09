@@ -4,8 +4,16 @@ namespace App\Providers;
 
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\Contracts\TransactionHoldServiceInterface;
+use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionServiceInterface;
+use App\Services\Contracts\TransactionStatusServiceInterface;
+use App\Services\Contracts\TransactionValidationInterface;
+use App\Services\Transaction\TransactionHoldService;
+use App\Services\Transaction\TransactionIdempotencyService;
 use App\Services\Transaction\TransactionService;
+use App\Services\Transaction\TransactionStatusService;
+use App\Services\Transaction\TransactionValidationService;
 use App\View\Composers\NavigationComposer;
 use App\View\Composers\UserComposer;
 use Carbon\Carbon;
@@ -24,6 +32,26 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             TransactionServiceInterface::class,
             TransactionService::class
+        );
+
+        $this->app->bind(
+            TransactionHoldServiceInterface::class,
+            TransactionHoldService::class
+        );
+
+        $this->app->bind(
+            TransactionIdempotencyServiceInterface::class,
+            TransactionIdempotencyService::class
+        );
+
+        $this->app->bind(
+            TransactionStatusServiceInterface::class,
+            TransactionStatusService::class
+        );
+
+        $this->app->bind(
+            TransactionValidationInterface::class,
+            TransactionValidationService::class
         );
     }
 

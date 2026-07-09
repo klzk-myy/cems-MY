@@ -1,0 +1,4 @@
+DB Connection: mysql
+DB Database: cems_my
+DB Connection: OK
+Tables count: 84

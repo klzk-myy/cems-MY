@@ -22,7 +22,6 @@ class CurrencyPosition extends BaseModel
     protected $fillable = [
         'currency_code',
         'branch_id',
-        'till_id',
         'quantity',
         'average_cost',
         'total_cost',

@@ -28,7 +28,11 @@ use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
 use App\Services\Compliance\PepApprovalService;
+use App\Services\Contracts\TransactionHoldServiceInterface;
+use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionServiceInterface;
+use App\Services\Contracts\TransactionStatusServiceInterface;
+use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\CustomerScreeningService;
 use App\Services\DTOs\PreValidationResult;
 use App\Services\DTOs\SanctionCheckResult;
@@ -57,65 +61,19 @@ class TransactionService implements TransactionServiceInterface
         protected CacheTagsService $cacheTagsService,
         protected TransactionAccountingService $transactionAccountingService,
         protected PepApprovalService $pepApprovalService,
-        protected TransactionValidationService $validationService,
+        protected TransactionValidationInterface $validationService,
+        protected TransactionHoldServiceInterface $holdService,
+        protected TransactionIdempotencyServiceInterface $idempotencyService,
+        protected TransactionStatusServiceInterface $statusService,
     ) {}
 
     /**
      * Run complete pre-transaction validation before creation.
-     *
-     * This consolidates validation logic previously in TransactionPreValidationService:
-     * - Sanctions screening (blocking)
-     * - CDD level determination
-     * - Historical risk analysis (for returning customers)
-     * - Hold status determination
-     *
-     * @param  Customer  $customer  Customer for validation
-     * @param  string  $amount  Transaction amount (in MYR)
-     * @param  string  $currencyCode  Currency code
+     * Delegates to TransactionValidationService.
      */
     public function preValidate(Customer $customer, string $amount, string $currencyCode): PreValidationResult
     {
-        $result = new PreValidationResult;
-
-        // 1. Sanctions screening (blocking)
-        $sanctionResult = $this->checkSanctions($customer);
-        if ($sanctionResult->isBlocked()) {
-            $result->addBlock('sanctions', $sanctionResult->getMessage());
-
-            return $result;
-        }
-
-        // 2. CDD level determination
-        $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
-        $result->setCDDLevel($cddLevel);
-
-        // 3. Historical risk analysis (for returning customers)
-        if ($this->isReturningCustomer($customer)) {
-            $riskResult = $this->historicalRiskAnalysisService->analyze($customer, $amount);
-            $result->setRiskFlags($riskResult->getFlags());
-        }
-
-        // 4. Determine hold status
-        $holdRequired = $this->determineHoldRequired($result);
-        $result->setHoldRequired($holdRequired);
-
-        $this->auditService->logWithSeverity(
-            'pre_validation_completed',
-            [
-                'entity_type' => 'PreTransaction',
-                'entity_id' => $customer->id,
-                'new_values' => [
-                    'customer_id' => $customer->id,
-                    'amount' => $amount,
-                    'cdd_level' => $cddLevel->value,
-                    'hold_required' => $holdRequired,
-                    'risk_flags' => $result->getRiskFlags(),
-                ],
-            ],
-            'INFO'
-        );
-
-        return $result;
+        return $this->validationService->preValidate($customer, $amount, $currencyCode);
     }
 
     /**
@@ -158,22 +116,18 @@ class TransactionService implements TransactionServiceInterface
 
     /**
      * Determine if transaction requires a hold based on CDD level and risk flags.
+     * Delegates to TransactionHoldService.
+     *
+     * @param  Customer  $customer  The customer for hold determination
+     * @param  PreValidationResult  $result  Pre-validation result with CDD level and risk flags
      */
-    private function determineHoldRequired(PreValidationResult $result): bool
+    private function determineHoldRequired(Customer $customer, PreValidationResult $result): bool
     {
-        // Hold if Enhanced CDD
-        if ($result->getCDDLevel() === CddLevel::Enhanced) {
-            return true;
-        }
-
-        // Hold if any critical risk flags
-        foreach ($result->getRiskFlags() as $flag) {
-            if ($flag['severity'] === 'critical') {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->holdService->requiresHold(
+            $result->getCDDLevel(),
+            $customer,
+            $result->getRiskFlags()
+        );
     }
 
     /**
@@ -308,31 +262,26 @@ class TransactionService implements TransactionServiceInterface
             // This is checked BEFORE acquiring the position lock to avoid needless lock
             // contention when a request is a known duplicate. If the idempotency key
             // already exists, return immediately without acquiring any locks.
-            if (! empty($data['idempotency_key'])) {
-                $existingByKey = Transaction::where('idempotency_key', $data['idempotency_key'])->first();
-                if ($existingByKey) {
-                    return $existingByKey;
-                }
+            $existingByIdempotencyKey = $this->idempotencyService->findDuplicate(
+                $data['idempotency_key'] ?? null,
+                $userId,
+                $data
+            );
+            if ($existingByIdempotencyKey) {
+                return $existingByIdempotencyKey;
             }
 
             // STEP 2: Check for recent similar transaction (potential double-submit) BEFORE lock
             // Early detection allows returning without acquiring position lock
-            $recentWindow = now()->subSeconds(30);
-            $recentAmount = Transaction::where('user_id', $userId)
-                ->where('created_at', '>=', $recentWindow)
-                ->where('amount_foreign', $data['amount_foreign'])
-                ->where('currency_code', $data['currency_code'])
-                ->where('type', $data['type'])
-                ->first();
-
-            if ($recentAmount) {
+            $recentDuplicate = $this->idempotencyService->checkRecentDuplicate($userId, $data, 30);
+            if ($recentDuplicate) {
                 $this->auditService->logWithSeverity(
                     'potential_duplicate_detected',
                     [
                         'user_id' => $userId,
                         'entity_type' => 'Transaction',
-                        'entity_id' => $recentAmount->id,
-                        'description' => "Similar transaction {$recentAmount->id} found within 30 seconds",
+                        'entity_id' => $recentDuplicate->id,
+                        'description' => "Similar transaction {$recentDuplicate->id} found within 30 seconds",
                     ],
                     'WARNING'
                 );
@@ -867,40 +816,15 @@ class TransactionService implements TransactionServiceInterface
      */
     public function isRefundable(Transaction $transaction): bool
     {
-        // Must be completed
-        if (! $transaction->status->isCompleted()) {
-            return false;
-        }
-
-        // Cannot be already cancelled
-        if ($transaction->cancelled_at !== null) {
-            return false;
-        }
-
-        // Must be within configured cancellation window
-        $cancellationWindowHours = config('cems.transaction_cancellation_window_hours', 24);
-        if ($transaction->created_at->diffInHours(now()) >= $cancellationWindowHours) {
-            return false;
-        }
-
-        // Cannot be a refund
-        if ($transaction->is_refund) {
-            return false;
-        }
-
-        return true;
+        return $this->statusService->isRefundable($transaction);
     }
 
     /**
      * Determine if a transaction has been cancelled.
-     *
-     * Checks if the cancelled_at timestamp is set.
-     *
-     * @param  Transaction  $transaction  Transaction to check
-     * @return bool True if the transaction has been cancelled
+     * Delegates to TransactionStatusService.
      */
     public function isCancelled(Transaction $transaction): bool
     {
-        return $transaction->cancelled_at !== null;
+        return $this->statusService->isCancelled($transaction);
     }
 }

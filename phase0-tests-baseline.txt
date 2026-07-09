@@ -1,0 +1,89 @@
+
+  ............................................................................
+  ............................................................................
+  .................................................ss..s......................
+  ............................................................................
+  ............................................................................
+  ..................................................................!.........
+  ............................................................................
+  ............................................................................
+  ............................................................................
+  ............................................................................
+  ..............s..s..........................................................
+  ....................................................................⨯⨯⨯⨯....
+  ............................................................................
+  ............................................................................
+  ............................................................................
+  ............................................................................
+  ......................................................
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\MfaRequirementTest > counter approve and open requi…   
+  Failed asserting that 403 is not equal to 403.
+
+  at tests/Feature/MfaRequirementTest.php:107
+    103▕                 'teller_id' => $teller->id,
+    104▕                 'approved_floats' => ['USD' => '5000.00'],
+    105▕             ]);
+    106▕ 
+  ➜ 107▕         $this->assertNotEquals(403, $response->status());
+    108▕     }
+    109▕ 
+    110▕     #[Test]
+    111▕     public function emergency_close_requires_mfa(): void
+
+  1   tests/Feature/MfaRequirementTest.php:107
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\MfaRequirementTest > emergency close requires mfa      
+  Failed asserting that 403 matches expected 201.
+
+  at tests/Feature/MfaRequirementTest.php:138
+    134▕             ->postJson("/api/v1/counters/{$this->counter->id}/emergency-close", [
+    135▕                 'reason' => 'Test emergency',
+    136▕             ]);
+    137▕ 
+  ➜ 138▕         $this->assertEquals(201, $response->status());
+    139▕     }
+    140▕ 
+    141▕     #[Test]
+    142▕     public function emergency_acknowledge_requires_mfa(): void
+
+  1   tests/Feature/MfaRequirementTest.php:138
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\MfaRequirementTest > emergency acknowledge requires…   
+  Failed asserting that 403 matches expected 200.
+
+  at tests/Feature/MfaRequirementTest.php:173
+    169▕         $response = $this->actingAs($this->manager, 'sanctum')
+    170▕             ->withSession($this->withMfaSession())
+    171▕             ->postJson("/api/v1/counters/{$this->counter->id}/emergency/{$closure->id}/acknowledge");
+    172▕ 
+  ➜ 173▕         $this->assertEquals(200, $response->status());
+    174▕     }
+    175▕ 
+    176▕     #[Test]
+    177▕     public function handover_acknowledge_requires_mfa(): void
+
+  1   tests/Feature/MfaRequirementTest.php:173
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\MfaRequirementTest > handover acknowledge requires…    
+  Failed asserting that 403 matches expected 200.
+
+  at tests/Feature/MfaRequirementTest.php:225
+    221▕                 'verified' => true,
+    222▕                 'notes' => 'Test',
+    223▕             ]);
+    224▕ 
+  ➜ 225▕         $this->assertEquals(200, $response->status());
+    226▕     }
+    227▕ }
+    228▕
+
+  1   tests/Feature/MfaRequirementTest.php:225
+
+
+  Tests:    1 deprecated, 4 failed, 5 skipped, 1260 passed (3227 assertions)
+  Duration: 77.51s
+

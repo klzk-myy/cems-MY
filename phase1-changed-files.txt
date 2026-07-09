@@ -1,0 +1,6 @@
+AGENTS.md
+CLAUDE.md
+app/Models/CurrencyPosition.php
+app/Models/Customer.php
+app/Models/Transaction.php
+app/Models/User.php

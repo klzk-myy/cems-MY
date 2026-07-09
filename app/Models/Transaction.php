@@ -121,6 +121,10 @@ class Transaction extends TransactionModel
         'approved_at' => 'datetime',
         'approval_sync_failed' => 'boolean',
         'approval_sync_failed_at' => 'datetime',
+        'version' => 'integer',
+        'hold_reason' => 'string',
+        'cancelled_by' => 'integer',
+        'cancellation_reason' => 'string',
     ];
 
     protected function activeStatusValues(): array

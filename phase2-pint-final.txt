@@ -1,0 +1,1 @@
+{"tool":"pint","result":"fail","files":[{"path":"app\/Services\/Transaction\/TransactionHoldService.php","fixers":["no_superfluous_phpdoc_tags"]}],"errors":[{"path":"tests\/Unit\/Transaction\/TransactionHoldServiceTest.php","message":"Parse error: syntax error, unexpected identifier \"hold_triggered_by_critical_ris...\", expecting variable on line 57."}]}

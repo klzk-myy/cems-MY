@@ -1,0 +1,20 @@
+  Target class [App\Services\System\ThresholdService] does not exist.
+
+  at vendor/laravel/framework/src/Illuminate/Container/Container.php:961
+    957▕ 
+    958▕         try {
+    959▕             $reflector = new ReflectionClass($concrete);
+    960▕         } catch (ReflectionException $e) {
+  ➜ 961▕             throw new BindingResolutionException("Target class [$concrete] does not exist.", 0, $e);
+    962▕         }
+    963▕ 
+    964▕         // If the type is not instantiable, the developer is attempting to resolve
+    965▕         // an abstract type such as an Interface or Abstract Class and there is
+
+      [2m+26 vendor frames [22m
+  27  tests/Unit/TransactionServicePreValidationTest.php:22
+
+
+  Tests:    5 failed, 3 passed (15 assertions)
+  Duration: 4.36s
+

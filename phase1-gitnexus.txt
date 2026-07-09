@@ -1,0 +1,11 @@
+file:///home/luzenkock/.npm-global/lib/node_modules/gitnexus/dist/mcp/local/local-backend.js:329
+        throw new Error(`Multiple repositories indexed. Specify which one with the "repo" parameter. Available: ${labels.join(', ')}`);
+              ^
+
+Error: Multiple repositories indexed. Specify which one with the "repo" parameter. Available: steps.loc, cems-my (/www/wwwroot/local.host), acct.local, kimi-code, local-sanctions, ppr, cems0, pcie-z, superpowers, cems-my (/home/luzenkock/test/cems-my), cem2, arti.local
+    at LocalBackend.resolveRepo (file:///home/luzenkock/.npm-global/lib/node_modules/gitnexus/dist/mcp/local/local-backend.js:329:15)
+    at async LocalBackend.callTool (file:///home/luzenkock/.npm-global/lib/node_modules/gitnexus/dist/mcp/local/local-backend.js:568:22)
+    at async detectChangesCommand (file:///home/luzenkock/.npm-global/lib/node_modules/gitnexus/dist/cli/tool.js:163:20)
+    at async Command.<anonymous> (file:///home/luzenkock/.npm-global/lib/node_modules/gitnexus/dist/cli/lazy-action.js:16:9)
+
+Node.js v24.18.0

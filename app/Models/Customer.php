@@ -110,6 +110,8 @@ class Customer extends BaseModel
         'customer_type' => 'string',
         'pep_type' => 'string',
         'sanctions_screened_at' => 'datetime',
+        'freeze_reason' => 'string',
+        'rejection_reason' => 'string',
     ];
 
     /**

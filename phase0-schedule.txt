@@ -1,0 +1,36 @@
+
+  5    0  * *        *  php artisan report:msb2 .. Next Due: 20 hours from now
+  0    6  * *        *  php artisan report:position-limit  Next Due: 2 hours from now
+  0    20 * *        *  php artisan report:eod ... Next Due: 16 hours from now
+  0    21 * *        *  Closure at: vendor/laravel/framework/src/Illuminate/Console/Scheduling/Schedule.php:188  Next Due: 17 hours from now
+  0    1  * *        0  php artisan report:trial-balance  Next Due: 2 days from now
+  30   0  1 *        *  php artisan report:lmca ... Next Due: 3 weeks from now
+  0    3  1 *        *  php artisan compliance:rescreen --days=30  Next Due: 3 weeks from now
+  0    2  1 *        *  php artisan reports:cleanup --days=90  Next Due: 3 weeks from now
+  0    1  1 1,4,7,10 *  php artisan report:qlvr .. Next Due: 2 months from now
+  0    4  1 1        *  php artisan reports:archive --months=12  Next Due: 5 months from now
+  59   23 L *        *  php artisan revaluation:run  Next Due: 3 weeks from now
+  0    1  1 *        *  php artisan accounting:month-end  Next Due: 3 weeks from now
+  0    2  * *        0  App\Jobs\Compliance\SanctionsRescreeningJob  Next Due: 2 days from now
+  0    3  * *        *  App\Jobs\Compliance\CustomerLocationAnomalyJob  Next Due: 23 hours from now
+  30   3  * *        *  App\Jobs\Compliance\CurrencyFlowJob  Next Due: 10 minutes from now
+  0    4  * *        *  App\Jobs\Compliance\CounterfeitAlertJob  Next Due: 40 minutes from now
+  30   4  * *        *  App\Jobs\Compliance\VelocityMonitorJob  Next Due: 1 hour from now
+  45   4  * *        *  App\Jobs\Compliance\StructuringMonitorJob  Next Due: 1 hour from now
+  */5  *  * *        *  php artisan monitor:check --alert  Next Due: 58 seconds from now
+  0    8  * *        *  php artisan alert:daily-summary  Next Due: 4 hours from now
+  0    2  * *        0  php artisan alert:cleanup --days=30  Next Due: 2 days from now
+  0    3  * *        *  php artisan sanctions:update  Next Due: 23 hours from now
+  0    8  * *        *  php artisan sanctions:status  Next Due: 4 hours from now
+  0    1  * *        *  App\Jobs\ImportSanctionsJob  Next Due: 21 hours from now
+  0    2  * *        0  App\Jobs\ImportSanctionsJob  Next Due: 2 days from now
+  0    4  * *        *  App\Jobs\RescreenHighRiskCustomersJob  Next Due: 40 minutes from now
+  0    2  * *        *  php artisan backup:run --type=database  Next Due: 22 hours from now
+  0    2  * *        *  php artisan customer:risk-review  Next Due: 22 hours from now
+  0    3  * *        0  php artisan backup:run --type=full  Next Due: 2 days from now
+  0    4  1 *        *  php artisan backup:run --type=full --disk=s3  Next Due: 3 weeks from now
+  0    5  * *        *  php artisan backup:verify --all  Next Due: 1 hour from now
+  0    6  * *        *  php artisan backup:clean --force  Next Due: 2 hours from now
+  0    7  * *        *  php artisan backup:monitor --notify  Next Due: 3 hours from now
+  */15 *  * *        *  php artisan reservation:expire  Next Due: 10 minutes from now
+
