@@ -7,11 +7,14 @@ use App\Enums\TransactionType;
 use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TransactionCreationServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private function createContext(
         Customer $customer,
         TillBalance $tillBalance,
