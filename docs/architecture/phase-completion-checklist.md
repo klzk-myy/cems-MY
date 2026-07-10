@@ -1320,7 +1320,10 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 - [x] **Task B**: Create `TillBalanceManager` and refactor transaction services (including `till_id` → `Counter::code` alignment and data migration)
 - [x] **Task C**: Create `CurrencyPositionLockService` and refactor locking logic
 - [x] **Task D**: Create `AuditTrailHelper` and replace manual audit arrays
-- [x] **Task E**: Add `Transaction` query scopes and `TransactionReportQuery` for reporting — in progress
+- [x] **Task E**: Add `Transaction` query scopes and `TransactionReportQuery` for reporting — completed
+  - Files: `app/Models/Transaction.php`, `app/Services/Reporting/TransactionReportQuery.php`, `tests/Unit/Services/Reporting/TransactionReportQueryTest.php`
+  - Consumers updated: `ReportingService`, `CustomerReportService`, `EodReconciliationService`, `PatternRiskService`, `CurrencyFlowMonitor`, `CustomerRiskScoringService`, `AnalyticsController`, `DashboardController`, `RegulatoryReportController`
+  - Tests: `30 passed (88 assertions)` across `tests/Feature/Report`, `tests/Unit/Services/Reporting`, `tests/Unit/ReportingServiceTest.php`, `tests/Unit/EodReconciliationServiceTest.php`, `tests/Feature/AdminReportSmokeTest.php`
 - [ ] **Task F**: Create shared validation rules (`ValidCurrencyCode`, `ValidTill`, `ValidAmountForeign`, `ValidRate`)
 - [ ] **Task G**: Remove duplicate flat Form Request classes after route confirmation
 - [ ] **Task H**: Centralize IP allowlist/blocklist validation in `IpValidationService`
