@@ -29,7 +29,7 @@ class TransactionReportQueryTest extends TestCase
         $this->assertNotContains($cancelled->id, $result);
     }
 
-    public function test_for_date_range_filters_by_date_range_without_status_filter(): void
+    public function test_for_date_range_excludes_cancelled_transactions(): void
     {
         $inRangeCompleted = Transaction::factory()->create([
             'status' => TransactionStatus::Completed->value,
@@ -48,7 +48,7 @@ class TransactionReportQueryTest extends TestCase
         $result = $query->forDateRange('2024-01-01', '2024-01-31')->pluck('id')->toArray();
 
         $this->assertContains($inRangeCompleted->id, $result);
-        $this->assertContains($inRangeCancelled->id, $result);
+        $this->assertNotContains($inRangeCancelled->id, $result);
         $this->assertNotContains($outOfRange->id, $result);
     }
 
@@ -56,14 +56,13 @@ class TransactionReportQueryTest extends TestCase
     {
         Transaction::factory()->count(2)->create(['status' => TransactionStatus::Completed->value]);
         Transaction::factory()->count(3)->create(['status' => TransactionStatus::Pending->value]);
-        Transaction::factory()->count(4)->create(['status' => TransactionStatus::Cancelled->value]);
 
         $query = new TransactionReportQuery;
         $result = $query->countByStatus();
 
         $this->assertEquals(2, $result[TransactionStatus::Completed->value]);
         $this->assertEquals(3, $result[TransactionStatus::Pending->value]);
-        $this->assertEquals(4, $result[TransactionStatus::Cancelled->value]);
+        $this->assertArrayNotHasKey(TransactionStatus::Cancelled->value, $result);
     }
 
     public function test_sum_by_type_respects_branch_filtering(): void

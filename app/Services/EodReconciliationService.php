@@ -172,12 +172,12 @@ class EodReconciliationService
         $transactions = Transaction::with(['customer', 'user', 'flags'])
             ->where('till_id', $counter->code)
             ->whereDate('created_at', $date->toDateString())
-            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value])
+            ->notCancelled()->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value])
             ->get();
 
         $sumQuery = Transaction::where('till_id', $counter->code)
             ->whereDate('created_at', $date->toDateString())
-            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
+            ->notCancelled()->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
 
         // Buy transactions = cash received (customer sells foreign currency, we buy)
         $buyTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Buy->value);
@@ -303,7 +303,7 @@ class EodReconciliationService
         // Get transactions
         $baseQuery = Transaction::where('till_id', $counter->code)
             ->whereDate('created_at', $date->toDateString())
-            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
+            ->notCancelled()->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
 
         $buyTotal = (clone $baseQuery)->buy()->sum('amount_local');
         $sellTotal = (clone $baseQuery)->sell()->sum('amount_local');

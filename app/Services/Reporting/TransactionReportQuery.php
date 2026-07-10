@@ -9,7 +9,7 @@ class TransactionReportQuery
 {
     public function baseQuery(?int $branchId = null): Builder
     {
-        return Transaction::query()->forBranch($branchId);
+        return Transaction::query()->notCancelled()->forBranch($branchId);
     }
 
     public function completed(?int $branchId = null): Builder
