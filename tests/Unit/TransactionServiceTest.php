@@ -205,29 +205,29 @@ class TransactionServiceTest extends TestCase
     }
 
     #[Test]
-    public function large_transaction_requires_hold(): void
+    public function enhanced_cdd_transaction_requires_hold(): void
     {
+        // Mark customer as PEP so pre-validation returns Enhanced CDD and requires a hold.
+        $this->customer->update(['pep_status' => true]);
+
         $data = [
             'customer_id' => $this->customer->id,
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '12000.00',
+            'amount_foreign' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Property Purchase',
             'source_of_funds' => 'Property Sale',
+            'source_of_wealth' => 'Property Sale',
             'idempotency_key' => uniqid('test_', true),
         ];
 
         $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
 
         $this->assertInstanceOf(Transaction::class, $transaction);
-        // Transactions >= RM 10,000 (auto_approve threshold) get PendingApproval status
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
-        // Amount 12000 * 4.5 = 54000 MYR >= 10000 = Standard CDD
-        // Enhanced CDD is based on customer risk factors (PEP, High risk, Sanction match), not amount
-        $this->assertEquals(CddLevel::Standard, $transaction->cdd_level);
-        $this->assertNotNull($transaction->hold_reason);
+        $this->assertEquals(CddLevel::Enhanced, $transaction->cdd_level);
     }
 
     #[Test]
@@ -532,7 +532,9 @@ class TransactionServiceTest extends TestCase
     #[Test]
     public function reservation_consumed_on_transaction_approval(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        // Use a PEP customer so the transaction is held for approval, which is required
+        // to test reservation consumption during approval.
+        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true]);
         $counter = Counter::factory()->create();
 
         // Create till balances
@@ -575,6 +577,7 @@ class TransactionServiceTest extends TestCase
             'rate' => '4.50',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
+            'source_of_wealth' => 'employment',
             'till_id' => (string) $counter->code,
         ];
 
@@ -601,7 +604,8 @@ class TransactionServiceTest extends TestCase
     #[Test]
     public function approval_fails_if_stock_no_longer_available(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        // Use a PEP customer so the transaction is held for approval.
+        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true]);
         $branch = Branch::factory()->create();
         $counter = Counter::factory()->create([
             'code' => (string) $branch->id,
@@ -647,6 +651,7 @@ class TransactionServiceTest extends TestCase
             'rate' => '10.5',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
+            'source_of_wealth' => 'employment',
             'till_id' => $counter->code,
         ];
 

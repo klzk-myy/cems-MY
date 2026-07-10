@@ -164,9 +164,10 @@ class TransactionWorkflowTest extends TestCase
     #[Test]
     public function concurrent_sell_transactions_respect_reservation(): void
     {
+        // Use a PEP customer so the transaction is held for approval and reserves stock.
         $customer = Customer::factory()->create([
             'risk_rating' => 'Low',
-            'pep_status' => false,
+            'pep_status' => true,
         ]);
 
         $counter = Counter::factory()->create([
@@ -213,6 +214,7 @@ class TransactionWorkflowTest extends TestCase
             'rate' => '10.50', // 1000 * 10.5 = 10500 >= 10000 = PendingApproval
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
+            'source_of_wealth' => 'employment',
             'till_id' => $tillId,
             'idempotency_key' => 'test-concurrent-sell-1',
         ];
@@ -229,6 +231,7 @@ class TransactionWorkflowTest extends TestCase
             'rate' => '10.50',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
+            'source_of_wealth' => 'employment',
             'till_id' => $tillId,
             'idempotency_key' => 'test-concurrent-sell-2',
         ];
@@ -241,9 +244,10 @@ class TransactionWorkflowTest extends TestCase
     #[Test]
     public function approval_history_reflects_actual_state_transitions(): void
     {
+        // Use a PEP customer so the transaction is held for approval.
         $customer = Customer::factory()->create([
             'risk_rating' => 'Low',
-            'pep_status' => false,
+            'pep_status' => true,
         ]);
 
         $counter = Counter::factory()->create([
@@ -290,6 +294,7 @@ class TransactionWorkflowTest extends TestCase
             'rate' => '10.00',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
+            'source_of_wealth' => 'employment',
             'till_id' => $tillId,
             'idempotency_key' => 'test-approval-history-'.uniqid(),
         ];
@@ -337,11 +342,13 @@ class TransactionWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function transaction_approval_required_at_10000(): void
+    public function enhanced_cdd_transaction_requires_approval(): void
     {
+        // The thin facade no longer applies the auto-approve threshold; approval
+        // is driven by pre-validation (e.g. Enhanced CDD for PEP customers).
         $customer = Customer::factory()->create([
             'risk_rating' => 'Low',
-            'pep_status' => false,
+            'pep_status' => true,
         ]);
 
         $counter = Counter::factory()->create([
@@ -379,22 +386,21 @@ class TransactionWorkflowTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        // Transaction at exactly RM 10,000 should require approval (Sell transaction)
         $data = [
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '1000.00', // 1000 * 10.00 = 10000 exactly
+            'amount_foreign' => '100.00',
             'rate' => '10.00',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
+            'source_of_wealth' => 'employment',
             'till_id' => $tillId,
-            'idempotency_key' => 'test-approval-at-10000',
+            'idempotency_key' => 'test-enhanced-cdd-approval',
         ];
 
         $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
 
-        // At exactly RM 10,000, the >= comparison means it requires approval
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
     }
 }

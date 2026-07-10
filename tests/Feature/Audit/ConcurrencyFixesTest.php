@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Enums\CddLevel;
 use App\Enums\JournalEntryStatus;
 use App\Enums\RiskRating;
 use App\Enums\TransactionConfirmationStatus;
@@ -23,8 +24,9 @@ use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\TellerAllocationService;
-use App\Services\Contracts\TransactionServiceInterface;
+use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\System\RateLimitService;
+use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionReversalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -115,6 +117,8 @@ class ConcurrencyFixesTest extends TestCase
     {
         // This test is representative; full concurrency testing may require
         // parallel processes, but the assertion guards the locking code path.
+        // The allocation update now lives in TransactionCreationService, so we
+        // build the context directly instead of going through the facade.
         $branch = Branch::factory()->create();
         $teller = User::factory()->for($branch)->create();
         $customer = Customer::factory()->create([
@@ -131,7 +135,7 @@ class ConcurrencyFixesTest extends TestCase
         $counter = Counter::factory()->for($branch)->create();
 
         // Create TillBalance for USD (for the transaction's currency)
-        TillBalance::factory()->for($counter)->create([
+        $tillBalance = TillBalance::factory()->for($counter)->create([
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
             'date' => today(),
@@ -161,7 +165,7 @@ class ConcurrencyFixesTest extends TestCase
             'last_revalued_at' => null,
         ]);
 
-        $service = app(TransactionServiceInterface::class);
+        $creationService = app(TransactionCreationServiceInterface::class);
 
         // Verify preconditions
         $this->assertTrue($teller->isTeller(), 'Teller user must have Teller role');
@@ -174,17 +178,31 @@ class ConcurrencyFixesTest extends TestCase
 
         $amounts = ['9.99', '10.00', '10.01'];
         foreach ($amounts as $amountForeign) {
-            $service->createTransaction([
-                'customer_id' => $customer->id,
-                'till_id' => $counter->code,
-                'type' => TransactionType::Sell->value,
-                'currency_code' => 'USD',
-                'amount_foreign' => $amountForeign,
-                'rate' => '4.70',
-                'purpose' => 'Test transaction',
-                'source_of_funds' => 'salary',
-                'source_of_wealth' => 'employment',
-            ], $teller->id, '127.0.0.1');
+            $amountLocal = bcmul($amountForeign, '4.70', 4);
+
+            $context = new TransactionCreationContext(
+                data: [
+                    'customer_id' => $customer->id,
+                    'till_id' => $counter->code,
+                    'type' => TransactionType::Sell->value,
+                    'currency_code' => 'USD',
+                    'amount_foreign' => $amountForeign,
+                    'rate' => '4.70',
+                    'purpose' => 'Test transaction',
+                    'source_of_funds' => 'salary',
+                    'source_of_wealth' => 'employment',
+                ],
+                customer: $customer,
+                tillBalance: $tillBalance,
+                cddLevel: CddLevel::Simplified,
+                holdRequired: false,
+                status: TransactionStatus::Completed,
+                amountLocal: $amountLocal,
+                user: $teller,
+                allocation: $allocation,
+            );
+
+            $creationService->create($context, $teller->id, '127.0.0.1');
         }
 
         // Total allocated: 1000 - 30 = 970
