@@ -1298,6 +1298,46 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 
 ---
 
+## Out-of-Phase: Code Duplication Assessment and Consolidation Plan
+
+**Date**: 2026-07-10  
+**Scope**: Full codebase review and planned consolidation of duplicated code blocks  
+**Source documents**:
+- Assessment report: `docs/superpowers/plans/2026-07-10-code-duplication-assessment.md`
+- Implementation plan: `docs/superpowers/plans/2026-07-10-consolidate-duplicated-code.md`
+- Delivery checklist: `docs/superpowers/plans/2026-07-10-consolidation-delivery-checklist.md`
+
+### Assessment Summary
+
+- [x] **API response duplication**: ~197 inline `response()->json([...])` calls across 24 V1 controllers identified
+- [x] **Reporting/query duplication**: Repeated SQL aggregate fragments, in-memory buy/sell splits, date-range filters, and status predicates mapped
+- [x] **Service-level duplication**: Till balance lookup/update, currency position locking, manual audit arrays, and cache patterns catalogued
+- [x] **Validation/authorization duplication**: Duplicate Form Request classes, repeated `failedValidation()` handlers, currency/till/amount/rate rules, IP checks, and role checks documented
+
+### Planned Consolidation Areas
+
+- [x] **Task A**: Introduce `ApiResponse` trait and migrate all V1 controllers
+- [ ] **Task B**: Create `TillBalanceManager` and refactor transaction services
+- [ ] **Task C**: Create `CurrencyPositionLockService` and refactor locking logic
+- [ ] **Task D**: Create `AuditTrailHelper` and replace manual audit arrays
+- [ ] **Task E**: Add `Transaction` query scopes and `TransactionReportQuery` for reporting
+- [ ] **Task F**: Create shared validation rules (`ValidCurrencyCode`, `ValidTill`, `ValidAmountForeign`, `ValidRate`)
+- [ ] **Task G**: Remove duplicate flat Form Request classes after route confirmation
+- [ ] **Task H**: Centralize IP allowlist/blocklist validation in `IpValidationService`
+
+### Deliverables Status
+
+- [x] Assessment report written and saved
+- [x] Implementation plan written and saved
+- [x] Delivery checklist written and saved
+- [x] Implementation started
+- [ ] Implementation completed
+- [x] Tests passing for Task A (`ApiResponse` trait + controller rollout)
+- [x] Code formatted with Pint (Task A files)
+- [ ] GitNexus change detection reviewed
+
+---
+
 ## Final Sign-off (All Phases Complete)
 
 ### All Phases Checklist
