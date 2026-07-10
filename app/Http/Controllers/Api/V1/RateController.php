@@ -67,11 +67,7 @@ class RateController extends Controller
             return $this->errorResponse($result['message'], [], 500);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => $result['message'],
-            'rates' => $result['rates'],
-        ]);
+        return $this->successResponse($result['rates'] ?? null, $result['message']);
     }
 
     /**
@@ -124,7 +120,11 @@ class RateController extends Controller
 
         $result = $this->rateService->copyPreviousRates($targetDate);
 
-        return response()->json($result, $result['success'] ? 200 : 404);
+        if (! $result['success']) {
+            return $this->errorResponse($result['message'], [], 404);
+        }
+
+        return $this->successResponse($result['rates'] ?? null, $result['message']);
     }
 
     /**
@@ -170,8 +170,7 @@ class RateController extends Controller
 
         $result = $this->rateService->areAllRatesSet($validated['currencies']);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse(null, 'Rate check completed.', 200, [
             'all_set' => $result['all_set'],
             'missing' => $result['missing'],
         ]);
@@ -190,8 +189,7 @@ class RateController extends Controller
             $validated['type']
         );
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse(null, 'Rate validation completed.', 200, [
             'valid' => $result['valid'],
             'reason' => $result['reason'],
             'deviation_percent' => $result['deviation_percent'],
