@@ -1324,7 +1324,10 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
   - Files: `app/Models/Transaction.php`, `app/Services/Reporting/TransactionReportQuery.php`, `tests/Unit/Services/Reporting/TransactionReportQueryTest.php`
   - Consumers updated: `ReportingService`, `CustomerReportService`, `EodReconciliationService`, `PatternRiskService`, `CurrencyFlowMonitor`, `CustomerRiskScoringService`, `AnalyticsController`, `DashboardController`, `RegulatoryReportController`
   - Tests: `30 passed (88 assertions)` across `tests/Feature/Report`, `tests/Unit/Services/Reporting`, `tests/Unit/ReportingServiceTest.php`, `tests/Unit/EodReconciliationServiceTest.php`, `tests/Feature/AdminReportSmokeTest.php`
-- [ ] **Task F**: Create shared validation rules (`ValidCurrencyCode`, `ValidTill`, `ValidAmountForeign`, `ValidRate`)
+- [x] **Task F**: Create shared validation rules (`ValidCurrencyCode`, `ValidTill`, `ValidAmountForeign`, `ValidRate`)
+  - Files: `app/Rules/ValidCurrencyCode.php`, `app/Rules/ValidTill.php`, `app/Rules/ValidAmountForeign.php`, `app/Rules/ValidRate.php`
+  - Applied to `app/Http/Requests/Api/V1/Transaction/StoreTransactionRequest.php`
+  - Tests: `15 passed (20 assertions)` across `tests/Unit/Rules` and `tests/Feature/Api/V1/TransactionStoreResponseShapeTest.php`
 - [ ] **Task G**: Remove duplicate flat Form Request classes after route confirmation
 - [ ] **Task H**: Centralize IP allowlist/blocklist validation in `IpValidationService`
 
