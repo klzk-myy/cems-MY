@@ -4,13 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
 use App\Http\Requests\TransactionWizardStep1Request;
 use App\Http\Requests\TransactionWizardStep2Request;
 use App\Http\Requests\TransactionWizardStep3Request;
 use App\Models\Customer;
+use App\Models\User;
+use App\Services\Branch\TellerAllocationService;
+use App\Services\Contracts\TransactionCreationServiceInterface;
+use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\System\MathService;
 use App\Services\System\WizardSessionService;
-use App\Services\Transaction\TransactionService;
+use App\Services\ThresholdService;
+use App\Services\Transaction\DTOs\TransactionCreationContext;
+use App\Services\Transaction\TransactionApprovalService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -18,7 +26,9 @@ use Illuminate\Support\Str;
 class TransactionWizardController extends Controller
 {
     public function __construct(
-        protected TransactionService $transactionService,
+        protected TransactionValidationInterface $validationService,
+        protected TransactionCreationServiceInterface $creationService,
+        protected TransactionApprovalService $approvalService,
         protected WizardSessionService $wizardSessionService,
         protected MathService $mathService
     ) {}
@@ -34,8 +44,8 @@ class TransactionWizardController extends Controller
         // Calculate local amount
         $amountLocal = $this->mathService->multiply($validated['amount_foreign'], $validated['rate']);
 
-        // Run pre-validation (sanctions, CDD, risk) - consolidated into TransactionService
-        $validationResult = $this->transactionService->preValidate(
+        // Run pre-validation (sanctions, CDD, risk)
+        $validationResult = $this->validationService->preValidate(
             $customer,
             $amountLocal,
             $validated['currency_code']
@@ -144,17 +154,45 @@ class TransactionWizardController extends Controller
             [
                 'amount_local' => $sessionData['amount_local'],
                 'cdd_level' => $sessionData['cdd_level'],
-                'status' => $sessionData['hold_required'] ? TransactionStatus::PendingApproval : TransactionStatus::Completed,
-                'hold_reason' => $sessionData['hold_required'] ? 'enhanced_cdd_requires_approval' : null,
+                'idempotency_key' => $validated['idempotency_key'],
+                'source_of_wealth' => $sessionData['customer_details']['source_of_wealth'] ?? null,
             ]
         );
 
         try {
-            $transaction = $this->transactionService->createTransaction(
-                $transactionData,
-                auth()->id(),
-                request()->ip()
+            $this->validationService->validateCurrency($transactionData['currency_code']);
+            $this->validationService->validateIpAddress(request()->ip());
+
+            $tillBalance = $this->validationService->validateTillBalance(
+                $transactionData['till_id'],
+                $transactionData['currency_code']
             );
+
+            $customer = Customer::findOrFail($transactionData['customer_id']);
+            $amountLocal = (string) $sessionData['amount_local'];
+
+            $this->validationService->validatePepRequirements($customer, $transactionData);
+
+            $user = User::findOrFail(auth()->id());
+            $allocation = $this->determineTellerAllocation($user, $transactionData, $amountLocal);
+
+            $holdRequired = (bool) $sessionData['hold_required'];
+            $status = $this->determineInitialStatus($amountLocal, $holdRequired);
+
+            $context = new TransactionCreationContext(
+                data: $transactionData,
+                customer: $customer,
+                tillBalance: $tillBalance,
+                cddLevel: CddLevel::from($sessionData['cdd_level']),
+                holdRequired: $holdRequired,
+                status: $status,
+                amountLocal: $amountLocal,
+                user: $user,
+                allocation: $allocation,
+                holdReason: $holdRequired ? 'Compliance hold' : null,
+            );
+
+            $transaction = $this->creationService->create($context, $user->id, request()->ip());
 
             // Clear wizard session
             $this->wizardSessionService->forget($sessionId);
@@ -164,7 +202,7 @@ class TransactionWizardController extends Controller
                 'transaction_id' => $transaction->id,
                 'transaction_number' => $transaction->transaction_number,
                 'transaction_status' => $transaction->status->value,
-                'message' => $sessionData['hold_required']
+                'message' => $holdRequired
                     ? 'Transaction created and pending approval'
                     : 'Transaction completed successfully',
             ]);
@@ -289,5 +327,36 @@ class TransactionWizardController extends Controller
                 ? $sessionData['risk_flags']
                 : null,
         ];
+    }
+
+    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?Model
+    {
+        if (! $user->isTeller()) {
+            return null;
+        }
+
+        $service = app(TellerAllocationService::class);
+
+        if ($data['type'] === TransactionType::Buy->value) {
+            $result = $service->validateTransaction($user, $data['currency_code'], $amountLocal, true);
+
+            if (! $result->valid) {
+                throw new \InvalidArgumentException($result->reason);
+            }
+
+            return $result->allocation;
+        }
+
+        return $service->getActiveAllocation($user, $data['currency_code']);
+    }
+
+    private function determineInitialStatus(string $amountLocal, bool $holdRequired): TransactionStatus
+    {
+        if ($holdRequired
+            || $this->mathService->compare($amountLocal, app(ThresholdService::class)->getAutoApproveThreshold()) >= 0) {
+            return TransactionStatus::PendingApproval;
+        }
+
+        return TransactionStatus::Completed;
     }
 }

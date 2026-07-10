@@ -12,8 +12,8 @@ class TransactionWizardStep3Test extends TestCase
         $this->assertFileExists($file);
 
         $content = file_get_contents($file);
-        $this->assertStringContainsString('createTransaction(', $content);
-        $this->assertStringContainsString('auth()->id()', $content);
-        $this->assertStringContainsString('request()->ip()', $content);
+        $this->assertStringContainsString('creationService->create(', $content, 'Should call creation service to create transaction');
+        $this->assertStringContainsString('auth()->id()', $content, 'Should use auth()->id() for user identification');
+        $this->assertStringContainsString('request()->ip()', $content, 'Should pass request IP address');
     }
 }
