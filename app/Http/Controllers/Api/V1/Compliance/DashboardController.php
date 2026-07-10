@@ -28,7 +28,9 @@ class DashboardController extends Controller
     {
         $kpis = $this->reportingService->getDashboardKpis();
 
-        return $this->successResponse($kpis, 'Dashboard KPIs retrieved successfully.');
+        return $this->successResponse($kpis, 'Dashboard KPIs retrieved successfully.', 200, [
+            'generated_at' => now()->toIso8601String(),
+        ]);
     }
 
     /**
