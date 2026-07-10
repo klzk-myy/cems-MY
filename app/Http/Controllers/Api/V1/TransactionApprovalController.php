@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\SelfApprovalException;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\Transaction\TransactionApprovalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class TransactionApprovalController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected TransactionApprovalService $approvalService
     ) {}
@@ -35,10 +37,7 @@ class TransactionApprovalController extends Controller
         // Enforce branch-based authorization: managers can only approve transactions within their own branch
         $user = auth()->user();
         if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You can only approve transactions for your own branch.',
-            ], 403);
+            return $this->errorResponse('You can only approve transactions for your own branch.', [], 403);
         }
 
         try {
@@ -51,45 +50,19 @@ class TransactionApprovalController extends Controller
             );
 
             if (! $result['success']) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $result['message'],
-                ], 422);
+                return $this->errorResponse($result['message'], [], 422);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => $result['message'],
-                'data' => $result['transaction'],
-            ]);
+            return $this->successResponse($result['transaction'], $result['message']);
 
         } catch (SelfApprovalException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 403);
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (\InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            return $this->errorResponse($e->getMessage(), [], 400);
         } catch (\RuntimeException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 409);
+            return $this->errorResponse($e->getMessage(), [], 409);
         } catch (\Exception $e) {
-            Log::error('Transaction approval failed (API)', [
-                'transaction_id' => $transaction->id,
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Approval failed due to a system error. Please contact support.',
-                'code' => 'INTERNAL_ERROR',
-            ], 500);
+            return $this->serverErrorResponse('Approval failed due to a system error. Please contact support.', $e);
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
 use App\Http\Requests\Api\V1\Counter\InitiateOpeningRequest;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\Log;
  */
 class CounterOpeningController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected CounterOpeningWorkflowService $workflowService,
     ) {}
@@ -34,18 +37,12 @@ class CounterOpeningController extends Controller
         $user = Auth::user();
 
         if (! $user->branch) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User has no assigned branch',
-            ], 400);
+            return $this->errorResponse('User has no assigned branch', [], 400);
         }
 
         $pending = $this->workflowService->getPendingRequestsForBranch($user->branch);
 
-        return response()->json([
-            'success' => true,
-            'data' => $pending,
-        ]);
+        return $this->successResponse($pending);
     }
 
     /**
@@ -58,18 +55,12 @@ class CounterOpeningController extends Controller
 
         $counter = Counter::find($counterId);
         if (! $counter) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Counter not found',
-            ], 404);
+            return $this->notFoundResponse('Counter not found');
         }
 
         // Verify teller belongs to same branch as counter
         if ($user->branch_id !== $counter->branch_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Counter does not belong to your branch',
-            ], 403);
+            return $this->errorResponse('Counter does not belong to your branch', [], 403);
         }
 
         $validated = $request->validated();
@@ -81,18 +72,11 @@ class CounterOpeningController extends Controller
                 $validated['requested_floats']
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Opening request initiated, awaiting manager approval',
-                'data' => $allocations,
-            ]);
+            return $this->successResponse($allocations, 'Opening request initiated, awaiting manager approval');
         } catch (\Exception $e) {
             Log::error('Failed to initiate opening request', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Operation failed. Please contact support.',
-            ], 400);
+            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
         }
     }
 
@@ -106,18 +90,12 @@ class CounterOpeningController extends Controller
 
         // Only manager or admin can approve and open
         if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can approve and open counters',
-            ], 403);
+            return $this->errorResponse('Only managers and admins can approve and open counters', [], 403);
         }
 
         $counter = Counter::find($counterId);
         if (! $counter) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Counter not found',
-            ], 404);
+            return $this->notFoundResponse('Counter not found');
         }
 
         $validated = $request->validated();
@@ -126,10 +104,7 @@ class CounterOpeningController extends Controller
 
         // Verify teller belongs to same branch
         if ($teller->branch_id !== $counter->branch_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Teller does not belong to this branch',
-            ], 400);
+            return $this->errorResponse('Teller does not belong to this branch', [], 400);
         }
 
         try {
@@ -141,18 +116,9 @@ class CounterOpeningController extends Controller
                 $validated['daily_limits'] ?? []
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Counter opened successfully',
-                'data' => $session,
-            ]);
+            return $this->successResponse($session, 'Counter opened successfully');
         } catch (\Exception $e) {
-            Log::error('Failed to open counter', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to open counter. Please contact support.',
-            ], 500);
+            return $this->serverErrorResponse('Failed to open counter. Please contact support.', $e);
         }
     }
 }

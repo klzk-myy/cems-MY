@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Rate\CheckRateSetRequest;
 use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\Auth;
  */
 class RateController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected RateManagementService $rateService
     ) {}
@@ -33,10 +36,7 @@ class RateController extends Controller
     {
         $rates = $this->rateService->getCurrentRates();
 
-        return response()->json([
-            'success' => true,
-            'data' => $rates,
-        ]);
+        return $this->successResponse($rates);
     }
 
     /**
@@ -46,10 +46,7 @@ class RateController extends Controller
     {
         $summary = $this->rateService->getRatesSummary();
 
-        return response()->json([
-            'success' => true,
-            'data' => $summary,
-        ]);
+        return $this->successResponse($summary);
     }
 
     /**
@@ -61,19 +58,13 @@ class RateController extends Controller
         $user = Auth::user();
 
         if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can fetch rates from API',
-            ], 403);
+            return $this->errorResponse('Only managers and admins can fetch rates from API', [], 403);
         }
 
         $result = $this->rateService->fetchAndStoreRates($user);
 
         if (! $result['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => $result['message'],
-            ], 500);
+            return $this->errorResponse($result['message'], [], 500);
         }
 
         return response()->json([
@@ -91,16 +82,10 @@ class RateController extends Controller
         $rate = $this->rateService->getRateForCurrency($currencyCode);
 
         if (! $rate) {
-            return response()->json([
-                'success' => false,
-                'message' => "No rate found for {$currencyCode}",
-            ], 404);
+            return $this->errorResponse("No rate found for {$currencyCode}", [], 404);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $rate,
-        ]);
+        return $this->successResponse($rate);
     }
 
     /**
@@ -118,11 +103,7 @@ class RateController extends Controller
             Auth::user()
         );
 
-        return response()->json([
-            'success' => $result->success,
-            'message' => $result->message,
-            'data' => $result,
-        ]);
+        return $this->successResponse($result, $result->message);
     }
 
     /**
@@ -134,10 +115,7 @@ class RateController extends Controller
         $user = Auth::user();
 
         if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can copy previous rates',
-            ], 403);
+            return $this->errorResponse('Only managers and admins can copy previous rates', [], 403);
         }
 
         $validated = $request->validated();
@@ -162,10 +140,7 @@ class RateController extends Controller
             ->pluck('effective_date')
             ->map(fn ($date) => $date->format('Y-m-d'));
 
-        return response()->json([
-            'success' => true,
-            'data' => $dates,
-        ]);
+        return $this->successResponse($dates);
     }
 
     /**
@@ -183,10 +158,7 @@ class RateController extends Controller
             ->orderBy('effective_date', 'desc')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $histories,
-        ]);
+        return $this->successResponse($histories);
     }
 
     /**

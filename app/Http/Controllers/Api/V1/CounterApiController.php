@@ -4,15 +4,17 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\SessionClosedException;
 use App\Exceptions\Domain\VarianceThresholdException;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\CloseCounterRequest;
 use App\Models\Counter;
 use App\Services\Branch\CounterService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 
 class CounterApiController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected CounterService $counterService
     ) {}
@@ -29,10 +31,7 @@ class CounterApiController extends Controller
             ->first();
 
         if (! $session) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No open session found for this counter',
-            ], 404);
+            return $this->notFoundResponse('No open session found for this counter');
         }
 
         try {
@@ -49,22 +48,11 @@ class CounterApiController extends Controller
                 'session' => $result['session'] ?? $session->fresh(),
             ]);
         } catch (SessionClosedException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return $this->errorResponse($e->getMessage(), [], 422);
         } catch (VarianceThresholdException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return $this->errorResponse($e->getMessage(), [], 422);
         } catch (\Exception $e) {
-            Log::error('Failed to close counter', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Operation failed. Please contact support.',
-            ], 500);
+            return $this->serverErrorResponse('Operation failed. Please contact support.', $e);
         }
     }
 }

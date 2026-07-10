@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\MonthEndCloseRequest;
 use App\Services\Accounting\MonthEndCloseService;
@@ -12,6 +13,8 @@ use Illuminate\Http\Request;
 
 class MonthEndCloseController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected MonthEndCloseService $monthEndCloseService
     ) {}
@@ -27,10 +30,7 @@ class MonthEndCloseController extends Controller
         try {
             $results = $this->monthEndCloseService->runMonthEndClosing($date, $user);
 
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ]);
+            return $this->successResponse($results);
         } catch (MonthEndPreCheckFailedException $e) {
             return response()->json([
                 'success' => false,
@@ -38,10 +38,7 @@ class MonthEndCloseController extends Controller
                 'failures' => $e->getFailures(),
             ], 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse($e->getMessage(), [], 500);
         }
     }
 
@@ -51,15 +48,9 @@ class MonthEndCloseController extends Controller
             $carbonDate = Carbon::parse($date);
             $status = $this->monthEndCloseService->getMonthEndStatus($carbonDate);
 
-            return response()->json([
-                'success' => true,
-                'data' => $status,
-            ]);
+            return $this->successResponse($status);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse($e->getMessage(), [], 500);
         }
     }
 }

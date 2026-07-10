@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBranchRequest;
 use App\Http\Requests\UpdateBranchRequest;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\Auth;
  */
 class BranchController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected BranchService $branchService,
     ) {}
@@ -50,11 +53,7 @@ class BranchController extends Controller
 
         $branch = $this->branchService->createBranch($validated, Auth::id(), $request->ip());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Branch created successfully',
-            'data' => $branch,
-        ], 201);
+        return $this->successResponse($branch, 'Branch created successfully', 201);
     }
 
     /**
@@ -67,16 +66,10 @@ class BranchController extends Controller
         $user = Auth::user();
 
         if (! $user->role->isAdmin() && $user->branch_id !== $id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to this branch',
-            ], 403);
+            return $this->errorResponse('Unauthorized access to this branch', [], 403);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $branch,
-        ]);
+        return $this->successResponse($branch);
     }
 
     /**
@@ -90,11 +83,7 @@ class BranchController extends Controller
 
         $branch = $this->branchService->updateBranch($branch, $validated, Auth::id(), $request->ip());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Branch updated successfully',
-            'data' => $branch->fresh(),
-        ]);
+        return $this->successResponse($branch->fresh(), 'Branch updated successfully');
     }
 
     /**
@@ -107,15 +96,9 @@ class BranchController extends Controller
         try {
             $this->branchService->deactivateBranch($branch, Auth::id(), $request->ip());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Branch deactivated successfully',
-            ]);
+            return $this->successResponse(null, 'Branch deactivated successfully');
         } catch (\RuntimeException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            return $this->errorResponse($e->getMessage(), [], 400);
         }
     }
 
@@ -129,18 +112,12 @@ class BranchController extends Controller
         $user = Auth::user();
 
         if (! $user->role->isAdmin() && $user->branch_id !== $id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to this branch',
-            ], 403);
+            return $this->errorResponse('Unauthorized access to this branch', [], 403);
         }
 
         $counters = $branch->counters()->get(['id', 'code', 'name', 'status']);
 
-        return response()->json([
-            'success' => true,
-            'data' => $counters,
-        ]);
+        return $this->successResponse($counters);
     }
 
     /**
@@ -153,17 +130,11 @@ class BranchController extends Controller
         $user = Auth::user();
 
         if (! $user->role->isAdmin() && $user->branch_id !== $id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to this branch',
-            ], 403);
+            return $this->errorResponse('Unauthorized access to this branch', [], 403);
         }
 
         $users = $branch->users()->get(['id', 'username', 'email', 'role']);
 
-        return response()->json([
-            'success' => true,
-            'data' => $users,
-        ]);
+        return $this->successResponse($users);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Concerns\SanctionEntryNormalizer;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\SanctionList\IndexSanctionEntryRequest;
 use App\Http\Requests\Api\V1\SanctionList\StoreSanctionEntryRequest;
@@ -15,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 
 class SanctionListController extends Controller
 {
+    use ApiResponse;
     use SanctionEntryNormalizer;
 
     public function __construct(
@@ -27,19 +29,16 @@ class SanctionListController extends Controller
             ->orderBy('name')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $lists->map(fn ($list) => [
-                'id' => $list->id,
-                'name' => $list->name,
-                'source_url' => $list->source_url,
-                'source_format' => $list->source_format,
-                'update_frequency' => $list->update_frequency,
-                'last_synced_at' => $list->last_updated_at?->toIso8601String(),
-                'status' => $list->update_status,
-                'entries_count' => $list->entries_count,
-            ])->toArray(),
-        ]);
+        return $this->successResponse($lists->map(fn ($list) => [
+            'id' => $list->id,
+            'name' => $list->name,
+            'source_url' => $list->source_url,
+            'source_format' => $list->source_format,
+            'update_frequency' => $list->update_frequency,
+            'last_synced_at' => $list->last_updated_at?->toIso8601String(),
+            'status' => $list->update_status,
+            'entries_count' => $list->entries_count,
+        ])->toArray());
     }
 
     public function entries(IndexSanctionEntryRequest $request): JsonResponse
@@ -87,14 +86,11 @@ class SanctionListController extends Controller
         try {
             $result = $this->importService->import($list, manual: true);
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'status' => 'success',
-                    'records_added' => $result['added'],
-                    'records_updated' => $result['updated'],
-                    'records_deactivated' => $result['deactivated'],
-                ],
+            return $this->successResponse([
+                'status' => 'success',
+                'records_added' => $result['added'],
+                'records_updated' => $result['updated'],
+                'records_deactivated' => $result['deactivated'],
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -113,23 +109,20 @@ class SanctionListController extends Controller
             ->limit(50)
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $logs->map(fn ($log) => [
-                'id' => $log->id,
-                'list' => [
-                    'id' => $log->sanctionList?->id,
-                    'name' => $log->sanctionList?->name,
-                ],
-                'imported_at' => $log->imported_at->toIso8601String(),
-                'records_added' => $log->records_added,
-                'records_updated' => $log->records_updated,
-                'records_deactivated' => $log->records_deactivated,
-                'status' => $log->status,
-                'error_message' => $log->error_message,
-                'triggered_by' => $log->triggered_by,
-            ])->toArray(),
-        ]);
+        return $this->successResponse($logs->map(fn ($log) => [
+            'id' => $log->id,
+            'list' => [
+                'id' => $log->sanctionList?->id,
+                'name' => $log->sanctionList?->name,
+            ],
+            'imported_at' => $log->imported_at->toIso8601String(),
+            'records_added' => $log->records_added,
+            'records_updated' => $log->records_updated,
+            'records_deactivated' => $log->records_deactivated,
+            'status' => $log->status,
+            'error_message' => $log->error_message,
+            'triggered_by' => $log->triggered_by,
+        ])->toArray());
     }
 
     public function storeEntry(StoreSanctionEntryRequest $request): JsonResponse
@@ -154,13 +147,10 @@ class SanctionListController extends Controller
             'status' => 'active',
         ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $entry->id,
-                'entity_name' => $entry->entity_name,
-            ],
-        ], 201);
+        return $this->successResponse([
+            'id' => $entry->id,
+            'entity_name' => $entry->entity_name,
+        ], 'Entry created successfully.', 201);
     }
 
     public function updateEntry(UpdateSanctionEntryRequest $request, int $entryId): JsonResponse
@@ -178,14 +168,11 @@ class SanctionListController extends Controller
 
         $entry->update($validated);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $entry->id,
-                'entity_name' => $entry->entity_name,
-                'status' => $entry->status,
-            ],
-        ]);
+        return $this->successResponse([
+            'id' => $entry->id,
+            'entity_name' => $entry->entity_name,
+            'status' => $entry->status,
+        ], 'Entry updated successfully.');
     }
 
     public function deleteEntry(int $entryId): JsonResponse
@@ -194,6 +181,6 @@ class SanctionListController extends Controller
 
         $entry->update(['status' => 'inactive']);
 
-        return response()->json(['success' => true, 'data' => ['message' => 'Entry deactivated']]);
+        return $this->successResponse(['message' => 'Entry deactivated'], 'Entry deactivated');
     }
 }

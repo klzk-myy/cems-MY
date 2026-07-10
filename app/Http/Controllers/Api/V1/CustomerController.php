@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Customer\SearchCustomerRequest;
 use App\Http\Requests\Api\V1\Customer\UploadDocumentRequest;
@@ -26,6 +27,8 @@ use Illuminate\Support\Facades\Log;
  */
 class CustomerController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected CustomerService $customerService,
         protected AuditService $auditService,
@@ -78,10 +81,11 @@ class CustomerController extends Controller
         try {
             $customer = $this->customerService->createCustomer($validated, auth()->id());
 
-            return (new CustomerResource($customer->load(['documents', 'transactions'])))
-                ->additional(['success' => true, 'message' => 'Customer created successfully.'])
-                ->response($request)
-                ->setStatusCode(201);
+            return $this->resourceResponse(
+                new CustomerResource($customer->load(['documents', 'transactions'])),
+                'Customer created successfully.',
+                201
+            );
 
         } catch (\Exception $e) {
             Log::error('Customer API store failed', [
@@ -89,10 +93,7 @@ class CustomerController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create customer. Please contact support.',
-            ], 500);
+            return $this->errorResponse('Failed to create customer. Please contact support.', [], 500);
         }
     }
 
@@ -106,10 +107,7 @@ class CustomerController extends Controller
         }])->find($id);
 
         if (! $customer) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Customer not found.',
-            ], 404);
+            return $this->notFoundResponse('Customer not found.');
         }
 
         $this->authorize('view', $customer);
@@ -145,9 +143,10 @@ class CustomerController extends Controller
         try {
             $customer = $this->customerService->updateCustomer($customer, $validated, auth()->id());
 
-            return (new CustomerResource($customer->fresh()))
-                ->additional(['success' => true, 'message' => 'Customer updated successfully.'])
-                ->response($request);
+            return $this->resourceResponse(
+                new CustomerResource($customer->fresh()),
+                'Customer updated successfully.'
+            );
 
         } catch (\Exception $e) {
             Log::error('Customer API update failed', [
@@ -156,10 +155,7 @@ class CustomerController extends Controller
                 'customer_id' => $customer->id,
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update customer. Please contact support.',
-            ], 500);
+            return $this->errorResponse('Failed to update customer. Please contact support.', [], 500);
         }
     }
 
@@ -173,10 +169,7 @@ class CustomerController extends Controller
         $this->authorize('delete', $customer);
 
         if ($customer->transactions()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete customer with existing transactions.',
-            ], 400);
+            return $this->errorResponse('Cannot delete customer with existing transactions.', [], 400);
         }
 
         $customerName = $customer->full_name;
@@ -189,10 +182,7 @@ class CustomerController extends Controller
             'old' => ['full_name' => $customerName],
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Customer deleted successfully.',
-        ]);
+        return $this->successResponse(null, 'Customer deleted successfully.');
     }
 
     /**

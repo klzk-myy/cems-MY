@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Concerns\CancellableTransaction;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApiCancelTransactionRequest;
 use App\Http\Requests\ApproveCancelRequest;
@@ -13,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 
 class TransactionCancellationController extends Controller
 {
+    use ApiResponse;
     use CancellableTransaction;
 
     public function __construct(
@@ -32,19 +34,13 @@ class TransactionCancellationController extends Controller
         $transaction = Transaction::findOrFail($transactionId);
 
         if (! $this->canRequestCancellation(auth()->user(), $transaction)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to request cancellation for this transaction.',
-            ], 403);
+            return $this->errorResponse('Unauthorized to request cancellation for this transaction.', [], 403);
         }
 
         $validated = $request->validated();
 
         if (! $this->canBeCancelled($transaction)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This transaction cannot be cancelled in its current state.',
-            ], 400);
+            return $this->errorResponse('This transaction cannot be cancelled in its current state.', [], 400);
         }
 
         $result = $this->cancellationService->requestCancellation(
@@ -54,19 +50,12 @@ class TransactionCancellationController extends Controller
         );
 
         if (! $result) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to request cancellation. Please try again.',
-            ], 500);
+            return $this->errorResponse('Failed to request cancellation. Please try again.', [], 500);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cancellation requested successfully. Awaiting supervisor approval.',
-            'data' => [
-                'transaction' => $transaction->fresh(),
-            ],
-        ]);
+        return $this->successResponse([
+            'transaction' => $transaction->fresh(),
+        ], 'Cancellation requested successfully. Awaiting supervisor approval.');
     }
 
     /**
@@ -82,17 +71,11 @@ class TransactionCancellationController extends Controller
         $transaction = Transaction::findOrFail($transactionId);
 
         if (! $this->canApproveCancellation(auth()->user(), $transaction)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to approve cancellation for this transaction.',
-            ], 403);
+            return $this->errorResponse('Unauthorized to approve cancellation for this transaction.', [], 403);
         }
 
         if (! $transaction->status->isPendingCancellation()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This transaction is not pending cancellation.',
-            ], 400);
+            return $this->errorResponse('This transaction is not pending cancellation.', [], 400);
         }
 
         $validated = $request->validated();
@@ -104,19 +87,12 @@ class TransactionCancellationController extends Controller
         );
 
         if (! $result) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to approve cancellation. Please try again.',
-            ], 500);
+            return $this->errorResponse('Failed to approve cancellation. Please try again.', [], 500);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cancellation approved. Transaction has been cancelled.',
-            'data' => [
-                'transaction' => $transaction->fresh(),
-            ],
-        ]);
+        return $this->successResponse([
+            'transaction' => $transaction->fresh(),
+        ], 'Cancellation approved. Transaction has been cancelled.');
     }
 
     /**
@@ -132,17 +108,11 @@ class TransactionCancellationController extends Controller
         $transaction = Transaction::findOrFail($transactionId);
 
         if (! $this->canApproveCancellation(auth()->user(), $transaction)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to reject cancellation for this transaction.',
-            ], 403);
+            return $this->errorResponse('Unauthorized to reject cancellation for this transaction.', [], 403);
         }
 
         if (! $transaction->status->isPendingCancellation()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This transaction is not pending cancellation.',
-            ], 400);
+            return $this->errorResponse('This transaction is not pending cancellation.', [], 400);
         }
 
         $validated = $request->validated();
@@ -156,20 +126,13 @@ class TransactionCancellationController extends Controller
         );
 
         if (! $result) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to reject cancellation. Transaction history may be corrupted.',
-            ], 500);
+            return $this->errorResponse('Failed to reject cancellation. Transaction history may be corrupted.', [], 500);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cancellation rejected. Transaction has been restored to its previous status.',
-            'data' => [
-                'transaction' => $transaction->fresh(),
-                'previous_status' => $previousStatus->value,
-            ],
-        ]);
+        return $this->successResponse([
+            'transaction' => $transaction->fresh(),
+            'previous_status' => $previousStatus->value,
+        ], 'Cancellation rejected. Transaction has been restored to its previous status.');
     }
 
     protected function isWithinCancellationWindow(Transaction $transaction): bool

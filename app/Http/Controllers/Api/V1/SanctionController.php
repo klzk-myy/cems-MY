@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Sanction\SearchSanctionRequest;
 use App\Services\CustomerScreeningService;
@@ -9,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 
 class SanctionController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected CustomerScreeningService $screeningService
     ) {}
@@ -37,9 +40,6 @@ class SanctionController extends Controller
      */
     public function upload(): JsonResponse
     {
-        return response()->json([
-            'success' => false,
-            'message' => 'Manual file upload is no longer supported. Sanctions lists are automatically imported from configured sources via scheduled jobs.',
-        ], 410);
+        return $this->errorResponse('Manual file upload is no longer supported. Sanctions lists are automatically imported from configured sources via scheduled jobs.', [], 410);
     }
 }

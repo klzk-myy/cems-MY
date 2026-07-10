@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\UnauthorizedException;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\AcknowledgeHandoverRequest;
 use App\Models\Counter;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Auth;
 
 class CounterHandoverController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected CounterHandoverService $handoverService
     ) {}
@@ -23,27 +26,18 @@ class CounterHandoverController extends Controller
     {
         $counter = Counter::find($counterId);
         if (! $counter) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Counter not found',
-            ], 404);
+            return $this->notFoundResponse('Counter not found');
         }
 
         $handover = CounterHandover::with('counterSession')->find($handoverId);
         if (! $handover || $handover->counterSession->counter_id !== $counterId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Handover not found for this counter',
-            ], 404);
+            return $this->notFoundResponse('Handover not found for this counter');
         }
 
         $user = Auth::user();
 
         if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You do not have permission to access this resource.',
-            ], 403);
+            return $this->errorResponse('You do not have permission to access this resource.', [], 403);
         }
 
         $validated = $request->validated();
@@ -56,20 +50,11 @@ class CounterHandoverController extends Controller
                 $validated['notes'] ?? null
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Handover acknowledged successfully',
-            ]);
+            return $this->successResponse(null, 'Handover acknowledged successfully');
         } catch (UnauthorizedException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 403);
+            return $this->errorResponse($e->getMessage(), [], 403);
         } catch (InvalidStateException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return $this->errorResponse($e->getMessage(), [], 422);
         }
     }
 }

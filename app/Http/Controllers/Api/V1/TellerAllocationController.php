@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\TellerAllocation\ApproveAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\ModifyAllocationRequest;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\Log;
  */
 class TellerAllocationController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected TellerAllocationService $allocationService
     ) {}
@@ -34,18 +37,12 @@ class TellerAllocationController extends Controller
         $user = Auth::user();
 
         if (! $user->branch) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User has no assigned branch',
-            ], 400);
+            return $this->errorResponse('User has no assigned branch', [], 400);
         }
 
         $pending = $this->allocationService->getPendingAllocationsForBranch($user->branch);
 
-        return response()->json([
-            'success' => true,
-            'data' => $pending,
-        ]);
+        return $this->successResponse($pending);
     }
 
     /**
@@ -57,18 +54,12 @@ class TellerAllocationController extends Controller
         $user = Auth::user();
 
         if (! $user->branch) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User has no assigned branch',
-            ], 400);
+            return $this->errorResponse('User has no assigned branch', [], 400);
         }
 
         $active = $this->allocationService->getActiveAllocationsForBranch($user->branch);
 
-        return response()->json([
-            'success' => true,
-            'data' => $active,
-        ]);
+        return $this->successResponse($active);
     }
 
     /**
@@ -79,16 +70,10 @@ class TellerAllocationController extends Controller
         $allocation = TellerAllocation::with(['user', 'branch', 'counter'])->find($allocationId);
 
         if (! $allocation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Allocation not found',
-            ], 404);
+            return $this->notFoundResponse('Allocation not found');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $allocation,
-        ]);
+        return $this->successResponse($allocation);
     }
 
     /**
@@ -100,10 +85,7 @@ class TellerAllocationController extends Controller
         $user = Auth::user();
 
         if (! $this->allocationService->canManageAllocations($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can approve allocations',
-            ], 403);
+            return $this->errorResponse('Only managers and admins can approve allocations', [], 403);
         }
 
         $validated = $request->validated();
@@ -111,17 +93,11 @@ class TellerAllocationController extends Controller
         $allocation = TellerAllocation::find($allocationId);
 
         if (! $allocation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Allocation not found',
-            ], 404);
+            return $this->notFoundResponse('Allocation not found');
         }
 
         if (! $allocation->isPending()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Allocation is not in pending status',
-            ], 400);
+            return $this->errorResponse('Allocation is not in pending status', [], 400);
         }
 
         try {
@@ -132,18 +108,11 @@ class TellerAllocationController extends Controller
                 $validated['daily_limit_myr'] ?? null
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Allocation approved successfully',
-                'data' => $allocation,
-            ]);
+            return $this->successResponse($allocation, 'Allocation approved successfully');
         } catch (\Exception $e) {
             Log::error('Failed to approve allocation', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Operation failed. Please contact support.',
-            ], 400);
+            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
         }
     }
 
@@ -156,26 +125,17 @@ class TellerAllocationController extends Controller
         $user = Auth::user();
 
         if (! $this->allocationService->canManageAllocations($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can reject allocations',
-            ], 403);
+            return $this->errorResponse('Only managers and admins can reject allocations', [], 403);
         }
 
         $allocation = TellerAllocation::find($allocationId);
 
         if (! $allocation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Allocation not found',
-            ], 404);
+            return $this->notFoundResponse('Allocation not found');
         }
 
         if (! $allocation->isPending()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Allocation is not in pending status',
-            ], 400);
+            return $this->errorResponse('Allocation is not in pending status', [], 400);
         }
 
         $validated = $request->validated();
@@ -187,18 +147,11 @@ class TellerAllocationController extends Controller
                 $validated['rejection_reason'] ?? null
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Allocation rejected',
-                'data' => $allocation,
-            ]);
+            return $this->successResponse($allocation, 'Allocation rejected');
         } catch (\Exception $e) {
             Log::error('Failed to reject allocation', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Operation failed. Please contact support.',
-            ], 400);
+            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
         }
     }
 
@@ -211,10 +164,7 @@ class TellerAllocationController extends Controller
         $user = Auth::user();
 
         if (! $this->allocationService->canManageAllocations($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can modify allocations',
-            ], 403);
+            return $this->errorResponse('Only managers and admins can modify allocations', [], 403);
         }
 
         $validated = $request->validated();
@@ -222,17 +172,11 @@ class TellerAllocationController extends Controller
         $allocation = TellerAllocation::find($allocationId);
 
         if (! $allocation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Allocation not found',
-            ], 404);
+            return $this->notFoundResponse('Allocation not found');
         }
 
         if (! $allocation->isActive()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only active allocations can be modified',
-            ], 400);
+            return $this->errorResponse('Only active allocations can be modified', [], 400);
         }
 
         try {
@@ -243,18 +187,11 @@ class TellerAllocationController extends Controller
                 $validated['is_increase']
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Allocation modified successfully',
-                'data' => $allocation,
-            ]);
+            return $this->successResponse($allocation, 'Allocation modified successfully');
         } catch (\Exception $e) {
             Log::error('Failed to modify allocation', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Operation failed. Please contact support.',
-            ], 400);
+            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
         }
     }
 
@@ -267,36 +204,23 @@ class TellerAllocationController extends Controller
         $user = Auth::user();
 
         if (! $this->allocationService->canManageAllocations($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can return allocations to pool',
-            ], 403);
+            return $this->errorResponse('Only managers and admins can return allocations to pool', [], 403);
         }
 
         $allocation = TellerAllocation::find($allocationId);
 
         if (! $allocation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Allocation not found',
-            ], 404);
+            return $this->notFoundResponse('Allocation not found');
         }
 
         try {
             $this->allocationService->returnToPool($allocation);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Allocation returned to pool',
-                'data' => $allocation,
-            ]);
+            return $this->successResponse($allocation, 'Allocation returned to pool');
         } catch (\Exception $e) {
             Log::error('Failed to return allocation to pool', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Operation failed. Please contact support.',
-            ], 400);
+            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
         }
     }
 

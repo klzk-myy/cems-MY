@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\ReportType;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Report\ExportReportRequest;
 use App\Services\Reporting\ReportingService;
@@ -11,6 +12,8 @@ use Illuminate\Http\JsonResponse;
 
 class ReportController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected ReportingService $reportingService,
         protected DocumentStorageService $documentStorageService
@@ -22,10 +25,7 @@ class ReportController extends Controller
     public function download(string $filename): JsonResponse
     {
         if (! auth()->user()->isManager()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Manager or Admin access required.',
-            ], 403);
+            return $this->errorResponse('Unauthorized. Manager or Admin access required.', [], 403);
         }
 
         // Sanitize filename to prevent path traversal
@@ -37,16 +37,10 @@ class ReportController extends Controller
         $filepath = "reports/{$filename}";
 
         if (! $this->documentStorageService->exists($filepath)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Report not found.',
-            ], 404);
+            return $this->notFoundResponse('Report not found.');
         }
 
-        return response()->json([
-            'success' => true,
-            'download_url' => url('/reports/download/'.$filename),
-        ]);
+        return $this->successResponse(['download_url' => url('/reports/download/'.$filename)]);
     }
 
     /**
@@ -66,10 +60,6 @@ class ReportController extends Controller
 
         $filename = "{$reportType->value}_{$validated['period']}.".strtolower($validated['format']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Report exported successfully.',
-            'download_url' => url('/reports/download/'.$filename),
-        ]);
+        return $this->successResponse(['download_url' => url('/reports/download/'.$filename)], 'Report exported successfully.');
     }
 }

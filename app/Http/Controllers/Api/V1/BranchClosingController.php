@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Http\Concerns\BranchScoped;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\BranchClosingRequest;
 use App\Models\Branch;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 
 class BranchClosingController extends Controller
 {
+    use ApiResponse;
     use BranchScoped;
 
     public function __construct(
@@ -40,11 +42,7 @@ class BranchClosingController extends Controller
 
         $workflow = $this->branchClosingService->initiateClosure($branch, $user);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Branch closure workflow initiated',
-            'data' => $workflow,
-        ], 201);
+        return $this->successResponse($workflow, 'Branch closure workflow initiated', 201);
     }
 
     public function checklist(BranchClosingRequest $request, int $branchId): JsonResponse
@@ -58,21 +56,15 @@ class BranchClosingController extends Controller
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
 
         if (! $workflow) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No active closure workflow found for this branch',
-            ], 404);
+            return $this->notFoundResponse('No active closure workflow found for this branch');
         }
 
         $checklist = $this->branchClosingService->getChecklist($workflow);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'workflow' => $workflow,
-                'checklist' => $checklist,
-                'can_finalize' => $this->branchClosingService->canFinalize($workflow),
-            ],
+        return $this->successResponse([
+            'workflow' => $workflow,
+            'checklist' => $checklist,
+            'can_finalize' => $this->branchClosingService->canFinalize($workflow),
         ]);
     }
 
@@ -87,10 +79,7 @@ class BranchClosingController extends Controller
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
 
         if (! $workflow) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No active closure workflow found for this branch',
-            ], 404);
+            return $this->notFoundResponse('No active closure workflow found for this branch');
         }
 
         $user = Auth::user();
@@ -98,16 +87,9 @@ class BranchClosingController extends Controller
         try {
             $this->branchClosingService->finalize($workflow, $user);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Branch closure finalized successfully',
-                'data' => $workflow->fresh(),
-            ]);
+            return $this->successResponse($workflow->fresh(), 'Branch closure finalized successfully');
         } catch (BranchClosingChecklistIncompleteException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            return $this->errorResponse($e->getMessage(), [], 400);
         }
     }
 

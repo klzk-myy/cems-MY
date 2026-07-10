@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Eod\CounterReconciliationRequest;
 use App\Http\Requests\Api\V1\Eod\GenerateReportRequest;
@@ -20,6 +21,8 @@ use PDF;
  */
 class EodReconciliationController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected EodReconciliationService $eodService
     ) {}
@@ -37,35 +40,23 @@ class EodReconciliationController extends Controller
 
         $user = auth()->user();
         if (! $this->canAccessEod($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Manager, Compliance Officer, or Admin access required.',
-            ], 403);
+            return $this->errorResponse('Unauthorized. Manager, Compliance Officer, or Admin access required.', [], 403);
         }
 
         $branchId = $validated['branch_id'] ?? null;
 
         if ($branchId && ! $user->isAdmin() && $user->branch_id !== $branchId) {
             if (! $user->isComplianceOfficer()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You can only view reports for your own branch.',
-                ], 403);
+                return $this->errorResponse('You can only view reports for your own branch.', [], 403);
             }
         }
 
         try {
             $report = $this->eodService->generateDailyReconciliationSummary($carbonDate, $branchId);
 
-            return response()->json([
-                'success' => true,
-                'data' => $report,
-            ]);
+            return $this->successResponse($report);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to generate reconciliation report: '.$e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to generate reconciliation report: '.$e->getMessage(), [], 500);
         }
     }
 
@@ -82,24 +73,15 @@ class EodReconciliationController extends Controller
         $carbonDate = Carbon::parse($date);
 
         if (! $this->canAccessEod(auth()->user())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Manager, Compliance Officer, or Admin access required.',
-            ], 403);
+            return $this->errorResponse('Unauthorized. Manager, Compliance Officer, or Admin access required.', [], 403);
         }
 
         try {
             $report = $this->eodService->generateCounterReconciliation($counterId, $carbonDate);
 
-            return response()->json([
-                'success' => true,
-                'data' => $report,
-            ]);
+            return $this->successResponse($report);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to generate counter reconciliation: '.$e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to generate counter reconciliation: '.$e->getMessage(), [], 500);
         }
     }
 
@@ -115,10 +97,7 @@ class EodReconciliationController extends Controller
         $carbonDate = Carbon::parse($date);
 
         if (! $this->canAccessEod(auth()->user())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Manager, Compliance Officer, or Admin access required.',
-            ], 403);
+            return $this->errorResponse('Unauthorized. Manager, Compliance Officer, or Admin access required.', [], 403);
         }
 
         $branchId = $validated['branch_id'] ?? null;
@@ -129,10 +108,7 @@ class EodReconciliationController extends Controller
             $report = $this->eodService->generateReconciliationReport($carbonDate, $branchId, $counterId);
 
             if ($format === 'json') {
-                return response()->json([
-                    'success' => true,
-                    'data' => $report,
-                ]);
+                return $this->successResponse($report);
             }
 
             // Generate PDF
@@ -153,10 +129,7 @@ class EodReconciliationController extends Controller
             return $pdf->download($filename);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to generate reconciliation report: '.$e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to generate reconciliation report: '.$e->getMessage(), [], 500);
         }
     }
 
