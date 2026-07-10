@@ -4,7 +4,6 @@ namespace App\Services\Compliance\Monitors;
 
 use App\Enums\FindingSeverity;
 use App\Enums\FindingType;
-use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -37,7 +36,7 @@ class CurrencyFlowMonitor extends BaseMonitor
 
         $grouped = Transaction::with('customer')
             ->where('created_at', '>=', $cutoffTime)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
+            ->notCancelled()
             ->orderBy('created_at', 'asc')
             ->get()
             ->groupBy('customer_id');

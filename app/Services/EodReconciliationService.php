@@ -431,8 +431,8 @@ class EodReconciliationService
     public function checkMissingAccountingEntries(Carbon $date, ?int $branchId = null): array
     {
         $transactions = Transaction::with(['user', 'branch'])
+            ->completed()
             ->whereDate('approved_at', $date->toDateString())
-            ->where('status', TransactionStatus::Completed->value)
             ->where('cdd_level', 'Enhanced')
             ->when($branchId, function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId);
@@ -480,7 +480,7 @@ class EodReconciliationService
     public function getMissingAccountingEntriesCount(Carbon $date, ?int $branchId = null): int
     {
         return Transaction::whereDate('approved_at', $date->toDateString())
-            ->where('status', TransactionStatus::Completed->value)
+            ->completed()
             ->where('cdd_level', 'Enhanced')
             ->when($branchId, function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId);

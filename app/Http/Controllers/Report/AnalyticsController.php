@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Report;
 
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
-use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
 use App\Models\Currency;
@@ -13,6 +12,7 @@ use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
+use App\Services\Reporting\TransactionReportQuery;
 use App\Services\System\MathService;
 use App\Support\DbDate;
 use Carbon\Carbon;
@@ -37,7 +37,7 @@ class AnalyticsController extends Controller
         $currency = $request->input('currency', 'all');
 
         $query = Transaction::whereYear('created_at', $year)
-            ->where('status', TransactionStatus::Completed);
+            ->completed();
 
         if ($currency !== 'all') {
             $query->where('currency_code', $currency);
@@ -113,17 +113,16 @@ class AnalyticsController extends Controller
 
         $startDate = $request->input('start_date', now()->subMonth()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->subMonth()->endOfMonth()->toDateString());
-        $startAt = Carbon::parse($startDate)->startOfDay();
-        $endAt = Carbon::parse($endDate)->endOfDay();
 
         $positionModels = CurrencyPosition::with('currency')->get();
         $currencyCodes = $positionModels->pluck('currency_code')->unique()->values()->toArray();
         $rates = $this->getCurrentRates($currencyCodes);
 
-        $allSells = Transaction::whereIn('currency_code', $currencyCodes)
-            ->where('type', TransactionType::Sell)
-            ->where('status', TransactionStatus::Completed)
-            ->whereBetween('created_at', [$startAt, $endAt])
+        $allSells = app(TransactionReportQuery::class)
+            ->completed()
+            ->forDateRange($startDate, $endDate)
+            ->sell()
+            ->whereIn('currency_code', $currencyCodes)
             ->select('currency_code', 'rate', 'amount_foreign', 'amount_local')
             ->get()
             ->groupBy('currency_code');

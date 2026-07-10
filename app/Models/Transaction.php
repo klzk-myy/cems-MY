@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
 use App\Models\Bases\TransactionModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -106,8 +108,8 @@ class Transaction extends TransactionModel
         'base_rate' => MoneyCast::class.':6',
         'rate_override' => 'boolean',
         'is_refund' => 'boolean',
-        'type' => \App\Enums\TransactionType::class,
-        'status' => \App\Enums\TransactionStatus::class,
+        'type' => TransactionType::class,
+        'status' => TransactionStatus::class,
         'cdd_level' => \App\Enums\CddLevel::class,
         'cancelled_at' => 'datetime',
         'rate_override_approved_at' => 'datetime',
@@ -127,24 +129,55 @@ class Transaction extends TransactionModel
         'cancellation_reason' => 'string',
     ];
 
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', TransactionStatus::Completed->value);
+    }
+
+    public function scopeNotCancelled($query)
+    {
+        return $query->where('status', '!=', TransactionStatus::Cancelled->value);
+    }
+
+    public function scopeForDateRange($query, string $from, string $to)
+    {
+        return $query->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to);
+    }
+
+    public function scopeForBranch($query, ?int $branchId)
+    {
+        return $query->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
+    }
+
+    public function scopeBuy($query)
+    {
+        return $query->where('type', TransactionType::Buy->value);
+    }
+
+    public function scopeSell($query)
+    {
+        return $query->where('type', TransactionType::Sell->value);
+    }
+
     protected function activeStatusValues(): array
     {
         return [
-            \App\Enums\TransactionStatus::Approved->value,
-            \App\Enums\TransactionStatus::Processing->value,
-            \App\Enums\TransactionStatus::Completed->value,
-            \App\Enums\TransactionStatus::Finalized->value,
+            TransactionStatus::Approved->value,
+            TransactionStatus::Processing->value,
+            TransactionStatus::Completed->value,
+            TransactionStatus::Finalized->value,
         ];
     }
 
     protected function openStatusValues(): array
     {
         return [
-            \App\Enums\TransactionStatus::Draft->value,
-            \App\Enums\TransactionStatus::PendingApproval->value,
-            \App\Enums\TransactionStatus::Pending->value,
-            \App\Enums\TransactionStatus::OnHold->value,
-            \App\Enums\TransactionStatus::PendingCancellation->value,
+            TransactionStatus::Draft->value,
+            TransactionStatus::PendingApproval->value,
+            TransactionStatus::Pending->value,
+            TransactionStatus::OnHold->value,
+            TransactionStatus::PendingCancellation->value,
         ];
     }
 

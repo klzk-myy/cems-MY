@@ -2,7 +2,6 @@
 
 namespace App\Services\Risk;
 
-use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Transaction;
 use App\Services\System\MathService;
@@ -48,7 +47,7 @@ class PatternRiskService
         $details = [];
 
         $recentTransactions = Transaction::where('customer_id', $customerId)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
+            ->notCancelled()
             ->orderBy('created_at', 'desc')
             ->take(10)
             ->get();
@@ -101,7 +100,7 @@ class PatternRiskService
 
         $recentTransactions = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $cutoffTime)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
+            ->notCancelled()
             ->orderBy('created_at', 'asc')
             ->get();
 

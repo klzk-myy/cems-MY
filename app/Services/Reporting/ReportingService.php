@@ -2,11 +2,9 @@
 
 namespace App\Services\Reporting;
 
-use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
-use App\Models\Transaction;
 use App\Services\Contracts\ReportingServiceInterface;
 use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
@@ -102,8 +100,9 @@ class ReportingService implements ReportingServiceInterface
 
     public function generateMSB2Data(string $date): array
     {
-        $transactions = Transaction::whereDate('created_at', $date)
-            ->where('status', TransactionStatus::Completed->value)
+        $transactions = app(TransactionReportQuery::class)
+            ->completed()
+            ->forDateRange($date, $date)
             ->get();
 
         $currencies = Currency::where('is_active', true)->get();
@@ -215,9 +214,10 @@ class ReportingService implements ReportingServiceInterface
         $currencyCodes = $currencies->pluck('code')->toArray();
         $currencyData = [];
 
-        $allTxns = Transaction::whereBetween('created_at', [$startDate, $endDate])
+        $allTxns = app(TransactionReportQuery::class)
+            ->completed()
+            ->forDateRange($startDate->toDateString(), $endDate->toDateString())
             ->whereIn('currency_code', $currencyCodes)
-            ->where('status', TransactionStatus::Completed->value)
             ->get()
             ->groupBy('currency_code');
 
@@ -246,8 +246,9 @@ class ReportingService implements ReportingServiceInterface
             ];
         }
 
-        $customerCount = Transaction::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', TransactionStatus::Completed->value)
+        $customerCount = app(TransactionReportQuery::class)
+            ->completed()
+            ->forDateRange($startDate->toDateString(), $endDate->toDateString())
             ->distinct('customer_id')
             ->count('customer_id');
 
@@ -326,10 +327,11 @@ class ReportingService implements ReportingServiceInterface
         $startDate = Carbon::create($year, $startMonth, 1)->startOfMonth();
         $endDate = $startDate->copy()->addMonths(3)->subDay();
 
-        $transactions = Transaction::with(['customer', 'user'])
-            ->whereBetween('created_at', [$startDate, $endDate])
+        $transactions = app(TransactionReportQuery::class)
+            ->completed()
+            ->forDateRange($startDate->toDateString(), $endDate->toDateString())
+            ->with(['customer', 'user'])
             ->where('amount_local', '>=', self::LARGE_VALUE_THRESHOLD)
-            ->where('status', TransactionStatus::Completed->value)
             ->orderBy('created_at')
             ->get();
 
