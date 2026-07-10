@@ -1317,8 +1317,8 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 ### Planned Consolidation Areas
 
 - [x] **Task A**: Introduce `ApiResponse` trait and migrate all V1 controllers
-- [ ] **Task B**: Create `TillBalanceManager` and refactor transaction services
-- [ ] **Task C**: Create `CurrencyPositionLockService` and refactor locking logic
+- [x] **Task B**: Create `TillBalanceManager` and refactor transaction services (including `till_id` → `Counter::code` alignment and data migration)
+- [x] **Task C**: Create `CurrencyPositionLockService` and refactor locking logic — in progress
 - [ ] **Task D**: Create `AuditTrailHelper` and replace manual audit arrays
 - [ ] **Task E**: Add `Transaction` query scopes and `TransactionReportQuery` for reporting
 - [ ] **Task F**: Create shared validation rules (`ValidCurrencyCode`, `ValidTill`, `ValidAmountForeign`, `ValidRate`)
@@ -1332,8 +1332,8 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 - [x] Delivery checklist written and saved
 - [x] Implementation started
 - [ ] Implementation completed
-- [x] Tests passing for Task A (`ApiResponse` trait + controller rollout)
-- [x] Code formatted with Pint (Task A files)
+- [x] Tests passing for Tasks A–B (`ApiResponse`, controller rollout, `TillBalanceManager`)
+- [x] Code formatted with Pint (Tasks A–B files)
 - [ ] GitNexus change detection reviewed
 
 ---
