@@ -1328,7 +1328,10 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
   - Files: `app/Rules/ValidCurrencyCode.php`, `app/Rules/ValidTill.php`, `app/Rules/ValidAmountForeign.php`, `app/Rules/ValidRate.php`
   - Applied to `app/Http/Requests/Api/V1/Transaction/StoreTransactionRequest.php`
   - Tests: `15 passed (20 assertions)` across `tests/Unit/Rules` and `tests/Feature/Api/V1/TransactionStoreResponseShapeTest.php`
-- [ ] **Task G**: Remove duplicate flat Form Request classes after route confirmation
+- [x] **Task G**: Remove duplicate flat Form Request classes after route confirmation
+  - Deleted: `app/Http/Requests/Api/V1/StoreTransactionRequest.php`, `ApproveAllocationRequest.php`, `RejectAllocationRequest.php`, `ModifyAllocationRequest.php`, `MyActiveAllocationRequest.php`
+  - Verified no stale imports; API controllers use namespaced equivalents
+  - Tests: `2 passed (15 assertions)` in `tests/Feature/Api/V1`
 - [ ] **Task H**: Centralize IP allowlist/blocklist validation in `IpValidationService`
 
 ### Deliverables Status
