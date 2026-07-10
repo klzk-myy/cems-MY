@@ -6,6 +6,7 @@ use App\Casts\MoneyCast;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Bases\TransactionModel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -129,33 +130,33 @@ class Transaction extends TransactionModel
         'cancellation_reason' => 'string',
     ];
 
-    public function scopeCompleted($query)
+    public function scopeCompleted(Builder $query): Builder
     {
         return $query->where('status', TransactionStatus::Completed->value);
     }
 
-    public function scopeNotCancelled($query)
+    public function scopeNotCancelled(Builder $query): Builder
     {
         return $query->where('status', '!=', TransactionStatus::Cancelled->value);
     }
 
-    public function scopeForDateRange($query, string $from, string $to)
+    public function scopeForDateRange(Builder $query, string $from, string $to): Builder
     {
         return $query->whereDate('created_at', '>=', $from)
             ->whereDate('created_at', '<=', $to);
     }
 
-    public function scopeForBranch($query, ?int $branchId)
+    public function scopeForBranch(Builder $query, ?int $branchId): Builder
     {
         return $query->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
     }
 
-    public function scopeBuy($query)
+    public function scopeBuy(Builder $query): Builder
     {
         return $query->where('type', TransactionType::Buy->value);
     }
 
-    public function scopeSell($query)
+    public function scopeSell(Builder $query): Builder
     {
         return $query->where('type', TransactionType::Sell->value);
     }

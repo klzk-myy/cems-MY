@@ -2,6 +2,7 @@
 
 namespace App\Services\Reporting;
 
+use App\Enums\TransactionType;
 use App\Models\Customer;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,11 +51,16 @@ class CustomerReportService
         $baseQuery = $customer->transactions()->completed();
         $this->applyDateRangeFilters($baseQuery, $filters);
 
-        $buyVolume = (clone $baseQuery)->buy()->sum('amount_local');
-        $sellVolume = (clone $baseQuery)->sell()->sum('amount_local');
-        $buyCount = (clone $baseQuery)->buy()->count();
-        $sellCount = (clone $baseQuery)->sell()->count();
-        $totalCount = $baseQuery->count();
+        $transactions = $baseQuery->get(['created_at', 'amount_local', 'type']);
+
+        $buyTransactions = $transactions->where('type', TransactionType::Buy);
+        $sellTransactions = $transactions->where('type', TransactionType::Sell);
+
+        $buyVolume = (string) $buyTransactions->sum('amount_local');
+        $sellVolume = (string) $sellTransactions->sum('amount_local');
+        $buyCount = $buyTransactions->count();
+        $sellCount = $sellTransactions->count();
+        $totalCount = $transactions->count();
         $totalVolume = $this->mathService->add($buyVolume, $sellVolume);
 
         return [
@@ -65,8 +71,8 @@ class CustomerReportService
             'sell_volume' => $sellVolume,
             'total_volume' => $totalVolume,
             'avg_transaction' => $totalCount > 0 ? $this->mathService->divide($totalVolume, (string) $totalCount) : '0',
-            'first_transaction' => $baseQuery->min('created_at'),
-            'last_transaction' => $baseQuery->max('created_at'),
+            'first_transaction' => $transactions->min('created_at'),
+            'last_transaction' => $transactions->max('created_at'),
         ];
     }
 
@@ -81,13 +87,7 @@ class CustomerReportService
         $baseQuery = $customer->transactions()->completed();
         $this->applyDateRangeFilters($baseQuery, $filters);
 
-        $buyTransactions = (clone $baseQuery)
-            ->buy()
-            ->get(['created_at', 'amount_local']);
-
-        $sellTransactions = (clone $baseQuery)
-            ->sell()
-            ->get(['created_at', 'amount_local']);
+        $transactions = $baseQuery->get(['created_at', 'amount_local', 'type']);
 
         // Get last 12 months of labels
         $chartLabels = [];
@@ -98,13 +98,12 @@ class CustomerReportService
             $date = now()->subMonths($i);
             $chartLabels[] = $date->format('M Y');
 
-            $buyTotal = $buyTransactions
-                ->filter(fn ($t) => $t->created_at->year === $date->year && $t->created_at->month === $date->month)
-                ->sum('amount_local');
+            $monthTransactions = $transactions->filter(
+                fn ($t) => $t->created_at->year === $date->year && $t->created_at->month === $date->month
+            );
 
-            $sellTotal = $sellTransactions
-                ->filter(fn ($t) => $t->created_at->year === $date->year && $t->created_at->month === $date->month)
-                ->sum('amount_local');
+            $buyTotal = $monthTransactions->where('type', TransactionType::Buy)->sum('amount_local');
+            $sellTotal = $monthTransactions->where('type', TransactionType::Sell)->sum('amount_local');
 
             $chartBuyData[] = $buyTotal ?: 0;
             $chartSellData[] = $sellTotal ?: 0;

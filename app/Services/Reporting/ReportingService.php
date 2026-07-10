@@ -2,6 +2,7 @@
 
 namespace App\Services\Reporting;
 
+use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
@@ -30,27 +31,19 @@ class ReportingService implements ReportingServiceInterface
 
     public function generateMSB2(string $date): string
     {
-        $buyTransactions = Transaction::completed()
+        $buyType = TransactionType::Buy->value;
+        $sellType = TransactionType::Sell->value;
+
+        $summary = Transaction::completed()
             ->forDateRange($date, $date)
-            ->buy()
-            ->get(['currency_code', 'amount_foreign']);
-
-        $sellTransactions = Transaction::completed()
-            ->forDateRange($date, $date)
-            ->sell()
-            ->get(['currency_code', 'amount_foreign']);
-
-        $buySummary = $buyTransactions->groupBy('currency_code')->map(fn ($items) => [
-            'volume' => (string) $items->sum('amount_foreign'),
-            'count' => $items->count(),
-        ]);
-
-        $sellSummary = $sellTransactions->groupBy('currency_code')->map(fn ($items) => [
-            'volume' => (string) $items->sum('amount_foreign'),
-            'count' => $items->count(),
-        ]);
-
-        $currencies = $buySummary->keys()->merge($sellSummary->keys())->unique()->sort()->values();
+            ->select('currency_code')
+            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume', [$buyType])
+            ->selectRaw('COUNT(CASE WHEN type = ? THEN 1 END) as buy_count', [$buyType])
+            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume', [$sellType])
+            ->selectRaw('COUNT(CASE WHEN type = ? THEN 1 END) as sell_count', [$sellType])
+            ->groupBy('currency_code')
+            ->orderBy('currency_code')
+            ->get();
 
         $filename = "MSB2_{$date}.csv";
         $filepath = "reports/{$filename}";
@@ -74,14 +67,14 @@ class ReportingService implements ReportingServiceInterface
             'Sell_Count',
         ]);
 
-        foreach ($currencies as $currency) {
+        foreach ($summary as $row) {
             fputcsv($csv, [
                 $date,
-                $currency,
-                $buySummary->get($currency)['volume'] ?? '0',
-                $buySummary->get($currency)['count'] ?? 0,
-                $sellSummary->get($currency)['volume'] ?? '0',
-                $sellSummary->get($currency)['count'] ?? 0,
+                $row->currency_code,
+                (string) $row->buy_volume,
+                (int) $row->buy_count,
+                (string) $row->sell_volume,
+                (int) $row->sell_count,
             ]);
         }
 

@@ -14,6 +14,7 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Support\BcmathHelper;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * EOD Reconciliation Service
@@ -134,6 +135,19 @@ class EodReconciliationService
     }
 
     /**
+     * Build the base query for reconcilable transactions for a counter on a date.
+     */
+    private function reconcilableTransactionsQuery(int $counterId, Carbon $date): Builder
+    {
+        $counter = Counter::findOrFail($counterId);
+
+        return Transaction::where('till_id', $counter->code)
+            ->forDateRange($date->toDateString(), $date->toDateString())
+            ->notCancelled()
+            ->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
+    }
+
+    /**
      * Generate per-counter reconciliation details.
      *
      * @param  int  $counterId  Counter ID
@@ -169,15 +183,11 @@ class EodReconciliationService
         $openingFloat = $tillBalances->sum('opening_balance');
 
         // Get transactions for this counter on this date
-        $transactions = Transaction::with(['customer', 'user', 'flags'])
-            ->where('till_id', $counter->code)
-            ->forDateRange($date->toDateString(), $date->toDateString())
-            ->notCancelled()->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value])
+        $transactions = $this->reconcilableTransactionsQuery($counterId, $date)
+            ->with(['customer', 'user', 'flags'])
             ->get();
 
-        $sumQuery = Transaction::where('till_id', $counter->code)
-            ->forDateRange($date->toDateString(), $date->toDateString())
-            ->notCancelled()->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
+        $sumQuery = $this->reconcilableTransactionsQuery($counterId, $date);
 
         // Buy transactions = cash received (customer sells foreign currency, we buy)
         $buyTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Buy->value);
@@ -301,9 +311,7 @@ class EodReconciliationService
         $openingFloat = $tillBalances->sum('opening_balance');
 
         // Get transactions
-        $baseQuery = Transaction::where('till_id', $counter->code)
-            ->forDateRange($date->toDateString(), $date->toDateString())
-            ->notCancelled()->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
+        $baseQuery = $this->reconcilableTransactionsQuery($counterId, $date);
 
         $buyTotal = (clone $baseQuery)->buy()->sum('amount_local');
         $sellTotal = (clone $baseQuery)->sell()->sum('amount_local');
