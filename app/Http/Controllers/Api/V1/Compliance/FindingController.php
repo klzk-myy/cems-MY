@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Http\Concerns\FiltersComplianceFindings;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\DismissFindingRequest;
 use App\Http\Requests\Api\V1\Compliance\FindingIndexRequest;
@@ -11,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 
 class FindingController extends Controller
 {
+    use ApiResponse;
     use FiltersComplianceFindings;
 
     /**
@@ -25,10 +27,7 @@ class FindingController extends Controller
         $perPage = $request->get('per_page', 20);
         $findings = $query->orderBy('generated_at', 'desc')->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $findings,
-        ]);
+        return $this->successResponse($findings, 'Findings retrieved successfully.');
     }
 
     /**
@@ -38,10 +37,7 @@ class FindingController extends Controller
     {
         $finding = ComplianceFinding::with('subject')->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $finding,
-        ]);
+        return $this->successResponse($finding, 'Finding retrieved successfully.');
     }
 
     /**
@@ -54,11 +50,7 @@ class FindingController extends Controller
         $finding = ComplianceFinding::findOrFail($id);
         $finding->dismiss($validated['reason']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Finding dismissed.',
-            'data' => $finding,
-        ]);
+        return $this->successResponse($finding, 'Finding dismissed.');
     }
 
     /**
@@ -66,9 +58,6 @@ class FindingController extends Controller
      */
     public function stats(): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->getFindingStats(),
-        ]);
+        return $this->successResponse($this->getFindingStats(), 'Finding statistics retrieved successfully.');
     }
 }
