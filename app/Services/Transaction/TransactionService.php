@@ -7,9 +7,7 @@ use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Events\TransactionApproved;
-use App\Events\TransactionCreated;
 use App\Exceptions\Domain\AllocationValidationException;
-use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
@@ -17,7 +15,6 @@ use App\Http\Traits\ValidatorMethods;
 use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\TellerAllocation;
-use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
@@ -31,6 +28,7 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
 use App\Services\Compliance\PepApprovalService;
+use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionHoldServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionServiceInterface;
@@ -42,9 +40,10 @@ use App\Services\DTOs\SanctionCheckResult;
 use App\Services\System\CacheTagsService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Services\Transaction\DTOs\TransactionCreationContext;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Log;
 
 class TransactionService implements TransactionServiceInterface
 {
@@ -70,6 +69,7 @@ class TransactionService implements TransactionServiceInterface
         protected TransactionIdempotencyServiceInterface $idempotencyService,
         protected TransactionStatusServiceInterface $statusService,
         protected CurrencyPositionLockService $positionLockService,
+        protected TransactionCreationServiceInterface $creationService,
     ) {}
 
     /**
@@ -150,12 +150,12 @@ class TransactionService implements TransactionServiceInterface
 
         $userId = $userId ?? auth()->id();
         $ipAddress = $ipAddress ?? request()->ip();
+        $user = User::findOrFail($userId);
 
         $this->validationService->validateIpAddress($ipAddress);
 
         $tillBalance = $this->validationService->validateTillBalance($data['till_id'], $data['currency_code']);
 
-        // Get customer and calculate amounts
         $customer = Customer::findOrFail($data['customer_id']);
         $amountForeign = (string) $data['amount_foreign'];
         $rate = (string) $data['rate'];
@@ -163,44 +163,63 @@ class TransactionService implements TransactionServiceInterface
 
         $this->validationService->validatePepRequirements($customer, $data);
 
-        // Validate against teller allocation (only for tellers, not manager/admin overrides)
-        // Only validate for Buy transactions (teller sells foreign currency and needs allocation)
-        // For Sell transactions, no allocation check is needed upfront
-        $user = User::findOrFail($userId);
-        $allocationForUpdate = null;
-        if ($user->isTeller()) {
-            $isBuy = ($data['type'] === TransactionType::Buy->value);
-            if ($isBuy) {
-                $validationResult = $this->tellerAllocationService->validateTransaction(
-                    $user,
-                    $data['currency_code'],
-                    $amountLocal,
-                    $isBuy
-                );
+        $allocationForUpdate = $this->determineTellerAllocation($user, $data, $amountLocal);
 
-                if (! $validationResult->valid) {
-                    throw new AllocationValidationException($validationResult->reason);
-                }
-
-                $allocationForUpdate = $validationResult->allocation;
-            } else {
-                // For Sell transactions, get allocation for update after transaction completes
-                $allocationForUpdate = $this->tellerAllocationService->getActiveAllocation(
-                    $user,
-                    $data['currency_code']
-                );
-            }
-        }
-
-        // Determine CDD level
         $cddLevel = $this->complianceService->determineCDDLevel($amountLocal, $customer);
         $holdCheck = $this->complianceService->requiresHold($amountLocal, $customer);
 
-        // Build CDD triggers from the CDD level determination (already done by ComplianceService)
-        // Note: ComplianceService::determineCDDLevel() already checked sanctions, PEP status, and amounts
-        $cddTriggers = [];
+        $cddTriggers = $this->buildCDDTriggers($cddLevel, $customer, $amountLocal);
+        $this->logCDDDecision($userId, $customer, $cddLevel, $cddTriggers, $amountLocal);
+
+        [$status, $holdReason] = $this->determineInitialStatus($amountLocal, $holdCheck);
+
+        $context = new TransactionCreationContext(
+            data: $data,
+            customer: $customer,
+            tillBalance: $tillBalance,
+            cddLevel: $cddLevel,
+            holdRequired: $holdCheck->requiresHold,
+            status: $status,
+            amountLocal: $amountLocal,
+            user: $user,
+            allocation: $allocationForUpdate,
+            holdReason: $holdReason,
+        );
+
+        return $this->creationService->create($context, $userId, $ipAddress);
+    }
+
+    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?Model
+    {
+        if (! $user->isTeller()) {
+            return null;
+        }
+
+        $isBuy = ($data['type'] === TransactionType::Buy->value);
+
+        if ($isBuy) {
+            $validationResult = $this->tellerAllocationService->validateTransaction(
+                $user,
+                $data['currency_code'],
+                $amountLocal,
+                $isBuy
+            );
+
+            if (! $validationResult->valid) {
+                throw new AllocationValidationException($validationResult->reason);
+            }
+
+            return $validationResult->allocation;
+        }
+
+        return $this->tellerAllocationService->getActiveAllocation($user, $data['currency_code']);
+    }
+
+    private function buildCDDTriggers(CddLevel $cddLevel, Customer $customer, string $amountLocal): array
+    {
+        $triggers = [];
+
         if ($cddLevel === CddLevel::Enhanced) {
-            $triggers = [];
             if ($customer->pep_status) {
                 $triggers[] = 'PEP customer';
             }
@@ -213,11 +232,15 @@ class TransactionService implements TransactionServiceInterface
             if ($customer->risk_rating === RiskRating::High) {
                 $triggers[] = 'High risk customer';
             }
-            $cddTriggers = $triggers;
         } elseif ($cddLevel === CddLevel::Standard) {
-            $cddTriggers[] = 'Standard amount >= RM '.$this->thresholdService->getStandardCddThreshold();
+            $triggers[] = 'Standard amount >= RM '.$this->thresholdService->getStandardCddThreshold();
         }
 
+        return $triggers;
+    }
+
+    private function logCDDDecision(int $userId, Customer $customer, CddLevel $cddLevel, array $cddTriggers, string $amountLocal): void
+    {
         $this->auditService->logWithSeverity(
             'cdd_decision',
             [
@@ -233,250 +256,22 @@ class TransactionService implements TransactionServiceInterface
             ],
             'INFO'
         );
+    }
 
-        // Determine initial status
+    private function determineInitialStatus(string $amountLocal, $holdCheck): array
+    {
         $status = TransactionStatus::Completed;
         $holdReason = null;
-        $approvedBy = null;
 
-        if ($holdCheck->requiresHold || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
-            // BNM AML/CFT COMPLIANCE REQUIREMENT:
-            // Transactions >= RM 10,000 (auto_approve threshold) require manager approval, regardless of compliance hold status.
-            // This is a BNM regulatory requirement to ensure proper oversight of larger transactions.
-            //
-            // RATIONALE:
-            // - Transactions < RM 10,000: Can be auto-approved (Completed status)
-            // - Transactions >= RM 10,000: Require manager approval (PendingApproval status)
-            // - Transactions >= RM 50,000 OR high-risk: Additional compliance hold (PendingApproval status)
-            //
-            // This dual-layer approval ensures:
-            // 1. Manager oversight for all transactions at or above auto_approve threshold
-            // 2. Compliance officer review for high-risk or large transactions
-            // 3. Segregation of duties between tellers, managers, and compliance officers
-            //
-            // NOTE: CDD levels (Simplified/Specific/Standard/Enhanced) are separate from approval requirements.
-            // CDD determines documentation requirements; approval requirement is based on transaction amount.
+        if ($holdCheck->requiresHold
+            || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
             $status = TransactionStatus::PendingApproval;
             if ($holdCheck->requiresHold) {
                 $holdReason = implode(', ', $holdCheck->reasons);
             }
         }
 
-        $transaction = DB::transaction(function () use ($data, $userId, $user, $tillBalance, $amountForeign, $rate, $amountLocal, $cddLevel, $status, $holdReason, $approvedBy, &$allocationForUpdate, $ipAddress) {
-            // STEP 1: Check for duplicate transaction via idempotency key FIRST
-            // This is checked BEFORE acquiring the position lock to avoid needless lock
-            // contention when a request is a known duplicate. If the idempotency key
-            // already exists, return immediately without acquiring any locks.
-            $existingByIdempotencyKey = $this->idempotencyService->findDuplicate(
-                $data['idempotency_key'] ?? null,
-                $userId,
-                $data
-            );
-            if ($existingByIdempotencyKey) {
-                return $existingByIdempotencyKey;
-            }
-
-            // STEP 2: Check for recent similar transaction (potential double-submit) BEFORE lock
-            // Early detection allows returning without acquiring position lock
-            $recentDuplicate = $this->idempotencyService->checkRecentDuplicate($userId, $data, 30);
-            if ($recentDuplicate) {
-                $this->auditService->logWithSeverity(
-                    'potential_duplicate_detected',
-                    [
-                        'user_id' => $userId,
-                        'entity_type' => 'Transaction',
-                        'entity_id' => $recentDuplicate->id,
-                        'description' => "Similar transaction {$recentDuplicate->id} found within 30 seconds",
-                    ],
-                    'WARNING'
-                );
-
-                throw new DuplicateTransactionException;
-            }
-
-            // STEP 3: Acquire position lock (only for actual new transactions)
-            // For Sell transactions, getAvailableBalance() locks the row and returns
-            // '0' when no position exists, so a zero-balance row is not created.
-            // For Buy transactions, lock() is used because the position will be written.
-            if ($data['type'] === TransactionType::Sell->value) {
-                $availableBalance = $this->positionService->getAvailableBalance(
-                    $data['currency_code'],
-                    $tillBalance->branch_id
-                );
-
-                if ($this->mathService->compare($availableBalance, $amountForeign) < 0) {
-                    throw new InsufficientStockException(
-                        $data['currency_code'],
-                        $amountForeign,
-                        $availableBalance
-                    );
-                }
-            } elseif ($data['type'] === TransactionType::Buy->value) {
-                $this->positionLockService->lock($tillBalance->branch_id, $data['currency_code']);
-            }
-
-            $transaction = Transaction::create([
-                'customer_id' => $data['customer_id'],
-                'user_id' => $userId,
-                'branch_id' => $tillBalance->branch_id,
-                'till_id' => $data['till_id'],
-                'type' => $data['type'],
-                'currency_code' => $data['currency_code'],
-                'amount_foreign' => $amountForeign,
-                'amount_local' => $amountLocal,
-                'rate' => $rate,
-                'purpose' => $data['purpose'],
-                'source_of_funds' => $data['source_of_funds'],
-                'source_of_wealth' => $data['source_of_wealth'] ?? null,
-                'cdd_level' => $cddLevel,
-                'idempotency_key' => $data['idempotency_key'] ?? null,
-            ]);
-
-            $transaction->status = $status;
-            $transaction->hold_reason = $holdReason;
-            $transaction->approved_by = $approvedBy;
-            $transaction->version = 0;
-            $transaction->save();
-
-            // If transaction requires approval (>= RM 3,000 and no compliance hold),
-            // reserve stock immediately so it cannot be oversold
-            // Only reserve stock for Sell transactions (Buy transactions add stock, not consume it)
-            if ($status === TransactionStatus::PendingApproval && $data['type'] === TransactionType::Sell->value) {
-                $this->positionService->reserveStock($transaction);
-            }
-
-            // If completed, update positions, till balance, and create accounting entries
-            if ($status === TransactionStatus::Completed) {
-                $this->positionService->updatePosition(
-                    $data['currency_code'],
-                    $amountForeign,
-                    $rate,
-                    $data['type'],
-                    $tillBalance->branch_id
-                );
-                $this->updateTillBalance($tillBalance, $data['type'], $amountLocal, $amountForeign);
-
-                // Update teller allocation if this was a teller transaction
-                if ($allocationForUpdate) {
-                    $isBuy = ($data['type'] === TransactionType::Buy->value);
-                    // Re-fetch allocation with lock to prevent concurrent modification
-                    $lockedAllocation = TellerAllocation::where('id', $allocationForUpdate->id)
-                        ->lockForUpdate()
-                        ->firstOrFail();
-
-                    if ($isBuy) {
-                        $lockedAllocation->add($amountForeign);
-                    } else {
-                        $lockedAllocation->deduct($amountForeign);
-                    }
-                    $lockedAllocation->addDailyUsed($amountLocal);
-                }
-
-                $this->createAccountingEntries($transaction, $ipAddress, $user);
-            }
-
-            $this->auditTrailHelper->recordTransaction(
-                $transaction->id,
-                'transaction_created',
-                [
-                    'new' => [
-                        'customer_id' => $transaction->customer_id,
-                        'type' => $transaction->type,
-                        'amount_local' => $transaction->amount_local,
-                        'amount_foreign' => $transaction->amount_foreign,
-                        'currency' => $transaction->currency_code,
-                        'rate' => $transaction->rate,
-                        'status' => $transaction->status->value,
-                        'cdd_level' => $cddLevel->value,
-                        'branch_id' => $transaction->branch_id,
-                        'till_id' => $transaction->till_id,
-                    ],
-                ],
-                $user,
-                'INFO',
-                $ipAddress
-            );
-
-            // Dispatch event for async processing
-            DB::afterCommit(fn () => Event::dispatch(new TransactionCreated($transaction)));
-
-            return $transaction;
-        });
-
-        return $transaction;
-    }
-
-    /**
-     * Update till balance after transaction.
-     * Updates both foreign currency and MYR (local currency) balances.
-     * Uses lockForUpdate to prevent race conditions on concurrent transactions.
-     */
-    protected function updateTillBalance(TillBalance $tillBalance, string $type, string $amountLocal, string $amountForeign): void
-    {
-        $manager = app(TillBalanceManager::class);
-
-        $counter = Counter::where('code', $tillBalance->till_id)
-            ->orWhere('id', $tillBalance->till_id)
-            ->first();
-
-        if (! $counter) {
-            throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
-        }
-
-        $lockedForeign = $manager->currentBalance($counter, $tillBalance->currency_code, true);
-
-        if (! $lockedForeign) {
-            throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
-        }
-
-        $myrBalance = $manager->currentBalance($counter, 'MYR', true);
-
-        if (! $myrBalance) {
-            throw new TillBalanceMissingException('MYR', $tillBalance->till_id);
-        }
-
-        // Update foreign currency balance using separate buy/sell tracking
-        // Buy: increase buy_total_foreign (we are buying foreign currency from customer, stock increases)
-        // Sell: increase sell_total_foreign (we are selling foreign currency to customer, stock decreases)
-        if ($type === TransactionType::Buy->value) {
-            $manager->adjustBalance($lockedForeign, 'buy_total_foreign', $amountForeign, 'add', false);
-            $manager->adjustBalance($lockedForeign, 'foreign_total', $amountForeign, 'add', false);
-        } else {
-            $manager->adjustBalance($lockedForeign, 'sell_total_foreign', $amountForeign, 'add', false);
-            $manager->adjustBalance($lockedForeign, 'foreign_total', $amountForeign, 'subtract', false);
-        }
-
-        // Update MYR balance - cash in on Sell, cash out on Buy
-        $myrOperation = $type === TransactionType::Buy->value ? 'subtract' : 'add';
-        $manager->adjustBalance($myrBalance, 'transaction_total', $amountLocal, $myrOperation, false);
-    }
-
-    /**
-     * Create accounting journal entries for transaction.
-     * For Enhanced CDD transactions, defers creation until approval.
-     */
-    protected function createAccountingEntries(Transaction $transaction, ?string $ipAddress = null, ?User $user = null): void
-    {
-        // Check if Enhanced CDD and not yet approved (status is PendingApproval)
-        if ($transaction->cdd_level === CddLevel::Enhanced
-            && $transaction->status !== TransactionStatus::Completed) {
-            Log::info('Deferring journal entry creation for Enhanced CDD transaction', [
-                'transaction_id' => $transaction->id,
-                'status' => $transaction->status->value,
-                'cdd_level' => $transaction->cdd_level->value,
-            ]);
-
-            $this->auditTrailHelper->recordTransaction($transaction->id, 'journal_entries_deferred', [
-                'cdd_level' => $transaction->cdd_level->value,
-                'status' => $transaction->status->value,
-                'reason' => 'Enhanced CDD requires approval before bookkeeping',
-            ], $user, 'INFO', $ipAddress);
-
-            return;
-        }
-
-        // Create entries immediately for Simplified/Standard CDD or approved Enhanced CDD
-        $this->createImmediateAccountingEntries($transaction);
+        return [$status, $holdReason];
     }
 
     /**
@@ -684,12 +479,29 @@ class TransactionService implements TransactionServiceInterface
                     $lockedTransaction->type->value,
                     $lockedTransaction->branch_id ?? 'HQ'
                 );
-                $this->updateTillBalance(
-                    $tillBalance,
-                    $lockedTransaction->type->value,
-                    (string) $lockedTransaction->amount_local,
-                    (string) $lockedTransaction->amount_foreign
-                );
+
+                $manager = app(TillBalanceManager::class);
+
+                $lockedForeign = $manager->currentBalance($counter, $lockedTransaction->currency_code, true);
+                if (! $lockedForeign) {
+                    throw new TillBalanceMissingException($lockedTransaction->currency_code, $lockedTransaction->till_id);
+                }
+
+                $myrBalance = $manager->currentBalance($counter, 'MYR', true);
+                if (! $myrBalance) {
+                    throw new TillBalanceMissingException('MYR', $lockedTransaction->till_id);
+                }
+
+                if ($lockedTransaction->type->value === TransactionType::Buy->value) {
+                    $manager->adjustBalance($lockedForeign, 'buy_total_foreign', (string) $lockedTransaction->amount_foreign, 'add', false);
+                    $manager->adjustBalance($lockedForeign, 'foreign_total', (string) $lockedTransaction->amount_foreign, 'add', false);
+                } else {
+                    $manager->adjustBalance($lockedForeign, 'sell_total_foreign', (string) $lockedTransaction->amount_foreign, 'add', false);
+                    $manager->adjustBalance($lockedForeign, 'foreign_total', (string) $lockedTransaction->amount_foreign, 'subtract', false);
+                }
+
+                $myrOperation = $lockedTransaction->type->value === TransactionType::Buy->value ? 'subtract' : 'add';
+                $manager->adjustBalance($myrBalance, 'transaction_total', (string) $lockedTransaction->amount_local, $myrOperation, false);
 
                 // Update teller allocation if this was a teller transaction
                 $user = User::find($lockedTransaction->user_id);
@@ -719,7 +531,7 @@ class TransactionService implements TransactionServiceInterface
                 if ($lockedTransaction->cdd_level === CddLevel::Enhanced) {
                     $this->createDeferredAccountingEntries($lockedTransaction->id);
                 } else {
-                    $this->createAccountingEntries($lockedTransaction, $ipAddress, $approver);
+                    $this->createImmediateAccountingEntries($lockedTransaction);
                 }
 
                 // Audit logging for the approval action
