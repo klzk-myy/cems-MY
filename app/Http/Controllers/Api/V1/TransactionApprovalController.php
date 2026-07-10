@@ -49,11 +49,11 @@ class TransactionApprovalController extends Controller
                 $request->ip()
             );
 
-            if (! $result['success']) {
-                return $this->errorResponse($result['message'], [], 422);
+            if (! $result->success) {
+                return $this->errorResponse($result->message, [], 422);
             }
 
-            return $this->successResponse($result['transaction'], $result['message']);
+            return $this->successResponse($result->transaction, $result->message);
 
         } catch (SelfApprovalException $e) {
             return $this->errorResponse($e->getMessage(), [], 403);

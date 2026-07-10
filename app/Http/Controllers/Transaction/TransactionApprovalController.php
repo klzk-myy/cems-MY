@@ -64,12 +64,12 @@ class TransactionApprovalController extends Controller
                 $request->ip()
             );
 
-            if (! $result['success']) {
-                return back()->with('error', $result['message']);
+            if (! $result->success) {
+                return back()->with('error', $result->message);
             }
 
             return redirect()->route('transactions.show', $transaction)
-                ->with('success', $result['message']);
+                ->with('success', $result->message);
 
         } catch (SelfApprovalException $e) {
             return back()->with('error', $e->getMessage());

@@ -6,15 +6,9 @@ use App\Enums\CddLevel;
 use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
-use App\Events\TransactionApproved;
 use App\Exceptions\Domain\AllocationValidationException;
-use App\Exceptions\Domain\InsufficientStockException;
-use App\Exceptions\Domain\StockReservationExpiredException;
-use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Http\Traits\ValidatorMethods;
-use App\Models\Counter;
 use App\Models\Customer;
-use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
@@ -24,10 +18,10 @@ use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
-use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
 use App\Services\Compliance\PepApprovalService;
+use App\Services\Contracts\TransactionApprovalServiceInterface;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionHoldServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
@@ -42,8 +36,6 @@ use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 
 class TransactionService implements TransactionServiceInterface
 {
@@ -70,6 +62,7 @@ class TransactionService implements TransactionServiceInterface
         protected TransactionStatusServiceInterface $statusService,
         protected CurrencyPositionLockService $positionLockService,
         protected TransactionCreationServiceInterface $creationService,
+        protected TransactionApprovalServiceInterface $approvalService,
     ) {}
 
     /**
@@ -284,309 +277,26 @@ class TransactionService implements TransactionServiceInterface
     }
 
     /**
-     * Create accounting journal entries immediately.
-     */
-    protected function createImmediateAccountingEntries(Transaction $transaction): void
-    {
-        $this->transactionAccountingService->createImmediateAccountingEntries($transaction);
-    }
-
-    /**
      * Approve a pending transaction and complete its side effects.
-     *
-     * This method handles the full approval workflow for transactions that were
-     * created with 'Pending' status (typically >= RM 50,000).
      *
      * @param  Transaction  $transaction  The pending transaction to approve
      * @param  int  $approverId  The user ID of the manager/admin approving
      * @param  string|null  $ipAddress  IP address for audit logging
      * @return array{success: bool, message: string, transaction?: Transaction}
-     *
-     * @throws \InvalidArgumentException If transaction is not pending
-     * @throws \RuntimeException If transaction was already processed
      */
     public function approveTransaction(Transaction $transaction, int $approverId, ?string $ipAddress = null): array
     {
-        $ipAddress = $ipAddress ?? request()->ip();
+        $this->validationService->validateIpAddress($ipAddress ?? request()->ip());
 
-        $this->validationService->validateIpAddress($ipAddress);
+        $this->approvalService->validateApprovalEligibility($transaction, $approverId);
 
-        // Validate transaction is in pending approval status
-        if ($transaction->status !== TransactionStatus::PendingApproval) {
-            throw new \InvalidArgumentException(
-                'Transaction is not pending approval. Current status: '.$transaction->status->label()
-            );
-        }
+        $result = $this->approvalService->approve($transaction, $approverId, $ipAddress);
 
-        // Re-run compliance monitoring before approval
-        // If high-priority AML flags are generated, approval is blocked
-        $amlResult = $this->monitoringService->monitorTransaction($transaction);
-        $highPriorityFlags = array_filter(
-            $amlResult['flags'],
-            fn ($flag) => $flag->flag_type->isHighPriority()
-        );
-
-        if (! empty($highPriorityFlags)) {
-            $flagTypes = implode(', ', array_map(
-                fn ($f) => $f->flag_type->label(),
-                $highPriorityFlags
-            ));
-
-            $this->auditService->logWithSeverity(
-                'transaction_approval_blocked',
-                [
-                    'user_id' => $approverId,
-                    'entity_type' => 'Transaction',
-                    'entity_id' => $transaction->id,
-                    'new_values' => [
-                        'reason' => 'High-priority AML flags',
-                        'flags' => $flagTypes,
-                    ],
-                ],
-                'WARNING'
-            );
-
-            return [
-                'success' => false,
-                'message' => "Approval blocked: High-priority AML flags generated ({$flagTypes}). Transaction remains pending for compliance review.",
-            ];
-        }
-
-        try {
-            $result = DB::transaction(function () use ($transaction, $approverId, $amlResult, $ipAddress) {
-                // Pessimistic lock to prevent concurrent approvals, with optimistic version check
-                // lockForUpdate() prevents other transactions from modifying this row concurrently.
-                // After acquiring the lock, we verify the version hasn't changed since the caller
-                // loaded the model, providing a clear error if the data is stale.
-                $lockedTransaction = Transaction::where('id', $transaction->id)
-                    ->where('status', TransactionStatus::PendingApproval)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $lockedTransaction) {
-                    throw new \RuntimeException(
-                        'Transaction was already processed or modified by another user.'
-                    );
-                }
-
-                // Verify version match after acquiring lock (optimistic concurrency guard)
-                // This detects stale data: if the in-memory model has a different version
-                // than the locked DB row, the caller was operating on outdated data.
-                if ((int) $lockedTransaction->version !== (int) $transaction->version) {
-                    throw new \RuntimeException(
-                        'Transaction was modified by another user since you loaded it. '.
-                        'Please refresh the record and try again.'
-                    );
-                }
-
-                // EDGE CASE VALIDATION: Verify customer still exists
-                // Customer could have been deleted between transaction creation and approval
-                $customer = Customer::find($lockedTransaction->customer_id);
-                if (! $customer) {
-                    throw new \RuntimeException(
-                        'Customer has been deleted. Cannot approve transaction for non-existent customer.'
-                    );
-                }
-
-                // EDGE CASE VALIDATION: Verify till is still open
-                // Till could have been closed between transaction creation and approval
-                $manager = app(TillBalanceManager::class);
-                $counter = Counter::where('code', $lockedTransaction->till_id)
-                    ->orWhere('id', $lockedTransaction->till_id)
-                    ->first();
-
-                $tillBalance = $counter
-                    ? $manager->currentBalance($counter, $lockedTransaction->currency_code)
-                    : null;
-
-                if (! $tillBalance) {
-                    throw new \RuntimeException(
-                        'Till has been closed. Cannot approve transaction for closed till.'
-                    );
-                }
-
-                // EDGE CASE VALIDATION: Verify position still exists (for Sell transactions)
-                // Position could have been deleted between transaction creation and approval
-                if ($lockedTransaction->type->isSell()) {
-                    $position = $this->positionLockService->findForUpdate(
-                        (string) $lockedTransaction->branch_id,
-                        $lockedTransaction->currency_code
-                    );
-
-                    if (! $position) {
-                        throw new \RuntimeException(
-                            'Currency position has been deleted. Cannot approve Sell transaction without position.'
-                        );
-                    }
-                }
-
-                // Build proper transition history: record direct PendingApproval -> Completed transition
-                $history = $lockedTransaction->transition_history ?? [];
-                $nowIso = now()->toIso8601String();
-
-                // Determine "from" state based on original status
-                $fromState = $lockedTransaction->status->value;
-
-                // Record actual state transition: PendingApproval -> Completed
-                $history[] = [
-                    'from' => $fromState,
-                    'to' => TransactionStatus::Completed->value,
-                    'reason' => 'Transaction approved and completed by manager',
-                    'user_id' => $approverId,
-                    'timestamp' => $nowIso,
-                ];
-
-                // Perform the update with proper history and version increment
-                $lockedTransaction->status = TransactionStatus::Completed;
-                $lockedTransaction->approved_by = $approverId;
-                $lockedTransaction->approved_at = $nowIso;
-                $lockedTransaction->transition_history = $history;
-                $lockedTransaction->version = $lockedTransaction->version + 1;
-                $lockedTransaction->save();
-
-                // Refresh the model to get updated version
-                $lockedTransaction->refresh();
-
-                // Check available balance BEFORE consuming reservation (Sell only)
-                // Buy transactions ADD foreign currency to the position — no existing stock required
-                if ($lockedTransaction->type === TransactionType::Sell) {
-                    $available = $this->positionService->getAvailableBalance(
-                        $lockedTransaction->currency_code,
-                        (string) $lockedTransaction->branch_id
-                    );
-
-                    if ($this->mathService->compare($available, (string) $lockedTransaction->amount_foreign) < 0) {
-                        throw new InsufficientStockException(
-                            $lockedTransaction->currency_code,
-                            (string) $lockedTransaction->amount_foreign,
-                            $available
-                        );
-                    }
-
-                    // Consume the stock reservation for Sell transactions only
-                    $reservation = $this->positionService->consumeStockReservation($lockedTransaction->id);
-
-                    if (! $reservation) {
-                        throw new StockReservationExpiredException($lockedTransaction->id);
-                    }
-                }
-
-                // Execute position and till balance updates
-                $this->positionService->updatePosition(
-                    $lockedTransaction->currency_code,
-                    (string) $lockedTransaction->amount_foreign,
-                    (string) $lockedTransaction->rate,
-                    $lockedTransaction->type->value,
-                    $lockedTransaction->branch_id ?? 'HQ'
-                );
-
-                $manager = app(TillBalanceManager::class);
-
-                $lockedForeign = $manager->currentBalance($counter, $lockedTransaction->currency_code, true);
-                if (! $lockedForeign) {
-                    throw new TillBalanceMissingException($lockedTransaction->currency_code, $lockedTransaction->till_id);
-                }
-
-                $myrBalance = $manager->currentBalance($counter, 'MYR', true);
-                if (! $myrBalance) {
-                    throw new TillBalanceMissingException('MYR', $lockedTransaction->till_id);
-                }
-
-                if ($lockedTransaction->type->value === TransactionType::Buy->value) {
-                    $manager->adjustBalance($lockedForeign, 'buy_total_foreign', (string) $lockedTransaction->amount_foreign, 'add', false);
-                    $manager->adjustBalance($lockedForeign, 'foreign_total', (string) $lockedTransaction->amount_foreign, 'add', false);
-                } else {
-                    $manager->adjustBalance($lockedForeign, 'sell_total_foreign', (string) $lockedTransaction->amount_foreign, 'add', false);
-                    $manager->adjustBalance($lockedForeign, 'foreign_total', (string) $lockedTransaction->amount_foreign, 'subtract', false);
-                }
-
-                $myrOperation = $lockedTransaction->type->value === TransactionType::Buy->value ? 'subtract' : 'add';
-                $manager->adjustBalance($myrBalance, 'transaction_total', (string) $lockedTransaction->amount_local, $myrOperation, false);
-
-                // Update teller allocation if this was a teller transaction
-                $user = User::find($lockedTransaction->user_id);
-                if ($user && $user->isTeller()) {
-                    $allocationForUpdate = $this->tellerAllocationService->getActiveAllocation(
-                        $user,
-                        $lockedTransaction->currency_code
-                    );
-                    if ($allocationForUpdate) {
-                        $allocationForUpdate = TellerAllocation::where('id', $allocationForUpdate->id)
-                            ->lockForUpdate()
-                            ->firstOrFail();
-
-                        if ($lockedTransaction->type->isBuy()) {
-                            $allocationForUpdate->add((string) $lockedTransaction->amount_foreign);
-                        } else {
-                            $allocationForUpdate->deduct((string) $lockedTransaction->amount_foreign);
-                        }
-                        $allocationForUpdate->addDailyUsed((string) $lockedTransaction->amount_local);
-                    }
-                }
-
-                // Create double-entry accounting journal entries
-                // For Enhanced CDD transactions, use deferred entry creation (approval triggers it)
-                $approver = User::find($approverId);
-
-                if ($lockedTransaction->cdd_level === CddLevel::Enhanced) {
-                    $this->createDeferredAccountingEntries($lockedTransaction->id);
-                } else {
-                    $this->createImmediateAccountingEntries($lockedTransaction);
-                }
-
-                // Audit logging for the approval action
-                $this->auditTrailHelper->recordTransaction($lockedTransaction->id, 'transaction_approved', [
-                    'old' => [
-                        'status' => TransactionStatus::PendingApproval->value,
-                        'approved_by' => null,
-                    ],
-                    'new' => [
-                        'status' => TransactionStatus::Completed->value,
-                        'approved_by' => $approverId,
-                        'approved_at' => $lockedTransaction->approved_at->toIso8601String(),
-                        'aml_flags_checked' => $amlResult['flags_created'] ?? 0,
-                    ],
-                ], $approver, 'INFO', $ipAddress);
-
-                // Dispatch event for async compliance processing
-                Event::dispatch(new TransactionApproved($lockedTransaction, $approverId));
-
-                // Invalidate dashboard cache only after the transaction commits successfully.
-                // This keeps the invalidation logically tied to the approval while avoiding
-                // a scenario where the cache is cleared but the DB transaction later rolls back.
-                DB::afterCommit(function () {
-                    $this->cacheTagsService->invalidate('dashboard');
-                });
-
-                return [
-                    'success' => true,
-                    'message' => 'Transaction approved and completed successfully.',
-                    'transaction' => $lockedTransaction->fresh(),
-                ];
-            });
-
-            return $result;
-        } catch (InsufficientStockException $e) {
-            return [
-                'success' => false,
-                'message' => 'Insufficient stock: '.$e->getMessage(),
-            ];
-        } catch (StockReservationExpiredException $e) {
-            return [
-                'success' => false,
-                'message' => 'Stock reservation expired: '.$e->getMessage(),
-            ];
-        } catch (\RuntimeException $e) {
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Transaction approval failed: '.$e->getMessage(),
-            ];
-        }
+        return [
+            'success' => $result->success,
+            'message' => $result->message,
+            'transaction' => $result->transaction,
+        ];
     }
 
     /**
