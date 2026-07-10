@@ -6,6 +6,7 @@ use App\Enums\CaseNoteType;
 use App\Enums\CaseResolution;
 use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\AddCaseNoteRequest;
 use App\Http\Requests\Api\V1\Compliance\CaseIndexRequest;
@@ -20,6 +21,8 @@ use Illuminate\Http\JsonResponse;
 
 class CaseController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected CaseManagementService $caseService
     ) {}
@@ -47,7 +50,7 @@ class CaseController extends Controller
         $perPage = $request->get('per_page', 20);
         $cases = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return (new CaseCollection($cases))->additional(['success' => true]);
+        return $this->resourceWithSuccess(new CaseCollection($cases), 'Cases retrieved successfully.');
     }
 
     /**
@@ -58,10 +61,7 @@ class CaseController extends Controller
         $case = ComplianceCase::with(['customer', 'assignee', 'notes.author', 'documents'])
             ->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $case,
-        ]);
+        return $this->successResponse($case, 'Case retrieved successfully.');
     }
 
     /**
@@ -89,11 +89,7 @@ class CaseController extends Controller
             );
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Case created successfully.',
-            'data' => $case,
-        ], 201);
+        return $this->successResponse($case, 'Case created successfully.', 201);
     }
 
     /**
@@ -117,11 +113,7 @@ class CaseController extends Controller
             $case->update(['priority' => $validated['priority']]);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Case updated successfully.',
-            'data' => $case->fresh(),
-        ]);
+        return $this->successResponse($case->fresh(), 'Case updated successfully.');
     }
 
     /**
@@ -141,11 +133,7 @@ class CaseController extends Controller
             isInternal: $validated['is_internal'] ?? true
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Note added successfully.',
-            'data' => $note,
-        ], 201);
+        return $this->successResponse($note, 'Note added successfully.', 201);
     }
 
     /**
@@ -163,11 +151,7 @@ class CaseController extends Controller
             notes: $validated['notes'] ?? null
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Case closed successfully.',
-            'data' => $case,
-        ]);
+        return $this->successResponse($case, 'Case closed successfully.');
     }
 
     /**
@@ -178,11 +162,7 @@ class CaseController extends Controller
         $case = ComplianceCase::findOrFail($id);
         $case = $this->caseService->escalateCase($case);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Case escalated successfully.',
-            'data' => $case,
-        ]);
+        return $this->successResponse($case, 'Case escalated successfully.');
     }
 
     /**
@@ -226,9 +206,6 @@ class CaseController extends Controller
             ]);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $timeline->sortBy('timestamp')->values(),
-        ]);
+        return $this->successResponse($timeline->sortBy('timestamp')->values(), 'Case timeline retrieved successfully.');
     }
 }
