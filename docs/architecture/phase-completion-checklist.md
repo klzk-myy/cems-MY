@@ -1332,7 +1332,10 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
   - Deleted: `app/Http/Requests/Api/V1/StoreTransactionRequest.php`, `ApproveAllocationRequest.php`, `RejectAllocationRequest.php`, `ModifyAllocationRequest.php`, `MyActiveAllocationRequest.php`
   - Verified no stale imports; API controllers use namespaced equivalents
   - Tests: `2 passed (15 assertions)` in `tests/Feature/Api/V1`
-- [ ] **Task H**: Centralize IP allowlist/blocklist validation in `IpValidationService`
+- [x] **Task H**: Centralize IP allowlist/blocklist validation in `IpValidationService`
+  - File: `app/Services/Security/IpValidationService.php`
+  - Consumers: `ValidatorMethods` trait, `TransactionValidationService`, `RateLimitService`, `IpBlockerCommand`
+  - Tests: `42 passed (63 assertions)` targeted; `67 passed (134 assertions)` for `--filter=Ip`
 
 ### Deliverables Status
 
