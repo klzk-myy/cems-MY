@@ -235,6 +235,7 @@ class TellerAllocationController extends Controller
 
         $result = $this->allocationService->getActiveAllocationForTeller($user, $validated['currency_code']);
 
+        // Service returns a pre-shaped envelope (success/data/message); keep passthrough to preserve consumer contract.
         return response()->json($result);
     }
 }
