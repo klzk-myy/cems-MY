@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
 use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
@@ -21,12 +22,17 @@ use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
+use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
+use App\Services\Contracts\TransactionCreationServiceInterface;
+use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
+use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\TransactionCancellationService;
 use App\Services\Transaction\TransactionMonitoringService;
-use App\Services\Transaction\TransactionService;
 use Barryvdh\DomPDF\PDF;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -42,9 +48,10 @@ class TransactionController extends Controller
         protected TransactionMonitoringService $monitoringService,
         protected MathService $mathService,
         protected AccountingService $accountingService,
-        protected TransactionService $transactionService,
         protected AuditService $auditService,
         protected TransactionCancellationService $cancellationService,
+        protected TransactionValidationInterface $validationService,
+        protected TransactionCreationServiceInterface $creationService,
         private PDF $pdf,
         private BarcodeGeneratorPNG $barcodeGenerator
     ) {}
@@ -119,16 +126,46 @@ class TransactionController extends Controller
         $this->authorize('create', Transaction::class);
 
         $validated = $request->validated();
+        $ipAddress = $request->ip();
 
         $counter = Counter::find($validated['counter_id']);
         $validated['till_id'] = $counter ? (string) $counter->code : (string) $validated['counter_id'];
 
         try {
-            $transaction = $this->transactionService->createTransaction(
-                $validated,
-                auth()->id(),
-                $request->ip()
+            $this->validationService->validateCurrency($validated['currency_code']);
+            $this->validationService->validateIpAddress($ipAddress);
+
+            $tillBalance = $this->validationService->validateTillBalance($validated['till_id'], $validated['currency_code']);
+
+            $customer = Customer::findOrFail($validated['customer_id']);
+            $amountLocal = $this->mathService->multiply((string) $validated['amount_foreign'], (string) $validated['rate']);
+
+            $this->validationService->validatePepRequirements($customer, $validated);
+
+            $validationResult = $this->validationService->preValidate($customer, $amountLocal, $validated['currency_code']);
+
+            if ($validationResult->isBlocked()) {
+                return back()->with('error', $validationResult->getBlocks()[0]['message'])->withInput();
+            }
+
+            $user = User::findOrFail(auth()->id());
+            $allocation = $this->determineTellerAllocation($user, $validated, $amountLocal);
+            $status = $this->determineInitialStatus($amountLocal, $validationResult->isHoldRequired());
+
+            $context = new TransactionCreationContext(
+                data: $validated,
+                customer: $customer,
+                tillBalance: $tillBalance,
+                cddLevel: $validationResult->getCDDLevel(),
+                holdRequired: $validationResult->isHoldRequired(),
+                status: $status,
+                amountLocal: $amountLocal,
+                user: $user,
+                allocation: $allocation,
+                holdReason: $validationResult->isHoldRequired() ? 'Compliance hold' : null,
             );
+
+            $transaction = $this->creationService->create($context, $user->id, $ipAddress);
 
             if ($transaction->status === TransactionStatus::PendingApproval) {
                 return redirect()->route('transactions.show', $transaction)
@@ -296,5 +333,36 @@ class TransactionController extends Controller
         }
 
         return null;
+    }
+
+    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?Model
+    {
+        if (! $user->isTeller()) {
+            return null;
+        }
+
+        $service = app(TellerAllocationService::class);
+
+        if ($data['type'] === TransactionType::Buy->value) {
+            $result = $service->validateTransaction($user, $data['currency_code'], $amountLocal, true);
+
+            if (! $result->valid) {
+                throw new \InvalidArgumentException($result->reason);
+            }
+
+            return $result->allocation;
+        }
+
+        return $service->getActiveAllocation($user, $data['currency_code']);
+    }
+
+    private function determineInitialStatus(string $amountLocal, bool $holdRequired): TransactionStatus
+    {
+        if ($holdRequired
+            || $this->mathService->compare($amountLocal, app(ThresholdService::class)->getAutoApproveThreshold()) >= 0) {
+            return TransactionStatus::PendingApproval;
+        }
+
+        return TransactionStatus::Completed;
     }
 }
