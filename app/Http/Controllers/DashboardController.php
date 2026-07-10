@@ -48,7 +48,7 @@ class DashboardController extends Controller
                 60,
                 ['dashboard', 'transactions'],
                 function () {
-                    return Transaction::whereDate('created_at', today())->buy()->sum('amount_local');
+                    return Transaction::completed()->whereDate('created_at', today())->buy()->sum('amount_local');
                 }
             ),
             'sell_volume' => $this->cacheOptimizationService->remember(
@@ -56,7 +56,7 @@ class DashboardController extends Controller
                 60,
                 ['dashboard', 'transactions'],
                 function () {
-                    return Transaction::whereDate('created_at', today())->sell()->sum('amount_local');
+                    return Transaction::completed()->whereDate('created_at', today())->sell()->sum('amount_local');
                 }
             ),
             'flagged' => $this->cacheOptimizationService->remember(

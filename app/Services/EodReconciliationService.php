@@ -81,7 +81,7 @@ class EodReconciliationService
 
         // Get branch-level stats
         $transactions = Transaction::with(['customer', 'user', 'flags'])
-            ->whereDate('created_at', $date->toDateString())
+            ->forDateRange($date->toDateString(), $date->toDateString())
             ->when($branchId, function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId);
             })
@@ -171,12 +171,12 @@ class EodReconciliationService
         // Get transactions for this counter on this date
         $transactions = Transaction::with(['customer', 'user', 'flags'])
             ->where('till_id', $counter->code)
-            ->whereDate('created_at', $date->toDateString())
+            ->forDateRange($date->toDateString(), $date->toDateString())
             ->notCancelled()->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value])
             ->get();
 
         $sumQuery = Transaction::where('till_id', $counter->code)
-            ->whereDate('created_at', $date->toDateString())
+            ->forDateRange($date->toDateString(), $date->toDateString())
             ->notCancelled()->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
 
         // Buy transactions = cash received (customer sells foreign currency, we buy)
@@ -302,7 +302,7 @@ class EodReconciliationService
 
         // Get transactions
         $baseQuery = Transaction::where('till_id', $counter->code)
-            ->whereDate('created_at', $date->toDateString())
+            ->forDateRange($date->toDateString(), $date->toDateString())
             ->notCancelled()->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
 
         $buyTotal = (clone $baseQuery)->buy()->sum('amount_local');
