@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\DomainException;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Transaction\StoreTransactionRequest;
 use App\Http\Requests\Api\V1\TransactionIndexRequest;
@@ -14,6 +15,8 @@ use Illuminate\Http\JsonResponse;
 
 class TransactionController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected TransactionService $transactionService
     ) {}
@@ -54,28 +57,20 @@ class TransactionController extends Controller
             // Reload with relationships
             $transaction->load(['customer', 'user', 'approver']);
 
-            return (new TransactionResource($transaction))
-                ->additional(['success' => true, 'message' => 'Transaction created successfully.'])
-                ->response($request)
-                ->setStatusCode(201);
+            return $this->resourceResponse(
+                new TransactionResource($transaction),
+                'Transaction created successfully.',
+                201
+            );
 
         } catch (\InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return $this->errorResponse($e->getMessage(), [], 422);
 
         } catch (DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], $e->getStatusCode());
+            return $this->errorResponse($e->getMessage(), [], $e->getStatusCode());
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction failed: '.$e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Transaction failed: '.$e->getMessage(), $e);
         }
     }
 
