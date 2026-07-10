@@ -49,7 +49,7 @@ class TransactionController extends Controller
 
         $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return (new TransactionCollection($transactions))->additional(['success' => true]);
+        return $this->resourceWithSuccess(new TransactionCollection($transactions), 'Transactions retrieved successfully.');
     }
 
     /**
@@ -128,7 +128,7 @@ class TransactionController extends Controller
 
         $this->authorize('view', $transaction);
 
-        return (new TransactionResource($transaction))->additional(['success' => true]);
+        return $this->resourceWithSuccess(new TransactionResource($transaction), 'Transaction retrieved successfully.');
     }
 
     private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?Model
