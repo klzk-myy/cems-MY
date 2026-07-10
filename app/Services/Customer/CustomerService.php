@@ -5,7 +5,9 @@ namespace App\Services\Customer;
 use App\Enums\CddLevel;
 use App\Enums\RiskRating;
 use App\Models\Customer;
+use App\Models\User;
 use App\Repositories\CustomerRepository;
+use App\Services\Audit\AuditTrailHelper;
 use App\Services\AuditService;
 use App\Services\Compliance\RiskScoringEngine;
 use App\Services\Contracts\CustomerServiceInterface;
@@ -36,6 +38,7 @@ class CustomerService implements CustomerServiceInterface
         protected CustomerScreeningService $screeningService,
         protected RiskScoringEngine $riskScoringEngine,
         protected AuditService $auditService,
+        protected AuditTrailHelper $auditTrailHelper,
         protected CacheTagsService $cacheTagsService,
         protected CustomerRepository $customerRepository
     ) {}
@@ -50,7 +53,7 @@ class CustomerService implements CustomerServiceInterface
      */
     public function createCustomer(array $data, int $userId): Customer
     {
-        $customer = DB::transaction(function () use ($data) {
+        $customer = DB::transaction(function () use ($data, $userId) {
             // Encrypt sensitive fields
             $encryptedData = $this->encryptCustomerData($data);
 
@@ -68,7 +71,8 @@ class CustomerService implements CustomerServiceInterface
             $this->calculateRiskScore($customer);
 
             // Log customer creation
-            $this->auditService->logCustomer('customer_created', $customer->id, [
+            $user = User::find($userId);
+            $this->auditTrailHelper->recordCustomer($customer->id, 'customer_created', [
                 'new' => [
                     'full_name' => $customer->full_name,
                     'id_type' => $customer->id_type,
@@ -77,7 +81,7 @@ class CustomerService implements CustomerServiceInterface
                     'pep_status' => $customer->pep_status,
                     'sanction_hit' => $customer->sanction_hit,
                 ],
-            ]);
+            ], $user, 'INFO', request()?->ip());
 
             return $customer;
         });
@@ -96,7 +100,7 @@ class CustomerService implements CustomerServiceInterface
      */
     public function updateCustomer(Customer $customer, array $data, int $userId): Customer
     {
-        $customer = DB::transaction(function () use ($customer, $data) {
+        $customer = DB::transaction(function () use ($customer, $data, $userId) {
             // Encrypt sensitive fields if provided
             $encryptedData = $this->encryptCustomerData($data);
 
@@ -118,7 +122,8 @@ class CustomerService implements CustomerServiceInterface
             $this->calculateRiskScore($customer);
 
             // Log customer update
-            $this->auditService->logCustomer('customer_updated', $customer->id, [
+            $user = User::find($userId);
+            $this->auditTrailHelper->recordCustomer($customer->id, 'customer_updated', [
                 'old' => [
                     'full_name' => $customer->getOriginal('full_name'),
                     'risk_rating' => $customer->getOriginal('risk_rating'),
@@ -127,7 +132,7 @@ class CustomerService implements CustomerServiceInterface
                     'full_name' => $customer->full_name,
                     'risk_rating' => $customer->risk_rating,
                 ],
-            ]);
+            ], $user, 'INFO', request()?->ip());
 
             return $customer->fresh();
         });

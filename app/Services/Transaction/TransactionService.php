@@ -24,6 +24,7 @@ use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
+use App\Services\Audit\AuditTrailHelper;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
@@ -55,6 +56,7 @@ class TransactionService implements TransactionServiceInterface
         protected CurrencyPositionService $positionService,
         protected AccountingService $accountingService,
         protected AuditService $auditService,
+        protected AuditTrailHelper $auditTrailHelper,
         protected TransactionMonitoringService $monitoringService,
         protected TellerAllocationService $tellerAllocationService,
         protected CustomerScreeningService $screeningService,
@@ -260,7 +262,7 @@ class TransactionService implements TransactionServiceInterface
             }
         }
 
-        $transaction = DB::transaction(function () use ($data, $userId, $tillBalance, $amountForeign, $rate, $amountLocal, $cddLevel, $status, $holdReason, $approvedBy, &$allocationForUpdate) {
+        $transaction = DB::transaction(function () use ($data, $userId, $user, $tillBalance, $amountForeign, $rate, $amountLocal, $cddLevel, $status, $holdReason, $approvedBy, &$allocationForUpdate, $ipAddress) {
             // STEP 1: Check for duplicate transaction via idempotency key FIRST
             // This is checked BEFORE acquiring the position lock to avoid needless lock
             // contention when a request is a known duplicate. If the idempotency key
@@ -370,7 +372,7 @@ class TransactionService implements TransactionServiceInterface
                     $lockedAllocation->addDailyUsed($amountLocal);
                 }
 
-                $this->createAccountingEntries($transaction);
+                $this->createAccountingEntries($transaction, $ipAddress, $user);
             }
 
             $this->auditService->logWithSeverity(
@@ -387,6 +389,7 @@ class TransactionService implements TransactionServiceInterface
                         'status' => $transaction->status,
                         'cdd_level' => $cddLevel,
                     ],
+                    'ip_address' => $ipAddress,
                 ],
                 'INFO'
             );
@@ -449,7 +452,7 @@ class TransactionService implements TransactionServiceInterface
      * Create accounting journal entries for transaction.
      * For Enhanced CDD transactions, defers creation until approval.
      */
-    protected function createAccountingEntries(Transaction $transaction): void
+    protected function createAccountingEntries(Transaction $transaction, ?string $ipAddress = null, ?User $user = null): void
     {
         // Check if Enhanced CDD and not yet approved (status is PendingApproval)
         if ($transaction->cdd_level === CddLevel::Enhanced
@@ -460,11 +463,11 @@ class TransactionService implements TransactionServiceInterface
                 'cdd_level' => $transaction->cdd_level->value,
             ]);
 
-            $this->auditService->logTransaction('journal_entries_deferred', $transaction->id, [
+            $this->auditTrailHelper->recordTransaction($transaction->id, 'journal_entries_deferred', [
                 'cdd_level' => $transaction->cdd_level->value,
                 'status' => $transaction->status->value,
                 'reason' => 'Enhanced CDD requires approval before bookkeeping',
-            ]);
+            ], $user, 'INFO', $ipAddress);
 
             return;
         }
@@ -552,7 +555,7 @@ class TransactionService implements TransactionServiceInterface
         }
 
         try {
-            $result = DB::transaction(function () use ($transaction, $approverId, $amlResult) {
+            $result = DB::transaction(function () use ($transaction, $approverId, $amlResult, $ipAddress) {
                 // Pessimistic lock to prevent concurrent approvals, with optimistic version check
                 // lockForUpdate() prevents other transactions from modifying this row concurrently.
                 // After acquiring the lock, we verify the version hasn't changed since the caller
@@ -708,14 +711,16 @@ class TransactionService implements TransactionServiceInterface
 
                 // Create double-entry accounting journal entries
                 // For Enhanced CDD transactions, use deferred entry creation (approval triggers it)
+                $approver = User::find($approverId);
+
                 if ($lockedTransaction->cdd_level === CddLevel::Enhanced) {
                     $this->createDeferredAccountingEntries($lockedTransaction->id);
                 } else {
-                    $this->createAccountingEntries($lockedTransaction);
+                    $this->createAccountingEntries($lockedTransaction, $ipAddress, $approver);
                 }
 
                 // Audit logging for the approval action
-                $this->auditService->logTransaction('transaction_approved', $lockedTransaction->id, [
+                $this->auditTrailHelper->recordTransaction($lockedTransaction->id, 'transaction_approved', [
                     'old' => [
                         'status' => TransactionStatus::PendingApproval->value,
                         'approved_by' => null,
@@ -726,7 +731,7 @@ class TransactionService implements TransactionServiceInterface
                         'approved_at' => $lockedTransaction->approved_at->toIso8601String(),
                         'aml_flags_checked' => $amlResult['flags_created'] ?? 0,
                     ],
-                ]);
+                ], $approver, 'INFO', $ipAddress);
 
                 // Dispatch event for async compliance processing
                 Event::dispatch(new TransactionApproved($lockedTransaction, $approverId));

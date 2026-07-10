@@ -66,7 +66,8 @@ class AuditService implements AuditServiceInterface
         array $data = [],
         string $severity = 'INFO'
     ): SystemLog {
-        $userId = $data['user_id'] ?? auth()->id();
+        $userId = array_key_exists('user_id', $data) ? $data['user_id'] : auth()->id();
+        $ipAddress = array_key_exists('ip_address', $data) ? $data['ip_address'] : Request::ip();
 
         // Create log entry with null hash (will be sealed async)
         $log = SystemLog::create([
@@ -77,7 +78,7 @@ class AuditService implements AuditServiceInterface
             'entity_id' => $data['entity_id'] ?? null,
             'old_values' => ! empty($data['old_values'] ?? []) ? $data['old_values'] : null,
             'new_values' => ! empty($data['new_values'] ?? []) ? $data['new_values'] : null,
-            'ip_address' => Request::ip(),
+            'ip_address' => $ipAddress,
             'user_agent' => Request::userAgent(),
             'session_id' => session()->getId(),
             'previous_hash' => null,
@@ -124,16 +125,22 @@ class AuditService implements AuditServiceInterface
     ): SystemLog {
         $severity = $data['severity'] ?? 'INFO';
 
-        return $this->logWithSeverity(
-            $action,
-            [
-                'entity_type' => 'Transaction',
-                'entity_id' => $transactionId,
-                'old_values' => $data['old'] ?? [],
-                'new_values' => $data['new'] ?? [],
-            ],
-            $severity
-        );
+        $payload = [
+            'entity_type' => 'Transaction',
+            'entity_id' => $transactionId,
+            'old_values' => $data['old'] ?? [],
+            'new_values' => $data['new'] ?? [],
+        ];
+
+        if (array_key_exists('user_id', $data)) {
+            $payload['user_id'] = $data['user_id'];
+        }
+
+        if (array_key_exists('ip_address', $data)) {
+            $payload['ip_address'] = $data['ip_address'];
+        }
+
+        return $this->logWithSeverity($action, $payload, $severity);
     }
 
     /**
@@ -146,16 +153,22 @@ class AuditService implements AuditServiceInterface
     ): SystemLog {
         $severity = $data['severity'] ?? 'INFO';
 
-        return $this->logWithSeverity(
-            $action,
-            [
-                'entity_type' => 'Customer',
-                'entity_id' => $customerId,
-                'old_values' => $data['old'] ?? [],
-                'new_values' => $data['new'] ?? [],
-            ],
-            $severity
-        );
+        $payload = [
+            'entity_type' => 'Customer',
+            'entity_id' => $customerId,
+            'old_values' => $data['old'] ?? [],
+            'new_values' => $data['new'] ?? [],
+        ];
+
+        if (array_key_exists('user_id', $data)) {
+            $payload['user_id'] = $data['user_id'];
+        }
+
+        if (array_key_exists('ip_address', $data)) {
+            $payload['ip_address'] = $data['ip_address'];
+        }
+
+        return $this->logWithSeverity($action, $payload, $severity);
     }
 
     /**

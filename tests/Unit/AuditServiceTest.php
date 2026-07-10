@@ -131,6 +131,53 @@ class AuditServiceTest extends TestCase
     }
 
     #[Test]
+    public function log_with_severity_falls_back_to_authenticated_user_and_request_ip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $this->app['request']->server->set('REMOTE_ADDR', '192.168.1.50');
+
+        $log = $this->auditService->logWithSeverity(
+            'test_action',
+            ['entity_type' => 'Test'],
+            'INFO'
+        );
+
+        $this->assertEquals($user->id, $log->user_id);
+        $this->assertEquals('192.168.1.50', $log->ip_address);
+    }
+
+    #[Test]
+    public function log_transaction_without_user_or_ip_falls_back_to_auth_and_request(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $this->app['request']->server->set('REMOTE_ADDR', '10.0.0.5');
+
+        $log = $this->auditService->logTransaction('transaction_action', 123, []);
+
+        $this->assertEquals('Transaction', $log->entity_type);
+        $this->assertEquals(123, $log->entity_id);
+        $this->assertEquals($user->id, $log->user_id);
+        $this->assertEquals('10.0.0.5', $log->ip_address);
+    }
+
+    #[Test]
+    public function log_customer_without_user_or_ip_falls_back_to_auth_and_request(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $this->app['request']->server->set('REMOTE_ADDR', '10.0.0.6');
+
+        $log = $this->auditService->logCustomer('customer_action', 456, []);
+
+        $this->assertEquals('Customer', $log->entity_type);
+        $this->assertEquals(456, $log->entity_id);
+        $this->assertEquals($user->id, $log->user_id);
+        $this->assertEquals('10.0.0.6', $log->ip_address);
+    }
+
+    #[Test]
     public function session_id_is_recorded(): void
     {
         $user = User::factory()->create();

@@ -4,13 +4,11 @@ namespace App\Services\Transaction;
 
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Models\Transaction;
-use App\Services\AuditService;
 
 class TransactionApprovalService
 {
     public function __construct(
         protected TransactionService $transactionService,
-        protected AuditService $auditService,
     ) {}
 
     public function validateApprovalEligibility(Transaction $transaction, int $approverId): void
