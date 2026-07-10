@@ -175,13 +175,17 @@ class EodReconciliationService
             ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value])
             ->get();
 
+        $sumQuery = Transaction::where('till_id', $counter->code)
+            ->whereDate('created_at', $date->toDateString())
+            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
+
         // Buy transactions = cash received (customer sells foreign currency, we buy)
-        $buyTransactions = $transactions->filter(fn ($tx) => $tx->type === TransactionType::Buy);
-        $totalCashReceived = $buyTransactions->sum('amount_local');
+        $buyTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Buy->value);
+        $totalCashReceived = (clone $sumQuery)->buy()->sum('amount_local');
 
         // Sell transactions = cash paid out (customer buys foreign currency, we sell)
-        $sellTransactions = $transactions->filter(fn ($tx) => $tx->type === TransactionType::Sell);
-        $totalCashPaidOut = $sellTransactions->sum('amount_local');
+        $sellTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Sell->value);
+        $totalCashPaidOut = (clone $sumQuery)->sell()->sum('amount_local');
 
         // Expected closing = opening + received - paid out
         $closingFloatExpected = BcmathHelper::subtract(
@@ -297,13 +301,12 @@ class EodReconciliationService
         $openingFloat = $tillBalances->sum('opening_balance');
 
         // Get transactions
-        $transactions = Transaction::where('till_id', $counter->code)
+        $baseQuery = Transaction::where('till_id', $counter->code)
             ->whereDate('created_at', $date->toDateString())
-            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value])
-            ->get();
+            ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value]);
 
-        $buyTotal = $transactions->filter(fn ($tx) => $tx->type === TransactionType::Buy)->sum('amount_local');
-        $sellTotal = $transactions->filter(fn ($tx) => $tx->type === TransactionType::Sell)->sum('amount_local');
+        $buyTotal = (clone $baseQuery)->buy()->sum('amount_local');
+        $sellTotal = (clone $baseQuery)->sell()->sum('amount_local');
 
         $expectedClosing = BcmathHelper::subtract(
             BcmathHelper::add($openingFloat, $buyTotal),

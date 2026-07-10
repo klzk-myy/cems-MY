@@ -2,9 +2,9 @@
 
 namespace App\Services\Reporting;
 
-use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
+use App\Models\Transaction;
 use App\Services\Contracts\ReportingServiceInterface;
 use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
@@ -30,19 +30,27 @@ class ReportingService implements ReportingServiceInterface
 
     public function generateMSB2(string $date): string
     {
-        $queryDate = now()->parse($date);
+        $buyTransactions = Transaction::completed()
+            ->forDateRange($date, $date)
+            ->buy()
+            ->get(['currency_code', 'amount_foreign']);
 
-        $summary = DB::table('transactions')
-            ->select(
-                'currency_code',
-                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume', [TransactionType::Buy->value]),
-                DB::raw('SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as buy_count', [TransactionType::Buy->value]),
-                DB::raw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume', [TransactionType::Sell->value]),
-                DB::raw('SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as sell_count', [TransactionType::Sell->value])
-            )
-            ->whereDate('created_at', $queryDate)
-            ->groupBy('currency_code')
-            ->get();
+        $sellTransactions = Transaction::completed()
+            ->forDateRange($date, $date)
+            ->sell()
+            ->get(['currency_code', 'amount_foreign']);
+
+        $buySummary = $buyTransactions->groupBy('currency_code')->map(fn ($items) => [
+            'volume' => (string) $items->sum('amount_foreign'),
+            'count' => $items->count(),
+        ]);
+
+        $sellSummary = $sellTransactions->groupBy('currency_code')->map(fn ($items) => [
+            'volume' => (string) $items->sum('amount_foreign'),
+            'count' => $items->count(),
+        ]);
+
+        $currencies = $buySummary->keys()->merge($sellSummary->keys())->unique()->sort()->values();
 
         $filename = "MSB2_{$date}.csv";
         $filepath = "reports/{$filename}";
@@ -66,14 +74,14 @@ class ReportingService implements ReportingServiceInterface
             'Sell_Count',
         ]);
 
-        foreach ($summary as $row) {
+        foreach ($currencies as $currency) {
             fputcsv($csv, [
                 $date,
-                $row->currency_code,
-                $row->buy_volume,
-                $row->buy_count,
-                $row->sell_volume,
-                $row->sell_count,
+                $currency,
+                $buySummary->get($currency)['volume'] ?? '0',
+                $buySummary->get($currency)['count'] ?? 0,
+                $sellSummary->get($currency)['volume'] ?? '0',
+                $sellSummary->get($currency)['count'] ?? 0,
             ]);
         }
 

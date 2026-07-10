@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Report;
 
 use App\Enums\ReportType;
-use App\Enums\TransactionStatus;
-use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LmcaGenerateRequest;
 use App\Http\Requests\LmcaReportRequest;
@@ -14,12 +12,12 @@ use App\Http\Requests\QuarterlyLvrRequest;
 use App\Http\Requests\StoreMsb2ReportRequest;
 use App\Http\Requests\UpdateReportStatusRequest;
 use App\Models\ReportGenerated;
+use App\Models\Transaction;
 use App\Services\Reporting\ReportingService;
 use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class RegulatoryReportController extends Controller
@@ -55,44 +53,46 @@ class RegulatoryReportController extends Controller
             ->whereDate('period_start', $date)
             ->first();
 
-        // Get summary data using query builder
-        $summary = DB::table('transactions')
-            ->selectRaw('
-                currency_code,
-                SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume_foreign,
-                SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_amount_myr,
-                COUNT(CASE WHEN type = ? THEN 1 END) as buy_count,
-                SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume_foreign,
-                SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_amount_myr,
-                COUNT(CASE WHEN type = ? THEN 1 END) as sell_count
-            ', [
-                TransactionType::Buy->value,
-                TransactionType::Buy->value,
-                TransactionType::Buy->value,
-                TransactionType::Sell->value,
-                TransactionType::Sell->value,
-                TransactionType::Sell->value,
-            ])
-            ->whereDate('created_at', $date)
-            ->where('status', TransactionStatus::Completed)
-            ->groupBy('currency_code')
-            ->orderBy('currency_code')
-            ->get()
-            ->keyBy('currency_code')
-            ->map(function ($row) {
-                return [
-                    'buy_count' => (int) $row->buy_count,
-                    'buy_volume' => (string) $row->buy_volume_foreign,
-                    'buy_amount_myr' => (string) $row->buy_amount_myr,
-                    'sell_count' => (int) $row->sell_count,
-                    'sell_volume' => (string) $row->sell_volume_foreign,
-                    'sell_amount_myr' => (string) $row->sell_amount_myr,
-                    'net_volume' => $this->mathService->subtract(
-                        (string) $row->buy_volume_foreign,
-                        (string) $row->sell_volume_foreign
-                    ),
-                ];
-            });
+        $buyTransactions = Transaction::completed()
+            ->forDateRange($date, $date)
+            ->buy()
+            ->get(['currency_code', 'amount_foreign', 'amount_local']);
+
+        $sellTransactions = Transaction::completed()
+            ->forDateRange($date, $date)
+            ->sell()
+            ->get(['currency_code', 'amount_foreign', 'amount_local']);
+
+        $buySummary = $buyTransactions->groupBy('currency_code')->map(fn ($items) => [
+            'count' => $items->count(),
+            'volume' => (string) $items->sum('amount_foreign'),
+            'amount_myr' => (string) $items->sum('amount_local'),
+        ]);
+
+        $sellSummary = $sellTransactions->groupBy('currency_code')->map(fn ($items) => [
+            'count' => $items->count(),
+            'volume' => (string) $items->sum('amount_foreign'),
+            'amount_myr' => (string) $items->sum('amount_local'),
+        ]);
+
+        $currencies = $buySummary->keys()->merge($sellSummary->keys())->unique()->sort()->values();
+
+        $summary = $currencies->mapWithKeys(function (string $currency) use ($buySummary, $sellSummary) {
+            $buy = $buySummary->get($currency, ['count' => 0, 'volume' => '0', 'amount_myr' => '0']);
+            $sell = $sellSummary->get($currency, ['count' => 0, 'volume' => '0', 'amount_myr' => '0']);
+
+            return [
+                $currency => [
+                    'buy_count' => $buy['count'],
+                    'buy_volume' => $buy['volume'],
+                    'buy_amount_myr' => $buy['amount_myr'],
+                    'sell_count' => $sell['count'],
+                    'sell_volume' => $sell['volume'],
+                    'sell_amount_myr' => $sell['amount_myr'],
+                    'net_volume' => $this->mathService->subtract($buy['volume'], $sell['volume']),
+                ],
+            ];
+        });
 
         $totalBuyMyr = (string) $summary->sum(function ($row) {
             return $row['buy_amount_myr'];
