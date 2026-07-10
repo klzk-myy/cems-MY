@@ -14,7 +14,7 @@ class TillBalanceFactory extends Factory
     public function definition(): array
     {
         return [
-            'till_id' => Counter::factory(),
+            'till_id' => Counter::factory()->create()->code,
             'currency_code' => 'USD',
             'opening_balance' => '10000.00',
             'closing_balance' => null,

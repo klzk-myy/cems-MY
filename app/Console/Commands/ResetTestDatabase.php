@@ -173,7 +173,7 @@ class ResetTestDatabase extends Command
 
             // Create till balance
             DB::table('till_balances')->insert([
-                'till_id' => (string) $counter->id,
+                'till_id' => (string) $counter->code,
                 'currency_code' => $currencyCode,
                 'opening_balance' => $openingAmount,
                 'transaction_total' => '0.0000',
@@ -185,7 +185,7 @@ class ResetTestDatabase extends Command
             // Create currency position
             DB::table('currency_positions')->insert([
                 'currency_code' => $currencyCode,
-                'till_id' => (string) $counter->id,
+                'till_id' => (string) $counter->code,
                 'balance' => $openingAmount,
                 'avg_cost_rate' => match ($currencyCode) {
                     'USD' => '4.7200',

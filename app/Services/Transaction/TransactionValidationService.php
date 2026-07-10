@@ -6,11 +6,13 @@ use App\Exceptions\Domain\InvalidCurrencyException;
 use App\Exceptions\Domain\InvalidIpAddressException;
 use App\Exceptions\Domain\PepApprovalRequiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
+use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
 use App\Services\Compliance\PepApprovalService;
@@ -47,11 +49,15 @@ class TransactionValidationService implements TransactionValidationInterface
 
     public function validateTillBalance(string $tillId, string $currencyCode): TillBalance
     {
-        $tillBalance = TillBalance::where('till_id', $tillId)
-            ->where('currency_code', $currencyCode)
-            ->whereDate('date', today())
-            ->whereNull('closed_at')
+        $counter = Counter::where('code', $tillId)
+            ->orWhere('id', $tillId)
             ->first();
+
+        if (! $counter) {
+            throw new TillBalanceMissingException($currencyCode, $tillId);
+        }
+
+        $tillBalance = app(TillBalanceManager::class)->currentBalance($counter, $currencyCode, true);
 
         if (! $tillBalance) {
             throw new TillBalanceMissingException($currencyCode, $tillId);

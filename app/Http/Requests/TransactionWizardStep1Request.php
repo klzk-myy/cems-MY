@@ -20,7 +20,7 @@ class TransactionWizardStep1Request extends AuthorizedFormRequest
             'currency_code' => ['required', 'string', 'exists:currencies,code'],
             'amount_foreign' => ['required', 'numeric', 'min:0.01', 'max:9999999999.9999'],
             'rate' => ['required', 'numeric', 'min:0.0001', 'max:999999'],
-            'till_id' => ['required', 'string', 'exists:counters,id'],
+            'till_id' => ['required', 'string', 'exists:counters,code'],
             'purpose' => ['required', 'string', 'max:255'],
             'source_of_funds' => ['required', 'string', 'max:255'],
             'collect_additional_details' => ['sometimes', 'boolean'],

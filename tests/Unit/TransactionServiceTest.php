@@ -117,7 +117,7 @@ class TransactionServiceTest extends TestCase
 
         // Create till balance (open till)
         $this->tillBalance = TillBalance::factory()->create([
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'branch_id' => $this->branch->id,
             'currency_code' => $this->currency->code,
             'date' => today(),
@@ -129,7 +129,7 @@ class TransactionServiceTest extends TestCase
 
         // Create MYR till balance (required by updateTillBalance)
         TillBalance::factory()->create([
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'currency_code' => 'MYR',
             'opening_balance' => '100000.00',
             'date' => today(),
@@ -160,7 +160,7 @@ class TransactionServiceTest extends TestCase
     {
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -187,7 +187,7 @@ class TransactionServiceTest extends TestCase
         // For buy transactions, position doesn't need to exist beforehand
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '500.00',
@@ -209,7 +209,7 @@ class TransactionServiceTest extends TestCase
     {
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '12000.00',
@@ -238,7 +238,7 @@ class TransactionServiceTest extends TestCase
 
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -258,7 +258,7 @@ class TransactionServiceTest extends TestCase
     {
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -278,7 +278,7 @@ class TransactionServiceTest extends TestCase
     {
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '99.999999',
@@ -300,7 +300,7 @@ class TransactionServiceTest extends TestCase
     {
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -328,7 +328,7 @@ class TransactionServiceTest extends TestCase
 
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -355,7 +355,7 @@ class TransactionServiceTest extends TestCase
 
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -375,13 +375,13 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals('100.0000', $this->tillBalance->foreign_total);
 
         // MYR till balance transaction_total should reflect local value paid
-        $myrBalance = TillBalance::where('till_id', $this->counter->id)
+        $myrBalance = TillBalance::where('till_id', $this->counter->code)
             ->where('currency_code', 'MYR')
             ->whereDate('date', today())
             ->whereNull('closed_at')
             ->first();
         $this->assertNotNull($myrBalance);
-        $this->assertEquals('450.0000', $myrBalance->transaction_total);
+        $this->assertEquals('-450.0000', $myrBalance->transaction_total);
     }
 
     #[Test]
@@ -398,7 +398,7 @@ class TransactionServiceTest extends TestCase
         // Step 1: Do a BUY transaction - should add to buy_total_foreign
         $buyData = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '500.00', // Buy 500 USD from customer
@@ -418,7 +418,7 @@ class TransactionServiceTest extends TestCase
         // Step 2: Do a SELL transaction - should add to sell_total_foreign
         $sellData = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Sell->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '200.00', // Sell 200 USD to customer
@@ -447,7 +447,7 @@ class TransactionServiceTest extends TestCase
         // Test Simplified CDD (< RM 3,000)
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -483,7 +483,7 @@ class TransactionServiceTest extends TestCase
 
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -506,6 +506,7 @@ class TransactionServiceTest extends TestCase
         // Create a position with 1000 USD
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
+            'branch_id' => 'TEST-TILL',
             'till_id' => 'TEST-TILL',
             'balance' => '1000.00',
             'avg_cost_rate' => '4.50',
@@ -536,7 +537,8 @@ class TransactionServiceTest extends TestCase
 
         // Create till balances
         TillBalance::factory()->create([
-            'till_id' => (string) $counter->id,
+            'till_id' => (string) $counter->code,
+            'branch_id' => $counter->branch_id,
             'currency_code' => 'USD',
             'opening_balance' => '0',
             'date' => today(),
@@ -544,7 +546,8 @@ class TransactionServiceTest extends TestCase
         ]);
 
         TillBalance::factory()->create([
-            'till_id' => (string) $counter->id,
+            'till_id' => (string) $counter->code,
+            'branch_id' => $counter->branch_id,
             'currency_code' => 'MYR',
             'opening_balance' => '100000.00',
             'date' => today(),
@@ -555,7 +558,8 @@ class TransactionServiceTest extends TestCase
         // (balance - pending reservations) >= sell amount at approval time
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => (string) $counter->id,
+            'branch_id' => $counter->branch_id,
+            'till_id' => (string) $counter->code,
             'balance' => '5000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
@@ -571,7 +575,7 @@ class TransactionServiceTest extends TestCase
             'rate' => '4.50',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
-            'till_id' => (string) $counter->id,
+            'till_id' => (string) $counter->code,
         ];
 
         $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
@@ -598,11 +602,17 @@ class TransactionServiceTest extends TestCase
     public function approval_fails_if_stock_no_longer_available(): void
     {
         $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        $branch = Branch::factory()->create();
+        $counter = Counter::factory()->create([
+            'code' => (string) $branch->id,
+            'branch_id' => $branch->id,
+        ]);
 
         // Position has 2000 USD
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TEST-TILL',
+            'branch_id' => $branch->id,
+            'till_id' => $counter->code,
             'balance' => '2000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
@@ -610,7 +620,8 @@ class TransactionServiceTest extends TestCase
 
         // Create till balance
         TillBalance::factory()->create([
-            'till_id' => 'TEST-TILL',
+            'till_id' => $counter->code,
+            'branch_id' => $branch->id,
             'currency_code' => 'USD',
             'opening_balance' => '0',
             'date' => today(),
@@ -618,7 +629,8 @@ class TransactionServiceTest extends TestCase
         ]);
 
         TillBalance::factory()->create([
-            'till_id' => 'TEST-TILL',
+            'till_id' => $counter->code,
+            'branch_id' => $branch->id,
             'currency_code' => 'MYR',
             'opening_balance' => '100000.00',
             'date' => today(),
@@ -635,7 +647,7 @@ class TransactionServiceTest extends TestCase
             'rate' => '10.5',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
-            'till_id' => 'TEST-TILL',
+            'till_id' => $counter->code,
         ];
 
         $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
@@ -659,7 +671,7 @@ class TransactionServiceTest extends TestCase
             'pep_status' => false,
         ]);
 
-        $tillId = (string) $this->counter->id;
+        $tillId = (string) $this->counter->code;
 
         // Create USD and MYR till balances
         TillBalance::factory()->create([
@@ -707,8 +719,8 @@ class TransactionServiceTest extends TestCase
             ->where('currency_code', 'MYR')
             ->first();
 
-        // Paid 450 MYR for 100 USD (450 = 100 * 4.50)
-        $this->assertEquals('450.0000', $myrBalance->transaction_total);
+        // Paid 450 MYR for 100 USD (450 = 100 * 4.50); transaction_total tracks outflow as negative
+        $this->assertEquals('-450.0000', $myrBalance->transaction_total);
     }
 
     #[Test]
@@ -719,7 +731,7 @@ class TransactionServiceTest extends TestCase
             'pep_status' => false,
         ]);
 
-        $tillId = (string) $this->counter->id;
+        $tillId = (string) $this->counter->code;
 
         // Create USD position and MYR till balance
         CurrencyPosition::factory()->create([
@@ -777,7 +789,7 @@ class TransactionServiceTest extends TestCase
         // Attempt without source_of_wealth - should fail
         $dataWithoutWealth = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -802,7 +814,7 @@ class TransactionServiceTest extends TestCase
 
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',
@@ -829,7 +841,7 @@ class TransactionServiceTest extends TestCase
         // Should succeed with only source_of_funds (source_of_wealth not required for non-PEPs)
         $data = [
             'customer_id' => $this->customer->id,
-            'till_id' => $this->counter->id,
+            'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
             'amount_foreign' => '100.00',

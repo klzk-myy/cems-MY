@@ -5,6 +5,7 @@ namespace App\Services\Transaction;
 use App\Enums\TransactionImportStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\TillBalance;
@@ -12,6 +13,7 @@ use App\Models\Transaction;
 use App\Models\TransactionImport;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
+use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
 use App\Support\BcmathHelper;
@@ -138,11 +140,15 @@ class TransactionImportService
             }
 
             // Validate till is open
-            $tillBalance = TillBalance::where('till_id', $data['till_id'])
-                ->where('currency_code', $data['currency_code'])
-                ->whereDate('date', today())
-                ->whereNull('closed_at')
+            $counter = Counter::where('code', $data['till_id'])
+                ->orWhere('id', $data['till_id'])
                 ->first();
+
+            if (! $counter) {
+                throw new \Exception("Till {$data['till_id']} is not open for {$data['currency_code']}");
+            }
+
+            $tillBalance = app(TillBalanceManager::class)->currentBalance($counter, $data['currency_code']);
 
             if (! $tillBalance) {
                 throw new \Exception("Till {$data['till_id']} is not open for {$data['currency_code']}");
@@ -275,22 +281,13 @@ class TransactionImportService
      */
     protected function updateTillBalance(TillBalance $tillBalance, string $type, string $amountLocal, string $amountForeign): void
     {
-        $currentTotal = $tillBalance->transaction_total ?? '0';
-        $foreignTotal = $tillBalance->foreign_total ?? '0';
+        $manager = app(TillBalanceManager::class);
 
-        if ($type === TransactionType::Buy->value) {
-            // Buying foreign: stock increases
-            $tillBalance->update([
-                'transaction_total' => $this->mathService->add($currentTotal, $amountLocal),
-                'foreign_total' => $this->mathService->add($foreignTotal, $amountForeign),
-            ]);
-        } else {
-            // Selling foreign: stock decreases
-            $tillBalance->update([
-                'transaction_total' => $this->mathService->add($currentTotal, $amountLocal),
-                'foreign_total' => $this->mathService->subtract($foreignTotal, $amountForeign),
-            ]);
-        }
+        // Buying foreign: stock increases; Selling foreign: stock decreases
+        $foreignOperation = $type === TransactionType::Buy->value ? 'add' : 'subtract';
+
+        $manager->adjustBalance($tillBalance, 'transaction_total', $amountLocal, 'add');
+        $manager->adjustBalance($tillBalance, 'foreign_total', $amountForeign, $foreignOperation);
     }
 
     /**

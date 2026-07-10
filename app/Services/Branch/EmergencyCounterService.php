@@ -131,7 +131,7 @@ class EmergencyCounterService
         $session = $closure->session;
         $counter = $closure->counter;
 
-        $tillBalances = TillBalance::where('till_id', (string) $counter->id)
+        $tillBalances = TillBalance::where('till_id', (string) $counter->code)
             ->where('date', $session->session_date)
             ->get();
 

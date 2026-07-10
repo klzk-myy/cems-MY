@@ -127,7 +127,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
 
         // Create opening till balances
         $usdBalance = TillBalance::create([
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'currency_code' => 'USD',
             'opening_balance' => '10000.00',
             'date' => $today,
@@ -135,7 +135,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
         ]);
 
         $eurBalance = TillBalance::create([
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'currency_code' => 'EUR',
             'opening_balance' => '5000.00',
             'date' => $today,
@@ -165,7 +165,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
         $this->assertNotNull($handover->id);
 
         // Get all till balances - old ones (closed) and new ones (opened for toUser)
-        $allBalances = TillBalance::where('till_id', (string) $this->counter->id)
+        $allBalances = TillBalance::where('till_id', (string) $this->counter->code)
             ->orderBy('id')
             ->get();
 
@@ -223,7 +223,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
 
         // Create opening till balances for multiple currencies
         TillBalance::create([
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'currency_code' => 'USD',
             'opening_balance' => '10000.00',
             'date' => $today,
@@ -231,7 +231,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
         ]);
 
         TillBalance::create([
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'currency_code' => 'EUR',
             'opening_balance' => '5000.00',
             'date' => $today,
@@ -255,7 +255,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
         );
 
         // Get the closed USD balance
-        $closedUsdBalance = TillBalance::where('till_id', (string) $this->counter->id)
+        $closedUsdBalance = TillBalance::where('till_id', (string) $this->counter->code)
             ->where('currency_code', 'USD')
             ->whereNotNull('closed_at')
             ->first();
@@ -287,7 +287,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
 
         // Create opening till balance
         $usdBalance = TillBalance::create([
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'currency_code' => 'USD',
             'opening_balance' => '10000.00',
             'date' => $today,
@@ -310,7 +310,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
         );
 
         // Find the closed USD balance
-        $closedUsd = TillBalance::where('till_id', (string) $this->counter->id)
+        $closedUsd = TillBalance::where('till_id', (string) $this->counter->code)
             ->where('currency_code', 'USD')
             ->whereNotNull('closed_at')
             ->first();

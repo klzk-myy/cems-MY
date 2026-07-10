@@ -14,6 +14,7 @@ use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Http\Traits\ValidatorMethods;
+use App\Models\Counter;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\TellerAllocation;
@@ -25,6 +26,7 @@ use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
 use App\Services\Compliance\PepApprovalService;
@@ -397,75 +399,48 @@ class TransactionService implements TransactionServiceInterface
     }
 
     /**
-     * Verify till is still open for operations.
-     *
-     * @param  TillBalance  $tillBalance  The till balance to verify
-     *
-     * @throws \InvalidArgumentException If till is closed
-     */
-    protected function verifyTillIsOpen(TillBalance $tillBalance): void
-    {
-        if ($tillBalance->closed_at !== null) {
-            throw new \InvalidArgumentException('Till is closed. Cannot perform operations on closed till.');
-        }
-    }
-
-    /**
      * Update till balance after transaction.
      * Updates both foreign currency and MYR (local currency) balances.
      * Uses lockForUpdate to prevent race conditions on concurrent transactions.
      */
     protected function updateTillBalance(TillBalance $tillBalance, string $type, string $amountLocal, string $amountForeign): void
     {
-        $this->verifyTillIsOpen($tillBalance);
+        $manager = app(TillBalanceManager::class);
 
-        // Lock the foreign currency balance
-        $lockedForeign = TillBalance::where('id', $tillBalance->id)
-            ->lockForUpdate()
+        $counter = Counter::where('code', $tillBalance->till_id)
+            ->orWhere('id', $tillBalance->till_id)
             ->first();
 
-        // Lock the MYR balance (always present for active till)
-        $myrBalance = TillBalance::where('till_id', $lockedForeign->till_id)
-            ->where('currency_code', 'MYR')
-            ->whereDate('date', today())
-            ->whereNull('closed_at')
-            ->lockForUpdate()
-            ->first();
+        if (! $counter) {
+            throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
+        }
+
+        $lockedForeign = $manager->currentBalance($counter, $tillBalance->currency_code, true);
+
+        if (! $lockedForeign) {
+            throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
+        }
+
+        $myrBalance = $manager->currentBalance($counter, 'MYR', true);
 
         if (! $myrBalance) {
-            throw new TillBalanceMissingException('MYR', $lockedForeign->till_id);
+            throw new TillBalanceMissingException('MYR', $tillBalance->till_id);
         }
 
         // Update foreign currency balance using separate buy/sell tracking
         // Buy: increase buy_total_foreign (we are buying foreign currency from customer, stock increases)
         // Sell: increase sell_total_foreign (we are selling foreign currency to customer, stock decreases)
-        $buyTotal = $lockedForeign->buy_total_foreign ?? '0';
-        $sellTotal = $lockedForeign->sell_total_foreign ?? '0';
-        $foreignTotal = $lockedForeign->foreign_total ?? '0';
-
         if ($type === TransactionType::Buy->value) {
-            $newBuyTotal = $this->mathService->add($buyTotal, $amountForeign);
-            $newForeignTotal = $this->mathService->add($foreignTotal, $amountForeign);
-            $lockedForeign->update([
-                'buy_total_foreign' => $newBuyTotal,
-                'foreign_total' => $newForeignTotal,
-            ]);
+            $manager->adjustBalance($lockedForeign, 'buy_total_foreign', $amountForeign, 'add', false);
+            $manager->adjustBalance($lockedForeign, 'foreign_total', $amountForeign, 'add', false);
         } else {
-            $newSellTotal = $this->mathService->add($sellTotal, $amountForeign);
-            $newForeignTotal = $this->mathService->subtract($foreignTotal, $amountForeign);
-            $lockedForeign->update([
-                'sell_total_foreign' => $newSellTotal,
-                'foreign_total' => $newForeignTotal,
-            ]);
+            $manager->adjustBalance($lockedForeign, 'sell_total_foreign', $amountForeign, 'add', false);
+            $manager->adjustBalance($lockedForeign, 'foreign_total', $amountForeign, 'subtract', false);
         }
 
         // Update MYR balance - cash in on Sell, cash out on Buy
-        $myrTotal = $myrBalance->transaction_total ?? '0';
-        $newMyrTotal = $type === TransactionType::Buy->value
-            ? $this->mathService->subtract($myrTotal, $amountLocal)
-            : $this->mathService->add($myrTotal, $amountLocal);
-
-        $myrBalance->update(['transaction_total' => $newMyrTotal]);
+        $myrOperation = $type === TransactionType::Buy->value ? 'subtract' : 'add';
+        $manager->adjustBalance($myrBalance, 'transaction_total', $amountLocal, $myrOperation, false);
     }
 
     /**
@@ -612,11 +587,14 @@ class TransactionService implements TransactionServiceInterface
 
                 // EDGE CASE VALIDATION: Verify till is still open
                 // Till could have been closed between transaction creation and approval
-                $tillBalance = TillBalance::where('till_id', $lockedTransaction->till_id)
-                    ->where('currency_code', $lockedTransaction->currency_code)
-                    ->whereDate('date', today())
-                    ->whereNull('closed_at')
+                $manager = app(TillBalanceManager::class);
+                $counter = Counter::where('code', $lockedTransaction->till_id)
+                    ->orWhere('id', $lockedTransaction->till_id)
                     ->first();
+
+                $tillBalance = $counter
+                    ? $manager->currentBalance($counter, $lockedTransaction->currency_code)
+                    : null;
 
                 if (! $tillBalance) {
                     throw new \RuntimeException(
@@ -664,20 +642,6 @@ class TransactionService implements TransactionServiceInterface
 
                 // Refresh the model to get updated version
                 $lockedTransaction->refresh();
-
-                // Get the till balance for today
-                $tillBalance = TillBalance::where('till_id', $lockedTransaction->till_id ?? 'MAIN')
-                    ->where('currency_code', $lockedTransaction->currency_code)
-                    ->whereDate('date', today())
-                    ->whereNull('closed_at')
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $tillBalance) {
-                    throw new \RuntimeException(
-                        'Till balance not found for today. Cannot complete transaction.'
-                    );
-                }
 
                 // Check available balance BEFORE consuming reservation (Sell only)
                 // Buy transactions ADD foreign currency to the position — no existing stock required

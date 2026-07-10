@@ -62,7 +62,7 @@ class TillBalance extends BaseModel
 
     public function counter(): BelongsTo
     {
-        return $this->belongsTo(Counter::class, 'till_id');
+        return $this->belongsTo(Counter::class, 'till_id', 'code');
     }
 
     public function tellerAllocation(): BelongsTo

@@ -86,7 +86,7 @@ class CriticalTransactionFixesTest extends TestCase
         $service = app(TransactionServiceInterface::class);
         $service->createTransaction([
             'customer_id' => $customer->id,
-            'till_id' => $till->id,
+            'till_id' => $till->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -96,7 +96,7 @@ class CriticalTransactionFixesTest extends TestCase
             'source_of_funds' => 'Savings',
         ], $teller->id, '127.0.0.1');
 
-        $this->assertSame('530.0000', TillBalance::where('till_id', $till->id)->where('currency_code', 'MYR')->first()->transaction_total);
+        $this->assertSame('530.0000', TillBalance::where('till_id', $till->code)->where('currency_code', 'MYR')->first()->transaction_total);
     }
 
     public function test_reversing_buy_restores_myr_till_balance(): void
@@ -139,7 +139,7 @@ class CriticalTransactionFixesTest extends TestCase
             'customer_id' => $customer->id,
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
-            'till_id' => $till->id,
+            'till_id' => $till->code,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
             'amount_local' => '470.00',

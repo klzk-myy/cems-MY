@@ -19,13 +19,15 @@ class TransactionWizardTest extends TestCase
 
     protected User $teller;
 
+    protected Counter $counter;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->teller = User::factory()->create(['role' => UserRole::Teller]);
         Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
-        Counter::factory()->create(['id' => '1', 'code' => 'T1']);
+        $this->counter = Counter::factory()->create(['id' => '1', 'code' => 'T1']);
     }
 
     #[Test]
@@ -40,7 +42,7 @@ class TransactionWizardTest extends TestCase
                 'currency_code' => 'USD',
                 'amount_foreign' => '100.00',
                 'rate' => '4.50',
-                'till_id' => '1',
+                'till_id' => $this->counter->code,
                 'purpose' => 'Travel',
                 'source_of_funds' => 'Salary',
             ]);
@@ -72,7 +74,7 @@ class TransactionWizardTest extends TestCase
                 'currency_code' => 'USD',
                 'amount_foreign' => '100.00',
                 'rate' => '4.50',
-                'till_id' => '1',
+                'till_id' => $this->counter->code,
                 'purpose' => 'Travel',
                 'source_of_funds' => 'Salary',
             ]);
@@ -102,7 +104,7 @@ class TransactionWizardTest extends TestCase
                 'currency_code' => 'USD',
                 'amount_foreign' => '100.00',
                 'rate' => '4.50',
-                'till_id' => '1',
+                'till_id' => $this->counter->code,
                 'purpose' => 'Travel',
                 'source_of_funds' => 'Salary',
             ]);
@@ -125,7 +127,7 @@ class TransactionWizardTest extends TestCase
                 'currency_code' => 'USD',
                 'amount_foreign' => '100.00',
                 'rate' => '4.50',
-                'till_id' => '1',
+                'till_id' => $this->counter->code,
                 'purpose' => 'Travel',
                 'source_of_funds' => 'Salary',
                 'collect_additional_details' => true,
@@ -149,7 +151,7 @@ class TransactionWizardTest extends TestCase
                 'currency_code' => 'USD',
                 'amount_foreign' => '60000.00',
                 'rate' => '4.50',
-                'till_id' => '1',
+                'till_id' => $this->counter->code,
                 'purpose' => 'Investment',
                 'source_of_funds' => 'Business',
             ]);

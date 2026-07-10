@@ -120,7 +120,8 @@ class TransactionController extends Controller
 
         $validated = $request->validated();
 
-        $validated['till_id'] = (string) $validated['counter_id'];
+        $counter = Counter::find($validated['counter_id']);
+        $validated['till_id'] = $counter ? (string) $counter->code : (string) $validated['counter_id'];
 
         try {
             $transaction = $this->transactionService->createTransaction(

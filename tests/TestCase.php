@@ -151,7 +151,7 @@ abstract class TestCase extends BaseTestCase
         ]);
 
         TillBalance::create([
-            'till_id' => (string) $counter->id,
+            'till_id' => (string) $counter->code,
             'currency_code' => $currencyCode,
             'branch_id' => $branch->id,
             'opening_balance' => $openingBalance,
@@ -161,7 +161,7 @@ abstract class TestCase extends BaseTestCase
 
         // Also create MYR till balance (required by TransactionService::updateTillBalance)
         TillBalance::create([
-            'till_id' => (string) $counter->id,
+            'till_id' => (string) $counter->code,
             'currency_code' => 'MYR',
             'branch_id' => $branch->id,
             'opening_balance' => '100000.00',

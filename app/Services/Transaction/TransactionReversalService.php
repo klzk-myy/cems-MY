@@ -4,17 +4,18 @@ namespace App\Services\Transaction;
 
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Models\Counter;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\JournalEntry;
 use App\Models\TellerAllocation;
-use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
@@ -210,12 +211,22 @@ class TransactionReversalService
 
     protected function reverseTillBalance(Transaction $transaction): void
     {
-        $tillBalance = TillBalance::where('till_id', $transaction->till_id)
-            ->where('currency_code', $transaction->currency_code)
-            ->whereDate('date', today())
-            ->whereNull('closed_at')
-            ->lockForUpdate()
+        $counter = Counter::where('code', $transaction->till_id)
+            ->orWhere('id', $transaction->till_id)
             ->first();
+
+        if (! $counter) {
+            Log::warning('No counter found for reversal', [
+                'transaction_id' => $transaction->id,
+                'till_id' => $transaction->till_id,
+            ]);
+
+            return;
+        }
+
+        $manager = app(TillBalanceManager::class);
+
+        $tillBalance = $manager->currentBalance($counter, $transaction->currency_code, true);
 
         if (! $tillBalance) {
             Log::warning('No open till balance found for reversal', [
@@ -229,38 +240,25 @@ class TransactionReversalService
 
         $isBuy = $transaction->type === TransactionType::Buy;
 
-        $foreignTotal = $tillBalance->foreign_total ?? '0';
         if ($isBuy) {
-            $newForeignTotal = $this->mathService->subtract($foreignTotal, $transaction->amount_foreign);
-            $buyTotal = $tillBalance->buy_total_foreign ?? '0';
-            $newBuyTotal = $this->mathService->subtract($buyTotal, $transaction->amount_foreign);
-            $tillBalance->update([
-                'foreign_total' => $newForeignTotal,
-                'buy_total_foreign' => $newBuyTotal,
-            ]);
+            $manager->adjustBalance($tillBalance, 'foreign_total', (string) $transaction->amount_foreign, 'subtract', false);
+            $manager->adjustBalance($tillBalance, 'buy_total_foreign', (string) $transaction->amount_foreign, 'subtract', false);
         } else {
-            $newForeignTotal = $this->mathService->add($foreignTotal, $transaction->amount_foreign);
-            $sellTotal = $tillBalance->sell_total_foreign ?? '0';
-            $newSellTotal = $this->mathService->add($sellTotal, $transaction->amount_foreign);
-            $tillBalance->update([
-                'foreign_total' => $newForeignTotal,
-                'sell_total_foreign' => $newSellTotal,
-            ]);
+            $manager->adjustBalance($tillBalance, 'foreign_total', (string) $transaction->amount_foreign, 'add', false);
+            $manager->adjustBalance($tillBalance, 'sell_total_foreign', (string) $transaction->amount_foreign, 'subtract', false);
         }
 
-        $myrTillBalance = TillBalance::where('till_id', $transaction->till_id)
-            ->where('currency_code', 'MYR')
-            ->whereDate('date', today())
-            ->whereNull('closed_at')
-            ->lockForUpdate()
-            ->first();
+        $myrTillBalance = $manager->currentBalance($counter, 'MYR', true);
 
         if ($myrTillBalance) {
-            $myrTotal = $myrTillBalance->transaction_total ?? '0';
-            $newMyrTotal = $transaction->type->isBuy()
-                ? $this->mathService->add($myrTotal, $transaction->amount_local)
-                : $this->mathService->subtract($myrTotal, $transaction->amount_local);
-            $myrTillBalance->update(['transaction_total' => $newMyrTotal]);
+            $operation = $transaction->type->isBuy() ? 'add' : 'subtract';
+            $manager->adjustBalance(
+                $myrTillBalance,
+                'transaction_total',
+                (string) $transaction->amount_local,
+                $operation,
+                false
+            );
         }
 
         Log::info('Till balance reversed for transaction', [

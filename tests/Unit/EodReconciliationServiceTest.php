@@ -67,7 +67,7 @@ class EodReconciliationServiceTest extends TestCase
 
         // Create till balance using direct insert (bypassing factory to ensure proper till_id)
         DB::table('till_balances')->insert([
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'currency_code' => 'MYR',
             'branch_id' => $this->branch->id,
             'opening_balance' => '10000.00',
@@ -84,7 +84,7 @@ class EodReconciliationServiceTest extends TestCase
             'amount_local' => '5000.00',
             'amount_foreign' => '1100.00',
             'rate' => '4.5455',
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'branch_id' => $this->branch->id,
             'user_id' => $this->user->id,
             'customer_id' => $this->customer->id,
@@ -121,7 +121,7 @@ class EodReconciliationServiceTest extends TestCase
 
         // Create till balance with both opening and closing using direct insert
         DB::table('till_balances')->insert([
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'currency_code' => 'MYR',
             'branch_id' => $this->branch->id,
             'opening_balance' => '10000.00',
@@ -139,7 +139,7 @@ class EodReconciliationServiceTest extends TestCase
             'amount_local' => '5000.00',
             'amount_foreign' => '1100.00',
             'rate' => '4.5455',
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'branch_id' => $this->branch->id,
             'user_id' => $this->user->id,
             'customer_id' => $this->customer->id,
@@ -175,7 +175,7 @@ class EodReconciliationServiceTest extends TestCase
 
         // Create till balance using direct insert (bypassing factory to ensure proper till_id)
         DB::table('till_balances')->insert([
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'currency_code' => 'MYR',
             'branch_id' => $this->branch->id,
             'opening_balance' => '10000.00',
@@ -211,7 +211,7 @@ class EodReconciliationServiceTest extends TestCase
 
         // Create till balance with closing balance matching only completed transactions
         DB::table('till_balances')->insert([
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'currency_code' => 'MYR',
             'branch_id' => $this->branch->id,
             'opening_balance' => '10000.00',
@@ -229,7 +229,7 @@ class EodReconciliationServiceTest extends TestCase
             'amount_local' => '5000.00',
             'amount_foreign' => '1100.00',
             'rate' => '4.5455',
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'branch_id' => $this->branch->id,
             'user_id' => $this->user->id,
             'customer_id' => $this->customer->id,
@@ -247,7 +247,7 @@ class EodReconciliationServiceTest extends TestCase
             'amount_local' => '3000.00',
             'amount_foreign' => '660.00',
             'rate' => '4.5455',
-            'till_id' => (string) $this->counter->id,
+            'till_id' => (string) $this->counter->code,
             'branch_id' => $this->branch->id,
             'user_id' => $this->user->id,
             'customer_id' => $this->customer->id,

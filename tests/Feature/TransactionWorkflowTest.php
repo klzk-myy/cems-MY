@@ -149,6 +149,7 @@ class TransactionWorkflowTest extends TestCase
             'amount_local' => '450.00',
             'customer_id' => $this->customer->id,
             'user_id' => $this->teller->id,
+            'branch_id' => $this->branch->id,
             'till_id' => $this->counter->code,
             'status' => TransactionStatus::Completed,
             'cdd_level' => 'Simplified',
@@ -168,13 +169,17 @@ class TransactionWorkflowTest extends TestCase
             'pep_status' => false,
         ]);
 
-        $counter = Counter::factory()->create();
+        $counter = Counter::factory()->create([
+            'branch_id' => $this->branch->id,
+            'code' => (string) $this->branch->id,
+        ]);
 
-        $tillId = (string) $counter->id;
+        $tillId = (string) $counter->code;
 
         // Create USD position with exactly 1500 USD
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
+            'branch_id' => $counter->branch_id,
             'till_id' => $tillId,
             'balance' => '1500.00',
             'avg_cost_rate' => '4.50',
@@ -183,6 +188,7 @@ class TransactionWorkflowTest extends TestCase
 
         TillBalance::factory()->create([
             'till_id' => $tillId,
+            'branch_id' => $counter->branch_id,
             'currency_code' => 'USD',
             'opening_balance' => '0',
             'date' => today(),
@@ -191,6 +197,7 @@ class TransactionWorkflowTest extends TestCase
 
         TillBalance::factory()->create([
             'till_id' => $tillId,
+            'branch_id' => $counter->branch_id,
             'currency_code' => 'MYR',
             'opening_balance' => '100000.00',
             'date' => today(),
@@ -239,13 +246,17 @@ class TransactionWorkflowTest extends TestCase
             'pep_status' => false,
         ]);
 
-        $counter = Counter::factory()->create();
+        $counter = Counter::factory()->create([
+            'branch_id' => $this->branch->id,
+            'code' => (string) $this->branch->id,
+        ]);
 
-        $tillId = (string) $counter->id;
+        $tillId = (string) $counter->code;
 
         // Create USD position with sufficient balance for Sell
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
+            'branch_id' => $counter->branch_id,
             'till_id' => $tillId,
             'balance' => '2000.00',
             'avg_cost_rate' => '4.50',
@@ -254,6 +265,7 @@ class TransactionWorkflowTest extends TestCase
 
         TillBalance::factory()->create([
             'till_id' => $tillId,
+            'branch_id' => $counter->branch_id,
             'currency_code' => 'MYR',
             'opening_balance' => '20000.00',
             'date' => today(),
@@ -262,6 +274,7 @@ class TransactionWorkflowTest extends TestCase
 
         TillBalance::factory()->create([
             'till_id' => $tillId,
+            'branch_id' => $counter->branch_id,
             'currency_code' => 'USD',
             'opening_balance' => '2000.00',
             'date' => today(),
@@ -331,13 +344,17 @@ class TransactionWorkflowTest extends TestCase
             'pep_status' => false,
         ]);
 
-        $counter = Counter::factory()->create();
+        $counter = Counter::factory()->create([
+            'branch_id' => $this->branch->id,
+            'code' => (string) $this->branch->id,
+        ]);
 
-        $tillId = (string) $counter->id;
+        $tillId = (string) $counter->code;
 
         // Create USD position with sufficient balance for Sell
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
+            'branch_id' => $counter->branch_id,
             'till_id' => $tillId,
             'balance' => '2000.00',
             'avg_cost_rate' => '4.50',
@@ -346,6 +363,7 @@ class TransactionWorkflowTest extends TestCase
 
         TillBalance::factory()->create([
             'till_id' => $tillId,
+            'branch_id' => $counter->branch_id,
             'currency_code' => 'MYR',
             'opening_balance' => '20000.00',
             'date' => today(),
@@ -354,6 +372,7 @@ class TransactionWorkflowTest extends TestCase
 
         TillBalance::factory()->create([
             'till_id' => $tillId,
+            'branch_id' => $counter->branch_id,
             'currency_code' => 'USD',
             'opening_balance' => '2000.00',
             'date' => today(),

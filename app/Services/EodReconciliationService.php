@@ -162,7 +162,7 @@ class EodReconciliationService
         }
 
         // Get till balances for the day
-        $tillBalances = TillBalance::where('till_id', (string) $counterId)
+        $tillBalances = TillBalance::where('till_id', $counter->code)
             ->where('date', $date->toDateString())
             ->get();
 
@@ -170,7 +170,7 @@ class EodReconciliationService
 
         // Get transactions for this counter on this date
         $transactions = Transaction::with(['customer', 'user', 'flags'])
-            ->where('till_id', (string) $counterId)
+            ->where('till_id', $counter->code)
             ->whereDate('created_at', $date->toDateString())
             ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value])
             ->get();
@@ -212,8 +212,8 @@ class EodReconciliationService
 
         // Flagged transactions
         $flaggedTransactions = FlaggedTransaction::with(['transaction', 'transaction.customer'])
-            ->whereHas('transaction', function ($query) use ($counterId, $date) {
-                $query->where('till_id', (string) $counterId)
+            ->whereHas('transaction', function ($query) use ($counter, $date) {
+                $query->where('till_id', $counter->code)
                     ->whereDate('created_at', $date->toDateString());
             })
             ->where('status', '!=', 'Resolved')
@@ -288,14 +288,16 @@ class EodReconciliationService
      */
     public function calculateVariance(int $counterId, Carbon $date): string
     {
-        $tillBalances = TillBalance::where('till_id', (string) $counterId)
+        $counter = Counter::findOrFail($counterId);
+
+        $tillBalances = TillBalance::where('till_id', $counter->code)
             ->where('date', $date->toDateString())
             ->get();
 
         $openingFloat = $tillBalances->sum('opening_balance');
 
         // Get transactions
-        $transactions = Transaction::where('till_id', (string) $counterId)
+        $transactions = Transaction::where('till_id', $counter->code)
             ->whereDate('created_at', $date->toDateString())
             ->whereNotIn('status', [TransactionStatus::Cancelled->value, TransactionStatus::Failed->value, TransactionStatus::Pending->value])
             ->get();
@@ -362,8 +364,10 @@ class EodReconciliationService
      */
     private function getCurrencyBreakdown(int $counterId, Carbon $date): array
     {
+        $counter = Counter::findOrFail($counterId);
+
         $tillBalances = TillBalance::with('currency')
-            ->where('till_id', (string) $counterId)
+            ->where('till_id', $counter->code)
             ->where('date', $date->toDateString())
             ->get();
 

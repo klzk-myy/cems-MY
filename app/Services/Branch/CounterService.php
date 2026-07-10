@@ -78,7 +78,7 @@ class CounterService
 
                 if ($currencyCode) {
                     TillBalance::create([
-                        'till_id' => (string) $counter->id,
+                        'till_id' => (string) $counter->code,
                         'currency_code' => $currencyCode,
                         'opening_balance' => $float['amount'],
                         'date' => $today,
@@ -123,7 +123,7 @@ class CounterService
                 }
             })->get()->keyBy('code');
 
-            $tillBalances = TillBalance::where('till_id', (string) $session->counter_id)
+            $tillBalances = TillBalance::where('till_id', $this->counterCode($session))
                 ->where('date', $session->session_date)
                 ->whereNull('closed_at')
                 ->orderBy('currency_code')
@@ -320,7 +320,7 @@ class CounterService
 
             // Pre-fetch relevant till balances
             $currencyCodes = array_values(array_filter($currencies));
-            $tillBalances = TillBalance::where('till_id', (string) $session->counter_id)
+            $tillBalances = TillBalance::where('till_id', $this->counterCode($session))
                 ->where('date', $session->session_date)
                 ->whereNull('closed_at')
                 ->whereIn('currency_code', $currencyCodes)
@@ -334,7 +334,7 @@ class CounterService
             // Sort currency codes alphabetically to prevent deadlocks when concurrent
             // handovers involve different currency sets (ensures consistent lock order)
             sort($currencyCodes);
-            $allBalances = TillBalance::where('till_id', (string) $session->counter_id)
+            $allBalances = TillBalance::where('till_id', $this->counterCode($session))
                 ->where('date', $session->session_date)
                 ->whereIn('currency_code', $currencyCodes)
                 ->orderBy('currency_code')
@@ -446,7 +446,7 @@ class CounterService
 
                     // Create new open balance for new session
                     TillBalance::create([
-                        'till_id' => (string) $session->counter_id,
+                        'till_id' => $this->counterCode($session),
                         'currency_code' => $currencyCode,
                         'opening_balance' => $closingBalance,
                         'date' => $today,
@@ -466,7 +466,7 @@ class CounterService
                 } else {
                     // No existing balance at all - create new
                     TillBalance::create([
-                        'till_id' => (string) $session->counter_id,
+                        'till_id' => $this->counterCode($session),
                         'currency_code' => $currencyCode,
                         'opening_balance' => $closingBalance,
                         'date' => $today,
@@ -578,5 +578,13 @@ class CounterService
         }
 
         return $resolved;
+    }
+
+    /**
+     * Resolve the counter code for a session so till balances are keyed by code.
+     */
+    private function counterCode(CounterSession $session): string
+    {
+        return Counter::find($session->counter_id)?->code ?? (string) $session->counter_id;
     }
 }

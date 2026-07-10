@@ -5,9 +5,11 @@ namespace Tests\Unit;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
+use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Branch\TillBalanceManager;
 use App\Services\Transaction\TransactionReversalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -199,5 +201,48 @@ class TransactionReversalServiceTest extends TestCase
 
         $this->assertIsInt($hours);
         $this->assertGreaterThan(0, $hours);
+    }
+
+    #[Test]
+    public function reversing_sell_transaction_restores_till_balance(): void
+    {
+        $branch = $this->createTestBranch();
+        $till = $this->createTestCounter(['branch_id' => $branch->id]);
+        $user = User::factory()->create();
+        $manager = app(TillBalanceManager::class);
+        $currencyCode = 'USD';
+        $amountForeign = '500.00';
+        $amountLocal = '2250.00';
+        $rate = '4.50';
+
+        Currency::factory()->create(['code' => $currencyCode]);
+
+        // Simulate the till state after the original Sell transaction.
+        $foreignBalance = $manager->openBalance($till, $currencyCode, $user->id);
+        $manager->adjustBalance($foreignBalance, 'sell_total_foreign', $amountForeign, 'add');
+
+        $myrBalance = $manager->openBalance($till, 'MYR', $user->id);
+        $manager->adjustBalance($myrBalance, 'transaction_total', $amountLocal, 'add');
+
+        $transaction = Transaction::factory()->create([
+            'branch_id' => $branch->id,
+            'till_id' => $till->code,
+            'type' => TransactionType::Sell,
+            'currency_code' => $currencyCode,
+            'amount_foreign' => $amountForeign,
+            'amount_local' => $amountLocal,
+            'rate' => $rate,
+            'status' => TransactionStatus::Completed,
+            'created_at' => now(),
+        ]);
+
+        $this->service->reverse($transaction, $user, 'Regression test reversal');
+
+        $foreignBalance->refresh();
+        $myrBalance->refresh();
+
+        $this->assertEquals('0.0000', (string) $foreignBalance->sell_total_foreign);
+        $this->assertEquals('500.0000', (string) $foreignBalance->foreign_total);
+        $this->assertEquals('0.0000', (string) $myrBalance->transaction_total);
     }
 }

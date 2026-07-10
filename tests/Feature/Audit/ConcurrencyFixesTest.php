@@ -176,7 +176,7 @@ class ConcurrencyFixesTest extends TestCase
         foreach ($amounts as $amountForeign) {
             $service->createTransaction([
                 'customer_id' => $customer->id,
-                'till_id' => $counter->id,
+                'till_id' => $counter->code,
                 'type' => TransactionType::Sell->value,
                 'currency_code' => 'USD',
                 'amount_foreign' => $amountForeign,

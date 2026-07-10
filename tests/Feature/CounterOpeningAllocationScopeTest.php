@@ -97,7 +97,7 @@ class CounterOpeningAllocationScopeTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('till_balances', [
-            'till_id' => (string) $counter->id,
+            'till_id' => (string) $counter->code,
             'currency_code' => 'EUR',
             'opening_balance' => '1000.00',
         ]);
