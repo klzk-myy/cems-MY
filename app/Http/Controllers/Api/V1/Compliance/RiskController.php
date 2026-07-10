@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Compliance;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\LockRiskProfileRequest;
 use App\Models\Compliance\CustomerRiskProfile;
@@ -10,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 
 class RiskController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected RiskScoringEngine $engine
     ) {}
@@ -21,10 +24,7 @@ class RiskController extends Controller
     {
         $profile = $this->findProfileOrFail($customerId);
 
-        return response()->json([
-            'success' => true,
-            'data' => $profile,
-        ]);
+        return $this->successResponse($profile, 'Risk profile retrieved successfully.');
     }
 
     /**
@@ -52,10 +52,7 @@ class RiskController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $history,
-        ]);
+        return $this->successResponse($history, 'Risk score history retrieved successfully.');
     }
 
     /**
@@ -65,11 +62,7 @@ class RiskController extends Controller
     {
         $profile = $this->engine->recalculateForCustomer((int) $customerId);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Risk score recalculated.',
-            'data' => $profile,
-        ]);
+        return $this->successResponse($profile, 'Risk score recalculated.');
     }
 
     /**
@@ -83,11 +76,7 @@ class RiskController extends Controller
 
         $profile->lock(auth()->id(), $validated['reason']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Risk profile locked.',
-            'data' => $profile,
-        ]);
+        return $this->successResponse($profile, 'Risk profile locked.');
     }
 
     /**
@@ -99,11 +88,7 @@ class RiskController extends Controller
 
         $profile->unlock();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Risk profile unlocked.',
-            'data' => $profile,
-        ]);
+        return $this->successResponse($profile, 'Risk profile unlocked.');
     }
 
     /**
@@ -118,13 +103,10 @@ class RiskController extends Controller
             ->map(fn ($count) => (int) $count)
             ->all();
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'total' => CustomerRiskProfile::query()->count(),
-                'by_tier' => $distribution,
-            ],
-        ]);
+        return $this->successResponse([
+            'total' => CustomerRiskProfile::query()->count(),
+            'by_tier' => $distribution,
+        ], 'Risk portfolio overview retrieved successfully.');
     }
 
     private function findProfileOrFail(string $customerId): CustomerRiskProfile
