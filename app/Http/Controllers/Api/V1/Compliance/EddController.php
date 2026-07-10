@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Enums\EddStatus;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\EddIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\RejectEddRequest;
@@ -13,6 +14,8 @@ use Illuminate\Http\JsonResponse;
 
 class EddController extends Controller
 {
+    use ApiResponse;
+
     /**
      * List EDD records with filtering.
      */
@@ -30,10 +33,7 @@ class EddController extends Controller
         $perPage = $request->get('per_page', 20);
         $records = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $records,
-        ]);
+        return $this->successResponse($records, 'EDD records retrieved successfully.');
     }
 
     /**
@@ -44,10 +44,7 @@ class EddController extends Controller
         $record = EnhancedDiligenceRecord::with(['customer', 'flaggedTransaction'])
             ->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $record,
-        ]);
+        return $this->successResponse($record, 'EDD record retrieved successfully.');
     }
 
     /**
@@ -59,10 +56,7 @@ class EddController extends Controller
             ->orderBy('name')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $templates,
-        ]);
+        return $this->successResponse($templates, 'EDD templates retrieved successfully.');
     }
 
     /**
@@ -75,10 +69,7 @@ class EddController extends Controller
         $record = EnhancedDiligenceRecord::findOrFail($id);
 
         if (! $record->status->canSubmitQuestionnaire()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot submit questionnaire in current status.',
-            ], 422);
+            return $this->errorResponse('Cannot submit questionnaire in current status.', [], 422);
         }
 
         $record->update([
@@ -88,11 +79,7 @@ class EddController extends Controller
             'status' => EddStatus::QuestionnaireSubmitted,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Questionnaire submitted successfully.',
-            'data' => $record->fresh(),
-        ]);
+        return $this->successResponse($record->fresh(), 'Questionnaire submitted successfully.');
     }
 
     /**
@@ -108,11 +95,7 @@ class EddController extends Controller
             'approved_at' => now(),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'EDD record approved.',
-            'data' => $record,
-        ]);
+        return $this->successResponse($record, 'EDD record approved.');
     }
 
     /**
@@ -131,10 +114,6 @@ class EddController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'EDD record rejected.',
-            'data' => $record,
-        ]);
+        return $this->successResponse($record, 'EDD record rejected.');
     }
 }
