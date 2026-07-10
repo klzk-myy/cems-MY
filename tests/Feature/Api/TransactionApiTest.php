@@ -2,14 +2,18 @@
 
 namespace Tests\Feature\Api;
 
+use App\Enums\CddLevel;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
+use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\Transaction\TransactionService;
+use App\Services\Contracts\TransactionCreationServiceInterface;
+use App\Services\Contracts\TransactionValidationInterface;
+use App\Services\DTOs\PreValidationResult;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -21,37 +25,54 @@ class TransactionApiTest extends TestCase
     #[Test]
     public function store_returns_transaction_resource()
     {
-        $transaction = Transaction::factory()->create();
+        $branch = Branch::factory()->create();
+        $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
+        $counter = Counter::factory()->create(['code' => 'MAIN', 'branch_id' => $branch->id]);
+        $customer = Customer::factory()->create();
+        $tillBalance = TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => $currency->code,
+            'branch_id' => $branch->id,
+        ]);
+        $admin = User::factory()->create(['role' => 'admin', 'mfa_enabled' => false]);
 
-        $transactionService = $this->mock(TransactionService::class);
-        $transactionService->shouldReceive('createTransaction')
-            ->once()
-            ->with(
-                \Mockery::on(function ($data) {
-                    return isset($data['customer_id']) && isset($data['currency_code']);
-                }),
-                \Mockery::any(),
-                \Mockery::any()
-            )
-            ->andReturn($transaction);
-
-        $teller = User::factory()->create([
-            'role' => 'teller',
-            'mfa_enabled' => false,
+        $transaction = Transaction::factory()->create([
+            'customer_id' => $customer->id,
+            'currency_code' => $currency->code,
+            'till_id' => $counter->code,
+            'branch_id' => $branch->id,
         ]);
 
-        Counter::factory()->create(['code' => 'MAIN']);
+        $validationResult = new PreValidationResult;
+        $validationResult->setCDDLevel(CddLevel::Simplified);
+        $validationResult->setHoldRequired(false);
 
-        $response = $this->actingAs($teller)
+        $validationService = $this->mock(TransactionValidationInterface::class);
+        $validationService->shouldReceive('validateCurrency')->once();
+        $validationService->shouldReceive('validateIpAddress')->once();
+        $validationService->shouldReceive('validateTillBalance')
+            ->once()
+            ->andReturn($tillBalance);
+        $validationService->shouldReceive('validatePepRequirements')->once();
+        $validationService->shouldReceive('preValidate')
+            ->once()
+            ->andReturn($validationResult);
+
+        $creationService = $this->mock(TransactionCreationServiceInterface::class);
+        $creationService->shouldReceive('create')
+            ->once()
+            ->andReturn($transaction);
+
+        $response = $this->actingAs($admin)
             ->postJson('/api/v1/transactions', [
-                'customer_id' => $transaction->customer_id,
+                'customer_id' => $customer->id,
                 'type' => 'Buy',
-                'currency_code' => $transaction->currency_code,
+                'currency_code' => $currency->code,
                 'amount_foreign' => $transaction->amount_foreign,
                 'rate' => $transaction->rate,
                 'purpose' => $transaction->purpose,
                 'source_of_funds' => $transaction->source_of_funds,
-                'till_id' => $transaction->till_id,
+                'till_id' => $counter->code,
             ]);
 
         $response->assertStatus(201)
