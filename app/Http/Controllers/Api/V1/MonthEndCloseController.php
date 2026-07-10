@@ -32,11 +32,9 @@ class MonthEndCloseController extends Controller
 
             return $this->successResponse($results);
         } catch (MonthEndPreCheckFailedException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pre-flight checks failed',
+            return $this->errorResponse('Pre-flight checks failed', [], 422, [
                 'failures' => $e->getFailures(),
-            ], 422);
+            ]);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), [], 500);
         }

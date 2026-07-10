@@ -56,6 +56,7 @@ class SanctionListController extends Controller
 
         $entries = $query->paginate($perPage);
 
+        // Legacy non-standard envelope (data/meta); preserved to avoid breaking API consumers.
         return response()->json([
             'data' => $entries->map(fn ($entry) => [
                 'id' => $entry->id,
@@ -93,12 +94,12 @@ class SanctionListController extends Controller
                 'records_deactivated' => $result['deactivated'],
             ]);
         } catch (\Exception $e) {
-            return response()->json([
+            return $this->errorResponse('Import failed', [], 500, [
                 'data' => [
                     'status' => 'failed',
                     'error' => $e->getMessage(),
                 ],
-            ], 500);
+            ]);
         }
     }
 

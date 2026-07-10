@@ -33,11 +33,9 @@ class BranchClosingController extends Controller
 
         $existingWorkflow = $this->branchClosingService->getActiveWorkflow($branch);
         if ($existingWorkflow) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An active closure workflow already exists for this branch',
+            return $this->errorResponse('An active closure workflow already exists for this branch', [], 400, [
                 'data' => $existingWorkflow,
-            ], 400);
+            ]);
         }
 
         $workflow = $this->branchClosingService->initiateClosure($branch, $user);

@@ -35,9 +35,7 @@ class BranchController extends Controller
         $perPage = $request->get('per_page', 20);
         $branches = Branch::orderBy('code')->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $branches->items(),
+        return $this->successResponse($branches->items(), 'Branches retrieved successfully.', 200, [
             'current_page' => $branches->currentPage(),
             'per_page' => $branches->perPage(),
             'total' => $branches->total(),

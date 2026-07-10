@@ -25,6 +25,8 @@ class SanctionController extends Controller
 
         $response = $this->screeningService->screenName($validated['name']);
 
+        // Legacy non-standard envelope (query/matches/count/action/confidence_score);
+        // preserved to avoid breaking API consumers.
         return response()->json([
             'success' => true,
             'query' => $validated['name'],

@@ -42,9 +42,7 @@ class CounterApiController extends Controller
                 $validated['notes'] ?? null
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Counter closed successfully',
+            return $this->successResponse(null, 'Counter closed successfully', 200, [
                 'session' => $result['session'] ?? $session->fresh(),
             ]);
         } catch (SessionClosedException $e) {
