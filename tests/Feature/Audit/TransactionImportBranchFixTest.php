@@ -16,9 +16,9 @@ class TransactionImportBranchFixTest extends TestCase
 
         $content = file_get_contents($file);
         $this->assertStringContainsString(
-            'getPositionWithLock',
+            'CurrencyPositionLockService',
             $content,
-            'Should use getPositionWithLock for stock check'
+            'Should use CurrencyPositionLockService for stock check'
         );
         $this->assertStringContainsString(
             '$tillBalance->branch_id',

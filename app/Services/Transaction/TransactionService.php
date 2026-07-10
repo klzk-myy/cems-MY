@@ -15,13 +15,13 @@ use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Http\Traits\ValidatorMethods;
 use App\Models\Counter;
-use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\AuditService;
@@ -67,6 +67,7 @@ class TransactionService implements TransactionServiceInterface
         protected TransactionHoldServiceInterface $holdService,
         protected TransactionIdempotencyServiceInterface $idempotencyService,
         protected TransactionStatusServiceInterface $statusService,
+        protected CurrencyPositionLockService $positionLockService,
     ) {}
 
     /**
@@ -292,14 +293,15 @@ class TransactionService implements TransactionServiceInterface
             }
 
             // STEP 3: Acquire position lock (only for actual new transactions)
-            // For Sell transactions, also verify sufficient stock immediately after lock
+            // For Sell transactions, getAvailableBalance() locks the row and returns
+            // '0' when no position exists, so a zero-balance row is not created.
+            // For Buy transactions, lock() is used because the position will be written.
             if ($data['type'] === TransactionType::Sell->value) {
-                $this->positionService->getPositionWithLock($data['currency_code'], $tillBalance->branch_id);
-
                 $availableBalance = $this->positionService->getAvailableBalance(
                     $data['currency_code'],
                     $tillBalance->branch_id
                 );
+
                 if ($this->mathService->compare($availableBalance, $amountForeign) < 0) {
                     throw new InsufficientStockException(
                         $data['currency_code'],
@@ -308,7 +310,7 @@ class TransactionService implements TransactionServiceInterface
                     );
                 }
             } elseif ($data['type'] === TransactionType::Buy->value) {
-                $this->positionService->getPositionWithLock($data['currency_code'], $tillBalance->branch_id);
+                $this->positionLockService->lock($tillBalance->branch_id, $data['currency_code']);
             }
 
             $transaction = Transaction::create([
@@ -605,9 +607,10 @@ class TransactionService implements TransactionServiceInterface
                 // EDGE CASE VALIDATION: Verify position still exists (for Sell transactions)
                 // Position could have been deleted between transaction creation and approval
                 if ($lockedTransaction->type->isSell()) {
-                    $position = CurrencyPosition::where('currency_code', $lockedTransaction->currency_code)
-                        ->where('branch_id', $lockedTransaction->branch_id)
-                        ->first();
+                    $position = $this->positionLockService->findForUpdate(
+                        (string) $lockedTransaction->branch_id,
+                        $lockedTransaction->currency_code
+                    );
 
                     if (! $position) {
                         throw new \RuntimeException(

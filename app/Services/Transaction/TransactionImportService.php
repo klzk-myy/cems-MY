@@ -12,6 +12,7 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\TransactionImport;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
@@ -33,7 +34,8 @@ class TransactionImportService
         protected ComplianceService $complianceService,
         protected CurrencyPositionService $positionService,
         protected AccountingService $accountingService,
-        protected TransactionMonitoringService $monitoringService
+        protected TransactionMonitoringService $monitoringService,
+        protected CurrencyPositionLockService $positionLockService,
     ) {
         $this->import = $import;
     }
@@ -203,14 +205,15 @@ class TransactionImportService
                     }
                 }
 
-                // For sell transactions, check stock availability with lock
+                // For sell transactions, check stock availability with findForUpdate()
+                // so a zero-balance row is not created when there is no position yet.
                 if ($data['type'] === TransactionType::Sell->value) {
-                    $position = $this->positionService->getPositionWithLock(
-                        $data['currency_code'],
-                        $tillBalance->branch_id
+                    $position = $this->positionLockService->findForUpdate(
+                        $tillBalance->branch_id,
+                        $data['currency_code']
                     );
 
-                    if (! $position || $this->mathService->compare($position->balance, $amountForeign) < 0) {
+                    if ($position === null || $this->mathService->compare($position->balance, $amountForeign) < 0) {
                         $availableBalance = $position ? $position->balance : '0';
                         throw new \Exception("Insufficient stock. Available: {$availableBalance} {$data['currency_code']}");
                     }

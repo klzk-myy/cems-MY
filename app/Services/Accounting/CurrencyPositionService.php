@@ -13,7 +13,6 @@ use App\Models\User;
 use App\Services\Contracts\CurrencyPositionServiceInterface;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -26,6 +25,11 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     protected MathService $mathService;
 
     /**
+     * Lock service instance for pessimistic position locking.
+     */
+    protected CurrencyPositionLockService $lockService;
+
+    /**
      * Precision for position calculations (4 decimals for rates/balances)
      */
     protected int $positionPrecision = 4;
@@ -34,10 +38,12 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * Create a new CurrencyPositionService instance.
      *
      * @param  MathService  $mathService  Math service for high-precision calculations
+     * @param  CurrencyPositionLockService  $lockService  Lock service for pessimistic position locking
      */
-    public function __construct(MathService $mathService)
+    public function __construct(MathService $mathService, CurrencyPositionLockService $lockService)
     {
         $this->mathService = $mathService;
+        $this->lockService = $lockService;
         $this->positionPrecision = (int) config('thresholds.rates.precision', 4);
     }
 
@@ -65,23 +71,13 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         string $branchId = 'HQ'
     ): CurrencyPosition {
         $position = DB::transaction(function () use ($currencyCode, $amount, $rate, $type, $branchId) {
-            // Lock the position row for update to prevent race conditions on concurrent sells
-            $position = CurrencyPosition::where('currency_code', $currencyCode)
-                ->where('branch_id', $branchId)
-                ->lockForUpdate()
-                ->first();
-
-            // Create position if it doesn't exist (race-safe)
-            if ($position === null) {
-                $position = $this->getOrCreatePosition((int) $branchId, $currencyCode, $rate);
-            }
-
-            $oldBalance = $position->quantity;
-            $oldAvgCost = $position->average_cost;
-
             if ($type === TransactionType::Buy->value) {
-                // Buying foreign currency - increase position
-                $newBalance = $this->mathService->add($oldBalance, $amount);
+                // Buying foreign currency - lock or create the position
+                $position = $this->lockService->lock($branchId, $currencyCode);
+
+                $oldBalance = $position->quantity;
+                $oldAvgCost = $position->average_cost;
+
                 if ($this->mathService->compare($oldBalance, '0') > 0) {
                     $newAvgCost = $this->mathService->calculateAverageCost(
                         $oldBalance,
@@ -92,25 +88,34 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 } else {
                     $newAvgCost = $rate;
                 }
+
+                $position = $this->lockService->adjust($position, $amount, 'add');
             } else {
-                // Selling foreign currency - decrease position
-                // Check for sufficient balance - prevent negative positions
-                if ($this->mathService->compare($oldBalance, '0') <= 0) {
+                // Selling foreign currency - only lock an existing position; do not
+                // create a zero-quantity row when no position exists.
+                $position = $this->lockService->findForUpdate($branchId, $currencyCode);
+
+                if ($position === null || $this->mathService->compare($position->quantity, '0') <= 0) {
                     throw new \InvalidArgumentException(
                         'Cannot sell: Position is empty or negative'
                     );
                 }
-                if ($this->mathService->compare($oldBalance, $amount) < 0) {
+
+                if ($this->mathService->compare($position->quantity, $amount) < 0) {
                     throw new \InvalidArgumentException(
-                        "Insufficient balance. Available: {$oldBalance}, Requested: {$amount}"
+                        "Insufficient balance. Available: {$position->quantity}, Requested: {$amount}"
                     );
                 }
-                $newBalance = $this->mathService->subtract($oldBalance, $amount);
+
+                $oldAvgCost = $position->average_cost;
                 $newAvgCost = $oldAvgCost; // Cost basis doesn't change on sale
+
+                $position = $this->lockService->adjust($position, $amount, 'subtract');
             }
 
+            $newBalance = $position->quantity;
+
             $position->update([
-                'quantity' => $this->mathService->round($newBalance, $this->positionPrecision),
                 'average_cost' => $this->mathService->round($newAvgCost, $this->positionPrecision),
                 'current_rate' => $this->mathService->round($rate, $this->positionPrecision),
                 'unrealized_gain_loss' => $this->mathService->round(
@@ -133,29 +138,17 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     public function getOrCreatePosition(int $branchId, string $currencyCode, string $rate): CurrencyPosition
     {
         return DB::transaction(function () use ($branchId, $currencyCode, $rate) {
-            $position = CurrencyPosition::where('currency_code', $currencyCode)
-                ->where('branch_id', $branchId)
-                ->lockForUpdate()
-                ->first();
+            $position = $this->lockService->lock((string) $branchId, $currencyCode);
 
-            if ($position) {
-                return $position;
-            }
-
-            try {
-                return CurrencyPosition::create([
-                    'currency_code' => $currencyCode,
-                    'branch_id' => $branchId,
-                    'quantity' => '0',
+            if ($position->wasRecentlyCreated) {
+                $position->update([
                     'average_cost' => $rate,
                     'current_rate' => $rate,
                 ]);
-            } catch (UniqueConstraintViolationException $e) {
-                return CurrencyPosition::where('currency_code', $currencyCode)
-                    ->where('branch_id', $branchId)
-                    ->lockForUpdate()
-                    ->firstOrFail();
+                $position->refresh();
             }
+
+            return $position;
         });
     }
 
@@ -172,10 +165,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      */
     public function getPositionWithLock(string $currencyCode, string $branchId): ?CurrencyPosition
     {
-        return CurrencyPosition::where('currency_code', $currencyCode)
-            ->where('branch_id', $branchId)
-            ->lockForUpdate()
-            ->first();
+        return $this->lockService->findForUpdate($branchId, $currencyCode);
     }
 
     /**
@@ -406,10 +396,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     public function getAvailableBalance(string $currencyCode, string $locationId): string
     {
         return DB::transaction(function () use ($currencyCode, $locationId) {
-            $position = CurrencyPosition::where('currency_code', $currencyCode)
-                ->where('branch_id', $locationId)
-                ->lockForUpdate()
-                ->first();
+            $position = $this->lockService->findForUpdate($locationId, $currencyCode);
             $quantity = $position ? $position->quantity : '0';
 
             $reserved = StockReservation::where('currency_code', $currencyCode)

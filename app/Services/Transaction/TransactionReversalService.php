@@ -5,13 +5,13 @@ namespace App\Services\Transaction;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Counter;
-use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\JournalEntry;
 use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
@@ -30,6 +30,7 @@ class TransactionReversalService
         protected ComplianceService $complianceService,
         protected CurrencyPositionService $positionService,
         protected TellerAllocationService $tellerAllocationService,
+        protected CurrencyPositionLockService $positionLockService,
     ) {}
 
     public function reverse(Transaction $transaction, User $requester, string $reason): bool
@@ -174,10 +175,10 @@ class TransactionReversalService
 
     public function reversePositions(Transaction $transaction): void
     {
-        $position = CurrencyPosition::where('currency_code', $transaction->currency_code)
-            ->where('branch_id', $transaction->branch_id)
-            ->lockForUpdate()
-            ->first();
+        $position = $this->positionLockService->findForUpdate(
+            $transaction->branch_id,
+            $transaction->currency_code
+        );
 
         if (! $position) {
             Log::warning('No position found for reversal', [

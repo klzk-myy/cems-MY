@@ -20,6 +20,7 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\LedgerService;
 use App\Services\AuditService;
@@ -78,7 +79,7 @@ class TransactionAccountingVerificationTest extends TestCase
 
         $this->accountingService = new AccountingService($this->mathService, $auditService);
         $this->ledgerService = new LedgerService($this->mathService, $this->accountingService);
-        $this->positionService = new CurrencyPositionService($this->mathService);
+        $this->positionService = new CurrencyPositionService($this->mathService, new CurrencyPositionLockService($this->mathService));
 
         $this->transactionService = resolve(TransactionService::class);
 

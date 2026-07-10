@@ -8,6 +8,7 @@ use App\Models\CurrencyPosition;
 use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -208,7 +209,7 @@ class CurrencyPositionServiceTest extends TestCase
             'created_by' => $teller->id,
         ]);
 
-        $positionService = new CurrencyPositionService(new MathService);
+        $positionService = new CurrencyPositionService(new MathService, new CurrencyPositionLockService(new MathService));
         $result = $positionService->consumeStockReservation($transaction->id);
 
         $this->assertNull($result);
@@ -255,7 +256,7 @@ class CurrencyPositionServiceTest extends TestCase
             'created_by' => $teller->id,
         ]);
 
-        $positionService = new CurrencyPositionService(new MathService);
+        $positionService = new CurrencyPositionService(new MathService, new CurrencyPositionLockService(new MathService));
         $result = $positionService->consumeStockReservation($transaction->id);
 
         $this->assertNotNull($result);
@@ -291,7 +292,7 @@ class CurrencyPositionServiceTest extends TestCase
             'created_by' => $teller->id,
         ]);
 
-        $positionService = new CurrencyPositionService(new MathService);
+        $positionService = new CurrencyPositionService(new MathService, new CurrencyPositionLockService(new MathService));
         $result = $positionService->releaseStockReservation($transaction->id);
 
         // Expired reservations can be released (used by the expire command)
