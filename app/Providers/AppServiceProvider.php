@@ -4,11 +4,15 @@ namespace App\Providers;
 
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\Contracts\TransactionApprovalServiceInterface;
+use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionHoldServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Contracts\TransactionStatusServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
+use App\Services\Transaction\TransactionApprovalService;
+use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionHoldService;
 use App\Services\Transaction\TransactionIdempotencyService;
 use App\Services\Transaction\TransactionService;
@@ -52,6 +56,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             TransactionValidationInterface::class,
             TransactionValidationService::class
+        );
+
+        $this->app->bind(
+            TransactionCreationServiceInterface::class,
+            TransactionCreationService::class
+        );
+
+        $this->app->bind(
+            TransactionApprovalServiceInterface::class,
+            TransactionApprovalService::class
         );
     }
 
