@@ -8,9 +8,9 @@ use App\Enums\UserRole;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\DeferredAccountingReconciliationFailedNotification;
+use App\Services\Accounting\TransactionAccountingService;
 use App\Services\AuditService;
 use App\Services\System\MathService;
-use App\Services\Transaction\TransactionService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -49,7 +49,7 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
      */
     public function __construct(
         protected MathService $mathService,
-        protected TransactionService $transactionService,
+        protected TransactionAccountingService $transactionAccountingService,
         protected AuditService $auditService,
     ) {}
 
@@ -176,8 +176,8 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
         }
 
         try {
-            // Call the TransactionService to create deferred accounting entries
-            $this->transactionService->createDeferredAccountingEntries($transaction->id);
+            // Create the deferred accounting entries directly through the accounting service
+            $this->transactionAccountingService->createDeferredAccountingEntries($transaction->id);
 
             // Audit log for the reconciliation
             $this->auditService->logWithSeverity(
