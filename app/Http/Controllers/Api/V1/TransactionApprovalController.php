@@ -20,13 +20,6 @@ class TransactionApprovalController extends Controller
 
     /**
      * Approve a pending transaction.
-     *
-     * This method delegates to TransactionService::approveTransaction() which handles:
-     * - Status transition from Pending to Completed
-     * - Position and till balance updates
-     * - Double-entry accounting journal entries
-     * - AML/Compliance monitoring before approval
-     * - Audit logging
      */
     public function approve(Request $request, int $transactionId): JsonResponse
     {
