@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Compliance;
 
 use App\Enums\AlertPriority;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\AlertIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\BulkAssignAlertRequest;
@@ -13,6 +14,8 @@ use Illuminate\Http\JsonResponse;
 
 class AlertController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected AlertTriageService $alertTriageService
     ) {}
@@ -46,10 +49,7 @@ class AlertController extends Controller
             ->orderByDesc('risk_score')
             ->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $alerts,
-        ]);
+        return $this->successResponse($alerts, 'Alerts retrieved successfully.');
     }
 
     /**
@@ -65,10 +65,7 @@ class AlertController extends Controller
             'case',
         ])->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $alert,
-        ]);
+        return $this->successResponse($alert, 'Alert retrieved successfully.');
     }
 
     /**
@@ -83,11 +80,14 @@ class AlertController extends Controller
             $validated['user_id']
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => "Bulk assign completed: {$results['success']} succeeded, {$results['failed']} failed",
-            'results' => $results,
-        ], $results['failed'] > 0 ? 207 : 200);
+        $code = $results['failed'] > 0 ? 207 : 200;
+
+        return $this->successResponse(
+            null,
+            "Bulk assign completed: {$results['success']} succeeded, {$results['failed']} failed",
+            $code,
+            ['results' => $results]
+        );
     }
 
     /**
@@ -103,11 +103,14 @@ class AlertController extends Controller
             $validated['notes'] ?? null
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => "Bulk resolve completed: {$results['success']} succeeded, {$results['failed']} failed",
-            'results' => $results,
-        ], $results['failed'] > 0 ? 207 : 200);
+        $code = $results['failed'] > 0 ? 207 : 200;
+
+        return $this->successResponse(
+            null,
+            "Bulk resolve completed: {$results['success']} succeeded, {$results['failed']} failed",
+            $code,
+            ['results' => $results]
+        );
     }
 
     /**
@@ -117,10 +120,7 @@ class AlertController extends Controller
     {
         $summary = $this->alertTriageService->getQueueSummary();
 
-        return response()->json([
-            'success' => true,
-            'data' => $summary,
-        ]);
+        return $this->successResponse($summary, 'Alert queue summary retrieved successfully.');
     }
 
     /**
@@ -147,10 +147,8 @@ class AlertController extends Controller
             })
             ->get();
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse($alerts, 'Overdue alerts retrieved successfully.', 200, [
             'count' => $alerts->count(),
-            'data' => $alerts,
         ]);
     }
 
@@ -161,9 +159,7 @@ class AlertController extends Controller
     {
         $assigned = $this->alertTriageService->autoAssignAlerts();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Auto-assignment completed.',
+        return $this->successResponse(null, 'Auto-assignment completed.', 200, [
             'assigned_count' => count($assigned),
         ]);
     }
