@@ -107,4 +107,60 @@ class ApiResponseTest extends TestCase
         ], $response->getData(true));
         Log::shouldNotHaveReceived('error');
     }
+
+    public function test_success_response_includes_meta_keys(): void
+    {
+        $response = $this->successResponse(['id' => 1], 'Created', 201, [
+            'generated_at' => '2026-07-10T00:00:00+00:00',
+            'pagination' => ['current_page' => 1],
+        ]);
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertEquals(201, $response->getStatusCode());
+        $this->assertEquals([
+            'success' => true,
+            'message' => 'Created',
+            'data' => ['id' => 1],
+            'generated_at' => '2026-07-10T00:00:00+00:00',
+            'pagination' => ['current_page' => 1],
+        ], $response->getData(true));
+    }
+
+    public function test_error_response_includes_meta_keys(): void
+    {
+        $response = $this->errorResponse('Validation failed', ['field' => ['required']], 422, [
+            'failures' => ['check_a', 'check_b'],
+        ]);
+
+        $this->assertEquals(422, $response->getStatusCode());
+        $this->assertEquals([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => ['field' => ['required']],
+            'failures' => ['check_a', 'check_b'],
+        ], $response->getData(true));
+    }
+
+    public function test_resource_with_success_preserves_resource_type(): void
+    {
+        $resource = new JsonResource(['id' => 1]);
+
+        $result = $this->resourceWithSuccess($resource, 'OK');
+
+        $this->assertInstanceOf(JsonResource::class, $result);
+        $this->assertSame($resource, $result);
+    }
+
+    public function test_resource_with_success_adds_envelope_and_meta(): void
+    {
+        $resource = new JsonResource(['id' => 1]);
+
+        $result = $this->resourceWithSuccess($resource, 'OK', ['transaction_stats' => ['total' => 5]]);
+
+        $this->assertEquals([
+            'success' => true,
+            'message' => 'OK',
+            'transaction_stats' => ['total' => 5],
+        ], $result->additional);
+    }
 }
