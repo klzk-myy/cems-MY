@@ -20,7 +20,6 @@ use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionMonitoringService;
-use App\Services\Transaction\TransactionService;
 use App\Services\Transaction\TransactionStateMachine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +29,6 @@ use Illuminate\View\View;
 class TransactionApprovalController extends Controller
 {
     public function __construct(
-        protected TransactionService $transactionService,
         protected TransactionApprovalService $approvalService,
         protected CurrencyPositionService $positionService,
         protected ComplianceService $complianceService,
