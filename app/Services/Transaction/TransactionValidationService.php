@@ -21,6 +21,7 @@ use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\CustomerScreeningService;
 use App\Services\DTOs\PreValidationResult;
 use App\Services\DTOs\SanctionCheckResult;
+use App\Services\Security\IpValidationService;
 use App\Services\ThresholdService;
 
 class TransactionValidationService implements TransactionValidationInterface
@@ -68,7 +69,7 @@ class TransactionValidationService implements TransactionValidationInterface
 
     public function validateIpAddress(?string $ipAddress): void
     {
-        if ($ipAddress && ! filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+        if ($ipAddress && ! app(IpValidationService::class)->isValidIp($ipAddress)) {
             throw new InvalidIpAddressException($ipAddress);
         }
     }

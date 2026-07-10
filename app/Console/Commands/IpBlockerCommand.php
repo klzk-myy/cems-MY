@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Services\Security\IpValidationService;
 use App\Services\System\RateLimitService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -343,6 +344,8 @@ class IpBlockerCommand extends Command
             return false;
         }
 
+        $ipValidationService = app(IpValidationService::class);
+
         // Check if CIDR notation
         if (str_contains($value, '/')) {
             $parts = explode('/', $value);
@@ -350,7 +353,10 @@ class IpBlockerCommand extends Command
                 return false;
             }
             [$ip, $mask] = $parts;
-            if (! filter_var($ip, FILTER_VALIDATE_IP)) {
+            if (! $ipValidationService->isValidIp($ip)) {
+                return false;
+            }
+            if (! is_numeric($mask)) {
                 return false;
             }
             $maskInt = (int) $mask;
@@ -361,6 +367,6 @@ class IpBlockerCommand extends Command
             return true;
         }
 
-        return filter_var($value, FILTER_VALIDATE_IP) !== false;
+        return $ipValidationService->isValidIp($value);
     }
 }

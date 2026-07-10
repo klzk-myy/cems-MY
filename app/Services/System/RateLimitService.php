@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\System;
 
+use App\Services\Security\IpValidationService;
 use Illuminate\Cache\RedisStore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -59,24 +60,11 @@ class RateLimitService
      */
     private function isIpWhitelisted(string $ip, array $whitelist): bool
     {
-        foreach ($whitelist as $entry) {
-            $entry = trim($entry);
-            if (empty($entry)) {
-                continue;
-            }
-
-            // Check if CIDR notation
-            if (str_contains($entry, '/')) {
-                if ($this->ipInCidr($ip, $entry)) {
-                    return true;
-                }
-            } elseif ($entry === $ip) {
-                // Exact match
-                return true;
-            }
+        if ($whitelist === []) {
+            return false;
         }
 
-        return false;
+        return app(IpValidationService::class)->isAllowed($ip, $whitelist, []);
     }
 
     /**
@@ -84,30 +72,7 @@ class RateLimitService
      */
     public function ipInCidr(string $ip, string $cidr): bool
     {
-        if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            return false;
-        }
-
-        $parts = explode('/', $cidr, 2);
-        if (count($parts) !== 2) {
-            return false;
-        }
-
-        [$subnet, $mask] = $parts;
-
-        if (! filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            return false;
-        }
-
-        if (! is_numeric($mask) || $mask < 0 || $mask > 32) {
-            return false;
-        }
-
-        $ipLong = ip2long($ip);
-        $subnetLong = ip2long($subnet);
-        $maskLong = -1 << (32 - (int) $mask);
-
-        return ($ipLong & $maskLong) === ($subnetLong & $maskLong);
+        return app(IpValidationService::class)->ipInCidr($ip, $cidr);
     }
 
     /**

@@ -2,6 +2,8 @@
 
 namespace App\Http\Traits;
 
+use App\Services\Security\IpValidationService;
+
 trait ValidatorMethods
 {
     protected function validateCurrencyCode(string $currencyCode): void
@@ -13,7 +15,7 @@ trait ValidatorMethods
 
     protected function validateIpAddress(?string $ipAddress): void
     {
-        if ($ipAddress && ! filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+        if ($ipAddress && ! app(IpValidationService::class)->isValidIp($ipAddress)) {
             throw new \InvalidArgumentException("Invalid IP address: {$ipAddress}");
         }
     }
