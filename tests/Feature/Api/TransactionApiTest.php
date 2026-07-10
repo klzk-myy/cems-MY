@@ -40,6 +40,8 @@ class TransactionApiTest extends TestCase
             'mfa_enabled' => false,
         ]);
 
+        Counter::factory()->create(['code' => 'MAIN']);
+
         $response = $this->actingAs($teller)
             ->postJson('/api/v1/transactions', [
                 'customer_id' => $transaction->customer_id,
