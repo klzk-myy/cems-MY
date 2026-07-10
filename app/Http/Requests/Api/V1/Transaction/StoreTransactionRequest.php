@@ -3,6 +3,10 @@
 namespace App\Http\Requests\Api\V1\Transaction;
 
 use App\Http\Requests\ApiFormRequest;
+use App\Rules\ValidAmountForeign;
+use App\Rules\ValidCurrencyCode;
+use App\Rules\ValidRate;
+use App\Rules\ValidTill;
 
 class StoreTransactionRequest extends ApiFormRequest
 {
@@ -16,12 +20,12 @@ class StoreTransactionRequest extends ApiFormRequest
         return [
             'customer_id' => 'required|exists:customers,id',
             'type' => ['required', 'in:Buy,Sell'],
-            'currency_code' => 'required|exists:currencies,code',
-            'amount_foreign' => 'required|numeric|min:0.01|max:9999999999.9999',
-            'rate' => 'required|numeric|min:0.0001|max:999999',
+            'currency_code' => ['required', 'string', new ValidCurrencyCode],
+            'amount_foreign' => ['required', new ValidAmountForeign],
+            'rate' => ['required', new ValidRate],
             'purpose' => 'required|string|max:255',
             'source_of_funds' => 'required|string|max:255',
-            'till_id' => 'required|string',
+            'till_id' => ['required', 'string', new ValidTill],
             'idempotency_key' => 'nullable|string|max:100',
         ];
     }
