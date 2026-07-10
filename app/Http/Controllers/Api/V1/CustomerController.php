@@ -65,7 +65,7 @@ class CustomerController extends Controller
         $customers = $query->with(['documents', 'latestRiskSnapshot'])
             ->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return (new CustomerCollection($customers))->additional(['success' => true]);
+        return $this->resourceWithSuccess(new CustomerCollection($customers), 'Customers retrieved successfully.');
     }
 
     /**
@@ -124,10 +124,11 @@ class CustomerController extends Controller
             'last_transaction' => $customer->last_transaction_at,
         ];
 
-        return (new CustomerResource($customer))->additional([
-            'success' => true,
-            'transaction_stats' => $transactionStats,
-        ]);
+        return $this->resourceWithSuccess(
+            new CustomerResource($customer),
+            'Customer retrieved successfully.',
+            ['transaction_stats' => $transactionStats]
+        );
     }
 
     /**
@@ -200,7 +201,7 @@ class CustomerController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(50);
 
-        return (new TransactionCollection($transactions))->additional(['success' => true]);
+        return $this->resourceWithSuccess(new TransactionCollection($transactions), 'Customer transaction history retrieved successfully.');
     }
 
     /**
@@ -229,11 +230,7 @@ class CustomerController extends Controller
             'new_values' => ['document_type' => $request->document_type],
         ]);
 
-        return response()->json([
-            'success' => true,
-            'document_id' => $document->id,
-            'message' => 'Document uploaded successfully.',
-        ]);
+        return $this->successResponse(['document_id' => $document->id], 'Document uploaded successfully.');
     }
 
     /**
@@ -246,10 +243,8 @@ class CustomerController extends Controller
 
         $results = $this->customerService->searchCustomers($validated['query']);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse($results, 'Search completed.', 200, [
             'query' => $validated['query'],
-            'results' => $results,
             'count' => count($results),
         ]);
     }
