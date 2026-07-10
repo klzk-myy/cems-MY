@@ -130,20 +130,6 @@ class TransactionController extends Controller
                 $request->ip()
             );
 
-            $this->auditService->logTransaction('transaction_created', $transaction->id, [
-                'new' => [
-                    'type' => $transaction->type->value,
-                    'currency_code' => $transaction->currency_code,
-                    'amount_foreign' => $transaction->amount_foreign,
-                    'amount_local' => $transaction->amount_local,
-                    'rate' => $transaction->rate,
-                    'customer_id' => $transaction->customer_id,
-                    'purpose' => $transaction->purpose,
-                    'source_of_funds' => $transaction->source_of_funds,
-                    'status' => $transaction->status->value,
-                ],
-            ]);
-
             if ($transaction->status === TransactionStatus::PendingApproval) {
                 return redirect()->route('transactions.show', $transaction)
                     ->with('warning', 'Transaction created and pending manager approval.');

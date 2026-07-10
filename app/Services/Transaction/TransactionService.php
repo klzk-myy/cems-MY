@@ -375,23 +375,26 @@ class TransactionService implements TransactionServiceInterface
                 $this->createAccountingEntries($transaction, $ipAddress, $user);
             }
 
-            $this->auditService->logWithSeverity(
+            $this->auditTrailHelper->recordTransaction(
+                $transaction->id,
                 'transaction_created',
                 [
-                    'user_id' => $userId,
-                    'entity_type' => 'Transaction',
-                    'entity_id' => $transaction->id,
-                    'new_values' => [
+                    'new' => [
+                        'customer_id' => $transaction->customer_id,
                         'type' => $transaction->type,
                         'amount_local' => $transaction->amount_local,
                         'amount_foreign' => $transaction->amount_foreign,
                         'currency' => $transaction->currency_code,
-                        'status' => $transaction->status,
-                        'cdd_level' => $cddLevel,
+                        'rate' => $transaction->rate,
+                        'status' => $transaction->status->value,
+                        'cdd_level' => $cddLevel->value,
+                        'branch_id' => $transaction->branch_id,
+                        'till_id' => $transaction->till_id,
                     ],
-                    'ip_address' => $ipAddress,
                 ],
-                'INFO'
+                $user,
+                'INFO',
+                $ipAddress
             );
 
             // Dispatch event for async processing

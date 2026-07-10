@@ -13,7 +13,7 @@ use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\CurrencyPositionService;
-use App\Services\AuditService;
+use App\Services\Audit\AuditTrailHelper;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
@@ -26,7 +26,7 @@ class TransactionReversalService
     public function __construct(
         protected MathService $mathService,
         protected AccountingService $accountingService,
-        protected AuditService $auditService,
+        protected AuditTrailHelper $auditTrailHelper,
         protected ComplianceService $complianceService,
         protected CurrencyPositionService $positionService,
         protected TellerAllocationService $tellerAllocationService,
@@ -153,13 +153,11 @@ class TransactionReversalService
         $refund->approved_at = $status->isCompleted() ? now() : null;
         $refund->save();
 
-        $this->auditService->logWithSeverity(
+        $this->auditTrailHelper->recordTransaction(
+            $refund->id,
             'refund_compliance_check',
             [
-                'user_id' => $approvedBy,
-                'entity_type' => 'Transaction',
-                'entity_id' => $refund->id,
-                'new_values' => [
+                'new' => [
                     'original_transaction_id' => $original->id,
                     'amount_local' => $amountLocal,
                     'status' => $status->value,
@@ -167,6 +165,7 @@ class TransactionReversalService
                     'compliance_reasons' => $holdCheck->reasons,
                 ],
             ],
+            User::find($approvedBy),
             'INFO'
         );
 

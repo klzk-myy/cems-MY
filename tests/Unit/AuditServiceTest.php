@@ -178,6 +178,40 @@ class AuditServiceTest extends TestCase
     }
 
     #[Test]
+    public function log_transaction_forwards_explicit_user_id_and_ip_address(): void
+    {
+        $fallbackUser = User::factory()->create();
+        $explicitUser = User::factory()->create();
+        $this->actingAs($fallbackUser);
+        $this->app['request']->server->set('REMOTE_ADDR', '10.0.0.5');
+
+        $log = $this->auditService->logTransaction('transaction_action', 123, [
+            'user_id' => $explicitUser->id,
+            'ip_address' => '192.168.1.100',
+        ]);
+
+        $this->assertEquals($explicitUser->id, $log->user_id);
+        $this->assertEquals('192.168.1.100', $log->ip_address);
+    }
+
+    #[Test]
+    public function log_customer_forwards_explicit_user_id_and_ip_address(): void
+    {
+        $fallbackUser = User::factory()->create();
+        $explicitUser = User::factory()->create();
+        $this->actingAs($fallbackUser);
+        $this->app['request']->server->set('REMOTE_ADDR', '10.0.0.6');
+
+        $log = $this->auditService->logCustomer('customer_action', 456, [
+            'user_id' => $explicitUser->id,
+            'ip_address' => '192.168.1.101',
+        ]);
+
+        $this->assertEquals($explicitUser->id, $log->user_id);
+        $this->assertEquals('192.168.1.101', $log->ip_address);
+    }
+
+    #[Test]
     public function session_id_is_recorded(): void
     {
         $user = User::factory()->create();
