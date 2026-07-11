@@ -4,15 +4,19 @@ namespace App\Http\Concerns;
 
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Exceptions\Domain\AllocationValidationException;
+use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * Helpers for deciding teller allocation and initial transaction status
  * when assembling a TransactionCreationContext.
+ *
+ * Host classes must provide a constructor-injected `MathService` property
+ * named `$mathService` (e.g. `protected MathService $mathService`).
  */
 trait DeterminesTransactionStatus
 {
@@ -22,9 +26,11 @@ trait DeterminesTransactionStatus
      * @param  User  $user  The authenticated user creating the transaction.
      * @param  array{type: string, currency_code: string}  $data  Validated transaction data.
      * @param  string  $amountLocal  Local currency amount as a numeric string.
-     * @return Model|null The active teller allocation, or null for non-tellers.
+     * @return TellerAllocation|null The active teller allocation, or null for non-tellers.
+     *
+     * @throws AllocationValidationException When the active allocation cannot cover the transaction.
      */
-    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?Model
+    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?TellerAllocation
     {
         if (! $user->isTeller()) {
             return null;
@@ -36,10 +42,13 @@ trait DeterminesTransactionStatus
             $result = $service->validateTransaction($user, $data['currency_code'], $amountLocal, true);
 
             if (! $result->valid) {
-                throw new \InvalidArgumentException($result->reason);
+                throw new AllocationValidationException($result->reason);
             }
 
-            return $result->allocation;
+            /** @var TellerAllocation|null $allocation */
+            $allocation = $result->allocation;
+
+            return $allocation;
         }
 
         return $service->getActiveAllocation($user, $data['currency_code']);
@@ -53,10 +62,9 @@ trait DeterminesTransactionStatus
      */
     private function determineInitialStatus(string $amountLocal, bool $holdRequired): TransactionStatus
     {
-        $mathService = app(MathService::class);
         $thresholdService = app(ThresholdService::class);
 
-        if ($holdRequired || $mathService->compare($amountLocal, $thresholdService->getAutoApproveThreshold()) >= 0) {
+        if ($holdRequired || $this->mathService->compare($amountLocal, $thresholdService->getAutoApproveThreshold()) >= 0) {
             return TransactionStatus::PendingApproval;
         }
 

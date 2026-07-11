@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\EnsuresManagerOrAdmin;
 use App\Http\Requests\CopyPreviousRateRequest;
 use App\Http\Requests\OverrideRateRequest;
 use App\Models\Branch;
@@ -16,6 +17,8 @@ use Illuminate\View\View;
 
 class RateController extends Controller
 {
+    use EnsuresManagerOrAdmin;
+
     public function __construct(
         protected RateManagementService $rateService
     ) {}
@@ -54,11 +57,11 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can fetch rates from API',
-            ], 403);
+        if ($response = $this->ensureManagerOrAdminResponse(fn () => response()->json([
+            'success' => false,
+            'message' => 'Only managers and admins can fetch rates from API',
+        ], 403))) {
+            return $response;
         }
 
         $branchId = $this->resolveBranchId($user, $request);
@@ -72,11 +75,11 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only managers and admins can copy previous rates',
-            ], 403);
+        if ($response = $this->ensureManagerOrAdminResponse(fn () => response()->json([
+            'success' => false,
+            'message' => 'Only managers and admins can copy previous rates',
+        ], 403))) {
+            return $response;
         }
 
         $validated = $request->validated();

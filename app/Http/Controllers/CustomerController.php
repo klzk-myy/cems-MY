@@ -184,26 +184,7 @@ class CustomerController extends Controller
      */
     public function create(): View
     {
-        $idTypes = [
-            'MyKad' => 'MyKad (Malaysian IC)',
-            'Passport' => 'Passport',
-            'Others' => 'Other ID',
-        ];
-
-        // Common nationalities
-        $nationalities = [
-            'Malaysian',
-            'Singaporean',
-            'Indonesian',
-            'Thai',
-            'Filipino',
-            'Vietnamese',
-            'Chinese',
-            'Indian',
-            'Bangladeshi',
-            'Pakistani',
-            'Other',
-        ];
+        ['idTypes' => $idTypes, 'nationalities' => $nationalities] = $this->getCustomerFormOptions();
 
         return view('customers.create', compact(
             'idTypes',
@@ -306,27 +287,8 @@ class CustomerController extends Controller
     {
         $this->authorize('update', $customer);
 
-        $idTypes = [
-            'MyKad' => 'MyKad (Malaysian IC)',
-            'Passport' => 'Passport',
-            'Others' => 'Other ID',
-        ];
-
+        ['idTypes' => $idTypes, 'nationalities' => $nationalities] = $this->getCustomerFormOptions();
         $riskRatings = ['Low', 'Medium', 'High'];
-
-        $nationalities = [
-            'Malaysian',
-            'Singaporean',
-            'Indonesian',
-            'Thai',
-            'Filipino',
-            'Vietnamese',
-            'Chinese',
-            'Indian',
-            'Bangladeshi',
-            'Pakistani',
-            'Other',
-        ];
 
         // Decrypt ID number for display
         $decryptedIdNumber = $this->customerService->decryptIdNumber($customer);
@@ -444,5 +406,34 @@ class CustomerController extends Controller
         if (isset($daysInMonth[$month]) && $day > $daysInMonth[$month]) {
             $fail("MyKad ID contains invalid day for month {$month}.");
         }
+    }
+
+    /**
+     * Get the option lists shared by customer create/edit forms.
+     *
+     * @return array{idTypes: array<string, string>, nationalities: list<string>}
+     */
+    private function getCustomerFormOptions(): array
+    {
+        return [
+            'idTypes' => [
+                'MyKad' => 'MyKad (Malaysian IC)',
+                'Passport' => 'Passport',
+                'Others' => 'Other ID',
+            ],
+            'nationalities' => [
+                'Malaysian',
+                'Singaporean',
+                'Indonesian',
+                'Thai',
+                'Filipino',
+                'Vietnamese',
+                'Chinese',
+                'Indian',
+                'Bangladeshi',
+                'Pakistani',
+                'Other',
+            ],
+        ];
     }
 }

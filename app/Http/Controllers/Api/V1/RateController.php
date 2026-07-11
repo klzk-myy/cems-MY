@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
+use App\Http\Controllers\Concerns\EnsuresManagerOrAdmin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Rate\CheckRateSetRequest;
 use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
@@ -24,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
 class RateController extends Controller
 {
     use ApiResponse;
+    use EnsuresManagerOrAdmin;
 
     public function __construct(
         protected RateManagementService $rateService
@@ -57,8 +59,10 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return $this->errorResponse('Only managers and admins can fetch rates from API', [], 403);
+        if ($response = $this->ensureManagerOrAdminResponse(
+            fn () => $this->errorResponse('Only managers and admins can fetch rates from API', [], 403)
+        )) {
+            return $response;
         }
 
         $result = $this->rateService->fetchAndStoreRates($user);
@@ -110,8 +114,10 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return $this->errorResponse('Only managers and admins can copy previous rates', [], 403);
+        if ($response = $this->ensureManagerOrAdminResponse(
+            fn () => $this->errorResponse('Only managers and admins can copy previous rates', [], 403)
+        )) {
+            return $response;
         }
 
         $validated = $request->validated();
