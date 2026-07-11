@@ -1390,10 +1390,11 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 - [x] `tests/Feature/ComplianceDashboardAccessTest.php`: 3 passed (3 assertions)
 - [x] `tests/Feature/HomeDashboardN1Test.php`: 1 passed (3 assertions)
 - [x] `tests/Feature/AuthenticationTest.php` + `tests/Feature/SecurityTest.php`: 25 passed (44 assertions)
-- [x] `tests/Feature/Report`: 1 passed (2 assertions)
-- [x] `vendor/bin/pint --dirty --format agent`: passed for Task 12 files
+- [x] `tests/Feature/Report` + related report smoke/sanitization tests: 24 passed
+- [x] Integration tests for Tasks 1–11: 38 passed (116 assertions)
+- [x] `vendor/bin/pint --dirty --format agent`: passed for all changed files
 - [x] `npx gitnexus detect_changes` for Task 12: LOW risk, only `routes/web.php` imports `DashboardController`
-- [ ] `php artisan test --compact` fully passing — 10 pre-existing failures remain (documented in `docs/superpowers/plans/2026-07-11-consolidation-delivery-checklist.md`)
+- [x] `php artisan test --compact`: 1,468 passed, 5 skipped, 3 deprecated, 0 failed (3,672 assertions)
 
 ### Notes
 
@@ -1424,8 +1425,8 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
    ```bash
    php artisan test --compact 2>&1 | tee final-tests.txt
    ```
-   Result: `1421 passed, 10 failed, 5 skipped, 1 deprecated (3550 assertions)`
-   Remaining failures are pre-existing and unrelated to Phases 4–7 or the 2026-07-11 consolidation (route middleware aliases, route naming, orphaned views, User password_hash, MFA, AmlRuleEvaluator branch collision).
+   Result: `1468 passed, 5 skipped, 3 deprecated (3672 assertions)`
+   All test failures resolved; remaining skipped tests are intentional (e.g., database-specific, optional benchmarks).
 
 2. **Code style**:
    ```bash
