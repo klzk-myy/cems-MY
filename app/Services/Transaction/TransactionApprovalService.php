@@ -233,34 +233,12 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
 
     private function updateTillBalance($tillBalance, string $type, string $amountLocal, string $amountForeign): void
     {
-        $counter = Counter::where('code', $tillBalance->till_id)
-            ->orWhere('id', $tillBalance->till_id)
-            ->first();
-
-        if (! $counter) {
-            throw new \RuntimeException('Till has been closed.');
-        }
-
-        $lockedForeign = $this->tillBalanceManager->currentBalance($counter, $tillBalance->currency_code, true);
-        if (! $lockedForeign) {
-            throw new \RuntimeException('Till has been closed.');
-        }
-
-        $myrBalance = $this->tillBalanceManager->currentBalance($counter, 'MYR', true);
-        if (! $myrBalance) {
-            throw new \RuntimeException('MYR till balance missing.');
-        }
-
-        if ($type === TransactionType::Buy->value) {
-            $this->tillBalanceManager->adjustBalance($lockedForeign, 'buy_total_foreign', $amountForeign, 'add', false);
-            $this->tillBalanceManager->adjustBalance($lockedForeign, 'foreign_total', $amountForeign, 'add', false);
-        } else {
-            $this->tillBalanceManager->adjustBalance($lockedForeign, 'sell_total_foreign', $amountForeign, 'add', false);
-            $this->tillBalanceManager->adjustBalance($lockedForeign, 'foreign_total', $amountForeign, 'subtract', false);
-        }
-
-        $myrOperation = $type === TransactionType::Buy->value ? 'subtract' : 'add';
-        $this->tillBalanceManager->adjustBalance($myrBalance, 'transaction_total', $amountLocal, $myrOperation, false);
+        $this->tillBalanceManager->applyTransaction(
+            $tillBalance,
+            TransactionType::from($type),
+            $amountLocal,
+            $amountForeign
+        );
     }
 
     private function updateTellerAllocation(Transaction $transaction): void

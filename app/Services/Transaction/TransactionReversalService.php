@@ -238,28 +238,12 @@ class TransactionReversalService
             return;
         }
 
-        $isBuy = $transaction->type === TransactionType::Buy;
-
-        if ($isBuy) {
-            $manager->adjustBalance($tillBalance, 'foreign_total', (string) $transaction->amount_foreign, 'subtract', false);
-            $manager->adjustBalance($tillBalance, 'buy_total_foreign', (string) $transaction->amount_foreign, 'subtract', false);
-        } else {
-            $manager->adjustBalance($tillBalance, 'foreign_total', (string) $transaction->amount_foreign, 'add', false);
-            $manager->adjustBalance($tillBalance, 'sell_total_foreign', (string) $transaction->amount_foreign, 'subtract', false);
-        }
-
-        $myrTillBalance = $manager->currentBalance($counter, 'MYR', true);
-
-        if ($myrTillBalance) {
-            $operation = $transaction->type->isBuy() ? 'add' : 'subtract';
-            $manager->adjustBalance(
-                $myrTillBalance,
-                'transaction_total',
-                (string) $transaction->amount_local,
-                $operation,
-                false
-            );
-        }
+        $manager->reverseTransaction(
+            $tillBalance,
+            $transaction->type,
+            (string) $transaction->amount_local,
+            (string) $transaction->amount_foreign
+        );
 
         Log::info('Till balance reversed for transaction', [
             'transaction_id' => $transaction->id,

@@ -284,13 +284,13 @@ class TransactionImportService
      */
     protected function updateTillBalance(TillBalance $tillBalance, string $type, string $amountLocal, string $amountForeign): void
     {
-        $manager = app(TillBalanceManager::class);
-
-        // Buying foreign: stock increases; Selling foreign: stock decreases
-        $foreignOperation = $type === TransactionType::Buy->value ? 'add' : 'subtract';
-
-        $manager->adjustBalance($tillBalance, 'transaction_total', $amountLocal, 'add');
-        $manager->adjustBalance($tillBalance, 'foreign_total', $amountForeign, $foreignOperation);
+        app(TillBalanceManager::class)->applyTransaction(
+            $tillBalance,
+            TransactionType::from($type),
+            $amountLocal,
+            $amountForeign,
+            false
+        );
     }
 
     /**
