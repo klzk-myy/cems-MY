@@ -12,6 +12,8 @@ interface TransactionServiceInterface
 
     public function createTransaction(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction;
 
+    public function prepareAndCreate(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction;
+
     public function approveTransaction(Transaction $transaction, int $approverId, ?string $ipAddress = null): array;
 
     public function isRefundable(Transaction $transaction): bool;

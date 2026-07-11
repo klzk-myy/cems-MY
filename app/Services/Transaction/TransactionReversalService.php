@@ -7,7 +7,6 @@ use App\Enums\TransactionType;
 use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\JournalEntry;
-use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
@@ -238,28 +237,12 @@ class TransactionReversalService
             return;
         }
 
-        $isBuy = $transaction->type === TransactionType::Buy;
-
-        if ($isBuy) {
-            $manager->adjustBalance($tillBalance, 'foreign_total', (string) $transaction->amount_foreign, 'subtract', false);
-            $manager->adjustBalance($tillBalance, 'buy_total_foreign', (string) $transaction->amount_foreign, 'subtract', false);
-        } else {
-            $manager->adjustBalance($tillBalance, 'foreign_total', (string) $transaction->amount_foreign, 'add', false);
-            $manager->adjustBalance($tillBalance, 'sell_total_foreign', (string) $transaction->amount_foreign, 'subtract', false);
-        }
-
-        $myrTillBalance = $manager->currentBalance($counter, 'MYR', true);
-
-        if ($myrTillBalance) {
-            $operation = $transaction->type->isBuy() ? 'add' : 'subtract';
-            $manager->adjustBalance(
-                $myrTillBalance,
-                'transaction_total',
-                (string) $transaction->amount_local,
-                $operation,
-                false
-            );
-        }
+        $manager->reverseTransaction(
+            $tillBalance,
+            $transaction->type,
+            (string) $transaction->amount_local,
+            (string) $transaction->amount_foreign
+        );
 
         Log::info('Till balance reversed for transaction', [
             'transaction_id' => $transaction->id,
@@ -302,25 +285,6 @@ class TransactionReversalService
 
     protected function reverseTellerAllocation(Transaction $transaction): void
     {
-        $user = User::find($transaction->user_id);
-        if ($user && $user->isTeller()) {
-            $allocation = $this->tellerAllocationService->getActiveAllocation(
-                $user,
-                $transaction->currency_code
-            );
-            if ($allocation) {
-                $allocation = TellerAllocation::where('id', $allocation->id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                if ($transaction->type->isBuy()) {
-                    $allocation->deduct((string) $transaction->amount_foreign);
-                    $allocation->subtractDailyUsed((string) $transaction->amount_local);
-                } else {
-                    $allocation->add((string) $transaction->amount_foreign);
-                    $allocation->subtractDailyUsed((string) $transaction->amount_local);
-                }
-            }
-        }
+        $this->tellerAllocationService->reverseTransactionAllocation($transaction);
     }
 }

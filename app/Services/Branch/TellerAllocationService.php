@@ -3,9 +3,11 @@
 namespace App\Services\Branch;
 
 use App\Enums\TellerAllocationStatus;
+use App\Enums\TransactionType;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\TellerAllocation;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Contracts\TellerAllocationServiceInterface;
 use App\Services\DTOs\AllocationValidationResult;
@@ -252,6 +254,62 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     public function canManageAllocations(User $user): bool
     {
         return $user->role->isManager() || $user->role->isAdmin();
+    }
+
+    public function applyTransactionAllocation(Transaction $transaction, ?TellerAllocation $allocation = null): void
+    {
+        if ($allocation === null) {
+            $user = User::find($transaction->user_id);
+
+            if (! $user || ! $user->isTeller()) {
+                return;
+            }
+
+            $allocation = $this->getActiveAllocation($user, $transaction->currency_code);
+        }
+
+        if (! $allocation) {
+            return;
+        }
+
+        $lockedAllocation = TellerAllocation::where('id', $allocation->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($transaction->type === TransactionType::Buy) {
+            $lockedAllocation->add((string) $transaction->amount_foreign);
+        } else {
+            $lockedAllocation->deduct((string) $transaction->amount_foreign);
+        }
+
+        $lockedAllocation->addDailyUsed((string) $transaction->amount_local);
+    }
+
+    public function reverseTransactionAllocation(Transaction $transaction): void
+    {
+        $user = User::find($transaction->user_id);
+
+        if (! $user || ! $user->isTeller()) {
+            return;
+        }
+
+        $allocation = $this->getActiveAllocation($user, $transaction->currency_code);
+
+        if (! $allocation) {
+            return;
+        }
+
+        $lockedAllocation = TellerAllocation::where('id', $allocation->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($transaction->type === TransactionType::Buy) {
+            $lockedAllocation->deduct((string) $transaction->amount_foreign);
+        } else {
+            $lockedAllocation->add((string) $transaction->amount_foreign);
+        }
+
+        $lockedAllocation->subtractDailyUsed((string) $transaction->amount_local);
     }
 
     /**

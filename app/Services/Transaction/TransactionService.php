@@ -3,9 +3,14 @@
 namespace App\Services\Transaction;
 
 use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
+use App\Exceptions\Domain\AllocationValidationException;
+use App\Exceptions\Domain\TransactionBlockedException;
 use App\Models\Customer;
+use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Branch\TellerAllocationService;
 use App\Services\Contracts\TransactionApprovalServiceInterface;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionHoldServiceInterface;
@@ -15,6 +20,7 @@ use App\Services\Contracts\TransactionStatusServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\DTOs\PreValidationResult;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 
 class TransactionService implements TransactionServiceInterface
@@ -26,6 +32,7 @@ class TransactionService implements TransactionServiceInterface
         protected TransactionHoldServiceInterface $holdService,
         protected TransactionIdempotencyServiceInterface $idempotencyService,
         protected TransactionStatusServiceInterface $statusService,
+        protected MathService $mathService,
     ) {}
 
     public function preValidate(Customer $customer, string $amount, string $currencyCode): PreValidationResult
@@ -35,11 +42,51 @@ class TransactionService implements TransactionServiceInterface
 
     public function createTransaction(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction
     {
-        return $this->creationService->create(
-            $this->buildCreationContext($data, $userId, $ipAddress),
-            $userId,
-            $ipAddress
+        return $this->prepareAndCreate($data, $userId, $ipAddress);
+    }
+
+    public function prepareAndCreate(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction
+    {
+        $userId ??= auth()->id();
+        $user = User::findOrFail($userId);
+        $ipAddress ??= request()?->ip();
+
+        $this->validationService->validateCurrency($data['currency_code']);
+        $this->validationService->validateIpAddress($ipAddress);
+
+        $tillBalance = $this->validationService->validateTillBalance($data['till_id'], $data['currency_code']);
+        $customer = Customer::findOrFail($data['customer_id']);
+
+        $amountLocal = $this->mathService->multiply(
+            (string) $data['amount_foreign'],
+            (string) $data['rate']
         );
+
+        $this->validationService->validatePepRequirements($customer, $data);
+
+        $validationResult = $this->validationService->preValidate($customer, $amountLocal, $data['currency_code']);
+
+        if ($validationResult->isBlocked()) {
+            throw new TransactionBlockedException($validationResult->getBlocks()[0]['message']);
+        }
+
+        $allocation = $this->determineTellerAllocation($user, $data, $amountLocal);
+        $status = $this->determineInitialStatus($amountLocal, $validationResult->isHoldRequired());
+
+        $context = new TransactionCreationContext(
+            data: $data,
+            customer: $customer,
+            tillBalance: $tillBalance,
+            cddLevel: $validationResult->getCDDLevel(),
+            holdRequired: $validationResult->isHoldRequired(),
+            status: $status,
+            amountLocal: $amountLocal,
+            user: $user,
+            allocation: $allocation,
+            holdReason: $validationResult->isHoldRequired() ? 'Compliance hold' : null,
+        );
+
+        return $this->creationService->create($context, $user->id, $ipAddress);
     }
 
     public function approveTransaction(Transaction $transaction, int $approverId, ?string $ipAddress = null): array
@@ -63,37 +110,54 @@ class TransactionService implements TransactionServiceInterface
         return $this->statusService->isCancelled($transaction);
     }
 
-    private function buildCreationContext(array $data, ?int $userId, ?string $ipAddress): TransactionCreationContext
+    /**
+     * Determine the teller allocation to attach to a new transaction.
+     *
+     * @param  User  $user  The authenticated user creating the transaction.
+     * @param  array{type: string, currency_code: string}  $data  Validated transaction data.
+     * @param  string  $amountLocal  Local currency amount as a numeric string.
+     * @return TellerAllocation|null The active teller allocation, or null for non-tellers.
+     *
+     * @throws AllocationValidationException When the active allocation cannot cover the transaction.
+     */
+    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?TellerAllocation
     {
-        $userId ??= auth()->id();
-        $user = User::findOrFail($userId);
+        if (! $user->isTeller()) {
+            return null;
+        }
 
-        $this->validationService->validateCurrency($data['currency_code']);
-        $this->validationService->validateIpAddress($ipAddress ?? request()->ip());
+        $service = app(TellerAllocationService::class);
 
-        $tillBalance = $this->validationService->validateTillBalance($data['till_id'], $data['currency_code']);
-        $customer = Customer::findOrFail($data['customer_id']);
+        if ($data['type'] === TransactionType::Buy->value) {
+            $result = $service->validateTransaction($user, $data['currency_code'], $amountLocal, true);
 
-        $math = app(MathService::class);
-        $amountLocal = $math->multiply((string) $data['amount_foreign'], (string) $data['rate']);
+            if (! $result->valid) {
+                throw new AllocationValidationException($result->reason);
+            }
 
-        $this->validationService->validatePepRequirements($customer, $data);
+            /** @var TellerAllocation|null $allocation */
+            $allocation = $result->allocation;
 
-        $validationResult = $this->validationService->preValidate($customer, $amountLocal, $data['currency_code']);
+            return $allocation;
+        }
 
-        $status = $validationResult->isHoldRequired()
-            ? TransactionStatus::PendingApproval
-            : TransactionStatus::Completed;
+        return $service->getActiveAllocation($user, $data['currency_code']);
+    }
 
-        return new TransactionCreationContext(
-            data: $data,
-            customer: $customer,
-            tillBalance: $tillBalance,
-            cddLevel: $validationResult->getCDDLevel(),
-            holdRequired: $validationResult->isHoldRequired(),
-            status: $status,
-            amountLocal: $amountLocal,
-            user: $user,
-        );
+    /**
+     * Decide whether a transaction should start as Completed or PendingApproval.
+     *
+     * @param  string  $amountLocal  Local currency amount as a numeric string.
+     * @param  bool  $holdRequired  Whether a compliance hold is required.
+     */
+    private function determineInitialStatus(string $amountLocal, bool $holdRequired): TransactionStatus
+    {
+        $thresholdService = app(ThresholdService::class);
+
+        if ($holdRequired || $this->mathService->compare($amountLocal, $thresholdService->getAutoApproveThreshold()) >= 0) {
+            return TransactionStatus::PendingApproval;
+        }
+
+        return TransactionStatus::Completed;
     }
 }

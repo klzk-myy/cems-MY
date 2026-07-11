@@ -2,7 +2,6 @@
 
 namespace App\Services\Reporting;
 
-use App\Enums\TransactionType;
 use App\Models\Customer;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Builder;
@@ -53,22 +52,16 @@ class CustomerReportService
 
         $transactions = $baseQuery->get(['created_at', 'amount_local', 'type']);
 
-        $buyTransactions = $transactions->where('type', TransactionType::Buy);
-        $sellTransactions = $transactions->where('type', TransactionType::Sell);
-
-        $buyVolume = (string) $buyTransactions->sum('amount_local');
-        $sellVolume = (string) $sellTransactions->sum('amount_local');
-        $buyCount = $buyTransactions->count();
-        $sellCount = $sellTransactions->count();
+        $volumes = app(TransactionReportQuery::class)->buySellVolumes($transactions);
         $totalCount = $transactions->count();
-        $totalVolume = $this->mathService->add($buyVolume, $sellVolume);
+        $totalVolume = $this->mathService->add($volumes['buy_volume'], $volumes['sell_volume']);
 
         return [
             'total_count' => $totalCount,
-            'buy_count' => $buyCount,
-            'sell_count' => $sellCount,
-            'buy_volume' => $buyVolume,
-            'sell_volume' => $sellVolume,
+            'buy_count' => $volumes['buy_count'],
+            'sell_count' => $volumes['sell_count'],
+            'buy_volume' => $volumes['buy_volume'],
+            'sell_volume' => $volumes['sell_volume'],
             'total_volume' => $totalVolume,
             'avg_transaction' => $totalCount > 0 ? $this->mathService->divide($totalVolume, (string) $totalCount) : '0',
             'first_transaction' => $transactions->min('created_at'),

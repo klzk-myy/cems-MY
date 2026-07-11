@@ -363,40 +363,33 @@ class ComplianceReportingService
 
     /**
      * Export audit trail to CSV format.
+     *
+     * @return array{headers: array<int, string>, rows: array<int, array<int, mixed>>}
      */
-    public function exportAuditTrailToCsv(array $filters = []): string
+    public function exportAuditTrailToCsv(array $filters = []): array
     {
         $trail = $this->getAuditTrail(array_merge($filters, ['per_page' => 10000]));
         $data = $trail['data'];
 
-        $csv = "ID,Action,Description,Entity Type,Entity ID,User ID,IP Address,Created At\n";
+        $headers = ['ID', 'Action', 'Description', 'Entity Type', 'Entity ID', 'User ID', 'IP Address', 'Created At'];
+        $rows = [];
 
         foreach ($data as $entry) {
-            $csv .= sprintf(
-                "%d,%s,%s,%s,%s,%s,%s,%s\n",
+            $rows[] = [
                 $entry->id ?? 0,
-                $this->escapeCsv($entry->action ?? ''),
-                $this->escapeCsv($entry->description ?? ''),
-                $this->escapeCsv($entry->entity_type ?? ''),
+                $entry->action ?? '',
+                $entry->description ?? '',
+                $entry->entity_type ?? '',
                 $entry->entity_id ?? '',
                 $entry->user_id ?? '',
                 $entry->ip_address ?? '',
-                $entry->created_at ?? ''
-            );
+                $entry->created_at ?? '',
+            ];
         }
 
-        return $csv;
-    }
-
-    /**
-     * Escape CSV field value.
-     */
-    protected function escapeCsv(string $value): string
-    {
-        if (str_contains($value, ',') || str_contains($value, '"') || str_contains($value, "\n")) {
-            return '"'.str_replace('"', '""', $value).'"';
-        }
-
-        return $value;
+        return [
+            'headers' => $headers,
+            'rows' => $rows,
+        ];
     }
 }

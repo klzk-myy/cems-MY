@@ -7,8 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\AuditTrailExportRequest;
 use App\Http\Requests\Api\V1\Compliance\AuditTrailRequest;
 use App\Services\Compliance\ComplianceReportingService;
+use App\Services\Reporting\CsvReportWriter;
 use Illuminate\Http\JsonResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Controller for compliance dashboard API endpoints.
@@ -75,22 +77,18 @@ class DashboardController extends Controller
     /**
      * Export audit trail as CSV.
      */
-    public function auditTrailExport(AuditTrailExportRequest $request): StreamedResponse
+    public function auditTrailExport(AuditTrailExportRequest $request): BinaryFileResponse
     {
         $filters = $request->validated();
 
-        $csv = $this->reportingService->exportAuditTrailToCsv($filters);
+        $export = $this->reportingService->exportAuditTrailToCsv($filters);
 
         $filename = 'compliance_audit_trail_'.now()->format('Y-m-d_His').'.csv';
+        $filepath = app(CsvReportWriter::class)->write($filename, $export['headers'], $export['rows']);
 
-        return response()->streamDownload(function () use ($csv) {
-            $handle = fopen('php://output', 'w');
-            fwrite($handle, $csv);
-            fclose($handle);
-        }, $filename, [
+        return response()->download(Storage::path($filepath), $filename, [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-        ]);
+        ])->deleteFileAfterSend();
     }
 
     /**

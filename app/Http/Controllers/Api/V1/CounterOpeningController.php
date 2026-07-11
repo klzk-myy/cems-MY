@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesManager;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
 use App\Http\Requests\Api\V1\Counter\InitiateOpeningRequest;
-use App\Models\Counter;
 use App\Models\User;
 use App\Services\Branch\CounterOpeningWorkflowService;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,8 @@ use Illuminate\Support\Facades\Log;
 class CounterOpeningController extends Controller
 {
     use ApiResponse;
+    use AuthorizesCounter;
+    use AuthorizesManager;
 
     public function __construct(
         protected CounterOpeningWorkflowService $workflowService,
@@ -53,14 +56,9 @@ class CounterOpeningController extends Controller
     {
         $user = Auth::user();
 
-        $counter = Counter::find($counterId);
-        if (! $counter) {
-            return $this->notFoundResponse('Counter not found');
-        }
-
-        // Verify teller belongs to same branch as counter
-        if ($user->branch_id !== $counter->branch_id) {
-            return $this->errorResponse('Counter does not belong to your branch', [], 403);
+        $counter = $this->authorizeCounter($counterId, $user);
+        if ($counter instanceof JsonResponse) {
+            return $counter;
         }
 
         $validated = $request->validated();
@@ -88,14 +86,13 @@ class CounterOpeningController extends Controller
     {
         $user = Auth::user();
 
-        // Only manager or admin can approve and open
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return $this->errorResponse('Only managers and admins can approve and open counters', [], 403);
+        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can approve and open counters')) {
+            return $response;
         }
 
-        $counter = Counter::find($counterId);
-        if (! $counter) {
-            return $this->notFoundResponse('Counter not found');
+        $counter = $this->authorizeCounter($counterId, $user);
+        if ($counter instanceof JsonResponse) {
+            return $counter;
         }
 
         $validated = $request->validated();

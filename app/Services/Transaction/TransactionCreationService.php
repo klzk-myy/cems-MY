@@ -8,15 +8,13 @@ use App\Enums\TransactionType;
 use App\Events\TransactionCreated;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
-use App\Exceptions\Domain\TillBalanceMissingException;
-use App\Models\Counter;
-use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
+use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
@@ -180,60 +178,19 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
         $this->updateTillBalance($context->tillBalance, $data['type'], $context->amountLocal, $data['amount_foreign']);
 
-        $this->updateTellerAllocation($context->allocation, $data['type'], $data['amount_foreign'], $context->amountLocal);
+        app(TellerAllocationService::class)->applyTransactionAllocation($transaction, $context->allocation);
 
         $this->createAccountingEntries($transaction, $ipAddress, $context->user);
     }
 
     private function updateTillBalance(TillBalance $tillBalance, string $type, string $amountLocal, string $amountForeign): void
     {
-        $counter = Counter::where('code', $tillBalance->till_id)
-            ->orWhere('id', $tillBalance->till_id)
-            ->first();
-
-        if (! $counter) {
-            throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
-        }
-
-        $lockedForeign = $this->tillBalanceManager->currentBalance($counter, $tillBalance->currency_code, true);
-        if (! $lockedForeign) {
-            throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
-        }
-
-        $myrBalance = $this->tillBalanceManager->currentBalance($counter, 'MYR', true);
-        if (! $myrBalance) {
-            throw new TillBalanceMissingException('MYR', $tillBalance->till_id);
-        }
-
-        if ($type === TransactionType::Buy->value) {
-            $this->tillBalanceManager->adjustBalance($lockedForeign, 'buy_total_foreign', $amountForeign, 'add', false);
-            $this->tillBalanceManager->adjustBalance($lockedForeign, 'foreign_total', $amountForeign, 'add', false);
-        } else {
-            $this->tillBalanceManager->adjustBalance($lockedForeign, 'sell_total_foreign', $amountForeign, 'add', false);
-            $this->tillBalanceManager->adjustBalance($lockedForeign, 'foreign_total', $amountForeign, 'subtract', false);
-        }
-
-        $myrOperation = $type === TransactionType::Buy->value ? 'subtract' : 'add';
-        $this->tillBalanceManager->adjustBalance($myrBalance, 'transaction_total', $amountLocal, $myrOperation, false);
-    }
-
-    private function updateTellerAllocation(?Model $allocation, string $type, string $amountForeign, string $amountLocal): void
-    {
-        if (! $allocation) {
-            return;
-        }
-
-        $lockedAllocation = TellerAllocation::where('id', $allocation->id)
-            ->lockForUpdate()
-            ->firstOrFail();
-
-        if ($type === TransactionType::Buy->value) {
-            $lockedAllocation->add($amountForeign);
-        } else {
-            $lockedAllocation->deduct($amountForeign);
-        }
-
-        $lockedAllocation->addDailyUsed($amountLocal);
+        $this->tillBalanceManager->applyTransaction(
+            $tillBalance,
+            TransactionType::from($type),
+            $amountLocal,
+            $amountForeign
+        );
     }
 
     private function createAccountingEntries(Transaction $transaction, ?string $ipAddress, ?Model $user = null): void

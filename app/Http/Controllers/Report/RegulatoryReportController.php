@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Report;
 
 use App\Enums\ReportType;
-use App\Enums\TransactionType;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LmcaGenerateRequest;
 use App\Http\Requests\LmcaReportRequest;
@@ -15,6 +15,7 @@ use App\Http\Requests\UpdateReportStatusRequest;
 use App\Models\ReportGenerated;
 use App\Models\Transaction;
 use App\Services\Reporting\ReportingService;
+use App\Services\Reporting\TransactionReportQuery;
 use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,8 @@ use Illuminate\View\View;
 
 class RegulatoryReportController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected ReportingService $reportingService,
         protected MathService $mathService,
@@ -54,21 +57,13 @@ class RegulatoryReportController extends Controller
             ->whereDate('period_start', $date)
             ->first();
 
-        $buyType = TransactionType::Buy->value;
-        $sellType = TransactionType::Sell->value;
-
-        $rows = Transaction::completed()
-            ->forDateRange($date, $date)
-            ->select('currency_code')
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume', [$buyType])
-            ->selectRaw('COUNT(CASE WHEN type = ? THEN 1 END) as buy_count', [$buyType])
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_amount_myr', [$buyType])
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume', [$sellType])
-            ->selectRaw('COUNT(CASE WHEN type = ? THEN 1 END) as sell_count', [$sellType])
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_amount_myr', [$sellType])
-            ->groupBy('currency_code')
-            ->orderBy('currency_code')
-            ->get();
+        $rows = app(TransactionReportQuery::class)
+            ->buySellSummary(
+                Transaction::completed()->forDateRange($date, $date)->select('currency_code'),
+                'currency_code',
+                'amount_foreign',
+                'amount_local'
+            );
 
         $summary = $rows->mapWithKeys(function ($row) {
             $buyVolume = (string) $row->buy_volume;
@@ -78,10 +73,10 @@ class RegulatoryReportController extends Controller
                 $row->currency_code => [
                     'buy_count' => (int) $row->buy_count,
                     'buy_volume' => $buyVolume,
-                    'buy_amount_myr' => (string) $row->buy_amount_myr,
+                    'buy_amount_myr' => (string) $row->buy_amount,
                     'sell_count' => (int) $row->sell_count,
                     'sell_volume' => $sellVolume,
-                    'sell_amount_myr' => (string) $row->sell_amount_myr,
+                    'sell_amount_myr' => (string) $row->sell_amount,
                     'net_volume' => $this->mathService->subtract($buyVolume, $sellVolume),
                 ],
             ];
@@ -132,7 +127,7 @@ class RegulatoryReportController extends Controller
             'file_format' => 'CSV',
         ]);
 
-        return response()->json($report);
+        return $this->successResponse($report, 'MSB(2) report generated successfully.');
     }
 
     public function generateMSB2(StoreMsb2ReportRequest $request): JsonResponse
@@ -141,11 +136,10 @@ class RegulatoryReportController extends Controller
 
         $filepath = $this->reportingService->generateMSB2($request->validated('date'));
 
-        return response()->json([
-            'message' => 'MSB(2) report generated',
+        return $this->successResponse([
             'filename' => basename($filepath),
             'download_url' => url('/reports/download/'.basename($filepath)),
-        ]);
+        ], 'MSB(2) report generated.');
     }
 
     public function updateMSB2Status(UpdateReportStatusRequest $request): JsonResponse
@@ -190,11 +184,10 @@ class RegulatoryReportController extends Controller
             'file_format' => 'CSV',
         ]);
 
-        return response()->json([
-            'message' => 'Form LMCA generated successfully',
+        return $this->successResponse([
             'filename' => basename($filepath),
             'download_url' => url('/reports/download/'.basename($filepath)),
-        ]);
+        ], 'Form LMCA generated successfully.');
     }
 
     /**
@@ -222,9 +215,7 @@ class RegulatoryReportController extends Controller
             ->first();
 
         if (! $report) {
-            return response()->json([
-                'message' => 'Report not found. Generate the report first.',
-            ], 404);
+            return $this->notFoundResponse('Report not found. Generate the report first.');
         }
 
         $report->update([
@@ -233,10 +224,9 @@ class RegulatoryReportController extends Controller
             'submitted_by' => auth()->id(),
         ]);
 
-        return response()->json([
-            'message' => 'Report status updated successfully',
+        return $this->successResponse([
             'status' => $report->status,
-        ]);
+        ], 'Report status updated successfully.');
     }
 
     /**
@@ -276,11 +266,10 @@ class RegulatoryReportController extends Controller
             'file_format' => 'CSV',
         ]);
 
-        return response()->json([
-            'message' => 'Quarterly Large Value Report generated successfully',
+        return $this->successResponse([
             'filename' => basename($filepath),
             'download_url' => url('/reports/download/'.basename($filepath)),
-        ]);
+        ], 'Quarterly Large Value Report generated successfully.');
     }
 
     /**
@@ -317,10 +306,9 @@ class RegulatoryReportController extends Controller
             'file_format' => 'CSV',
         ]);
 
-        return response()->json([
-            'message' => 'Position Limit Report generated successfully',
+        return $this->successResponse([
             'filename' => basename($filepath),
             'download_url' => url('/reports/download/'.basename($filepath)),
-        ]);
+        ], 'Position Limit Report generated successfully.');
     }
 }
