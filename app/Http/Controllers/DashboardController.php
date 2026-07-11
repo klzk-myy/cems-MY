@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
+use App\Services\Compliance\ComplianceFlagService;
 use App\Services\System\CacheOptimizationService;
 use App\Services\System\CacheTagsService;
 use App\Services\Transaction\RateApiService;
@@ -102,7 +103,7 @@ class DashboardController extends Controller
      */
     public function compliance(Request $request): View
     {
-        $this->ensureComplianceOfficerAccess(auth()->user(), 'Unauthorized. Compliance Officer access required.');
+        $this->authorize('viewAny', FlaggedTransaction::class);
 
         $query = FlaggedTransaction::with(['transaction.customer', 'assignedTo', 'reviewer']);
 
@@ -141,36 +142,9 @@ class DashboardController extends Controller
      */
     public function assignFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
-        $this->ensureComplianceOfficerAccess(auth()->user());
+        $this->authorize('assign', $flaggedTransaction);
 
-        $oldStatus = $flaggedTransaction->status;
-        $oldAssignedTo = $flaggedTransaction->assigned_to;
-
-        $flaggedTransaction->update([
-            'assigned_to' => auth()->id(),
-            'status' => 'Under_Review',
-        ]);
-
-        $this->cacheTagsService->invalidate('dashboard');
-
-        $this->auditService->logWithSeverity(
-            'compliance_flag_assigned',
-            [
-                'user_id' => auth()->id(),
-                'entity_type' => 'FlaggedTransaction',
-                'entity_id' => $flaggedTransaction->id,
-                'old_values' => [
-                    'status' => $oldStatus,
-                    'assigned_to' => $oldAssignedTo,
-                ],
-                'new_values' => [
-                    'status' => 'Under_Review',
-                    'assigned_to' => auth()->id(),
-                    'assigned_by' => auth()->user()->username,
-                ],
-            ],
-            'WARNING'
-        );
+        app(ComplianceFlagService::class)->assignToCurrentUser($flaggedTransaction, auth()->user());
 
         return back()->with('success', 'Flag assigned to you for review.');
     }
@@ -182,36 +156,9 @@ class DashboardController extends Controller
      */
     public function resolveFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
-        $this->ensureComplianceOfficerAccess(auth()->user());
+        $this->authorize('resolve', $flaggedTransaction);
 
-        $oldStatus = $flaggedTransaction->status;
-
-        $flaggedTransaction->update([
-            'status' => 'Resolved',
-            'reviewed_by' => auth()->id(),
-            'resolved_at' => now(),
-        ]);
-
-        $this->cacheTagsService->invalidate('dashboard');
-
-        $this->auditService->logWithSeverity(
-            'compliance_flag_resolved',
-            [
-                'user_id' => auth()->id(),
-                'entity_type' => 'FlaggedTransaction',
-                'entity_id' => $flaggedTransaction->id,
-                'old_values' => [
-                    'status' => $oldStatus,
-                ],
-                'new_values' => [
-                    'status' => 'Resolved',
-                    'reviewed_by' => auth()->id(),
-                    'reviewed_by_username' => auth()->user()->username,
-                    'resolved_at' => now()->toDateTimeString(),
-                ],
-            ],
-            'INFO'
-        );
+        app(ComplianceFlagService::class)->resolve($flaggedTransaction, auth()->user());
 
         return back()->with('success', 'Flag marked as resolved.');
     }
@@ -223,7 +170,7 @@ class DashboardController extends Controller
      */
     public function accounting(): View
     {
-        $this->ensureManagerAccess(auth()->user());
+        $this->requireManagerOrAdmin();
 
         $positions = $this->currencyPositionService->getAllPositions();
         $totalPnl = $this->currencyPositionService->getTotalPnl();
@@ -238,7 +185,7 @@ class DashboardController extends Controller
      */
     public function reports(): View
     {
-        $this->ensureCanViewReports(auth()->user());
+        $this->authorize('viewReports');
 
         $recentReports = ReportGenerated::with('generatedBy')
             ->orderBy('generated_at', 'desc')
@@ -261,37 +208,5 @@ class DashboardController extends Controller
             'rates' => array_column($trend['data'], 'rate'),
             'trend' => $trend['trend'],
         ]);
-    }
-
-    /**
-     * Ensure the user is a Compliance Officer or Admin.
-     */
-    private function ensureComplianceOfficerAccess(User $user, string $message = ''): void
-    {
-        if (! $user->isAdmin() && ! $user->isComplianceOfficer()) {
-            abort(403, $message);
-        }
-    }
-
-    /**
-     * Ensure the user is a Manager or Admin.
-     */
-    private function ensureManagerAccess(User $user): void
-    {
-        if (! $user->isManager()) {
-            abort(403, 'Unauthorized. Manager access required.');
-        }
-    }
-
-    /**
-     * Ensure the user is allowed to view reports.
-     *
-     * Managers, Compliance Officers, and Admins may view reports.
-     */
-    private function ensureCanViewReports(User $user): void
-    {
-        if (! $user->role->canViewReports()) {
-            abort(403, 'Unauthorized. Manager or Compliance Officer access required.');
-        }
     }
 }
