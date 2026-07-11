@@ -1350,6 +1350,59 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 
 ---
 
+## Out-of-Phase: 2026-07-11 Consolidation of Duplicated Code Blocks & Controller Architecture
+
+**Date**: 2026-07-11  
+**Scope**: Eliminate remaining high-risk duplication in controller architecture and service-level mutation logic  
+**Source documents**:
+- Assessment report: `docs/superpowers/plans/2026-07-11-code-duplication-assessment.md`
+- Implementation plan: `docs/superpowers/plans/2026-07-11-consolidate-duplicated-code.md`
+- Delivery checklist: `docs/superpowers/plans/2026-07-11-consolidation-delivery-checklist.md`
+
+### Consolidation Tasks Completed
+
+- [x] **Task 1**: Extend `TillBalanceManager` with `applyTransaction()` / `reverseTransaction()` helpers
+- [x] **Task 2**: Extend `TellerAllocationService` with allocation mutation helpers
+- [x] **Task 3**: Centralize transaction preparation in `TransactionService::prepareAndCreate()`
+- [x] **Task 4**: Create `AuthorizesCounter` concern for API counter controllers
+- [x] **Task 5**: Create `AuthorizesManager` trait for standardized manager/admin JSON authorization
+- [x] **Task 6**: Create `CsvReportWriter` and centralize CSV report writing
+- [x] **Task 7**: Extend `TransactionReportQuery` with buy/sell helpers
+- [x] **Task 8**: Move import accounting entries to `TransactionAccountingService`
+- [x] **Task 9**: Apply `ApiResponse` trait to `RegulatoryReportController`
+- [x] **Task 10**: Simplify `TellerAllocationController` action scaffold
+- [x] **Task 11**: Extract `ReceiptGenerationService` from `TransactionController`
+- [x] **Task 12**: Extract `ComplianceFlagService` from `DashboardController` and replace private authorization helpers with policy/gate checks
+
+### Key New Files
+
+- `app/Services/Compliance/ComplianceFlagService.php`
+- `app/Policies/FlaggedTransactionPolicy.php`
+
+### Key Modified Files
+
+- `app/Http/Controllers/DashboardController.php`
+- `app/Providers/AuthServiceProvider.php`
+
+### Verification
+
+- [x] `tests/Unit/Services/Compliance/ComplianceFlagServiceTest.php`: 4 passed (21 assertions)
+- [x] `tests/Feature/ComplianceDashboardAccessTest.php`: 3 passed (3 assertions)
+- [x] `tests/Feature/HomeDashboardN1Test.php`: 1 passed (3 assertions)
+- [x] `tests/Feature/AuthenticationTest.php` + `tests/Feature/SecurityTest.php`: 25 passed (44 assertions)
+- [x] `tests/Feature/Report`: 1 passed (2 assertions)
+- [x] `vendor/bin/pint --dirty --format agent`: passed for Task 12 files
+- [x] `npx gitnexus detect_changes` for Task 12: LOW risk, only `routes/web.php` imports `DashboardController`
+- [ ] `php artisan test --compact` fully passing — 10 pre-existing failures remain (documented in `docs/superpowers/plans/2026-07-11-consolidation-delivery-checklist.md`)
+
+### Notes
+
+- `FlaggedTransactionPolicy` registered in `AuthServiceProvider`.
+- `viewReports` Gate added to preserve manager/compliance-officer/admin access to the reports dashboard.
+- `DashboardController` now uses `$this->requireManagerOrAdmin()` (inherited) for accounting and policy/gate authorization for compliance and reports.
+
+---
+
 ## Final Sign-off (All Phases Complete)
 
 ### All Phases Checklist
@@ -1363,6 +1416,7 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 - [x] Phase 6: Controllers migrated ✅
 - [x] Phase 7: TransactionService facade finalized ✅
 - [x] Out-of-Phase: Code duplication assessment and consolidation (Tasks A–H / 1–11) ✅
+- [x] Out-of-Phase: 2026-07-11 consolidation (Tasks 1–12) ✅
 
 ### Final Verification
 
@@ -1370,8 +1424,8 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
    ```bash
    php artisan test --compact 2>&1 | tee final-tests.txt
    ```
-   Result: `1397 passed, 9 failed, 5 skipped, 1 deprecated (3481 assertions)`
-   Remaining failures are pre-existing and unrelated to Phases 4–7 (route middleware aliases, route naming, orphaned views, User password_hash, MFA).
+   Result: `1421 passed, 10 failed, 5 skipped, 1 deprecated (3550 assertions)`
+   Remaining failures are pre-existing and unrelated to Phases 4–7 or the 2026-07-11 consolidation (route middleware aliases, route naming, orphaned views, User password_hash, MFA, AmlRuleEvaluator branch collision).
 
 2. **Code style**:
    ```bash
