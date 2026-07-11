@@ -132,6 +132,10 @@ class CustomerService implements CustomerServiceInterface
             // Encrypt sensitive fields if provided
             $encryptedData = $this->encryptCustomerData($data);
 
+            // Capture original values before update for re-screening and audit logging
+            $originalName = $customer->getOriginal('full_name');
+            $originalRiskRating = $customer->getOriginal('risk_rating');
+
             // Update customer
             $customer->update($encryptedData);
 
@@ -142,7 +146,7 @@ class CustomerService implements CustomerServiceInterface
             }
 
             // Re-screen against sanctions if name changed
-            if (isset($data['full_name']) && $data['full_name'] !== $customer->getOriginal('full_name')) {
+            if (isset($data['full_name']) && $data['full_name'] !== $originalName) {
                 $this->screenCustomer($customer, $data['full_name']);
             }
 
@@ -153,8 +157,8 @@ class CustomerService implements CustomerServiceInterface
             $user = User::find($userId);
             $this->auditTrailHelper->recordCustomer($customer->id, 'customer_updated', [
                 'old' => [
-                    'full_name' => $customer->getOriginal('full_name'),
-                    'risk_rating' => $customer->getOriginal('risk_rating'),
+                    'full_name' => $originalName,
+                    'risk_rating' => $originalRiskRating,
                 ],
                 'new' => [
                     'full_name' => $customer->full_name,
