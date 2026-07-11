@@ -7,7 +7,6 @@ use App\Enums\TransactionType;
 use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\JournalEntry;
-use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
@@ -286,25 +285,6 @@ class TransactionReversalService
 
     protected function reverseTellerAllocation(Transaction $transaction): void
     {
-        $user = User::find($transaction->user_id);
-        if ($user && $user->isTeller()) {
-            $allocation = $this->tellerAllocationService->getActiveAllocation(
-                $user,
-                $transaction->currency_code
-            );
-            if ($allocation) {
-                $allocation = TellerAllocation::where('id', $allocation->id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                if ($transaction->type->isBuy()) {
-                    $allocation->deduct((string) $transaction->amount_foreign);
-                    $allocation->subtractDailyUsed((string) $transaction->amount_local);
-                } else {
-                    $allocation->add((string) $transaction->amount_foreign);
-                    $allocation->subtractDailyUsed((string) $transaction->amount_local);
-                }
-            }
-        }
+        $this->tellerAllocationService->reverseTransactionAllocation($transaction);
     }
 }

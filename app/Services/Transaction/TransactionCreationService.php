@@ -8,13 +8,13 @@ use App\Enums\TransactionType;
 use App\Events\TransactionCreated;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
-use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
+use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
@@ -178,7 +178,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
         $this->updateTillBalance($context->tillBalance, $data['type'], $context->amountLocal, $data['amount_foreign']);
 
-        $this->updateTellerAllocation($context->allocation, $data['type'], $data['amount_foreign'], $context->amountLocal);
+        app(TellerAllocationService::class)->applyTransactionAllocation($transaction, $context->allocation);
 
         $this->createAccountingEntries($transaction, $ipAddress, $context->user);
     }
@@ -191,25 +191,6 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             $amountLocal,
             $amountForeign
         );
-    }
-
-    private function updateTellerAllocation(?Model $allocation, string $type, string $amountForeign, string $amountLocal): void
-    {
-        if (! $allocation) {
-            return;
-        }
-
-        $lockedAllocation = TellerAllocation::where('id', $allocation->id)
-            ->lockForUpdate()
-            ->firstOrFail();
-
-        if ($type === TransactionType::Buy->value) {
-            $lockedAllocation->add($amountForeign);
-        } else {
-            $lockedAllocation->deduct($amountForeign);
-        }
-
-        $lockedAllocation->addDailyUsed($amountLocal);
     }
 
     private function createAccountingEntries(Transaction $transaction, ?string $ipAddress, ?Model $user = null): void

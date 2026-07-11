@@ -11,7 +11,6 @@ use App\Exceptions\Domain\SelfApprovalException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Models\Counter;
 use App\Models\Customer;
-use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
@@ -243,32 +242,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
 
     private function updateTellerAllocation(Transaction $transaction): void
     {
-        $user = User::find($transaction->user_id);
-
-        if (! $user || ! $user->isTeller()) {
-            return;
-        }
-
-        $allocation = app(TellerAllocationService::class)->getActiveAllocation(
-            $user,
-            $transaction->currency_code
-        );
-
-        if (! $allocation) {
-            return;
-        }
-
-        $lockedAllocation = TellerAllocation::where('id', $allocation->id)
-            ->lockForUpdate()
-            ->firstOrFail();
-
-        if ($transaction->type === TransactionType::Buy) {
-            $lockedAllocation->add((string) $transaction->amount_foreign);
-        } else {
-            $lockedAllocation->deduct((string) $transaction->amount_foreign);
-        }
-
-        $lockedAllocation->addDailyUsed((string) $transaction->amount_local);
+        app(TellerAllocationService::class)->applyTransactionAllocation($transaction);
     }
 
     private function createAccountingEntries(Transaction $transaction, ?string $ipAddress, ?User $user): void
