@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\ReportType;
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesManager;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Report\ExportReportRequest;
@@ -13,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 class ReportController extends Controller
 {
     use ApiResponse;
+    use AuthorizesManager;
 
     public function __construct(
         protected ReportingService $reportingService,
@@ -24,8 +26,8 @@ class ReportController extends Controller
      */
     public function download(string $filename): JsonResponse
     {
-        if (! auth()->user()->isManager()) {
-            return $this->errorResponse('Unauthorized. Manager or Admin access required.', [], 403);
+        if ($response = $this->requireManagerOrAdminResponse()) {
+            return $response;
         }
 
         // Sanitize filename to prevent path traversal

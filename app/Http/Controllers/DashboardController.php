@@ -102,7 +102,7 @@ class DashboardController extends Controller
      */
     public function compliance(Request $request): View
     {
-        $this->ensureComplianceOfficerAccess(auth()->user(), 'Unauthorized. Compliance Officer access required.');
+        $this->requireComplianceOfficerAccess('Unauthorized. Compliance Officer access required.');
 
         $query = FlaggedTransaction::with(['transaction.customer', 'assignedTo', 'reviewer']);
 
@@ -141,7 +141,7 @@ class DashboardController extends Controller
      */
     public function assignFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
-        $this->ensureComplianceOfficerAccess(auth()->user());
+        $this->requireComplianceOfficerAccess();
 
         $oldStatus = $flaggedTransaction->status;
         $oldAssignedTo = $flaggedTransaction->assigned_to;
@@ -182,7 +182,7 @@ class DashboardController extends Controller
      */
     public function resolveFlag(Request $request, FlaggedTransaction $flaggedTransaction): RedirectResponse
     {
-        $this->ensureComplianceOfficerAccess(auth()->user());
+        $this->requireComplianceOfficerAccess();
 
         $oldStatus = $flaggedTransaction->status;
 
@@ -223,7 +223,7 @@ class DashboardController extends Controller
      */
     public function accounting(): View
     {
-        $this->ensureManagerAccess(auth()->user());
+        $this->requireManagerOrAdmin();
 
         $positions = $this->currencyPositionService->getAllPositions();
         $totalPnl = $this->currencyPositionService->getTotalPnl();
@@ -238,7 +238,7 @@ class DashboardController extends Controller
      */
     public function reports(): View
     {
-        $this->ensureCanViewReports(auth()->user());
+        $this->requireManagerOrAdminOrComplianceOfficer();
 
         $recentReports = ReportGenerated::with('generatedBy')
             ->orderBy('generated_at', 'desc')
@@ -266,9 +266,11 @@ class DashboardController extends Controller
     /**
      * Ensure the user is a Compliance Officer or Admin.
      */
-    private function ensureComplianceOfficerAccess(User $user, string $message = ''): void
+    private function requireComplianceOfficerAccess(string $message = ''): void
     {
-        if (! $user->isAdmin() && ! $user->isComplianceOfficer()) {
+        $user = auth()->user();
+
+        if (! $user?->isAdmin() && ! $user?->isComplianceOfficer()) {
             abort(403, $message);
         }
     }
@@ -276,21 +278,23 @@ class DashboardController extends Controller
     /**
      * Ensure the user is a Manager or Admin.
      */
-    private function ensureManagerAccess(User $user): void
+    private function requireManagerOrAdmin(): void
     {
-        if (! $user->isManager()) {
+        $user = auth()->user();
+
+        if (! $user?->isManager()) {
             abort(403, 'Unauthorized. Manager access required.');
         }
     }
 
     /**
-     * Ensure the user is allowed to view reports.
-     *
-     * Managers, Compliance Officers, and Admins may view reports.
+     * Ensure the user is a Manager, Compliance Officer, or Admin.
      */
-    private function ensureCanViewReports(User $user): void
+    private function requireManagerOrAdminOrComplianceOfficer(): void
     {
-        if (! $user->role->canViewReports()) {
+        $user = auth()->user();
+
+        if (! $user?->isManager() && ! $user?->isComplianceOfficer()) {
             abort(403, 'Unauthorized. Manager or Compliance Officer access required.');
         }
     }

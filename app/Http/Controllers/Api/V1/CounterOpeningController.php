@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesManager;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
@@ -24,6 +25,7 @@ class CounterOpeningController extends Controller
 {
     use ApiResponse;
     use AuthorizesCounter;
+    use AuthorizesManager;
 
     public function __construct(
         protected CounterOpeningWorkflowService $workflowService,
@@ -84,9 +86,8 @@ class CounterOpeningController extends Controller
     {
         $user = Auth::user();
 
-        // Only manager or admin can approve and open
-        if (! $user->role->isManager() && ! $user->role->isAdmin()) {
-            return $this->errorResponse('Only managers and admins can approve and open counters', [], 403);
+        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can approve and open counters')) {
+            return $response;
         }
 
         $counter = $this->authorizeCounter($counterId, $user);

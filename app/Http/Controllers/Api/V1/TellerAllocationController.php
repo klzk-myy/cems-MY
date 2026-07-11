@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesManager;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\TellerAllocation\ApproveAllocationRequest;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\Log;
 class TellerAllocationController extends Controller
 {
     use ApiResponse;
+    use AuthorizesManager;
 
     public function __construct(
         protected TellerAllocationService $allocationService
@@ -84,8 +86,8 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $this->allocationService->canManageAllocations($user)) {
-            return $this->errorResponse('Only managers and admins can approve allocations', [], 403);
+        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can approve allocations')) {
+            return $response;
         }
 
         $validated = $request->validated();
@@ -124,8 +126,8 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $this->allocationService->canManageAllocations($user)) {
-            return $this->errorResponse('Only managers and admins can reject allocations', [], 403);
+        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can reject allocations')) {
+            return $response;
         }
 
         $allocation = TellerAllocation::find($allocationId);
@@ -163,8 +165,8 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $this->allocationService->canManageAllocations($user)) {
-            return $this->errorResponse('Only managers and admins can modify allocations', [], 403);
+        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can modify allocations')) {
+            return $response;
         }
 
         $validated = $request->validated();
@@ -203,8 +205,8 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $this->allocationService->canManageAllocations($user)) {
-            return $this->errorResponse('Only managers and admins can return allocations to pool', [], 403);
+        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can return allocations to pool')) {
+            return $response;
         }
 
         $allocation = TellerAllocation::find($allocationId);
