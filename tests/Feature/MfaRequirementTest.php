@@ -86,7 +86,7 @@ class MfaRequirementTest extends TestCase
             'status' => CounterSessionStatus::Open,
         ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->manager)
             ->postJson("/api/v1/counters/{$this->counter->id}/approve-and-open", [
                 'teller_id' => $teller->id,
                 'approved_floats' => ['USD' => '5000.00'],
@@ -97,7 +97,7 @@ class MfaRequirementTest extends TestCase
                 'error' => 'MFA verification required',
             ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->manager)
             ->withSession($this->withMfaSession())
             ->postJson("/api/v1/counters/{$this->counter->id}/approve-and-open", [
                 'teller_id' => $teller->id,
@@ -119,7 +119,7 @@ class MfaRequirementTest extends TestCase
             'status' => CounterSessionStatus::Open,
         ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->manager)
             ->postJson("/api/v1/counters/{$this->counter->id}/emergency-close", [
                 'reason' => 'Test emergency',
             ]);
@@ -129,7 +129,7 @@ class MfaRequirementTest extends TestCase
                 'error' => 'MFA verification required',
             ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->manager)
             ->withSession($this->withMfaSession())
             ->postJson("/api/v1/counters/{$this->counter->id}/emergency-close", [
                 'reason' => 'Test emergency',
@@ -158,7 +158,7 @@ class MfaRequirementTest extends TestCase
             'closed_at' => now(),
         ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->manager)
             ->postJson("/api/v1/counters/{$this->counter->id}/emergency/{$closure->id}/acknowledge");
 
         $response->assertStatus(403)
@@ -166,7 +166,7 @@ class MfaRequirementTest extends TestCase
                 'error' => 'MFA verification required',
             ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->manager)
             ->withSession($this->withMfaSession())
             ->postJson("/api/v1/counters/{$this->counter->id}/emergency/{$closure->id}/acknowledge");
 
@@ -204,7 +204,7 @@ class MfaRequirementTest extends TestCase
             'variance_myr' => '0.00',
         ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->manager)
             ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
                 'verified' => true,
                 'notes' => 'Test',
@@ -215,7 +215,7 @@ class MfaRequirementTest extends TestCase
                 'error' => 'MFA verification required',
             ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->manager)
             ->withSession($this->withMfaSession())
             ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
                 'verified' => true,

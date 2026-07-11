@@ -51,6 +51,11 @@ $app = Application::configure(basePath: dirname(__DIR__))
             PerformanceTrackingMiddleware::class,
         ]);
 
+        // Enable stateful Sanctum authentication for first-party SPA API requests
+        $middleware->api(append: [
+            EnsureFrontendRequestsAreStateful::class,
+        ]);
+
         $middleware->alias([
             'auth' => Authenticate::class,
             'auth.basic' => AuthenticateWithBasicAuth::class,
