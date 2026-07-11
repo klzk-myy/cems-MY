@@ -115,15 +115,12 @@ class MonthEndCloseService
 
         $allSuccessful = collect($reports)->every(fn ($report) => ($report['status'] ?? 'failed') === 'success');
 
-        ReportGenerated::create([
-            'report_type' => ReportType::MonthEnd,
-            'period_start' => $date->copy()->startOfMonth(),
-            'period_end' => $date->copy()->endOfMonth(),
-            'generated_by' => auth()->id() ?? 1,
-            'generated_at' => now(),
-            'file_format' => 'CSV',
-            'status' => $allSuccessful ? 'Generated' : 'Failed',
-        ]);
+        $this->reportingService->recordGeneratedReport(
+            ReportType::MonthEnd,
+            $date->copy()->startOfMonth(),
+            $date->copy()->endOfMonth(),
+            $allSuccessful ? 'Generated' : 'Failed'
+        );
 
         return $reports;
     }

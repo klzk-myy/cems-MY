@@ -118,14 +118,11 @@ class RegulatoryReportController extends Controller
         $date = $request->input('date', now()->subDay()->toDateString());
         $report = $this->reportingService->generateMSB2Data($date);
 
-        ReportGenerated::create([
-            'report_type' => ReportType::Msb2,
-            'period_start' => $date,
-            'period_end' => $date,
-            'generated_by' => auth()->id(),
-            'generated_at' => now(),
-            'file_format' => 'CSV',
-        ]);
+        $this->reportingService->recordGeneratedReport(
+            ReportType::Msb2,
+            Carbon::parse($date)->startOfDay(),
+            Carbon::parse($date)->endOfDay()
+        );
 
         return $this->successResponse($report, 'MSB(2) report generated successfully.');
     }
@@ -175,14 +172,11 @@ class RegulatoryReportController extends Controller
         $month = $request->validated('month');
         $filepath = $this->reportingService->generateFormLMCACsv($month);
 
-        ReportGenerated::create([
-            'report_type' => ReportType::Lmca,
-            'period_start' => now()->parse($month)->startOfMonth(),
-            'period_end' => now()->parse($month)->endOfMonth(),
-            'generated_by' => auth()->id(),
-            'generated_at' => now(),
-            'file_format' => 'CSV',
-        ]);
+        $this->reportingService->recordGeneratedReport(
+            ReportType::Lmca,
+            now()->parse($month)->startOfMonth(),
+            now()->parse($month)->endOfMonth()
+        );
 
         return $this->successResponse([
             'filename' => basename($filepath),
@@ -257,14 +251,11 @@ class RegulatoryReportController extends Controller
         $quarter = $request->validated('quarter');
         $filepath = $this->reportingService->generateQuarterlyLargeValueCsv($quarter);
 
-        ReportGenerated::create([
-            'report_type' => ReportType::Qlvr,
-            'period_start' => $this->getQuarterStart($quarter),
-            'period_end' => $this->getQuarterEnd($quarter),
-            'generated_by' => auth()->id(),
-            'generated_at' => now(),
-            'file_format' => 'CSV',
-        ]);
+        $this->reportingService->recordGeneratedReport(
+            ReportType::Qlvr,
+            $this->getQuarterStart($quarter),
+            $this->getQuarterEnd($quarter)
+        );
 
         return $this->successResponse([
             'filename' => basename($filepath),
@@ -297,14 +288,11 @@ class RegulatoryReportController extends Controller
 
         $filepath = $this->reportingService->generatePositionLimitCsv();
 
-        ReportGenerated::create([
-            'report_type' => ReportType::Plr,
-            'period_start' => now()->startOfDay(),
-            'period_end' => now()->endOfDay(),
-            'generated_by' => auth()->id(),
-            'generated_at' => now(),
-            'file_format' => 'CSV',
-        ]);
+        $this->reportingService->recordGeneratedReport(
+            ReportType::Plr,
+            now()->startOfDay(),
+            now()->endOfDay()
+        );
 
         return $this->successResponse([
             'filename' => basename($filepath),

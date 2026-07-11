@@ -2,9 +2,11 @@
 
 namespace App\Services\Reporting;
 
+use App\Enums\ReportType;
 use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
+use App\Models\ReportGenerated;
 use App\Models\Transaction;
 use App\Services\Contracts\ReportingServiceInterface;
 use App\Services\System\EncryptionService;
@@ -26,6 +28,24 @@ class ReportingService implements ReportingServiceInterface
     ) {
         $this->encryptionService = $encryptionService;
         $this->mathService = $mathService;
+    }
+
+    public function recordGeneratedReport(
+        ReportType $reportType,
+        Carbon $periodStart,
+        Carbon $periodEnd,
+        string $status = 'Generated',
+        string $format = 'CSV'
+    ): ReportGenerated {
+        return ReportGenerated::create([
+            'report_type' => $reportType,
+            'period_start' => $periodStart,
+            'period_end' => $periodEnd,
+            'generated_by' => auth()->id(),
+            'generated_at' => now(),
+            'file_format' => $format,
+            'status' => $status,
+        ]);
     }
 
     public function generateMSB2(string $date): string

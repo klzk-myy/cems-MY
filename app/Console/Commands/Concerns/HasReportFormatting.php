@@ -4,20 +4,25 @@ namespace App\Console\Commands\Concerns;
 
 use App\Enums\ReportType;
 use App\Models\ReportGenerated;
+use App\Services\Reporting\ReportingService;
+use Carbon\Carbon;
 
 trait HasReportFormatting
 {
-    protected function createReportRecord(ReportType $type, string $periodStart, string $periodEnd, string $format = 'CSV'): ReportGenerated
-    {
-        return ReportGenerated::create([
-            'report_type' => $type,
-            'period_start' => $periodStart,
-            'period_end' => $periodEnd,
-            'generated_by' => auth()->id() ?? 1,
-            'generated_at' => now(),
-            'file_format' => $format,
-            'status' => 'Generated',
-        ]);
+    protected function createReportRecord(
+        ReportType $reportType,
+        Carbon $periodStart,
+        Carbon $periodEnd,
+        string $status = 'Generated',
+        string $format = 'CSV'
+    ): ReportGenerated {
+        return app(ReportingService::class)->recordGeneratedReport(
+            $reportType,
+            $periodStart,
+            $periodEnd,
+            $status,
+            $format
+        );
     }
 
     protected function getReportFilename(ReportType $type, string $suffix): string
