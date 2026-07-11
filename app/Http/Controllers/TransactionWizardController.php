@@ -3,28 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CddLevel;
-use App\Enums\TransactionStatus;
-use App\Enums\TransactionType;
+use App\Http\Concerns\DeterminesTransactionStatus;
 use App\Http\Requests\TransactionWizardStep1Request;
 use App\Http\Requests\TransactionWizardStep2Request;
 use App\Http\Requests\TransactionWizardStep3Request;
 use App\Models\Customer;
 use App\Models\User;
-use App\Services\Branch\TellerAllocationService;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\System\MathService;
 use App\Services\System\WizardSessionService;
-use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\TransactionApprovalService;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TransactionWizardController extends Controller
 {
+    use DeterminesTransactionStatus;
+
     public function __construct(
         protected TransactionValidationInterface $validationService,
         protected TransactionCreationServiceInterface $creationService,
@@ -327,36 +325,5 @@ class TransactionWizardController extends Controller
                 ? $sessionData['risk_flags']
                 : null,
         ];
-    }
-
-    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?Model
-    {
-        if (! $user->isTeller()) {
-            return null;
-        }
-
-        $service = app(TellerAllocationService::class);
-
-        if ($data['type'] === TransactionType::Buy->value) {
-            $result = $service->validateTransaction($user, $data['currency_code'], $amountLocal, true);
-
-            if (! $result->valid) {
-                throw new \InvalidArgumentException($result->reason);
-            }
-
-            return $result->allocation;
-        }
-
-        return $service->getActiveAllocation($user, $data['currency_code']);
-    }
-
-    private function determineInitialStatus(string $amountLocal, bool $holdRequired): TransactionStatus
-    {
-        if ($holdRequired
-            || $this->mathService->compare($amountLocal, app(ThresholdService::class)->getAutoApproveThreshold()) >= 0) {
-            return TransactionStatus::PendingApproval;
-        }
-
-        return TransactionStatus::Completed;
     }
 }
