@@ -250,7 +250,7 @@ class CriticalTransactionFixesTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        $this->mock(ReportingService::class, function ($mock) {
+        $this->partialMock(ReportingService::class, function ($mock) {
             $mock->shouldReceive('generateFormLMCACsv')->andThrow(new \Exception('LMCA failed'));
         });
 
