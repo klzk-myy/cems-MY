@@ -45,8 +45,6 @@ class CustomerService implements CustomerServiceInterface
 
     /**
      * Create a customer and return the result with a success message.
-     *
-     * @throws \RuntimeException if creation fails
      */
     public function createCustomerAction(array $data, int $createdBy): CustomerActionResult
     {
@@ -62,14 +60,15 @@ class CustomerService implements CustomerServiceInterface
 
     /**
      * Update a customer and return the result.
-     *
-     * @throws \RuntimeException if update fails
      */
     public function updateCustomerAction(Customer $customer, array $data, int $updatedBy): CustomerActionResult
     {
         $customer = $this->updateCustomer($customer, $data, $updatedBy);
 
-        return new CustomerActionResult($customer);
+        return new CustomerActionResult(
+            $customer,
+            "Customer {$customer->full_name} updated successfully."
+        );
     }
 
     /**
@@ -143,7 +142,7 @@ class CustomerService implements CustomerServiceInterface
             }
 
             // Re-screen against sanctions if name changed
-            if (isset($data['full_name']) && $data['full_name'] !== $customer->full_name) {
+            if (isset($data['full_name']) && $data['full_name'] !== $customer->getOriginal('full_name')) {
                 $this->screenCustomer($customer, $data['full_name']);
             }
 

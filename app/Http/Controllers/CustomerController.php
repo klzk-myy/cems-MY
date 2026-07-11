@@ -309,7 +309,7 @@ class CustomerController extends Controller
             $result = $this->customerService->updateCustomerAction($customer, $validated, auth()->id());
 
             return redirect()->route('customers.show', $result->customer)
-                ->with('success', "Customer {$result->customer->full_name} updated successfully.");
+                ->with('success', $result->message);
         } catch (\Exception $e) {
             Log::error('Customer update failed', [
                 'error' => $e->getMessage(),

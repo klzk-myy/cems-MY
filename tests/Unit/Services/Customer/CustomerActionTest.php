@@ -76,7 +76,7 @@ class CustomerActionTest extends TestCase
 
         $this->assertInstanceOf(CustomerActionResult::class, $result);
         $this->assertSame($updated, $result->customer);
-        $this->assertNull($result->message);
+        $this->assertSame('Customer Alice Smith-Updated updated successfully.', $result->message);
     }
 
     #[Test]
