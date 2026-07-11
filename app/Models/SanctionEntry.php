@@ -61,7 +61,7 @@ class SanctionEntry extends BaseModel
         ];
     }
 
-    public static function buildForUpdate(array $data, array $normalized, ?SanctionEntry $entry = null): array
+    public static function buildForUpdate(array $data, array $normalized): array
     {
         $payload = [
             'entity_name' => $data['entity_name'] ?? null,
