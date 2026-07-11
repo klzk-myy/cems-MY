@@ -102,10 +102,12 @@ class ReportingService implements ReportingServiceInterface
 
     public function generateMSB2Data(string $date): array
     {
-        $transactions = app(TransactionReportQuery::class)
-            ->completed()
-            ->forDateRange($date, $date)
-            ->get();
+        $query = app(TransactionReportQuery::class);
+
+        $summary = $query->buySellSummary(
+            $query->completed()->forDateRange($date, $date)->select('currency_code')->orderBy('currency_code'),
+            'currency_code'
+        )->keyBy('currency_code');
 
         $currencies = Currency::where('is_active', true)->get();
         $currencyCodes = $currencies->pluck('code')->toArray();
@@ -114,23 +116,29 @@ class ReportingService implements ReportingServiceInterface
             ->get()
             ->keyBy('currency_code');
 
+        $transactions = $query->completed()
+            ->forDateRange($date, $date)
+            ->select(['currency_code', 'type', 'rate'])
+            ->get()
+            ->groupBy('currency_code');
+
         $rows = [];
 
         foreach ($currencies as $currency) {
-            $currencyTxns = $transactions->where('currency_code', $currency->code);
-            $volumes = app(TransactionReportQuery::class)->buySellVolumes($currencyTxns);
+            $row = $summary->get($currency->code);
+            $currencyTxns = $transactions->get($currency->code, collect());
             $position = $positions->get($currency->code);
 
-            $buyTxns = $currencyTxns->where('type', 'Buy');
-            $sellTxns = $currencyTxns->where('type', 'Sell');
+            $buyTxns = $currencyTxns->where('type', TransactionType::Buy->value);
+            $sellTxns = $currencyTxns->where('type', TransactionType::Sell->value);
 
             $rows[] = [
                 'Date' => $date,
                 'Currency' => $currency->code,
-                'Buy_Volume_MYR' => $volumes['buy_volume'],
-                'Buy_Count' => $volumes['buy_count'],
-                'Sell_Volume_MYR' => $volumes['sell_volume'],
-                'Sell_Count' => $volumes['sell_count'],
+                'Buy_Volume_MYR' => $row ? (string) $row->buy_volume : '0',
+                'Buy_Count' => $row ? (int) $row->buy_count : 0,
+                'Sell_Volume_MYR' => $row ? (string) $row->sell_volume : '0',
+                'Sell_Count' => $row ? (int) $row->sell_count : 0,
                 'Avg_Buy_Rate' => (string) ($buyTxns->avg('rate') ?? '0'),
                 'Avg_Sell_Rate' => (string) ($sellTxns->avg('rate') ?? '0'),
                 'Opening_Position' => $position ? $position->quantity : '0',
