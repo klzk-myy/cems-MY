@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\SelfApprovalException;
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 class TransactionApprovalController extends Controller
 {
     use ApiResponse;
+    use AuthorizesBranchResource;
 
     public function __construct(
         protected TransactionApprovalService $approvalService
@@ -27,10 +29,9 @@ class TransactionApprovalController extends Controller
 
         $transaction = Transaction::findOrFail($transactionId);
 
-        // Enforce branch-based authorization: managers can only approve transactions within their own branch
-        $user = auth()->user();
-        if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
-            return $this->errorResponse('You can only approve transactions for your own branch.', [], 403);
+        $authorization = $this->authorizeBranchResource($transaction, 'approve');
+        if ($authorization instanceof JsonResponse) {
+            return $authorization;
         }
 
         try {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBranchRequest;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Auth;
 class BranchController extends Controller
 {
     use ApiResponse;
+    use AuthorizesBranchResource;
 
     public function __construct(
         protected BranchService $branchService,
@@ -61,10 +63,10 @@ class BranchController extends Controller
     public function show(int $id): JsonResponse
     {
         $branch = Branch::findOrFail($id);
-        $user = Auth::user();
 
-        if (! $user->role->isAdmin() && $user->branch_id !== $id) {
-            return $this->errorResponse('Unauthorized access to this branch', [], 403);
+        $authorization = $this->authorizeBranchResource($branch, 'access', 'Unauthorized access to this branch');
+        if ($authorization instanceof JsonResponse) {
+            return $authorization;
         }
 
         return $this->successResponse($branch);
@@ -107,10 +109,10 @@ class BranchController extends Controller
     public function counters(int $id): JsonResponse
     {
         $branch = Branch::findOrFail($id);
-        $user = Auth::user();
 
-        if (! $user->role->isAdmin() && $user->branch_id !== $id) {
-            return $this->errorResponse('Unauthorized access to this branch', [], 403);
+        $authorization = $this->authorizeBranchResource($branch, 'access', 'Unauthorized access to this branch');
+        if ($authorization instanceof JsonResponse) {
+            return $authorization;
         }
 
         $counters = $branch->counters()->get(['id', 'code', 'name', 'status']);
@@ -125,10 +127,10 @@ class BranchController extends Controller
     public function users(int $id): JsonResponse
     {
         $branch = Branch::findOrFail($id);
-        $user = Auth::user();
 
-        if (! $user->role->isAdmin() && $user->branch_id !== $id) {
-            return $this->errorResponse('Unauthorized access to this branch', [], 403);
+        $authorization = $this->authorizeBranchResource($branch, 'access', 'Unauthorized access to this branch');
+        if ($authorization instanceof JsonResponse) {
+            return $authorization;
         }
 
         $users = $branch->users()->get(['id', 'username', 'email', 'role']);

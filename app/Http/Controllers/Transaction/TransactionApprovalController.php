@@ -6,6 +6,7 @@ use App\Enums\TransactionConfirmationStatus;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\SelfApprovalException;
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmTransactionApprovalRequest;
 use App\Models\Transaction;
@@ -28,6 +29,8 @@ use Illuminate\View\View;
 
 class TransactionApprovalController extends Controller
 {
+    use AuthorizesBranchResource;
+
     public function __construct(
         protected TransactionApprovalService $approvalService,
         protected CurrencyPositionService $positionService,
@@ -224,7 +227,11 @@ class TransactionApprovalController extends Controller
      */
     private function ensureCanApproveForBranch(Transaction $transaction, User $user, string $action = 'manage'): void
     {
-        if (! $user->isAdmin() && $transaction->branch_id !== $user->branch_id) {
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        if ($transaction->branch_id !== $user->branch_id) {
             abort(403, "You can only {$action} transactions for your own branch.");
         }
     }
