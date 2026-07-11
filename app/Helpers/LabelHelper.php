@@ -30,7 +30,7 @@ class LabelHelper
         }
 
         foreach ($methodPreference as $method) {
-            if ((is_object($value) || is_string($value)) && method_exists($value, $method)) {
+            if (is_object($value) && method_exists($value, $method)) {
                 return (string) $value->{$method}();
             }
         }

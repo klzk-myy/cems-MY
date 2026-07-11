@@ -320,11 +320,6 @@ class SetupController extends Controller
             ]);
         }
 
-        if (isset($setupData['currencies'])) {
-            // Base currency is set via session/config - no is_base column needed
-            // The base currency code is stored in $setupData['currencies']['base_currency']
-        }
-
         if (isset($setupData['rates']) && ($setupData['rates']['use_default_rates'] ?? false)) {
             Artisan::call('db:seed', ['--class' => 'ExchangeRateSeeder', '--force' => true]);
         }
