@@ -26,6 +26,12 @@ class TillBalanceManagerLifecycleTest extends TestCase
         $this->manager = app(TillBalanceManager::class);
     }
 
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
+
     #[Test]
     public function open_till_creates_till_balance_with_opening_balance(): void
     {

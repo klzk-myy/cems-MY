@@ -17,6 +17,13 @@ class TillBalanceManager
         protected TillService $tillService,
     ) {}
 
+    private function resolveCounter(string|int $tillIdentifier): ?Counter
+    {
+        return Counter::where('code', $tillIdentifier)
+            ->orWhere('id', $tillIdentifier)
+            ->first();
+    }
+
     public function openTill(
         Counter $till,
         string $currencyCode,
@@ -67,13 +74,18 @@ class TillBalanceManager
             throw new \RuntimeException('Till already closed for today.');
         }
 
-        $counter = Counter::where('code', $tillBalance->till_id)
-            ->orWhere('id', $tillBalance->till_id)
-            ->first();
+        $counter = $this->resolveCounter($tillBalance->till_id);
 
-        $netFlow = $counter
-            ? $this->tillService->calculateNetFlow($tillBalance->till_id, $tillBalance->currency_code)
-            : '0';
+        if (! $counter) {
+            Log::warning('Counter not found for till balance', [
+                'till_id' => $tillBalance->till_id,
+                'currency_code' => $tillBalance->currency_code,
+            ]);
+
+            throw new \RuntimeException('Counter not found for till balance.');
+        }
+
+        $netFlow = $this->tillService->calculateNetFlow($tillBalance->till_id, $tillBalance->currency_code);
 
         $expectedClosing = $this->mathService->add(
             (string) $tillBalance->opening_balance,
@@ -181,9 +193,7 @@ class TillBalanceManager
         string $amountForeign,
         bool $lock = true
     ): void {
-        $counter = Counter::where('code', $tillBalance->till_id)
-            ->orWhere('id', $tillBalance->till_id)
-            ->first();
+        $counter = $this->resolveCounter($tillBalance->till_id);
 
         if (! $counter) {
             throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
@@ -218,9 +228,7 @@ class TillBalanceManager
         string $amountForeign,
         bool $lock = true
     ): void {
-        $counter = Counter::where('code', $tillBalance->till_id)
-            ->orWhere('id', $tillBalance->till_id)
-            ->first();
+        $counter = $this->resolveCounter($tillBalance->till_id);
 
         if (! $counter) {
             Log::warning('No counter found for reversal', [
