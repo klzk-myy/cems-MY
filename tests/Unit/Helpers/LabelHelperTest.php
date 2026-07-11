@@ -83,4 +83,20 @@ class LabelHelperTest extends TestCase
         $this->assertSame('Active', LabelHelper::getStatusLabel(LabelHelperStatusTestEnum::Active));
         $this->assertSame('Buy', LabelHelper::getTypeLabel(LabelHelperTypeTestEnum::Buy));
     }
+
+    #[Test]
+    public function it_returns_default_for_non_string_scalar(): void
+    {
+        $this->assertSame('Unknown', LabelHelper::getStatusLabel(123));
+        $this->assertSame('Unknown', LabelHelper::getTypeLabel(123));
+    }
+
+    #[Test]
+    public function it_returns_default_for_object_without_to_string(): void
+    {
+        $object = new class {};
+
+        $this->assertSame('Unknown', LabelHelper::getStatusLabel($object));
+        $this->assertSame('Unknown', LabelHelper::getTypeLabel($object));
+    }
 }

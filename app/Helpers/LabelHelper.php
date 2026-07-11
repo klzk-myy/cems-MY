@@ -30,13 +30,21 @@ class LabelHelper
         }
 
         foreach ($methodPreference as $method) {
-            if (method_exists($value, $method)) {
+            if ((is_object($value) || is_string($value)) && method_exists($value, $method)) {
                 return (string) $value->{$method}();
             }
         }
 
         if (is_object($value) && enum_exists(get_class($value))) {
             return $value->name ?? $default;
+        }
+
+        if (is_object($value) && ! method_exists($value, '__toString')) {
+            return $default;
+        }
+
+        if (! is_object($value) && ! is_string($value)) {
+            return $default;
         }
 
         return (string) $value;

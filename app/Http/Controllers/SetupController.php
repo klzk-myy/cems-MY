@@ -264,22 +264,10 @@ class SetupController extends Controller
 
     private function getMissingComponents(): array
     {
-        $keys = [
-            'admin_user' => 'admin_user',
-            'currencies' => 'currencies',
-            'exchange_rates' => 'exchange_rates',
-            'branches' => 'branches',
-            'chart_of_accounts' => 'chart_of_accounts',
-        ];
-
-        $missing = [];
-        foreach ($keys as $key => $component) {
-            if (! $this->getSetupChecks()[$key]) {
-                $missing[] = $component;
-            }
-        }
-
-        return $missing;
+        return array_keys(array_filter(
+            $this->getSetupChecks(),
+            fn ($check) => ! $check
+        ));
     }
 
     private function runMigrations(): void

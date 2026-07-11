@@ -6,12 +6,9 @@ use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\ReportGenerated;
 use App\Models\Transaction;
-use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
-use App\Services\AuditService;
 use App\Services\Compliance\ComplianceFlagService;
 use App\Services\System\CacheOptimizationService;
-use App\Services\System\CacheTagsService;
 use App\Services\Transaction\RateApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -21,11 +18,9 @@ use Illuminate\View\View;
 class DashboardController extends Controller
 {
     public function __construct(
-        protected AuditService $auditService,
         protected CurrencyPositionService $currencyPositionService,
         protected RateApiService $rateApiService,
         protected CacheOptimizationService $cacheOptimizationService,
-        protected CacheTagsService $cacheTagsService,
     ) {}
 
     /**
