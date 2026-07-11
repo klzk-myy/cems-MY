@@ -12,11 +12,9 @@ class OpenTillRequest extends AuthorizedFormRequest
     public function rules(): array
     {
         return [
-            'counter_id' => 'required|exists:counters,id',
-            'opening_balance_myr' => 'required|numeric|min:0',
-            'currency_balances' => 'nullable|array',
-            'currency_balances.*.currency_code' => 'required|string|max:3',
-            'currency_balances.*.amount' => 'required|numeric|min:0',
+            'till_id' => 'required|exists:counters,id',
+            'currency_code' => 'required|string|exists:currencies,code',
+            'opening_balance' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:500',
         ];
     }

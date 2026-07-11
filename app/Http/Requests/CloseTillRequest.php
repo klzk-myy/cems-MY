@@ -12,11 +12,9 @@ class CloseTillRequest extends AuthorizedFormRequest
     public function rules(): array
     {
         return [
-            'counter_id' => 'required|exists:counters,id',
-            'closing_balance_myr' => 'required|numeric|min:0',
-            'currency_balances' => 'nullable|array',
-            'currency_balances.*.currency_code' => 'required|string|max:3',
-            'currency_balances.*.amount' => 'required|numeric|min:0',
+            'till_id' => 'required|exists:counters,id',
+            'currency_code' => 'required|string|exists:currencies,code',
+            'closing_balance' => 'required|numeric|min:0',
             'difference_notes' => 'nullable|string|max:500',
         ];
     }

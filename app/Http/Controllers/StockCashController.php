@@ -172,7 +172,7 @@ class StockCashController extends Controller
                 $tillBalance,
                 (string) $validated['closing_balance'],
                 auth()->id(),
-                $validated['notes'] ?? null
+                $validated['difference_notes'] ?? null
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
