@@ -217,9 +217,10 @@ class RegulatoryReportController extends Controller
         $this->requireManagerOrAdmin();
 
         $quarter = $request->validated('quarter', now()->format('Y').'-Q'.(int) ceil((int) now()->format('n') / 3));
+        $quarterVo = Quarter::fromString($quarter);
 
         $reportGenerated = ReportGenerated::where('report_type', ReportType::Qlvr)
-            ->where('period_start', Quarter::fromString($quarter)->startDate())
+            ->where('period_start', $quarterVo->startDate())
             ->first();
 
         $reportData = $this->reportingService->generateQuarterlyLargeValueReport($quarter);
@@ -235,12 +236,13 @@ class RegulatoryReportController extends Controller
         $this->requireManagerOrAdmin();
 
         $quarter = $request->validated('quarter');
+        $quarterVo = Quarter::fromString($quarter);
         $filepath = $this->reportingService->generateQuarterlyLargeValueCsv($quarter);
 
         $this->reportingService->recordGeneratedReport(
             ReportType::Qlvr,
-            Quarter::fromString($quarter)->startDate(),
-            Quarter::fromString($quarter)->endDate()
+            $quarterVo->startDate(),
+            $quarterVo->endDate()
         );
 
         return $this->successResponse([

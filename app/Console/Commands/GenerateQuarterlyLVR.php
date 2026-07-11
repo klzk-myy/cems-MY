@@ -25,7 +25,8 @@ class GenerateQuarterlyLVR extends Command
         try {
             $filepath = $reportingService->generateQuarterlyLargeValueCsv($quarter);
 
-            $this->createReportRecord(ReportType::Qlvr, Quarter::fromString($quarter)->startDate(), Quarter::fromString($quarter)->endDate());
+            $quarterVo = Quarter::fromString($quarter);
+            $this->createReportRecord(ReportType::Qlvr, $quarterVo->startDate(), $quarterVo->endDate());
 
             $this->info("Quarterly LVR generated: {$filepath}");
 
@@ -40,7 +41,7 @@ class GenerateQuarterlyLVR extends Command
     protected function getPreviousQuarter(): string
     {
         $now = now();
-        $q = ceil($now->format('n') / 3);
+        $q = (int) ceil($now->format('n') / 3);
         $y = $now->year;
 
         if ($q === 1) {
