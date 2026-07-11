@@ -17,7 +17,7 @@ trait AuthorizesBranchResource
         $user = Auth::user();
 
         if ($user === null) {
-            return $this->errorResponse('Unauthenticated.', [], 401);
+            return $this->denyResponse('Unauthenticated.', 401);
         }
 
         if ($user->isAdmin()) {
@@ -29,13 +29,21 @@ trait AuthorizesBranchResource
             : $resource->getAttribute('branch_id');
 
         if ($resourceBranchId !== null && $resourceBranchId !== $user->branch_id) {
-            return $this->errorResponse(
+            return $this->denyResponse(
                 $message ?? "You can only {$action} resources for your own branch.",
-                [],
                 403
             );
         }
 
         return true;
+    }
+
+    private function denyResponse(string $message, int $status): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'data' => [],
+        ], $status);
     }
 }
