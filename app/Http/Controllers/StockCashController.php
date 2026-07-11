@@ -7,15 +7,18 @@ use App\Http\Requests\CloseTillRequest;
 use App\Http\Requests\OpenTillRequest;
 use App\Http\Requests\TillReconciliationRequest;
 use App\Http\Requests\TillReportRequest;
+use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
+use App\Services\Branch\TillBalanceManager;
 use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class StockCashController extends Controller
@@ -24,7 +27,8 @@ class StockCashController extends Controller
         protected MathService $mathService,
         protected CurrencyPositionService $currencyPositionService,
         protected TillService $tillService,
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected TillBalanceManager $tillBalanceManager,
     ) {}
 
     /**
@@ -104,24 +108,29 @@ class StockCashController extends Controller
 
         $validated = $request->validated();
 
-        // Check if already open
-        $existing = TillBalance::where('till_id', $validated['till_id'])
-            ->where('currency_code', $validated['currency_code'])
-            ->whereDate('date', today())
+        $till = Counter::where('code', $validated['till_id'])
+            ->orWhere('id', $validated['till_id'])
             ->first();
 
-        if ($existing) {
-            return back()->with('error', 'Till already opened for this currency today.');
+        if (! $till) {
+            return back()->with('error', 'Till not found.');
         }
 
-        $tillBalance = TillBalance::create([
-            'till_id' => $validated['till_id'],
-            'currency_code' => $validated['currency_code'],
-            'opening_balance' => $validated['opening_balance'],
-            'date' => today(),
-            'opened_by' => auth()->id(),
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        try {
+            $tillBalance = $this->tillBalanceManager->openTill(
+                $till,
+                $validated['currency_code'],
+                (string) $validated['opening_balance'],
+                auth()->id(),
+                $validated['notes'] ?? null
+            );
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Failed to open till', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Unable to open till. Please try again.');
+        }
 
         // Log till opening
         $this->auditService->log(
@@ -158,32 +167,20 @@ class StockCashController extends Controller
             return back()->with('error', 'Till not found for today.');
         }
 
-        if ($tillBalance->closed_at) {
-            return back()->with('error', 'Till already closed for today.');
+        try {
+            $tillBalance = $this->tillBalanceManager->closeTill(
+                $tillBalance,
+                (string) $validated['closing_balance'],
+                auth()->id(),
+                $validated['notes'] ?? null
+            );
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Failed to close till', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Unable to close till. Please try again.');
         }
-
-        // Calculate expected closing balance based on transactions
-        $netFlow = $this->tillService->calculateNetFlow(
-            $validated['till_id'],
-            $validated['currency_code']
-        );
-
-        $expectedClosing = $this->mathService->add(
-            (string) $tillBalance->opening_balance,
-            (string) $netFlow
-        );
-        $variance = $this->mathService->subtract(
-            (string) $validated['closing_balance'],
-            $expectedClosing
-        );
-
-        $tillBalance->update([
-            'closing_balance' => $validated['closing_balance'],
-            'variance' => $variance,
-            'closed_by' => auth()->id(),
-            'closed_at' => now(),
-            'notes' => $validated['notes'] ?? null,
-        ]);
 
         // Log till closing
         $this->auditService->log(
@@ -195,12 +192,12 @@ class StockCashController extends Controller
                 'opening_balance' => $tillBalance->opening_balance,
             ],
             [
-                'closing_balance' => $validated['closing_balance'],
-                'variance' => $variance,
+                'closing_balance' => $tillBalance->closing_balance,
+                'variance' => $tillBalance->variance,
             ]
         );
 
-        return back()->with('success', 'Till closed successfully. Variance: '.number_format((float) $variance, 2));
+        return back()->with('success', 'Till closed successfully. Variance: '.number_format((float) $tillBalance->variance, 2));
     }
 
     /**
