@@ -22,6 +22,7 @@ use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionMonitoringService;
 use App\Services\Transaction\TransactionStateMachine;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -227,12 +228,10 @@ class TransactionApprovalController extends Controller
      */
     private function ensureCanApproveForBranch(Transaction $transaction, User $user, string $action = 'manage'): void
     {
-        if ($user->isAdmin()) {
-            return;
-        }
+        $result = $this->authorizeBranchResource($transaction, $action);
 
-        if ($transaction->branch_id !== $user->branch_id) {
-            abort(403, "You can only {$action} transactions for your own branch.");
+        if ($result instanceof JsonResponse) {
+            abort(403, $result->getData()->message ?? "You can only {$action} transactions for your own branch.");
         }
     }
 
