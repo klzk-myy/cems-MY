@@ -42,9 +42,10 @@ class SanctionEntry extends BaseModel
         'status' => SanctionStatus::class,
     ];
 
-    public static function buildFromValidated(array $data, array $normalized, bool $isUpdate = false): array
+    public static function buildForCreate(array $data, array $normalized): array
     {
-        $payload = [
+        return [
+            'list_id' => $data['list_id'],
             'entity_name' => $data['entity_name'] ?? null,
             'entity_type' => $data['entity_type'] ?? null,
             'aliases' => $data['aliases'] ?? null,
@@ -56,21 +57,33 @@ class SanctionEntry extends BaseModel
             'normalized_name' => $normalized['normalized_name'],
             'soundex_code' => $normalized['soundex_code'],
             'metaphone_code' => $normalized['metaphone_code'],
+            'status' => SanctionStatus::Active->value,
+        ];
+    }
+
+    public static function buildForUpdate(array $data, array $normalized, ?SanctionEntry $entry = null): array
+    {
+        $payload = [
+            'entity_name' => $data['entity_name'] ?? null,
+            'entity_type' => $data['entity_type'] ?? null,
+            'aliases' => $data['aliases'] ?? null,
+            'nationality' => $data['nationality'] ?? null,
+            'date_of_birth' => $data['date_of_birth'] ?? null,
+            'reference_number' => $data['reference_number'] ?? null,
+            'listing_date' => $data['listing_date'] ?? null,
+            'details' => $data['details'] ?? null,
+            'list_source' => $data['list_source'] ?? null,
+            'address' => $data['address'] ?? null,
+            'city' => $data['city'] ?? null,
+            'country' => $data['country'] ?? null,
+            'postal_code' => $data['postal_code'] ?? null,
+            'normalized_name' => $normalized['normalized_name'],
+            'soundex_code' => $normalized['soundex_code'],
+            'metaphone_code' => $normalized['metaphone_code'],
         ];
 
-        if (! $isUpdate) {
-            $payload['list_id'] = $data['list_id'];
-            $payload['status'] = 'active';
-        } else {
-            $payload['list_source'] = $data['list_source'] ?? null;
-            $payload['address'] = $data['address'] ?? null;
-            $payload['city'] = $data['city'] ?? null;
-            $payload['country'] = $data['country'] ?? null;
-            $payload['postal_code'] = $data['postal_code'] ?? null;
-
-            if (array_key_exists('status', $data)) {
-                $payload['status'] = $data['status'];
-            }
+        if (array_key_exists('status', $data)) {
+            $payload['status'] = $data['status'];
         }
 
         return $payload;

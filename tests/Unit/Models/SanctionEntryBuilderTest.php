@@ -2,12 +2,13 @@
 
 namespace Tests\Unit\Models;
 
+use App\Enums\SanctionStatus;
 use App\Models\SanctionEntry;
 use PHPUnit\Framework\TestCase;
 
 class SanctionEntryBuilderTest extends TestCase
 {
-    public function test_create_payload_includes_create_only_fields(): void
+    public function test_build_for_create_includes_create_only_fields(): void
     {
         $data = [
             'list_id' => 1,
@@ -22,16 +23,34 @@ class SanctionEntryBuilderTest extends TestCase
             'metaphone_code' => 'JN T',
         ];
 
-        $payload = SanctionEntry::buildFromValidated($data, $normalized);
+        $payload = SanctionEntry::buildForCreate($data, $normalized);
 
         $this->assertSame(1, $payload['list_id']);
         $this->assertSame('1990-01-01', $payload['date_of_birth']);
-        $this->assertSame('active', $payload['status']);
+        $this->assertSame(SanctionStatus::Active->value, $payload['status']);
         $this->assertArrayNotHasKey('list_source', $payload);
         $this->assertArrayNotHasKey('address', $payload);
     }
 
-    public function test_update_payload_includes_update_only_fields(): void
+    public function test_build_for_create_status_uses_active_enum_value(): void
+    {
+        $data = [
+            'list_id' => 1,
+            'entity_name' => 'John Doe',
+        ];
+
+        $normalized = [
+            'normalized_name' => 'john doe',
+            'soundex_code' => 'J530',
+            'metaphone_code' => 'JN T',
+        ];
+
+        $payload = SanctionEntry::buildForCreate($data, $normalized);
+
+        $this->assertSame(SanctionStatus::Active->value, $payload['status']);
+    }
+
+    public function test_build_for_update_includes_update_only_fields(): void
     {
         $data = [
             'entity_name' => 'John Doe',
@@ -51,7 +70,7 @@ class SanctionEntryBuilderTest extends TestCase
             'metaphone_code' => 'JN T',
         ];
 
-        $payload = SanctionEntry::buildFromValidated($data, $normalized, true);
+        $payload = SanctionEntry::buildForUpdate($data, $normalized);
 
         $this->assertSame('OFAC', $payload['list_source']);
         $this->assertSame('123 Main St', $payload['address']);
@@ -63,7 +82,7 @@ class SanctionEntryBuilderTest extends TestCase
         $this->assertArrayNotHasKey('list_id', $payload);
     }
 
-    public function test_update_payload_allows_missing_entity_name_and_entity_type(): void
+    public function test_build_for_update_allows_missing_entity_name_and_entity_type(): void
     {
         $data = [
             'list_source' => 'OFAC',
@@ -75,14 +94,14 @@ class SanctionEntryBuilderTest extends TestCase
             'metaphone_code' => 'JN T',
         ];
 
-        $payload = SanctionEntry::buildFromValidated($data, $normalized, true);
+        $payload = SanctionEntry::buildForUpdate($data, $normalized);
 
         $this->assertNull($payload['entity_name']);
         $this->assertNull($payload['entity_type']);
         $this->assertSame('OFAC', $payload['list_source']);
     }
 
-    public function test_update_payload_preserves_provided_normalized_values(): void
+    public function test_build_for_update_preserves_provided_normalized_values(): void
     {
         $data = [
             'entity_name' => 'Jane Doe',
@@ -95,14 +114,49 @@ class SanctionEntryBuilderTest extends TestCase
             'metaphone_code' => 'JN T',
         ];
 
-        $payload = SanctionEntry::buildFromValidated($data, $normalized, true);
+        $payload = SanctionEntry::buildForUpdate($data, $normalized);
 
         $this->assertSame('jane doe', $payload['normalized_name']);
         $this->assertSame('J530', $payload['soundex_code']);
         $this->assertSame('JN T', $payload['metaphone_code']);
     }
 
-    public function test_default_nulls_are_handled(): void
+    public function test_build_for_update_includes_status_when_provided(): void
+    {
+        $data = [
+            'entity_name' => 'John Doe',
+            'status' => 'inactive',
+        ];
+
+        $normalized = [
+            'normalized_name' => 'john doe',
+            'soundex_code' => 'J530',
+            'metaphone_code' => 'JN T',
+        ];
+
+        $payload = SanctionEntry::buildForUpdate($data, $normalized);
+
+        $this->assertSame('inactive', $payload['status']);
+    }
+
+    public function test_build_for_update_omits_status_when_absent(): void
+    {
+        $data = [
+            'entity_name' => 'John Doe',
+        ];
+
+        $normalized = [
+            'normalized_name' => 'john doe',
+            'soundex_code' => 'J530',
+            'metaphone_code' => 'JN T',
+        ];
+
+        $payload = SanctionEntry::buildForUpdate($data, $normalized);
+
+        $this->assertArrayNotHasKey('status', $payload);
+    }
+
+    public function test_build_for_create_default_nulls_are_handled(): void
     {
         $data = [
             'list_id' => 1,
@@ -116,7 +170,7 @@ class SanctionEntryBuilderTest extends TestCase
             'metaphone_code' => 'JN T',
         ];
 
-        $payload = SanctionEntry::buildFromValidated($data, $normalized);
+        $payload = SanctionEntry::buildForCreate($data, $normalized);
 
         $this->assertNull($payload['aliases']);
         $this->assertNull($payload['nationality']);

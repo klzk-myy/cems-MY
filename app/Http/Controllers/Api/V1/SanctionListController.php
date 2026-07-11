@@ -132,7 +132,7 @@ class SanctionListController extends Controller
 
         $normalized = $this->normalizeEntityName($validated['entity_name']);
 
-        $entry = SanctionEntry::create(SanctionEntry::buildFromValidated($validated, $normalized));
+        $entry = SanctionEntry::create(SanctionEntry::buildForCreate($validated, $normalized));
 
         return $this->successResponse([
             'id' => $entry->id,
@@ -156,7 +156,7 @@ class SanctionListController extends Controller
             ];
         }
 
-        $entry->update(SanctionEntry::buildFromValidated($validated, $normalized, true));
+        $entry->update(SanctionEntry::buildForUpdate($validated, $normalized));
 
         return $this->successResponse([
             'id' => $entry->id,

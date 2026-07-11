@@ -143,7 +143,7 @@ class SanctionListController extends Controller
 
         $normalized = $this->normalizeEntityName($validated['entity_name']);
 
-        SanctionEntry::create(SanctionEntry::buildFromValidated($validated, $normalized));
+        SanctionEntry::create(SanctionEntry::buildForCreate($validated, $normalized));
 
         return redirect()->route('compliance.sanctions.entries.index')
             ->with('success', 'Sanction entry created successfully');
@@ -172,7 +172,7 @@ class SanctionListController extends Controller
 
         $normalized = $this->normalizeEntityName($validated['entity_name']);
 
-        $entry->update(SanctionEntry::buildFromValidated($validated, $normalized, true));
+        $entry->update(SanctionEntry::buildForUpdate($validated, $normalized));
 
         return redirect()->route('compliance.sanctions.entries.show', $entry)
             ->with('success', 'Sanction entry updated successfully');
