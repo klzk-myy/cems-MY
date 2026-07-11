@@ -20,6 +20,7 @@ use App\Services\AuditService;
 use App\Services\Branch\CounterHandoverService;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\EmergencyCounterService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -76,35 +77,26 @@ class CounterController extends Controller
     {
         $user = auth()->user();
         $openingFloats = $request->input('opening_floats');
+        $today = now()->toDateString();
 
-        try {
-            $session = $this->counterService->openSession($counter, $user, $openingFloats);
-
-            // Audit log
-            $this->auditService->logWithSeverity(
-                'counter_opened',
-                [
-                    'user_id' => $user->id,
-                    'entity_type' => 'CounterSession',
-                    'entity_id' => $session->id,
-                    'new_values' => [
-                        'counter_code' => $counter->code,
-                        'counter_name' => $counter->name,
-                        'opened_by' => $user->username,
-                        'session_date' => $session->session_date->toDateString(),
-                        'opening_floats' => $openingFloats,
-                    ],
+        return $this->handleCounterAction(
+            action: 'counter_opened',
+            operation: fn () => $this->counterService->openSession($counter, $user, $openingFloats),
+            successMessage: "Counter {$counter->code} opened successfully",
+            redirectRoute: 'counters.index',
+            auditContext: [
+                'user_id' => $user->id,
+                'auditable_type' => 'CounterSession',
+                'counter_id' => $counter->id,
+                'new_values' => [
+                    'counter_code' => $counter->code,
+                    'counter_name' => $counter->name,
+                    'opened_by' => $user->username,
+                    'session_date' => $today,
+                    'opening_floats' => $openingFloats,
                 ],
-                'INFO'
-            );
-
-            return redirect()->route('counters.index')
-                ->with('success', "Counter {$counter->code} opened successfully");
-        } catch (\Exception $e) {
-            Log::error('Counter open failed', ['exception' => $e, 'counter_id' => $counter->id]);
-
-            return back()->with('error', "Failed to open counter: {$e->getMessage()}");
-        }
+            ]
+        );
     }
 
     public function showClose(Counter $counter): View
@@ -129,7 +121,6 @@ class CounterController extends Controller
      */
     public function close(CloseCounterRequest $request, Counter $counter): RedirectResponse
     {
-
         $user = auth()->user();
         $closingFloats = $request->input('closing_floats');
         $notes = $request->input('notes');
@@ -144,38 +135,29 @@ class CounterController extends Controller
             return back()->with('error', 'No open session found for this counter today.');
         }
 
-        try {
-            $this->counterService->closeSession($session, $user, $closingFloats, $notes);
-
-            // Audit log
-            $this->auditService->logWithSeverity(
-                'counter_closed',
-                [
-                    'user_id' => $user->id,
-                    'entity_type' => 'CounterSession',
-                    'entity_id' => $session->id,
-                    'old_values' => [
-                        'counter_code' => $counter->code,
-                        'status' => CounterSessionStatus::Open->value,
-                    ],
-                    'new_values' => [
-                        'counter_code' => $counter->code,
-                        'status' => CounterSessionStatus::Closed->value,
-                        'closed_by' => $user->username,
-                        'closing_floats' => $closingFloats,
-                        'notes' => $notes,
-                    ],
+        return $this->handleCounterAction(
+            action: 'counter_closed',
+            operation: fn () => $this->counterService->closeSession($session, $user, $closingFloats, $notes),
+            successMessage: "Counter {$counter->code} closed successfully",
+            redirectRoute: 'counters.index',
+            auditContext: [
+                'user_id' => $user->id,
+                'auditable_type' => 'CounterSession',
+                'auditable_id' => $session->id,
+                'counter_id' => $counter->id,
+                'old_values' => [
+                    'counter_code' => $counter->code,
+                    'status' => CounterSessionStatus::Open->value,
                 ],
-                'INFO'
-            );
-
-            return redirect()->route('counters.index')
-                ->with('success', "Counter {$counter->code} closed successfully");
-        } catch (\Exception $e) {
-            Log::error('Counter close failed', ['exception' => $e, 'counter_id' => $counter->id]);
-
-            return back()->with('error', "Failed to close counter: {$e->getMessage()}");
-        }
+                'new_values' => [
+                    'counter_code' => $counter->code,
+                    'status' => CounterSessionStatus::Closed->value,
+                    'closed_by' => $user->username,
+                    'closing_floats' => $closingFloats,
+                    'notes' => $notes,
+                ],
+            ]
+        );
     }
 
     public function status(Counter $counter): JsonResponse
@@ -276,46 +258,37 @@ class CounterController extends Controller
 
         $physicalCounts = $request->input('physical_counts');
 
-        try {
-            $this->counterService->initiateHandover(
+        return $this->handleCounterAction(
+            action: 'counter_handed_over',
+            operation: fn () => $this->counterService->initiateHandover(
                 $session,
                 $fromUser,
                 $toUser,
                 $supervisor,
                 $physicalCounts
-            );
-
-            // Audit log
-            $this->auditService->logWithSeverity(
-                'counter_handed_over',
-                [
-                    'user_id' => $fromUser->id,
-                    'entity_type' => 'CounterSession',
-                    'entity_id' => $session->id,
-                    'old_values' => [
-                        'counter_code' => $counter->code,
-                        'from_user' => $fromUser->username,
-                        'status' => CounterSessionStatus::Open->value,
-                    ],
-                    'new_values' => [
-                        'counter_code' => $counter->code,
-                        'from_user' => $fromUser->username,
-                        'to_user' => $toUser->username,
-                        'supervisor' => $supervisor->username,
-                        'status' => CounterSessionStatus::HandedOver->value,
-                        'physical_counts' => $physicalCounts,
-                    ],
+            ),
+            successMessage: "Counter {$counter->code} handed over to {$toUser->name}",
+            redirectRoute: 'counters.index',
+            auditContext: [
+                'user_id' => $fromUser->id,
+                'auditable_type' => 'CounterSession',
+                'auditable_id' => $session->id,
+                'counter_id' => $counter->id,
+                'old_values' => [
+                    'counter_code' => $counter->code,
+                    'from_user' => $fromUser->username,
+                    'status' => CounterSessionStatus::Open->value,
                 ],
-                'INFO'
-            );
-
-            return redirect()->route('counters.index')
-                ->with('success', "Counter {$counter->code} handed over to {$toUser->name}");
-        } catch (\Exception $e) {
-            Log::error('Counter handover failed', ['exception' => $e, 'counter_id' => $counter->id]);
-
-            return back()->with('error', "Failed to handover counter: {$e->getMessage()}");
-        }
+                'new_values' => [
+                    'counter_code' => $counter->code,
+                    'from_user' => $fromUser->username,
+                    'to_user' => $toUser->username,
+                    'supervisor' => $supervisor->username,
+                    'status' => CounterSessionStatus::HandedOver->value,
+                    'physical_counts' => $physicalCounts,
+                ],
+            ]
+        );
     }
 
     public function showEmergency(Counter $counter): View
@@ -425,6 +398,51 @@ class CounterController extends Controller
                 ->with('success', 'Handover acknowledged successfully');
         } catch (\Exception $e) {
             return back()->with('error', "Failed to acknowledge handover: {$e->getMessage()}");
+        }
+    }
+
+    private function handleCounterAction(
+        string $action,
+        callable $operation,
+        string $successMessage,
+        string $redirectRoute,
+        array $auditContext
+    ): RedirectResponse {
+        $verb = match ($action) {
+            'counter_opened' => 'open',
+            'counter_closed' => 'close',
+            'counter_handed_over' => 'handover',
+            default => $action,
+        };
+
+        try {
+            $result = $operation();
+
+            $auditableId = $auditContext['auditable_id'] ?? null;
+            if ($auditableId === null && $result instanceof Model) {
+                $auditableId = $result->getKey();
+            }
+
+            $this->auditService->logWithSeverity(
+                $action,
+                [
+                    'user_id' => $auditContext['user_id'] ?? auth()->id(),
+                    'entity_type' => $auditContext['auditable_type'] ?? 'Counter',
+                    'entity_id' => $auditableId,
+                    'old_values' => $auditContext['old_values'] ?? [],
+                    'new_values' => $auditContext['new_values'] ?? [],
+                ],
+                $auditContext['severity'] ?? 'INFO'
+            );
+
+            return redirect()->route($redirectRoute)->with('success', $successMessage);
+        } catch (\Exception $e) {
+            Log::error("Counter {$verb} failed", [
+                'exception' => $e,
+                'counter_id' => $auditContext['counter_id'] ?? $auditContext['auditable_id'] ?? null,
+            ]);
+
+            return back()->with('error', "Failed to {$verb} counter: {$e->getMessage()}");
         }
     }
 
