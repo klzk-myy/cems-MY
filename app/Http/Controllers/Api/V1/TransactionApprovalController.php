@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\SelfApprovalException;
-use App\Http\Controllers\Api\V1\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
+use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\Transaction\TransactionApprovalService;

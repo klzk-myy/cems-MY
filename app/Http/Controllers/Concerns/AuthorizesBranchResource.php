@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\Concerns;
+namespace App\Http\Controllers\Concerns;
 
 use App\Models\Branch;
 use Illuminate\Database\Eloquent\Model;

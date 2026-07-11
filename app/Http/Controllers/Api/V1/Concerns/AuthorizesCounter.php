@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Concerns;
 
+use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Models\Counter;
 use Illuminate\Http\JsonResponse;
 

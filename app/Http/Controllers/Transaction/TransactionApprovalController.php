@@ -6,7 +6,7 @@ use App\Enums\TransactionConfirmationStatus;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\SelfApprovalException;
-use App\Http\Controllers\Api\V1\Concerns\AuthorizesBranchResource;
+use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmTransactionApprovalRequest;
 use App\Models\Transaction;
@@ -208,10 +208,10 @@ class TransactionApprovalController extends Controller
     }
 
     /**
-     * Ensure the authenticated user is allowed to manage the transaction branch.
+     * Determine whether the transaction requires manager confirmation.
      *
-     * Managers can only approve or reject transactions within their own branch.
-     * Admins are exempt from this restriction.
+     * A transaction requires confirmation when its local-currency amount is
+     * greater than or equal to the configured threshold.
      */
     protected function requiresConfirmation(Transaction $transaction): bool
     {
@@ -231,7 +231,7 @@ class TransactionApprovalController extends Controller
         $result = $this->authorizeBranchResource($transaction, $action);
 
         if ($result instanceof JsonResponse) {
-            abort(403, $result->getData()->message ?? "You can only {$action} transactions for your own branch.");
+            abort($result->getStatusCode(), $result->getData()->message ?? "You can only {$action} transactions for your own branch.");
         }
     }
 
