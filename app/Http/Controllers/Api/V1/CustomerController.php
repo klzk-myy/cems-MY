@@ -79,14 +79,13 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $customer = $this->customerService->createCustomerAction($validated, auth()->id());
+            $result = $this->customerService->createCustomerAction($validated, auth()->id());
 
             return $this->resourceResponse(
-                new CustomerResource($customer->load(['documents', 'transactions'])),
+                new CustomerResource($result->customer->load(['documents', 'transactions'])),
                 'Customer created successfully.',
                 201
             );
-
         } catch (\Exception $e) {
             Log::error('Customer API store failed', [
                 'error' => $e->getMessage(),
@@ -142,13 +141,12 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $customer = $this->customerService->updateCustomerAction($customer, $validated, auth()->id());
+            $result = $this->customerService->updateCustomerAction($customer, $validated, auth()->id());
 
             return $this->resourceResponse(
-                new CustomerResource($customer->fresh()),
+                new CustomerResource($result->customer->fresh()),
                 'Customer updated successfully.'
             );
-
         } catch (\Exception $e) {
             Log::error('Customer API update failed', [
                 'error' => $e->getMessage(),

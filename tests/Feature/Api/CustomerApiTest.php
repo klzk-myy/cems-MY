@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Customer\CustomerActionResult;
 use App\Services\Customer\CustomerService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,10 +27,10 @@ class CustomerApiTest extends TestCase
                 }),
                 1
             )
-            ->andReturn(Customer::factory()->make([
+            ->andReturn(new CustomerActionResult(Customer::factory()->make([
                 'id' => 1,
                 'full_name' => 'John Doe',
-            ]));
+            ])));
 
         $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
             ->postJson('/api/v1/customers', [
@@ -64,7 +65,7 @@ class CustomerApiTest extends TestCase
                 }),
                 1
             )
-            ->andReturn($customer);
+            ->andReturn(new CustomerActionResult($customer));
 
         $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
             ->putJson("/api/v1/customers/{$customer->id}", [

@@ -202,16 +202,10 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $customer = $this->customerService->createCustomerAction($validated, auth()->id());
+            $result = $this->customerService->createCustomerAction($validated, auth()->id());
 
-            $message = "Customer {$customer->full_name} created successfully.";
-            if ($customer->sanction_hit) {
-                $message .= ' WARNING: Sanction match(es) found - customer flagged as High Risk.';
-            }
-
-            return redirect()->route('customers.show', $customer)
-                ->with('success', $message);
-
+            return redirect()->route('customers.show', $result->customer)
+                ->with('success', $result->message);
         } catch (\Exception $e) {
             Log::error('Customer store failed', [
                 'error' => $e->getMessage(),
@@ -312,15 +306,15 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $customer = $this->customerService->updateCustomerAction($customer, $validated, auth()->id());
+            $result = $this->customerService->updateCustomerAction($customer, $validated, auth()->id());
 
-            return redirect()->route('customers.show', $customer)
-                ->with('success', "Customer {$customer->full_name} updated successfully.");
-
+            return redirect()->route('customers.show', $result->customer)
+                ->with('success', "Customer {$result->customer->full_name} updated successfully.");
         } catch (\Exception $e) {
             Log::error('Customer update failed', [
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
+                'customer_id' => $customer->id,
             ]);
 
             return back()->with('error', 'Failed to update customer. Please contact support.')

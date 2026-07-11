@@ -44,23 +44,32 @@ class CustomerService implements CustomerServiceInterface
     ) {}
 
     /**
-     * Create a customer and return the model.
+     * Create a customer and return the result with a success message.
      *
      * @throws \RuntimeException if creation fails
      */
-    public function createCustomerAction(array $data, int $createdBy): Customer
+    public function createCustomerAction(array $data, int $createdBy): CustomerActionResult
     {
-        return $this->createCustomer($data, $createdBy);
+        $customer = $this->createCustomer($data, $createdBy);
+
+        $message = "Customer {$customer->full_name} created successfully.";
+        if ($customer->sanction_hit) {
+            $message .= ' WARNING: Sanction match(es) found - customer flagged as High Risk.';
+        }
+
+        return new CustomerActionResult($customer, $message);
     }
 
     /**
-     * Update a customer and return the refreshed model.
+     * Update a customer and return the result.
      *
      * @throws \RuntimeException if update fails
      */
-    public function updateCustomerAction(Customer $customer, array $data, int $updatedBy): Customer
+    public function updateCustomerAction(Customer $customer, array $data, int $updatedBy): CustomerActionResult
     {
-        return $this->updateCustomer($customer, $data, $updatedBy);
+        $customer = $this->updateCustomer($customer, $data, $updatedBy);
+
+        return new CustomerActionResult($customer);
     }
 
     /**

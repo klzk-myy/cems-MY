@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\Customer;
 
 use App\Models\Customer;
+use App\Services\Customer\CustomerActionResult;
 use App\Services\Customer\CustomerService;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,12 +18,13 @@ class CustomerActionTest extends TestCase
     }
 
     #[Test]
-    public function create_customer_action_delegates_to_create_customer_and_returns_customer(): void
+    public function create_customer_action_returns_result_with_customer_and_message(): void
     {
         $service = Mockery::mock(CustomerService::class)->makePartial();
         $data = ['full_name' => 'Alice Smith'];
         $createdBy = 5;
         $customer = new Customer(['full_name' => 'Alice Smith']);
+        $customer->sanction_hit = false;
 
         $service->shouldReceive('createCustomer')
             ->once()
@@ -31,11 +33,33 @@ class CustomerActionTest extends TestCase
 
         $result = $service->createCustomerAction($data, $createdBy);
 
-        $this->assertSame($customer, $result);
+        $this->assertInstanceOf(CustomerActionResult::class, $result);
+        $this->assertSame($customer, $result->customer);
+        $this->assertSame('Customer Alice Smith created successfully.', $result->message);
     }
 
     #[Test]
-    public function update_customer_action_delegates_to_update_customer_and_returns_refreshed_customer(): void
+    public function create_customer_action_appends_sanction_warning_when_sanction_hit(): void
+    {
+        $service = Mockery::mock(CustomerService::class)->makePartial();
+        $customer = new Customer(['full_name' => 'Alice Smith']);
+        $customer->sanction_hit = true;
+
+        $service->shouldReceive('createCustomer')
+            ->once()
+            ->andReturn($customer);
+
+        $result = $service->createCustomerAction([], 1);
+
+        $this->assertInstanceOf(CustomerActionResult::class, $result);
+        $this->assertSame(
+            'Customer Alice Smith created successfully. WARNING: Sanction match(es) found - customer flagged as High Risk.',
+            $result->message
+        );
+    }
+
+    #[Test]
+    public function update_customer_action_returns_result_with_customer(): void
     {
         $service = Mockery::mock(CustomerService::class)->makePartial();
         $customer = new Customer(['id' => 1, 'full_name' => 'Alice Smith']);
@@ -50,7 +74,9 @@ class CustomerActionTest extends TestCase
 
         $result = $service->updateCustomerAction($customer, $data, $updatedBy);
 
-        $this->assertSame($updated, $result);
+        $this->assertInstanceOf(CustomerActionResult::class, $result);
+        $this->assertSame($updated, $result->customer);
+        $this->assertNull($result->message);
     }
 
     #[Test]
