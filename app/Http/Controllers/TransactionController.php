@@ -3,13 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TransactionStatus;
-use App\Exceptions\Domain\AllocationValidationException;
-use App\Exceptions\Domain\DuplicateTransactionException;
-use App\Exceptions\Domain\InsufficientStockException;
-use App\Exceptions\Domain\InvalidCurrencyException;
-use App\Exceptions\Domain\PepApprovalRequiredException;
-use App\Exceptions\Domain\TillBalanceMissingException;
-use App\Http\Concerns\DeterminesTransactionStatus;
+use App\Exceptions\Domain\DomainException;
+use App\Exceptions\Domain\TransactionBlockedException;
 use App\Http\Requests\IndexTransactionRequest;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Branch;
@@ -19,16 +14,8 @@ use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\Accounting\AccountingService;
-use App\Services\Accounting\CurrencyPositionService;
-use App\Services\AuditService;
-use App\Services\Compliance\ComplianceService;
-use App\Services\Contracts\TransactionCreationServiceInterface;
-use App\Services\Contracts\TransactionValidationInterface;
-use App\Services\System\MathService;
-use App\Services\Transaction\DTOs\TransactionCreationContext;
+use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Transaction\TransactionCancellationService;
-use App\Services\Transaction\TransactionMonitoringService;
 use Barryvdh\DomPDF\PDF;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
@@ -39,18 +26,9 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TransactionController extends Controller
 {
-    use DeterminesTransactionStatus;
-
     public function __construct(
-        protected CurrencyPositionService $positionService,
-        protected ComplianceService $complianceService,
-        protected TransactionMonitoringService $monitoringService,
-        protected MathService $mathService,
-        protected AccountingService $accountingService,
-        protected AuditService $auditService,
+        protected TransactionServiceInterface $transactionService,
         protected TransactionCancellationService $cancellationService,
-        protected TransactionValidationInterface $validationService,
-        protected TransactionCreationServiceInterface $creationService,
         private PDF $pdf,
         private BarcodeGeneratorPNG $barcodeGenerator
     ) {}
@@ -131,40 +109,7 @@ class TransactionController extends Controller
         $validated['till_id'] = $counter ? (string) $counter->code : (string) $validated['counter_id'];
 
         try {
-            $this->validationService->validateCurrency($validated['currency_code']);
-            $this->validationService->validateIpAddress($ipAddress);
-
-            $tillBalance = $this->validationService->validateTillBalance($validated['till_id'], $validated['currency_code']);
-
-            $customer = Customer::findOrFail($validated['customer_id']);
-            $amountLocal = $this->mathService->multiply((string) $validated['amount_foreign'], (string) $validated['rate']);
-
-            $this->validationService->validatePepRequirements($customer, $validated);
-
-            $validationResult = $this->validationService->preValidate($customer, $amountLocal, $validated['currency_code']);
-
-            if ($validationResult->isBlocked()) {
-                return back()->with('error', $validationResult->getBlocks()[0]['message'])->withInput();
-            }
-
-            $user = User::findOrFail(auth()->id());
-            $allocation = $this->determineTellerAllocation($user, $validated, $amountLocal);
-            $status = $this->determineInitialStatus($amountLocal, $validationResult->isHoldRequired());
-
-            $context = new TransactionCreationContext(
-                data: $validated,
-                customer: $customer,
-                tillBalance: $tillBalance,
-                cddLevel: $validationResult->getCDDLevel(),
-                holdRequired: $validationResult->isHoldRequired(),
-                status: $status,
-                amountLocal: $amountLocal,
-                user: $user,
-                allocation: $allocation,
-                holdReason: $validationResult->isHoldRequired() ? 'Compliance hold' : null,
-            );
-
-            $transaction = $this->creationService->create($context, $user->id, $ipAddress);
+            $transaction = $this->transactionService->prepareAndCreate($validated, auth()->id(), $ipAddress);
 
             if ($transaction->status === TransactionStatus::PendingApproval) {
                 return redirect()->route('transactions.show', $transaction)
@@ -173,20 +118,9 @@ class TransactionController extends Controller
 
             return redirect()->route('transactions.show', $transaction)
                 ->with('success', 'Transaction completed successfully. Receipt #'.$transaction->id);
-
-        } catch (InvalidCurrencyException $e) {
+        } catch (TransactionBlockedException $e) {
             return back()->with('error', $e->getMessage())->withInput();
-        } catch (InsufficientStockException $e) {
-            return back()->with('error', $e->getMessage())->withInput();
-        } catch (DuplicateTransactionException $e) {
-            return back()->with('error', $e->getMessage())->withInput();
-        } catch (AllocationValidationException $e) {
-            return back()->with('error', $e->getMessage())->withInput();
-        } catch (TillBalanceMissingException $e) {
-            return back()->with('error', $e->getMessage())->withInput();
-        } catch (PepApprovalRequiredException $e) {
-            return back()->with('error', $e->getMessage())->withInput();
-        } catch (\InvalidArgumentException $e) {
+        } catch (DomainException $e) {
             return back()->with('error', $e->getMessage())->withInput();
         } catch (\Exception $e) {
             Log::error('Transaction creation failed', [
@@ -194,15 +128,6 @@ class TransactionController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'user_id' => auth()->id(),
             ]);
-
-            $this->auditService->logWithSeverity(
-                'transaction_failed',
-                [
-                    'user_id' => auth()->id(),
-                    'description' => $e->getMessage(),
-                ],
-                'ERROR'
-            );
 
             return back()->with('error', 'Transaction failed. Please contact support if the problem persists.')->withInput();
         }
@@ -254,7 +179,7 @@ class TransactionController extends Controller
         $transaction->load(['customer', 'user', 'approver']);
 
         $barcodeImage = null;
-        $barcodeText = str_pad($transaction->id, 10, '0', STR_PAD_LEFT);
+        $barcodeText = str_pad((string) $transaction->id, 10, '0', STR_PAD_LEFT);
         try {
             $barcodeData = $this->barcodeGenerator->getBarcode($barcodeText, $this->barcodeGenerator::TYPE_CODE_128);
             $barcodeImage = 'data:image/png;base64,'.base64_encode($barcodeData);
@@ -283,7 +208,7 @@ class TransactionController extends Controller
         $pdf = $this->pdf;
         $pdf->loadView('transactions.receipt', compact('transaction', 'barcodeImage', 'qrCodeImage', 'barcodeText'));
         $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait');
-        $filename = 'receipt_'.str_pad($transaction->id, 8, '0', STR_PAD_LEFT).'.pdf';
+        $filename = 'receipt_'.str_pad((string) $transaction->id, 8, '0', STR_PAD_LEFT).'.pdf';
 
         return $pdf->download($filename);
     }
