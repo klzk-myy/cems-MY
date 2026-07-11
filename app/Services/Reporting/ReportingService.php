@@ -7,20 +7,17 @@ use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\ReportGenerated;
-use App\Models\Transaction;
+use App\Models\User;
 use App\Services\Contracts\ReportingServiceInterface;
-use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
 use App\ValueObjects\Quarter;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class ReportingService implements ReportingServiceInterface
 {
     protected const LARGE_VALUE_THRESHOLD = '50000';
 
     public function __construct(
-        protected EncryptionService $encryptionService,
         protected MathService $mathService
     ) {}
 
@@ -44,19 +41,16 @@ class ReportingService implements ReportingServiceInterface
 
     public function generateMSB2(string $date): string
     {
-        $buyType = TransactionType::Buy->value;
-        $sellType = TransactionType::Sell->value;
+        $query = app(TransactionReportQuery::class);
 
-        $summary = Transaction::completed()
-            ->forDateRange($date, $date)
-            ->select('currency_code')
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume', [$buyType])
-            ->selectRaw('COUNT(CASE WHEN type = ? THEN 1 END) as buy_count', [$buyType])
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume', [$sellType])
-            ->selectRaw('COUNT(CASE WHEN type = ? THEN 1 END) as sell_count', [$sellType])
-            ->groupBy('currency_code')
-            ->orderBy('currency_code')
-            ->get();
+        $summary = $query->buySellSummary(
+            $query->completed()
+                ->forDateRange($date, $date)
+                ->select('currency_code')
+                ->orderBy('currency_code'),
+            'currency_code',
+            'amount_foreign'
+        );
 
         $filename = "MSB2_{$date}.csv";
 
@@ -265,7 +259,7 @@ class ReportingService implements ReportingServiceInterface
             ->distinct('customer_id')
             ->count('customer_id');
 
-        $staffCount = DB::table('users')
+        $staffCount = User::query()
             ->where('is_active', true)
             ->count();
 
