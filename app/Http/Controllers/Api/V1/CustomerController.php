@@ -79,7 +79,7 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $customer = $this->customerService->createCustomer($validated, auth()->id());
+            $customer = $this->customerService->createCustomerAction($validated, auth()->id());
 
             return $this->resourceResponse(
                 new CustomerResource($customer->load(['documents', 'transactions'])),
@@ -142,7 +142,7 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $customer = $this->customerService->updateCustomer($customer, $validated, auth()->id());
+            $customer = $this->customerService->updateCustomerAction($customer, $validated, auth()->id());
 
             return $this->resourceResponse(
                 new CustomerResource($customer->fresh()),

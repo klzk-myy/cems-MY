@@ -44,6 +44,26 @@ class CustomerService implements CustomerServiceInterface
     ) {}
 
     /**
+     * Create a customer and return the model.
+     *
+     * @throws \RuntimeException if creation fails
+     */
+    public function createCustomerAction(array $data, int $createdBy): Customer
+    {
+        return $this->createCustomer($data, $createdBy);
+    }
+
+    /**
+     * Update a customer and return the refreshed model.
+     *
+     * @throws \RuntimeException if update fails
+     */
+    public function updateCustomerAction(Customer $customer, array $data, int $updatedBy): Customer
+    {
+        return $this->updateCustomer($customer, $data, $updatedBy);
+    }
+
+    /**
      * Create a new customer with encryption, screening, and risk assessment.
      * Initial risk_rating is always 'Low' - automated risk scoring module determines actual risk.
      *

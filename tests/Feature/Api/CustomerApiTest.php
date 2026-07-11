@@ -18,7 +18,7 @@ class CustomerApiTest extends TestCase
     public function store_delegates_to_customer_service()
     {
         $customerService = $this->mock(CustomerService::class);
-        $customerService->shouldReceive('createCustomer')
+        $customerService->shouldReceive('createCustomerAction')
             ->once()
             ->with(
                 \Mockery::on(function ($data) {
@@ -53,7 +53,7 @@ class CustomerApiTest extends TestCase
     {
         $customer = Customer::factory()->create();
         $customerService = $this->mock(CustomerService::class);
-        $customerService->shouldReceive('updateCustomer')
+        $customerService->shouldReceive('updateCustomerAction')
             ->once()
             ->with(
                 \Mockery::on(function ($c) use ($customer) {

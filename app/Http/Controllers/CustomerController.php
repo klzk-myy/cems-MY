@@ -202,7 +202,7 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $customer = $this->customerService->createCustomer($validated, auth()->id());
+            $customer = $this->customerService->createCustomerAction($validated, auth()->id());
 
             $message = "Customer {$customer->full_name} created successfully.";
             if ($customer->sanction_hit) {
@@ -312,7 +312,7 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $customer = $this->customerService->updateCustomer($customer, $validated, auth()->id());
+            $customer = $this->customerService->updateCustomerAction($customer, $validated, auth()->id());
 
             return redirect()->route('customers.show', $customer)
                 ->with('success', "Customer {$customer->full_name} updated successfully.");
