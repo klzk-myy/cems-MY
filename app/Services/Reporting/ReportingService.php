@@ -16,19 +16,12 @@ use Illuminate\Support\Facades\DB;
 
 class ReportingService implements ReportingServiceInterface
 {
-    protected EncryptionService $encryptionService;
-
-    protected MathService $mathService;
-
     protected const LARGE_VALUE_THRESHOLD = '50000';
 
     public function __construct(
-        EncryptionService $encryptionService,
-        MathService $mathService
-    ) {
-        $this->encryptionService = $encryptionService;
-        $this->mathService = $mathService;
-    }
+        protected EncryptionService $encryptionService,
+        protected MathService $mathService
+    ) {}
 
     public function recordGeneratedReport(
         ReportType $reportType,
@@ -41,7 +34,7 @@ class ReportingService implements ReportingServiceInterface
             'report_type' => $reportType,
             'period_start' => $periodStart,
             'period_end' => $periodEnd,
-            'generated_by' => auth()->id(),
+            'generated_by' => auth()->id() ?? 1,
             'generated_at' => now(),
             'file_format' => $format,
             'status' => $status,

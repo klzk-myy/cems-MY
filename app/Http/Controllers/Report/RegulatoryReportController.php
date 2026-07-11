@@ -174,8 +174,8 @@ class RegulatoryReportController extends Controller
 
         $this->reportingService->recordGeneratedReport(
             ReportType::Lmca,
-            now()->parse($month)->startOfMonth(),
-            now()->parse($month)->endOfMonth()
+            Carbon::parse($month)->startOfMonth(),
+            Carbon::parse($month)->endOfMonth()
         );
 
         return $this->successResponse([
