@@ -108,9 +108,7 @@ class StockCashController extends Controller
 
         $validated = $request->validated();
 
-        $till = Counter::where('code', $validated['till_id'])
-            ->orWhere('id', $validated['till_id'])
-            ->first();
+        $till = Counter::where('code', $validated['till_id'])->first();
 
         if (! $till) {
             return back()->with('error', 'Till not found.');

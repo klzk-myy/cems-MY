@@ -24,6 +24,17 @@ class TillBalanceManager
             ->first();
     }
 
+    private function resolveOpenedBy(?int $openedBy): int
+    {
+        $openedBy = $openedBy ?? auth()->id();
+
+        if ($openedBy === null) {
+            throw new \InvalidArgumentException('opened_by is required to open a till balance');
+        }
+
+        return $openedBy;
+    }
+
     public function openTill(
         Counter $till,
         string $currencyCode,
@@ -32,11 +43,7 @@ class TillBalanceManager
         ?string $notes = null
     ): TillBalance {
         $currency = Currency::where('code', $currencyCode)->firstOrFail();
-        $openedBy = $openedBy ?? auth()->id();
-
-        if ($openedBy === null) {
-            throw new \InvalidArgumentException('opened_by is required to open a till balance');
-        }
+        $openedBy = $this->resolveOpenedBy($openedBy);
 
         $existing = TillBalance::where('till_id', $till->code)
             ->where('currency_code', $currency->code)
@@ -85,6 +92,12 @@ class TillBalanceManager
             throw new \RuntimeException('Counter not found for till balance.');
         }
 
+        $closedBy = $closedBy ?? auth()->id();
+
+        if ($closedBy === null) {
+            throw new \InvalidArgumentException('closed_by is required to close a till balance');
+        }
+
         $netFlow = $this->tillService->calculateNetFlow($tillBalance->till_id, $tillBalance->currency_code);
 
         $expectedClosing = $this->mathService->add(
@@ -96,7 +109,7 @@ class TillBalanceManager
         $tillBalance->update([
             'closing_balance' => $closingBalance,
             'variance' => $variance,
-            'closed_by' => $closedBy ?? auth()->id(),
+            'closed_by' => $closedBy,
             'closed_at' => now(),
             'notes' => $notes,
         ]);
@@ -108,11 +121,7 @@ class TillBalanceManager
     {
         $currency = Currency::where('code', $currencyCode)->firstOrFail();
 
-        $openedBy = $openedBy ?? auth()->id();
-
-        if ($openedBy === null) {
-            throw new \InvalidArgumentException('opened_by is required to open a till balance');
-        }
+        $openedBy = $this->resolveOpenedBy($openedBy);
 
         return TillBalance::firstOrCreate(
             [
