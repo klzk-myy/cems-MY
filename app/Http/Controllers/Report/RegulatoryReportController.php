@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Report;
 
 use App\Enums\ReportType;
-use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LmcaGenerateRequest;
 use App\Http\Requests\LmcaReportRequest;
@@ -15,6 +14,7 @@ use App\Http\Requests\UpdateReportStatusRequest;
 use App\Models\ReportGenerated;
 use App\Models\Transaction;
 use App\Services\Reporting\ReportingService;
+use App\Services\Reporting\TransactionReportQuery;
 use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -54,21 +54,13 @@ class RegulatoryReportController extends Controller
             ->whereDate('period_start', $date)
             ->first();
 
-        $buyType = TransactionType::Buy->value;
-        $sellType = TransactionType::Sell->value;
-
-        $rows = Transaction::completed()
-            ->forDateRange($date, $date)
-            ->select('currency_code')
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as buy_volume', [$buyType])
-            ->selectRaw('COUNT(CASE WHEN type = ? THEN 1 END) as buy_count', [$buyType])
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_amount_myr', [$buyType])
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_foreign ELSE 0 END) as sell_volume', [$sellType])
-            ->selectRaw('COUNT(CASE WHEN type = ? THEN 1 END) as sell_count', [$sellType])
-            ->selectRaw('SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_amount_myr', [$sellType])
-            ->groupBy('currency_code')
-            ->orderBy('currency_code')
-            ->get();
+        $rows = app(TransactionReportQuery::class)
+            ->buySellSummary(
+                Transaction::completed()->forDateRange($date, $date)->select('currency_code'),
+                'currency_code',
+                'amount_foreign',
+                'amount_local'
+            );
 
         $summary = $rows->mapWithKeys(function ($row) {
             $buyVolume = (string) $row->buy_volume;
@@ -78,10 +70,10 @@ class RegulatoryReportController extends Controller
                 $row->currency_code => [
                     'buy_count' => (int) $row->buy_count,
                     'buy_volume' => $buyVolume,
-                    'buy_amount_myr' => (string) $row->buy_amount_myr,
+                    'buy_amount_myr' => (string) $row->buy_amount,
                     'sell_count' => (int) $row->sell_count,
                     'sell_volume' => $sellVolume,
-                    'sell_amount_myr' => (string) $row->sell_amount_myr,
+                    'sell_amount_myr' => (string) $row->sell_amount,
                     'net_volume' => $this->mathService->subtract($buyVolume, $sellVolume),
                 ],
             ];

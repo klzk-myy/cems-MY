@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Report;
 
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
-use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
@@ -45,22 +44,15 @@ class AnalyticsController extends Controller
 
         $monthColumn = DbDate::monthColumn('created_at');
 
-        $monthlyData = $query->selectRaw("
-            {$monthColumn} as month,
-            COUNT(*) as count,
-            SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as buy_volume,
-            SUM(CASE WHEN type = ? THEN amount_local ELSE 0 END) as sell_volume,
-            SUM(amount_local) as total_volume
-        ", [
-            TransactionType::Buy->value,
-            TransactionType::Sell->value,
-        ])
-            ->groupBy(DB::raw($monthColumn))
-            ->orderBy('month')
-            ->get()
+        $monthlyData = app(TransactionReportQuery::class)
+            ->buySellSummary(
+                $query->select(DB::raw("{$monthColumn} as month")),
+                DB::raw($monthColumn),
+                'amount_local'
+            )
             ->map(function ($row) {
-                $volume = (string) $row->total_volume;
-                $count = (int) $row->count;
+                $volume = $this->mathService->add((string) $row->buy_volume, (string) $row->sell_volume);
+                $count = (int) $row->buy_count + (int) $row->sell_count;
 
                 return [
                     'month' => (int) $row->month,

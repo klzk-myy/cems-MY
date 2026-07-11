@@ -103,17 +103,20 @@ class ReportingService implements ReportingServiceInterface
         $rows = [];
 
         foreach ($currencies as $currency) {
-            $buyTxns = $transactions->where('currency_code', $currency->code)->where('type', 'Buy');
-            $sellTxns = $transactions->where('currency_code', $currency->code)->where('type', 'Sell');
+            $currencyTxns = $transactions->where('currency_code', $currency->code);
+            $volumes = app(TransactionReportQuery::class)->buySellVolumes($currencyTxns);
             $position = $positions->get($currency->code);
+
+            $buyTxns = $currencyTxns->where('type', 'Buy');
+            $sellTxns = $currencyTxns->where('type', 'Sell');
 
             $rows[] = [
                 'Date' => $date,
                 'Currency' => $currency->code,
-                'Buy_Volume_MYR' => (string) $buyTxns->sum('amount_local'),
-                'Buy_Count' => $buyTxns->count(),
-                'Sell_Volume_MYR' => (string) $sellTxns->sum('amount_local'),
-                'Sell_Count' => $sellTxns->count(),
+                'Buy_Volume_MYR' => $volumes['buy_volume'],
+                'Buy_Count' => $volumes['buy_count'],
+                'Sell_Volume_MYR' => $volumes['sell_volume'],
+                'Sell_Count' => $volumes['sell_count'],
                 'Avg_Buy_Rate' => (string) ($buyTxns->avg('rate') ?? '0'),
                 'Avg_Sell_Rate' => (string) ($sellTxns->avg('rate') ?? '0'),
                 'Opening_Position' => $position ? $position->quantity : '0',
@@ -215,20 +218,20 @@ class ReportingService implements ReportingServiceInterface
 
         foreach ($currencies as $currency) {
             $currencyTxns = $allTxns->get($currency->code, collect());
-            $buyTxns = $currencyTxns->where('type', 'Buy');
-            $sellTxns = $currencyTxns->where('type', 'Sell');
+            $myrVolumes = app(TransactionReportQuery::class)->buySellVolumes($currencyTxns);
+            $foreignVolumes = app(TransactionReportQuery::class)->buySellVolumes($currencyTxns, 'amount_foreign');
 
             $openingPosition = $positions->get($currency->code);
 
             $currencyData[] = [
                 'currency_code' => $currency->code,
                 'currency_name' => $currency->name,
-                'buy_count' => $buyTxns->count(),
-                'buy_volume' => $buyTxns->sum('amount_foreign'),
-                'buy_value_myr' => $buyTxns->sum('amount_local'),
-                'sell_count' => $sellTxns->count(),
-                'sell_volume' => $sellTxns->sum('amount_foreign'),
-                'sell_value_myr' => $sellTxns->sum('amount_local'),
+                'buy_count' => $myrVolumes['buy_count'],
+                'buy_volume' => $foreignVolumes['buy_volume'],
+                'buy_value_myr' => $myrVolumes['buy_volume'],
+                'sell_count' => $myrVolumes['sell_count'],
+                'sell_volume' => $foreignVolumes['sell_volume'],
+                'sell_value_myr' => $myrVolumes['sell_volume'],
                 'opening_stock' => $openingPosition ? $openingPosition->quantity : '0',
                 'closing_stock' => $openingPosition ? $openingPosition->quantity : '0',
             ];
