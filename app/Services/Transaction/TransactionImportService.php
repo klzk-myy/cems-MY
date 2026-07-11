@@ -11,9 +11,9 @@ use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\TransactionImport;
-use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\CurrencyPositionService;
+use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
@@ -33,7 +33,6 @@ class TransactionImportService
         protected MathService $mathService,
         protected ComplianceService $complianceService,
         protected CurrencyPositionService $positionService,
-        protected AccountingService $accountingService,
         protected TransactionMonitoringService $monitoringService,
         protected CurrencyPositionLockService $positionLockService,
     ) {
@@ -253,7 +252,7 @@ class TransactionImportService
                     $this->updateTillBalance($tillBalance, $data['type'], $amountLocal, $amountForeign);
 
                     // Create accounting entries
-                    $this->createAccountingEntries($transaction);
+                    app(TransactionAccountingService::class)->createImportAccountingEntries($transaction);
                 }
 
                 // Run compliance monitoring BEFORE commit (moved before commit)
@@ -290,84 +289,6 @@ class TransactionImportService
             $amountLocal,
             $amountForeign,
             false
-        );
-    }
-
-    /**
-     * Create accounting journal entries
-     */
-    protected function createAccountingEntries(Transaction $transaction): void
-    {
-        $entries = [];
-
-        if ($transaction->type->value === TransactionType::Buy->value) {
-            // Buy: Dr Foreign Currency Inventory, Cr Cash - MYR
-            $entries = [
-                [
-                    'account_code' => '2000', // Foreign Currency Inventory
-                    'debit' => $transaction->amount_local,
-                    'credit' => '0',
-                    'description' => "Buy {$transaction->amount_foreign} {$transaction->currency_code} @ {$transaction->rate}",
-                ],
-                [
-                    'account_code' => '1000', // Cash - MYR
-                    'debit' => '0',
-                    'credit' => $transaction->amount_local,
-                    'description' => "Payment for {$transaction->currency_code} purchase",
-                ],
-            ];
-        } else {
-            // Sell: Calculate gain/loss
-            $position = $this->positionService->getPosition($transaction->currency_code);
-            $avgCost = $position ? $position->avg_cost_rate : $transaction->rate;
-            $costBasis = $this->mathService->multiply(
-                (string) $transaction->amount_foreign,
-                $avgCost
-            );
-            $revenue = $this->mathService->subtract(
-                (string) $transaction->amount_local,
-                $costBasis
-            );
-
-            $isGain = $this->mathService->compare($revenue, '0') >= 0;
-
-            $entries = [
-                [
-                    'account_code' => '1000', // Cash - MYR
-                    'debit' => $transaction->amount_local,
-                    'credit' => '0',
-                    'description' => "Sale of {$transaction->amount_foreign} {$transaction->currency_code}",
-                ],
-                [
-                    'account_code' => '2000', // Foreign Currency Inventory
-                    'debit' => '0',
-                    'credit' => $costBasis,
-                    'description' => "Cost of {$transaction->currency_code} sold",
-                ],
-            ];
-
-            if ($isGain) {
-                $entries[] = [
-                    'account_code' => '5000', // Revenue - Forex Trading
-                    'debit' => '0',
-                    'credit' => $revenue,
-                    'description' => "Gain on {$transaction->currency_code} sale",
-                ];
-            } else {
-                $entries[] = [
-                    'account_code' => '6000', // Expense - Forex Loss
-                    'debit' => $this->mathService->multiply($revenue, '-1'),
-                    'credit' => '0',
-                    'description' => "Loss on {$transaction->currency_code} sale",
-                ];
-            }
-        }
-
-        $this->accountingService->createJournalEntry(
-            $entries,
-            'Transaction',
-            $transaction->id,
-            "Transaction #{$transaction->id} - {$transaction->type->value} {$transaction->currency_code}"
         );
     }
 }

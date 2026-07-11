@@ -73,66 +73,7 @@ class TransactionAccountingService
      */
     public function createImmediateAccountingEntries(Transaction $transaction): void
     {
-        $entries = [];
-
-        if ($transaction->type->isBuy()) {
-            $entries = [
-                [
-                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
-                    'debit' => $transaction->amount_local,
-                    'credit' => '0',
-                    'description' => "Buy {$transaction->amount_foreign} {$transaction->currency_code} @ {$transaction->rate}",
-                ],
-                [
-                    'account_code' => AccountCode::CASH_MYR->value,
-                    'debit' => '0',
-                    'credit' => $transaction->amount_local,
-                    'description' => "Payment for {$transaction->currency_code} purchase",
-                ],
-            ];
-        } else {
-            $position = $this->positionService->getPosition($transaction->currency_code, $transaction->till_id);
-            $avgCost = $position ? $position->avg_cost_rate : $transaction->rate;
-
-            if ($avgCost === null) {
-                throw new \RuntimeException('Cannot calculate cost basis: no position or rate available for transaction');
-            }
-
-            $costBasis = $this->mathService->multiply((string) $transaction->amount_foreign, $avgCost);
-            $revenue = $this->mathService->subtract((string) $transaction->amount_local, $costBasis);
-            $isGain = $this->mathService->compare($revenue, '0') >= 0;
-
-            $entries = [
-                [
-                    'account_code' => AccountCode::CASH_MYR->value,
-                    'debit' => $transaction->amount_local,
-                    'credit' => '0',
-                    'description' => "Sale of {$transaction->amount_foreign} {$transaction->currency_code}",
-                ],
-                [
-                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
-                    'debit' => '0',
-                    'credit' => $costBasis,
-                    'description' => "Cost of {$transaction->currency_code} sold",
-                ],
-            ];
-
-            if ($isGain) {
-                $entries[] = [
-                    'account_code' => AccountCode::FOREX_TRADING_REVENUE->value,
-                    'debit' => '0',
-                    'credit' => $revenue,
-                    'description' => "Gain on {$transaction->currency_code} sale",
-                ];
-            } else {
-                $entries[] = [
-                    'account_code' => AccountCode::FOREX_LOSS->value,
-                    'debit' => $this->mathService->multiply($revenue, '-1'),
-                    'credit' => '0',
-                    'description' => "Loss on {$transaction->currency_code} sale",
-                ];
-            }
-        }
+        $entries = $this->buildEntriesForTransaction($transaction);
 
         $journalEntry = $this->accountingService->createJournalEntry(
             $entries,
@@ -146,5 +87,82 @@ class TransactionAccountingService
         $transaction->journal_entries_created_at = now();
         $transaction->has_deferred_accounting = false;
         $transaction->save();
+    }
+
+    /**
+     * Create accounting entries for imported transactions.
+     */
+    public function createImportAccountingEntries(Transaction $transaction): void
+    {
+        $this->createImmediateAccountingEntries($transaction);
+    }
+
+    /**
+     * Build journal entries for a transaction.
+     *
+     * @return array<int, array{account_code: string, debit: mixed, credit: mixed, description: string}>
+     */
+    protected function buildEntriesForTransaction(Transaction $transaction): array
+    {
+        if ($transaction->type->isBuy()) {
+            return [
+                [
+                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                    'debit' => $transaction->amount_local,
+                    'credit' => '0',
+                    'description' => "Buy {$transaction->amount_foreign} {$transaction->currency_code} @ {$transaction->rate}",
+                ],
+                [
+                    'account_code' => AccountCode::CASH_MYR->value,
+                    'debit' => '0',
+                    'credit' => $transaction->amount_local,
+                    'description' => "Payment for {$transaction->currency_code} purchase",
+                ],
+            ];
+        }
+
+        $position = $this->positionService->getPosition($transaction->currency_code, $transaction->till_id);
+        $avgCost = $position ? $position->avg_cost_rate : $transaction->rate;
+
+        if ($avgCost === null) {
+            throw new \RuntimeException('Cannot calculate cost basis: no position or rate available for transaction');
+        }
+
+        $costBasis = $this->mathService->multiply((string) $transaction->amount_foreign, $avgCost);
+        $revenue = $this->mathService->subtract((string) $transaction->amount_local, $costBasis);
+        $isGain = $this->mathService->compare($revenue, '0') >= 0;
+
+        $entries = [
+            [
+                'account_code' => AccountCode::CASH_MYR->value,
+                'debit' => $transaction->amount_local,
+                'credit' => '0',
+                'description' => "Sale of {$transaction->amount_foreign} {$transaction->currency_code}",
+            ],
+            [
+                'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                'debit' => '0',
+                'credit' => $costBasis,
+                'description' => "Cost of {$transaction->currency_code} sold",
+            ],
+        ];
+
+        if ($isGain) {
+            $entries[] = [
+                'account_code' => AccountCode::FOREX_TRADING_REVENUE->value,
+                'debit' => '0',
+                'credit' => $revenue,
+                'description' => "Gain on {$transaction->currency_code} sale",
+            ];
+        } else {
+            $entries[] = [
+                'account_code' => AccountCode::FOREX_LOSS->value,
+                'debit' => $this->mathService->multiply($revenue, '-1'),
+                'credit' => '0',
+                'description' => "Loss on {$transaction->currency_code} sale",
+            ];
+        }
+
+        return $entries;
     }
 }
