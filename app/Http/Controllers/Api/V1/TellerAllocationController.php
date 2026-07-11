@@ -79,18 +79,19 @@ class TellerAllocationController extends Controller
     }
 
     /**
-     * Approve a pending allocation.
-     * Manager/Admin only.
+     * Handle an allocation action with common guard scaffolding.
      */
-    public function approve(ApproveAllocationRequest $request, int $allocationId): JsonResponse
-    {
+    private function handleAllocationAction(
+        int $allocationId,
+        string $actionName,
+        callable $operation,
+        ?string $statusCheck = null
+    ): JsonResponse {
         $user = Auth::user();
 
-        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can approve allocations')) {
-            return $response;
+        if (! $this->allocationService->canManageAllocations($user)) {
+            return $this->errorResponse("Only managers and admins can {$actionName} allocations", [], 403);
         }
-
-        $validated = $request->validated();
 
         $allocation = TellerAllocation::find($allocationId);
 
@@ -98,24 +99,36 @@ class TellerAllocationController extends Controller
             return $this->notFoundResponse('Allocation not found');
         }
 
-        if (! $allocation->isPending()) {
-            return $this->errorResponse('Allocation is not in pending status', [], 400);
+        if ($statusCheck && ! $allocation->{$statusCheck}()) {
+            return $this->errorResponse('Allocation is not in the required status', [], 400);
         }
 
         try {
-            $allocation = $this->allocationService->approveAllocation(
-                $allocation,
-                $user,
-                $validated['approved_amount'],
-                $validated['daily_limit_myr'] ?? null
-            );
-
-            return $this->successResponse($allocation, 'Allocation approved successfully');
+            return $this->successResponse($operation($allocation, $user));
         } catch (\Exception $e) {
-            Log::error('Failed to approve allocation', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+            Log::error("Failed to {$actionName} allocation", ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
 
             return $this->errorResponse('Operation failed. Please contact support.', [], 400);
         }
+    }
+
+    /**
+     * Approve a pending allocation.
+     * Manager/Admin only.
+     */
+    public function approve(ApproveAllocationRequest $request, int $allocationId): JsonResponse
+    {
+        return $this->handleAllocationAction(
+            allocationId: $allocationId,
+            actionName: 'approve',
+            statusCheck: 'isPending',
+            operation: fn ($allocation, $user) => $this->allocationService->approveAllocation(
+                $allocation,
+                $user,
+                $request->validated()['approved_amount'],
+                $request->validated()['daily_limit_myr'] ?? null
+            )
+        );
     }
 
     /**
@@ -124,37 +137,16 @@ class TellerAllocationController extends Controller
      */
     public function reject(RejectAllocationRequest $request, int $allocationId): JsonResponse
     {
-        $user = Auth::user();
-
-        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can reject allocations')) {
-            return $response;
-        }
-
-        $allocation = TellerAllocation::find($allocationId);
-
-        if (! $allocation) {
-            return $this->notFoundResponse('Allocation not found');
-        }
-
-        if (! $allocation->isPending()) {
-            return $this->errorResponse('Allocation is not in pending status', [], 400);
-        }
-
-        $validated = $request->validated();
-
-        try {
-            $allocation = $this->allocationService->rejectAllocation(
+        return $this->handleAllocationAction(
+            allocationId: $allocationId,
+            actionName: 'reject',
+            statusCheck: 'isPending',
+            operation: fn ($allocation, $user) => $this->allocationService->rejectAllocation(
                 $allocation,
                 $user,
-                $validated['rejection_reason'] ?? null
-            );
-
-            return $this->successResponse($allocation, 'Allocation rejected');
-        } catch (\Exception $e) {
-            Log::error('Failed to reject allocation', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
-
-            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
-        }
+                $request->validated()['rejection_reason'] ?? null
+            )
+        );
     }
 
     /**
@@ -163,38 +155,17 @@ class TellerAllocationController extends Controller
      */
     public function modify(ModifyAllocationRequest $request, int $allocationId): JsonResponse
     {
-        $user = Auth::user();
-
-        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can modify allocations')) {
-            return $response;
-        }
-
-        $validated = $request->validated();
-
-        $allocation = TellerAllocation::find($allocationId);
-
-        if (! $allocation) {
-            return $this->notFoundResponse('Allocation not found');
-        }
-
-        if (! $allocation->isActive()) {
-            return $this->errorResponse('Only active allocations can be modified', [], 400);
-        }
-
-        try {
-            $allocation = $this->allocationService->modifyAllocation(
+        return $this->handleAllocationAction(
+            allocationId: $allocationId,
+            actionName: 'modify',
+            statusCheck: 'isActive',
+            operation: fn ($allocation, $user) => $this->allocationService->modifyAllocation(
                 $allocation,
                 $user,
-                $validated['new_amount'],
-                $validated['is_increase']
-            );
-
-            return $this->successResponse($allocation, 'Allocation modified successfully');
-        } catch (\Exception $e) {
-            Log::error('Failed to modify allocation', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
-
-            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
-        }
+                $request->validated()['new_amount'],
+                $request->validated()['is_increase']
+            )
+        );
     }
 
     /**
@@ -203,27 +174,15 @@ class TellerAllocationController extends Controller
      */
     public function returnToPool(int $allocationId): JsonResponse
     {
-        $user = Auth::user();
+        return $this->handleAllocationAction(
+            allocationId: $allocationId,
+            actionName: 'return to pool',
+            operation: function ($allocation, $user) {
+                $this->allocationService->returnToPool($allocation);
 
-        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can return allocations to pool')) {
-            return $response;
-        }
-
-        $allocation = TellerAllocation::find($allocationId);
-
-        if (! $allocation) {
-            return $this->notFoundResponse('Allocation not found');
-        }
-
-        try {
-            $this->allocationService->returnToPool($allocation);
-
-            return $this->successResponse($allocation, 'Allocation returned to pool');
-        } catch (\Exception $e) {
-            Log::error('Failed to return allocation to pool', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
-
-            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
-        }
+                return $allocation;
+            }
+        );
     }
 
     /**
