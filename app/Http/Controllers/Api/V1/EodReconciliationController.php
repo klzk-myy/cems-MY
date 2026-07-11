@@ -38,11 +38,11 @@ class EodReconciliationController extends Controller
 
         $carbonDate = Carbon::parse($date);
 
-        $user = auth()->user();
-        if (! $this->canAccessEod($user)) {
-            return $this->errorResponse('Unauthorized. Manager, Compliance Officer, or Admin access required.', [], 403);
+        if ($response = $this->requireEodAccess()) {
+            return $response;
         }
 
+        $user = auth()->user();
         $branchId = $validated['branch_id'] ?? null;
 
         if ($branchId && ! $user->isAdmin() && $user->branch_id !== $branchId) {
@@ -72,8 +72,8 @@ class EodReconciliationController extends Controller
 
         $carbonDate = Carbon::parse($date);
 
-        if (! $this->canAccessEod(auth()->user())) {
-            return $this->errorResponse('Unauthorized. Manager, Compliance Officer, or Admin access required.', [], 403);
+        if ($response = $this->requireEodAccess()) {
+            return $response;
         }
 
         try {
@@ -96,8 +96,8 @@ class EodReconciliationController extends Controller
 
         $carbonDate = Carbon::parse($date);
 
-        if (! $this->canAccessEod(auth()->user())) {
-            return $this->errorResponse('Unauthorized. Manager, Compliance Officer, or Admin access required.', [], 403);
+        if ($response = $this->requireEodAccess()) {
+            return $response;
         }
 
         $branchId = $validated['branch_id'] ?? null;
@@ -131,6 +131,15 @@ class EodReconciliationController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to generate reconciliation report: '.$e->getMessage(), [], 500);
         }
+    }
+
+    private function requireEodAccess(): ?JsonResponse
+    {
+        if (! $this->canAccessEod(auth()->user())) {
+            return $this->errorResponse('Unauthorized. Manager, Compliance Officer, or Admin access required.', [], 403);
+        }
+
+        return null;
     }
 
     private function canAccessEod($user): bool

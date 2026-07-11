@@ -36,41 +36,36 @@ class DashboardController extends Controller
     public function index(): View
     {
         $stats = [
-            'total_transactions' => $this->cacheOptimizationService->remember(
-                'dashboard.transactions.total',
-                60,
+            'total_transactions' => $this->rememberDashboard(
+                'transactions.total',
                 ['dashboard', 'transactions'],
                 function () {
                     return Transaction::whereDate('created_at', today())->count();
                 }
             ),
-            'buy_volume' => $this->cacheOptimizationService->remember(
-                'dashboard.transactions.buy_volume',
-                60,
+            'buy_volume' => $this->rememberDashboard(
+                'transactions.buy_volume',
                 ['dashboard', 'transactions'],
                 function () {
                     return Transaction::completed()->whereDate('created_at', today())->buy()->sum('amount_local');
                 }
             ),
-            'sell_volume' => $this->cacheOptimizationService->remember(
-                'dashboard.transactions.sell_volume',
-                60,
+            'sell_volume' => $this->rememberDashboard(
+                'transactions.sell_volume',
                 ['dashboard', 'transactions'],
                 function () {
                     return Transaction::completed()->whereDate('created_at', today())->sell()->sum('amount_local');
                 }
             ),
-            'flagged' => $this->cacheOptimizationService->remember(
-                'dashboard.compliance.flagged',
-                60,
+            'flagged' => $this->rememberDashboard(
+                'compliance.flagged',
                 ['dashboard', 'compliance'],
                 function () {
                     return FlaggedTransaction::where('status', 'Open')->count();
                 }
             ),
-            'active_customers' => $this->cacheOptimizationService->remember(
-                'dashboard.customers.active',
-                60,
+            'active_customers' => $this->rememberDashboard(
+                'customers.active',
                 ['dashboard', 'customers'],
                 function () {
                     return Customer::count();
@@ -78,9 +73,8 @@ class DashboardController extends Controller
             ),
         ];
 
-        $recent_transactions = $this->cacheOptimizationService->remember(
-            'dashboard.transactions.recent',
-            60,
+        $recent_transactions = $this->rememberDashboard(
+            'transactions.recent',
             ['dashboard', 'transactions'],
             function () {
                 return Transaction::with('customer')
@@ -94,6 +88,11 @@ class DashboardController extends Controller
         $this->cacheOptimizationService->putStats(now()->addSeconds(60));
 
         return view('pages.dashboard', compact('stats', 'recent_transactions'));
+    }
+
+    private function rememberDashboard(string $key, array $tags, callable $callback): mixed
+    {
+        return $this->cacheOptimizationService->remember("dashboard.{$key}", 60, $tags, $callback);
     }
 
     /**

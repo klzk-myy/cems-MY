@@ -7,40 +7,38 @@ class LabelHelper
     /**
      * Get the label from a status, handling both enum and string types.
      */
-    public static function getStatusLabel($status, string $default = ''): string
+    public static function getStatusLabel(mixed $value, string $default = 'Unknown'): string
     {
-        if ($status === null) {
-            return $default;
-        }
-
-        if (is_object($status) && method_exists($status, 'label')) {
-            return $status->label();
-        }
-
-        if (is_object($status) && method_exists($status, 'value')) {
-            return (string) $status->value;
-        }
-
-        if (is_string($status)) {
-            return $status;
-        }
-
-        return $default;
+        return self::getLabel($value, $default, ['getStatusLabel', 'getStatusDisplayName', 'label', 'name']);
     }
 
     /**
      * Get the label from a type/enum, handling both enum and string types.
      */
-    public static function getTypeLabel($type, string $default = ''): string
+    public static function getTypeLabel(mixed $value, string $default = 'Unknown'): string
     {
-        if (is_object($type) && method_exists($type, 'label')) {
-            return $type->label();
+        return self::getLabel($value, $default, ['getTypeLabel', 'getTypeDisplayName', 'label', 'name']);
+    }
+
+    /**
+     * Resolve a label from an enum, object, or scalar value.
+     */
+    private static function getLabel(mixed $value, string $default, array $methodPreference): string
+    {
+        if ($value === null) {
+            return $default;
         }
 
-        if (is_string($type)) {
-            return $type;
+        foreach ($methodPreference as $method) {
+            if (method_exists($value, $method)) {
+                return (string) $value->{$method}();
+            }
         }
 
-        return $default;
+        if (is_object($value) && enum_exists(get_class($value))) {
+            return $value->name ?? $default;
+        }
+
+        return (string) $value;
     }
 }

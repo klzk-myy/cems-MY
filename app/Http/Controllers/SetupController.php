@@ -216,26 +216,38 @@ class SetupController extends Controller
         }
     }
 
+    private function getSetupChecks(): array
+    {
+        return [
+            'admin_user' => User::exists(),
+            'currencies' => Currency::exists(),
+            'exchange_rates' => ExchangeRate::exists(),
+            'branches' => Branch::exists(),
+            'chart_of_accounts' => ChartOfAccount::exists(),
+        ];
+    }
+
     private function isSetupComplete(): bool
     {
-        return User::exists() &&
-               Currency::exists() &&
-               ExchangeRate::exists() &&
-               Branch::exists();
+        return collect($this->getSetupChecks())
+            ->only(['admin_user', 'currencies', 'exchange_rates', 'branches'])
+            ->every(fn ($check) => $check);
     }
 
     private function getCurrentStep(): int
     {
-        if (! User::exists()) {
+        $checks = $this->getSetupChecks();
+
+        if (! $checks['admin_user']) {
             return 1;
         }
-        if (! Currency::exists()) {
+        if (! $checks['currencies']) {
             return 2;
         }
-        if (! ExchangeRate::exists()) {
+        if (! $checks['exchange_rates']) {
             return 3;
         }
-        if (! Branch::exists()) {
+        if (! $checks['branches']) {
             return 4;
         }
 
@@ -244,14 +256,7 @@ class SetupController extends Controller
 
     private function calculateProgress(): int
     {
-        $checks = [
-            User::exists(),
-            Currency::exists(),
-            ExchangeRate::exists(),
-            Branch::exists(),
-            ChartOfAccount::exists(),
-        ];
-
+        $checks = $this->getSetupChecks();
         $completed = count(array_filter($checks));
 
         return (int) (($completed / count($checks)) * 100);
@@ -259,22 +264,19 @@ class SetupController extends Controller
 
     private function getMissingComponents(): array
     {
-        $missing = [];
+        $keys = [
+            'admin_user' => 'admin_user',
+            'currencies' => 'currencies',
+            'exchange_rates' => 'exchange_rates',
+            'branches' => 'branches',
+            'chart_of_accounts' => 'chart_of_accounts',
+        ];
 
-        if (! User::exists()) {
-            $missing[] = 'admin_user';
-        }
-        if (! Currency::exists()) {
-            $missing[] = 'currencies';
-        }
-        if (! ExchangeRate::exists()) {
-            $missing[] = 'exchange_rates';
-        }
-        if (! Branch::exists()) {
-            $missing[] = 'branches';
-        }
-        if (! ChartOfAccount::exists()) {
-            $missing[] = 'chart_of_accounts';
+        $missing = [];
+        foreach ($keys as $key => $component) {
+            if (! $this->getSetupChecks()[$key]) {
+                $missing[] = $component;
+            }
         }
 
         return $missing;
