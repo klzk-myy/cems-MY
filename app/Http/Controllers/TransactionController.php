@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TransactionStatus;
-use App\Enums\TransactionType;
 use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\InvalidCurrencyException;
 use App\Exceptions\Domain\PepApprovalRequiredException;
 use App\Exceptions\Domain\TillBalanceMissingException;
+use App\Http\Concerns\DeterminesTransactionStatus;
 use App\Http\Requests\IndexTransactionRequest;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Branch;
@@ -22,17 +22,14 @@ use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
-use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\TransactionCancellationService;
 use App\Services\Transaction\TransactionMonitoringService;
 use Barryvdh\DomPDF\PDF;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -42,6 +39,8 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TransactionController extends Controller
 {
+    use DeterminesTransactionStatus;
+
     public function __construct(
         protected CurrencyPositionService $positionService,
         protected ComplianceService $complianceService,
@@ -333,36 +332,5 @@ class TransactionController extends Controller
         }
 
         return null;
-    }
-
-    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?Model
-    {
-        if (! $user->isTeller()) {
-            return null;
-        }
-
-        $service = app(TellerAllocationService::class);
-
-        if ($data['type'] === TransactionType::Buy->value) {
-            $result = $service->validateTransaction($user, $data['currency_code'], $amountLocal, true);
-
-            if (! $result->valid) {
-                throw new \InvalidArgumentException($result->reason);
-            }
-
-            return $result->allocation;
-        }
-
-        return $service->getActiveAllocation($user, $data['currency_code']);
-    }
-
-    private function determineInitialStatus(string $amountLocal, bool $holdRequired): TransactionStatus
-    {
-        if ($holdRequired
-            || $this->mathService->compare($amountLocal, app(ThresholdService::class)->getAutoApproveThreshold()) >= 0) {
-            return TransactionStatus::PendingApproval;
-        }
-
-        return TransactionStatus::Completed;
     }
 }
