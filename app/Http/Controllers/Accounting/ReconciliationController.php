@@ -62,28 +62,27 @@ class ReconciliationController extends Controller
             ->with('success', 'Item marked as exception.');
     }
 
-    public function reconciliationReport(ReconciliationReportRequest $request): View
+    private function getReconciliationReport(Request $request): array
     {
         $validated = $request->validated();
 
-        $report = $this->bankReconciliationService->getReconciliationReport(
+        return $this->bankReconciliationService->getReconciliationReport(
             $validated['account_code'],
             $validated['from'],
             $validated['to']
         );
+    }
+
+    public function reconciliationReport(ReconciliationReportRequest $request): View
+    {
+        $report = $this->getReconciliationReport($request);
 
         return view('accounting.reconciliation_report', compact('report'));
     }
 
     public function exportReconciliation(ExportReconciliationRequest $request): View
     {
-        $validated = $request->validated();
-
-        $report = $this->bankReconciliationService->getReconciliationReport(
-            $validated['account_code'],
-            $validated['from'],
-            $validated['to']
-        );
+        $report = $this->getReconciliationReport($request);
 
         return view('accounting.reconciliation_export', compact('report'));
     }
