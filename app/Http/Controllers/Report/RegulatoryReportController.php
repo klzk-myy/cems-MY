@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Report;
 
 use App\Enums\ReportType;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LmcaGenerateRequest;
 use App\Http\Requests\LmcaReportRequest;
@@ -23,6 +24,8 @@ use Illuminate\View\View;
 
 class RegulatoryReportController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected ReportingService $reportingService,
         protected MathService $mathService,
@@ -124,7 +127,7 @@ class RegulatoryReportController extends Controller
             'file_format' => 'CSV',
         ]);
 
-        return response()->json($report);
+        return $this->successResponse($report, 'MSB(2) report generated successfully.');
     }
 
     public function generateMSB2(StoreMsb2ReportRequest $request): JsonResponse
@@ -133,11 +136,10 @@ class RegulatoryReportController extends Controller
 
         $filepath = $this->reportingService->generateMSB2($request->validated('date'));
 
-        return response()->json([
-            'message' => 'MSB(2) report generated',
+        return $this->successResponse([
             'filename' => basename($filepath),
             'download_url' => url('/reports/download/'.basename($filepath)),
-        ]);
+        ], 'MSB(2) report generated.');
     }
 
     public function updateMSB2Status(UpdateReportStatusRequest $request): JsonResponse
@@ -182,11 +184,10 @@ class RegulatoryReportController extends Controller
             'file_format' => 'CSV',
         ]);
 
-        return response()->json([
-            'message' => 'Form LMCA generated successfully',
+        return $this->successResponse([
             'filename' => basename($filepath),
             'download_url' => url('/reports/download/'.basename($filepath)),
-        ]);
+        ], 'Form LMCA generated successfully.');
     }
 
     /**
@@ -214,9 +215,7 @@ class RegulatoryReportController extends Controller
             ->first();
 
         if (! $report) {
-            return response()->json([
-                'message' => 'Report not found. Generate the report first.',
-            ], 404);
+            return $this->notFoundResponse('Report not found. Generate the report first.');
         }
 
         $report->update([
@@ -225,10 +224,9 @@ class RegulatoryReportController extends Controller
             'submitted_by' => auth()->id(),
         ]);
 
-        return response()->json([
-            'message' => 'Report status updated successfully',
+        return $this->successResponse([
             'status' => $report->status,
-        ]);
+        ], 'Report status updated successfully.');
     }
 
     /**
@@ -268,11 +266,10 @@ class RegulatoryReportController extends Controller
             'file_format' => 'CSV',
         ]);
 
-        return response()->json([
-            'message' => 'Quarterly Large Value Report generated successfully',
+        return $this->successResponse([
             'filename' => basename($filepath),
             'download_url' => url('/reports/download/'.basename($filepath)),
-        ]);
+        ], 'Quarterly Large Value Report generated successfully.');
     }
 
     /**
@@ -309,10 +306,9 @@ class RegulatoryReportController extends Controller
             'file_format' => 'CSV',
         ]);
 
-        return response()->json([
-            'message' => 'Position Limit Report generated successfully',
+        return $this->successResponse([
             'filename' => basename($filepath),
             'download_url' => url('/reports/download/'.basename($filepath)),
-        ]);
+        ], 'Position Limit Report generated successfully.');
     }
 }
