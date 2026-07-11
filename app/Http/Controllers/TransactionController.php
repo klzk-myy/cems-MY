@@ -15,22 +15,18 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Contracts\TransactionServiceInterface;
+use App\Services\Transaction\ReceiptGenerationService;
 use App\Services\Transaction\TransactionCancellationService;
-use Barryvdh\DomPDF\PDF;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
-use Picqer\Barcode\BarcodeGeneratorPNG;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TransactionController extends Controller
 {
     public function __construct(
         protected TransactionServiceInterface $transactionService,
         protected TransactionCancellationService $cancellationService,
-        private PDF $pdf,
-        private BarcodeGeneratorPNG $barcodeGenerator
     ) {}
 
     /**
@@ -176,41 +172,7 @@ class TransactionController extends Controller
             return $response;
         }
 
-        $transaction->load(['customer', 'user', 'approver']);
-
-        $barcodeImage = null;
-        $barcodeText = str_pad((string) $transaction->id, 10, '0', STR_PAD_LEFT);
-        try {
-            $barcodeData = $this->barcodeGenerator->getBarcode($barcodeText, $this->barcodeGenerator::TYPE_CODE_128);
-            $barcodeImage = 'data:image/png;base64,'.base64_encode($barcodeData);
-        } catch (\Exception $e) {
-            $barcodeImage = null;
-        }
-
-        $qrCodeImage = null;
-        try {
-            $qrCodeData = QrCode::format('png')
-                ->size(150)
-                ->generate(json_encode([
-                    'id' => $transaction->id,
-                    'amount' => $transaction->amount_local,
-                    'currency' => $transaction->currency_code,
-                    'date' => $transaction->created_at->toIso8601String(),
-                    'customer_id' => $transaction->customer_id,
-                    'type' => $transaction->type->value,
-                    'verify' => url('/verify/transaction/'.$transaction->id),
-                ]));
-            $qrCodeImage = 'data:image/png;base64,'.base64_encode($qrCodeData);
-        } catch (\Exception $e) {
-            $qrCodeImage = null;
-        }
-
-        $pdf = $this->pdf;
-        $pdf->loadView('transactions.receipt', compact('transaction', 'barcodeImage', 'qrCodeImage', 'barcodeText'));
-        $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait');
-        $filename = 'receipt_'.str_pad((string) $transaction->id, 8, '0', STR_PAD_LEFT).'.pdf';
-
-        return $pdf->download($filename);
+        return app(ReceiptGenerationService::class)->generate($transaction);
     }
 
     /**
