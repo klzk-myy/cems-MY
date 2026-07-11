@@ -45,10 +45,11 @@ class SanctionEntry extends BaseModel
     public static function buildFromValidated(array $data, array $normalized, bool $isUpdate = false): array
     {
         $payload = [
-            'entity_name' => $data['entity_name'],
-            'entity_type' => $data['entity_type'],
+            'entity_name' => $data['entity_name'] ?? null,
+            'entity_type' => $data['entity_type'] ?? null,
             'aliases' => $data['aliases'] ?? null,
             'nationality' => $data['nationality'] ?? null,
+            'date_of_birth' => $data['date_of_birth'] ?? null,
             'reference_number' => $data['reference_number'] ?? null,
             'listing_date' => $data['listing_date'] ?? null,
             'details' => $data['details'] ?? null,
@@ -59,7 +60,6 @@ class SanctionEntry extends BaseModel
 
         if (! $isUpdate) {
             $payload['list_id'] = $data['list_id'];
-            $payload['date_of_birth'] = $data['date_of_birth'] ?? null;
             $payload['status'] = 'active';
         } else {
             $payload['list_source'] = $data['list_source'] ?? null;
@@ -67,6 +67,10 @@ class SanctionEntry extends BaseModel
             $payload['city'] = $data['city'] ?? null;
             $payload['country'] = $data['country'] ?? null;
             $payload['postal_code'] = $data['postal_code'] ?? null;
+
+            if (array_key_exists('status', $data)) {
+                $payload['status'] = $data['status'];
+            }
         }
 
         return $payload;

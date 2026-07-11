@@ -41,6 +41,8 @@ class SanctionEntryBuilderTest extends TestCase
             'city' => 'New York',
             'country' => 'US',
             'postal_code' => '10001',
+            'date_of_birth' => '1990-01-01',
+            'status' => 'inactive',
         ];
 
         $normalized = [
@@ -56,9 +58,28 @@ class SanctionEntryBuilderTest extends TestCase
         $this->assertSame('New York', $payload['city']);
         $this->assertSame('US', $payload['country']);
         $this->assertSame('10001', $payload['postal_code']);
+        $this->assertSame('1990-01-01', $payload['date_of_birth']);
+        $this->assertSame('inactive', $payload['status']);
         $this->assertArrayNotHasKey('list_id', $payload);
-        $this->assertArrayNotHasKey('date_of_birth', $payload);
-        $this->assertArrayNotHasKey('status', $payload);
+    }
+
+    public function test_update_payload_allows_missing_entity_name_and_entity_type(): void
+    {
+        $data = [
+            'list_source' => 'OFAC',
+        ];
+
+        $normalized = [
+            'normalized_name' => 'john doe',
+            'soundex_code' => 'J530',
+            'metaphone_code' => 'JN T',
+        ];
+
+        $payload = SanctionEntry::buildFromValidated($data, $normalized, true);
+
+        $this->assertNull($payload['entity_name']);
+        $this->assertNull($payload['entity_type']);
+        $this->assertSame('OFAC', $payload['list_source']);
     }
 
     public function test_update_payload_preserves_provided_normalized_values(): void
