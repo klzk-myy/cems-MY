@@ -8,15 +8,17 @@ use App\Models\TransactionImport;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Compliance\ComplianceService;
+use App\Services\Reporting\CsvReportWriter;
 use App\Services\System\DocumentStorageService;
 use App\Services\System\MathService;
 use App\Services\Transaction\TransactionImportService;
 use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TransactionBatchController extends Controller
 {
@@ -133,7 +135,7 @@ class TransactionBatchController extends Controller
     /**
      * Download import errors as CSV
      */
-    public function downloadErrors(TransactionImport $import): RedirectResponse|StreamedResponse
+    public function downloadErrors(TransactionImport $import): RedirectResponse|BinaryFileResponse
     {
         if ($import->imported_by !== auth()->id()) {
             abort(403, 'Unauthorized. You can only view your own import errors.');
@@ -145,24 +147,21 @@ class TransactionBatchController extends Controller
             return back()->with('info', 'No errors to download for this import.');
         }
 
-        $headers = [
+        $headers = ['Row', 'Data', 'Error'];
+        $rows = [];
+        foreach ($errors as $rowNumber => $error) {
+            $rows[] = [
+                $rowNumber,
+                is_array($error['data'] ?? null) ? json_encode($error['data']) : ($error['data'] ?? ''),
+                $error['message'] ?? 'Unknown error',
+            ];
+        }
+
+        $filename = "import_errors_{$import->id}.csv";
+        $filepath = app(CsvReportWriter::class)->write($filename, $headers, $rows);
+
+        return response()->download(Storage::path($filepath), $filename, [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"import_errors_{$import->id}.csv\"",
-        ];
-
-        $callback = function () use ($errors) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['Row', 'Data', 'Error']);
-            foreach ($errors as $rowNumber => $error) {
-                fputcsv($file, [
-                    $rowNumber,
-                    is_array($error['data'] ?? null) ? json_encode($error['data']) : ($error['data'] ?? ''),
-                    $error['message'] ?? 'Unknown error',
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        ])->deleteFileAfterSend();
     }
 }

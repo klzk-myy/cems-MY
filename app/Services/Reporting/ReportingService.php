@@ -11,7 +11,6 @@ use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ReportingService implements ReportingServiceInterface
 {
@@ -46,41 +45,29 @@ class ReportingService implements ReportingServiceInterface
             ->get();
 
         $filename = "MSB2_{$date}.csv";
-        $filepath = "reports/{$filename}";
 
-        // Ensure the reports directory exists
-        if (! Storage::exists('reports')) {
-            Storage::makeDirectory('reports');
-        }
-
-        $csv = fopen(Storage::path($filepath), 'w');
-        if (! $csv) {
-            throw new \RuntimeException("Failed to open report file for writing: {$filepath}");
-        }
-
-        fputcsv($csv, [
+        $headers = [
             'Date',
             'Currency',
             'Buy_Volume',
             'Buy_Count',
             'Sell_Volume',
             'Sell_Count',
-        ]);
+        ];
 
+        $rows = [];
         foreach ($summary as $row) {
-            fputcsv($csv, [
+            $rows[] = [
                 $date,
                 $row->currency_code,
                 (string) $row->buy_volume,
                 (int) $row->buy_count,
                 (string) $row->sell_volume,
                 (int) $row->sell_count,
-            ]);
+            ];
         }
 
-        fclose($csv);
-
-        return $filepath;
+        return app(CsvReportWriter::class)->write($filename, $headers, $rows);
     }
 
     protected function maskName(string $name): string
@@ -272,21 +259,15 @@ class ReportingService implements ReportingServiceInterface
     {
         $data = $this->generateFormLMCA($month);
         $filename = "LMCA_{$month}.csv";
-        $filepath = "reports/{$filename}";
 
-        if (! Storage::exists('reports')) {
-            Storage::makeDirectory('reports');
-        }
+        $titleRows = [
+            ['BNM Form LMCA - Monthly Report'],
+            ['License Number', $data['license_number']],
+            ['Reporting Period', $data['reporting_period']],
+            ['Report Date', $data['report_date']],
+        ];
 
-        $csv = fopen(Storage::path($filepath), 'w');
-
-        fputcsv($csv, ['BNM Form LMCA - Monthly Report']);
-        fputcsv($csv, ['License Number', $data['license_number']]);
-        fputcsv($csv, ['Reporting Period', $data['reporting_period']]);
-        fputcsv($csv, ['Report Date', $data['report_date']]);
-        fputcsv($csv, []);
-
-        fputcsv($csv, [
+        $headers = [
             'Currency',
             'Buy Count',
             'Buy Volume (Foreign)',
@@ -296,10 +277,11 @@ class ReportingService implements ReportingServiceInterface
             'Sell Value (MYR)',
             'Opening Stock',
             'Closing Stock',
-        ]);
+        ];
 
+        $rows = [];
         foreach ($data['currencies'] as $row) {
-            fputcsv($csv, [
+            $rows[] = [
                 $row['currency_code'],
                 $row['buy_count'],
                 $row['buy_volume'],
@@ -309,16 +291,14 @@ class ReportingService implements ReportingServiceInterface
                 $row['sell_value_myr'],
                 $row['opening_stock'],
                 $row['closing_stock'],
-            ]);
+            ];
         }
 
-        fputcsv($csv, []);
-        fputcsv($csv, ['Total Customers Served', $data['customer_count']]);
-        fputcsv($csv, ['Total Active Staff', $data['staff_count']]);
+        $rows[] = [];
+        $rows[] = ['Total Customers Served', $data['customer_count']];
+        $rows[] = ['Total Active Staff', $data['staff_count']];
 
-        fclose($csv);
-
-        return $filepath;
+        return app(CsvReportWriter::class)->writeWithTitleRows($filename, $titleRows, $headers, $rows);
     }
 
     public function generateQuarterlyLargeValueReport(string $quarter): array
@@ -384,30 +364,22 @@ class ReportingService implements ReportingServiceInterface
     {
         $data = $this->generateQuarterlyLargeValueReport($quarter);
         $filename = "QLVR_{$quarter}.csv";
-        $filepath = "reports/{$filename}";
 
-        if (! Storage::exists('reports')) {
-            Storage::makeDirectory('reports');
-        }
+        $titleRows = [
+            ['BNM Quarterly Large Value Transaction Report'],
+            ['Quarter', $data['quarter']],
+            ['Period', $data['period_start'].' to '.$data['period_end']],
+            ['Total Transactions', $data['total_transactions']],
+            ['Total Amount (MYR)', number_format($data['total_amount'], 2)],
+        ];
 
-        $csv = fopen(Storage::path($filepath), 'w');
-
-        fputcsv($csv, ['BNM Quarterly Large Value Transaction Report']);
-        fputcsv($csv, ['Quarter', $data['quarter']]);
-        fputcsv($csv, ['Period', $data['period_start'].' to '.$data['period_end']]);
-        fputcsv($csv, ['Total Transactions', $data['total_transactions']]);
-        fputcsv($csv, ['Total Amount (MYR)', number_format($data['total_amount'], 2)]);
-        fputcsv($csv, []);
-
-        fputcsv($csv, ['Transaction_ID', 'Date', 'Customer_Name', 'Amount_Local', 'Currency', 'Transaction_Type']);
-
+        $headers = ['Transaction_ID', 'Date', 'Customer_Name', 'Amount_Local', 'Currency', 'Transaction_Type'];
+        $rows = [];
         foreach ($data['data'] as $row) {
-            fputcsv($csv, array_values($row));
+            $rows[] = array_values($row);
         }
 
-        fclose($csv);
-
-        return $filepath;
+        return app(CsvReportWriter::class)->writeWithTitleRows($filename, $titleRows, $headers, $rows);
     }
 
     public function generatePositionLimitReport(): array
@@ -468,20 +440,14 @@ class ReportingService implements ReportingServiceInterface
     {
         $data = $this->generatePositionLimitReport();
         $filename = 'PositionLimit_'.now()->format('Y-m-d').'.csv';
-        $filepath = "reports/{$filename}";
 
-        if (! Storage::exists('reports')) {
-            Storage::makeDirectory('reports');
-        }
+        $titleRows = [
+            ['BNM Position Limit Utilization Report'],
+            ['Generated', $data['generated_at']],
+            ['Total Exposure (MYR)', $data['total_exposure_myr']],
+        ];
 
-        $csv = fopen(Storage::path($filepath), 'w');
-
-        fputcsv($csv, ['BNM Position Limit Utilization Report']);
-        fputcsv($csv, ['Generated', $data['generated_at']]);
-        fputcsv($csv, ['Total Exposure (MYR)', $data['total_exposure_myr']]);
-        fputcsv($csv, []);
-
-        fputcsv($csv, [
+        $headers = [
             'Currency',
             'Current Balance',
             'Position Limit',
@@ -490,10 +456,11 @@ class ReportingService implements ReportingServiceInterface
             'Last Valuation Rate',
             'Exposure (MYR)',
             'Status',
-        ]);
+        ];
 
+        $rows = [];
         foreach ($data['positions'] as $row) {
-            fputcsv($csv, [
+            $rows[] = [
                 $row['currency_code'],
                 $row['current_balance'],
                 $row['position_limit'] ?? 'N/A',
@@ -502,12 +469,10 @@ class ReportingService implements ReportingServiceInterface
                 $row['current_rate'],
                 $row['exposure_myr'],
                 $row['status'],
-            ]);
+            ];
         }
 
-        fclose($csv);
-
-        return $filepath;
+        return app(CsvReportWriter::class)->writeWithTitleRows($filename, $titleRows, $headers, $rows);
     }
 
     private function parseQuarter(string $quarter): array

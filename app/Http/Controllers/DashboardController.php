@@ -276,18 +276,6 @@ class DashboardController extends Controller
     }
 
     /**
-     * Ensure the user is a Manager or Admin.
-     */
-    private function requireManagerOrAdmin(): void
-    {
-        $user = auth()->user();
-
-        if (! $user?->isManager()) {
-            abort(403, 'Unauthorized. Manager access required.');
-        }
-    }
-
-    /**
      * Ensure the user is a Manager, Compliance Officer, or Admin.
      */
     private function requireManagerOrAdminOrComplianceOfficer(): void
