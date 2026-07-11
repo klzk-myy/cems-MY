@@ -143,21 +143,7 @@ class SanctionListController extends Controller
 
         $normalized = $this->normalizeEntityName($validated['entity_name']);
 
-        SanctionEntry::create([
-            'list_id' => $validated['list_id'],
-            'entity_name' => $validated['entity_name'],
-            'entity_type' => $validated['entity_type'],
-            'aliases' => $validated['aliases'] ?? null,
-            'nationality' => $validated['nationality'] ?? null,
-            'date_of_birth' => $validated['date_of_birth'] ?? null,
-            'reference_number' => $validated['reference_number'] ?? null,
-            'listing_date' => $validated['listing_date'] ?? null,
-            'details' => $validated['details'] ?? null,
-            'normalized_name' => $normalized['normalized_name'],
-            'soundex_code' => $normalized['soundex_code'],
-            'metaphone_code' => $normalized['metaphone_code'],
-            'status' => 'active',
-        ]);
+        SanctionEntry::create(SanctionEntry::buildFromValidated($validated, $normalized));
 
         return redirect()->route('compliance.sanctions.entries.index')
             ->with('success', 'Sanction entry created successfully');
@@ -180,28 +166,13 @@ class SanctionListController extends Controller
             ? array_filter(array_map('trim', explode("\n", $request->input('aliases'))))
             : null;
 
+        if (isset($validated['date_listed'])) {
+            $validated['listing_date'] = $validated['date_listed'];
+        }
+
         $normalized = $this->normalizeEntityName($validated['entity_name']);
 
-        $updateData = [
-            'list_source' => $validated['list_source'] ?? null,
-            'entity_name' => $validated['entity_name'],
-            'entity_type' => $validated['entity_type'],
-            'aliases' => $validated['aliases'] ?? null,
-            'nationality' => $validated['nationality'] ?? null,
-            'reference_number' => $validated['reference_number'] ?? null,
-            'listing_date' => $validated['date_listed'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'city' => $validated['city'] ?? null,
-            'country' => $validated['country'] ?? null,
-            'postal_code' => $validated['postal_code'] ?? null,
-            'details' => $validated['details'] ?? null,
-        ];
-
-        $updateData['normalized_name'] = $normalized['normalized_name'];
-        $updateData['soundex_code'] = $normalized['soundex_code'];
-        $updateData['metaphone_code'] = $normalized['metaphone_code'];
-
-        $entry->update($updateData);
+        $entry->update(SanctionEntry::buildFromValidated($validated, $normalized, true));
 
         return redirect()->route('compliance.sanctions.entries.show', $entry)
             ->with('success', 'Sanction entry updated successfully');

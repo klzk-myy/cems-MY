@@ -132,21 +132,7 @@ class SanctionListController extends Controller
 
         $normalized = $this->normalizeEntityName($validated['entity_name']);
 
-        $entry = SanctionEntry::create([
-            'list_id' => $validated['list_id'],
-            'entity_name' => $validated['entity_name'],
-            'entity_type' => $validated['entity_type'],
-            'aliases' => $validated['aliases'] ?? null,
-            'nationality' => $validated['nationality'] ?? null,
-            'date_of_birth' => $validated['date_of_birth'] ?? null,
-            'reference_number' => $validated['reference_number'] ?? null,
-            'listing_date' => $validated['listing_date'] ?? null,
-            'details' => $validated['details'] ?? null,
-            'normalized_name' => $normalized['normalized_name'],
-            'soundex_code' => $normalized['soundex_code'],
-            'metaphone_code' => $normalized['metaphone_code'],
-            'status' => 'active',
-        ]);
+        $entry = SanctionEntry::create(SanctionEntry::buildFromValidated($validated, $normalized));
 
         return $this->successResponse([
             'id' => $entry->id,
@@ -162,12 +148,15 @@ class SanctionListController extends Controller
 
         if (isset($validated['entity_name'])) {
             $normalized = $this->normalizeEntityName($validated['entity_name']);
-            $validated['normalized_name'] = $normalized['normalized_name'];
-            $validated['soundex_code'] = $normalized['soundex_code'];
-            $validated['metaphone_code'] = $normalized['metaphone_code'];
+        } else {
+            $normalized = [
+                'normalized_name' => $entry->normalized_name,
+                'soundex_code' => $entry->soundex_code,
+                'metaphone_code' => $entry->metaphone_code,
+            ];
         }
 
-        $entry->update($validated);
+        $entry->update(SanctionEntry::buildFromValidated($validated, $normalized, true));
 
         return $this->successResponse([
             'id' => $entry->id,

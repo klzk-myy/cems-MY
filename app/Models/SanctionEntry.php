@@ -42,6 +42,36 @@ class SanctionEntry extends BaseModel
         'status' => SanctionStatus::class,
     ];
 
+    public static function buildFromValidated(array $data, array $normalized, bool $isUpdate = false): array
+    {
+        $payload = [
+            'entity_name' => $data['entity_name'],
+            'entity_type' => $data['entity_type'],
+            'aliases' => $data['aliases'] ?? null,
+            'nationality' => $data['nationality'] ?? null,
+            'reference_number' => $data['reference_number'] ?? null,
+            'listing_date' => $data['listing_date'] ?? null,
+            'details' => $data['details'] ?? null,
+            'normalized_name' => $normalized['normalized_name'],
+            'soundex_code' => $normalized['soundex_code'],
+            'metaphone_code' => $normalized['metaphone_code'],
+        ];
+
+        if (! $isUpdate) {
+            $payload['list_id'] = $data['list_id'];
+            $payload['date_of_birth'] = $data['date_of_birth'] ?? null;
+            $payload['status'] = 'active';
+        } else {
+            $payload['list_source'] = $data['list_source'] ?? null;
+            $payload['address'] = $data['address'] ?? null;
+            $payload['city'] = $data['city'] ?? null;
+            $payload['country'] = $data['country'] ?? null;
+            $payload['postal_code'] = $data['postal_code'] ?? null;
+        }
+
+        return $payload;
+    }
+
     public function sanctionList(): BelongsTo
     {
         return $this->belongsTo(SanctionList::class, 'list_id');
