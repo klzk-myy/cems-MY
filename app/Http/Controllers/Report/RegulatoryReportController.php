@@ -17,6 +17,7 @@ use App\Models\Transaction;
 use App\Services\Reporting\ReportingService;
 use App\Services\Reporting\TransactionReportQuery;
 use App\Services\System\MathService;
+use App\ValueObjects\Quarter;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,21 +31,6 @@ class RegulatoryReportController extends Controller
         protected ReportingService $reportingService,
         protected MathService $mathService,
     ) {}
-
-    protected function getQuarterStart(string $quarter): Carbon
-    {
-        $parts = explode('-', $quarter);
-        $year = (int) $parts[0];
-        $q = (int) substr($parts[1], 1);
-        $startMonth = (($q - 1) * 3) + 1;
-
-        return Carbon::create($year, $startMonth, 1)->startOfMonth();
-    }
-
-    protected function getQuarterEnd(string $quarter): Carbon
-    {
-        return $this->getQuarterStart($quarter)->copy()->addMonths(3)->subDay()->endOfDay();
-    }
 
     public function msb2(Msb2ReportRequest $request): View
     {
@@ -233,7 +219,7 @@ class RegulatoryReportController extends Controller
         $quarter = $request->validated('quarter', now()->format('Y').'-Q'.(int) ceil((int) now()->format('n') / 3));
 
         $reportGenerated = ReportGenerated::where('report_type', ReportType::Qlvr)
-            ->where('period_start', $this->getQuarterStart($quarter))
+            ->where('period_start', Quarter::fromString($quarter)->startDate())
             ->first();
 
         $reportData = $this->reportingService->generateQuarterlyLargeValueReport($quarter);
@@ -253,8 +239,8 @@ class RegulatoryReportController extends Controller
 
         $this->reportingService->recordGeneratedReport(
             ReportType::Qlvr,
-            $this->getQuarterStart($quarter),
-            $this->getQuarterEnd($quarter)
+            Quarter::fromString($quarter)->startDate(),
+            Quarter::fromString($quarter)->endDate()
         );
 
         return $this->successResponse([

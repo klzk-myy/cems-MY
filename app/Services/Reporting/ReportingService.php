@@ -11,6 +11,7 @@ use App\Models\Transaction;
 use App\Services\Contracts\ReportingServiceInterface;
 use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
+use App\ValueObjects\Quarter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -319,10 +320,9 @@ class ReportingService implements ReportingServiceInterface
 
     public function generateQuarterlyLargeValueReport(string $quarter): array
     {
-        [$year, $quarterNumber] = $this->parseQuarter($quarter);
-        $startMonth = ($quarterNumber - 1) * 3 + 1;
-        $startDate = Carbon::create($year, $startMonth, 1)->startOfMonth();
-        $endDate = $startDate->copy()->addMonths(3)->subDay();
+        $quarterVo = Quarter::fromString($quarter);
+        $startDate = $quarterVo->startDate();
+        $endDate = $quarterVo->endDate();
 
         $transactions = app(TransactionReportQuery::class)
             ->completed()
@@ -489,14 +489,5 @@ class ReportingService implements ReportingServiceInterface
         }
 
         return app(CsvReportWriter::class)->writeWithTitleRows($filename, $titleRows, $headers, $rows);
-    }
-
-    private function parseQuarter(string $quarter): array
-    {
-        if (! preg_match('/^(\d{4})-Q([1-4])$/', $quarter, $matches)) {
-            throw new \InvalidArgumentException("Invalid quarter format: {$quarter}. Expected YYYY-QN.");
-        }
-
-        return [(int) $matches[1], (int) $matches[2]];
     }
 }

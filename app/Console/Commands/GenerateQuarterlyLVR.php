@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Console\Commands\Concerns\HasReportFormatting;
 use App\Enums\ReportType;
 use App\Services\Reporting\ReportingService;
-use Carbon\Carbon;
+use App\ValueObjects\Quarter;
 use Illuminate\Console\Command;
 
 class GenerateQuarterlyLVR extends Command
@@ -25,7 +25,7 @@ class GenerateQuarterlyLVR extends Command
         try {
             $filepath = $reportingService->generateQuarterlyLargeValueCsv($quarter);
 
-            $this->createReportRecord(ReportType::Qlvr, $this->getQuarterStart($quarter), $this->getQuarterEnd($quarter));
+            $this->createReportRecord(ReportType::Qlvr, Quarter::fromString($quarter)->startDate(), Quarter::fromString($quarter)->endDate());
 
             $this->info("Quarterly LVR generated: {$filepath}");
 
@@ -48,27 +48,5 @@ class GenerateQuarterlyLVR extends Command
         }
 
         return $y.'-Q'.($q - 1);
-    }
-
-    protected function getQuarterStart(string $quarter): Carbon
-    {
-        [$year, $quarterNumber] = $this->parseQuarter($quarter);
-        $startMonth = ($quarterNumber - 1) * 3 + 1;
-
-        return Carbon::create($year, $startMonth, 1)->startOfMonth();
-    }
-
-    private function parseQuarter(string $quarter): array
-    {
-        if (! preg_match('/^(\d{4})-Q([1-4])$/', $quarter, $matches)) {
-            throw new \InvalidArgumentException("Invalid quarter format: {$quarter}. Expected YYYY-QN.");
-        }
-
-        return [(int) $matches[1], (int) $matches[2]];
-    }
-
-    protected function getQuarterEnd(string $quarter): Carbon
-    {
-        return $this->getQuarterStart($quarter)->copy()->addMonths(3)->subDay()->endOfDay();
     }
 }

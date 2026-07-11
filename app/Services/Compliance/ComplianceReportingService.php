@@ -13,6 +13,7 @@ use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\ReportGenerated;
 use App\Models\SystemLog;
+use App\ValueObjects\Quarter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -264,8 +265,9 @@ class ComplianceReportingService
     {
         $quarter = (int) ceil((int) $date->format('n') / 3);
         $year = (int) $date->format('Y');
-        $quarterStart = Carbon::create($year, (($quarter - 1) * 3) + 1, 1)->startOfMonth();
-        $quarterEnd = $quarterStart->copy()->addMonths(3)->subDay();
+        $quarterVo = Quarter::fromString("{$year}-Q{$quarter}");
+        $quarterStart = $quarterVo->startDate();
+        $quarterEnd = $quarterVo->endDate();
         $deadline = $this->addWorkingDays($quarterEnd, $workingDays);
 
         return [
