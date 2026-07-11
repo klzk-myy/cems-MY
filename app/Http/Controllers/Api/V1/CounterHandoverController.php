@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\UserRole;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\UnauthorizedException;
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\AcknowledgeHandoverRequest;
-use App\Models\Counter;
 use App\Models\CounterHandover;
 use App\Services\Branch\CounterHandoverService;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 class CounterHandoverController extends Controller
 {
     use ApiResponse;
+    use AuthorizesCounter;
 
     public function __construct(
         protected CounterHandoverService $handoverService
@@ -24,9 +24,9 @@ class CounterHandoverController extends Controller
 
     public function acknowledge(AcknowledgeHandoverRequest $request, int $counterId, int $handoverId): JsonResponse
     {
-        $counter = Counter::find($counterId);
-        if (! $counter) {
-            return $this->notFoundResponse('Counter not found');
+        $counter = $this->authorizeCounter($counterId);
+        if ($counter instanceof JsonResponse) {
+            return $counter;
         }
 
         $handover = CounterHandover::with('counterSession')->find($handoverId);
@@ -34,18 +34,12 @@ class CounterHandoverController extends Controller
             return $this->notFoundResponse('Handover not found for this counter');
         }
 
-        $user = Auth::user();
-
-        if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
-            return $this->errorResponse('You do not have permission to access this resource.', [], 403);
-        }
-
         $validated = $request->validated();
 
         try {
             $this->handoverService->acknowledgeHandover(
                 $handover,
-                $user,
+                Auth::user(),
                 $validated['verified'],
                 $validated['notes'] ?? null
             );

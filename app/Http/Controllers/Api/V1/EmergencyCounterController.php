@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
+use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\InitiateEmergencyCloseRequest;
-use App\Models\Counter;
 use App\Models\EmergencyClosure;
 use App\Services\Branch\EmergencyCounterService;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 class EmergencyCounterController extends Controller
 {
     use ApiResponse;
+    use AuthorizesCounter;
 
     public function __construct(
         protected EmergencyCounterService $emergencyService
@@ -26,16 +26,12 @@ class EmergencyCounterController extends Controller
     {
         $validated = $request->validated();
 
-        $counter = Counter::find($counterId);
-        if (! $counter) {
-            return $this->notFoundResponse('Counter not found');
+        $counter = $this->authorizeCounter($counterId);
+        if ($counter instanceof JsonResponse) {
+            return $counter;
         }
 
         $user = Auth::user();
-
-        if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
-            return $this->errorResponse('You do not have permission to access this resource.', [], 403);
-        }
 
         try {
             $closure = $this->emergencyService->initiateEmergencyClose(
@@ -56,15 +52,9 @@ class EmergencyCounterController extends Controller
 
     public function getVariance(int $counterId, int $closureId): JsonResponse
     {
-        $counter = Counter::find($counterId);
-        if (! $counter) {
-            return $this->notFoundResponse('Counter not found');
-        }
-
-        $user = Auth::user();
-
-        if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
-            return $this->errorResponse('You do not have permission to access this resource.', [], 403);
+        $counter = $this->authorizeCounter($counterId);
+        if ($counter instanceof JsonResponse) {
+            return $counter;
         }
 
         $closure = EmergencyClosure::find($closureId);
@@ -79,9 +69,9 @@ class EmergencyCounterController extends Controller
 
     public function acknowledge(int $counterId, int $closureId): JsonResponse
     {
-        $counter = Counter::find($counterId);
-        if (! $counter) {
-            return $this->notFoundResponse('Counter not found');
+        $counter = $this->authorizeCounter($counterId);
+        if ($counter instanceof JsonResponse) {
+            return $counter;
         }
 
         $closure = EmergencyClosure::find($closureId);
@@ -90,10 +80,6 @@ class EmergencyCounterController extends Controller
         }
 
         $user = Auth::user();
-
-        if ($user->role !== UserRole::Admin && $counter->branch_id !== $user->branch_id) {
-            return $this->errorResponse('You do not have permission to access this resource.', [], 403);
-        }
 
         if (! $user->isManager()) {
             return $this->errorResponse('Only managers can acknowledge emergency closures', [], 403);
