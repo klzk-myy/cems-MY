@@ -9,6 +9,7 @@ use App\Services\AuditService;
 use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\DTOs\RateOverrideResult;
 use App\Services\System\MathService;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -63,6 +64,21 @@ class RateManagementService implements RateManagementServiceInterface
 
             return $query->first();
         });
+    }
+
+    public function getRateHistory(string $currencyCode, int $days, ?int $branchId = null): EloquentCollection
+    {
+        $query = ExchangeRateHistory::forCurrency($currencyCode)
+            ->forDateRange(
+                now()->subDays($days)->toDateString(),
+                now()->toDateString()
+            );
+
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+
+        return $query->orderBy('effective_date', 'desc')->get();
     }
 
     public function overrideRate(

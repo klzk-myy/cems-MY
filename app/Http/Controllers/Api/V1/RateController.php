@@ -156,13 +156,7 @@ class RateController extends Controller
     {
         $days = $request->get('days', 30);
 
-        $histories = ExchangeRateHistory::forCurrency($currencyCode)
-            ->forDateRange(
-                now()->subDays($days)->toDateString(),
-                now()->toDateString()
-            )
-            ->orderBy('effective_date', 'desc')
-            ->get();
+        $histories = $this->rateService->getRateHistory($currencyCode, $days);
 
         return $this->successResponse($histories);
     }

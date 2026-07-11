@@ -131,17 +131,7 @@ class RateController extends Controller
         $branchId = $this->resolveBranchId($user, $request);
         $days = $request->get('days', 30);
 
-        $query = ExchangeRateHistory::forCurrency($currencyCode)
-            ->forDateRange(
-                now()->subDays($days)->toDateString(),
-                now()->toDateString()
-            );
-
-        if ($branchId !== null) {
-            $query->where('branch_id', $branchId);
-        }
-
-        $histories = $query->orderBy('effective_date', 'desc')->get();
+        $histories = $this->rateService->getRateHistory($currencyCode, $days, $branchId);
 
         return response()->json([
             'success' => true,
