@@ -20,6 +20,7 @@ use App\Services\AuditService;
 use App\Services\Branch\CounterHandoverService;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\EmergencyCounterService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -446,7 +447,7 @@ class CounterController extends Controller
         }
     }
 
-    private function getActiveCurrencies()
+    private function getActiveCurrencies(): Collection
     {
         return Currency::select('code', 'name')->where('is_active', true)->get();
     }
