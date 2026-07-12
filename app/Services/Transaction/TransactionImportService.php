@@ -46,6 +46,9 @@ class TransactionImportService
      */
     public function process(string $filePath): void
     {
+        $this->errors = [];
+        $this->successCount = 0;
+
         $this->import->update([
             'status' => TransactionImportStatus::Processing->value,
             'imported_at' => now(),
@@ -71,11 +74,12 @@ class TransactionImportService
                 throw new \Exception('Invalid CSV header. Expected columns: '.implode(', ', $expectedHeader));
             }
 
+            $threshold = $this->thresholdService->getAutoApproveThreshold();
             $rowNumber = 1;
 
             while (($row = fgetcsv($handle)) !== false) {
                 $rowNumber++;
-                $this->processRow($row, $rowNumber);
+                $this->processRow($row, $rowNumber, $threshold);
             }
 
             $this->import->update([
@@ -93,7 +97,7 @@ class TransactionImportService
     /**
      * Process single row
      */
-    protected function processRow(array $row, int $rowNumber): void
+    protected function processRow(array $row, int $rowNumber, string $threshold): void
     {
         try {
             // Expected columns: customer_id, type, currency_code, amount_foreign, rate, purpose, source_of_funds, till_id
@@ -185,10 +189,10 @@ class TransactionImportService
             }
 
             // Enforce auto-approve threshold: if amount exceeds threshold, require approval
-            $threshold = $this->thresholdService->getAutoApproveThreshold();
             if ($this->mathService->compare($amountLocal, $threshold) >= 0) {
                 $status = TransactionStatus::PendingApproval->value;
-                $holdReason = $holdReason ?: 'Transaction amount exceeds auto-approve threshold';
+                $thresholdReason = 'Transaction amount exceeds auto-approve threshold';
+                $holdReason = $holdReason ? "{$holdReason}; {$thresholdReason}" : $thresholdReason;
             }
 
             // Create transaction within database transaction
