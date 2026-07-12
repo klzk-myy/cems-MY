@@ -1,5 +1,0 @@
-Customer freeze_reason: 
-Customer rejection_reason: test rejection
-User password_hash updated successfully
-Transaction hold_reason: test hold
-All manual tests passed!
