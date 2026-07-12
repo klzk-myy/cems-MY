@@ -130,32 +130,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, security]
 
-    services:
-      mysql:
-        image: mysql:8.0.36
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: cems_test
-          MYSQL_USER: cems
-          MYSQL_PASSWORD: cems123
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
-      redis:
-        image: redis:7.2-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -164,7 +138,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2.16'
-          extensions: bcmath, mysql, redis, mbstring, xml, ctype, json, tokenizer, pdo_mysql
+          extensions: bcmath, mbstring, xml, ctype, json, tokenizer, pdo_sqlite
           coverage: xdebug
           tools: composer
 
@@ -179,72 +153,17 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
-      - name: Create environment file
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-          sed -i 's/DB_DATABASE=cems/DB_DATABASE=cems_test/' .env
-          sed -i 's/DB_USERNAME=root/DB_USERNAME=root/' .env
-          sed -i 's/DB_PASSWORD=/DB_PASSWORD=root/' .env
-          sed -i 's/CACHE_DRIVER=file/CACHE_DRIVER=redis/' .env
-          sed -i 's/REDIS_HOST=127.0.0.1/REDIS_HOST=127.0.0.1/' .env
-          sed -i 's/SESSION_DRIVER=file/SESSION_DRIVER=array/' .env
-          sed -i 's/QUEUE_CONNECTION=sync/QUEUE_CONNECTION=sync/' .env
-          echo "APP_ENV=testing" >> .env
-
       - name: Directory Permissions
         run: chmod -R 777 storage bootstrap/cache
 
-      - name: Wait for MySQL
-        run: |
-          while ! mysqladmin ping -h"127.0.0.1" --silent; do
-            sleep 1
-          done
-
-      - name: Wait for Redis
-        run: |
-          for i in {1..60}; do
-            if timeout 1 bash -c 'echo > /dev/tcp/127.0.0.1/6379' 2>/dev/null; then
-              echo "Redis is ready"
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Redis did not become ready in time" >&2
-          exit 1
-
-      - name: Run migrations and seed
-        env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: cems_test
-          DB_USERNAME: root
-          DB_PASSWORD: root
-        run: php artisan migrate:fresh --force --seed --seeder=DatabaseSeeder
-
       - name: Execute Unit Tests
         env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: cems_test
-          DB_USERNAME: root
-          DB_PASSWORD: root
-          REDIS_HOST: 127.0.0.1
           XDEBUG_MODE: coverage
         run: |
           php artisan test --testsuite=Unit --parallel --coverage-text --coverage-cobertura coverage.xml
 
       - name: Execute Feature Tests
         env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: cems_test
-          DB_USERNAME: root
-          DB_PASSWORD: root
-          REDIS_HOST: 127.0.0.1
           XDEBUG_MODE: coverage
         run: |
           php artisan test --testsuite=Feature --parallel --coverage-text --coverage-cobertura coverage-feature.xml
