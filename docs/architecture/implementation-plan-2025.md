@@ -34,9 +34,9 @@ This plan addresses architectural concerns identified during a comprehensive cod
 | 7 | TransactionService Facade Finalization | ✅ Complete | Reduced to **62 lines / 6 dependencies**; `MathService`, `ThresholdService`, and private helpers removed |
 | 8 | Orphaned Code Cleanup | ✅ Complete | 25 candidate views verified as used; 0 unnamed routes; inline middleware already aliased; no actionable `XXX` markers |
 | 9 | Code Quality Improvements | ✅ Complete | Handler maps exceptions to 400/409/422/500; all hardcoded cache keys migrated to `CacheKeys`; controller method lengths evaluated |
-| 10 | Validation & Deployment | ⚠️ Partial | Local validation passed; changes committed and pushed to `main`/`develop`; staging/production deployment blocked by missing GitHub Action secrets and `composer audit` vulnerabilities |
+| 10 | Validation & Deployment | ⚠️ Partial | Local validation passed; composer dependencies updated; changes committed and pushed; staging/production blocked by missing GitHub secrets and remaining Laravel 11 advisories |
 
-> **Recommendation**: Phases 1–9 are complete. Phase 10 local validation is complete and code is pushed. Before deploying, fix: (1) missing `STAGING_SSH_KEY` / `STAGING_HOST` / `STAGING_USER` GitHub secrets, and (2) dependency vulnerabilities reported by `composer audit`.
+> **Recommendation**: Phases 1–9 are complete. Phase 10 local validation is complete, dependencies updated, and code is pushed. Remaining blockers: (1) configure `STAGING_SSH_KEY` / `STAGING_HOST` / `STAGING_USER` GitHub secrets, and (2) decide whether to upgrade `laravel/framework` from v11.54.0 to v12.61.1+ to clear the last 3 security advisories.
 
 ---
 
