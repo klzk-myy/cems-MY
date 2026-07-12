@@ -18,11 +18,11 @@ class TransactionImportThresholdTest extends TestCase
     public function test_import_marks_rows_above_auto_approve_threshold_as_pending(): void
     {
         ['customer' => $customer, 'import' => $import] = $this->createFixtures();
-        $service = $this->createImportService($import, '5000');
+        $service = $this->createImportService('5000');
         $csv = $this->createCsv("{$customer->id},Buy,USD,2000,4.0,Business,Salary,MAIN");
 
         try {
-            $service->process($csv);
+            $service->process($import, $csv);
 
             $this->assertDatabaseHas('transactions', [
                 'customer_id' => $customer->id,
@@ -37,11 +37,11 @@ class TransactionImportThresholdTest extends TestCase
     public function test_import_marks_rows_equal_to_auto_approve_threshold_as_pending(): void
     {
         ['customer' => $customer, 'import' => $import] = $this->createFixtures();
-        $service = $this->createImportService($import, '4000');
+        $service = $this->createImportService('4000');
         $csv = $this->createCsv("{$customer->id},Buy,USD,1000,4.0,Business,Salary,MAIN");
 
         try {
-            $service->process($csv);
+            $service->process($import, $csv);
 
             $this->assertDatabaseHas('transactions', [
                 'customer_id' => $customer->id,
@@ -63,11 +63,11 @@ class TransactionImportThresholdTest extends TestCase
         );
         $complianceService->method('determineCDDLevel')->willReturn(CddLevel::Standard);
 
-        $service = $this->createImportService($import, '5000', $complianceService);
+        $service = $this->createImportService('5000', $complianceService);
         $csv = $this->createCsv("{$customer->id},Buy,USD,2000,4.0,Business,Salary,MAIN");
 
         try {
-            $service->process($csv);
+            $service->process($import, $csv);
 
             $this->assertDatabaseHas('transactions', [
                 'customer_id' => $customer->id,

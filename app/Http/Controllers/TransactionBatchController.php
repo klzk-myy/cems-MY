@@ -88,7 +88,7 @@ class TransactionBatchController extends Controller
 
         try {
             // Process import
-            $this->importService->process($fullPath);
+            $this->importService->process($import, $fullPath);
 
             return redirect()->route('transactions.batch-upload.show', $import)
                 ->with('success', "Import completed. {$import->success_count} transactions imported, {$import->error_count} errors.");

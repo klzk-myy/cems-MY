@@ -64,7 +64,6 @@ trait TransactionImportTestHelpers
     }
 
     private function createImportService(
-        TransactionImport $import,
         string $threshold,
         ?ComplianceService $complianceService = null
     ): TransactionImportService {
@@ -72,7 +71,6 @@ trait TransactionImportTestHelpers
         $thresholdService->method('getAutoApproveThreshold')->willReturn($threshold);
 
         return new TransactionImportService(
-            $import,
             app(MathService::class),
             $complianceService ?? app(ComplianceService::class),
             app(CurrencyPositionService::class),

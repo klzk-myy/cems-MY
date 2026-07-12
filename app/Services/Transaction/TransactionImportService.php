@@ -30,22 +30,20 @@ class TransactionImportService
     protected int $successCount = 0;
 
     public function __construct(
-        TransactionImport $import,
         protected MathService $mathService,
         protected ComplianceService $complianceService,
         protected CurrencyPositionService $positionService,
         protected TransactionMonitoringService $monitoringService,
         protected CurrencyPositionLockService $positionLockService,
         protected ThresholdService $thresholdService,
-    ) {
-        $this->import = $import;
-    }
+    ) {}
 
     /**
      * Process CSV file
      */
-    public function process(string $filePath): void
+    public function process(TransactionImport $import, string $filePath): void
     {
+        $this->import = $import;
         $this->errors = [];
         $this->successCount = 0;
 
