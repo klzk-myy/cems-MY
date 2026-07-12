@@ -1463,7 +1463,7 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 
 ---
 
-## Phase 10: Validation & Deployment ⚠️ PARTIAL — Local Validation Complete, Deployment Environment-Blocked
+## Phase 10: Validation & Deployment ⚠️ PARTIAL — Local Validation Complete, Staging Blocked by Missing CI/CD Secrets
 
 > **Note:** This corresponds to `implementation-plan-2025.md` Phase 10.
 
@@ -1492,9 +1492,9 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 
 - [x] Run `npx gitnexus detect_changes --scope unstaged --repo cems-my` before commit
 - [x] Review affected symbols and processes
-- [x] Changes committed to `main` as `b8cdc9ee`
+- [x] Changes committed to `main` as `97daa507`
 
-**Result**: 22 changed files, 135 symbols, 22 affected processes — **CRITICAL** risk. Affected flows align with the planned extraction scope (transaction create/approve, customer update, cache invalidation). No unintended ripple effects outside the expected domain.
+**Result**: Latest commit aligns with the planned extraction scope. The accumulated Phases 1–9 diff remains **CRITICAL** risk, concentrated in transaction create/approve, customer update, and cache-invalidation flows. No unintended ripple effects outside the expected domain.
 
 ### Task 10.3: Database Migration / Cache Clear ✅
 
@@ -1506,15 +1506,16 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 
 **Migrations**: No new migrations were introduced by Phases 1–9.
 
-### Task 10.4: Staging Deployment ❌ BLOCKED — CI/CD Secrets Missing + Laravel 11 Advisories
+### Task 10.4: Staging Deployment ❌ BLOCKED — Missing GitHub Action Secrets
 
-- [x] Changes committed to `main` (`b8cdc9ee`)
+- [x] Changes committed to `main` (`97daa507`)
 - [x] Pushed `main` to remote `origin/main`
-- [x] Created/updated `develop` branch on remote
-- [x] Ran `composer update` locally — 52 packages updated, most vulnerabilities resolved
-- [x] Re-triggered GitHub Actions workflows after composer update:
-  - `CI/CD Pipeline` on `develop` → **failed** at `Security Audit > Check for vulnerabilities`
-  - `Deploy to Staging` on `develop` → **failed** at `Setup SSH`
+- [x] Created/updated `develop` branch on remote (`97daa507`)
+- [x] Ran `composer update` locally — `laravel/framework` upgraded to **v12.63.0**
+- [x] `composer audit` — **no security vulnerability advisories found**
+- [x] Re-triggered GitHub Actions workflows after Laravel 12 upgrade:
+  - `CI/CD Pipeline` on `develop` → **in_progress** (monitoring)
+  - `Deploy to Staging` on `develop` → **failed** at `Setup SSH` (missing secrets)
 - [ ] Deploy to staging environment
 - [ ] Run full test suite on staging
 - [ ] Smoke test critical paths (create customer, create transaction, approve ≥ RM 10k, generate MSB2/LMCA, view dashboard)
@@ -1523,12 +1524,12 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 - [ ] Verify compliance jobs run (scheduler)
 
 **Blockers**:
-1. **Missing GitHub secrets**: `STAGING_SSH_KEY`, `STAGING_HOST`, `STAGING_USER` (and `SLACK_WEBHOOK_URL`) are not configured in the repository/environment.
-2. **Laravel 11 security advisories**: `composer audit` still reports 3 advisories for `laravel/framework` v11.54.0. Patched versions require Laravel 12.61.1+ (major version upgrade).
+1. **Missing GitHub secrets**: `STAGING_SSH_KEY`, `STAGING_HOST`, `STAGING_USER`, and `SLACK_WEBHOOK_URL` are not configured in the repository/environment. The `Deploy to Staging` workflow fails at the `Setup SSH` step without these secrets.
+2. **Laravel framework security advisories**: Resolved by upgrading to `laravel/framework` v12.63.0.
 
 **Latest workflow links**:
-- Deploy to Staging: https://github.com/klzk-myy/cems-MY/actions/runs/29194454317
-- CI/CD Pipeline: https://github.com/klzk-myy/cems-MY/actions/runs/29194454321
+- CI/CD Pipeline: https://github.com/klzk-myy/cems-MY/actions/runs/29194803694
+- Deploy to Staging: https://github.com/klzk-myy/cems-MY/actions/runs/29194803680
 
 ### Task 10.5: Production Deployment ❌ BLOCKED — Staging Approval Required
 
@@ -1558,27 +1559,27 @@ php artisan migrate:rollback --pretend  # if any migration ran
 php artisan up
 ```
 
-**Status**: Blocked by staging deployment failure; cannot proceed without fixing CI/CD secrets and the remaining Laravel framework advisories.
+**Status**: Blocked by staging deployment failure; cannot proceed until the GitHub Action staging secrets are configured and staging smoke tests pass.
 
 ### Deployment Readiness Notes
 
-**Latest commit**: `4b8e4907` on `main` (composer.lock security update)  
-**Remote**: `origin/main` and `origin/develop` both at `4b8e4907`  
-**Scope**: Phases 4–10 (service extraction, controller migration, facade finalization, orphaned cleanup, code quality, local validation)  
+**Latest commit**: `97daa507` on `main` (Laravel 12 upgrade + CDD sanction-hit fix)  
+**Remote**: `origin/main` and `origin/develop` both at `97daa507`  
+**Scope**: Phases 1–10 local validation, Laravel 12 security upgrade  
 **Risk**: CRITICAL per GitNexus, concentrated in transaction/customer/cache flows  
 **Migrations**: None  
 **Local Tests**: 1532 passed, 5 skipped, 3 deprecated, 0 failed  
 **Style**: Pint passed  
-**composer audit**: 3 remaining advisories in `laravel/framework` v11.54.0 requiring Laravel 12.61.1+
-**CI Status**: ❌ Failed — blocked by missing staging SSH secrets and remaining Laravel framework advisories
+**composer audit**: No advisories found  
+**CI Status**: `CI/CD Pipeline` in_progress; `Deploy to Staging` failed at `Setup SSH` due to missing secrets
 
 ### Sign-off
 
 **Developer**: AI Agent (Kimi Code CLI)  
 **Date**: 2026-07-12  
 **Branch**: `main`  
-**Commit**: `4b8e4907`  
-**Status**: ⚠️ PARTIAL — local validation complete, composer dependencies updated, changes committed and pushed; staging/production deployment blocked by missing GitHub Action secrets and Laravel 11 security advisories.
+**Commit**: `97daa507`  
+**Status**: ⚠️ PARTIAL — local validation complete, Laravel 12 upgrade pushed, `composer audit` clean; staging/production deployment blocked by missing GitHub Action secrets.
 
 ---
 
@@ -1728,7 +1729,7 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 - [x] Phase 7: TransactionService facade finalized ✅
 - [x] Phase 8: Orphaned Code Cleanup ✅
 - [x] Phase 9: Code Quality Improvements ✅
-- [~] Phase 10: Validation & Deployment ⚠️ PARTIAL — local validation complete; staging/production blocked
+- [~] Phase 10: Validation & Deployment ⚠️ PARTIAL — local validation complete; Laravel 12 upgrade pushed; staging/production blocked by missing GitHub Action secrets
 - [x] Out-of-Phase: Code duplication assessment and consolidation (Tasks A–H / 1–11) ✅
 - [x] Out-of-Phase: 2026-07-11 consolidation (Tasks 1–12) ✅
 

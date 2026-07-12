@@ -34,9 +34,9 @@ This plan addresses architectural concerns identified during a comprehensive cod
 | 7 | TransactionService Facade Finalization | ✅ Complete | Reduced to **62 lines / 6 dependencies**; `MathService`, `ThresholdService`, and private helpers removed |
 | 8 | Orphaned Code Cleanup | ✅ Complete | 25 candidate views verified as used; 0 unnamed routes; inline middleware already aliased; no actionable `XXX` markers |
 | 9 | Code Quality Improvements | ✅ Complete | Handler maps exceptions to 400/409/422/500; all hardcoded cache keys migrated to `CacheKeys`; controller method lengths evaluated |
-| 10 | Validation & Deployment | ⚠️ Partial | Local validation passed; composer dependencies updated; changes committed and pushed; staging/production blocked by missing GitHub secrets and remaining Laravel 11 advisories |
+| 10 | Validation & Deployment | ⚠️ Partial | Local validation passed; `laravel/framework` upgraded to v12.63.0; `composer audit` clean; committed and pushed to `main` and `develop`; staging deployment blocked by missing GitHub Action secrets |
 
-> **Recommendation**: Phases 1–9 are complete. Phase 10 local validation is complete, dependencies updated, and code is pushed. Remaining blockers: (1) configure `STAGING_SSH_KEY` / `STAGING_HOST` / `STAGING_USER` GitHub secrets, and (2) decide whether to upgrade `laravel/framework` from v11.54.0 to v12.61.1+ to clear the last 3 security advisories.
+> **Recommendation**: Phases 1–9 are complete. Phase 10 local validation and the Laravel 12 security upgrade are complete. The only remaining deployment blocker is configuring the GitHub Action secrets `STAGING_SSH_KEY`, `STAGING_HOST`, `STAGING_USER`, and `SLACK_WEBHOOK_URL` in the repository settings.
 
 ---
 
@@ -1017,13 +1017,13 @@ Existing tests to ensure architecture rules maintained:
 | Phase 1: Schema fixes | 2 days | ✅ Complete | Yes | Phase 0 complete |
 | Phase 2: Hold & Idempotency extraction | 3 days | ✅ Complete | Yes | Phase 0 complete |
 | Phase 3: Status & Validation extraction | 3 days | ✅ Complete | Yes | Phase 2 complete |
-| Phase 4: Creation service extraction | 4 days | ⚠️ Partial | Yes | Phase 3 complete |
-| Phase 5: Approval service extraction | 4 days | ⚠️ Partial | Yes | Phase 3 complete |
+| Phase 4: Creation service extraction | 4 days | ✅ Complete | Yes | Phase 3 complete |
+| Phase 5: Approval service extraction | 4 days | ✅ Complete | Yes | Phase 3 complete |
 | Phase 6: Controller migration | 3 days | ✅ Complete | No | Phase 4-5 stable |
 | Phase 7: Facade finalization | 2 days | ✅ Complete | No | Phase 6 complete |
 | Phase 8: Orphaned cleanup | 3 days | ✅ Complete | Yes | Independent |
-| Phase 9: Quality improvements | 3 days | ⚠️ Partial | No | Phase 7 complete |
-| Phase 10: Validation & deploy | 4 days | ❌ Not Started | No | Phases 1-9 complete |
+| Phase 9: Quality improvements | 3 days | ✅ Complete | No | Phase 7 complete |
+| Phase 10: Validation & deploy | 4 days | ⚠️ Partial | No | Phases 1-9 complete |
 
 **Total**: 6-8 weeks (with parallelization); current elapsed time already exceeds original 4-6 week estimate due to scope expansion and out-of-phase consolidation work.
 
