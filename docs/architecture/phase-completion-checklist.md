@@ -1506,10 +1506,14 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 
 **Migrations**: No new migrations were introduced by Phases 1–9.
 
-### Task 10.4: Staging Deployment 🟡 READY — Environment Access Required
+### Task 10.4: Staging Deployment ❌ BLOCKED — CI/CD Secrets Missing
 
 - [x] Changes committed to `main` (`b8cdc9ee`)
-- [ ] Merge/push to `develop` branch
+- [x] Pushed `main` to remote `origin/main`
+- [x] Created/updated `develop` branch on remote (`9d78dadc` merged with remote baseline deletions)
+- [x] Triggered GitHub Actions workflows:
+  - `CI/CD Pipeline` on `develop` → **failed** at `Security Audit > Check for vulnerabilities` (composer audit found dependency vulnerabilities)
+  - `Deploy to Staging` on `develop` → **failed** at `Setup SSH` (missing GitHub secrets)
 - [ ] Deploy to staging environment
 - [ ] Run full test suite on staging
 - [ ] Smoke test critical paths (create customer, create transaction, approve ≥ RM 10k, generate MSB2/LMCA, view dashboard)
@@ -1517,9 +1521,15 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 - [ ] Verify audit trails intact
 - [ ] Verify compliance jobs run (scheduler)
 
-**Status**: Code is committed and ready. Staging deployment requires environment access.
+**Blockers**:
+1. **Missing GitHub secrets**: `STAGING_SSH_KEY`, `STAGING_HOST`, `STAGING_USER` (and likely `SLACK_WEBHOOK_URL`) are not configured in the repository/environment.
+2. **Dependency vulnerabilities**: `composer audit` reported vulnerabilities in the lock file; the `Security Audit` job fails and blocks downstream `Run Test Suite` and `Deploy` jobs.
 
-### Task 10.5: Production Deployment 🟡 READY — Staging Approval Required
+**Workflow links**:
+- Deploy to Staging: https://github.com/klzk-myy/cems-MY/actions/runs/29193737975
+- CI/CD Pipeline: https://github.com/klzk-myy/cems-MY/actions/runs/29193737890
+
+### Task 10.5: Production Deployment ❌ BLOCKED — Staging Approval Required
 
 **Prerequisites**:
 - [ ] Staging approved
@@ -1547,21 +1557,18 @@ php artisan migrate:rollback --pretend  # if any migration ran
 php artisan up
 ```
 
-**Status**: Production deployment is gated on successful staging approval.
+**Status**: Blocked by staging deployment failure; cannot proceed without fixing CI/CD secrets and dependency vulnerabilities.
 
 ### Deployment Readiness Notes
 
-**Commit**: `b8cdc9ee` on `main`  
+**Commit**: `b8cdc9ee` on `main` (docs update `e38e04cd`)  
+**Remote**: `origin/main` and `origin/develop` both at `9d78dadc`  
 **Scope**: Phases 4–10 (service extraction, controller migration, facade finalization, orphaned cleanup, code quality, local validation)  
 **Risk**: CRITICAL per GitNexus, concentrated in transaction/customer/cache flows  
 **Migrations**: None  
-**Tests**: 1532 passed, 5 skipped, 3 deprecated, 0 failed  
+**Local Tests**: 1532 passed, 5 skipped, 3 deprecated, 0 failed  
 **Style**: Pint passed  
-**Next actions**:
-1. Push `main` (or merge to `develop`) to remote
-2. Deploy to staging and run smoke tests
-3. After staging approval, schedule production maintenance window
-4. Run production deployment and monitor logs
+**CI Status**: ❌ Failed — blocked by missing staging SSH secrets and `composer audit` vulnerabilities
 
 ### Sign-off
 
@@ -1569,7 +1576,7 @@ php artisan up
 **Date**: 2026-07-12  
 **Branch**: `main`  
 **Commit**: `b8cdc9ee`  
-**Status**: ⚠️ PARTIAL — local validation complete and changes committed; staging/production deployment pending environment access and release coordination.
+**Status**: ⚠️ PARTIAL — local validation complete, changes committed and pushed, but staging/production deployment blocked by missing GitHub Action secrets and dependency audit failures.
 
 ---
 
