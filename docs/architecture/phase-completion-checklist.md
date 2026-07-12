@@ -1508,12 +1508,13 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 
 ### Task 10.4: Staging Deployment ❌ BLOCKED — Missing GitHub Action Secrets
 
-- [x] Changes committed to `main` (`97daa507`)
+- [x] Changes committed to `main` (`77b6eceb`)
 - [x] Pushed `main` to remote `origin/main`
-- [x] Created/updated `develop` branch on remote (`97daa507`)
+- [x] Created/updated `develop` branch on remote (`77b6eceb`)
 - [x] Ran `composer update` locally — `laravel/framework` upgraded to **v12.63.0**
 - [x] `composer audit` — **no security vulnerability advisories found**
-- [x] Re-triggered GitHub Actions workflows after Laravel 12 upgrade:
+- [x] Fixed `CI/CD Pipeline` workflow to trigger on `main` (was `master`) and deploy from `main`
+- [x] Re-triggered GitHub Actions workflows after workflow fix:
   - `CI/CD Pipeline` on `develop` → **in_progress** (monitoring)
   - `Deploy to Staging` on `develop` → **failed** at `Setup SSH` (missing secrets)
 - [ ] Deploy to staging environment
@@ -1563,14 +1564,15 @@ php artisan up
 
 ### Deployment Readiness Notes
 
-**Latest commit**: `97daa507` on `main` (Laravel 12 upgrade + CDD sanction-hit fix)  
-**Remote**: `origin/main` and `origin/develop` both at `97daa507`  
-**Scope**: Phases 1–10 local validation, Laravel 12 security upgrade  
+**Latest commit**: `77b6eceb` on `main` (Laravel 12 upgrade + CDD sanction-hit fix + CI branch alignment)  
+**Remote**: `origin/main` and `origin/develop` both at `77b6eceb`  
+**Scope**: Phases 1–10 local validation, Laravel 12 security upgrade, CI/CD workflow branch alignment  
 **Risk**: CRITICAL per GitNexus, concentrated in transaction/customer/cache flows  
 **Migrations**: None  
 **Local Tests**: 1532 passed, 5 skipped, 3 deprecated, 0 failed  
 **Style**: Pint passed  
 **composer audit**: No advisories found  
+**GitNexus**: Index up-to-date (594bac2/77b6eceb)  
 **CI Status**: `CI/CD Pipeline` in_progress; `Deploy to Staging` failed at `Setup SSH` due to missing secrets
 
 ### Sign-off
@@ -1578,8 +1580,8 @@ php artisan up
 **Developer**: AI Agent (Kimi Code CLI)  
 **Date**: 2026-07-12  
 **Branch**: `main`  
-**Commit**: `97daa507`  
-**Status**: ⚠️ PARTIAL — local validation complete, Laravel 12 upgrade pushed, `composer audit` clean; staging/production deployment blocked by missing GitHub Action secrets.
+**Commit**: `77b6eceb`  
+**Status**: ⚠️ PARTIAL — local validation complete, Laravel 12 upgrade pushed, `composer audit` clean, CI workflow aligned to `main`; staging/production deployment blocked by missing GitHub Action secrets.
 
 ---
 
@@ -1752,7 +1754,7 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
    ```bash
    npx gitnexus analyze 2>&1 | tee final-gitnexus.txt
    ```
-   Result: index updated (13,082 nodes | 34,219 edges | 706 clusters | 300 flows).
+   Result: index up-to-date at commit `77b6eceb`.
 
    ```bash
    npx gitnexus detect_changes --scope compare --base-ref main --repo cems-my 2>&1 | tee final-changes.txt
