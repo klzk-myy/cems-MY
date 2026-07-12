@@ -20,13 +20,14 @@ use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class TransactionImportThresholdTest extends TestCase
+class TransactionImportProcessTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_import_marks_rows_above_auto_approve_threshold_as_pending(): void
+    public function test_import_completes_rows_below_auto_approve_threshold(): void
     {
         $currency = Currency::factory()->create(['code' => 'USD']);
+        Currency::factory()->create(['code' => 'MYR']);
         $customer = Customer::factory()->create([
             'risk_rating' => RiskRating::Low->value,
         ]);
@@ -37,6 +38,12 @@ class TransactionImportThresholdTest extends TestCase
             'date' => today(),
             'opening_balance' => '10000',
         ]);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'MYR',
+            'date' => today(),
+            'opening_balance' => '100000',
+        ]);
 
         $import = TransactionImport::factory()->create([
             'imported_by' => $customer->id,
@@ -44,7 +51,7 @@ class TransactionImportThresholdTest extends TestCase
         ]);
 
         $thresholdService = $this->createMock(ThresholdService::class);
-        $thresholdService->method('getAutoApproveThreshold')->willReturn('5000');
+        $thresholdService->method('getAutoApproveThreshold')->willReturn('10000');
 
         $service = new TransactionImportService(
             $import,
@@ -58,13 +65,17 @@ class TransactionImportThresholdTest extends TestCase
 
         $csv = tempnam(sys_get_temp_dir(), 'import');
         file_put_contents($csv, "customer_id,type,currency_code,amount_foreign,rate,purpose,source_of_funds,till_id\n");
-        file_put_contents($csv, "{$customer->id},Buy,USD,2000,4.0,Business,Salary,MAIN\n", FILE_APPEND);
+        file_put_contents($csv, "{$customer->id},Buy,USD,1000,4.0,Business,Salary,MAIN\n", FILE_APPEND);
 
         $service->process($csv);
 
         $this->assertDatabaseHas('transactions', [
             'customer_id' => $customer->id,
-            'status' => TransactionStatus::PendingApproval->value,
+            'status' => TransactionStatus::Completed->value,
+        ]);
+
+        $this->assertDatabaseMissing('transactions', [
+            'customer_id' => $customer->id,
             'hold_reason' => 'Transaction amount exceeds auto-approve threshold',
         ]);
 

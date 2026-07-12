@@ -17,6 +17,7 @@ use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use App\Support\BcmathHelper;
 use Illuminate\Support\Facades\DB;
 
@@ -35,6 +36,7 @@ class TransactionImportService
         protected CurrencyPositionService $positionService,
         protected TransactionMonitoringService $monitoringService,
         protected CurrencyPositionLockService $positionLockService,
+        protected ThresholdService $thresholdService,
     ) {
         $this->import = $import;
     }
