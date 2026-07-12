@@ -439,7 +439,8 @@ class CounterController extends Controller
             return redirect()->route($redirectRoute)->with('success', $successMessage);
         } catch (\Exception $e) {
             Log::error("Counter {$verb} failed", [
-                'exception' => $e,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'counter_id' => $auditContext['counter_id'] ?? $auditContext['auditable_id'] ?? null,
             ]);
 

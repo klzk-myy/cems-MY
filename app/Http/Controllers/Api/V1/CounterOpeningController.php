@@ -56,7 +56,7 @@ class CounterOpeningController extends Controller
     {
         $user = Auth::user();
 
-        $counter = $this->authorizeCounter($counterId, $user);
+        $counter = $this->authorizeCounter($counterId);
         if ($counter instanceof JsonResponse) {
             return $counter;
         }
@@ -90,7 +90,7 @@ class CounterOpeningController extends Controller
             return $response;
         }
 
-        $counter = $this->authorizeCounter($counterId, $user);
+        $counter = $this->authorizeCounter($counterId);
         if ($counter instanceof JsonResponse) {
             return $counter;
         }

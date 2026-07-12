@@ -28,7 +28,7 @@ trait AuthorizesBranchResource
             ? $resource->getKey()
             : $resource->getAttribute('branch_id');
 
-        if ($resourceBranchId !== null && $resourceBranchId !== $user->branch_id) {
+        if ($resourceBranchId !== null && (int) $resourceBranchId !== (int) $user->branch_id) {
             return $this->denyResponse(
                 $message ?? "You can only {$action} resources for your own branch.",
                 403
