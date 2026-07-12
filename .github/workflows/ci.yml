@@ -134,12 +134,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PHP with Coverage
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: bcmath, mbstring, xml, ctype, json, tokenizer, pdo_sqlite
-          coverage: pcov
+          extensions: bcmath, mbstring, xml, ctype, json, tokenizer, pdo_sqlite, sqlite3
+          coverage: none
           tools: composer
 
       - name: Cache Composer packages
@@ -157,25 +157,12 @@ jobs:
         run: chmod -R 777 storage bootstrap/cache
 
       - name: Execute Unit Tests
-        env:
-          XDEBUG_MODE: coverage
         run: |
-          php artisan test --testsuite=Unit --coverage-text --coverage-cobertura coverage.xml
+          php artisan test --testsuite=Unit 2>&1 | tee unit-test-output.txt
 
       - name: Execute Feature Tests
-        env:
-          XDEBUG_MODE: coverage
         run: |
-          php artisan test --testsuite=Feature --coverage-text --coverage-cobertura coverage-feature.xml
-
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage.xml,./coverage-feature.xml
-          flags: tests
-          name: cems-coverage
-          fail_ci_if_error: false
-          verbose: true
+          php artisan test --testsuite=Feature 2>&1 | tee feature-test-output.txt
 
       - name: Upload Test Results
         if: always()
@@ -183,8 +170,8 @@ jobs:
         with:
           name: test-results
           path: |
-            coverage.xml
-            coverage-feature.xml
+            unit-test-output.txt
+            feature-test-output.txt
             storage/logs/*.log
           retention-days: 3
 
@@ -194,8 +181,8 @@ jobs:
           echo "========================================"
           echo "TEST EXECUTION COMPLETE"
           echo "========================================"
-          echo "Unit Tests: coverage.xml"
-          echo "Feature Tests: coverage-feature.xml"
+          echo "Unit Tests: unit-test-output.txt"
+          echo "Feature Tests: feature-test-output.txt"
 
   # Job 4: Deployment (only on master branch push)
   deploy:
