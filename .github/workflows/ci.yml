@@ -160,13 +160,13 @@ jobs:
         env:
           XDEBUG_MODE: coverage
         run: |
-          php artisan test --testsuite=Unit --parallel --coverage-text --coverage-cobertura coverage.xml
+          php artisan test --testsuite=Unit --coverage-text --coverage-cobertura coverage.xml
 
       - name: Execute Feature Tests
         env:
           XDEBUG_MODE: coverage
         run: |
-          php artisan test --testsuite=Feature --parallel --coverage-text --coverage-cobertura coverage-feature.xml
+          php artisan test --testsuite=Feature --coverage-text --coverage-cobertura coverage-feature.xml
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4
