@@ -182,6 +182,10 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/till-report', [StockCashController::class, 'tillReport'])->name('till-report')
             ->middleware('role:manager');
         Route::get('/reconciliation', [StockCashController::class, 'reconciliationReport'])->name('reconciliation');
+        Route::post('/open', [StockCashController::class, 'openTill'])->name('open')
+            ->middleware('role:manager');
+        Route::post('/close', [StockCashController::class, 'closeTill'])->name('close')
+            ->middleware('role:manager');
     });
 
     Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
