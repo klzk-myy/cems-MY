@@ -1493,6 +1493,72 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 
 ---
 
+---
+
+## Post-Consolidation Review Remediation (2026-07-11)
+
+**Objective**: Fix Critical and Important issues identified in the comprehensive code review of the 2026-07-11 consolidation.
+
+**Plan**: `docs/superpowers/plans/2026-07-11-post-consolidation-review-remediation.md`  
+**Delivery Checklist**: `docs/superpowers/plans/2026-07-11-post-consolidation-review-delivery-checklist.md`
+
+### Code/Environment Checks ✅ COMPLETE
+
+- [x] Git branch is clean (all changes committed)
+- [x] All tests pass: `php artisan test --compact`
+  - **1,530 passed**, 5 skipped, 3 deprecated, **0 failed** (3,842 assertions)
+- [x] Code formatted with Pint: `vendor/bin/pint --dirty --format agent` → passed
+- [x] GitNexus working tree clean: `npx gitnexus detect_changes --repo=cems-my` → no uncommitted changes
+
+### Remediation Tasks ✅ COMPLETE
+
+1. **TransactionImportService `ThresholdService` injection**
+   - [x] `ThresholdService` injected into constructor
+   - [x] String-presence test replaced with behavioral tests
+   - [x] Threshold boundary and combined hold-reason cases covered
+   - [x] Shared test helpers extracted to `tests/Traits/TransactionImportTestHelpers.php`
+
+2. **TransactionBatchController import-record mismatch**
+   - [x] `TransactionImportService::process()` now accepts `TransactionImport $import` as first parameter
+   - [x] `TransactionImport` removed from service constructor
+   - [x] Controller passes the real import record to `process()`
+   - [x] Controller-level integration test verifies the import record is updated
+
+3. **AuthorizesBranchResource type-safe comparison**
+   - [x] Both `resourceBranchId` and `user->branch_id` cast to `int` before comparing
+   - [x] Unit tests cover string/int parity, admin bypass, and unauthenticated cases
+
+4. **CounterOpeningController `authorizeCounter()` argument fix**
+   - [x] Removed erroneous `User` argument from both `authorizeCounter()` calls
+
+5. **CounterController exception logging**
+   - [x] Exception serialized as `message` and `trace` strings instead of object
+
+6. **TransactionService `ThresholdService` injection**
+   - [x] `ThresholdService` added as final constructor parameter
+   - [x] `app(ThresholdService::class)` service-locator call removed
+
+7. **TellerAllocationController response envelope**
+   - [x] `myActiveAllocation()` now uses `successResponse()` from `ApiResponse` trait
+   - [x] Tests verify the standardized envelope shape
+
+8. **Stock-cash till routes restored**
+   - [x] `POST /stock-cash/open` and `POST /stock-cash/close` routes added
+   - [x] Feature test covers manager open/close lifecycle
+
+### Verification / Audit Findings ✅ COMPLETE
+
+- **Web transaction auto-approve threshold**: Existing tests in `tests/Feature/Web/TransactionControllerStoreTest.php` already verify that small web transactions complete and large ones are held for approval. Unified web/API behavior is confirmed and passing.
+- **LabelHelper fallback change**: Audit of all `getStatusLabel`/`getTypeLabel` call sites found only the Blade directive registration in `AppServiceProvider` and no views expecting an empty-string default. The `'Unknown'` fallback is safe; consumers can still pass an explicit empty default if needed.
+
+### Sign-off
+
+**Developer**: AI Agent (Kimi Code CLI)  
+**Date**: 2026-07-11  
+**Status**: Remediation complete, full suite green, ready for merge.
+
+---
+
 ## Sign-off Approvals
 
 **Lead Developer**: _________________ Date: _________  
