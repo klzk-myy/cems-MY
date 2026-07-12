@@ -8,13 +8,13 @@
 
 ## General Pre-Requirements (All Phases)
 
-- [ ] Git branch is clean (no unrelated changes)
-- [ ] All tests pass: `php artisan test --compact`
-- [ ] Code formatted with Pint: `vendor/bin/pint --format agent`
-- [ ] GitNexus index current: `npx gitnexus analyze`
-- [ ] No merge conflicts with `main` branch
-- [ ] Database backup taken (if phase modifies data)
-- [ ] Documentation updated (if applicable)
+- [x] Git branch is clean (no unrelated changes)
+- [x] All tests pass: `php artisan test --compact` — **1,530 passed**, 5 skipped, 3 deprecated, 0 failed
+- [x] Code formatted with Pint: `vendor/bin/pint --dirty --format agent` — passed
+- [x] GitNexus index current: `npx gitnexus analyze` — index refreshed after 2026-07-11 consolidation
+- [x] No merge conflicts with `main` branch
+- [ ] Database backup taken (if phase modifies data) — not performed for code-only phases
+- [x] Documentation updated (if applicable) — `phase-completion-checklist.md` updated
 
 ---
 
@@ -522,8 +522,90 @@ Approval: ☑ Phase 2 sign-off obtained (self-certified per automation)
 
 ---
 
+## Plan Phase 3: Orphaned Code Cleanup (Not Started)
 
-## Phase 4: Extract TransactionCreationService
+> **Note:** This corresponds to `implementation-plan-2025.md` Phase 3. The checklist's numbered Phase 3 above is the service-extraction phase; the plan's Phase 3 was never added to this checklist.
+
+**Objective**: Remove dead code and fix route hygiene.
+
+### Task 3.1: Identify Orphaned Views
+
+- [ ] Run `scripts/find-orphaned-views.php` and review 25 high-confidence orphans
+- [ ] Verify each orphaned view is not referenced dynamically in code or tests
+- [ ] Move confirmed orphans to `resources/views/orphaned/` for 30-day retention
+- [ ] Run `php artisan view:clear && php artisan test` after cleanup
+
+**Current State**: `resources/views/orphaned/` contains only `.gitkeep` and subdirectories; the 25 orphaned views identified by the script have not been moved. Example orphans:
+- `emails.transaction-approved`
+- `reports.eod-reconciliation`
+- `transactions.receipt`
+- 22 component views
+
+### Task 3.2: Fix Route Inconsistencies
+
+- [ ] Name 4 unnamed routes (`broadcasting/auth`, `login`, `test/query-log`, `up`)
+- [ ] Standardize route names to kebab-case
+- [ ] Convert 349 inline middleware class names to named aliases
+- [ ] Run `php artisan route:list` to verify
+
+**Current State**: Not performed. Route audit scripts exist but no route-name standardization has been applied.
+
+### Task 3.3: Remove TODO / DEPRECATED Code
+
+- [ ] Remove `XXX` markers (e.g., `app/Services/Reporting/ReportingService.php:259`)
+- [ ] Keep legitimate PHPDoc placeholders and validation hints
+
+**Current State**: Not performed.
+
+### Sign-off
+
+**Status**: ❌ NOT STARTED
+
+---
+
+## Plan Phase 4: Code Quality Improvements (Not Started)
+
+> **Note:** This corresponds to `implementation-plan-2025.md` Phase 4. The checklist's numbered Phase 4 below is the creation-service extraction; the plan's Phase 4 was never added to this checklist.
+
+**Objective**: Standardize errors, cache keys, and controller method length.
+
+### Task 4.1: Standardize Exception Handling
+
+- [ ] Create domain-specific exceptions:
+  - `TransactionException` (base)
+  - `TransactionValidationException`
+  - `TransactionCreationException`
+  - `TransactionApprovalException`
+- [ ] Update `TransactionService` catch blocks to throw typed exceptions
+- [ ] Update global exception handler (`app/Exceptions/Handler.php`)
+- [ ] Map exceptions to HTTP status codes (400/409/422/500)
+
+**Current State**: Not performed. Generic `\Exception` catches remain in several controllers.
+
+### Task 4.2: Consolidate Cache Keys
+
+- [ ] Create `app/Services/System/CacheKeys.php` enum or constants class
+- [ ] Replace hardcoded cache-key strings (e.g., `'exchange_rates_for_transactions'`) with enum cases
+
+**Current State**: Not performed. `CacheKeys` class/enum does not exist.
+
+### Task 4.3: Controller Method Length
+
+- [ ] Refactor `CustomerController@show` (100+ lines) to service or private helpers
+- [ ] Refactor `RegulatoryReportController@msb2` (80+ lines) by moving query logic to `ReportingService`
+
+**Current State**: Not performed.
+
+### Sign-off
+
+**Status**: ❌ NOT STARTED
+
+---
+
+
+## Checklist Phase 4: Extract TransactionCreationService — PARTIAL
+
+> **Status**: Service extracted and functional, but many detailed checklist items were never checked off and some design targets were not met.
 
 **Objective**: Extract the largest and most complex service (creation + side effects)
 
@@ -704,17 +786,20 @@ Break the ~200-line `create()` method into:
 
 Before Phase 5:
 
-1. ✅ Creation service unit tests ≥ 90% coverage
-2. ✅ All Transaction* feature tests pass (workflow, accounting, API)
-3. ✅ TransactionService wrapper orchestrates correctly
-4. ✅ No performance regression (>110% baseline)
-5. ✅ Code review: 2+ senior developers approved
-6. ✅ Compliance review: audit trail verified (log entries exist)
-7. ✅ Database transactions still work (no partial commits)
+1. [x] Creation service exists: `app/Services/Transaction/TransactionCreationService.php` (217 lines)
+2. [x] Interface exists: `app/Services/Contracts/TransactionCreationServiceInterface.php`
+3. [x] Unit tests exist: `tests/Unit/Transaction/TransactionCreationServiceTest.php` (15 tests)
+4. [x] Core semantics preserved (idempotency, recent-duplicate check, stock validation, side effects, event dispatch)
+5. [ ] Performance benchmark vs Phase 0 baseline — not recorded
+6. [ ] `TransactionService::createTransaction()` still orchestrates directly rather than delegating to `creationService->create()` as originally specified
+7. [ ] `TransactionCreationService::create()` is 64 lines (target ≤ 50); helper method line counts not verified
+8. [ ] No formal code review evidence recorded
+
+**Status**: ⚠️ PARTIAL — service is implemented and tested, but the checklist's detailed sub-items remain largely unchecked and the wrapper delegation target was not fully realized.
 
 ---
 
-## Phase 5: Extract TransactionApprovalService
+## Phase 5: Extract TransactionApprovalService — PARTIAL
 
 **Objective**: Extract the second-most complex service (approval workflow with edge cases)
 
@@ -926,16 +1011,19 @@ The original has 4 catch blocks. Preserve them:
 
 Before Phase 6:
 
-1. ✅ Approval service unit tests ≥ 90% coverage
-2. ✅ All edge cases tested (stale data, missing entities, insufficient stock)
-3. ✅ TransactionWorkflow feature tests pass (approval flow)
-4. ✅ Compliance: transition history verified in tests
-5. ✅ Code reviewed by 2+ senior developers
-6. ✅ Performance: lock duration < 100ms (benchmark if needed)
+1. [x] Approval service exists: `app/Services/Transaction/TransactionApprovalService.php` (257 lines)
+2. [x] Interface exists: `app/Services/Contracts/TransactionApprovalServiceInterface.php`
+3. [x] Unit tests exist: `tests/Unit/TransactionApprovalServiceTest.php` (4 tests)
+4. [x] Core approval workflow implemented (eligibility check, AML monitoring, side effects, transition history)
+5. [ ] Detailed edge-case matrix from checklist not verified against tests
+6. [ ] `approve()` method line count and helper line counts not verified
+7. [ ] No formal code review evidence recorded
+
+**Status**: ⚠️ PARTIAL — service is implemented and tested, but checklist sub-items remain largely unchecked.
 
 ---
 
-## Phase 6: Update Controllers to Use New Services
+## Phase 6: Update Controllers to Use New Services — NOT COMPLETE
 
 **Objective**: Gradually migrate 6 controllers from `TransactionService` facade to direct service injection
 
@@ -1156,21 +1244,27 @@ After all controllers migrated:
 
 ---
 
+### Current Code Evidence
+
+Verified in codebase:
+- `app/Http/Controllers/TransactionController.php` still injects `TransactionServiceInterface` and calls `$this->transactionService->prepareAndCreate(...)`.
+- `app/Http/Controllers/Api/V1/TransactionController.php` still injects `TransactionServiceInterface` and calls `$this->transactionService->prepareAndCreate(...)`.
+- No controller has been migrated to direct `TransactionCreationService` / `TransactionApprovalService` injection.
+
 ### Sign-off Checklist
 
 Before Phase 7:
 
-1. ✅ All 6 controllers migrated to direct service injection
-2. ✅ All Transaction* tests pass (unit + feature + API)
-3. ✅ `TransactionService` is now pure facade (all methods delegate)
-4. ✅ No controller uses `TransactionService` for business logic (only facade for backward compatibility)
-5. ✅ GitNexus shows clean dependency graph (controllers → specific services)
-6. ✅ Code reviewed and approved
-7. ✅ Documentation updated
+1. [ ] All 6 controllers migrated to direct service injection
+2. [ ] `TransactionService` is a pure facade (all methods delegate)
+3. [x] All Transaction* tests pass (unit + feature + API) — verified 2026-07-11
+4. [ ] No controller uses `TransactionService` for business logic
+
+**Status**: ❌ NOT COMPLETE — controllers still depend on `TransactionServiceInterface`; direct service injection was not performed.
 
 ---
 
-## Phase 7: TransactionService Facade Finalization
+## Phase 7: TransactionService Facade Finalization — PARTIAL
 
 **Objective**: Minimize `TransactionService` to a thin facade coordinating the 6 services
 
@@ -1263,14 +1357,32 @@ public function isCancelled(Transaction $transaction): bool
 
 ---
 
+### Current Code Evidence
+
+Verified in codebase (commit `f4e5ac53`):
+- `app/Services/Transaction/TransactionService.php` is **162 lines**, not ≤ 150.
+- Constructor has **8 dependencies**, not 6:
+  - `TransactionValidationInterface`
+  - `TransactionCreationServiceInterface`
+  - `TransactionApprovalServiceInterface`
+  - `TransactionHoldServiceInterface`
+  - `TransactionIdempotencyServiceInterface`
+  - `TransactionStatusServiceInterface`
+  - `MathService`
+  - `ThresholdService`
+- Private methods remain: `determineTellerAllocation()`, `determineInitialStatus()`.
+- `prepareAndCreate()` still contains orchestration logic rather than pure delegation.
+
 ### Phase 7 Sign-off
 
-1. ✅ TransactionService ≤ 150 lines
-2. ✅ All old dependencies removed
-3. ✅ All tests pass
-4. ✅ Interface still implemented
-5. ✅ GitNexus impact shows low risk
-6. ✅ Code review passed
+1. [ ] TransactionService ≤ 150 lines — actual: 162 lines
+2. [ ] All old dependencies removed — `MathService` and `ThresholdService` still injected
+3. [x] All tests pass — verified 2026-07-11: 1,530 passed, 0 failed
+4. [x] Interface still implemented
+5. [ ] GitNexus impact shows low risk — not re-run after facade changes
+6. [ ] Code review passed — no formal review evidence recorded
+
+**Status**: ⚠️ PARTIAL — services were extracted and `TransactionService` delegates, but it still contains helper logic and extra dependencies; it is not the minimal facade described in the plan.
 
 ---
 
@@ -1404,7 +1516,9 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 
 ---
 
-## Final Sign-off (All Phases Complete)
+## Final Sign-off — PARTIAL COMPLETION
+
+> **Note**: This sign-off was originally marked "All Phases Complete". The 2026-07-11 audit against `docs/architecture/implementation-plan-2025.md` and the implemented codebase found several phases incomplete. See the Outstanding Work section below.
 
 ### All Phases Checklist
 
@@ -1412,10 +1526,12 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 - [x] Phase 1: Schema fixes ✅
 - [x] Phase 2: Hold + Idempotency services ✅
 - [x] Phase 3: Status + Validation services ✅
-- [x] Phase 4: Creation service extraction ✅
-- [x] Phase 5: Approval service extraction ✅
-- [x] Phase 6: Controllers migrated ✅
-- [x] Phase 7: TransactionService facade finalized ✅
+- [ ] Plan Phase 3: Orphaned Code Cleanup ❌ NOT STARTED
+- [ ] Plan Phase 4: Code Quality Improvements ❌ NOT STARTED
+- [~] Checklist Phase 4: Creation service extraction ⚠️ PARTIAL
+- [~] Checklist Phase 5: Approval service extraction ⚠️ PARTIAL
+- [ ] Checklist Phase 6: Controllers migrated ❌ NOT COMPLETE
+- [~] Checklist Phase 7: TransactionService facade finalized ⚠️ PARTIAL
 - [x] Out-of-Phase: Code duplication assessment and consolidation (Tasks A–H / 1–11) ✅
 - [x] Out-of-Phase: 2026-07-11 consolidation (Tasks 1–12) ✅
 
@@ -1425,7 +1541,7 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
    ```bash
    php artisan test --compact 2>&1 | tee final-tests.txt
    ```
-   Result: `1468 passed, 5 skipped, 3 deprecated (3672 assertions)`
+   Result: `1530 passed, 5 skipped, 3 deprecated (3842 assertions)`
    All test failures resolved; remaining skipped tests are intentional (e.g., database-specific, optional benchmarks).
 
 2. **Code style**:
@@ -1445,10 +1561,11 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
    ```
    Result: CRITICAL risk due to 157 files changed on the long-lived feature branch; 899 symbols, 97 affected processes. Affected processes align with the planned extraction scope (transaction create/approve, reporting, position locking).
 
-4. **Facade metrics**:
-   - `app/Services/Transaction/TransactionService.php`: **99 lines** (target ≤ 150)
-   - Constructor dependencies: **6** (validation, creation, approval, hold, idempotency, status)
+4. **Facade metrics** (verified 2026-07-11):
+   - `app/Services/Transaction/TransactionService.php`: **162 lines** (target ≤ 150) — exceeds target
+   - Constructor dependencies: **8** (validation, creation, approval, hold, idempotency, status, MathService, ThresholdService)
    - `ValidatorMethods` trait removed ✅
+   - Private helper methods remain: `determineTellerAllocation()`, `determineInitialStatus()`
 
 5. **Compliance**:
    - [x] Audit logs still created via `AuditTrailHelper`
@@ -1490,6 +1607,31 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
   - Removed: `tests/Unit/Services/TransactionServiceEventTimingTest.php`
   - Removed: `tests/Feature/Audit/TransactionServiceCacheInvalidationTest.php`
 - `app/Jobs/Accounting/ReconcileDeferredAccountingJob.php` was updated to call `TransactionAccountingService::createDeferredAccountingEntries()` directly instead of the removed facade method.
+
+### Outstanding Work (from 2026-07-11 audit)
+
+The following items from `implementation-plan-2025.md` were never completed or were signed off prematurely:
+
+1. **Plan Phase 3: Orphaned Code Cleanup**
+   - 25 orphaned views still in place; `resources/views/orphaned/` only contains `.gitkeep`.
+   - Route-name standardization and inline-middleware alias conversion not performed.
+   - `XXX` markers not removed.
+
+2. **Plan Phase 4: Code Quality Improvements**
+   - Domain-specific transaction exceptions not created.
+   - `CacheKeys` enum/constants class not created; hardcoded cache keys remain.
+   - `CustomerController@show` and `RegulatoryReportController@msb2` not refactored for length.
+
+3. **Checklist Phase 6: Controller Migration**
+   - `TransactionController` and `Api/V1/TransactionController` still inject `TransactionServiceInterface` and call `prepareAndCreate()`.
+   - No controller has been migrated to direct `TransactionCreationService` / `TransactionApprovalService` injection.
+
+4. **Checklist Phase 7: Facade Finalization**
+   - `TransactionService` is 162 lines (target ≤ 150) with 8 dependencies (target 6).
+   - Still contains private helper logic (`determineTellerAllocation`, `determineInitialStatus`).
+
+5. **Deployment / Rollback**
+   - Staging deployment, smoke tests, Horizon/scheduler monitoring, 30-minute log watch, and rollback verification remain unchecked.
 
 ---
 
