@@ -33,7 +33,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2.16'
+          php-version: '8.3'
           extensions: bcmath, mbstring, xml, ctype, json, tokenizer
           coverage: none
           tools: composer
@@ -82,7 +82,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2.16'
+          php-version: '8.3'
           extensions: bcmath
           coverage: none
 
@@ -137,7 +137,7 @@ jobs:
       - name: Setup PHP with Coverage
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2.16'
+          php-version: '8.3'
           extensions: bcmath, mbstring, xml, ctype, json, tokenizer, pdo_sqlite
           coverage: xdebug
           tools: composer
