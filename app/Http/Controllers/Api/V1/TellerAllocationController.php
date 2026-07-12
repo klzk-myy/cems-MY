@@ -191,12 +191,12 @@ class TellerAllocationController extends Controller
     public function myActiveAllocation(MyActiveAllocationRequest $request): JsonResponse
     {
         $user = Auth::user();
-
         $validated = $request->validated();
 
         $result = $this->allocationService->getActiveAllocationForTeller($user, $validated['currency_code']);
 
-        // Service returns a pre-shaped envelope (success/data/message); keep passthrough to preserve consumer contract.
-        return response()->json($result);
+        $data = array_key_exists('data', $result) ? $result['data'] : $result;
+
+        return $this->successResponse($data, $result['message'] ?? 'Active allocation retrieved');
     }
 }

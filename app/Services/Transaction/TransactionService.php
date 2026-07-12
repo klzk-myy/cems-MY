@@ -33,6 +33,7 @@ class TransactionService implements TransactionServiceInterface
         protected TransactionIdempotencyServiceInterface $idempotencyService,
         protected TransactionStatusServiceInterface $statusService,
         protected MathService $mathService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     public function preValidate(Customer $customer, string $amount, string $currencyCode): PreValidationResult
@@ -152,9 +153,7 @@ class TransactionService implements TransactionServiceInterface
      */
     private function determineInitialStatus(string $amountLocal, bool $holdRequired): TransactionStatus
     {
-        $thresholdService = app(ThresholdService::class);
-
-        if ($holdRequired || $this->mathService->compare($amountLocal, $thresholdService->getAutoApproveThreshold()) >= 0) {
+        if ($holdRequired || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
             return TransactionStatus::PendingApproval;
         }
 
