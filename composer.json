@@ -11,7 +11,7 @@
         "blade-ui-kit/blade-icons": "^1.10",
         "doctrine/dbal": "^4.0",
         "guzzlehttp/guzzle": "^7.9",
-        "laravel/framework": "^11.0",
+        "laravel/framework": "^12.0",
         "laravel/horizon": "^5.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",

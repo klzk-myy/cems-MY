@@ -118,7 +118,7 @@ class ComplianceService implements ComplianceServiceInterface
      */
     private function checkSanctionMatchInternal(Customer $customer): bool
     {
-        return $this->checkSanctionMatch($customer);
+        return (bool) $customer->sanction_hit || $this->checkSanctionMatch($customer);
     }
 
     /**
