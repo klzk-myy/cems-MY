@@ -2,27 +2,18 @@
 
 namespace Tests\Feature\Audit;
 
-use App\Enums\RiskRating;
-use App\Enums\TransactionImportStatus;
+use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
-use App\Models\Counter;
-use App\Models\Currency;
-use App\Models\Customer;
-use App\Models\TillBalance;
-use App\Models\TransactionImport;
-use App\Services\Accounting\CurrencyPositionLockService;
-use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Compliance\ComplianceService;
-use App\Services\System\MathService;
-use App\Services\ThresholdService;
-use App\Services\Transaction\TransactionImportService;
-use App\Services\Transaction\TransactionMonitoringService;
+use App\Services\DTOs\ComplianceCheckResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\TransactionImportTestHelpers;
 
 class TransactionImportThresholdTest extends TestCase
 {
     use RefreshDatabase;
+    use TransactionImportTestHelpers;
 
     public function test_import_marks_rows_above_auto_approve_threshold_as_pending(): void
     {
@@ -62,58 +53,29 @@ class TransactionImportThresholdTest extends TestCase
         }
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function createFixtures(): array
+    public function test_import_appends_threshold_reason_to_compliance_hold_reason(): void
     {
-        $currency = Currency::factory()->create(['code' => 'USD']);
-        $customer = Customer::factory()->create([
-            'risk_rating' => RiskRating::Low->value,
-        ]);
-        $counter = Counter::factory()->create(['code' => 'MAIN']);
-        TillBalance::factory()->create([
-            'till_id' => $counter->code,
-            'currency_code' => $currency->code,
-            'date' => today(),
-            'opening_balance' => '10000',
-        ]);
+        ['customer' => $customer, 'import' => $import] = $this->createFixtures();
 
-        $import = TransactionImport::factory()->create([
-            'imported_by' => $customer->id,
-            'status' => TransactionImportStatus::Pending->value,
-        ]);
-
-        return [
-            'currency' => $currency,
-            'customer' => $customer,
-            'counter' => $counter,
-            'import' => $import,
-        ];
-    }
-
-    private function createImportService(TransactionImport $import, string $threshold): TransactionImportService
-    {
-        $thresholdService = $this->createMock(ThresholdService::class);
-        $thresholdService->method('getAutoApproveThreshold')->willReturn($threshold);
-
-        return new TransactionImportService(
-            $import,
-            app(MathService::class),
-            app(ComplianceService::class),
-            app(CurrencyPositionService::class),
-            app(TransactionMonitoringService::class),
-            app(CurrencyPositionLockService::class),
-            $thresholdService,
+        $complianceService = $this->createMock(ComplianceService::class);
+        $complianceService->method('requiresHold')->willReturn(
+            new ComplianceCheckResult(requiresHold: true, reasons: ['Customer risk requires review'])
         );
-    }
+        $complianceService->method('determineCDDLevel')->willReturn(CddLevel::Standard);
 
-    private function createCsv(string $row): string
-    {
-        $csv = tempnam(sys_get_temp_dir(), 'import');
-        file_put_contents($csv, "customer_id,type,currency_code,amount_foreign,rate,purpose,source_of_funds,till_id\n");
-        file_put_contents($csv, "{$row}\n", FILE_APPEND);
+        $service = $this->createImportService($import, '5000', $complianceService);
+        $csv = $this->createCsv("{$customer->id},Buy,USD,2000,4.0,Business,Salary,MAIN");
 
-        return $csv;
+        try {
+            $service->process($csv);
+
+            $this->assertDatabaseHas('transactions', [
+                'customer_id' => $customer->id,
+                'status' => TransactionStatus::PendingApproval->value,
+                'hold_reason' => 'Customer risk requires review; Transaction amount exceeds auto-approve threshold',
+            ]);
+        } finally {
+            unlink($csv);
+        }
     }
 }
