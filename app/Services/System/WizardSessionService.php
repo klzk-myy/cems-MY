@@ -8,16 +8,16 @@ class WizardSessionService
 {
     public function put(string $sessionId, array $data, int $ttl = 3600): void
     {
-        Cache::put("wizard:{$sessionId}", $data, now()->addSeconds($ttl));
+        Cache::put(CacheKeys::wizardSession($sessionId), $data, now()->addSeconds($ttl));
     }
 
     public function get(string $sessionId): ?array
     {
-        return Cache::get("wizard:{$sessionId}");
+        return Cache::get(CacheKeys::wizardSession($sessionId));
     }
 
     public function forget(string $sessionId): void
     {
-        Cache::forget("wizard:{$sessionId}");
+        Cache::forget(CacheKeys::wizardSession($sessionId));
     }
 }

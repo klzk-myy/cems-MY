@@ -12,6 +12,7 @@ use App\Services\AuditService;
 use App\Services\Compliance\RiskScoringEngine;
 use App\Services\Contracts\CustomerServiceInterface;
 use App\Services\CustomerScreeningService;
+use App\Services\System\CacheKeys;
 use App\Services\System\CacheTagsService;
 use App\Services\System\EncryptionService;
 use Illuminate\Support\Facades\Cache;
@@ -170,7 +171,7 @@ class CustomerService implements CustomerServiceInterface
         });
         $this->cacheTagsService->invalidate('dashboard');
         // Invalidate individual customer cache
-        Cache::forget("customer:{$customer->id}");
+        Cache::forget(CacheKeys::customer($customer->id));
 
         return $customer;
     }
@@ -181,7 +182,7 @@ class CustomerService implements CustomerServiceInterface
     public function getCustomer(int $customerId): ?Customer
     {
         return Cache::remember(
-            "customer:{$customerId}",
+            CacheKeys::customer($customerId),
             now()->addMinutes(30),
             fn () => $this->customerRepository->findById($customerId)
         );

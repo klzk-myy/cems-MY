@@ -111,12 +111,12 @@ class PerformanceBaselineService
 
     public function getCurrentResponseTime(): float
     {
-        return (float) Cache::get('current_response_time_ms', 0);
+        return (float) Cache::get(CacheKeys::CurrentResponseTimeMs->value, 0);
     }
 
     public function getCurrentCacheHitRate(): float
     {
-        return (float) Cache::get('current_cache_hit_rate', 0);
+        return (float) Cache::get(CacheKeys::CurrentCacheHitRate->value, 0);
     }
 
     public function getPerformanceSummary(): array

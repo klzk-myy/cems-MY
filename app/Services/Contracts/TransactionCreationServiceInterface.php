@@ -26,4 +26,21 @@ interface TransactionCreationServiceInterface
      * @throws \InvalidArgumentException If till is closed or other validation fails
      */
     public function create(TransactionCreationContext $context, ?int $userId = null, ?string $ipAddress = null): Transaction;
+
+    /**
+     * Validate raw transaction data, build a creation context, and create the transaction.
+     *
+     * This is the controller-facing entry point that replaces the orchestration
+     * previously done in TransactionService::prepareAndCreate().
+     *
+     * @param  array  $data  Validated transaction payload
+     * @param  int|null  $userId  User ID of transaction creator (null uses auth()->id())
+     * @param  string|null  $ipAddress  IP address for audit (null uses request()->ip())
+     * @return Transaction The created transaction
+     *
+     * @throws \InvalidArgumentException
+     * @throws TransactionBlockedException
+     * @throws AllocationValidationException
+     */
+    public function prepareAndCreate(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction;
 }

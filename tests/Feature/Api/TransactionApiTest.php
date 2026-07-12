@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Api;
 
-use App\Enums\CddLevel;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Currency;
@@ -12,8 +11,6 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Contracts\TransactionCreationServiceInterface;
-use App\Services\Contracts\TransactionValidationInterface;
-use App\Services\DTOs\PreValidationResult;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -43,23 +40,8 @@ class TransactionApiTest extends TestCase
             'branch_id' => $branch->id,
         ]);
 
-        $validationResult = new PreValidationResult;
-        $validationResult->setCDDLevel(CddLevel::Simplified);
-        $validationResult->setHoldRequired(false);
-
-        $validationService = $this->mock(TransactionValidationInterface::class);
-        $validationService->shouldReceive('validateCurrency')->once();
-        $validationService->shouldReceive('validateIpAddress')->once();
-        $validationService->shouldReceive('validateTillBalance')
-            ->once()
-            ->andReturn($tillBalance);
-        $validationService->shouldReceive('validatePepRequirements')->once();
-        $validationService->shouldReceive('preValidate')
-            ->once()
-            ->andReturn($validationResult);
-
         $creationService = $this->mock(TransactionCreationServiceInterface::class);
-        $creationService->shouldReceive('create')
+        $creationService->shouldReceive('prepareAndCreate')
             ->once()
             ->andReturn($transaction);
 

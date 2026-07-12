@@ -20,9 +20,14 @@ use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
+use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
+use App\Services\Contracts\TransactionValidationInterface;
+use App\Services\DTOs\PreValidationResult;
 use App\Services\System\CacheTagsService;
+use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -48,7 +53,11 @@ class TransactionCreationServiceTest extends TestCase
             $mocks['accounting'] ?? Mockery::mock(TransactionAccountingService::class),
             $mocks['audit'] ?? Mockery::mock(AuditTrailHelper::class),
             $mocks['till'] ?? app(TillBalanceManager::class),
-            $cache
+            $cache,
+            $mocks['validation'] ?? app(TransactionValidationInterface::class),
+            $mocks['math'] ?? app(MathService::class),
+            $mocks['threshold'] ?? app(ThresholdService::class),
+            $mocks['tellerAllocation'] ?? app(TellerAllocationService::class),
         );
     }
 
@@ -559,6 +568,73 @@ class TransactionCreationServiceTest extends TestCase
         $transaction = $service->create($this->context());
 
         $this->assertInstanceOf(Transaction::class, $transaction);
+    }
+
+    #[Test]
+    public function prepare_and_create_builds_context_and_delegates_to_create(): void
+    {
+        $customer = Customer::factory()->create();
+        $counter = Counter::factory()->create(['status' => 'active']);
+        Currency::factory()->create(['code' => 'USD']);
+        $tillBalance = TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'USD',
+            'branch_id' => $counter->branch_id,
+        ]);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'MYR',
+            'branch_id' => $counter->branch_id,
+        ]);
+        $user = User::factory()->create(['role' => UserRole::Manager->value]);
+
+        $validationResult = new PreValidationResult;
+        $validationResult->setCDDLevel(CddLevel::Standard);
+        $validationResult->setHoldRequired(false);
+
+        $validation = Mockery::mock(TransactionValidationInterface::class);
+        $validation->shouldReceive('validateCurrency')->once();
+        $validation->shouldReceive('validateIpAddress')->once();
+        $validation->shouldReceive('validateTillBalance')->andReturn($tillBalance);
+        $validation->shouldReceive('validatePepRequirements')->once();
+        $validation->shouldReceive('preValidate')->andReturn($validationResult);
+
+        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency->shouldReceive('findDuplicate')->andReturnNull();
+        $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('getPositionWithLock')->once();
+        $position->shouldReceive('updatePosition')->once();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->once();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransaction')->once();
+
+        $service = $this->service([
+            'validation' => $validation,
+            'idempotency' => $idempotency,
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+        ]);
+
+        $transaction = $service->prepareAndCreate([
+            'customer_id' => $customer->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'USD',
+            'amount_foreign' => '100.00',
+            'rate' => '4.5000',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'till_id' => (string) $counter->code,
+        ], $user->id, '127.0.0.1');
+
+        $this->assertInstanceOf(Transaction::class, $transaction);
+        $this->assertEquals(TransactionStatus::Completed, $transaction->status);
+        $this->assertEquals($customer->id, $transaction->customer_id);
     }
 
     protected function tearDown(): void

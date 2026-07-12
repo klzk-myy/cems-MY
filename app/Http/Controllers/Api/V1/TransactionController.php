@@ -11,7 +11,7 @@ use App\Http\Requests\Api\V1\TransactionIndexRequest;
 use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\Transaction;
-use App\Services\Contracts\TransactionServiceInterface;
+use App\Services\Contracts\TransactionCreationServiceInterface;
 use Illuminate\Http\JsonResponse;
 
 class TransactionController extends Controller
@@ -19,7 +19,7 @@ class TransactionController extends Controller
     use ApiResponse;
 
     public function __construct(
-        protected TransactionServiceInterface $transactionService
+        protected TransactionCreationServiceInterface $creationService
     ) {}
 
     /**
@@ -50,7 +50,7 @@ class TransactionController extends Controller
         $ipAddress = $request->ip();
 
         try {
-            $transaction = $this->transactionService->prepareAndCreate($validated, auth()->id(), $ipAddress);
+            $transaction = $this->creationService->prepareAndCreate($validated, auth()->id(), $ipAddress);
 
             $transaction->load(['customer', 'user', 'approver']);
 

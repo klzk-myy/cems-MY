@@ -37,7 +37,7 @@ class CacheOptimizationService
 
     public function putStats(\DateTimeInterface $ttl): void
     {
-        Cache::put('dashboard_cache_stats', $this->stats, $ttl);
+        Cache::put(CacheKeys::DashboardCacheStats->value, $this->stats, $ttl);
     }
 
     public function resetStats(): void

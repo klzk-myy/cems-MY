@@ -528,6 +528,41 @@ class TransactionApprovalServiceTest extends TestCase
         });
     }
 
+    #[Test]
+    public function approve_records_status_transition_history(): void
+    {
+        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter);
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('updatePosition')->once();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->once();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransaction')->once();
+
+        $result = $this->service([
+            'monitoring' => $this->monitoringMock(),
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+        ])->approve($transaction, $approver->id);
+
+        $this->assertTrue($result->success);
+
+        $history = $result->transaction->fresh()->transition_history;
+        $last = array_pop($history);
+
+        $this->assertSame(TransactionStatus::PendingApproval->value, $last['from']);
+        $this->assertSame(TransactionStatus::Completed->value, $last['to']);
+        $this->assertSame('Transaction approved and completed by manager', $last['reason']);
+        $this->assertSame($approver->id, $last['user_id']);
+        $this->assertArrayHasKey('timestamp', $last);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

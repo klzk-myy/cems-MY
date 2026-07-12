@@ -14,7 +14,7 @@ use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\Contracts\TransactionServiceInterface;
+use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Transaction\ReceiptGenerationService;
 use App\Services\Transaction\TransactionCancellationService;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +25,7 @@ use Illuminate\View\View;
 class TransactionController extends Controller
 {
     public function __construct(
-        protected TransactionServiceInterface $transactionService,
+        protected TransactionCreationServiceInterface $creationService,
         protected TransactionCancellationService $cancellationService,
     ) {}
 
@@ -105,7 +105,7 @@ class TransactionController extends Controller
         $validated['till_id'] = $counter ? (string) $counter->code : (string) $validated['counter_id'];
 
         try {
-            $transaction = $this->transactionService->prepareAndCreate($validated, auth()->id(), $ipAddress);
+            $transaction = $this->creationService->prepareAndCreate($validated, auth()->id(), $ipAddress);
 
             if ($transaction->status === TransactionStatus::PendingApproval) {
                 return redirect()->route('transactions.show', $transaction)

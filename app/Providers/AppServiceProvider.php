@@ -23,6 +23,7 @@ use App\View\Composers\UserComposer;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -82,6 +83,28 @@ class AppServiceProvider extends ServiceProvider
         $this->registerCarbonMacros();
         $this->registerBladeDirectives();
         $this->registerViewComposers();
+
+        // Name framework-provided routes after all service providers have booted.
+        $this->app->booted(function () {
+            $this->nameFrameworkRoutes();
+        });
+    }
+
+    /**
+     * Assign names to framework-provided routes that are registered without a name.
+     * This keeps the route table consistent with the application's naming convention.
+     */
+    protected function nameFrameworkRoutes(): void
+    {
+        $routeCollection = Route::getRoutes();
+
+        foreach ($routeCollection as $route) {
+            if ($route->getName() === null && $route->uri() === 'broadcasting/auth') {
+                $route->name('broadcasting.auth');
+            }
+        }
+
+        $routeCollection->refreshNameLookups();
     }
 
     /**

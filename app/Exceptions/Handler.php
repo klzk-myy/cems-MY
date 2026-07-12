@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -41,7 +42,8 @@ class Handler extends ExceptionHandler
      */
     public function render(Request $request, Throwable $e): Response|JsonResponse|RedirectResponse|\Symfony\Component\HttpFoundation\Response
     {
-        // Handle domain exceptions with appropriate HTTP status codes
+        // Handle domain exceptions (including all TransactionException subclasses)
+        // with their declared HTTP status codes.
         if ($e instanceof DomainException) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -65,11 +67,7 @@ class Handler extends ExceptionHandler
 
         // For API requests, return sanitized JSON response
         if ($request->expectsJson()) {
-            $status = match (true) {
-                $this->isHttpException($e) => $e->getStatusCode(),
-                $e instanceof DomainException => $e->getStatusCode(),
-                default => 500,
-            };
+            $status = $this->resolveApiStatusCode($e);
 
             // Don't expose internal error details for 500 errors
             if ($status >= 500) {
@@ -88,5 +86,24 @@ class Handler extends ExceptionHandler
         }
 
         return parent::render($request, $e);
+    }
+
+    /**
+     * Map common exception categories to HTTP status codes for API responses.
+     *
+     * - 400: Validation errors (malformed input)
+     * - 409: Concurrency / state conflicts (e.g., lock acquisition failures)
+     * - 422: Domain / business rule violations
+     * - 500: Unexpected server errors
+     */
+    protected function resolveApiStatusCode(Throwable $e): int
+    {
+        return match (true) {
+            $this->isHttpException($e) => $e->getStatusCode(),
+            $e instanceof ValidationException => 400,
+            $e instanceof DomainException => $e->getStatusCode(),
+            $e instanceof \RuntimeException => 409,
+            default => 500,
+        };
     }
 }

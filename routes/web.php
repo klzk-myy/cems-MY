@@ -36,9 +36,17 @@ use App\Http\Controllers\Transaction\TransactionCancellationController;
 use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
+use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+// Laravel health check route (named so it appears in route:list without an unnamed entry)
+Route::get('/up', function () {
+    event(new DiagnosingHealth);
+
+    return response('');
+})->name('up');
 
 // Health check endpoint
 Route::get('/health', [HealthCheckController::class, 'index'])

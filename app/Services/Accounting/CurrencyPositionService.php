@@ -11,6 +11,7 @@ use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Contracts\CurrencyPositionServiceInterface;
+use App\Services\System\CacheKeys;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -430,7 +431,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             'created_by' => $transaction->user_id,
         ]);
 
-        Cache::forget("position:{$transaction->branch_id}:{$transaction->currency_code}:available");
+        Cache::forget(CacheKeys::positionAvailable($transaction->branch_id, $transaction->currency_code));
 
         return $reservation;
     }
@@ -453,7 +454,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         }
 
         $reservation->update(['status' => StockReservationStatus::Consumed]);
-        Cache::forget("position:{$reservation->branch_id}:{$reservation->currency_code}:available");
+        Cache::forget(CacheKeys::positionAvailable($reservation->branch_id, $reservation->currency_code));
 
         return $reservation;
     }
@@ -476,7 +477,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         }
 
         $reservation->update(['status' => StockReservationStatus::Released]);
-        Cache::forget("position:{$reservation->branch_id}:{$reservation->currency_code}:available");
+        Cache::forget(CacheKeys::positionAvailable($reservation->branch_id, $reservation->currency_code));
 
         return $reservation;
     }
