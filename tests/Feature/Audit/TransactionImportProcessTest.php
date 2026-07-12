@@ -27,7 +27,11 @@ class TransactionImportProcessTest extends TestCase
     public function test_import_completes_rows_below_auto_approve_threshold(): void
     {
         $currency = Currency::factory()->create(['code' => 'USD']);
+
+        // The local-currency till balance is required because TillBalanceManager
+        // updates the MYR till whenever a completed Buy transaction is applied.
         Currency::factory()->create(['code' => 'MYR']);
+
         $customer = Customer::factory()->create([
             'risk_rating' => RiskRating::Low->value,
         ]);
@@ -67,18 +71,29 @@ class TransactionImportProcessTest extends TestCase
         file_put_contents($csv, "customer_id,type,currency_code,amount_foreign,rate,purpose,source_of_funds,till_id\n");
         file_put_contents($csv, "{$customer->id},Buy,USD,1000,4.0,Business,Salary,MAIN\n", FILE_APPEND);
 
-        $service->process($csv);
+        try {
+            $service->process($csv);
 
-        $this->assertDatabaseHas('transactions', [
-            'customer_id' => $customer->id,
-            'status' => TransactionStatus::Completed->value,
-        ]);
+            $this->assertDatabaseHas('transactions', [
+                'customer_id' => $customer->id,
+                'status' => TransactionStatus::Completed->value,
+            ]);
 
-        $this->assertDatabaseMissing('transactions', [
-            'customer_id' => $customer->id,
-            'hold_reason' => 'Transaction amount exceeds auto-approve threshold',
-        ]);
+            $this->assertDatabaseMissing('transactions', [
+                'customer_id' => $customer->id,
+                'hold_reason' => 'Transaction amount exceeds auto-approve threshold',
+            ]);
 
-        unlink($csv);
+            $this->assertDatabaseHas('transaction_imports', [
+                'id' => $import->id,
+                'status' => TransactionImportStatus::Completed->value,
+                'success_count' => 1,
+                'error_count' => 0,
+            ]);
+
+            $this->assertNotNull($import->fresh()->completed_at);
+        } finally {
+            unlink($csv);
+        }
     }
 }
