@@ -4,10 +4,6 @@ namespace Tests\Feature\Audit;
 
 use App\Enums\TransactionImportStatus;
 use App\Enums\TransactionStatus;
-use App\Models\Counter;
-use App\Models\Currency;
-use App\Models\Customer;
-use App\Models\TillBalance;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -54,21 +50,7 @@ class TransactionImportProcessTest extends TestCase
     public function test_batch_upload_updates_the_created_import_record(): void
     {
         $user = User::factory()->manager()->create();
-        $currency = Currency::factory()->create(['code' => 'USD']);
-        $customer = Customer::factory()->create();
-        $counter = Counter::factory()->create(['code' => 'MAIN']);
-        TillBalance::factory()->create([
-            'till_id' => $counter->code,
-            'currency_code' => $currency->code,
-            'date' => today(),
-            'opening_balance' => '10000',
-        ]);
-        TillBalance::factory()->create([
-            'till_id' => $counter->code,
-            'currency_code' => 'MYR',
-            'date' => today(),
-            'opening_balance' => '10000',
-        ]);
+        ['customer' => $customer] = $this->createFixtures(createImport: false);
 
         $this->actingAs($user);
 
@@ -85,6 +67,7 @@ class TransactionImportProcessTest extends TestCase
             'status' => TransactionImportStatus::Completed->value,
             'total_rows' => 1,
             'success_count' => 1,
+            'error_count' => 0,
         ]);
     }
 }

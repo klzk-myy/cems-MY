@@ -28,7 +28,7 @@ trait TransactionImportTestHelpers
      *
      * @return array<string, mixed>
      */
-    private function createFixtures(): array
+    private function createFixtures(bool $createImport = true): array
     {
         $currency = Currency::factory()->create(['code' => 'USD']);
         Currency::factory()->create(['code' => 'MYR']);
@@ -50,10 +50,12 @@ trait TransactionImportTestHelpers
             'opening_balance' => '100000',
         ]);
 
-        $import = TransactionImport::factory()->create([
-            'imported_by' => $customer->id,
-            'status' => TransactionImportStatus::Pending->value,
-        ]);
+        $import = $createImport
+            ? TransactionImport::factory()->create([
+                'imported_by' => $customer->id,
+                'status' => TransactionImportStatus::Pending->value,
+            ])
+            : null;
 
         return [
             'currency' => $currency,

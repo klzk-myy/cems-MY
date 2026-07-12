@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\DB;
 
 class TransactionImportService
 {
-    protected TransactionImport $import;
+    protected ?TransactionImport $import = null;
 
     protected array $errors = [];
 
@@ -77,7 +77,7 @@ class TransactionImportService
 
             while (($row = fgetcsv($handle)) !== false) {
                 $rowNumber++;
-                $this->processRow($row, $rowNumber, $threshold);
+                $this->processRow($this->import, $row, $rowNumber, $threshold);
             }
 
             $this->import->update([
@@ -95,7 +95,7 @@ class TransactionImportService
     /**
      * Process single row
      */
-    protected function processRow(array $row, int $rowNumber, string $threshold): void
+    protected function processRow(TransactionImport $import, array $row, int $rowNumber, string $threshold): void
     {
         try {
             // Expected columns: customer_id, type, currency_code, amount_foreign, rate, purpose, source_of_funds, till_id
@@ -225,7 +225,7 @@ class TransactionImportService
                 // Create transaction record
                 $transaction = Transaction::create([
                     'customer_id' => $data['customer_id'],
-                    'user_id' => $this->import->imported_by,
+                    'user_id' => $import->imported_by,
                     'till_id' => $data['till_id'],
                     'type' => $data['type'],
                     'currency_code' => $data['currency_code'],
