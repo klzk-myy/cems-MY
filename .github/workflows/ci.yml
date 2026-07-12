@@ -203,9 +203,15 @@ jobs:
 
       - name: Wait for Redis
         run: |
-          while ! redis-cli -h 127.0.0.1 ping; do
+          for i in {1..60}; do
+            if timeout 1 bash -c 'echo > /dev/tcp/127.0.0.1/6379' 2>/dev/null; then
+              echo "Redis is ready"
+              exit 0
+            fi
             sleep 1
           done
+          echo "Redis did not become ready in time" >&2
+          exit 1
 
       - name: Run migrations and seed
         env:
