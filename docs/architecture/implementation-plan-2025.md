@@ -36,7 +36,7 @@ This plan addresses architectural concerns identified during a comprehensive cod
 | 9 | Code Quality Improvements | ✅ Complete | Handler maps exceptions to 400/409/422/500; all hardcoded cache keys migrated to `CacheKeys`; controller method lengths evaluated |
 | 10 | Validation & Deployment | ⚠️ Partial | Local validation passed; `laravel/framework` upgraded to v12.63.0; `composer audit` clean; committed and pushed to `main` and `develop`; staging deployment blocked by missing GitHub Action secrets |
 
-> **Recommendation**: Phases 1–9 are complete. Phase 10 local validation and the Laravel 12 security upgrade are complete. The only remaining deployment blocker is configuring the GitHub Action secrets `STAGING_SSH_KEY`, `STAGING_HOST`, `STAGING_USER`, and `SLACK_WEBHOOK_URL` in the repository settings.
+> **Recommendation**: Phases 1–9 are complete. Phase 10 local validation and the Laravel 12 security upgrade are complete. The `CI/CD Pipeline` workflow was also aligned to trigger on `main`/`develop` (it previously referenced `master`). The only remaining deployment blocker is configuring the GitHub Action secrets `STAGING_SSH_KEY`, `STAGING_HOST`, `STAGING_USER`, and `SLACK_WEBHOOK_URL` in the repository settings.
 
 ---
 
