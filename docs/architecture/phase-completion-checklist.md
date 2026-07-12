@@ -1490,8 +1490,9 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 
 ### Task 10.2: GitNexus Change Detection ✅
 
-- [x] Run `npx gitnexus detect_changes --scope unstaged --repo cems-my`
+- [x] Run `npx gitnexus detect_changes --scope unstaged --repo cems-my` before commit
 - [x] Review affected symbols and processes
+- [x] Changes committed to `main` as `b8cdc9ee`
 
 **Result**: 22 changed files, 135 symbols, 22 affected processes — **CRITICAL** risk. Affected flows align with the planned extraction scope (transaction create/approve, customer update, cache invalidation). No unintended ripple effects outside the expected domain.
 
@@ -1505,9 +1506,10 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 
 **Migrations**: No new migrations were introduced by Phases 1–9.
 
-### Task 10.4: Staging Deployment ❌ ENVIRONMENT-BLOCKED
+### Task 10.4: Staging Deployment 🟡 READY — Environment Access Required
 
-- [ ] Merge to `develop` branch
+- [x] Changes committed to `main` (`b8cdc9ee`)
+- [ ] Merge/push to `develop` branch
 - [ ] Deploy to staging environment
 - [ ] Run full test suite on staging
 - [ ] Smoke test critical paths (create customer, create transaction, approve ≥ RM 10k, generate MSB2/LMCA, view dashboard)
@@ -1515,32 +1517,59 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 - [ ] Verify audit trails intact
 - [ ] Verify compliance jobs run (scheduler)
 
-**Blocker**: No staging environment access from this local workspace. Work is currently uncommitted on `main` (22 modified files). Staging deployment requires:
-1. Committing changes (requires user approval)
-2. Pushing to remote `develop` branch
-3. Deploying via CI/CD or SSH to staging host
+**Status**: Code is committed and ready. Staging deployment requires environment access.
 
-### Task 10.5: Production Deployment ❌ ENVIRONMENT-BLOCKED
+### Task 10.5: Production Deployment 🟡 READY — Staging Approval Required
 
-- [ ] Enable maintenance mode: `php artisan down --render="errors::503"`
-- [ ] Pull code, install dependencies: `composer install --no-dev --optimize-autoloader`
-- [ ] Clear caches
-- [ ] Run migrations (none expected)
-- [ ] Restart Horizon: `php artisan horizon:terminate`
-- [ ] Restart queues: `supervisorctl restart cems-worker:*`
-- [ ] Disable maintenance mode: `php artisan up`
-- [ ] Smoke test critical user flows
-- [ ] Monitor logs for 30 minutes
-- [ ] Verify rollback plan
+**Prerequisites**:
+- [ ] Staging approved
+- [ ] Database + files backup complete
+- [ ] Rollback plan ready
+- [ ] Maintenance window scheduled (if needed)
 
-**Blocker**: No production environment access from this local workspace. Requires staging approval, database backup, and maintenance window coordination.
+**Deployment Steps**:
+1. Enable maintenance mode: `php artisan down --render="errors::503"`
+2. Pull code, install dependencies: `composer install --no-dev --optimize-autoloader`
+3. Clear caches: `php artisan optimize:clear`
+4. Run migrations: `php artisan migrate` (none expected)
+5. Restart Horizon: `php artisan horizon:terminate`
+6. Restart queues: `supervisorctl restart cems-worker:*`
+7. Disable maintenance mode: `php artisan up`
+8. Smoke test critical user flows
+9. Monitor logs for 30 minutes: `tail -f storage/logs/laravel.log`
+
+**Rollback**:
+```bash
+git revert HEAD
+composer install --no-dev --optimize-autoloader
+php artisan optimize:clear
+php artisan migrate:rollback --pretend  # if any migration ran
+php artisan up
+```
+
+**Status**: Production deployment is gated on successful staging approval.
+
+### Deployment Readiness Notes
+
+**Commit**: `b8cdc9ee` on `main`  
+**Scope**: Phases 4–10 (service extraction, controller migration, facade finalization, orphaned cleanup, code quality, local validation)  
+**Risk**: CRITICAL per GitNexus, concentrated in transaction/customer/cache flows  
+**Migrations**: None  
+**Tests**: 1532 passed, 5 skipped, 3 deprecated, 0 failed  
+**Style**: Pint passed  
+**Next actions**:
+1. Push `main` (or merge to `develop`) to remote
+2. Deploy to staging and run smoke tests
+3. After staging approval, schedule production maintenance window
+4. Run production deployment and monitor logs
 
 ### Sign-off
 
 **Developer**: AI Agent (Kimi Code CLI)  
 **Date**: 2026-07-12  
-**Branch**: `main` (uncommitted changes from Phases 1–9)  
-**Status**: ⚠️ PARTIAL — local validation passed; staging/production deployment blocked by environment access.
+**Branch**: `main`  
+**Commit**: `b8cdc9ee`  
+**Status**: ⚠️ PARTIAL — local validation complete and changes committed; staging/production deployment pending environment access and release coordination.
 
 ---
 
