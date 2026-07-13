@@ -21,8 +21,8 @@ else
 fi
 
 log_info "Setting directory permissions..."
-chmod -R 775 storage bootstrap/cache
-find storage bootstrap/cache -type f -exec chmod 664 {} +
+chmod -R 775 storage bootstrap/cache || log_warn "Could not set some directory permissions"
+find storage bootstrap/cache -type f -exec chmod 664 {} + || log_warn "Could not set some file permissions"
 
 log_info "Running unit tests..."
 php artisan test --testsuite=Unit 2>&1 | tee "$RESULTS_DIR/unit-test-output.txt"

@@ -79,7 +79,7 @@
 **Developer**: AI Agent (Kimi Code CLI)
 **Date**: 2025-07-09
 **Branch**: `feat/architectural-improvements-2025`
-**Status**: All Phase 0 baseline tasks complete. Ready for Phase 1 (Schema Consistency Fixes).
+**Status**: ✅ All Phase 0 baseline tasks complete. Ready for Phase 1 (Schema Consistency Fixes).
 
 **Notes**:
 - Baseline tests show 4 pre-existing failures in `MfaRequirementTest` (unrelated to transaction refactoring)
@@ -90,7 +90,7 @@
 - Database accessible, Redis working, environment validated
 - Feature branch created from latest main
 
-**Approval**: ☑ Phase 0 sign-off obtained (self-certified per automation)
+**Approval**: ✅ Phase 0 sign-off obtained (self-certified per automation)
 
 ---
 
@@ -232,7 +232,7 @@ git stash pop
 **Developer**: AI Agent (Kimi Code CLI)
 **Date**: 2025-07-09
 **Branch**: `feat/architectural-improvements-2025`
-**Status**: All Phase 1 requirements met. Schema consistency issues fixed and verified.
+**Status**: ✅ All Phase 1 requirements met. Schema consistency issues fixed and verified.
 
 **Summary of Changes**:
 - **4 models modified** with 9 insertions, 4 deletions
@@ -251,7 +251,7 @@ git stash pop
 
 **Risk Level**: **LOW** - Non-destructive property metadata changes only
 
-**Approval**: ☑ Phase 1 sign-off obtained (self-certified per automation)
+**Approval**: ✅ Phase 1 sign-off obtained (self-certified per automation)
 
 ---
 
@@ -378,7 +378,7 @@ git stash pop
 **Developer**: AI Agent (Kimi Code CLI)
 **Date**: 2025-07-09
 **Branch**: feat/architectural-improvements-2025
-**Status**: All Phase 2 requirements met. Hold and Idempotency services extracted and verified.
+**Status**: ✅ All Phase 2 requirements met. Hold and Idempotency services extracted and verified.
 
 **Summary**:
 - 2 new services created with interfaces and unit tests
@@ -394,7 +394,7 @@ git stash pop
 
 **Risk**: LOW — isolated extraction with no ripple effects.
 
-Approval: ☑ Phase 2 sign-off obtained (self-certified per automation)
+Approval: ✅ Phase 2 sign-off obtained (self-certified per automation)
 
 ---
 
@@ -502,7 +502,7 @@ Approval: ☑ Phase 2 sign-off obtained (self-certified per automation)
 **Developer**: AI Agent (Kimi Code CLI)
 **Date**: 2025-07-09
 **Branch**: `feat/architectural-improvements-2025`
-**Status**: All Phase 3 requirements met. Status and Validation services extracted and verified.
+**Status**: ✅ All Phase 3 requirements met. Status and Validation services extracted and verified.
 
 **Summary**:
 - Extended existing `TransactionValidationService` with `preValidate()` method, consolidating sanctions screening, CDD determination, risk analysis, and hold checks
@@ -518,7 +518,7 @@ Approval: ☑ Phase 2 sign-off obtained (self-certified per automation)
 
 **Risk Level**: **LOW** - Clean extraction with no breaking changes; backward-compatible wrappers maintained.
 
-**Approval**: ☑ Phase 3 sign-off obtained (self-certified per automation)
+**Approval**: ✅ Phase 3 sign-off obtained (self-certified per automation)
 
 ---
 
@@ -1520,12 +1520,12 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 - [ ] Verify audit trails intact
 - [ ] Verify compliance jobs run (scheduler)
 
-**Status**: Local pipeline implemented and executable from any configured workstation/server. Staging deployment and smoke tests remain pending.
+**Status**: ⚠️ Local pipeline implemented and executable from any configured workstation/server. Staging deployment and smoke tests remain pending.
 
 **Local commands**:
 ```bash
 make ci                    # lint + security + tests
-make lint                  # Pint + Blade/PHP syntax checks
+make lint                  # Pint + PHP syntax checks (+ PHPStan if installed)
 make security              # composer audit + TruffleHog
 make test                  # full PHPUnit suite
 make deploy ENV=staging    # deploy to staging server
@@ -1568,12 +1568,12 @@ php artisan migrate:rollback --pretend  # if any migration ran
 php artisan up
 ```
 
-**Status**: Blocked until staging deployment and smoke tests pass.
+**Status**: ❌ BLOCKED — staging deployment and smoke tests required
 
 ### Deployment Readiness Notes
 
-**Latest commit**: `ff65f32f` on `main` (local CI/CD pipeline: `scripts/ci/`, `Makefile`, deployment env templates, removed GitHub Actions workflows, docs update)
-**Remote**: `origin/main` and `origin/develop` both at `ff65f32f`
+**Latest commit**: `f925f54b` on `main` (local CI/CD pipeline: `scripts/ci/`, `Makefile`, deployment env templates, removed GitHub Actions workflows, docs update)
+**Remote**: `origin/main` and `origin/develop` both at `f925f54b`
 **Scope**: Phases 1–10 local validation, Laravel 12 security upgrade, local CI/CD pipeline replacing GitHub Actions workflows
 **Risk**: CRITICAL per GitNexus, concentrated in transaction/customer/cache flows
 **Migrations**: None
@@ -1588,7 +1588,7 @@ php artisan up
 **Developer**: AI Agent (Kimi Code CLI)
 **Date**: 2026-07-13
 **Branch**: `main`
-**Commit**: `ff65f32f`
+**Commit**: `f925f54b`
 **Status**: ⚠️ PARTIAL — local validation complete, Laravel 12 upgrade pushed, `composer audit` clean, local CI/CD pipeline implemented; staging/production deployment and smoke tests pending.
 
 ---
@@ -1723,7 +1723,7 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 
 ---
 
-## Final Sign-off — PARTIAL COMPLETION
+## Final Sign-off — ⚠️ PARTIAL COMPLETION
 
 > **Note**: This sign-off was originally marked "All Phases Complete". The 2026-07-11 audit against `docs/architecture/implementation-plan-2025.md` and the implemented codebase found several phases incomplete. The plan was revised on 2026-07-12 to align phase numbering with the actual service-extraction work (Phases 2-7) and to reflect partial progress in Phase 9. Phases 4–7 were completed on 2026-07-12. See the Outstanding Work section below.
 
@@ -1922,7 +1922,7 @@ The following items from `implementation-plan-2025.md` were never completed or w
 
 **Developer**: AI Agent (Kimi Code CLI)
 **Date**: 2026-07-11
-**Status**: Remediation complete, full suite green, ready for merge.
+**Status**: ✅ Remediation complete, full suite green, ready for merge.
 
 ---
 

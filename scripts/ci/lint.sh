@@ -24,7 +24,7 @@ log_info "Running Laravel Pint..."
 log_info "Running PHP syntax check..."
 syntax_log=$(mktemp)
 trap 'rm -f "$syntax_log"' EXIT
-find app -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" | head -20 | tee "$syntax_log"
+find app -name "*.php" -exec php -l {} \; 2>&1 | { grep -v "No syntax errors" || true; } | head -20 | tee "$syntax_log"
 if [[ -s "$syntax_log" ]]; then
   fail "PHP syntax errors detected"
 fi

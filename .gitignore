@@ -73,3 +73,5 @@ opencode.json
 /browser-test.sh
 /run-tests.sh
 cems_my
+/.tmp
+/storage/test-results

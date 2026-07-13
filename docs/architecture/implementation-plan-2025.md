@@ -249,7 +249,7 @@ Tasks:
 
 ### Phase 2 Sign-off ✅ COMPLETE
 
-**Status**: All Phase 2 requirements met. Hold and Idempotency services extracted with transparent wrappers; all Transaction tests passing.
+**Status**: ✅ All Phase 2 requirements met. Hold and Idempotency services extracted with transparent wrappers; all Transaction tests passing.
 
 ---
 
@@ -312,7 +312,7 @@ Tasks:
 
 ### Phase 3 Sign-off ✅ COMPLETE
 
-**Status**: Status and Validation services extracted and tested. `TransactionService` delegates `preValidate()`, `isRefundable()`, and `isCancelled()`.
+**Status**: ✅ Status and Validation services extracted and tested. `TransactionService` delegates `preValidate()`, `isRefundable()`, and `isCancelled()`.
 
 ---
 
@@ -404,7 +404,7 @@ public function createTransaction(array $data, ?int $userId = null, ?string $ipA
 
 ### Phase 4 Sign-off ✅ COMPLETE
 
-**Status**: `TransactionCreationService` extracted and tested; `TransactionService::createTransaction()` delegates cleanly to `creationService->prepareAndCreate()`. `create()` is ~37 lines and all helper methods are ≤ 30 lines. Context assembly intentionally remains in `prepareAndCreate()` to avoid re-inflating the facade.
+**Status**: ✅ `TransactionCreationService` extracted and tested; `TransactionService::createTransaction()` delegates cleanly to `creationService->prepareAndCreate()`. `create()` is ~37 lines and all helper methods are ≤ 30 lines. Context assembly intentionally remains in `prepareAndCreate()` to avoid re-inflating the facade.
 
 ---
 
@@ -481,7 +481,7 @@ public function approveTransaction(Transaction $transaction, int $approverId, ?s
 
 ### Phase 5 Sign-off ✅ COMPLETE
 
-**Status**: `TransactionApprovalService` extracted, tested with 20 unit tests, and refactored to line-count targets. `approve()` is ~24 lines and all helpers are ≤ 40 lines.
+**Status**: ✅ `TransactionApprovalService` extracted, tested with 20 unit tests, and refactored to line-count targets. `approve()` is ~24 lines and all helpers are ≤ 40 lines.
 
 ---
 
@@ -550,7 +550,7 @@ class TransactionController
 
 ### Phase 6 Sign-off ✅ COMPLETE
 
-**Status**: All relevant controllers migrated to direct service injection; no controllers depend on `TransactionService` for transaction creation.
+**Status**: ✅ All relevant controllers migrated to direct service injection; no controllers depend on `TransactionService` for transaction creation.
 
 ---
 
@@ -608,7 +608,7 @@ public function __construct(
 
 ### Phase 7 Sign-off ✅ COMPLETE
 
-**Status**: `TransactionService` is now a minimal facade (62 lines, 6 dependencies). All creation orchestration lives in `TransactionCreationService`.
+**Status**: ✅ `TransactionService` is now a minimal facade (62 lines, 6 dependencies). All creation orchestration lives in `TransactionCreationService`.
 
 ---
 

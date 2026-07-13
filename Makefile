@@ -10,6 +10,8 @@ help:
 	@echo "  make test              - Run unit and feature tests"
 	@echo "  make ci                - Run lint + security + test (no deploy)"
 	@echo "  make deploy ENV=staging or ENV=production - Run full pipeline including deploy"
+	@echo "  make deploy-staging    - Shortcut for make deploy ENV=staging"
+	@echo "  make deploy-production - Shortcut for make deploy ENV=production"
 
 lint:
 	@scripts/ci/lint.sh
