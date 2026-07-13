@@ -18,7 +18,15 @@ for arg in "$@"; do
     --skip-security) SKIP_SECURITY=true ;;
     --skip-test) SKIP_TEST=true ;;
     --skip-deploy) SKIP_DEPLOY=true ;;
-    staging|production) ENVIRONMENT="$arg" ;;
+    staging|production)
+      [[ -z "$ENVIRONMENT" ]] || fail "Only one environment may be specified (got: $ENVIRONMENT and $arg)"
+      ENVIRONMENT="$arg"
+      ;;
+    --help)
+      echo "Usage: $0 [staging|production] [--skip-lint] [--skip-security] [--skip-test] [--skip-deploy]"
+      exit 0
+      ;;
+    *) fail "Unknown argument: $arg" ;;
   esac
 done
 
