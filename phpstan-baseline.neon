@@ -1,0 +1,4537 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:TYPE_DATABASE\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Console/Commands/Backup/MonitorCommand.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:DISK_LOCAL\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RunCommand.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:DISK_S3\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RunCommand.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:TYPE_DATABASE\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RunCommand.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:TYPE_FILES\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RunCommand.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:TYPE_FULL\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RunCommand.php
+
+		-
+			message: '#^Parameter \#3 \$count of static method Redis\:\:lrem\(\) expects int, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/ClearStuckQueues.php
+
+		-
+			message: '#^Argument of an invalid type App\\ValueObjects\\ScreeningResponse supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: app/Console/Commands/ComplianceRescreenCustomers.php
+
+		-
+			message: '#^Variable \$results in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Console/Commands/ComplianceRescreenCustomers.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, int\<1, max\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/ComprehensiveSetup.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/ExpireStockReservations.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Reporting\\ExportService\:\:toJSON\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/GenerateEodReconciliation.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Accounting\\AccountingService\:\:generateTrialBalance\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/GenerateTrialBalance.php
+
+		-
+			message: '#^Expression on left side of \?\? is always null\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Console/Commands/IpBlockerCommand.php
+
+		-
+			message: '#^Result of method Illuminate\\Console\\Command\:\:error\(\) \(void\) is used\.$#'
+			identifier: method.void
+			count: 1
+			path: app/Console/Commands/IpBlockerCommand.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemAlertLevel\:\:Critical\|App\\Enums\\SystemAlertLevel\:\:Info\|App\\Enums\\SystemAlertLevel\:\:Warning and ''critical'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemAlertLevel\:\:Critical\|App\\Enums\\SystemAlertLevel\:\:Info\|App\\Enums\\SystemAlertLevel\:\:Warning and ''info'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemAlertLevel\:\:Critical\|App\\Enums\\SystemAlertLevel\:\:Info\|App\\Enums\\SystemAlertLevel\:\:Warning and ''warning'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemHealthCheckStatus\:\:Critical\|App\\Enums\\SystemHealthCheckStatus\:\:Ok\|App\\Enums\\SystemHealthCheckStatus\:\:Warning and ''critical'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemHealthCheckStatus\:\:Critical\|App\\Enums\\SystemHealthCheckStatus\:\:Ok\|App\\Enums\\SystemHealthCheckStatus\:\:Warning and ''ok'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemHealthCheckStatus\:\:Critical\|App\\Enums\\SystemHealthCheckStatus\:\:Ok\|App\\Enums\\SystemHealthCheckStatus\:\:Warning and ''warning'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Parameter \#1 \$value of method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\SystemAlert\>\:\:limit\(\) expects int, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Parameter \#1 \$value of method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\SystemHealthCheck\>\:\:limit\(\) expects int, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Part \$alert\-\>level \(App\\Enums\\SystemAlertLevel\:\:Critical\|App\\Enums\\SystemAlertLevel\:\:Info\|App\\Enums\\SystemAlertLevel\:\:Warning\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Part \$check\-\>status \(App\\Enums\\SystemHealthCheckStatus\:\:Critical\|App\\Enums\\SystemHealthCheckStatus\:\:Ok\|App\\Enums\\SystemHealthCheckStatus\:\:Warning\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Match arm comparison between ''THB'' and ''THB'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 3
+			path: app/Console/Commands/ResetTestDatabase.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between App\\Enums\\TestResultStatus and ''failed'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Console/Commands/RunTestsCommand.php
+
+		-
+			message: '#^Parameter \#1 \$status of method App\\Console\\Commands\\SanctionsStatus\:\:formatStatus\(\) expects string\|null, App\\Enums\\UpdateStatus given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Console/Commands/SanctionsStatus.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$username\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Console/Commands/SendNotificationDigest.php
+
+		-
+			message: '#^Parameter \#1 \$user of method App\\Console\\Commands\\SendNotificationDigest\:\:sendDigestForUser\(\) expects App\\Models\\User, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/SendNotificationDigest.php
+
+		-
+			message: '#^Parameter \#1 \$userId of method App\\Console\\Commands\\SendNotificationDigest\:\:getTargetUsers\(\) expects int\|null, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/SendNotificationDigest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/TestNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$username\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/TestNotification.php
+
+		-
+			message: '#^Parameter \#1 \$flaggedTransaction of class App\\Notifications\\TransactionFlaggedNotification constructor expects App\\Models\\FlaggedTransaction, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/TestNotification.php
+
+		-
+			message: '#^Parameter \#1 \$systemAlert of class App\\Notifications\\SystemHealthAlertNotification constructor expects App\\Models\\SystemAlert, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/TestNotification.php
+
+		-
+			message: '#^Parameter \#1 \$user of method App\\Console\\Commands\\TestNotification\:\:sendAllNotifications\(\) expects App\\Models\\User, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/TestNotification.php
+
+		-
+			message: '#^Parameter \#1 \$userId of method App\\Console\\Commands\\TestNotification\:\:getTargetUsers\(\) expects int\|null, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/TestNotification.php
+
+		-
+			message: '#^Parameter \#2 \$confirmation of class App\\Notifications\\LargeTransactionNotification constructor expects App\\Models\\TransactionConfirmation, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/TestNotification.php
+
+		-
+			message: '#^Parameter \#2 \$user of method App\\Console\\Commands\\TestNotification\:\:sendNotification\(\) expects App\\Models\\User, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/TestNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$reference_no\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/TestTransactionScenarios.php
+
+		-
+			message: '#^Access to property \$value on an unknown class App\\Models\\CddLevel\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Console/Commands/TestTransactionScenarios.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Console/Commands/ValidateRouteConsistency.php
+
+		-
+			message: '#^Binary operation "\-" between string and 1 results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Enums/CddLevel.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: App\\Enums\\CddLevel\:\:Specific$#'
+			identifier: match.unhandled
+			count: 2
+			path: app/Enums/CddLevel.php
+
+		-
+			message: '#^Call to an undefined method Throwable\:\:getStatusCode\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Exceptions/Handler.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Http\\Request\:\:validated\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Accounting/ReconciliationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/V1/Compliance/CaseController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/V1/Compliance/CaseController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$note_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/V1/Compliance/CaseController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\CaseController\:\:index\(\) should return App\\Http\\Resources\\Api\\V1\\Compliance\\CaseCollection but returns Illuminate\\Http\\Resources\\Json\\JsonResource\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/Compliance/CaseController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Api/V1/Compliance/CaseController.php
+
+		-
+			message: '#^Parameter \#1 \$session of method App\\Services\\Branch\\CounterService\:\:closeSession\(\) expects App\\Models\\CounterSession, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/CounterApiController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$counter_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/V1/CounterHandoverController.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\CounterOpeningWorkflowService\:\:getPendingRequestsForBranch\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/CounterOpeningController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/V1/CustomerController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CustomerController\:\:customerHistory\(\) should return App\\Http\\Resources\\Api\\V1\\TransactionCollection but returns Illuminate\\Http\\Resources\\Json\\JsonResource\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/CustomerController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CustomerController\:\:index\(\) should return App\\Http\\Resources\\Api\\V1\\CustomerCollection but returns Illuminate\\Http\\Resources\\Json\\JsonResource\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/CustomerController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CustomerController\:\:show\(\) should return App\\Http\\Resources\\Api\\V1\\CustomerResource\|Illuminate\\Http\\JsonResponse but returns Illuminate\\Http\\Resources\\Json\\JsonResource\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/CustomerController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionList\:\:\$update_frequency\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/V1/SanctionListController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/V1/SanctionListController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/V1/SanctionListController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\SanctionImportLog\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Api/V1/SanctionListController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\SanctionList\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Api/V1/SanctionListController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\SanctionEntry\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Api/V1/SanctionListController.php
+
+		-
+			message: '#^Method App\\Services\\CustomerScreeningService\:\:screenCustomer\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Http/Controllers/Api/V1/ScreeningController.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\TellerAllocationService\:\:getActiveAllocationsForBranch\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/TellerAllocationController.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\TellerAllocationService\:\:getPendingAllocationsForBranch\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/TellerAllocationController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionController\:\:index\(\) should return App\\Http\\Resources\\Api\\V1\\TransactionCollection but returns Illuminate\\Http\\Resources\\Json\\JsonResource\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/TransactionController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionController\:\:show\(\) should return App\\Http\\Resources\\Api\\V1\\TransactionResource but returns Illuminate\\Http\\Resources\\Json\\JsonResource\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/V1/TransactionController.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Compliance/FindingController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Enums\\FindingSeverity\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Compliance/FindingController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Enums\\FindingStatus\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Compliance/FindingController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Enums\\FindingType\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Compliance/FindingController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Compliance\\RiskDashboardController\:\:getLastSixMonths\(\) should return Illuminate\\Support\\Collection\<int, Carbon\\Carbon\> but returns Illuminate\\Support\\Collection\<int, Illuminate\\Support\\Carbon\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Compliance/RiskDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionList\:\:\$update_frequency\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Cannot cast App\\Enums\\SanctionListType to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Cannot cast App\\Enums\\UpdateStatus to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 2
+			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\SanctionImportLog\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\SanctionList\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\SanctionEntry\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$username\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 9
+			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Alert\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Compliance\\ComplianceFinding\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/CounterController.php
+
+		-
+			message: '#^Instanceof between string and App\\Enums\\CddLevel will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/Customer/CustomerSearchController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$transactions_sum_amount_local\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Support\\HigherOrderCollectionProxy\<string, Illuminate\\Database\\Eloquent\\Model, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\>\:\:isVerified\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
+			message: '#^Instanceof between string and App\\Enums\\CddLevel will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
+			message: '#^Call to method getMessage\(\) on an unknown class App\\Http\\Controllers\\FiscalYearClosedException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalYearController.php
+
+		-
+			message: '#^Call to method getMessage\(\) on an unknown class App\\Http\\Controllers\\FiscalYearNotFoundException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalYearController.php
+
+		-
+			message: '#^Call to method getMessage\(\) on an unknown class App\\Http\\Controllers\\OpenPeriodsException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalYearController.php
+
+		-
+			message: '#^Call to method getMessage\(\) on an unknown class App\\Http\\Controllers\\PermissionDeniedException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalYearController.php
+
+		-
+			message: '#^Caught class App\\Http\\Controllers\\FiscalYearClosedException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalYearController.php
+
+		-
+			message: '#^Caught class App\\Http\\Controllers\\FiscalYearNotFoundException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalYearController.php
+
+		-
+			message: '#^Caught class App\\Http\\Controllers\\OpenPeriodsException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalYearController.php
+
+		-
+			message: '#^Caught class App\\Http\\Controllers\\PermissionDeniedException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalYearController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$transactions_max_created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$transactions_min_created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$transactions_sum_amount_local\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\FlaggedTransaction\:\:\$count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$display_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:forDateRange\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Instanceof between App\\Enums\\ComplianceFlagType and BackedEnum will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\CurrencyPosition\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Customer\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Parameter \#2 \$groupBy of method App\\Services\\Reporting\\TransactionReportQuery\:\:buySellSummary\(\) expects Illuminate\\Database\\Query\\Expression\|string\|null, Illuminate\\Contracts\\Database\\Query\\Expression given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>display_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Report/AnalyticsController.php
+
+		-
+			message: '#^Property App\\Models\\User\:\:\$role \(App\\Enums\\UserRole\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Http/Controllers/SetupController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockTransfer\:\:\$destination_branch_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockTransferController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockTransfer\:\:\$source_branch_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockTransferController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockTransfer\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockTransferController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TestResultsController\:\:buildTrendData\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\{date\: string, pass_rate\: float, total_runs\: int, failed_count\: int\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>pass_rate" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>status" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>total_tests" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Called ''pluck'' on Laravel collection, but could have been retrieved as a query\.$#'
+			identifier: larastan.noUnnecessaryCollectionCall
+			count: 1
+			path: app/Http/Controllers/TransactionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$transaction_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TransactionWizardController.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: App\\Enums\\CddLevel\:\:Specific$#'
+			identifier: match.unhandled
+			count: 2
+			path: app/Http/Controllers/TransactionWizardController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/TransactionWizardController.php
+
+		-
+			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type bool\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: app/Http/Requests/Accounting/BalanceSheetRequest.php
+
+		-
+			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type bool\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: app/Http/Requests/Accounting/ExportReconciliationRequest.php
+
+		-
+			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type bool\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: app/Http/Requests/Accounting/LedgerRequest.php
+
+		-
+			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type bool\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: app/Http/Requests/Accounting/ProfitLossRequest.php
+
+		-
+			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type bool\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: app/Http/Requests/Accounting/ReconciliationReportRequest.php
+
+		-
+			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type bool\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: app/Http/Requests/Accounting/TrialBalanceRequest.php
+
+		-
+			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type bool\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: app/Http/Requests/Accounting/UpdateBudgetRequest.php
+
+		-
+			message: '#^Call to an undefined method App\\Enums\\UserRole\:\:canCreateTransactions\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Requests/TransactionWizardStep2Request.php
+
+		-
+			message: '#^Call to an undefined method App\\Enums\\UserRole\:\:canCreateTransactions\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Requests/TransactionWizardStep3Request.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Requests/UpdateAmlRuleRequest.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$city\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$country\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$is_main\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$parent_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$postal_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$state\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\BranchResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/BranchResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$assigned_to\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$case_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$case_summary\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$case_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$created_via\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$escalated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$metadata\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$primary_finding_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$primary_flag_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$priority\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$resolution\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$resolution_notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$resolved_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$severity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$sla_deadline\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\Compliance\\CaseResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/Compliance/CaseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$annual_volume_estimate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$cdd_level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$current_role_domain\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$date_of_birth\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$employer_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$employer_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$former_pep_domain\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$freeze_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$frozen_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$id_number_masked\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$id_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$is_frozen\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$is_pep_associate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$last_transaction_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$nationality\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$occupation\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$pep_role_ended_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$pep_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$rejection_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$risk_assessed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$risk_rating\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$risk_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$sanction_hit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$transactions_blocked\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\CustomerResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/CustomerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$amount_foreign\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$amount_local\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$approved_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$approved_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$base_rate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$branch_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$cancellation_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$cancelled_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$cancelled_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$cdd_level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$counter_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$counterparty_country\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$currency_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$customer_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$deferred_journal_entry_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$has_deferred_accounting\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$hold_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$is_refund\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$journal_entries_created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$journal_entry_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$original_transaction_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$purpose\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$rate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$rate_override\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$rate_override_approved_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$rate_override_approved_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$source_of_funds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$source_of_wealth\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$till_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\TransactionResource\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/TransactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$branch_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$last_login_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$mfa_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$mfa_verified_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\UserResource\:\:\$username\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/V1/UserResource.php
+
+		-
+			message: '#^Trait App\\Http\\Traits\\LoggerInjectable is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Http/Traits/LoggerInjectable.php
+
+		-
+			message: '#^Access to property \$value on an unknown class App\\Models\\CddLevel\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Jobs/Accounting/ReconcileDeferredAccountingJob.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>entry_hash" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Jobs/Audit/SealAuditHashJob.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Jobs/ImportSanctionsJob.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Reporting\\ReportingService\:\:generateReport\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Jobs/ReportGenerationJob.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Compliance\\SanctionsImportService\:\:importFromCsv\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Jobs/Sanctions/BaseSanctionsDownloadJob.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Compliance\\SanctionsImportService\:\:importFromJson\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Jobs/Sanctions/BaseSanctionsDownloadJob.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Compliance\\SanctionsImportService\:\:importFromXml\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Jobs/Sanctions/BaseSanctionsDownloadJob.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Notifications\\Notification\:\:toArray\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Jobs/SendNotificationJob.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Notifications\\Notification\:\:toMail\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Jobs/SendNotificationJob.php
+
+		-
+			message: '#^Parameter \$notifiable of method App\\Jobs\\SendNotificationJob\:\:__construct\(\) has invalid type Illuminate\\Notifications\\Notifiable\.$#'
+			identifier: parameter.trait
+			count: 1
+			path: app/Jobs/SendNotificationJob.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$risk_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/ComplianceEventListener.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/ComplianceEventListener.php
+
+		-
+			message: '#^Left side of && is always true\.$#'
+			identifier: booleanAnd.leftAlwaysTrue
+			count: 1
+			path: app/Listeners/ComplianceEventListener.php
+
+		-
+			message: '#^Parameter \#1 \$customer of method App\\Services\\Customer\\CustomerRelationService\:\:updateCustomerPepAssociateStatus\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Listeners/CustomerRelationListener.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/TriggerSanctionsRescreening.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\AccountingPeriodStatus\:\:Closed will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/AccountingPeriod.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\AccountingPeriodStatus\:\:Open will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/AccountingPeriod.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nationality\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/AmlRule.php
+
+		-
+			message: '#^Call to function is_object\(\) with string\|null will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Models/AmlRule.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\AmlRule\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/AmlRule.php
+
+		-
+			message: '#^Left side of && is always true\.$#'
+			identifier: booleanAnd.leftAlwaysTrue
+			count: 1
+			path: app/Models/BackupLog.php
+
+		-
+			message: '#^Method App\\Models\\BackupLog\:\:getDurationAttribute\(\) should return int\|null but returns float\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BackupLog.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BankReconciliation\:\:\$check_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BankReconciliation.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BankReconciliation\:\:\$check_status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/BankReconciliation.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BankReconciliation\:\:\$credit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BankReconciliation.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BankReconciliation\:\:\$debit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BankReconciliation.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Bases\\TransactionModel\:\:\$approved_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Bases/TransactionModel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Bases\\TransactionModel\:\:\$approved_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Bases/TransactionModel.php
+
+		-
+			message: '#^Class App\\Models\\Compliance\\BranchClosureWorkflow not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/Branch.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\Branch\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/Branch.php
+
+		-
+			message: '#^Parameter \#1 \$related of method Illuminate\\Database\\Eloquent\\Model\:\:hasMany\(\) expects class\-string\<Illuminate\\Database\\Eloquent\\Model\>, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Models/Branch.php
+
+		-
+			message: '#^Method App\\Services\\System\\MathService\:\:divide\(\) invoked with 3 parameters, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Models/Budget.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$priority\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\FlagStatus\:\:Dismissed\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^Invalid array key type App\\Enums\\ComplianceCasePriority\:\:Critical\.$#'
+			identifier: array.invalidKey
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^Invalid array key type App\\Enums\\ComplianceCasePriority\:\:High\.$#'
+			identifier: array.invalidKey
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^Invalid array key type App\\Enums\\ComplianceCasePriority\:\:Low\.$#'
+			identifier: array.invalidKey
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^Invalid array key type App\\Enums\\ComplianceCasePriority\:\:Medium\.$#'
+			identifier: array.invalidKey
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^Method App\\Models\\Compliance\\ComplianceCase\:\:addLink\(\) should return App\\Models\\Compliance\\ComplianceCaseLink but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^Method App\\Models\\Compliance\\ComplianceCase\:\:addNote\(\) should return App\\Models\\Compliance\\ComplianceCaseNote but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^Property App\\Models\\Compliance\\ComplianceCase\:\:\$resolution \(App\\Enums\\CaseResolution\|null\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Models/Compliance/ComplianceCase.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\Compliance\\CustomerBehavioralBaseline\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/Compliance/CustomerBehavioralBaseline.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\Compliance\\CustomerRiskProfile\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/Compliance/CustomerRiskProfile.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/CurrencyPosition.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branch\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Instanceof between string and App\\Enums\\RiskRating will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\Customer\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between \*NEVER\* and App\\Enums\\RiskRating\:\:High will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between \*NEVER\* and App\\Enums\\RiskRating\:\:Medium will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Method App\\Models\\CustomerDocument\:\:scopeExpired\(\) has invalid return type Illuminate\\Database\\Eloquent\\Eloquent\\Builder\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/CustomerDocument.php
+
+		-
+			message: '#^Method App\\Models\\CustomerDocument\:\:scopeExpiringSoon\(\) has invalid return type Illuminate\\Database\\Eloquent\\Eloquent\\Builder\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/CustomerDocument.php
+
+		-
+			message: '#^Method App\\Models\\CustomerDocument\:\:scopeUnverified\(\) has invalid return type Illuminate\\Database\\Eloquent\\Eloquent\\Builder\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/CustomerDocument.php
+
+		-
+			message: '#^PHPDoc tag @return with type Illuminate\\Database\\Eloquent\\Eloquent\\Builder is not subtype of native type Illuminate\\Database\\Eloquent\\Builder\.$#'
+			identifier: return.phpDocType
+			count: 3
+			path: app/Models/CustomerDocument.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\CustomerDocument\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/CustomerDocument.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\DeviceComputations\:\:\$expires_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/DeviceComputations.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRateHistory\:\:\$rate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/ExchangeRateHistory.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FiscalYearStatus\:\:Closed will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/FiscalYear.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FiscalYearStatus\:\:Open will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/FiscalYear.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\JournalEntryStatus\:\:Draft will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/JournalEntry.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\JournalEntryStatus\:\:Pending will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/JournalEntry.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\JournalEntryStatus\:\:Posted will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/JournalEntry.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\JournalEntryStatus\:\:Rejected will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/JournalEntry.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\JournalEntryStatus\:\:Reversed will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/JournalEntry.php
+
+		-
+			message: '#^Method App\\Models\\JournalLine\:\:account\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\ChartOfAccount, App\\Models\\JournalLine\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\ChartOfAccount, \$this\(App\\Models\\JournalLine\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/JournalLine.php
+
+		-
+			message: '#^Method App\\Models\\JournalLine\:\:journalEntry\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\JournalEntry, App\\Models\\JournalLine\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\JournalEntry, \$this\(App\\Models\\JournalLine\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/JournalLine.php
+
+		-
+			message: '#^Method App\\Models\\ReportRun\:\:getDurationInSeconds\(\) should return int\|null but returns float\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/ReportRun.php
+
+		-
+			message: '#^Property App\\Models\\ReportSchedule\:\:\$next_run_at \(Carbon\\Carbon\|null\) does not accept DateTime\|null\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Models/ReportSchedule.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\UpdateStatus\:\:Failed\|App\\Enums\\UpdateStatus\:\:NeverRun\|App\\Enums\\UpdateStatus\:\:Pending\|App\\Enums\\UpdateStatus\:\:Success and ''failed'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Models/SanctionList.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\UpdateStatus\:\:Failed\|App\\Enums\\UpdateStatus\:\:NeverRun\|App\\Enums\\UpdateStatus\:\:Pending\|App\\Enums\\UpdateStatus\:\:Success and ''pending'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Models/SanctionList.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\UpdateStatus\:\:Failed\|App\\Enums\\UpdateStatus\:\:NeverRun\|App\\Enums\\UpdateStatus\:\:Pending\|App\\Enums\\UpdateStatus\:\:Success and ''success'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Models/SanctionList.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, int\<1, max\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Models/StockTransfer.php
+
+		-
+			message: '#^Instanceof between App\\Enums\\SystemAlertLevel and App\\Enums\\SystemAlertLevel will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: app/Models/SystemAlert.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemAlertLevel\:\:Info and App\\Enums\\SystemAlertLevel\:\:Info is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 3
+			path: app/Models/SystemAlert.php
+
+		-
+			message: '#^Instanceof between App\\Enums\\SystemHealthCheckStatus and App\\Enums\\SystemHealthCheckStatus will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Models/SystemHealthCheck.php
+
+		-
+			message: '#^Match arm comparison between ''critical'' and ''critical'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Models/SystemHealthCheck.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemHealthCheckStatus\:\:Critical and App\\Enums\\SystemHealthCheckStatus\:\:Critical is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Models/SystemHealthCheck.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Models/SystemHealthCheck.php
+
+		-
+			message: '#^Instanceof between App\\Enums\\TestResultStatus and App\\Enums\\TestResultStatus will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: app/Models/TestResult.php
+
+		-
+			message: '#^Match arm comparison between ''running'' and ''running'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 2
+			path: app/Models/TestResult.php
+
+		-
+			message: '#^Trait App\\Models\\Traits\\HasClosedBy is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Models/Traits/HasClosedBy.php
+
+		-
+			message: '#^PHPDoc tag @property for property App\\Models\\Transaction\:\:\$cdd_level contains unknown class App\\Models\\CddLevel\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/Transaction.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\Transaction\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/Transaction.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TransactionConfirmation\:\:\$expires_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/TransactionConfirmation.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TransactionConfirmation\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/TransactionConfirmation.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\TransactionImportStatus\:\:Completed\|App\\Enums\\TransactionImportStatus\:\:CompletedWithErrors\|App\\Enums\\TransactionImportStatus\:\:Failed\|App\\Enums\\TransactionImportStatus\:\:Pending\|App\\Enums\\TransactionImportStatus\:\:Processing and ''completed'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Models/TransactionImport.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\TransactionImportStatus\:\:Completed\|App\\Enums\\TransactionImportStatus\:\:CompletedWithErrors\|App\\Enums\\TransactionImportStatus\:\:Failed\|App\\Enums\\TransactionImportStatus\:\:Pending\|App\\Enums\\TransactionImportStatus\:\:Processing and ''failed'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Models/TransactionImport.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\TransactionImportStatus\:\:Completed\|App\\Enums\\TransactionImportStatus\:\:CompletedWithErrors\|App\\Enums\\TransactionImportStatus\:\:Failed\|App\\Enums\\TransactionImportStatus\:\:Pending\|App\\Enums\\TransactionImportStatus\:\:Processing and ''processing'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Models/TransactionImport.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:getNotificationPreference\(\) should return App\\Models\\UserNotificationPreference\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:getOrCreateNotificationPreference\(\) should return App\\Models\\UserNotificationPreference but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\User\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\User\:\:\$hidden is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$hidden\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property App\\Models\\UserNotificationPreference\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/UserNotificationPreference.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 7
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 2
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type App\\Enums\\ComplianceCasePriority\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type App\\Enums\\ComplianceCaseType\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type App\\Enums\\FindingSeverity\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email_enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>username" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/ComplianceCaseAssignedNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Notifications/EmergencyCounterClosureNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$username\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/EmergencyCounterClosureNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$created_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$teller\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email_enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/LargeTransactionNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/ReservationExpiredNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/ReservationExpiredNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionEntry\:\:\$customer_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionEntry\:\:\$is_whitelisted\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionEntry\:\:\$match_score\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionEntry\:\:\$match_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionEntry\:\:\$matched_name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionEntry\:\:\$sanction_list_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionEntry\:\:\$screened_name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SanctionEntry\:\:\$transaction_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email_enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/SanctionsMatchNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Call to function in_array\(\) with App\\Enums\\SystemAlertLevel and array\{''warning'', ''critical''\} will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemAlertLevel\:\:Critical\|App\\Enums\\SystemAlertLevel\:\:Info\|App\\Enums\\SystemAlertLevel\:\:Warning and ''critical'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemAlertLevel\:\:Critical\|App\\Enums\\SystemAlertLevel\:\:Info\|App\\Enums\\SystemAlertLevel\:\:Warning and ''warning'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Parameter \#1 \$string of function ucfirst expects string, App\\Enums\\SystemAlertLevel given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between App\\Enums\\SystemAlertLevel and ''critical'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between App\\Enums\\SystemAlertLevel and ''warning'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email_enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/TransactionApprovedNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/TransactionApprovedNotification.php
+
+		-
+			message: '#^Array has 2 duplicate keys with value ''type'' \(''type'', ''type''\)\.$#'
+			identifier: array.duplicateKey
+			count: 1
+			path: app/Notifications/TransactionApprovedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email_enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/TransactionApprovedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/TransactionApprovedNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/TransactionCancellationPendingNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/TransactionCancellationPendingNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email_enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/TransactionCancellationPendingNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/TransactionCancellationPendingNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/TransactionFlaggedNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/TransactionFlaggedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email_enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/TransactionFlaggedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/TransactionFlaggedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>username" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/TransactionFlaggedNotification.php
+
+		-
+			message: '#^Argument of an invalid type Illuminate\\Routing\\RouteCollectionInterface supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: app/Providers/AppServiceProvider.php
+
+		-
+			message: '#^Property App\\Providers\\EventServiceProvider\:\:\$listen \(array\<class\-string, array\<int, class\-string\>\>\) does not accept default value of type array\<string, list\<list\<string\>\|string\>\>\.$#'
+			identifier: property.defaultValue
+			count: 1
+			path: app/Providers/EventServiceProvider.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Providers/RouteServiceProvider.php
+
+		-
+			message: '#^Instanceof between string and App\\Enums\\AccountType will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Services/Accounting/AccountingService.php
+
+		-
+			message: '#^Instantiated class App\\Services\\Accounting\\AccountNotFoundException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Accounting/AccountingService.php
+
+		-
+			message: '#^Throwing object of an unknown class App\\Services\\Accounting\\AccountNotFoundException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Accounting/AccountingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BankReconciliation\:\:\$check_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Accounting/BankReconciliationService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BankReconciliation\:\:\$check_number\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/Accounting/BankReconciliationService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BankReconciliation\:\:\$check_status\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/Accounting/BankReconciliationService.php
+
+		-
+			message: '#^Binary operation "\+" between string and string results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Services/Accounting/BankReconciliationService.php
+
+		-
+			message: '#^Parameter \#1 \$num of function abs expects float\|int, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Accounting/BankReconciliationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$account_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Accounting/BudgetService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CounterSession\:\:\$till_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Accounting/CurrencyPositionService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockReservation\:\:\$branch_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Accounting/CurrencyPositionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$average_cost\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Accounting/CurrencyPositionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currency_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Accounting/CurrencyPositionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_rate\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Accounting/CurrencyPositionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Accounting/CurrencyPositionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unrealized_gain_loss\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Accounting/CurrencyPositionService.php
+
+		-
+			message: '#^Method App\\Services\\Accounting\\CurrencyPositionService\:\:getVisiblePositionsForUser\(\) should return Illuminate\\Database\\Eloquent\\Collection but returns Illuminate\\Support\\Collection\<\(int\|string\), mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Accounting/CurrencyPositionService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AccountLedger\:\:\$total_credit\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Accounting/FiscalYearService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AccountLedger\:\:\$total_debit\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Accounting/FiscalYearService.php
+
+		-
+			message: '#^Instanceof between string and App\\Enums\\AccountType will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Services/Accounting/FiscalYearService.php
+
+		-
+			message: '#^Offset ''net_income'' on array\{revenues\: array\<int, array\{account_code\: string, account_name\: string, amount\: string\}\>, total_revenue\: string, expenses\: array\<int, array\{account_code\: string, account_name\: string, amount\: string\}\>, total_expenses\: string, net_profit\: string, period\: array\{from\: string, to\: string\}\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Accounting/FiscalYearService.php
+
+		-
+			message: '#^Instanceof between string and BackedEnum will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Services/Accounting/LedgerService.php
+
+		-
+			message: '#^Method App\\Services\\Accounting\\LedgerService\:\:getAccountLedger\(\) should return array\{account\: App\\Models\\ChartOfAccount, entries\: Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\AccountLedger\>, opening_balance\: string, closing_balance\: string, total_debits\: float, total_credits\: float, period\: array\{from\: string, to\: string\}\} but returns array\{account\: App\\Models\\ChartOfAccount, entries\: Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\AccountLedger\>, opening_balance\: string, closing_balance\: string, total_debits\: string, total_credits\: string, period\: array\{from\: string, to\: string\}\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Accounting/LedgerService.php
+
+		-
+			message: '#^Offset ''status'' on array\{status\: string, error\: string\}\|array\{status\: string, path\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Accounting/MonthEndCloseService.php
+
+		-
+			message: '#^PHPDoc tag @throws with type App\\Services\\Accounting\\Exception is not subtype of Throwable$#'
+			identifier: throws.notThrowable
+			count: 2
+			path: app/Services/Accounting/PeriodCloseService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\RevaluationEntry\:\:\$gain_loss_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Accounting/RevaluationService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Accounting/TransactionAccountingService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Audit/AuditTrailHelper.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>branch_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/AuditService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Branch/BranchClosingService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Branch/BranchClosingService.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\BranchClosingService\:\:checkAllocationsReturned\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Branch/BranchClosingService.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\BranchClosingService\:\:checkCountersClosed\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Branch/BranchClosingService.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\BranchClosingService\:\:checkDocumentsFinalized\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Branch/BranchClosingService.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\BranchClosingService\:\:checkTransfersComplete\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Branch/BranchClosingService.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\BranchClosingService\:\:createSettlementJournalEntries\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Branch/BranchClosingService.php
+
+		-
+			message: '#^Undefined variable\: \$approvedBy$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Services/Branch/BranchPoolService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Branch/CounterHandoverService.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\BranchPoolService\:\:getOrCreateForBranch\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Branch/CounterOpeningWorkflowService.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 2
+			path: app/Services/Branch/CounterService.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: app/Services/Branch/CounterService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Branch/CounterService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branch_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Branch/EmergencyCounterService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Branch/EmergencyCounterService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$session_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Branch/EmergencyCounterService.php
+
+		-
+			message: '#^Left side of && is always true\.$#'
+			identifier: booleanAnd.leftAlwaysTrue
+			count: 1
+			path: app/Services/Branch/EmergencyCounterService.php
+
+		-
+			message: '#^Parameter \#1 \$allocation of method App\\Services\\Branch\\TellerAllocationService\:\:returnToPool\(\) expects App\\Models\\TellerAllocation, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Branch/EmergencyCounterService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Branch/TellerAllocationService.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\BranchPoolService\:\:allocateToTeller\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/Branch/TellerAllocationService.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\BranchPoolService\:\:deallocateFromTeller\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Services/Branch/TellerAllocationService.php
+
+		-
+			message: '#^Parameter \#1 \$branch of method App\\Services\\Branch\\BranchPoolService\:\:getOrCreateForBranch\(\) expects App\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Branch/TellerAllocationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount_local\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$pep_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$risk_rating\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sanction_hit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Parameter \#1 \$alert of method App\\Services\\Compliance\\AlertTriageService\:\:assignToOfficer\(\) expects App\\Models\\Alert, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Parameter \#2 \$customer of method App\\Services\\Compliance\\AlertTriageService\:\:calculateRiskScore\(\) expects App\\Models\\Customer\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Parameter \#3 \$transaction of method App\\Services\\Compliance\\AlertTriageService\:\:calculateRiskScore\(\) expects App\\Models\\Transaction\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Services/Compliance/AlertTriageService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nationality\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/AmlRuleEvaluator.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\ComplianceCaseType\:\:Str\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/Compliance/CaseManagementService.php
+
+		-
+			message: '#^Method App\\Services\\Compliance\\CaseManagementService\:\:addDocument\(\) should return App\\Models\\Compliance\\ComplianceCaseDocument but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Compliance/CaseManagementService.php
+
+		-
+			message: '#^Parameter \#1 \$priority of method App\\Services\\Compliance\\CaseManagementService\:\:calculateSlaDeadlineFromPriority\(\) expects App\\Enums\\AlertPriority, App\\Enums\\ComplianceCasePriority given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Compliance/CaseManagementService.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Compliance/CaseManagementService.php
+
+		-
+			message: '#^Relation ''assignedTo'' is not found in App\\Models\\Compliance\\ComplianceCase model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/Compliance/CaseManagementService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\RiskRating\:\:High will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Services/Compliance/CddLevelDeterminationService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\RiskRating\:\:Medium will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Compliance/CddLevelDeterminationService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Compliance\\ComplianceCase\:\:\$count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/ComplianceReportingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Compliance\\ComplianceFinding\:\:\$count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/ComplianceReportingService.php
+
+		-
+			message: '#^Instanceof between App\\Enums\\ComplianceCaseStatus and App\\Enums\\ComplianceCaseStatus will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Services/Compliance/ComplianceReportingService.php
+
+		-
+			message: '#^Instanceof between App\\Enums\\FindingSeverity and App\\Enums\\FindingSeverity will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Services/Compliance/ComplianceReportingService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Compliance/ComplianceReportingService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\ConnectionInterface\:\:getDriverName\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Compliance/ComplianceService.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Compliance/ComplianceService.php
+
+		-
+			message: '#^Constructor of class App\\Services\\Compliance\\ComplianceService has an unused parameter \$cddLevelService\.$#'
+			identifier: constructor.unusedParameter
+			count: 1
+			path: app/Services/Compliance/ComplianceService.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Services/Compliance/ComplianceService.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: App\\Enums\\CddLevel\:\:Specific$#'
+			identifier: match.unhandled
+			count: 1
+			path: app/Services/Compliance/ComplianceService.php
+
+		-
+			message: '#^Method App\\Services\\Compliance\\ComplianceService\:\:countWorkingDays\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Services/Compliance/ComplianceService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\RiskRating\:\:High will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Compliance/ComplianceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Compliance/CustomerRiskReviewService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$risk_score\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Compliance/CustomerRiskReviewService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>overall_score" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Compliance/CustomerRiskReviewService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<TRelatedModel of Illuminate\\Database\\Eloquent\\Model\>\:\:needsRescreening\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Compliance/CustomerRiskScoringService.php
+
+		-
+			message: '#^Method App\\Services\\System\\MathService\:\:divide\(\) invoked with 3 parameters, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Services/Compliance/CustomerRiskScoringService.php
+
+		-
+			message: '#^Method App\\Services\\System\\MathService\:\:multiply\(\) invoked with 3 parameters, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Services/Compliance/CustomerRiskScoringService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$edd_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/EddService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$purpose_of_transaction\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/EddService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$risk_level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/EddService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$source_of_funds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/EddService.php
+
+		-
+			message: '#^Parameter \#1 \$customer of method App\\Services\\Compliance\\ComplianceService\:\:verifyCddDocuments\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Compliance/EddService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$questions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/EddTemplateService.php
+
+		-
+			message: '#^Call to method getEddThreshold\(\) on an unknown class App\\Services\\Compliance\\ThresholdService\.$#'
+			identifier: class.notFound
+			count: 2
+			path: app/Services/Compliance/EddTemplateService.php
+
+		-
+			message: '#^Parameter \$thresholdService of method App\\Services\\Compliance\\EddTemplateService\:\:__construct\(\) has invalid type App\\Services\\Compliance\\ThresholdService\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Compliance/EddTemplateService.php
+
+		-
+			message: '#^Property App\\Services\\Compliance\\EddTemplateService\:\:\$thresholdService has unknown class App\\Services\\Compliance\\ThresholdService as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Compliance/EddTemplateService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:verified\(\)\.$#'
+			identifier: method.notFound
+			count: 4
+			path: app/Services/Compliance/KycDocumentExpiryService.php
+
+		-
+			message: '#^Call to function in_array\(\) with string and array\{App\\Enums\\CddLevel\:\:Standard, App\\Enums\\CddLevel\:\:Enhanced\} will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Services/Compliance/KycDocumentExpiryService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\CddLevel\:\:Enhanced will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Compliance/KycDocumentExpiryService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount_local\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/Monitors/CounterfeitAlertMonitor.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currency_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/Monitors/CounterfeitAlertMonitor.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/Monitors/CounterfeitAlertMonitor.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>currency_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Compliance/Monitors/CounterfeitAlertMonitor.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Compliance/Monitors/CounterfeitAlertMonitor.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Compliance/Monitors/CurrencyFlowMonitor.php
+
+		-
+			message: '#^Method App\\Services\\Compliance\\Monitors\\BaseMonitor\:\:__construct\(\) invoked with 0 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Services/Compliance/Monitors/CustomerLocationAnomalyMonitor.php
+
+		-
+			message: '#^Cannot call method gt\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/Compliance/Monitors/SanctionsRescreeningMonitor.php
+
+		-
+			message: '#^Cannot call method toDateTimeString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Services/Compliance/Monitors/SanctionsRescreeningMonitor.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Compliance/Monitors/StructuringMonitor.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Compliance/Monitors/VelocityMonitor.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/NarrativeGenerator.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Services/Compliance/NarrativeGenerator.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 2
+			path: app/Services/Compliance/NarrativeGenerator.php
+
+		-
+			message: '#^Left side of && is always true\.$#'
+			identifier: booleanAnd.leftAlwaysTrue
+			count: 1
+			path: app/Services/Compliance/NarrativeGenerator.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type App\\Enums\\AlertPriority\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Compliance/NarrativeGenerator.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Compliance/NarrativeGenerator.php
+
+		-
+			message: '#^Variable \$indicators in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Services/Compliance/NarrativeGenerator.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between App\\Enums\\EddStatus and ''Approved'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Compliance/RiskScoringEngine.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between App\\Enums\\EddStatus and ''Rejected'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Compliance/RiskScoringEngine.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_keys expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Compliance/SanctionsImportService.php
+
+		-
+			message: '#^PHPDoc tag @throws with type App\\Services\\Contracts\\AllocationValidationException\|App\\Services\\Contracts\\TransactionBlockedException\|InvalidArgumentException is not subtype of Throwable$#'
+			identifier: throws.notThrowable
+			count: 1
+			path: app/Services/Contracts/TransactionCreationServiceInterface.php
+
+		-
+			message: '#^Instanceof between string and App\\Enums\\CddLevel will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Services/Customer/CustomerService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\RiskRating\:\:High will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Customer/CustomerService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Customer/CustomerService.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\UserRole\:\:Teller and App\\Enums\\UserRole\:\:Teller is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Services/Customer/UserService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$ownership_interest\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$relation_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$date_of_birth\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nationality\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Call to function in_array\(\) with App\\Enums\\RelationType and array\{''beneficial_owner'', ''related_entity'', ''business_partner''\} will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Call to method Illuminate\\Support\\Collection\<\*NEVER\*,\*NEVER\*\>\:\:isNotEmpty\(\) will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Cannot access property \$entryId on null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Parameter \#1 \$relatedParty of method App\\Services\\CustomerScreeningService\:\:analyzeRelatedPartyTransactions\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Parameter \#2 \$relatedParty of method App\\Services\\CustomerScreeningService\:\:checkOwnershipControl\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Variable \$union in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Services/CustomerScreeningService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount_local\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 6
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 11
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:buy\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:sell\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$date with type App\\Services\\DateTime is not subtype of native type Carbon\\Carbon\.$#'
+			identifier: parameter.phpDocType
+			count: 4
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\CounterHandover\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\TillBalance\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Transaction\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Parameter \$date of method App\\Services\\EodReconciliationService\:\:calculateVariance\(\) has invalid type App\\Services\\DateTime\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Parameter \$date of method App\\Services\\EodReconciliationService\:\:generateCounterReconciliation\(\) has invalid type App\\Services\\DateTime\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Parameter \$date of method App\\Services\\EodReconciliationService\:\:generateReconciliationReport\(\) has invalid type App\\Services\\DateTime\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Parameter \$date of method App\\Services\\EodReconciliationService\:\:getCurrencyBreakdown\(\) has invalid type App\\Services\\DateTime\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/EodReconciliationService.php
+
+		-
+			message: '#^Access to constant Buy on an unknown class App\\Services\\Reporting\\TransactionType\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Reporting/CustomerReportService.php
+
+		-
+			message: '#^Access to constant Sell on an unknown class App\\Services\\Reporting\\TransactionType\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Reporting/CustomerReportService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:forDateRange\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Reporting/CustomerReportService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:completed\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/Reporting/CustomerReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reporting/CustomerReportService.php
+
+		-
+			message: '#^Method App\\Services\\System\\MathService\:\:divide\(\) invoked with 3 parameters, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Services/Reporting/FinancialRatioService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Match expression does not handle remaining values\: App\\Enums\\ReportType\:\:BalanceSheet\|App\\Enums\\ReportType\:\:MonthEnd\|App\\Enums\\ReportType\:\:ProfitLoss\|App\\Enums\\ReportType\:\:TrialBalance$#'
+			identifier: match.unhandled
+			count: 2
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ReportRun\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:forDateRange\(\)\.$#'
+			identifier: method.notFound
+			count: 6
+			path: app/Services/Reporting/ReportingService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:buy\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Reporting/TransactionReportQuery.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:completed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Reporting/TransactionReportQuery.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:forDateRange\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Reporting/TransactionReportQuery.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:sell\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Reporting/TransactionReportQuery.php
+
+		-
+			message: '#^Method App\\Services\\Reporting\\TransactionReportQuery\:\:buySellSummary\(\) should return Illuminate\\Support\\Collection\<int, stdClass\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Reporting/TransactionReportQuery.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$select$#'
+			identifier: parameter.notFound
+			count: 1
+			path: app/Services/Reporting/TransactionReportQuery.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount_foreign\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/Risk/PatternRiskService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount_local\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Risk/PatternRiskService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 6
+			path: app/Services/Risk/PatternRiskService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Risk/PatternRiskService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Risk/PatternRiskService.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:DISK_LOCAL\.$#'
+			identifier: classConstant.notFound
+			count: 4
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:DISK_S3\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:STATUS_FAILED\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:STATUS_RUNNING\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:TYPE_DATABASE\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:TYPE_FILES\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to undefined constant App\\Models\\BackupLog\:\:TYPE_FULL\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Call to an undefined static method Spatie\\Backup\\BackupDestination\\BackupDestination\:\:forCurrentDisk\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Call to an undefined static method Spatie\\Backup\\Tasks\\Backup\\BackupJobFactory\:\:createFromArray\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Parameter \#2 \$fileSize of method App\\Models\\BackupLog\:\:markAsCompleted\(\) expects int, float given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Method App\\Services\\System\\DocumentStorageService\:\:download\(\) should return Symfony\\Component\\HttpFoundation\\BinaryFileResponse but returns Symfony\\Component\\HttpFoundation\\StreamedResponse\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/System/DocumentStorageService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/System/EncryptionService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MfaRecoveryCode\:\:\$code_hash\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/System/MfaService.php
+
+		-
+			message: '#^Parameter \#2 \$length of function str_pad expects int, float given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Services/System/MfaService.php
+
+		-
+			message: '#^Call to an undefined method ReflectionType\:\:getName\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/System/QueryOptimizerService.php
+
+		-
+			message: '#^Property App\\Models\\User\:\:\$role \(App\\Enums\\UserRole\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/System/SetupService.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemAlertLevel\:\:Critical\|App\\Enums\\SystemAlertLevel\:\:Info\|App\\Enums\\SystemAlertLevel\:\:Warning and ''critical'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 2
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Match arm comparison between App\\Enums\\SystemAlertLevel\:\:Critical\|App\\Enums\\SystemAlertLevel\:\:Info\|App\\Enums\\SystemAlertLevel\:\:Warning and ''warning'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 2
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Part \$alert\-\>level \(App\\Enums\\SystemAlertLevel\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Part \$level \(App\\Enums\\SystemAlertLevel\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between App\\Enums\\SystemAlertLevel and ''critical'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/System/TestRunnerService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>username" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/System/TestRunnerService.php
+
+		-
+			message: '#^Parameter \#3 \$fallbackConstant of method App\\Services\\ThresholdService\:\:get\(\) expects string\|null, int given\.$#'
+			identifier: argument.type
+			count: 5
+			path: app/Services/ThresholdService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRateHistory\:\:\$effective_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Transaction/RateApiService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRateHistory\:\:\$rate\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/Transaction/RateApiService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ExchangeRateHistory\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/Transaction/RateApiService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRateHistory\:\:\$rate\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/Transaction/RateManagementService.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Accounting\\CurrencyPositionService\:\:reversePositions\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Transaction/StockReleaseService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currency_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$variance\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasVariance\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isFullyReceived\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Call to function in_array\(\) with App\\Enums\\StockTransferStatus and array\{''InTransit'', ''PartiallyReceived''\} will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Parameter \#1 \$a of method App\\Services\\System\\MathService\:\:divide\(\) expects string, float\|int\<0, max\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between App\\Enums\\StockTransferStatus and ''BranchManagerApprov…'' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between App\\Enums\\StockTransferStatus and ''HqApproved'' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 3
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Property App\\Models\\Transaction\:\:\$approved_at \(Illuminate\\Support\\Carbon\|null\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/Transaction/TransactionApprovalService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Transaction/TransactionApprovalService.php
+
+		-
+			message: '#^Call to protected method reverseTillBalance\(\) of class App\\Services\\Transaction\\TransactionReversalService\.$#'
+			identifier: method.protected
+			count: 1
+			path: app/Services/Transaction/TransactionCancellationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cancellation_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Transaction/TransactionConfirmationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cancelled_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Transaction/TransactionConfirmationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cancelled_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Transaction/TransactionConfirmationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Transaction/TransactionConfirmationService.php
+
+		-
+			message: '#^Access to property \$value on an unknown class App\\Models\\CddLevel\.$#'
+			identifier: class.notFound
+			count: 3
+			path: app/Services/Transaction/TransactionCreationService.php
+
+		-
+			message: '#^Method App\\Services\\Transaction\\TransactionCreationService\:\:determineTellerAllocation\(\) has invalid return type App\\Services\\Transaction\\TellerAllocation\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Transaction/TransactionCreationService.php
+
+		-
+			message: '#^Method App\\Services\\Transaction\\TransactionCreationService\:\:determineTellerAllocation\(\) should return Illuminate\\Database\\Eloquent\\Model\|null but returns App\\Services\\Transaction\\TellerAllocation\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Transaction/TransactionCreationService.php
+
+		-
+			message: '#^PHPDoc tag @return with type App\\Services\\Transaction\\TellerAllocation\|null is not subtype of native type Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: app/Services/Transaction/TransactionCreationService.php
+
+		-
+			message: '#^PHPDoc tag @var for variable \$allocation contains unknown class App\\Services\\Transaction\\TellerAllocation\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Transaction/TransactionCreationService.php
+
+		-
+			message: '#^Parameter \#2 \$allocation of method App\\Services\\Branch\\TellerAllocationService\:\:applyTransactionAllocation\(\) expects App\\Models\\TellerAllocation\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Transaction/TransactionCreationService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Transaction/TransactionCreationService.php
+
+		-
+			message: '#^Method App\\Services\\Transaction\\TransactionErrorHandler\:\:getLatestError\(\) should return App\\Models\\TransactionError\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Services/Transaction/TransactionErrorHandler.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>retry_count" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Transaction/TransactionErrorHandler.php
+
+		-
+			message: '#^Offset ''idempotency_key'' on array\{customer_id\: non\-falsy\-string, type\: non\-falsy\-string, currency_code\: non\-falsy\-string, amount_foreign\: non\-falsy\-string&numeric\-string, rate\: non\-falsy\-string&numeric\-string, purpose\: non\-falsy\-string, source_of_funds\: non\-falsy\-string, till_id\: non\-falsy\-string, \.\.\.\} in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.offset
+			count: 1
+			path: app/Services/Transaction/TransactionImportService.php
+
+		-
+			message: '#^Parameter \#1 \$branchId of method App\\Services\\Accounting\\CurrencyPositionLockService\:\:findForUpdate\(\) expects string, int\<0, max\>\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Transaction/TransactionImportService.php
+
+		-
+			message: '#^Property App\\Models\\Transaction\:\:\$status \(App\\Enums\\TransactionStatus\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/Transaction/TransactionImportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$annual_volume_estimate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Transaction/TransactionMonitoringService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nationality\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Transaction/TransactionMonitoringService.php
+
+		-
+			message: '#^Method App\\Services\\Transaction\\TransactionMonitoringService\:\:assignFlag\(\) should return bool but returns int\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Transaction/TransactionMonitoringService.php
+
+		-
+			message: '#^Method App\\Services\\Transaction\\TransactionMonitoringService\:\:resolveFlag\(\) should return bool but returns int\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Transaction/TransactionMonitoringService.php
+
+		-
+			message: '#^Parameter \#2 \$customer of method App\\Services\\Compliance\\ComplianceService\:\:requiresHold\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Transaction/TransactionMonitoringService.php
+
+		-
+			message: '#^Job class App\\Jobs\\ProcessTransactionRetry constructor invoked with 1 parameter in App\\Jobs\\ProcessTransactionRetry\:\:dispatch\(\), 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Services/Transaction/TransactionRecoveryService.php
+
+		-
+			message: '#^Method App\\Services\\Transaction\\TransactionRecoveryService\:\:latestUnresolvedError\(\) should return App\\Models\\TransactionError\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Services/Transaction/TransactionRecoveryService.php
+
+		-
+			message: '#^Parameter \#1 \$branchId of method App\\Services\\Accounting\\CurrencyPositionLockService\:\:findForUpdate\(\) expects string, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Transaction/TransactionReversalService.php
+
+		-
+			message: '#^Parameter \#5 \$branchId of method App\\Services\\Accounting\\CurrencyPositionService\:\:updatePosition\(\) expects string, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Transaction/TransactionReversalService.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:BANK_CIMB\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:BANK_MAYBANK\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:BANK_PUBLIC\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:BANK_RHB\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:CAPITAL_PAID_IN\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:CASH_AUD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:CASH_EUR\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:CASH_GBP\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:CASH_JPY\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:CASH_SGD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:CASH_THB\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:CASH_USD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:COGS_CURRENCY\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:CONTINGENT_LC\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_AUDIT\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_BANK_CHARGES\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_COMMUNICATION\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_EIS\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_EPF\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_INSURANCE\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_INTEREST\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_IT_INFRA\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_MAINTENANCE\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_MARKETING\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_OFFICE_SUPPLIES\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_PROFESSIONAL\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_REGULATORY\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_RENT\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_SALARIES\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_SOCSO\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_SOFTWARE\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_TRAVEL\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:EXPENSE_UTILITIES\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FOREX_INVENTORY_AUD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FOREX_INVENTORY_EUR\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FOREX_INVENTORY_GBP\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FOREX_INVENTORY_JPY\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FOREX_INVENTORY_SGD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FOREX_INVENTORY_THB\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FOREX_INVENTORY_USD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FORWARD_CONTRACTS_EUR\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FORWARD_CONTRACTS_GBP\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:FORWARD_CONTRACTS_USD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:GUARANTEES_GIVEN\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:GUARANTEES_RECEIVED\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:INCOME_SUMMARY\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:NOSTRO_EUR\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:NOSTRO_GBP\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:NOSTRO_USD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:RETAINED_EARNINGS_CURRENT\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:REVENUE_COMMISSION\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:REVENUE_FOREX_GAIN\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:REVENUE_FOREX_TRADING\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:REVENUE_INTEREST\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:REVENUE_OTHER\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:REVENUE_REVALUATION_GAIN\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:REVENUE_SPREAD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:SHARE_PREMIUM\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:SPOT_CONTRACTS_EUR\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:SPOT_CONTRACTS_GBP\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:SPOT_CONTRACTS_SGD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:SPOT_CONTRACTS_USD\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:STATUTORY_RESERVE\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to undefined constant App\\Enums\\AccountCode\:\:UNREALIZED_FOREX\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Support/AccountCodes.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/View/Composers/UserComposer.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: database/factories/AccountingPeriodFactory.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>year_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: database/factories/AccountingPeriodFactory.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: database/factories/BackupLogFactory.php
+
+		-
+			message: '#^Call to an undefined method Faker\\Generator\:\:state\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: database/factories/BranchFactory.php
+
+		-
+			message: '#^Method Faker\\Generator\:\:mimeType\(\) invoked with 1 parameter, 0 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: database/factories/Compliance/ComplianceCaseDocumentFactory.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: database/factories/Compliance/ComplianceCaseLinkFactory.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, \(float\|int\) given\.$#'
+			identifier: argument.type
+			count: 1
+			path: database/factories/CostCenterFactory.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:each\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed, Closure\(App\\Models\\Customer\)\: void given\.$#'
+			identifier: argument.type
+			count: 1
+			path: database/factories/CustomerFactory.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, \(float\|int\) given\.$#'
+			identifier: argument.type
+			count: 1
+			path: database/factories/DepartmentFactory.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: database/factories/EnhancedDiligenceRecordFactory.php
+
+		-
+			message: '#^PHPDoc tag @extends has invalid type Database\\Factories\\JournalLine\.$#'
+			identifier: class.notFound
+			count: 1
+			path: database/factories/JournalLineFactory.php
+
+		-
+			message: '#^Property Database\\Factories\\JournalLineFactory\:\:\$model \(class\-string\<Database\\Factories\\JournalLine\>\) does not accept default value of type string\.$#'
+			identifier: property.defaultValue
+			count: 1
+			path: database/factories/JournalLineFactory.php
+
+		-
+			message: '#^Property Database\\Factories\\JournalLineFactory\:\:\$model has unknown class Database\\Factories\\JournalLine as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: database/factories/JournalLineFactory.php
+
+		-
+			message: '#^Type Database\\Factories\\JournalLine in generic type Illuminate\\Database\\Eloquent\\Factories\\Factory\<Database\\Factories\\JournalLine\> in PHPDoc tag @extends is not subtype of template type TModel of Illuminate\\Database\\Eloquent\\Model of class Illuminate\\Database\\Eloquent\\Factories\\Factory\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: database/factories/JournalLineFactory.php
+
+		-
+			message: '#^Access to constant Completed on an unknown class Database\\Factories\\ReportStatus\.$#'
+			identifier: class.notFound
+			count: 2
+			path: database/factories/ReportRunFactory.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, \(float\|int\) given\.$#'
+			identifier: argument.type
+			count: 1
+			path: database/factories/StockTransferFactory.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 2
+			path: database/factories/SystemLogFactory.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: database/factories/TransactionFactory.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:each\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed, Closure\(App\\Models\\Transaction\)\: void given\.$#'
+			identifier: argument.type
+			count: 1
+			path: database/factories/TransactionFactory.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: database/factories/TransactionFactory.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ForeignKeyDefinition\:\:after\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: database/migrations/2026_04_03_201932_add_status_columns_to_reports_generated_table.php
+
+		-
+			message: '#^Method Illuminate\\Database\\Schema\\Blueprint\:\:float\(\) invoked with 3 parameters, 1\-2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: database/migrations/2026_04_09_000001_create_test_results_table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ColumnDefinition\:\:notNull\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: database/migrations/2026_04_12_000002_create_transaction_state_history_table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ColumnDefinition\:\:notNull\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: database/migrations/2026_04_12_000003_create_approval_tasks_table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ColumnDefinition\:\:notNull\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: database/migrations/2026_04_12_000004_create_transaction_errors_table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\IndexDefinition\:\:name\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: database/migrations/2026_04_16_054413_add_unique_idempotency_key_to_transactions_table.php
+
+		-
+			message: '#^Offset ''address'' on array\{code\: ''BR001'', name\: ''Kuala Lumpur Branch'', city\: ''Kuala Lumpur'', state\: ''Wilayah Persekutuan'', postal_code\: ''50100'', address\: ''Ground Floor, Wisma…'', phone\: ''\+60 3\-2345 6789'', email\: ''kl@cems\.my'', \.\.\.\}\|array\{code\: ''BR002'', name\: ''Petaling Jaya Branch'', city\: ''Petaling Jaya'', state\: ''Selangor'', postal_code\: ''46200'', address\: ''Lot 5, Jalan SS21/1'', phone\: ''\+60 3\-3456 7890'', email\: ''pj@cems\.my'', \.\.\.\}\|array\{code\: ''BR003'', name\: ''Penang Branch'', city\: ''George Town'', state\: ''Pulau Pinang'', postal_code\: ''10200'', address\: ''56 Jalan Masjid…'', phone\: ''\+60 4\-4567 8901'', email\: ''penang@cems\.my'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: database/seeders/BranchSeeder.php
+
+		-
+			message: '#^Offset ''email'' on array\{code\: ''BR001'', name\: ''Kuala Lumpur Branch'', city\: ''Kuala Lumpur'', state\: ''Wilayah Persekutuan'', postal_code\: ''50100'', address\: ''Ground Floor, Wisma…'', phone\: ''\+60 3\-2345 6789'', email\: ''kl@cems\.my'', \.\.\.\}\|array\{code\: ''BR002'', name\: ''Petaling Jaya Branch'', city\: ''Petaling Jaya'', state\: ''Selangor'', postal_code\: ''46200'', address\: ''Lot 5, Jalan SS21/1'', phone\: ''\+60 3\-3456 7890'', email\: ''pj@cems\.my'', \.\.\.\}\|array\{code\: ''BR003'', name\: ''Penang Branch'', city\: ''George Town'', state\: ''Pulau Pinang'', postal_code\: ''10200'', address\: ''56 Jalan Masjid…'', phone\: ''\+60 4\-4567 8901'', email\: ''penang@cems\.my'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: database/seeders/BranchSeeder.php
+
+		-
+			message: '#^Offset ''phone'' on array\{code\: ''BR001'', name\: ''Kuala Lumpur Branch'', city\: ''Kuala Lumpur'', state\: ''Wilayah Persekutuan'', postal_code\: ''50100'', address\: ''Ground Floor, Wisma…'', phone\: ''\+60 3\-2345 6789'', email\: ''kl@cems\.my'', \.\.\.\}\|array\{code\: ''BR002'', name\: ''Petaling Jaya Branch'', city\: ''Petaling Jaya'', state\: ''Selangor'', postal_code\: ''46200'', address\: ''Lot 5, Jalan SS21/1'', phone\: ''\+60 3\-3456 7890'', email\: ''pj@cems\.my'', \.\.\.\}\|array\{code\: ''BR003'', name\: ''Penang Branch'', city\: ''George Town'', state\: ''Pulau Pinang'', postal_code\: ''10200'', address\: ''56 Jalan Masjid…'', phone\: ''\+60 4\-4567 8901'', email\: ''penang@cems\.my'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: database/seeders/BranchSeeder.php
+
+		-
+			message: '#^Offset ''postal_code'' on array\{code\: ''BR001'', name\: ''Kuala Lumpur Branch'', city\: ''Kuala Lumpur'', state\: ''Wilayah Persekutuan'', postal_code\: ''50100'', address\: ''Ground Floor, Wisma…'', phone\: ''\+60 3\-2345 6789'', email\: ''kl@cems\.my'', \.\.\.\}\|array\{code\: ''BR002'', name\: ''Petaling Jaya Branch'', city\: ''Petaling Jaya'', state\: ''Selangor'', postal_code\: ''46200'', address\: ''Lot 5, Jalan SS21/1'', phone\: ''\+60 3\-3456 7890'', email\: ''pj@cems\.my'', \.\.\.\}\|array\{code\: ''BR003'', name\: ''Penang Branch'', city\: ''George Town'', state\: ''Pulau Pinang'', postal_code\: ''10200'', address\: ''56 Jalan Masjid…'', phone\: ''\+60 4\-4567 8901'', email\: ''penang@cems\.my'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: database/seeders/BranchSeeder.php
+
+		-
+			message: '#^Property App\\Models\\User\:\:\$role \(App\\Enums\\UserRole\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: database/seeders/LargeTransactionTestSeeder.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ChartOfAccount\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: database/seeders/OpeningBalanceSeeder.php
+
+		-
+			message: '#^Property App\\Models\\User\:\:\$role \(App\\Enums\\UserRole\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: database/seeders/UserSeeder.php

@@ -6,7 +6,6 @@ use App\Exceptions\Domain\DomainException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -40,7 +39,7 @@ class Handler extends ExceptionHandler
      *
      * Sanitizes API error responses to prevent information disclosure.
      */
-    public function render(Request $request, Throwable $e): Response|JsonResponse|RedirectResponse|\Symfony\Component\HttpFoundation\Response
+    public function render($request, Throwable $e): Response|JsonResponse|RedirectResponse|\Symfony\Component\HttpFoundation\Response
     {
         // Handle domain exceptions (including all TransactionException subclasses)
         // with their declared HTTP status codes.

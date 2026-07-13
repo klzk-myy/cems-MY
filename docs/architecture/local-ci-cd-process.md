@@ -57,7 +57,7 @@ make test
 2. Installs Composer dependencies only if `vendor/` is missing
 3. Runs Laravel Pint in test mode (`./vendor/bin/pint --test`)
 4. Runs `php -l` syntax check on all PHP files under `app/`
-5. Runs PHPStan if `vendor/bin/phpstan` is installed
+5. Runs PHPStan (`./vendor/bin/phpstan analyse --no-progress`)
 
 ### `make security` → `scripts/ci/security.sh`
 
@@ -192,7 +192,6 @@ The old workflow files `.github/workflows/ci.yml` and `.github/workflows/staging
 ## Operational Notes
 
 - TruffleHog runs in advisory mode. It logs warnings but does not fail the security stage. To make it blocking, change the exit handling in `scripts/ci/security.sh`.
-- PHPStan is skipped if not installed. Install it to enable static analysis in the lint stage.
 - Service reloads (`php8.3-fpm`, `nginx`, `supervisorctl`) assume the deploy user has passwordless `sudo` on the target server.
 - SSH uses `StrictHostKeyChecking=accept-new`. For stricter security, pin the target host key in a `known_hosts` file and update `scripts/ci/deploy.sh` to use it.
 - Actual staging and production deploys, plus smoke tests, are still manual steps after creating the appropriate `.env.deploy.*` file.
