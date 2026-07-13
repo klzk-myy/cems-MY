@@ -1,9 +1,9 @@
 # Architecture Improvement Implementation Plan
 
-**Date**: 2026-07-13  
-**Repository**: `cems-my`  
-**Scope**: Comprehensive technical debt reduction and architectural improvements  
-**Priority**: P0-P3 (Critical to Low)  
+**Date**: 2026-07-13
+**Repository**: `cems-my`
+**Scope**: Comprehensive technical debt reduction and architectural improvements
+**Priority**: P0-P3 (Critical to Low)
 **Estimated Effort**: 2-3 sprints (4-6 weeks)
 
 ---
@@ -14,9 +14,9 @@ This plan addresses architectural concerns identified during a comprehensive cod
 
 1. ✅ **Reduce complexity** in the monolithic `TransactionService` — reduced from 906 to **62 lines** with 6 dependencies (target: ≤150 lines, 6 dependencies).
 2. ✅ **Fix schema consistency** issues (9 violations resolved in 4 models).
-3. [x] **Clean up orphaned code** — 25 candidate views verified as actively used; all 353 routes named (0 unnamed remaining); no genuine `XXX`/`TODO` markers found.
-4. [x] **Improve maintainability** while preserving regulatory compliance — six transaction services extracted; controller migration and facade finalization complete.
-5. [x] **Enforce code quality** standards across the codebase — domain exceptions explicitly handled in `Handler.php` with 400/409/422/500 mapping; all hardcoded cache-key strings replaced with `CacheKeys` enum cases / helpers; controller methods evaluated and accepted.
+- [x] **Clean up orphaned code** — 25 candidate views verified as actively used; all 353 routes named (0 unnamed remaining); no genuine `XXX`/`TODO` markers found.
+- [x] **Improve maintainability** while preserving regulatory compliance — six transaction services extracted; controller migration and facade finalization complete.
+- [x] **Enforce code quality** standards across the codebase — domain exceptions explicitly handled in `Handler.php` with 400/409/422/500 mapping; all hardcoded cache-key strings replaced with `CacheKeys` enum cases / helpers; controller methods evaluated and accepted.
 
 ---
 
@@ -528,7 +528,7 @@ class TransactionController
         protected TransactionCreationService $creationService,
         protected TransactionValidationService $validationService
     ) {}
-    
+
     public function store(TransactionRequest $request)
     {
         $validation = $this->validationService->validatePreTransaction(...);
@@ -1036,9 +1036,9 @@ This plan provides a structured, low-risk approach to improving the architecture
 The phased approach allows stopping at any point with a working system. Each phase delivers value independently, and the comprehensive testing strategy ensures confidence in the changes.
 
 **Recommended Next Steps**:
-1. **Phase 9 (Quality Improvements)**: Wire existing domain exceptions into `TransactionCreationService`/`TransactionApprovalService` and `app/Exceptions/Handler.php`; replace hardcoded cache-key strings with `CacheKeys` enum cases.
-2. **Phase 10 (Validation & Deployment)**: Run full test suite, staging smoke tests, production deployment, and rollback verification.
-3. Review this updated plan with the team and compliance/risk stakeholders before resuming active development.
+1. **Phase 10 (Validation & Deployment)**: Complete local CI/CD validation (`make ci`), then run `make deploy-staging` from a configured workstation/server. Execute staging smoke tests (create customer, create transaction, approve ≥ RM 10k, generate MSB2/LMCA, view dashboard) and monitor logs/scheduler/Horizon before requesting production deployment.
+2. **Production deployment**: Wait for staging approval and a scheduled maintenance window, then run `make deploy-production` with verified database and file backups in place.
+3. Review this updated plan and the deployment runbook with the team and compliance/risk stakeholders before executing any deployment.
 
 ---
 
@@ -1124,8 +1124,8 @@ After (Facade + 6 services) — current state
 
 ---
 
-**Document Version**: 1.1  
-**Status**: Revised to reflect actual implementation progress  
-**Author**: Code Review AI Assistant  
-**Review Date**: 2025-07-09  
+**Document Version**: 1.1
+**Status**: Revised to reflect actual implementation progress
+**Author**: Code Review AI Assistant
+**Review Date**: 2025-07-09
 **Last Updated**: 2026-07-13

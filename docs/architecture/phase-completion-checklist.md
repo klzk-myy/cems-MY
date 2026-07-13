@@ -76,9 +76,9 @@
 
 ### Sign-off ✅ COMPLETE
 
-**Developer**: AI Agent (Kimi Code CLI)  
-**Date**: 2025-07-09  
-**Branch**: `feat/architectural-improvements-2025`  
+**Developer**: AI Agent (Kimi Code CLI)
+**Date**: 2025-07-09
+**Branch**: `feat/architectural-improvements-2025`
 **Status**: All Phase 0 baseline tasks complete. Ready for Phase 1 (Schema Consistency Fixes).
 
 **Notes**:
@@ -105,7 +105,7 @@
 - [x] `app/Models/Transaction.php` - Added `version`, `hold_reason`, `cancelled_by`, `cancellation_reason` to `$casts` (note: `version` was already int unsigned in schema)
 - [x] `app/Models/CurrencyPosition.php` - Removed `till_id` from `$fillable` (column doesn't exist in currency_positions table)
 
-**Changes summary**: 
+**Changes summary**:
 - 4 model files modified
 - 9 insertions(+), 4 deletions(-)
 - All changes are non-destructive (only $fillable/$casts adjustments)
@@ -229,9 +229,9 @@ git stash pop
 
 ### Sign-off ✅ PHASE 1 COMPLETE
 
-**Developer**: AI Agent (Kimi Code CLI)  
-**Date**: 2025-07-09  
-**Branch**: `feat/architectural-improvements-2025`  
+**Developer**: AI Agent (Kimi Code CLI)
+**Date**: 2025-07-09
+**Branch**: `feat/architectural-improvements-2025`
 **Status**: All Phase 1 requirements met. Schema consistency issues fixed and verified.
 
 **Summary of Changes**:
@@ -375,9 +375,9 @@ git stash pop
 
 ### Phase 2 Sign-off ✅ COMPLETE
 
-**Developer**: AI Agent (Kimi Code CLI)  
-**Date**: 2025-07-09  
-**Branch**: feat/architectural-improvements-2025  
+**Developer**: AI Agent (Kimi Code CLI)
+**Date**: 2025-07-09
+**Branch**: feat/architectural-improvements-2025
 **Status**: All Phase 2 requirements met. Hold and Idempotency services extracted and verified.
 
 **Summary**:
@@ -499,9 +499,9 @@ Approval: ☑ Phase 2 sign-off obtained (self-certified per automation)
 
 ### Phase 3 Sign-off ✅ COMPLETE
 
-**Developer**: AI Agent (Kimi Code CLI)  
-**Date**: 2025-07-09  
-**Branch**: `feat/architectural-improvements-2025`  
+**Developer**: AI Agent (Kimi Code CLI)
+**Date**: 2025-07-09
+**Branch**: `feat/architectural-improvements-2025`
 **Status**: All Phase 3 requirements met. Status and Validation services extracted and verified.
 
 **Summary**:
@@ -666,7 +666,7 @@ Break the ~200-line `create()` method into:
           $data['amount_foreign'],
           $data['currency_code']
       );
-      
+
       // 2. Build context
       $tillBalance = $this->validationService->validateTillBalance($data['till_id'], $data['currency_code']);
       $context = new TransactionCreationContext(
@@ -677,7 +677,7 @@ Break the ~200-line `create()` method into:
           holdRequired: $validation->isHoldRequired(),
           allocation: $this->determineAllocation($userId, $data['currency_code']) // extract helper
       );
-      
+
       // 3. Create
       return $this->creationService->create($context, $userId, $ipAddress);
   }
@@ -716,14 +716,14 @@ Break the ~200-line `create()` method into:
 
 Before Phase 5:
 
-1. [x] Creation service exists: `app/Services/Transaction/TransactionCreationService.php` (333 lines)
-2. [x] Interface exists: `app/Services/Contracts/TransactionCreationServiceInterface.php`
-3. [x] Unit tests exist: `tests/Unit/Transaction/TransactionCreationServiceTest.php` (16 tests)
-4. [x] Core semantics preserved (idempotency, recent-duplicate check, stock validation, side effects, event dispatch)
-5. [ ] Performance benchmark vs Phase 0 baseline — not recorded
-6. [x] `TransactionService::createTransaction()` delegates cleanly to `creationService->prepareAndCreate()` (context assembly kept in the service to preserve the 6-dependency facade)
-7. [x] `TransactionCreationService::create()` is ~37 lines (target ≤ 50); all helper methods ≤ 30 lines
-8. [ ] No formal code review evidence recorded
+- [x] Creation service exists: `app/Services/Transaction/TransactionCreationService.php` (333 lines)
+- [x] Interface exists: `app/Services/Contracts/TransactionCreationServiceInterface.php`
+- [x] Unit tests exist: `tests/Unit/Transaction/TransactionCreationServiceTest.php` (16 tests)
+- [x] Core semantics preserved (idempotency, recent-duplicate check, stock validation, side effects, event dispatch)
+- [ ] Performance benchmark vs Phase 0 baseline — not recorded
+- [x] `TransactionService::createTransaction()` delegates cleanly to `creationService->prepareAndCreate()` (context assembly kept in the service to preserve the 6-dependency facade)
+- [x] `TransactionCreationService::create()` is ~37 lines (target ≤ 50); all helper methods ≤ 30 lines
+- [ ] No formal code review evidence recorded
 
 **Status**: ✅ COMPLETE — service is extracted, tested, and meets line-count targets. The original facade-built context design was intentionally not adopted to keep `TransactionService` at 6 dependencies.
 
@@ -798,7 +798,7 @@ class ApprovalResult
    - [ ] Check locked transaction exists (else `RuntimeException: already processed`)
    - [ ] **Version check**: `(int)$locked->version === (int)$original->version`
      - [ ] If mismatch: throw `RuntimeException: modified by another user`
-   
+
 4. **Edge Case Validations**:
    - [ ] Customer exists: `Customer::find($customer_id)` (else throw)
    - [ ] Till balance exists and open for today (else throw)
@@ -952,13 +952,13 @@ The original has 4 catch blocks. Preserve them:
 
 Before Phase 6:
 
-1. [x] Approval service exists: `app/Services/Transaction/TransactionApprovalService.php` (308 lines)
-2. [x] Interface exists: `app/Services/Contracts/TransactionApprovalServiceInterface.php`
-3. [x] Unit tests exist: `tests/Unit/Transaction/TransactionApprovalServiceTest.php` (20 tests)
-4. [x] Core approval workflow implemented (eligibility check, AML monitoring, side effects, transition history)
-5. [x] Detailed edge-case matrix verified against tests (version mismatch, customer deleted, till closed, position deleted, insufficient stock, expired reservation, AML blocks, teller allocation, audit, event, cache)
-6. [x] `approve()` method ~24 lines; all helpers ≤ 40 lines
-7. [ ] No formal code review evidence recorded
+- [x] Approval service exists: `app/Services/Transaction/TransactionApprovalService.php` (308 lines)
+- [x] Interface exists: `app/Services/Contracts/TransactionApprovalServiceInterface.php`
+- [x] Unit tests exist: `tests/Unit/Transaction/TransactionApprovalServiceTest.php` (20 tests)
+- [x] Core approval workflow implemented (eligibility check, AML monitoring, side effects, transition history)
+- [x] Detailed edge-case matrix verified against tests (version mismatch, customer deleted, till closed, position deleted, insufficient stock, expired reservation, AML blocks, teller allocation, audit, event, cache)
+- [x] `approve()` method ~24 lines; all helpers ≤ 40 lines
+- [ ] No formal code review evidence recorded
 
 **Status**: ✅ COMPLETE — service is extracted, tested, and meets line-count targets.
 
@@ -1197,10 +1197,10 @@ Verified in codebase:
 
 Before Phase 7:
 
-1. [x] All relevant controllers migrated to direct service injection
-2. [x] `TransactionService` is a pure facade (all methods delegate)
-3. [x] All Transaction* tests pass (unit + feature + API) — verified 2026-07-12
-4. [x] No controller uses `TransactionService` for business logic
+- [x] All relevant controllers migrated to direct service injection
+- [x] `TransactionService` is a pure facade (all methods delegate)
+- [x] All Transaction* tests pass (unit + feature + API) — verified 2026-07-12
+- [x] No controller uses `TransactionService` for business logic
 
 **Status**: ✅ COMPLETE — controllers now depend on specific services; `TransactionService` remains only as a backward-compatible facade for tests and queued jobs.
 
@@ -1316,12 +1316,12 @@ Verified in codebase (2026-07-12):
 
 ### Phase 7 Sign-off
 
-1. [x] TransactionService ≤ 150 lines — actual: 62 lines
-2. [x] All old dependencies removed — `MathService` and `ThresholdService` no longer injected
-3. [x] All tests pass — verified 2026-07-12: 1,530 passed, 5 skipped, 3 deprecated, 0 failed
-4. [x] Interface still implemented
-5. [x] GitNexus impact shows low risk — `detect_changes` run 2026-07-12: LOW risk, no affected processes
-6. [ ] Code review passed — no formal review evidence recorded
+- [x] TransactionService ≤ 150 lines — actual: 62 lines
+- [x] All old dependencies removed — `MathService` and `ThresholdService` no longer injected
+- [x] All tests pass — verified 2026-07-12: 1,530 passed, 5 skipped, 3 deprecated, 0 failed
+- [x] Interface still implemented
+- [x] GitNexus impact shows low risk — `detect_changes` run 2026-07-12: LOW risk, no affected processes
+- [ ] Code review passed — no formal review evidence recorded
 
 **Status**: ✅ COMPLETE — `TransactionService` is now a minimal facade coordinating the six extracted services.
 
@@ -1393,9 +1393,9 @@ Unnamed routes: 0
 
 ### Sign-off
 
-**Developer**: AI Agent (Kimi Code CLI)  
-**Date**: 2026-07-12  
-**Branch**: `feat/architectural-improvements-2025`  
+**Developer**: AI Agent (Kimi Code CLI)
+**Date**: 2026-07-12
+**Branch**: `feat/architectural-improvements-2025`
 **Status**: ✅ COMPLETE — orphaned views verified as used, all routes named, no actionable `XXX`/`TODO` markers found, tests green, Pint clean.
 
 ---
@@ -1456,9 +1456,9 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 
 ### Sign-off
 
-**Developer**: AI Agent (Kimi Code CLI)  
-**Date**: 2026-07-12  
-**Branch**: `feat/architectural-improvements-2025`  
+**Developer**: AI Agent (Kimi Code CLI)
+**Date**: 2026-07-12
+**Branch**: `feat/architectural-improvements-2025`
 **Status**: ✅ COMPLETE — exception handling standardized, cache keys consolidated, controller lengths evaluated and accepted.
 
 ---
@@ -1529,6 +1529,12 @@ make lint                  # Pint + Blade/PHP syntax checks
 make security              # composer audit + TruffleHog
 make test                  # full PHPUnit suite
 make deploy ENV=staging    # deploy to staging server
+make deploy-staging        # shortcut for make deploy ENV=staging
+make deploy-production     # shortcut for make deploy ENV=production
+
+# Pipeline stage skip flags (passed to scripts/ci/pipeline.sh):
+./scripts/ci/pipeline.sh staging --skip-lint --skip-test
+./scripts/ci/pipeline.sh production --skip-security --skip-deploy
 ```
 
 **Latest workflow links**:
@@ -1566,23 +1572,23 @@ php artisan up
 
 ### Deployment Readiness Notes
 
-**Latest commit**: `aa8d09d1` on `main` (local CI/CD pipeline: `scripts/ci/`, `Makefile`, deployment env templates, removed GitHub Actions workflows, docs update)  
-**Remote**: `origin/main` and `origin/develop` both at `aa8d09d1`  
-**Scope**: Phases 1–10 local validation, Laravel 12 security upgrade, local CI/CD pipeline replacing GitHub Actions workflows  
-**Risk**: CRITICAL per GitNexus, concentrated in transaction/customer/cache flows  
-**Migrations**: None  
-**Local Tests**: 1532 passed, 5 skipped, 3 deprecated, 0 failed (verified 2026-07-13)  
-**Style**: Pint passed (verified 2026-07-13)  
-**composer audit**: No advisories found  
-**GitNexus**: Index up-to-date  
+**Latest commit**: `ff65f32f` on `main` (local CI/CD pipeline: `scripts/ci/`, `Makefile`, deployment env templates, removed GitHub Actions workflows, docs update)
+**Remote**: `origin/main` and `origin/develop` both at `ff65f32f`
+**Scope**: Phases 1–10 local validation, Laravel 12 security upgrade, local CI/CD pipeline replacing GitHub Actions workflows
+**Risk**: CRITICAL per GitNexus, concentrated in transaction/customer/cache flows
+**Migrations**: None
+**Local Tests**: 1532 passed, 5 skipped, 3 deprecated, 0 failed (verified 2026-07-13)
+**Style**: Pint passed (verified 2026-07-13)
+**composer audit**: No advisories found
+**GitNexus**: Index up-to-date
 **CI/CD Status**: GitHub Actions workflows removed; local pipeline available via `make ci` and `make deploy ENV=staging`
 
 ### Sign-off
 
-**Developer**: AI Agent (Kimi Code CLI)  
-**Date**: 2026-07-13  
-**Branch**: `main`  
-**Commit**: `aa8d09d1`  
+**Developer**: AI Agent (Kimi Code CLI)
+**Date**: 2026-07-13
+**Branch**: `main`
+**Commit**: `ff65f32f`
 **Status**: ⚠️ PARTIAL — local validation complete, Laravel 12 upgrade pushed, `composer audit` clean, local CI/CD pipeline implemented; staging/production deployment and smoke tests pending.
 
 ---
@@ -1613,8 +1619,8 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 
 ## Out-of-Phase: Code Duplication Assessment and Consolidation Plan
 
-**Date**: 2026-07-10  
-**Scope**: Full codebase review and planned consolidation of duplicated code blocks  
+**Date**: 2026-07-10
+**Scope**: Full codebase review and planned consolidation of duplicated code blocks
 **Source documents**:
 - Assessment report: `docs/superpowers/plans/2026-07-10-code-duplication-assessment.md`
 - Implementation plan: `docs/superpowers/plans/2026-07-10-consolidate-duplicated-code.md`
@@ -1665,8 +1671,8 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 
 ## Out-of-Phase: 2026-07-11 Consolidation of Duplicated Code Blocks & Controller Architecture
 
-**Date**: 2026-07-11  
-**Scope**: Eliminate remaining high-risk duplication in controller architecture and service-level mutation logic  
+**Date**: 2026-07-11
+**Scope**: Eliminate remaining high-risk duplication in controller architecture and service-level mutation logic
 **Source documents**:
 - Assessment report: `docs/superpowers/plans/2026-07-11-code-duplication-assessment.md`
 - Implementation plan: `docs/superpowers/plans/2026-07-11-consolidate-duplicated-code.md`
@@ -1733,7 +1739,7 @@ If any vendor/ package uses it, **DO NOT REMOVE**. Keep as facade.
 - [x] Phase 7: TransactionService facade finalized ✅
 - [x] Phase 8: Orphaned Code Cleanup ✅
 - [x] Phase 9: Code Quality Improvements ✅
-- [~] Phase 10: Validation & Deployment ⚠️ PARTIAL — local validation complete; Laravel 12 upgrade pushed; local CI/CD pipeline implemented; staging/production deployment and smoke tests pending
+- [ ] Phase 10: Validation & Deployment ⚠️ PARTIAL — local validation complete; Laravel 12 upgrade pushed; local CI/CD pipeline implemented; staging/production deployment and smoke tests pending
 - [x] Out-of-Phase: Code duplication assessment and consolidation (Tasks A–H / 1–11) ✅
 - [x] Out-of-Phase: 2026-07-11 consolidation (Tasks 1–12) ✅
 
@@ -1860,7 +1866,7 @@ The following items from `implementation-plan-2025.md` were never completed or w
 
 **Objective**: Fix Critical and Important issues identified in the comprehensive code review of the 2026-07-11 consolidation.
 
-**Plan**: `docs/superpowers/plans/2026-07-11-post-consolidation-review-remediation.md`  
+**Plan**: `docs/superpowers/plans/2026-07-11-post-consolidation-review-remediation.md`
 **Delivery Checklist**: `docs/superpowers/plans/2026-07-11-post-consolidation-review-delivery-checklist.md`
 
 ### Code/Environment Checks ✅ COMPLETE
@@ -1914,18 +1920,18 @@ The following items from `implementation-plan-2025.md` were never completed or w
 
 ### Sign-off
 
-**Developer**: AI Agent (Kimi Code CLI)  
-**Date**: 2026-07-11  
+**Developer**: AI Agent (Kimi Code CLI)
+**Date**: 2026-07-11
 **Status**: Remediation complete, full suite green, ready for merge.
 
 ---
 
 ## Sign-off Approvals
 
-**Lead Developer**: _________________ Date: _________  
-**Compliance Officer**: _________________ Date: _________  
-**Tech Lead**: _________________ Date: _________  
-**DevOps**: _________________ Date: _________  
+**Lead Developer**: _________________ Date: _________
+**Compliance Officer**: _________________ Date: _________
+**Tech Lead**: _________________ Date: _________
+**DevOps**: _________________ Date: _________
 
 ---
 
@@ -1972,5 +1978,5 @@ done |& tee benchmark.txt
 
 ---
 
-**Document Version**: 1.2  
+**Document Version**: 1.2
 **Last Updated**: 2026-07-13
