@@ -6,7 +6,7 @@ set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
-ENVIRONMENT="${1:-staging}"
+ENVIRONMENT="${1:?Usage: $0 <environment>}"
 ENV_FILE="$REPO_ROOT/.env.deploy.$ENVIRONMENT"
 
 cd "$REPO_ROOT"
@@ -14,9 +14,9 @@ cd "$REPO_ROOT"
 load_env_file "$ENV_FILE"
 assert_env DEPLOY_HOST DEPLOY_USER DEPLOY_PATH DEPLOY_APP_URL DEPLOY_BRANCH
 
-SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SSH_OPTS=(-o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null)
 if [[ -n "${DEPLOY_SSH_KEY:-}" && -f "$DEPLOY_SSH_KEY" ]]; then
-  SSH_OPTS="$SSH_OPTS -i $DEPLOY_SSH_KEY"
+  SSH_OPTS+=( -i "$DEPLOY_SSH_KEY" )
 fi
 
 deploy_target="$DEPLOY_USER@$DEPLOY_HOST"
@@ -24,13 +24,14 @@ deploy_target="$DEPLOY_USER@$DEPLOY_HOST"
 log_info "Deploying to $ENVIRONMENT ($deploy_target:$DEPLOY_PATH)"
 
 run_remote() {
-  ssh $SSH_OPTS "$deploy_target" "$@"
+  ssh "${SSH_OPTS[@]}" "$deploy_target" "$@"
 }
 
-run_remote "
-  set -e
-  cd $DEPLOY_PATH
-  git pull origin $DEPLOY_BRANCH
+run_remote "DEPLOY_PATH=$(printf '%q' "$DEPLOY_PATH") DEPLOY_BRANCH=$(printf '%q' "$DEPLOY_BRANCH") bash -s" <<'REMOTE'
+  set -euo pipefail
+  cd "$DEPLOY_PATH"
+  git fetch origin "$DEPLOY_BRANCH"
+  git reset --hard "origin/$DEPLOY_BRANCH"
   composer install --no-dev --prefer-dist --no-interaction
   php artisan migrate --force
   php artisan optimize:clear
@@ -38,19 +39,19 @@ run_remote "
   php artisan route:cache
   php artisan view:cache
   php artisan optimize
-  sudo systemctl reload php8.2-fpm || true
-  sudo systemctl reload nginx || true
-"
+  sudo systemctl reload php8.3-fpm || echo "WARNING: failed to reload php8.3-fpm"
+  sudo systemctl reload nginx || echo "WARNING: failed to reload nginx"
+REMOTE
 
 log_info "Waiting for services to settle..."
 sleep 5
 
 log_info "Verifying deployment at $DEPLOY_APP_URL/health..."
-curl -fsS "$DEPLOY_APP_URL/health" || fail "Health check failed"
+curl -fsS --connect-timeout 10 --max-time 30 "$DEPLOY_APP_URL/health" || fail "Health check failed"
 
 if [[ -n "${SLACK_WEBHOOK_URL:-}" ]]; then
   log_info "Sending Slack success notification..."
-  curl -fsS -X POST -H 'Content-type: application/json' \
+  curl -fsS --connect-timeout 10 --max-time 30 -X POST -H 'Content-type: application/json' \
     --data "{\"text\":\"✅ CEMS-MY deployed to $ENVIRONMENT\"}" \
     "$SLACK_WEBHOOK_URL" || log_warn "Slack notification failed"
 fi
