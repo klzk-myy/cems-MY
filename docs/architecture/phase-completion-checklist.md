@@ -9,12 +9,12 @@
 ## General Pre-Requirements (All Phases)
 
 - [x] Git branch is clean (no unrelated changes)
-- [x] All tests pass: `php artisan test --compact` — **1,532 passed**, 5 skipped, 3 deprecated, 0 failed (verified 2026-07-12)
-- [x] Code formatted with Pint: `vendor/bin/pint --dirty --format agent` — passed (verified 2026-07-12)
+- [x] All tests pass: `php artisan test --compact` — **1,532 passed**, 5 skipped, 3 deprecated, 0 failed (verified 2026-07-13)
+- [x] Code formatted with Pint: `vendor/bin/pint --dirty --format agent` — passed (verified 2026-07-13)
 - [x] GitNexus index current: `npx gitnexus analyze` — index refreshed after 2026-07-11 consolidation
 - [x] No merge conflicts with `main` branch
 - [ ] Database backup taken (if phase modifies data) — not performed for code-only phases
-- [x] Documentation updated (if applicable) — `phase-completion-checklist.md` and `implementation-plan-2025.md` updated (2026-07-12)
+- [x] Documentation updated (if applicable) — `phase-completion-checklist.md` and `implementation-plan-2025.md` updated (2026-07-13)
 
 ---
 
@@ -1524,6 +1524,9 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 - [x] Re-triggered GitHub Actions workflows after coverage disable:
   - `CI/CD Pipeline` on `main` → **success** for commit `5ab719fd` (lint, security, test suite all green)
   - `Deploy to Staging` on `main` → **failed** at `Setup SSH` because GitHub secrets are not configured
+- [x] Latest CI verification on commit `9927cd6a` (run `29205395483`):
+  - `CI/CD Pipeline` → **success** overall, with lint, security, and test-suite jobs green
+  - `Deploy to Staging` → **failure** at `Setup SSH` because GitHub secrets are not configured
 - [ ] Deploy to staging environment
 - [ ] Run full test suite on staging
 - [ ] Smoke test critical paths (create customer, create transaction, approve ≥ RM 10k, generate MSB2/LMCA, view dashboard)
@@ -1536,8 +1539,8 @@ rg "Cache::(remember|get|put|forget|has)\(['\"]" app/ --type php
 2. **Laravel framework security advisories**: Resolved by upgrading to `laravel/framework` v12.63.0.
 
 **Latest workflow links**:
-- CI/CD Pipeline: https://github.com/klzk-myy/cems-MY/actions/runs/29196686035
-- Deploy to Staging: https://github.com/klzk-myy/cems-MY/actions/runs/29196682306
+- CI/CD Pipeline: https://github.com/klzk-myy/cems-MY/actions/runs/29205395483
+- Deploy to Staging: https://github.com/klzk-myy/cems-MY/actions/runs/29205395483
 
 ### Task 10.5: Production Deployment ❌ BLOCKED — Staging Approval Required
 
@@ -1571,24 +1574,24 @@ php artisan up
 
 ### Deployment Readiness Notes
 
-**Latest commit**: `5ab719fd` on `main` (Laravel 12 upgrade + CDD sanction-hit fix + CI branch alignment + advisory TruffleHog scan + Redis wait fix + SQLite CI test alignment + parallel/coverage fix + PHP 8.3 alignment + pcov coverage driver + coverage disabled for debugging)  
-**Remote**: `origin/main` and `origin/develop` both at `5ab719fd`  
-**Scope**: Phases 1–10 local validation, Laravel 12 security upgrade, CI/CD workflow branch alignment, advisory secret-scan fix, Redis wait fix, SQLite CI test alignment, parallel/coverage fix, PHP 8.3 alignment, pcov coverage driver, coverage disabled for debugging  
+**Latest commit**: `9927cd6a` on `main` (Laravel 12 upgrade + CDD sanction-hit fix + CI branch alignment + advisory TruffleHog scan + Redis wait fix + SQLite CI test alignment + parallel/coverage fix + PHP 8.3 alignment + coverage disabled and sqlite3 extension added + docs update)  
+**Remote**: `origin/main` and `origin/develop` both at `9927cd6a`  
+**Scope**: Phases 1–10 local validation, Laravel 12 security upgrade, CI/CD workflow branch alignment, advisory secret-scan fix, Redis wait fix, SQLite CI test alignment, parallel/coverage fix, PHP 8.3 alignment, coverage disabled for debugging  
 **Risk**: CRITICAL per GitNexus, concentrated in transaction/customer/cache flows  
 **Migrations**: None  
-**Local Tests**: 1532 passed, 5 skipped, 3 deprecated, 0 failed  
-**Style**: Pint passed  
+**Local Tests**: 1532 passed, 5 skipped, 3 deprecated, 0 failed (verified 2026-07-13)  
+**Style**: Pint passed (verified 2026-07-13)  
 **composer audit**: No advisories found  
 **GitNexus**: Index up-to-date  
-**CI Status**: `CI/CD Pipeline` **success** for `5ab719fd` (lint, security, tests all green); `Deploy to Staging` **failed** at `Setup SSH` because required GitHub secrets are not configured
+**CI Status**: `CI/CD Pipeline` run `29205395483` **success** for `9927cd6a` (lint, security, tests all green); `Deploy to Staging` **failed** at `Setup SSH` because required GitHub secrets are not configured
 
 ### Sign-off
 
 **Developer**: AI Agent (Kimi Code CLI)  
-**Date**: 2026-07-12  
+**Date**: 2026-07-13  
 **Branch**: `main`  
-**Commit**: `5ab719fd`  
-**Status**: ⚠️ PARTIAL — local validation complete, Laravel 12 upgrade pushed, `composer audit` clean, CI/CD Pipeline green; staging/production deployment blocked by missing GitHub Action secrets (`SSH_PRIVATE_KEY`, `SERVER_HOST`, `SERVER_USER`, `SLACK_WEBHOOK_URL`).
+**Commit**: `9927cd6a`  
+**Status**: ⚠️ PARTIAL — local validation complete, Laravel 12 upgrade pushed, `composer audit` clean, CI/CD Pipeline green on run `29205395483`; staging/production deployment blocked by missing GitHub Action secrets (`SSH_PRIVATE_KEY`, `SERVER_HOST`, `SERVER_USER`, `SLACK_WEBHOOK_URL`).
 
 ---
 
@@ -1978,4 +1981,4 @@ done |& tee benchmark.txt
 ---
 
 **Document Version**: 1.2  
-**Last Updated**: 2026-07-12
+**Last Updated**: 2026-07-13
