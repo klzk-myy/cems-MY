@@ -11,6 +11,10 @@
 .env
 .env.*
 !.env.example
+
+# Local deployment configuration
+.env.deploy.*
+!.env.deploy.*.example
 .env.*.bak
 *.bak
 *.backup
