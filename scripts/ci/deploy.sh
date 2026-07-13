@@ -32,13 +32,27 @@ run_remote "DEPLOY_PATH=$(printf '%q' "$DEPLOY_PATH") DEPLOY_BRANCH=$(printf '%q
   cd "$DEPLOY_PATH"
   git fetch origin "$DEPLOY_BRANCH"
   git reset --hard "origin/$DEPLOY_BRANCH"
-  composer install --no-dev --prefer-dist --no-interaction
+  composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
+
+  if [[ -f package.json ]]; then
+    if [[ -f package-lock.json ]]; then
+      npm ci
+    else
+      npm install
+    fi
+    npm run build
+  fi
+
   php artisan migrate --force
   php artisan optimize:clear
   php artisan config:cache
   php artisan route:cache
   php artisan view:cache
   php artisan optimize
+
+  php artisan horizon:terminate || echo "WARNING: failed to terminate Horizon"
+  sudo supervisorctl restart cems-worker:* || echo "WARNING: failed to restart queue workers"
+
   sudo systemctl reload php8.3-fpm || echo "WARNING: failed to reload php8.3-fpm"
   sudo systemctl reload nginx || echo "WARNING: failed to reload nginx"
 REMOTE

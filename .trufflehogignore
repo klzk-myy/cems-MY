@@ -1,41 +1,41 @@
 # Dependency directories
-vendor/
-node_modules/
+^vendor/
+^node_modules/
 
 # Tool/runtime directories
-.kilo/
-.mimocode/
-.playwright-mcp/
-.playwright-cli/
-.superpowers/
-.claude/
-.vscode/
-.idea/
-.zed/
-.nova/
-.fleet/
-.gitnexus/
-.worktree/
-.worktrees/
+^\.kilo/
+^\.mimocode/
+^\.playwright-mcp/
+^\.playwright-cli/
+^\.superpowers/
+^\.claude/
+^\.vscode/
+^\.idea/
+^\.zed/
+^\.nova/
+^\.fleet/
+^\.gitnexus/
+^\.worktree/
+^\.worktrees/
 
 # Build/cache/storage outputs
-public/build/
-public/storage/
-storage/
-bootstrap/cache/
-.phpunit.cache/
+^public/build/
+^public/storage/
+^storage/
+^bootstrap/cache/
+^\.phpunit\.cache/
 
 # Test/load artifacts
-load-tests/
-docker/
-*.log
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.svg
-*.zip
-*.tar.gz
-*.sql
-*.sqlite
-*.sqlite3
+^load-tests/
+^docker/
+\.log$
+\.png$
+\.jpg$
+\.jpeg$
+\.gif$
+\.svg$
+\.zip$
+\.tar\.gz$
+\.sql$
+\.sqlite$
+\.sqlite3$
