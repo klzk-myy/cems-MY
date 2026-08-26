@@ -11,16 +11,25 @@ use Illuminate\Support\Collection;
 
 class TransactionReportQuery
 {
+    /**
+     * @return Builder<Transaction>
+     */
     public function baseQuery(?int $branchId = null): Builder
     {
         return Transaction::query()->notCancelled()->forBranch($branchId);
     }
 
+    /**
+     * @return Builder<Transaction>
+     */
     public function completed(?int $branchId = null): Builder
     {
         return $this->baseQuery($branchId)->completed();
     }
 
+    /**
+     * @return Builder<Transaction>
+     */
     public function forDateRange(string $from, string $to, ?int $branchId = null): Builder
     {
         return $this->baseQuery($branchId)->forDateRange($from, $to);
@@ -29,6 +38,7 @@ class TransactionReportQuery
     /**
      * Aggregate buy/sell volumes and counts, optionally grouped by a column.
      *
+     * @param  Builder<Transaction>  $query
      * @param  array<int, string>|null  $select
      * @return Collection<int, \stdClass>
      */
@@ -64,7 +74,7 @@ class TransactionReportQuery
                 ->selectRaw("SUM(CASE WHEN type = ? THEN {$amountColumn} ELSE 0 END) as sell_amount", [$sellType]);
         }
 
-        return $query->get();
+        return $query->toBase()->get();
     }
 
     /**
@@ -97,8 +107,8 @@ class TransactionReportQuery
 
         foreach ($rows as $row) {
             $value = $row->{$column} ?? '0';
-            if ($value !== '') {
-                $total = bcadd($total, (string) $value, 4);
+            if (is_string($value) && $value !== '' && is_numeric($value)) {
+                $total = bcadd($total, $value, 4);
             }
         }
 
