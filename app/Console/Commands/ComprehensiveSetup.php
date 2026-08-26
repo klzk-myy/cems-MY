@@ -175,7 +175,7 @@ class ComprehensiveSetup extends Command
         for ($i = 1; $i <= $this->branchCount; $i++) {
             $branch = Branch::create([
                 'code' => sprintf('BR%03d', $i),
-                'name' => 'Branch '.str_pad($i, 3, '0', STR_PAD_LEFT),
+                'name' => 'Branch '.str_pad((string) $i, 3, '0', STR_PAD_LEFT),
                 'type' => 'branch',
                 'is_active' => true,
                 'is_main' => $i === 1,
