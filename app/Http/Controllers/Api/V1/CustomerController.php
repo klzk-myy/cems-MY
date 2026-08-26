@@ -88,7 +88,7 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $result = $this->customerService->createCustomerAction($validated, auth()->id());
+            $result = $this->customerService->createCustomerAction($validated, (int) auth()->id());
 
             return $this->resourceResponse(
                 new CustomerResource($result->customer->load(['documents', 'transactions'])),
@@ -140,7 +140,7 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $result = $this->customerService->updateCustomerAction($customer, $validated, auth()->id());
+            $result = $this->customerService->updateCustomerAction($customer, $validated, (int) auth()->id());
 
             return $this->resourceResponse(
                 new CustomerResource($result->customer->fresh()),
@@ -219,7 +219,7 @@ class CustomerController extends Controller
             customer: $customer,
             file: $file,
             documentType: $request->document_type,
-            uploadedBy: auth()->id(),
+            uploadedBy: (int) auth()->id(),
         );
 
         return $this->successResponse(['document_id' => $document->id], 'Document uploaded successfully.');
