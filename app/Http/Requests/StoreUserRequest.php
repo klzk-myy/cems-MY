@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\HasUserValidationRules;
 use App\Models\User;
+use App\Rules\PasswordComplexityRule;
 
 class StoreUserRequest extends AuthorizedFormRequest
 {
@@ -20,9 +21,8 @@ class StoreUserRequest extends AuthorizedFormRequest
             'password' => [
                 'required',
                 'string',
-                'min:12',
                 'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
+                new PasswordComplexityRule,
             ],
             'password_confirmation' => 'required',
         ]);
