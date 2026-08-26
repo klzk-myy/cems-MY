@@ -25,7 +25,7 @@ class BranchPoolController extends Controller
         $user = $request->user();
         $branch = $user->branch;
 
-        $pools = $branch
+        $pools = $branch instanceof Branch
             ? $this->poolService->getAllPoolsForBranch($branch)
             : BranchPool::with('branch')->get();
 
@@ -51,8 +51,14 @@ class BranchPoolController extends Controller
             'amount' => ['required', 'numeric', 'min:0.01'],
         ]);
 
+        $branch = $branchPool->branch;
+
+        if (! $branch instanceof Branch) {
+            return back()->with('error', 'This pool is not attached to a branch.');
+        }
+
         $this->poolService->replenish(
-            $branchPool->branch,
+            $branch,
             $branchPool->currency_code,
             (string) $validated['amount'],
             $request->user()->id,
