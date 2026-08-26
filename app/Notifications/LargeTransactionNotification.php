@@ -59,8 +59,8 @@ class LargeTransactionNotification extends Notification implements ShouldQueue
                 'confirmation' => $this->confirmation,
                 'amount' => $amount,
                 'transactionType' => $this->transaction->transaction_type?->label() ?? 'Unknown',
-                'currency' => $this->transaction->currency?->code ?? 'Unknown',
-                'branch' => $this->transaction->branch?->name ?? 'Unknown',
+                'currency' => $this->transaction->currency->code ?? 'Unknown',
+                'branch' => $this->transaction->branch->name ?? 'Unknown',
                 'teller' => $this->transaction->teller,
             ]);
     }
@@ -77,14 +77,14 @@ class LargeTransactionNotification extends Notification implements ShouldQueue
             'transaction_id' => $this->transaction->id,
             'confirmation_id' => $this->confirmation->id,
             'customer_id' => $this->transaction->customer_id,
-            'customer_name' => $this->transaction->customer?->full_name ?? 'Unknown',
-            'amount' => $this->transaction->amount,
+            'customer_name' => $this->transaction->customer->full_name ?? 'Unknown',
+            'amount' => $this->transaction->amount_local,
             'amount_formatted' => $this->formatAmount(),
-            'currency_code' => $this->transaction->currency?->code ?? null,
-            'transaction_type' => $this->transaction->transaction_type?->value ?? null,
+            'currency_code' => $this->transaction->currency->code ?? null,
+            'transaction_type' => $this->transaction->transaction_type->value ?? null,
             'branch_id' => $this->transaction->branch_id,
-            'branch_name' => $this->transaction->branch?->name ?? 'Unknown',
-            'teller_id' => $this->transaction->created_by,
+            'branch_name' => $this->transaction->branch->name ?? 'Unknown',
+            'teller_id' => $this->transaction->user_id,
             'created_at' => $this->transaction->created_at->toIso8601String(),
             'requires_approval' => true,
             'url' => route('transactions.confirm.show', $this->transaction->id),
@@ -110,8 +110,8 @@ class LargeTransactionNotification extends Notification implements ShouldQueue
      */
     protected function formatAmount(): string
     {
-        $amount = (string) $this->transaction->amount;
-        $currency = $this->transaction->currency?->code ?? 'MYR';
+        $amount = (string) $this->transaction->amount_local;
+        $currency = $this->transaction->currency->code ?? 'MYR';
 
         // Split into integer and decimal parts to avoid float cast precision loss
         $parts = explode('.', $amount, 2);
@@ -153,7 +153,7 @@ class LargeTransactionNotification extends Notification implements ShouldQueue
                 ->where('notification_type', 'large_transaction')
                 ->first();
 
-            $this->preferences[$userId] = $preference?->email_enabled ?? true;
+            $this->preferences[$userId] = $preference->email_enabled ?? true;
         }
 
         return $this->preferences[$userId];
