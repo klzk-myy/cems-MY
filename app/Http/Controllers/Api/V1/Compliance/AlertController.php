@@ -99,7 +99,7 @@ class AlertController extends Controller
 
         $results = $this->alertTriageService->bulkResolve(
             $validated['alert_ids'],
-            auth()->id(),
+            (int) auth()->id(),
             $validated['notes'] ?? null
         );
 
