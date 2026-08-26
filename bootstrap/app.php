@@ -19,15 +19,11 @@ use App\Jobs\Compliance\DownloadEuSanctionsJob;
 use App\Jobs\Compliance\DownloadOfacSanctionsJob;
 use App\Jobs\Compliance\LowStockAlertJob;
 use App\Jobs\Compliance\RunComplianceMonitorJob;
-use App\Jobs\ImportSanctionsJob;
-use App\Jobs\RescreenHighRiskCustomersJob;
+use App\Services\Compliance\CaseManagementService;
 use App\Services\Compliance\EddService;
-use App\Services\Compliance\Monitors\CounterfeitAlertMonitor;
-use App\Services\Compliance\Monitors\CurrencyFlowMonitor;
-use App\Services\Compliance\Monitors\CustomerLocationAnomalyMonitor;
+use App\Services\Compliance\KycDocumentExpiryService;
 use App\Services\Compliance\Monitors\SanctionsRescreeningMonitor;
-use App\Services\Compliance\Monitors\StructuringMonitor;
-use App\Services\Compliance\Monitors\VelocityMonitor;
+use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\TransactionConfirmationService;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
 use Illuminate\Auth\Middleware\Authorize;
@@ -57,6 +53,12 @@ $app = Application::configure(basePath: dirname(__DIR__))
             IpBlocker::class,
             QueryLogging::class,
             PerformanceTrackingMiddleware::class,
+        ]);
+
+        // Global API rate limit (RouteServiceProvider 'api' limiter) runs
+        // before everything else in the group.
+        $middleware->api(prepend: [
+            'throttle:api',
         ]);
 
         // Enable stateful Sanctum authentication for first-party SPA API requests
@@ -183,155 +185,21 @@ $app = Application::configure(basePath: dirname(__DIR__))
         // Sanctions Rescreening Monitor - Weekly on Sunday at 02:00
         $schedule->job(new RunComplianceMonitorJob(SanctionsRescreeningMonitor::class))
             ->weeklyOn(0, '02:00')
+            ->withoutOverlapping()
+            ->onOneServer()
             ->appendOutputTo(storage_path('logs/monitor-sanctions-rescreen.log'));
 
-        // Customer Location Anomaly Monitor - Daily at 03:00
-        $schedule->job(new RunComplianceMonitorJob(CustomerLocationAnomalyMonitor::class))
-            ->dailyAt('03:00')
-            ->appendOutputTo(storage_path('logs/monitor-location-anomaly.log'));
-
-        // Currency Flow Monitor - Daily at 03:30
-        $schedule->job(new RunComplianceMonitorJob(CurrencyFlowMonitor::class))
-            ->dailyAt('03:30')
-            ->appendOutputTo(storage_path('logs/monitor-currency-flow.log'));
-
-        // Counterfeit Alert Monitor - Daily at 04:00
-        $schedule->job(new RunComplianceMonitorJob(CounterfeitAlertMonitor::class))
-            ->dailyAt('04:00')
-            ->appendOutputTo(storage_path('logs/monitor-counterfeit-alert.log'));
-
-        // Velocity Monitor - Daily at 04:30 (AML velocity detection)
-        $schedule->job(new RunComplianceMonitorJob(VelocityMonitor::class))
-            ->dailyAt('04:30')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/monitor-velocity.log'));
-
-        // Structuring Monitor - Hourly (transaction aggregation detection).
-        // Hourly cadence with a lookback window that covers the inter-run
-        // interval so each transaction is inspected exactly once.
-        $schedule->job(new RunComplianceMonitorJob(StructuringMonitor::class))
-            ->hourly()
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/monitor-structuring.log'));
-
-        // Health checks - Every 5 minutes
-        $schedule->command('monitor:check --alert')
-            ->everyFiveMinutes()
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/monitor-health-check.log'));
-
-        // Daily summary report - Every day at 08:00
-        $schedule->command('alert:daily-summary')
-            ->dailyAt('08:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/alert-daily-summary.log'));
-
-        // Cleanup old alerts - Weekly on Sunday at 02:00
-        $schedule->command('alert:cleanup --days=30')
-            ->weeklyOn(0, '02:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/alert-cleanup.log'));
-
-        // Daily sanctions list update at 03:00 (BNM requires within 24 hours)
-        $schedule->command('sanctions:update')
-            ->dailyAt('03:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/sanctions-update.log'));
-
-        // Check sanctions status and alert if failed
-        $schedule->command('sanctions:status')
-            ->dailyAt('08:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/sanctions-status-check.log'));
-
-        // UN Consolidated sanctions list - Daily at 1 AM
-        // Uses lazy-resolved slug to avoid eager DB queries at app boot
-        $schedule->job(new ImportSanctionsJob(listSlug: 'un_consolidated'))
-            ->dailyAt('01:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/sanctions-import-un.log'));
-
-        // MOHA Malaysia sanctions list - Weekly on Sunday at 2 AM
-        $schedule->job(new ImportSanctionsJob(listSlug: 'moha_malaysia'))
-            ->weeklyOn(0, '02:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/sanctions-import-moha.log'));
-
-        // High risk customer rescreening - Daily at 4 AM
-        $schedule->job(new RescreenHighRiskCustomersJob)
-            ->dailyAt('04:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/sanctions-rescreen-highrisk.log'));
-
-        // Daily database backup at 02:00
-        $schedule->command('backup:run --type=database')
-            ->dailyAt('02:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/backup-database.log'));
-
-        // Customer Risk Review - Daily at 02:00 (after backup, before morning activity)
-        $schedule->command('customer:risk-review')
-            ->dailyAt('02:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/customer-risk-review.log'));
-
-        // Weekly full backup (files + database) on Sunday at 03:00
-        $schedule->command('backup:run --type=full')
-            ->weeklyOn(0, '03:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/backup-full.log'));
-
-        // Monthly archive to S3 Glacier on 1st at 04:00 (BNM 7-year retention)
-        $schedule->command('backup:run --type=full --disk=s3')
-            ->monthlyOn(1, '04:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/backup-archive.log'));
-
-        // Verify backups daily at 05:00
-        $schedule->command('backup:verify --all')
-            ->dailyAt('05:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/backup-verify.log'));
-
-        // Clean old backups daily at 06:00
-        $schedule->command('backup:clean --force')
-            ->dailyAt('06:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/backup-clean.log'));
-
-        // Monitor backup health daily at 07:00
-        $schedule->command('backup:monitor --notify')
-            ->dailyAt('07:00')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/backup-monitor.log'));
-
-        // Stock Reservation Expiry - Every 15 minutes
         $schedule->command('reservation:expire')
             ->everyFifteenMinutes()
             ->withoutOverlapping()
+            ->onOneServer()
             ->appendOutputTo(storage_path('logs/reservation-expire.log'));
 
         // Failed transaction recovery - every 5 minutes (retry/DLQ sweep)
         $schedule->command('transactions:recover')
             ->everyFiveMinutes()
             ->withoutOverlapping()
+            ->onOneServer()
             ->appendOutputTo(storage_path('logs/transactions-recover.log'));
 
         // DLQ admin alert - every 5 minutes, immediately after the recovery sweep
@@ -348,6 +216,15 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/edd-expire.log'));
+
+        // KYC document expiry - mark verified documents past expiry (plus grace
+        // period) as Expired so downstream checks block transactions on them.
+        $schedule->call(fn () => app(KycDocumentExpiryService::class)->expireDocuments())
+            ->name('kyc-expire-documents')
+            ->dailyAt('01:45')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/kyc-document-expire.log'));
 
         // Notification digest - daily email of unread notifications per user,
         // only when the digest feature is enabled (notifications.digest.enabled).
@@ -394,6 +271,145 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/audit-verify.log'));
+
+        // Queue Health Check - Daily at 05:30
+        $schedule->command('queue:health-check')
+            ->dailyAt('05:30')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/queue-health-check.log'));
+
+        // IP block statistics snapshot - Daily at 04:45
+        // Blocks self-expire via Redis TTL; this records the daily block
+        // table for audit and refreshes the blocked-IP index.
+        $schedule->command('security:ip stats')
+            ->dailyAt('04:45')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/security-ip-stats.log'));
+
+        // Database backup - Daily at 02:00
+        $schedule->command('backup:run --type=database')
+            ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/backup-database.log'));
+
+        // Full backup - Weekly on Sunday at 03:00
+        $schedule->command('backup:clean')
+            ->weeklyOn(0, '03:00')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/backup-clean.log'));
+
+        $schedule->command('backup:run')
+            ->weeklyOn(0, '03:05')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/backup-full.log'));
+
+        // Monthly labelled full backup - 1st of month at 04:00
+        // Destinations (local + s3) are configured in config/backup.php.
+        $schedule->command('backup:run --filename=monthly-full')
+            ->monthlyOn(1, '04:00')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/backup-monthly.log'));
+
+        // Backup health monitoring - Daily at 07:00
+        $schedule->command('backup:monitor')
+            ->dailyAt('07:00')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/backup-monitor.log'));
+
+        // Customer risk review sweep - Daily at 02:30
+        $schedule->command('customer:risk-review')
+            ->dailyAt('02:30')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/customer-risk-review.log'));
+
+        // Audit Log Rotation (BNM 5-year retention) - Weekly on Sunday at 03:30
+        $schedule->command('audit:rotate --cleanup')
+            ->weeklyOn(0, '03:30')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/audit-rotate.log'));
+
+        // Behavioral Baseline Backfill - Monthly on 1st at 03:30
+        // Ensures customers without transaction-driven baselines (e.g.
+        // pre-deployment) still get one computed each month.
+        $schedule->command('customer:baseline-backfill')
+            ->monthlyOn(1, '03:30')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/customer-baseline-backfill.log'));
+
+        // Dormancy Sweep - Monthly on 2nd at 02:30
+        // Stamps dormant_at on active customers with no transactions within
+        // the configured dormancy window (cems.dormancy_months).
+        $schedule->command('customers:mark-dormant')
+            ->monthlyOn(2, '02:30')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/customer-mark-dormant.log'));
+
+        // Rate Staleness Check - Hourly (alert when market rates are not refreshed)
+        $schedule->command('rates:staleness-check')
+            ->hourly()
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/rate-staleness.log'));
+
+        // Optional automatic rate refresh from the upstream API - every 2h.
+        // Opt-in via RATE_AUTO_FETCH_ENABLED so deployments without an API
+        // key never schedule outbound calls.
+        if (config('cems.rate_auto_fetch_enabled')) {
+            $schedule->call(fn () => app(RateManagementService::class)->fetchAndStoreRates())
+                ->name('rates-auto-fetch')
+                ->everyTwoHours()
+                ->withoutOverlapping()
+                ->onOneServer()
+                ->appendOutputTo(storage_path('logs/rates-auto-fetch.log'));
+        }
+
+        // Horizon metrics snapshot - Every 5 minutes
+        // Feeds the Horizon dashboard's Jobs/Queues trend charts.
+        $schedule->command('horizon:snapshot')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/horizon-snapshot.log'));
+
+        // Prune failed jobs older than 7 days - Weekly on Sunday at 04:00
+        $schedule->command('queue:prune-failed --hours=168')
+            ->weeklyOn(0, '04:00')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/queue-prune-failed.log'));
+
+        // PEP cessation review - Monthly on the 1st at 04:00
+        $schedule->command('customers:pep-cessation-review')
+            ->monthlyOn(1, '04:00')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/pep-cessation-review.log'));
+
+        // Case SLA breach alerts - Daily at 06:00
+        $schedule->call(fn () => app(CaseManagementService::class)->alertBreachedCases())
+            ->name('case-sla-breach-alerts')
+            ->dailyAt('06:00')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/case-sla-breach-alerts.log'));
+
+        // Due report schedules processor - Hourly (runs user-defined report schedules)
+        $schedule->command('reports:process-schedules')
+            ->hourly()
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/reports-process-schedules.log'));
     })
 
     // Disable framework event auto-discovery: Application::configure() co-registers
