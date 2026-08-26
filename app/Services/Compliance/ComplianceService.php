@@ -159,7 +159,8 @@ class ComplianceService implements ComplianceServiceInterface
      */
     private function countWorkingDays(Carbon $from, Carbon $to): int
     {
-        $holidayDates = collect(config('compliance.public_holidays', []))->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'));
+        $holidayDates = collect(config('compliance.public_holidays', []))
+            ->map(fn (mixed $d): string => Carbon::parse($d)->format('Y-m-d'));
         $days = 0;
         $current = $from->copy();
 
@@ -203,7 +204,7 @@ class ComplianceService implements ComplianceServiceInterface
 
         // Use parameter binding with explicit ESCAPE clause to prevent SQL injection
         $query = SanctionEntry::query();
-        $driver = $query->getConnection()->getDriverName();
+        $driver = $query->toBase()->getConnection()->getDriverName();
         $operator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
 
         $matches = $query
