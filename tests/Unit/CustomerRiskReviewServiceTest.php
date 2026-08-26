@@ -6,7 +6,6 @@ use App\Events\RiskScoreUpdated;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use App\Services\AuditService;
-use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\CustomerRiskReviewService;
 use App\Services\Compliance\CustomerRiskScoringService;
 use App\Services\Compliance\PepAssessmentService;
@@ -44,18 +43,17 @@ class CustomerRiskReviewServiceTest extends TestCase
         $mathService = new MathService;
         $thresholdService = new ThresholdService;
         $encryptionService = new EncryptionService;
-        $complianceService = new ComplianceService($encryptionService, $mathService);
         $auditService = new AuditService;
         $riskCalculationService = new RiskCalculationService(
             $mathService,
             $thresholdService,
             new VelocityRiskService($mathService, $thresholdService),
             new StructuringRiskService($mathService, $thresholdService),
-            new GeographicRiskService,
+            new GeographicRiskService($thresholdService),
             new AmountRiskService($mathService, $thresholdService),
             new PatternRiskService($mathService, new RoundTripDetector($mathService)),
         );
-        $geographicRiskService = new GeographicRiskService;
+        $geographicRiskService = new GeographicRiskService($thresholdService);
 
         $screeningResponse = new ScreeningResponse(
             action: 'clear',
@@ -69,7 +67,6 @@ class CustomerRiskReviewServiceTest extends TestCase
 
         $riskScoringService = new CustomerRiskScoringService(
             $screeningService,
-            $complianceService,
             $auditService,
             $mathService,
             $thresholdService,
