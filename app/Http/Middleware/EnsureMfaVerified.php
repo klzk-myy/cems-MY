@@ -56,10 +56,10 @@ class EnsureMfaVerified
                 return redirect()->route('mfa.setup');
             }
 
-            // Point API clients at enrollment, not verification: an
+            // Point API clients at the API enrollment endpoint: an
             // un-enrolled user bounced to mfa.verify would be sent straight
             // back to setup.
-            return $this->jsonResponse('MFA enrollment required', 403, route('mfa.setup'));
+            return $this->jsonResponse('MFA enrollment required', 403, '/api/v1/mfa/enroll');
         }
 
         // MFA optional for this role - skip verification entirely
@@ -121,7 +121,7 @@ class EnsureMfaVerified
     {
         $response = response()->json([
             'error' => $message,
-            'redirect' => $redirect ?? route('mfa.verify'),
+            'redirect' => $redirect ?? '/api/v1/mfa/verify',
         ], $status);
 
         if ($status === 401) {
