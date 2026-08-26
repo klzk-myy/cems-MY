@@ -6,7 +6,20 @@ use App\Casts\MoneyCast;
 use App\Enums\StockReservationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $transaction_id
+ * @property string $currency_code
+ * @property string $till_id
+ * @property string $amount_foreign
+ * @property StockReservationStatus $status
+ * @property Carbon|null $expires_at
+ * @property int $created_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class StockReservation extends BaseModel
 {
     use HasFactory;
@@ -27,11 +40,17 @@ class StockReservation extends BaseModel
         'status' => StockReservationStatus::class,
     ];
 
+    /**
+     * @return BelongsTo<Transaction, $this>
+     */
     public function transaction(): BelongsTo
     {
         return $this->belongsTo(Transaction::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
