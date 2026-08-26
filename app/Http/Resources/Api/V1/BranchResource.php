@@ -4,9 +4,27 @@ namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
  * Transform a branch into a JSON resource.
+ *
+ * @property int $id
+ * @property string $code
+ * @property string $name
+ * @property string $type
+ * @property string|null $address
+ * @property string|null $city
+ * @property string|null $state
+ * @property string|null $postal_code
+ * @property string $country
+ * @property string|null $phone
+ * @property string|null $email
+ * @property bool $is_active
+ * @property bool $is_main
+ * @property int|null $parent_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class BranchResource extends JsonResource
 {
