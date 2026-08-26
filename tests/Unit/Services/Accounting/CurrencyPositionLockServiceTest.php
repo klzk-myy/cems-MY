@@ -9,6 +9,7 @@ use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class CurrencyPositionLockServiceTest extends TestCase
@@ -103,6 +104,7 @@ class CurrencyPositionLockServiceTest extends TestCase
             'quantity' => '1000.0000',
         ]);
 
+        /** @var MockInterface&CurrencyPositionLockService $service */
         $service = \Mockery::mock(CurrencyPositionLockService::class)
             ->makePartial();
         $service->shouldReceive('findForUpdate')
