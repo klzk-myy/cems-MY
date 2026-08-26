@@ -6,7 +6,27 @@ use App\Enums\CounterSessionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $counter_id
+ * @property int $user_id
+ * @property Carbon $session_date
+ * @property Carbon $opened_at
+ * @property Carbon|null $closed_at
+ * @property int $opened_by
+ * @property int|null $closed_by
+ * @property int|null $teller_allocation_id
+ * @property string|null $requested_amount_myr
+ * @property string|null $daily_limit_myr
+ * @property CounterSessionStatus|null $status
+ * @property string|null $notes
+ * @property bool|null $physical_count_verified
+ * @property string|null $handover_notes
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class CounterSession extends BaseModel
 {
     use HasFactory;
@@ -34,31 +54,49 @@ class CounterSession extends BaseModel
         'daily_limit_myr' => 'decimal:2',
     ];
 
+    /**
+     * @return BelongsTo<Counter, $this>
+     */
     public function counter(): BelongsTo
     {
         return $this->belongsTo(Counter::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsTo<TellerAllocation, $this>
+     */
     public function tellerAllocation(): BelongsTo
     {
         return $this->belongsTo(TellerAllocation::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function openedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'opened_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function closedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'closed_by');
     }
 
+    /**
+     * @return HasMany<CounterHandover, $this>
+     */
     public function handovers(): HasMany
     {
         return $this->hasMany(CounterHandover::class);
