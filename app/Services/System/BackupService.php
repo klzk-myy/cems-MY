@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Backup\BackupDestination\BackupDestination;
+use Spatie\Backup\Config\Config as BackupConfig;
 use Spatie\Backup\Tasks\Backup\BackupJobFactory;
 
 /**
@@ -40,7 +41,7 @@ class BackupService
             'status' => BackupLog::STATUS_RUNNING,
             'started_at' => now(),
             'metadata' => [
-                'triggered_by' => $user?->email ?? 'system',
+                'triggered_by' => $user->email ?? 'system',
                 'ip_address' => request()?->ip(),
             ],
         ]);
@@ -52,7 +53,7 @@ class BackupService
             Config::set('backup.backup.destination.disks', [$disk]);
 
             // Run the backup using Spatie
-            $backupJob = BackupJobFactory::createFromArray(config('backup.backup'));
+            $backupJob = BackupJobFactory::createFromConfig(BackupConfig::fromArray(config('backup.backup')));
 
             if ($type === BackupLog::TYPE_DATABASE) {
                 $backupJob->dontBackupFilesystem();
@@ -69,7 +70,7 @@ class BackupService
             if ($newestBackup) {
                 $log->markAsCompleted(
                     $newestBackup->path(),
-                    $newestBackup->sizeInBytes(),
+                    (int) $newestBackup->sizeInBytes(),
                     $this->calculateChecksum($newestBackup->path(), $disk)
                 );
             } else {
@@ -103,7 +104,9 @@ class BackupService
             if ($disk === BackupLog::DISK_LOCAL) {
                 $fullPath = storage_path('app/'.$path);
                 if (file_exists($fullPath)) {
-                    return hash_file('sha256', $fullPath);
+                    $checksum = hash_file('sha256', $fullPath);
+
+                    return $checksum !== false ? $checksum : null;
                 }
             } else {
                 // For S3, stream the object and hash incrementally so backups
@@ -117,7 +120,11 @@ class BackupService
 
                     $context = hash_init('sha256');
                     while (! feof($stream)) {
-                        hash_update($context, fread($stream, 8192));
+                        $chunk = fread($stream, 8192);
+                        if ($chunk === false) {
+                            break;
+                        }
+                        hash_update($context, $chunk);
                     }
                     fclose($stream);
 
@@ -202,7 +209,11 @@ class BackupService
 
                     $context = hash_init('sha256');
                     while (! feof($stream)) {
-                        hash_update($context, fread($stream, 8192));
+                        $chunk = fread($stream, 8192);
+                        if ($chunk === false) {
+                            break;
+                        }
+                        hash_update($context, $chunk);
                     }
                     fclose($stream);
 
@@ -450,7 +461,8 @@ class BackupService
         $deleted = [];
 
         // Use Spatie's cleanup command logic
-        $backupDestinations = BackupDestination::forCurrentDisk(
+        $backupDestinations = array_map(
+            fn (string $diskName) => BackupDestination::create($diskName, config('backup.backup.name')),
             config('backup.backup.destination.disks')
         );
 
