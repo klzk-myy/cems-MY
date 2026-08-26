@@ -54,9 +54,14 @@ class MoneyCast implements CastsAttributes
         $shouldRoundUp = $roundDigit >= 5;
 
         // Rebuild the scaled integer (value * 10^scale) and carry the increment if needed.
-        $scaledInt = $shouldRoundUp
-            ? bcadd($intPart.$keptFrac, '1', 0)
-            : ($intPart.$keptFrac ?: '0');
+        $operand = $intPart.$keptFrac;
+
+        if (! ctype_digit($operand)) {
+            throw new InvalidArgumentException("{$value} could not be rounded.");
+        }
+
+        /** @var numeric-string $operand */
+        $scaledInt = $shouldRoundUp ? bcadd($operand, '1', 0) : $operand;
 
         // Insert the decimal point at the scale position.
         if ($this->scale > 0) {
@@ -67,6 +72,7 @@ class MoneyCast implements CastsAttributes
         }
 
         // Never emit "-0.0000": a value that rounds to zero is plain zero
+        /** @var numeric-string $result */
         if (bccomp($result, '0', $this->scale) === 0) {
             return '0'.($this->scale > 0 ? '.'.str_repeat('0', $this->scale) : '');
         }
