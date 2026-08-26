@@ -6,7 +6,17 @@ use App\Models\Traits\HasCodeAndName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string $code
+ * @property string $name
+ * @property string|null $symbol
+ * @property int $decimal_places
+ * @property bool $is_active
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class Currency extends BaseModel
 {
     use HasCodeAndName, HasFactory, SoftDeletes;
