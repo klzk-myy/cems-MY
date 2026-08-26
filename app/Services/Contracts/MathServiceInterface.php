@@ -8,9 +8,14 @@ interface MathServiceInterface
 
     public function subtract(string $a, string $b): string;
 
-    public function multiply(string $a, string $b): string;
+    /**
+     * Negate a decimal amount.
+     */
+    public function negate(string $amount): string;
 
-    public function divide(string $a, string $b): string;
+    public function multiply(string $a, string $b, ?int $scale = null): string;
+
+    public function divide(string $a, string $b, ?int $scale = null): string;
 
     public function safeDivide(string $a, string $b, ?int $precision = null): string;
 
