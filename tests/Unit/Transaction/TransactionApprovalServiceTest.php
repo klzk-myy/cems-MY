@@ -6,11 +6,13 @@ use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
 use App\Enums\StockReservationStatus;
 use App\Enums\TellerAllocationStatus;
+use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionApproved;
 use App\Exceptions\Domain\SelfApprovalException;
+use App\Exceptions\Domain\TransactionConfirmationRequiredException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Counter;
 use App\Models\CurrencyPosition;
@@ -20,7 +22,9 @@ use App\Models\StockReservation;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
+use App\Models\TransactionConfirmation;
 use App\Models\User;
+use App\Notifications\TransactionOutcomeNotification;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
@@ -30,9 +34,11 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\System\CacheTagsService;
 use App\Services\System\MathService;
 use App\Services\Transaction\TransactionApprovalService;
+use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -64,7 +70,8 @@ class TransactionApprovalServiceTest extends TestCase
             $cache,
             $auditService,
             $tellerAllocation,
-            new MathService
+            new MathService,
+            $mocks['confirmation'] ?? app(TransactionConfirmationService::class)
         );
     }
 
@@ -246,6 +253,57 @@ class TransactionApprovalServiceTest extends TestCase
 
         $this->assertFalse($result->success);
         $this->assertStringContainsString('modified by another user', $result->message);
+    }
+
+    #[Test]
+    public function approve_throws_when_confirmation_required_but_not_confirmed(): void
+    {
+        config(['thresholds.reporting.str' => '50000']);
+        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter, ['amount_local' => '75000.00']);
+
+        $monitoring = Mockery::mock(TransactionMonitoringService::class);
+        $monitoring->shouldReceive('monitorTransaction')->never();
+
+        $this->expectException(TransactionConfirmationRequiredException::class);
+
+        $this->service([
+            'monitoring' => $monitoring,
+        ])->approve($transaction, $approver->id);
+    }
+
+    #[Test]
+    public function approve_succeeds_when_confirmation_confirmed(): void
+    {
+        config(['thresholds.reporting.str' => '50000']);
+        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter, ['amount_local' => '75000.00']);
+
+        TransactionConfirmation::factory()->create([
+            'transaction_id' => $transaction->id,
+            'status' => TransactionConfirmationStatus::Confirmed->value,
+        ]);
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('updatePosition')->once();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->once();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransactionSealed')->once();
+
+        $result = $this->service([
+            'monitoring' => $this->monitoringMock(),
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+        ])->approve($transaction, $approver->id);
+
+        $this->assertTrue($result->success);
+        $this->assertSame(TransactionStatus::Completed, $result->transaction->status);
     }
 
     #[Test]
@@ -708,6 +766,93 @@ class TransactionApprovalServiceTest extends TestCase
 
         $this->assertFalse($result->success);
         $this->assertStringContainsString('Till has been closed', $result->message);
+    }
+
+    #[Test]
+    public function approve_does_not_send_duplicate_outcome_notification(): void
+    {
+        // Approval notifications are owned by the queued TransactionApprovedListener
+        // (fired via the TransactionApproved event); the outcome notification is
+        // reserved for rejections so the teller never receives two notifications.
+        Notification::fake();
+
+        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter);
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('updatePosition')->once();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->once();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransactionSealed')->once();
+
+        $result = $this->service([
+            'monitoring' => $this->monitoringMock(),
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+        ])->approve($transaction, $approver->id);
+
+        $this->assertTrue($result->success);
+
+        Notification::assertSentToTimes($approver, TransactionOutcomeNotification::class, 0);
+    }
+
+    #[Test]
+    public function reject_notifies_teller_with_outcome_and_reason(): void
+    {
+        Notification::fake();
+
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $rejector = User::factory()->create(['role' => UserRole::Manager]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter, ['user_id' => $teller->id]);
+
+        $rejected = $this->service([
+            'monitoring' => $this->monitoringMock(),
+        ])->reject($transaction, $rejector->id, 'Duplicate entry');
+
+        $this->assertTrue($rejected);
+        $transaction->refresh();
+        $this->assertSame(TransactionStatus::Rejected, $transaction->status);
+
+        Notification::assertSentTo(
+            $teller,
+            TransactionOutcomeNotification::class,
+            function (TransactionOutcomeNotification $notification) use ($transaction, $rejector) {
+                return $notification->outcome === 'rejected'
+                    && $notification->reason === 'Duplicate entry'
+                    && $notification->actorName === $rejector->username
+                    && $notification->transaction->id === $transaction->id;
+            }
+        );
+
+        Notification::assertSentToTimes($rejector, TransactionOutcomeNotification::class, 0);
+    }
+
+    #[Test]
+    public function reject_throws_for_non_pending_transaction_without_notifying(): void
+    {
+        Notification::fake();
+
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $rejector = User::factory()->create(['role' => UserRole::Manager]);
+        $transaction = Transaction::factory()->create([
+            'status' => TransactionStatus::Completed,
+            'user_id' => $teller->id,
+        ]);
+
+        $this->expectException(TransactionValidationException::class);
+
+        try {
+            $this->service()->reject($transaction, $rejector->id, 'Too late');
+        } finally {
+            Notification::assertSentToTimes($teller, TransactionOutcomeNotification::class, 0);
+            Notification::assertSentToTimes($rejector, TransactionOutcomeNotification::class, 0);
+        }
     }
 
     protected function tearDown(): void
