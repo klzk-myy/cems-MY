@@ -6,6 +6,7 @@ use App\Enums\TransactionType;
 use App\Models\TillBalance;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Traits\TillBalanceTrait;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class TillBalanceTraitTest extends TestCase
@@ -21,6 +22,7 @@ class TillBalanceTraitTest extends TestCase
 
     public function test_update_till_balance_calls_manager(): void
     {
+        /** @var TillBalanceManager&MockObject $mockManager */
         $mockManager = $this->tillBalanceManager;
 
         $mockManager->expects($this->once())
@@ -38,6 +40,7 @@ class TillBalanceTraitTest extends TestCase
 
     public function test_update_till_balance_with_sell_type(): void
     {
+        /** @var TillBalanceManager&MockObject $mockManager */
         $mockManager = $this->tillBalanceManager;
 
         $mockManager->expects($this->once())
