@@ -12,6 +12,7 @@ use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\TellerAllocation;
 use App\Models\User;
+use App\Services\AuditService;
 use App\Services\Branch\BranchClosingService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\TellerAllocationService;
@@ -141,7 +142,7 @@ class BranchClosingWorkflowTest extends TestCase
     public function finalize_throws_when_branch_has_pending_items(): void
     {
         $mathService = new MathService;
-        $branchPoolService = new BranchPoolService($mathService);
+        $branchPoolService = new BranchPoolService(new AuditService, $mathService);
         $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService);
 
         $allocation = $tellerAllocationService->requestAllocation(
