@@ -182,7 +182,7 @@ class UnifiedAlertController extends Controller
             'status_label' => $this->getFindingStatusLabel($finding->status->value),
             'customer' => $finding->subject_type === 'Customer' ? [
                 'id' => $finding->subject_id,
-                'name' => $finding->subject?->full_name ?? 'Customer #'.$finding->subject_id,
+                'name' => $finding->subject instanceof Customer ? $finding->subject->full_name : 'Customer #'.$finding->subject_id,
                 'ic' => null,
             ] : null,
             'assigned_to' => null,
