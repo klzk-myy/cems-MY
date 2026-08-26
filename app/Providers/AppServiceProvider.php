@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\Contracts\MathServiceInterface;
+use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\Contracts\TransactionApprovalServiceInterface;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionHoldServiceInterface;
@@ -13,6 +14,7 @@ use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Contracts\TransactionStatusServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\System\MathService;
+use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionHoldService;
@@ -77,6 +79,11 @@ class AppServiceProvider extends ServiceProvider
             MathServiceInterface::class,
             MathService::class
         );
+
+        $this->app->bind(
+            RateManagementServiceInterface::class,
+            RateManagementService::class
+        );
     }
 
     /**
@@ -110,7 +117,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $routeCollection = Route::getRoutes();
 
-        foreach ($routeCollection as $route) {
+        foreach ($routeCollection->getRoutes() as $route) {
             if ($route->getName() === null && $route->uri() === 'broadcasting/auth') {
                 $route->name('broadcasting.auth');
             }
