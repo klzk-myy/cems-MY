@@ -18,4 +18,18 @@
 
         <x-button type="submit" variant="primary">Update Password</x-button>
     </form>
+
+    <x-card title="Security" description="Sign out of every other device currently using your account." class="mt-8 max-w-md">
+        @if (session('success'))
+            <div class="mb-4 rounded border border-emerald-300 bg-emerald-50 p-3 text-emerald-800">{{ session('success') }}</div>
+        @endif
+
+        <form method="POST" action="{{ route('profile.devices.logout-others') }}" class="space-y-4">
+            @csrf
+
+            <x-input type="password" name="current_password" label="Current Password" required />
+
+            <x-button type="submit" variant="secondary">Log Out Other Devices</x-button>
+        </form>
+    </x-card>
 </x-app-layout>
