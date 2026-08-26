@@ -22,9 +22,7 @@ class ScreeningController extends Controller
     {
         $customer = Customer::findOrFail($customerId);
 
-        $notes = $request->input('notes');
-
-        $response = $this->screeningService->screenCustomer($customer, $notes);
+        $response = $this->screeningService->screenCustomer($customer);
 
         return $this->successResponse($response->toArray());
     }
