@@ -21,6 +21,11 @@ interface CustomerScreeningServiceInterface
 
     public function handleConfirmedMatch(Customer $customer, string $listType): array;
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function handleConfirmedAdverseMatch(Customer $customer, string $severity = 'medium'): array;
+
     public function getStatus(Customer $customer): array;
 
     public function levenshteinSimilarity(string $a, string $b): float;
