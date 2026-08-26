@@ -15,9 +15,11 @@ use App\Models\Compliance\ComplianceCaseDocument;
 use App\Models\Compliance\ComplianceCaseLink;
 use App\Models\Customer;
 use App\Models\User;
+use App\Notifications\ComplianceCaseAssignedNotification;
 use App\Services\Compliance\CaseManagementService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -276,5 +278,50 @@ class CaseManagementServiceTest extends TestCase
         ]);
 
         $this->assertMatchesRegularExpression('/^CASE-\d{4}-\d{5}$/', $case->case_number);
+    }
+
+    #[Test]
+    public function assigning_case_notifies_new_assignee_with_deadline(): void
+    {
+        Notification::fake();
+
+        $currentAssignee = User::factory()->create()->id;
+        $newAssignee = User::factory()->complianceOfficer()->create();
+
+        $case = ComplianceCase::factory()->create([
+            'assigned_to' => $currentAssignee,
+            'sla_deadline' => now()->addDays(3),
+        ]);
+
+        $this->service->assignToOfficer($case, (int) $newAssignee->id);
+
+        Notification::assertSentTo(
+            $newAssignee,
+            ComplianceCaseAssignedNotification::class,
+            function (ComplianceCaseAssignedNotification $notification) use ($newAssignee): bool {
+                $payload = $notification->toArray($newAssignee);
+
+                return $payload['days_until_deadline'] !== null
+                    && abs((float) $payload['days_until_deadline'] - 3.0) < 0.01;
+            }
+        );
+    }
+
+    #[Test]
+    public function reassigning_the_same_officer_does_not_notify_again(): void
+    {
+        Notification::fake();
+
+        $assignee = User::factory()->complianceOfficer()->create();
+
+        $case = ComplianceCase::factory()->create([
+            'assigned_to' => $assignee->id,
+            'sla_deadline' => now()->addDay(),
+        ]);
+
+        $this->service->assignToOfficer($case, (int) $assignee->id);
+        $this->service->assignToOfficer($case, (int) $assignee->id);
+
+        Notification::assertNotSentTo($assignee, ComplianceCaseAssignedNotification::class);
     }
 }
