@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\CustomerRelationAdded;
 use App\Events\CustomerRelationRemoved;
+use App\Models\Customer;
 use App\Services\Customer\CustomerRelationService;
 
 class CustomerRelationListener
@@ -16,8 +17,14 @@ class CustomerRelationListener
     {
         $relation = $event->relation;
 
-        if ($relation->is_pep) {
-            $this->relationService->updateCustomerPepAssociateStatus($relation->customer);
+        if (! $relation->is_pep) {
+            return;
+        }
+
+        $customer = $relation->customer;
+
+        if ($customer instanceof Customer) {
+            $this->relationService->updateCustomerPepAssociateStatus($customer);
         }
     }
 
@@ -25,8 +32,14 @@ class CustomerRelationListener
     {
         $relation = $event->relation;
 
-        if ($relation->is_pep) {
-            $this->relationService->updateCustomerPepAssociateStatus($relation->customer);
+        if (! $relation->is_pep) {
+            return;
+        }
+
+        $customer = $relation->customer;
+
+        if ($customer instanceof Customer) {
+            $this->relationService->updateCustomerPepAssociateStatus($customer);
         }
     }
 }
