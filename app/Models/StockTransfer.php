@@ -9,7 +9,30 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $transfer_number
+ * @property string $type 'Standard', 'Emergency', 'Scheduled', 'Return'
+ * @property StockTransferStatus $status
+ * @property string|null $source_branch_name
+ * @property string|null $destination_branch_name
+ * @property int $requested_by
+ * @property Carbon|null $requested_at
+ * @property int|null $branch_manager_approved_by
+ * @property Carbon|null $branch_manager_approved_at
+ * @property int|null $hq_approved_by
+ * @property Carbon|null $hq_approved_at
+ * @property Carbon|null $dispatched_at
+ * @property Carbon|null $completed_at
+ * @property string|null $notes
+ * @property string|null $cancellation_reason
+ * @property string $total_value_myr
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class StockTransfer extends BaseModel
 {
     use HasFactory, SoftDeletes;
@@ -51,21 +74,33 @@ class StockTransfer extends BaseModel
 
     public const TYPE_RETURN = 'Return';
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function requestedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function branchManagerApprovedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'branch_manager_approved_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function hqApprovedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'hq_approved_by');
     }
 
+    /**
+     * @return HasMany<StockTransferItem, $this>
+     */
     /**
      * @return HasMany<StockTransferItem, $this>
      */
