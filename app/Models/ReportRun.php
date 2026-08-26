@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @property-read User|null $generatedBy
+ */
 class ReportRun extends BaseModel
 {
     use HasFactory;
@@ -39,6 +42,9 @@ class ReportRun extends BaseModel
         return $this->belongsTo(ReportSchedule::class, 'schedule_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function generatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'generated_by');
@@ -73,7 +79,7 @@ class ReportRun extends BaseModel
             return null;
         }
 
-        return $this->completed_at->diffInSeconds($this->started_at);
+        return (int) $this->completed_at->diffInSeconds($this->started_at);
     }
 
     public function markAsRunning(): void
