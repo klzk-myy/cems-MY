@@ -40,15 +40,10 @@ class AmlRuleEvaluator
         $triggered = false;
         $reason = null;
 
-        // Convert string to enum for evaluation if needed. Read defensively:
-        // the AmlRule model casts rule_type to an enum, and legacy seeded
-        // rules store types outside that enum (e.g. 'threshold'), so going
-        // through the cast would throw a ValueError before tryFrom runs.
-        try {
-            $ruleTypeValue = $rule->rule_type;
-        } catch (\ValueError $e) {
-            $ruleTypeValue = $rule->getRawOriginal('rule_type');
-        }
+        // Read the stored (pre-cast) value defensively: legacy seeded rules
+        // store types outside the AmlRuleType enum (e.g. 'threshold'), so
+        // going through the cast would throw a ValueError before tryFrom runs.
+        $ruleTypeValue = $rule->getRawOriginal('rule_type');
 
         if (is_string($ruleTypeValue)) {
             $ruleTypeValue = AmlRuleType::tryFrom($ruleTypeValue);
