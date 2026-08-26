@@ -21,7 +21,7 @@ class CostCenterFactory extends Factory
         static $codeCounter = 0;
 
         return [
-            'code' => 'CC-'.str_pad(++$codeCounter, 4, '0', STR_PAD_LEFT),
+            'code' => 'CC-'.str_pad((string) ++$codeCounter, 4, '0', STR_PAD_LEFT),
             'name' => $this->faker->words(3, true),
             'description' => $this->faker->sentence(),
             'is_active' => $this->faker->boolean(90),
