@@ -12,7 +12,22 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property FindingType $finding_type
+ * @property FindingSeverity $severity
+ * @property string $subject_type
+ * @property int $subject_id
+ * @property array|null $details
+ * @property FindingStatus $status
+ * @property Carbon $generated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class ComplianceFinding extends BaseModel
 {
     use HasFactory, HasStatus, SoftDeletes;
@@ -106,60 +121,8 @@ class ComplianceFinding extends BaseModel
     }
 
     /**
-     * Check if the finding is in New status.
-     */
-    public function isNew(): bool
-    {
-        return $this->status === FindingStatus::New;
-    }
-
-    /**
-     * Check if the finding has Critical severity.
-     */
-    public function isCritical(): bool
-    {
-        return $this->severity === FindingSeverity::Critical;
-    }
-
-    /**
-     * Scope to filter findings by status.
-     */
-    public function scopeWithStatus(Builder $query, FindingStatus $status): Builder
-    {
-        return $query->where('status', $status->value);
-    }
-
-    /**
-     * Scope to filter findings by severity.
-     */
-    public function scopeWithSeverity(Builder $query, FindingSeverity $severity): Builder
-    {
-        return $query->where('severity', $severity->value);
-    }
-
-    /**
-     * Scope to filter new findings.
-     */
-    public function scopeNew(Builder $query): Builder
-    {
-        return $query->where('status', FindingStatus::New->value);
-    }
-
-    /**
-     * Scope to filter findings by type.
-     */
-    public function scopeOfType(Builder $query, FindingType $type): Builder
-    {
-        return $query->where('finding_type', $type->value);
-    }
-
-    /**
-     * Scope to open findings that would duplicate a new finding of the same
-     * type for the same subject. Used by monitors to avoid re-firing the
-     * same issue on every scheduled run.
-     *
-     * withTrashed-aware: soft-deleted rows still count while they were open,
-     * otherwise archived duplicates would immediately be recreated.
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeOpenDuplicateOf(
         Builder $query,
@@ -167,7 +130,7 @@ class ComplianceFinding extends BaseModel
         string $subjectType,
         int $subjectId
     ): Builder {
-        return $query->withTrashed()
+        return $query->withoutGlobalScope(SoftDeletingScope::class)
             ->where('finding_type', $findingType)
             ->where('subject_type', $subjectType)
             ->where('subject_id', $subjectId)
