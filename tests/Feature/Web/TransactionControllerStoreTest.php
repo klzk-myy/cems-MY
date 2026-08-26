@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Web;
 
+use App\Enums\PepType;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
@@ -144,6 +145,82 @@ class TransactionControllerStoreTest extends TestCase
             'amount_local' => '11250.0000',
             'status' => TransactionStatus::PendingApproval->value,
         ]);
+    }
+
+    #[Test]
+    public function web_store_blocks_pep_transaction_without_source_of_wealth(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
+        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true, 'pep_type' => PepType::Domestic->value]);
+        $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
+        $counter = $this->setupStoreTest($teller, 'USD');
+
+        $this->actingAs($teller);
+        $this->setMfaVerification($teller);
+
+        $response = $this->post('/transactions', $this->basePayload($customer, $counter, $currency));
+
+        $response->assertSessionHas('error');
+        $response->assertRedirect();
+        $this->assertDatabaseCount('transactions', 0);
+    }
+
+    #[Test]
+    public function web_store_creates_pep_transaction_with_source_of_wealth(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
+        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true, 'pep_type' => PepType::Domestic->value]);
+        $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
+        $counter = $this->setupStoreTest($teller, 'USD');
+
+        $this->actingAs($teller);
+        $this->setMfaVerification($teller);
+
+        $payload = $this->basePayload($customer, $counter, $currency);
+        $payload['source_of_wealth'] = 'Investment Portfolio';
+
+        $response = $this->post('/transactions', $payload);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+        $this->assertDatabaseHas('transactions', [
+            'customer_id' => $customer->id,
+            'user_id' => $teller->id,
+            'source_of_funds' => 'Salary',
+            'source_of_wealth' => 'Investment Portfolio',
+        ]);
+    }
+
+    #[Test]
+    public function web_store_rejects_source_of_wealth_over_500_characters(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
+        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
+        $counter = $this->setupStoreTest($teller, 'USD');
+
+        $this->actingAs($teller);
+        $this->setMfaVerification($teller);
+
+        $payload = $this->basePayload($customer, $counter, $currency);
+        $payload['source_of_wealth'] = str_repeat('a', 501);
+
+        $response = $this->post('/transactions', $payload);
+
+        $response->assertSessionHasErrors('source_of_wealth');
+        $this->assertDatabaseCount('transactions', 0);
     }
 
     #[Test]
