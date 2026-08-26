@@ -9,6 +9,7 @@ use App\Http\Requests\Api\V1\TellerAllocation\ApproveAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\ModifyAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\MyActiveAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\RejectAllocationRequest;
+use App\Models\Branch;
 use App\Models\TellerAllocation;
 use App\Services\Branch\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
@@ -38,11 +39,13 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->branch) {
+        $branch = $user->branch;
+
+        if (! $branch instanceof Branch) {
             return $this->errorResponse('User has no assigned branch', [], 400);
         }
 
-        $pending = $this->allocationService->getPendingAllocationsForBranch($user->branch);
+        $pending = $this->allocationService->getPendingAllocationsForBranch($branch);
 
         return $this->successResponse($pending);
     }
@@ -55,11 +58,13 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->branch) {
+        $branch = $user->branch;
+
+        if (! $branch instanceof Branch) {
             return $this->errorResponse('User has no assigned branch', [], 400);
         }
 
-        $active = $this->allocationService->getActiveAllocationsForBranch($user->branch);
+        $active = $this->allocationService->getActiveAllocationsForBranch($branch);
 
         return $this->successResponse($active);
     }
