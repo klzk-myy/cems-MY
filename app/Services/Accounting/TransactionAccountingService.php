@@ -97,7 +97,7 @@ class TransactionAccountingService
                 $transaction->branch_id
             );
 
-            $transaction->journal_entry_id = $journalEntry->id;
+            $transaction->journal_entry_id = max(0, (int) $journalEntry->id);
             $transaction->journal_entries_created_at = now();
             $transaction->has_deferred_accounting = false;
             $transaction->save();
