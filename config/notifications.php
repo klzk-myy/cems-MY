@@ -20,7 +20,7 @@ return [
     | notifications. Available channels: mail, sms, database, broadcast, webhook
     |
     */
-    'default_channels' => array_values(array_filter(['database', 'broadcast'], fn ($channel) => $channel !== 'broadcast' || env('BROADCAST_DRIVER', 'null') !== 'null')),
+    'default_channels' => array_filter(['database', 'broadcast'], fn ($channel) => $channel !== 'broadcast' || env('BROADCAST_DRIVER', 'null') !== 'null'),
 
     /*
     |--------------------------------------------------------------------------
