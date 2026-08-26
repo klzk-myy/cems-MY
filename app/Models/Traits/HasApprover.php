@@ -6,6 +6,10 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int|null $approved_by
+ * @property Carbon|null $approved_at
+ */
 trait HasApprover
 {
     public function initializeHasApprover(): void
@@ -13,6 +17,9 @@ trait HasApprover
         $this->mergeCasts(['approved_at' => 'datetime']);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
