@@ -6,7 +6,31 @@ use App\Casts\MoneyCast;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $currency_code
+ * @property string $branch_id Branch code string (legacy numeric ids were converted to codes)
+ * @property string $quantity
+ * @property string $average_cost
+ * @property string $total_cost
+ * @property string $current_rate
+ * @property string $current_value
+ * @property string $unrealized_gain_loss
+ * @property Carbon|null $last_revalued_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read string $balance Alias of quantity
+ * @property-read string $avg_cost_rate
+ * @property-read string $avg_cost
+ * @property-read string $last_valuation_rate
+ * @property-read string $unrealized_pnl
+ * @property-read string|null $last_valuation_at
+ * @property-read string $market_value
+ * @property-read string $unrealized_pl
+ * @property-read string $previous_rate
+ */
 class CurrencyPosition extends BaseModel
 {
     use HasFactory;
@@ -41,6 +65,9 @@ class CurrencyPosition extends BaseModel
         'last_revalued_at' => 'datetime',
     ];
 
+    /**
+     * @return BelongsTo<Currency, $this>
+     */
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code');
@@ -48,6 +75,8 @@ class CurrencyPosition extends BaseModel
 
     /**
      * Get the branch associated with this currency position.
+     *
+     * @return BelongsTo<Branch, $this>
      */
     public function branch(): BelongsTo
     {
@@ -167,7 +196,7 @@ class CurrencyPosition extends BaseModel
     public function setTillIdAttribute($value): void
     {
         // Only set branch_id if not already set explicitly
-        if (! isset($this->attributes['branch_id']) || $this->attributes['branch_id'] === null) {
+        if (! isset($this->attributes['branch_id'])) {
             $this->attributes['branch_id'] = $value;
         }
     }
