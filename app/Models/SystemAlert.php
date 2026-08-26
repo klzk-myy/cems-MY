@@ -118,10 +118,10 @@ class SystemAlert extends SystemModel
      */
     public function getStatusColorClass(): string
     {
-        return match ($this->level) {
-            SystemAlertLevel::Critical => 'red',
-            SystemAlertLevel::Warning => 'yellow',
-            SystemAlertLevel::Info => 'blue',
+        return match ($this->level->value) {
+            'critical' => 'red',
+            'warning' => 'yellow',
+            'info' => 'blue',
             default => 'gray',
         };
     }
@@ -131,12 +131,12 @@ class SystemAlert extends SystemModel
      */
     public function getStatusBadgeClassAttribute(): string
     {
-        $level = $this->level instanceof SystemAlertLevel ? $this->level : SystemAlertLevel::tryFrom($this->level) ?? SystemAlertLevel::Info;
+        $levelValue = $this->level instanceof SystemAlertLevel ? $this->level->value : (SystemAlertLevel::tryFrom((string) $this->level)?->value ?? SystemAlertLevel::Info->value);
 
-        return match ($level) {
-            SystemAlertLevel::Critical => 'status-flagged',
-            SystemAlertLevel::Warning => 'status-pending',
-            SystemAlertLevel::Info => 'status-active',
+        return match ($levelValue) {
+            SystemAlertLevel::Critical->value => 'status-flagged',
+            SystemAlertLevel::Warning->value => 'status-pending',
+            SystemAlertLevel::Info->value => 'status-active',
             default => 'status-inactive',
         };
     }
@@ -146,12 +146,12 @@ class SystemAlert extends SystemModel
      */
     public function getStatusLabelAttribute(): string
     {
-        $level = $this->level instanceof SystemAlertLevel ? $this->level : SystemAlertLevel::tryFrom($this->level) ?? SystemAlertLevel::Info;
+        $levelValue = $this->level instanceof SystemAlertLevel ? $this->level->value : (SystemAlertLevel::tryFrom((string) $this->level)?->value ?? SystemAlertLevel::Info->value);
 
-        return match ($level) {
-            SystemAlertLevel::Critical => 'Critical',
-            SystemAlertLevel::Warning => 'Warning',
-            SystemAlertLevel::Info => 'Info',
+        return match ($levelValue) {
+            SystemAlertLevel::Critical->value => 'Critical',
+            SystemAlertLevel::Warning->value => 'Warning',
+            SystemAlertLevel::Info->value => 'Info',
             default => 'Unknown',
         };
     }
