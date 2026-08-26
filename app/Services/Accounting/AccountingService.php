@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Enums\AccountType;
 use App\Enums\JournalEntryStatus;
 use App\Exceptions\Domain\AccountingPeriodException;
+use App\Exceptions\Domain\AccountNotFoundException;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
@@ -81,7 +82,7 @@ class AccountingService implements AccountingServiceInterface
         ?int $createdBy = null,
         ?int $branchId = null
     ): JournalEntry {
-        $createdBy = $createdBy ?? auth()->id();
+        $createdBy = $createdBy ?? auth()->user()?->id;
         $entryDate = $entryDate ?? now()->toDateString();
 
         return DB::transaction(function () use ($lines, $referenceType, $referenceId, $description, $entryDate, $createdBy, $branchId) {
@@ -163,7 +164,7 @@ class AccountingService implements AccountingServiceInterface
         ?int $rejectedBy = null,
         ?string $rejectionNotes = null
     ): JournalEntry {
-        $rejectedBy = $rejectedBy ?? auth()->id();
+        $rejectedBy = $rejectedBy ?? auth()->user()?->id;
 
         return DB::transaction(function () use ($entry, $rejectionNotes) {
             // Re-fetch with a row lock to serialize concurrent reject attempts
@@ -234,7 +235,7 @@ class AccountingService implements AccountingServiceInterface
         string $reason = '',
         ?int $reversedBy = null
     ): JournalEntry {
-        $reversedBy = $reversedBy ?? auth()->id();
+        $reversedBy = $reversedBy ?? auth()->user()?->id;
 
         return DB::transaction(function () use ($originalEntry, $reason, $reversedBy) {
             // Re-fetch with a row lock to serialize concurrent reverse attempts
