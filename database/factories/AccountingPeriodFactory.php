@@ -8,6 +8,9 @@ use App\Models\AccountingPeriod;
 use App\Models\FiscalYear;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<AccountingPeriod>
+ */
 class AccountingPeriodFactory extends Factory
 {
     protected $model = AccountingPeriod::class;
@@ -40,8 +43,8 @@ class AccountingPeriodFactory extends Factory
 
     public function forMonth(int $month, ?int $fiscalYearId = null): static
     {
-        $year = $fiscalYearId ? FiscalYear::find($fiscalYearId)?->year_code ?? date('Y') : date('Y');
-        $monthStr = str_pad($month, 2, '0', STR_PAD_LEFT);
+        $year = $fiscalYearId ? FiscalYear::find($fiscalYearId)->year_code ?? date('Y') : date('Y');
+        $monthStr = str_pad((string) $month, 2, '0', STR_PAD_LEFT);
 
         return $this->state(fn (array $attributes) => [
             'fiscal_year_id' => $fiscalYearId,
