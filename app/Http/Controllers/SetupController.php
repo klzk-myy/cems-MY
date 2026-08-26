@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\JournalEntryStatus;
+use App\Enums\UserRole;
 use App\Http\Requests\SetupRequest;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
@@ -22,7 +23,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -78,6 +78,8 @@ class SetupController extends Controller
             $this->setupService->markSetupComplete();
 
             DB::commit();
+
+            $this->flashSanctionsBootstrapNotice();
 
             return response()->json([
                 'success' => true,
@@ -180,6 +182,8 @@ class SetupController extends Controller
             DB::commit();
 
             session()->forget('setup');
+
+            $this->flashSanctionsBootstrapNotice();
 
             return response()->json([
                 'success' => true,
@@ -311,27 +315,44 @@ class SetupController extends Controller
         $this->setupService->seedOptionalData($config);
     }
 
+    /**
+     * Fresh installs have empty sanctions lists until the first scheduled
+     * import (daily 01:00). Tell operators to load them immediately so the
+     * gap is closed deliberately, not silently.
+     */
+    private function flashSanctionsBootstrapNotice(): void
+    {
+        session()->flash('info',
+            'Sanctions lists are not loaded yet. Run "php artisan sanctions:update" now - '
+            .'sanctions screening is ineffective until the lists are imported.'
+        );
+    }
+
     private function executeSetup(array $setupData): void
     {
         $this->runMigrations();
 
         if (isset($setupData['admin'])) {
+            // Pass the plain password - the mutator hashes it once. Hashing
+            // here as well would double-hash and lock the admin out.
             $user = User::create([
                 'username' => $setupData['admin']['admin_name'],
                 'email' => $setupData['admin']['admin_email'],
-                'password' => Hash::make($setupData['admin']['admin_password']),
+                'password' => $setupData['admin']['admin_password'],
                 'mfa_enabled' => false,
                 'is_active' => true,
             ]);
 
-            $user->role = 'admin';
+            $user->role = UserRole::Admin;
             $user->save();
         }
 
         Artisan::call('db:seed', ['--class' => 'CurrencySeeder', '--force' => true]);
-        Artisan::call('db:seed', ['--class' => 'ChartOfAccountsSeeder', '--force' => true]);
-        Artisan::call('db:seed', ['--class' => 'FiscalYearSeeder', '--force' => true]);
-        Artisan::call('db:seed', ['--class' => 'AccountingPeriodSeeder', '--force' => true]);
+        Artisan::call('db:seed', ['--class' => 'EnhancedChartOfAccountsSeeder', '--force' => true]);
+
+        // Shared with quickSetup so both install paths guarantee the same
+        // fiscal-year / accounting-period preconditions.
+        $this->setupService->ensureFiscalYearAndPeriods();
 
         if (isset($setupData['business'])) {
             Branch::create([
