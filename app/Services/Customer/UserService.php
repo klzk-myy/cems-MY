@@ -4,6 +4,7 @@ namespace App\Services\Customer;
 
 use App\Enums\UserRole;
 use App\Exceptions\Domain\UserManagementException;
+use App\Models\PasswordHistory;
 use App\Models\User;
 use App\Services\AuditService;
 use Illuminate\Support\Facades\Cache;
@@ -49,6 +50,9 @@ class UserService
         $user->role = $data['role'];
         $user->password_hash = Hash::make($data['password']);
         $user->save();
+
+        // Seed history with the initial hash so reuse prevention covers it.
+        PasswordHistory::record($user->id, $user->password_hash);
 
         // Log user creation
         $this->auditService->log(
@@ -172,7 +176,10 @@ class UserService
      */
     public function resetPassword(User $user, string $newPassword, int $resetBy): User
     {
-        $user->password_hash = Hash::make($newPassword);
+        // Assign through the mutator so the superseded hash is archived,
+        // password_changed_at is stamped, and the BNM forced-rotation clock
+        // restarts for this user.
+        $user->password = $newPassword;
         $user->save();
 
         // Log password reset
@@ -295,11 +302,11 @@ class UserService
         $user = User::findOrFail($userId);
         $role = $user->role;
 
-        return match ($role) {
-            UserRole::Admin => ['*'],
-            UserRole::ComplianceOfficer => ['transactions.view', 'compliance.*', 'reports.*'],
-            UserRole::Manager => ['transactions.create', 'transactions.view', 'transactions.approve', 'reports.view'],
-            UserRole::Teller => ['transactions.create', 'transactions.view'],
+        return match ($role->value) {
+            'admin' => ['*'],
+            'compliance_officer' => ['transactions.view', 'compliance.*', 'reports.*'],
+            'manager' => ['transactions.create', 'transactions.view', 'transactions.approve', 'reports.view'],
+            'teller' => ['transactions.create', 'transactions.view'],
             default => [],
         };
     }
