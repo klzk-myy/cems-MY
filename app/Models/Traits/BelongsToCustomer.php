@@ -3,6 +3,9 @@
 namespace App\Models\Traits;
 
 use App\Models\Customer;
+/**
+ * @property int $customer_id
+ */
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 trait BelongsToCustomer
@@ -12,6 +15,9 @@ trait BelongsToCustomer
         $this->mergeFillable(['customer_id']);
     }
 
+    /**
+     * @return BelongsTo<Customer, $this>
+     */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
