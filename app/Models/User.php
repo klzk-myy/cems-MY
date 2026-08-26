@@ -7,6 +7,7 @@ use App\Exceptions\Domain\UserManagementException;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceCaseDocument;
 use App\Models\Compliance\ComplianceCaseNote;
+use App\Services\System\MfaService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -44,7 +45,7 @@ class User extends Authenticatable
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $fillable = [
         'branch_id',
@@ -53,12 +54,13 @@ class User extends Authenticatable
         'password',
         'is_active',
         'last_login_at',
+        'notification_preferences',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $hidden = [
         'password',
@@ -136,14 +138,31 @@ class User extends Authenticatable
     }
 
     /**
-     * When password is set, automatically hash it and store in password_hash.
+     * When password is set, archive the previous hash for reuse prevention,
+     * then hash and store the new password.
      *
      * @param  string  $value
      */
     public function setPasswordAttribute($value): void
     {
+        $previousHash = $this->getOriginal('password_hash');
+
+        if ($this->exists && is_string($previousHash) && $previousHash !== '') {
+            PasswordHistory::record((int) $this->getKey(), $previousHash);
+        }
+
         $this->password_hash = Hash::make($value);
         $this->password_changed_at = now();
+    }
+
+    /**
+     * Previously used password hashes for reuse prevention.
+     *
+     * @return HasMany<PasswordHistory, $this>
+     */
+    public function passwordHistories(): HasMany
+    {
+        return $this->hasMany(PasswordHistory::class);
     }
 
     /**
@@ -156,6 +175,8 @@ class User extends Authenticatable
 
     /**
      * Get the branch this user belongs to.
+     *
+     * @return BelongsTo<Branch, $this>
      */
     public function branch(): BelongsTo
     {
