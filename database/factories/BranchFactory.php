@@ -20,7 +20,7 @@ class BranchFactory extends Factory
             'type' => Branch::TYPE_BRANCH,
             'address' => fake()->streetAddress(),
             'city' => fake()->city(),
-            'state' => fake()->state(),
+            'state' => fake()->stateAbbr(),
             'postal_code' => fake()->postcode(),
             'country' => 'Malaysia',
             'phone' => fake()->phoneNumber(),
