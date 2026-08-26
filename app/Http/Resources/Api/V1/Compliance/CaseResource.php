@@ -2,13 +2,40 @@
 
 namespace App\Http\Resources\Api\V1\Compliance;
 
+use App\Enums\CaseResolution;
+use App\Enums\ComplianceCasePriority;
+use App\Enums\ComplianceCaseStatus;
+use App\Enums\ComplianceCaseType;
+use App\Enums\FindingSeverity;
 use App\Http\Resources\Api\V1\CustomerResource;
 use App\Http\Resources\Api\V1\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
  * Transform a compliance case into a JSON resource.
+ *
+ * @property int $id
+ * @property string $case_number
+ * @property ComplianceCaseType $case_type
+ * @property FindingSeverity $severity
+ * @property ComplianceCasePriority $priority
+ * @property ComplianceCaseStatus $status
+ * @property int $assigned_to
+ * @property string|null $case_summary
+ * @property Carbon $sla_deadline
+ * @property Carbon|null $escalated_at
+ * @property Carbon|null $resolved_at
+ * @property CaseResolution|null $resolution
+ * @property string|null $resolution_notes
+ * @property int|null $primary_flag_id
+ * @property int|null $primary_finding_id
+ * @property array|null $metadata
+ * @property string $created_via
+ * @property int|null $customer_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class CaseResource extends JsonResource
 {
