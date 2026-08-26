@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Compliance;
 
+use App\Enums\SystemAlertLevel;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Services\System\SystemAlertService;
@@ -25,6 +26,10 @@ class LowStockAlertJob implements ShouldQueue
     public function handle(SystemAlertService $alertService): void
     {
         $threshold = (string) config('thresholds.low_stock.threshold', '10000');
+
+        if (! is_numeric($threshold)) {
+            throw new \InvalidArgumentException('Configured low stock threshold must be numeric.');
+        }
         $lowStockCurrencies = [];
 
         $currencies = Currency::where('is_active', true)->get();
@@ -49,11 +54,13 @@ class LowStockAlertJob implements ShouldQueue
         }
 
         foreach ($lowStockCurrencies as $item) {
-            $alertService->createAlert(
-                'low_stock',
+            $alertService->send(
                 "Low stock alert for {$item['currency']}: position {$item['position']} below threshold {$item['threshold']}",
-                'medium',
-                ['currency' => $item['currency'], 'position' => $item['position']]
+                SystemAlertLevel::Warning->value,
+                [
+                    'source' => 'low_stock',
+                    'metadata' => ['currency' => $item['currency'], 'position' => $item['position']],
+                ]
             );
         }
 
