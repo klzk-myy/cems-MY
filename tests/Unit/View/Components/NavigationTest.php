@@ -49,6 +49,8 @@ class NavigationTest extends TestCase
         $component = new Navigation;
         $view = $component->render();
 
+        $this->assertInstanceOf(View::class, $view);
+
         $html = $view->render();
         $this->assertStringContainsString('navigation', $html);
     }
