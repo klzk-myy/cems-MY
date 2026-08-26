@@ -10,6 +10,10 @@ namespace App\Enums;
  */
 enum TransactionStatus: string
 {
+    /**
+     * Legacy state — retained only so historical rows deserialize. Absent
+     * from TransactionStateMachine::TRANSITIONS; no code path creates it.
+     */
     case Draft = 'Draft';
     case PendingApproval = 'PendingApproval';
     case Approved = 'Approved';
@@ -20,9 +24,16 @@ enum TransactionStatus: string
     case Reversed = 'Reversed';
     case Failed = 'Failed';
     case Rejected = 'Rejected';
+    case PendingCancellation = 'PendingCancellation';
+
+    /**
+     * Legacy states — retained only so historical rows deserialize. They are
+     * absent from TransactionStateMachine::TRANSITIONS: no code path may
+     * create or transition into them. Holds map to PendingApproval instead of
+     * OnHold; there is no Draft intake and no Completed -> Finalized sweep.
+     */
     case Pending = 'Pending';
     case OnHold = 'OnHold';
-    case PendingCancellation = 'PendingCancellation';
 
     /**
      * Check if the transaction is in draft state.
