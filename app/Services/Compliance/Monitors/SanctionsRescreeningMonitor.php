@@ -130,7 +130,7 @@ class SanctionsRescreeningMonitor extends BaseMonitor
                 'customer_nationality' => $customer->nationality,
                 'match_count' => count($matchDetails),
                 'matches' => array_slice($matchDetails, 0, 5),
-                'confidence_score' => $response->confidenceScore !== null ? round((float) $response->confidenceScore, 2) : 0.0,
+                'confidence_score' => round((float) $response->confidenceScore, 2),
                 'action' => $response->action,
                 'last_screened_at' => $customer->sanctions_screened_at?->toDateTimeString(),
                 'recommendation' => 'Immediate referral to Compliance Officer required',
