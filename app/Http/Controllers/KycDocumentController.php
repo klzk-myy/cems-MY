@@ -4,14 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\CustomerDocument;
 use App\Services\AuditService;
+use App\Services\System\DocumentStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class KycDocumentController extends Controller
 {
     public function __construct(
         protected AuditService $auditService,
+        protected DocumentStorageService $documentStorageService,
     ) {}
 
     /**
@@ -19,17 +20,23 @@ class KycDocumentController extends Controller
      */
     public function verify(Request $request, CustomerDocument $customerDocument): JsonResponse
     {
+        $this->authorize('verify', $customerDocument);
+
         $customerDocument->update([
             'status' => 'verified',
             'verified_by' => $request->user()->id,
             'verified_at' => now(),
+            'rejection_reason' => null,
         ]);
 
         $this->auditService->logWithSeverity(
             'kyc_document_verified',
-            "KYC document #{$customerDocument->id} verified",
-            'info',
-            ['document_id' => $customerDocument->id, 'customer_id' => $customerDocument->customer_id]
+            [
+                'description' => "KYC document #{$customerDocument->id} verified",
+                'document_id' => $customerDocument->id,
+                'customer_id' => $customerDocument->customer_id,
+            ],
+            'INFO'
         );
 
         return response()->json(['success' => true, 'message' => 'Document verified']);
@@ -40,6 +47,8 @@ class KycDocumentController extends Controller
      */
     public function reject(Request $request, CustomerDocument $customerDocument): JsonResponse
     {
+        $this->authorize('reject', $customerDocument);
+
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:500'],
         ]);
@@ -48,13 +57,18 @@ class KycDocumentController extends Controller
             'status' => 'rejected',
             'verified_by' => $request->user()->id,
             'verified_at' => now(),
+            'rejection_reason' => $validated['reason'],
         ]);
 
         $this->auditService->logWithSeverity(
             'kyc_document_rejected',
-            "KYC document #{$customerDocument->id} rejected",
-            'warning',
-            ['document_id' => $customerDocument->id, 'customer_id' => $customerDocument->customer_id, 'reason' => $validated['reason']]
+            [
+                'description' => "KYC document #{$customerDocument->id} rejected",
+                'document_id' => $customerDocument->id,
+                'customer_id' => $customerDocument->customer_id,
+                'reason' => $validated['reason'],
+            ],
+            'WARNING'
         );
 
         return response()->json(['success' => true, 'message' => 'Document rejected']);
@@ -62,13 +76,22 @@ class KycDocumentController extends Controller
 
     /**
      * Download a customer document.
+     *
+     * Downloads are routed through DocumentStorageService so the stored
+     * path is validated against traversal before hitting the storage disk.
      */
     public function download(CustomerDocument $customerDocument)
     {
+        $this->authorize('download', $customerDocument);
+
         if (! $customerDocument->file_path) {
             abort(404, 'Document file not found');
         }
 
-        return Storage::disk('local')->download($customerDocument->file_path);
+        try {
+            return $this->documentStorageService->download($customerDocument->file_path);
+        } catch (\InvalidArgumentException $e) {
+            abort(404, 'Document file not found');
+        }
     }
 }
