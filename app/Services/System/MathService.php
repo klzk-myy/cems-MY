@@ -44,11 +44,11 @@ class MathService implements MathServiceInterface
      *
      * @param  string  $a  First operand
      * @param  string  $b  Second operand
-     * @return string Sum of a and b
+     * @return numeric-string Sum of a and b
      */
     public function add(string $a, string $b): string
     {
-        return bcadd($a, $b, $this->scale);
+        return bcadd($this->assertNumeric($a), $this->assertNumeric($b), $this->scale);
     }
 
     /**
@@ -56,11 +56,22 @@ class MathService implements MathServiceInterface
      *
      * @param  string  $a  First operand
      * @param  string  $b  Second operand
-     * @return string Difference of a and b
+     * @return numeric-string Difference of a and b
      */
     public function subtract(string $a, string $b): string
     {
-        return bcsub($a, $b, $this->scale);
+        return bcsub($this->assertNumeric($a), $this->assertNumeric($b), $this->scale);
+    }
+
+    /**
+     * Negate a decimal amount.
+     *
+     * @param  string  $amount  Amount to negate
+     * @return numeric-string Negated amount at the configured scale
+     */
+    public function negate(string $amount): string
+    {
+        return bcsub('0', $this->assertNumeric($amount), $this->scale);
     }
 
     /**
@@ -68,11 +79,12 @@ class MathService implements MathServiceInterface
      *
      * @param  string  $a  First operand
      * @param  string  $b  Second operand
-     * @return string Product of a and b
+     * @param  int|null  $scale  Optional decimal scale override
+     * @return numeric-string Product of a and b
      */
-    public function multiply(string $a, string $b): string
+    public function multiply(string $a, string $b, ?int $scale = null): string
     {
-        return bcmul($a, $b, $this->scale);
+        return bcmul($this->assertNumeric($a), $this->assertNumeric($b), $scale ?? $this->scale);
     }
 
     /**
@@ -80,17 +92,21 @@ class MathService implements MathServiceInterface
      *
      * @param  string  $a  Dividend
      * @param  string  $b  Divisor
-     * @return string Quotient of a and b
+     * @param  int|null  $scale  Optional decimal scale override
+     * @return numeric-string Quotient of a and b
      *
      * @throws \InvalidArgumentException If divisor is zero
      */
-    public function divide(string $a, string $b): string
+    public function divide(string $a, string $b, ?int $scale = null): string
     {
-        if (bccomp($b, '0', $this->scale) === 0) {
+        $dividend = $this->assertNumeric($a);
+        $divisor = $this->assertNumeric($b);
+
+        if (bccomp($divisor, '0', $scale ?? $this->scale) === 0) {
             throw new MathValidationException('Division by zero');
         }
 
-        return bcdiv($a, $b, $this->scale);
+        return bcdiv($dividend, $divisor, $scale ?? $this->scale);
     }
 
     /**
@@ -102,15 +118,18 @@ class MathService implements MathServiceInterface
      * @param  string  $a  Dividend
      * @param  string  $b  Divisor
      * @param  int|null  $precision  Optional precision override (default: scale)
-     * @return string Quotient of a and b, or '0' when b is zero
+     * @return numeric-string Quotient of a and b, or '0' when b is zero
      */
     public function safeDivide(string $a, string $b, ?int $precision = null): string
     {
-        if (bccomp($b, '0', $this->scale) === 0) {
+        $dividend = $this->assertNumeric($a);
+        $divisor = $this->assertNumeric($b);
+
+        if (bccomp($divisor, '0', $this->scale) === 0) {
             return '0';
         }
 
-        return bcdiv($a, $b, $precision ?? $this->scale);
+        return bcdiv($dividend, $divisor, $precision ?? $this->scale);
     }
 
     /**
@@ -122,7 +141,7 @@ class MathService implements MathServiceInterface
      */
     public function compare(string $a, string $b): int
     {
-        return bccomp($a, $b, $this->scale);
+        return bccomp($this->assertNumeric($a), $this->assertNumeric($b), $this->scale);
     }
 
     /**
@@ -134,7 +153,7 @@ class MathService implements MathServiceInterface
      * @param  string  $oldAvgCost  Current average cost rate
      * @param  string  $transactionAmount  Amount being added
      * @param  string  $transactionRate  Rate of new transaction
-     * @return string New weighted average cost
+     * @return numeric-string New weighted average cost
      */
     public function calculateAverageCost(
         string $oldBalance,
@@ -159,7 +178,7 @@ class MathService implements MathServiceInterface
      * @param  string  $oldRate  Previous valuation rate
      * @param  string  $newRate  Current market rate
      * @param  int|null  $precision  Optional precision override (default: scale)
-     * @return string Revaluation P&L (positive = gain, negative = loss)
+     * @return numeric-string Revaluation P&L (positive = gain, negative = loss)
      */
     public function calculateRevaluationPnl(
         string $positionAmount,
@@ -174,9 +193,9 @@ class MathService implements MathServiceInterface
         // like 0.000002 would truncate to '0.0000' at scale 4 before the
         // multiply ever sees it.
         $workingScale = max($this->scale, $outputPrecision);
-        $rateDiff = bcsub($newRate, $oldRate, $workingScale);
+        $rateDiff = bcsub($this->assertNumeric($newRate), $this->assertNumeric($oldRate), $workingScale);
 
-        return bcmul($positionAmount, $rateDiff, $outputPrecision);
+        return bcmul($this->assertNumeric($positionAmount), $this->assertNumeric($rateDiff), $outputPrecision);
     }
 
     /**
@@ -186,7 +205,7 @@ class MathService implements MathServiceInterface
      *
      * @param  string  $foreignAmount  Amount in foreign currency
      * @param  string  $rate  Exchange rate
-     * @return string Amount in local currency (MYR)
+     * @return numeric-string Amount in local currency (MYR)
      */
     public function calculateTransactionAmount(
         string $foreignAmount,
@@ -199,10 +218,12 @@ class MathService implements MathServiceInterface
      * Get the absolute value of a number.
      *
      * @param  string  $number  The number
-     * @return string Absolute value
+     * @return numeric-string Absolute value
      */
     public function abs(string $number): string
     {
+        $number = $this->assertNumeric($number);
+
         if (bccomp($number, '0', $this->scale) < 0) {
             return bcsub('0', $number, $this->scale);
         }
@@ -225,7 +246,7 @@ class MathService implements MathServiceInterface
      *
      * @param  string  $number  The number to round
      * @param  int  $precision  Number of decimal places
-     * @return string Rounded number
+     * @return numeric-string Rounded number
      */
     public function round(string $number, int $precision = 0): string
     {
@@ -240,7 +261,8 @@ class MathService implements MathServiceInterface
         // Example: round('123.4567', 2)
         //   multiplier = 100
         //   multiplied = 12345.67 + 0.5 → truncated to 12346 → / 100 = 123.46
-        $multiplier = bcpow('10', (string) $precision, $this->scale);
+        $multiplier = $this->assertNumeric(bcpow('10', (string) $precision, $this->scale));
+        $number = $this->assertNumeric($number);
 
         // Use extra precision to preserve the rounding digit after multiplication
         $workingScale = max($this->scale, $precision + 2);
@@ -257,5 +279,19 @@ class MathService implements MathServiceInterface
         $truncated = bcadd($adjusted, '0', 0);
 
         return bcdiv($truncated, $multiplier, $precision);
+    }
+
+    /**
+     * Validate that an operand is a numeric string before handing it to BCMath.
+     *
+     * @return numeric-string
+     */
+    private function assertNumeric(string $value): string
+    {
+        if (! is_numeric($value)) {
+            throw new MathValidationException("Value '{$value}' is not a valid numeric string.");
+        }
+
+        return $value;
     }
 }
