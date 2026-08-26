@@ -3,6 +3,9 @@
 namespace App\Models\Traits;
 
 use App\Models\Branch;
+/**
+ * @property int|null $branch_id
+ */
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -13,6 +16,9 @@ trait BelongsToBranch
         $this->mergeFillable(['branch_id']);
     }
 
+    /**
+     * @return BelongsTo<Branch, $this>
+     */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
