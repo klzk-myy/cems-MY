@@ -17,12 +17,14 @@ class ExchangeRate extends BaseModel
         'rate_sell',
         'source',
         'fetched_at',
+        'effective_date',
     ];
 
     protected $casts = [
         'rate_buy' => 'decimal:4',
         'rate_sell' => 'decimal:4',
         'fetched_at' => 'datetime',
+        'effective_date' => 'datetime',
     ];
 
     public function currency(): BelongsTo
@@ -43,5 +45,19 @@ class ExchangeRate extends BaseModel
     public function scopeForBranch(Builder $query, int $branchId): Builder
     {
         return $query->where('branch_id', $branchId);
+    }
+
+    /**
+     * Restrict to rows whose scheduled effective_date has arrived
+     * (NULL effective_date means the row is active immediately).
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q
+            ->whereNull('effective_date')
+            ->orWhere('effective_date', '<=', now()));
     }
 }
