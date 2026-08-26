@@ -37,7 +37,8 @@ class AnalyticsController extends Controller
         $year = $request->input('year', now()->year);
         $currency = $request->input('currency', 'all');
 
-        $query = Transaction::whereYear('created_at', $year)
+        $query = Transaction::query()
+            ->whereYear('created_at', $year)
             ->completed();
 
         if ($currency !== 'all') {
@@ -49,7 +50,7 @@ class AnalyticsController extends Controller
         $monthlyData = app(TransactionReportQuery::class)
             ->buySellSummary(
                 $query->select(DB::raw("{$monthColumn} as month")),
-                DB::raw($monthColumn),
+                $monthColumn,
                 'amount_local'
             )
             ->map(function ($row) {
@@ -145,7 +146,7 @@ class AnalyticsController extends Controller
             }
 
             return [
-                'currency' => $position->currency?->display_name ?? $position->currency_code,
+                'currency' => $position->currency !== null ? $position->currency->display_name : $position->currency_code,
                 'position' => $balance,
                 'avg_buy_rate' => $avgCost,
                 'avg_sell_rate' => $currentRate,
@@ -315,7 +316,7 @@ class AnalyticsController extends Controller
     protected function normalizeRiskRating(mixed $riskRating): string
     {
         $value = $riskRating instanceof \BackedEnum
-            ? $riskRating->value
+            ? (string) $riskRating->value
             : (string) $riskRating;
 
         return $value !== '' ? strtolower($value) : 'unknown';
