@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $verified_by
  * @property Carbon|null $verified_at
  * @property Carbon|null $expiry_date
+ * @property string|null $rejection_reason
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -43,6 +44,7 @@ class CustomerDocument extends BaseModel
         'verified_at',
         'expiry_date',
         'status',
+        'rejection_reason',
     ];
 
     /**
@@ -71,6 +73,8 @@ class CustomerDocument extends BaseModel
 
     /**
      * Get the customer that owns the document.
+     *
+     * @return BelongsTo<Customer, $this>
      */
     public function customer(): BelongsTo
     {
@@ -103,8 +107,6 @@ class CustomerDocument extends BaseModel
 
     /**
      * Scope a query to only include unverified documents.
-     *
-     * @return \Illuminate\Database\Eloquent\Eloquent\Builder
      */
     public function scopeUnverified(Builder $query): Builder
     {
@@ -113,8 +115,6 @@ class CustomerDocument extends BaseModel
 
     /**
      * Scope a query to only include expired documents.
-     *
-     * @return \Illuminate\Database\Eloquent\Eloquent\Builder
      */
     public function scopeExpired(Builder $query): Builder
     {
@@ -123,8 +123,6 @@ class CustomerDocument extends BaseModel
 
     /**
      * Scope a query to only include documents expiring soon.
-     *
-     * @return \Illuminate\Database\Eloquent\Eloquent\Builder
      */
     public function scopeExpiringSoon(Builder $query): Builder
     {
