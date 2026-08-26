@@ -80,7 +80,7 @@ class VelocityMonitor extends BaseMonitor
                 subjectType: 'Customer',
                 subjectId: $customerId,
                 details: [
-                    'customer_name' => $customer?->full_name ?? 'Unknown',
+                    'customer_name' => $customer->full_name ?? 'Unknown',
                     'transactions_in_window' => $transactionCount,
                     'total_amount_in_window' => $amount24h,
                     'window_days' => $this->velocityWindowDays,
@@ -97,7 +97,7 @@ class VelocityMonitor extends BaseMonitor
                 subjectType: 'Customer',
                 subjectId: $customerId,
                 details: [
-                    'customer_name' => $customer?->full_name ?? 'Unknown',
+                    'customer_name' => $customer->full_name ?? 'Unknown',
                     'transactions_in_window' => $transactionCount,
                     'total_amount_in_window' => $amount24h,
                     'window_days' => $this->velocityWindowDays,
