@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Enums\ReportType;
 use App\Exceptions\Domain\AccountingPeriodException;
+use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Models\AccountingPeriod;
 use App\Models\JournalEntry;
@@ -23,6 +24,7 @@ class MonthEndCloseService
         protected AccountingService $accountingService,
         protected AuditService $auditService,
         protected ReportingService $reportingService,
+        protected PeriodCloseService $periodCloseService,
     ) {}
 
     public function runMonthEndClosing(Carbon $date, User $initiator): array
@@ -42,7 +44,7 @@ class MonthEndCloseService
 
             $results['reports'] = $this->generateReports($date);
 
-            $results['period'] = $this->closePeriod($date);
+            $results['period'] = $this->closePeriod($date, $initiator->id);
 
             $this->auditService->log(
                 'month_end_close',
@@ -126,20 +128,44 @@ class MonthEndCloseService
         return $reports;
     }
 
-    public function closePeriod(Carbon $date): array
+    /**
+     * Close the accounting period covering the given date.
+     *
+     * Delegates to PeriodCloseService::closePeriod so the close goes through
+     * the balanced-entry validation, P&L closing entries, row locking, and
+     * audit logging that the manual status flip used to bypass.
+     *
+     * Idempotent: closing an already-closed period is treated as success with
+     * a note, so scheduled monthly reruns do not fail.
+     *
+     * @return array{period_id: int|null, period_code: string|null, closed_at: string|null, note?: string}
+     */
+    public function closePeriod(Carbon $date, ?int $closedBy = null): array
     {
-        return DB::transaction(function () use ($date) {
+        return DB::transaction(function () use ($date, $closedBy) {
             $period = AccountingPeriod::forDate($date->toDateString())->first();
 
             if (! $period) {
                 throw new AccountingPeriodException('No period found for date');
             }
 
-            $period->update([
-                'status' => 'Closed',
-                'closed_at' => now(),
-                'closed_by' => auth()->id(),
-            ]);
+            if ($closedBy === null) {
+                $authId = auth()->id();
+                $closedBy = $authId === null ? null : (int) $authId;
+            }
+
+            try {
+                $this->periodCloseService->closePeriod($period, $closedBy);
+            } catch (ClosedPeriodException) {
+                return [
+                    'period_id' => $period->id,
+                    'period_code' => $period->period_code,
+                    'closed_at' => $period->closed_at?->toDateTimeString(),
+                    'note' => "Period {$period->period_code} was already closed; nothing to do",
+                ];
+            }
+
+            $period->refresh();
 
             $nextMonth = $date->copy()->addMonth();
             $existingNext = AccountingPeriod::forDate($nextMonth->toDateString())->first();
@@ -158,7 +184,7 @@ class MonthEndCloseService
             return [
                 'period_id' => $period->id,
                 'period_code' => $period->period_code,
-                'closed_at' => $period->closed_at->toDateTimeString(),
+                'closed_at' => $period->closed_at?->toDateTimeString(),
             ];
         });
     }
