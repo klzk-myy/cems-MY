@@ -20,7 +20,36 @@
                 </div>
             </x-card>
 
-            <x-card title="Your Trusted Devices" class="mb-6">
+            @if(auth()->user()->mfa_enabled)
+            <x-card title="Regenerate Recovery Codes" class="mb-6">
+                <p class="text-sm text-ink-muted mb-4">
+                    Generating new recovery codes invalidates all existing ones. The new codes are shown once.
+                </p>
+                <form method="POST" action="{{ route('mfa.recovery-codes.regenerate') }}" class="space-y-1">
+                    @csrf
+                    <x-input type="password" name="current_password" label="Current Password" required autocomplete="current-password" />
+                    @error('current_password')
+                        <p class="text-sm text-danger-600">{{ $message }}</p>
+                    @enderror
+                    <x-button variant="secondary" type="submit">Generate New Recovery Codes</x-button>
+                </form>
+            </x-card>
+
+            <x-card title="Disable Two-Factor Authentication" class="mb-6">
+                <p class="text-sm text-ink-muted mb-4">
+                    Disabling MFA removes your authenticator secret, all recovery codes and every trusted device.
+                    Confirm with your current password and a valid code.
+                </p>
+                <form method="POST" action="{{ route('mfa.disable') }}" class="space-y-1">
+                    @csrf
+                    <x-input type="password" name="current_password" label="Current Password" required autocomplete="current-password" />
+                    <x-input type="text" name="code" label="Verification Code" placeholder="6-digit code or recovery code" maxlength="9" required />
+                    <x-button variant="danger" type="submit">Disable MFA</x-button>
+                </form>
+            </x-card>
+        @endif
+
+        <x-card title="Your Trusted Devices" class="mb-6">
                 <x-table>
                     <x-slot:thead>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Device</th>
