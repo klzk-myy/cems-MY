@@ -2,11 +2,25 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Enums\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
  * Transform a user into a JSON resource.
+ *
+ * @property int $id
+ * @property string $username
+ * @property string $email
+ * @property UserRole $role
+ * @property int|null $branch_id
+ * @property bool $is_active
+ * @property bool $mfa_enabled
+ * @property Carbon|null $mfa_verified_at
+ * @property Carbon|null $last_login_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class UserResource extends JsonResource
 {
