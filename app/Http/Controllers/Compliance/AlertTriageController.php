@@ -66,7 +66,7 @@ class AlertTriageController extends Controller
     {
         $this->authorize('updateStatus', $alert);
 
-        $this->alertTriageService->resolveAlert($alert, auth()->id(), $request->resolution);
+        $this->alertTriageService->resolveAlert($alert, (int) auth()->id(), $request->resolution);
 
         return redirect()->route('compliance.alerts.index')->with('success', 'Alert resolved successfully');
     }
@@ -76,7 +76,7 @@ class AlertTriageController extends Controller
         $this->authorize('updateStatus', $alert);
 
         try {
-            $this->alertTriageService->dismissAlert($alert, auth()->id());
+            $this->alertTriageService->dismissAlert($alert, (int) auth()->id());
         } catch (CaseManagementException $e) {
             // Already resolved/rejected alerts are refused with the same
             // clean 403 the guard has always produced.
@@ -93,7 +93,7 @@ class AlertTriageController extends Controller
     {
         $this->authorize('updateStatus', $alert);
 
-        $this->alertTriageService->escalateAlert($alert, auth()->id(), $request->validated('reason'));
+        $this->alertTriageService->escalateAlert($alert, (int) auth()->id(), $request->validated('reason'));
 
         return redirect()->route('compliance.alerts.index')->with('success', 'Alert escalated successfully');
     }
