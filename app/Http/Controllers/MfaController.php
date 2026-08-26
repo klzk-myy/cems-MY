@@ -6,11 +6,13 @@ use App\Http\Requests\Mfa\DisableMfaRequest;
 use App\Http\Requests\Mfa\SetupMfaRequest;
 use App\Http\Requests\Mfa\VerifyMfaRequest;
 use App\Http\Requests\Mfa\VerifyRecoveryCodeRequest;
+use App\Models\MfaRecoveryCode;
 use App\Services\AuditService;
 use App\Services\System\MfaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 
@@ -274,6 +276,37 @@ class MfaController extends Controller
 
         return redirect('/dashboard')
             ->with('status', 'MFA has been disabled successfully.');
+    }
+
+    /**
+     * Regenerate recovery codes, replacing all existing ones.
+     *
+     * Requires the current password so a hijacked session cannot rotate the
+     * backup factor. New codes are displayed exactly once via the shared
+     * single-display session handoff.
+     */
+    public function regenerateRecoveryCodes(Request $request): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (! $user->mfa_enabled) {
+            return redirect()->route('mfa.setup');
+        }
+
+        if (! Hash::check((string) $request->input('current_password'), (string) $user->password_hash)) {
+            return redirect()->back()
+                ->withErrors(['current_password' => 'The provided password is incorrect.']);
+        }
+
+        MfaRecoveryCode::where('user_id', $user->id)->delete();
+
+        Session::put('mfa_recovery_codes', $this->mfaService->generateRecoveryCodes($user));
+
+        $this->auditService->logMfaEvent('mfa_recovery_codes_regenerated', $user->id, [
+            'new' => ['channel' => 'web'],
+        ]);
+
+        return redirect()->route('mfa.recovery-codes');
     }
 
     /**
