@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\MatchType;
 use App\Models\SanctionEntry;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -57,7 +58,7 @@ class SanctionsMatchNotification extends Notification implements ShouldQueue
                 'notifiable' => $notifiable,
                 'sanctionEntry' => $this->sanctionEntry,
                 'sanctionList' => $sanctionList,
-                'matchType' => $matchType?->label() ?? 'Unknown',
+                'matchType' => $this->describeMatchType($matchType),
                 'matchReason' => $this->matchReason,
                 'screenedName' => $this->sanctionEntry->screened_name,
                 'matchedName' => $this->sanctionEntry->matched_name,
@@ -74,16 +75,18 @@ class SanctionsMatchNotification extends Notification implements ShouldQueue
      */
     public function toArray(User $notifiable): array
     {
+        $matchType = $this->sanctionEntry->match_type;
+
         return [
             'type' => 'sanctions_match',
             'sanction_entry_id' => $this->sanctionEntry->id,
             'sanction_list_id' => $this->sanctionEntry->sanction_list_id,
-            'sanction_list_name' => $this->sanctionEntry->sanctionList?->name ?? 'Unknown',
+            'sanction_list_name' => $this->sanctionEntry->sanctionList->name ?? 'Unknown',
             'customer_id' => $this->sanctionEntry->customer_id,
-            'customer_name' => $this->sanctionEntry->customer?->full_name ?? 'Unknown',
+            'customer_name' => $this->sanctionEntry->customer->full_name ?? 'Unknown',
             'transaction_id' => $this->sanctionEntry->transaction_id,
-            'match_type' => $this->sanctionEntry->match_type?->value ?? null,
-            'match_type_label' => $this->sanctionEntry->match_type?->label() ?? 'Unknown',
+            'match_type' => $matchType instanceof \BackedEnum ? $matchType->value : $matchType,
+            'match_type_label' => $this->describeMatchType($matchType),
             'screened_name' => $this->sanctionEntry->screened_name,
             'matched_name' => $this->sanctionEntry->matched_name,
             'match_score' => $this->sanctionEntry->match_score,
@@ -116,7 +119,7 @@ class SanctionsMatchNotification extends Notification implements ShouldQueue
             ->first();
 
         // Sanctions matches are critical - default to true
-        return $preference?->email_enabled ?? true;
+        return $preference->email_enabled ?? true;
     }
 
     /**
@@ -125,5 +128,18 @@ class SanctionsMatchNotification extends Notification implements ShouldQueue
     public function databaseType(User $notifiable): string
     {
         return 'sanctions_match';
+    }
+
+    /**
+     * The screening pipeline stamps match_type as either a raw algorithm
+     * string or a backed enum, depending on the code path.
+     */
+    protected function describeMatchType(string|\BackedEnum|null $matchType): string
+    {
+        if ($matchType instanceof MatchType) {
+            return $matchType->label();
+        }
+
+        return $matchType ?? 'Unknown';
     }
 }
