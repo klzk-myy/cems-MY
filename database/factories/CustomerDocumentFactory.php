@@ -8,6 +8,9 @@ use App\Models\CustomerDocument;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<CustomerDocument>
+ */
 class CustomerDocumentFactory extends Factory
 {
     protected $model = CustomerDocument::class;
