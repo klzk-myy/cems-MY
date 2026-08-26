@@ -43,22 +43,44 @@ class StockTransferItem extends BaseModel
 
     public function isFullyReceived(): bool
     {
-        $received = $this->quantity_received ?? '0';
-
-        return bccomp((string) $received, (string) $this->quantity, 4) >= 0;
+        return bccomp($this->receivedQuantity(), $this->quantityNumericString(), 4) >= 0;
     }
 
     public function hasVariance(): bool
     {
-        $received = $this->quantity_received ?? '0';
-
-        return bccomp((string) $received, (string) $this->quantity, 4) !== 0;
+        return bccomp($this->receivedQuantity(), $this->quantityNumericString(), 4) !== 0;
     }
 
     public function getVarianceAttribute(): string
     {
+        return bcsub($this->quantityNumericString(), $this->receivedQuantity(), 4);
+    }
+
+    /**
+     * @return numeric-string
+     */
+    private function receivedQuantity(): string
+    {
         $received = $this->quantity_received ?? '0';
 
-        return bcsub((string) $this->quantity, (string) $received, 4);
+        if (! is_numeric($received)) {
+            throw new \InvalidArgumentException('quantity_received must be numeric.');
+        }
+
+        return $received;
+    }
+
+    /**
+     * @return numeric-string
+     */
+    private function quantityNumericString(): string
+    {
+        $quantity = $this->quantity;
+
+        if ($quantity === null || ! is_numeric($quantity)) {
+            throw new \InvalidArgumentException('quantity must be numeric.');
+        }
+
+        return $quantity;
     }
 }
