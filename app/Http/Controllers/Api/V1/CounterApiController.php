@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\CloseCounterRequest;
 use App\Models\Counter;
+use App\Models\CounterSession;
 use App\Services\Branch\CounterService;
 use Illuminate\Http\JsonResponse;
 
@@ -30,6 +31,7 @@ class CounterApiController extends Controller
             return $branchError;
         }
 
+        /** @var CounterSession|null $session */
         $session = $counter->sessions()
             ->where('status', 'open')
             ->latest()
