@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\BackupStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,6 +16,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class BackupLog extends BaseModel
 {
     use HasFactory;
+
+    public const TYPE_DATABASE = 'database';
+
+    public const TYPE_FILES = 'files';
+
+    public const TYPE_FULL = 'full';
+
+    public const DISK_LOCAL = 'local';
+
+    public const DISK_S3 = 's3';
+
+    public const STATUS_RUNNING = 'running';
+
+    public const STATUS_FAILED = 'failed';
 
     protected $fillable = [
         'user_id',
@@ -103,7 +118,7 @@ class BackupLog extends BaseModel
     public function getDurationAttribute(): ?int
     {
         if ($this->started_at && $this->completed_at) {
-            return $this->completed_at->diffInSeconds($this->started_at);
+            return (int) $this->completed_at->diffInSeconds($this->started_at);
         }
 
         return null;
@@ -210,6 +225,7 @@ class BackupLog extends BaseModel
      */
     public static function getStatistics(int $days = 30): array
     {
+        /** @var Builder<self> $recent */
         $recent = self::recent($days);
 
         return [
@@ -223,7 +239,7 @@ class BackupLog extends BaseModel
                 ->whereNotNull('started_at')
                 ->whereNotNull('completed_at')
                 ->get()
-                ->avg(fn ($log) => $log->duration),
+                ->avg(fn (self $log): float => (float) $log->duration),
         ];
     }
 }
