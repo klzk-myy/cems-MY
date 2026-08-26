@@ -8,10 +8,12 @@
     <form method="POST" action="{{ route('transactions.store') }}">
         @csrf
         @php
-            // Reuse one idempotency key across validation redirects so a retry
-            // after a validation error does not create a duplicate booking.
-            $idempotencyKey = session('tx_idempotency_key') ?? \Illuminate\Support\Str::uuid()->toString();
-            session(['tx_idempotency_key' => $idempotencyKey]);
+            // Reuse the key across validation-error redirects so a retry after
+            // a validation error does not create a duplicate booking. A fresh
+            // page load always generates a new key, so every successful booking
+            // gets its own identity. Duplicate-key submissions are resolved
+            // idempotently by TransactionCreationService::findDuplicate.
+            $idempotencyKey = old('idempotency_key') ?? \Illuminate\Support\Str::uuid()->toString();
         @endphp
         <input type="hidden" name="branch_id" value="{{ auth()->user()?->branch_id }}">
         <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
@@ -32,6 +34,8 @@
             <x-select name="purpose" label="Purpose" :options="['Travel' => 'Travel', 'Education' => 'Education', 'Medical' => 'Medical', 'Business' => 'Business', 'Investment' => 'Investment', 'Family Support' => 'Family Support', 'Migration' => 'Migration', 'Other' => 'Other']" :selected="old('purpose')" required />
 
             <x-input name="source_of_funds" label="Source of Funds" placeholder="e.g. Salary, Savings, Business Income" value="{{ old('source_of_funds') }}" required />
+
+            <x-input name="source_of_wealth" label="Source of Wealth" placeholder="e.g. Business Ownership, Inheritance, Investments" value="{{ old('source_of_wealth') }}" help="Required for PEP customers" />
         </div>
 
         <div class="mt-6 flex gap-2">
