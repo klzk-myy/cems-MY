@@ -17,8 +17,8 @@ return new class extends Migration
                 $table->unsignedBigInteger('transaction_id');
                 $table->unsignedBigInteger('approver_id')->nullable();
                 $table->enum('status', ['pending', 'approved', 'rejected', 'expired'])->default('pending');
-                $table->decimal('threshold_amount', 18, 4)->notNull();
-                $table->string('required_role', 50)->notNull();
+                $table->decimal('threshold_amount', 18, 4)->nullable(false);
+                $table->string('required_role', 50)->nullable(false);
                 $table->text('notes')->nullable();
                 $table->timestamp('expires_at')->nullable();
                 $table->timestamp('decided_at')->nullable();
