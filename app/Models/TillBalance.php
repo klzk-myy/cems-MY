@@ -7,8 +7,26 @@ use App\Models\Traits\BelongsToBranch;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
+ * @property int $id
+ * @property string $till_id
+ * @property string $currency_code
+ * @property int|null $branch_id
+ * @property string $opening_balance
+ * @property string|null $closing_balance
+ * @property string|null $variance
+ * @property string $transaction_total
+ * @property string $foreign_total
+ * @property string $buy_total_foreign
+ * @property string $sell_total_foreign
+ * @property Carbon $date
+ * @property int $opened_by
+ * @property int|null $closed_by
+ * @property Carbon|null $closed_at
+ * @property string|null $notes
+ * @property int|null $teller_allocation_id
  * @property-read Currency|null $currency
  * @property-read User|null $opener
  * @property-read User|null $closer
