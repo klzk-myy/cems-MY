@@ -20,6 +20,7 @@ use App\Services\DTOs\ApprovalResult;
 use App\Services\System\CacheTagsService;
 use App\Services\System\MathService;
 use App\Services\Transaction\TransactionApprovalService;
+use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionErrorHandler;
 use App\Services\Transaction\TransactionMonitoringService;
 use App\Services\Transaction\TransactionRecoveryService;
@@ -55,7 +56,8 @@ class ProcessTransactionRetryTest extends TestCase
             $cache,
             $auditService,
             $tellerAllocation,
-            new MathService
+            new MathService,
+            app(TransactionConfirmationService::class)
         );
     }
 
