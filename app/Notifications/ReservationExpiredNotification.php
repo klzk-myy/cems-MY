@@ -29,7 +29,7 @@ class ReservationExpiredNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('Stock Reservation Expired - '.config('app.name'))
             ->line('Your stock reservation has expired and been released.')
-            ->line('Transaction ID: '.($transaction?->id ?? 'N/A'))
+            ->line('Transaction ID: '.($transaction->id ?? 'N/A'))
             ->line('Currency: '.$this->reservation->currency_code)
             ->line('Amount: '.$this->reservation->amount_foreign)
             ->line('Please contact your manager if you have questions.');
