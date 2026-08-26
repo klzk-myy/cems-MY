@@ -47,6 +47,12 @@ class Navigation
                         'uri' => '/transactions',
                     ],
                     [
+                        'label' => 'Transaction Wizard',
+                        'route' => 'transactions.wizard',
+                        'icon' => 'sparkles',
+                        'uri' => '/transactions/wizard',
+                    ],
+                    [
                         'label' => 'Customers',
                         'route' => 'customers.index',
                         'icon' => 'users',
@@ -139,6 +145,18 @@ class Navigation
                         'icon' => 'chart-bar',
                         'uri' => '/compliance/risk-dashboard',
                     ],
+                    [
+                        'label' => 'Screening Matches',
+                        'route' => 'compliance.screening.matches.index',
+                        'icon' => 'identification',
+                        'uri' => '/compliance/screening-matches',
+                    ],
+                    [
+                        'label' => 'EDD Reviews',
+                        'route' => 'compliance.edd-reviews.index',
+                        'icon' => 'clipboard-document-check',
+                        'uri' => '/compliance/edd-review',
+                    ],
                 ],
             ],
 
@@ -165,6 +183,13 @@ class Navigation
                         'route' => 'accounting.ledger',
                         'icon' => 'bookmark-square',
                         'uri' => '/accounting/ledger',
+                    ],
+                    [
+                        'label' => 'Chart of Accounts',
+                        'route' => 'accounting.chart-of-accounts.index',
+                        'icon' => 'list-bullet',
+                        'uri' => '/accounting/chart-of-accounts',
+                        'roles' => ['admin', 'compliance'],
                     ],
                     [
                         'label' => 'Trial Balance',
@@ -265,6 +290,13 @@ class Navigation
                         'icon' => 'no-symbol',
                         'uri' => '/reports/position-limit',
                     ],
+                    [
+                        'label' => 'Report Schedules',
+                        'route' => 'reports.schedules.index',
+                        'icon' => 'clock',
+                        'uri' => '/reports/schedules',
+                        'roles' => ['admin'],
+                    ],
                 ],
             ],
 
@@ -291,6 +323,19 @@ class Navigation
                         'route' => 'mfa.trusted-devices',
                         'icon' => 'device-phone-mobile',
                         'uri' => '/mfa/trusted-devices',
+                    ],
+                    [
+                        'label' => 'Notification Preferences',
+                        'route' => 'notifications.preferences',
+                        'icon' => 'bell-alert',
+                        'uri' => '/notifications/preferences',
+                    ],
+                    [
+                        'label' => 'Audit Logs',
+                        'route' => 'admin.audit-logs.index',
+                        'icon' => 'shield-exclamation',
+                        'uri' => '/admin/audit-logs',
+                        'roles' => ['admin', 'compliance'],
                     ],
                 ],
             ],
@@ -331,6 +376,18 @@ class Navigation
                         'icon' => 'user',
                         'uri' => '/users',
                     ],
+                    [
+                        'label' => 'Branches',
+                        'route' => 'branches.index',
+                        'icon' => 'building-office',
+                        'uri' => '/branches',
+                    ],
+                    [
+                        'label' => 'Currencies',
+                        'route' => 'system.currencies.index',
+                        'icon' => 'currency-dollar',
+                        'uri' => '/system/currencies',
+                    ],
                 ],
             ],
         ];
@@ -355,11 +412,31 @@ class Navigation
 
         foreach ($navigation as $section => $config) {
             if (self::sectionAllowed($section, $role)) {
+                $config['items'] = array_values(array_filter(
+                    $config['items'],
+                    fn (array $item) => self::itemAllowed($item, $role)
+                ));
+
                 $filtered[$section] = $config;
             }
         }
 
         return $filtered;
+    }
+
+    /**
+     * Check if an individual item is allowed for role. Items may declare an
+     * optional 'roles' list of UserRole values narrowing the section default.
+     *
+     * @param  array<string, mixed>  $item
+     */
+    private static function itemAllowed(array $item, UserRole $role): bool
+    {
+        if (! isset($item['roles'])) {
+            return true;
+        }
+
+        return in_array($role->value, $item['roles'], true);
     }
 
     /**
