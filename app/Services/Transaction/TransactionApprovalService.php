@@ -4,6 +4,7 @@ namespace App\Services\Transaction;
 
 use App\Enums\CddLevel;
 use App\Enums\StockReservationStatus;
+use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Events\TransactionApproved;
@@ -11,6 +12,7 @@ use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Exceptions\Domain\StockReservationExpiredException;
 use App\Exceptions\Domain\TransactionApprovalException;
+use App\Exceptions\Domain\TransactionConfirmationRequiredException;
 use App\Exceptions\Domain\TransactionCreationException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Counter;
@@ -18,7 +20,9 @@ use App\Models\Customer;
 use App\Models\StockReservation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
+use App\Models\TransactionConfirmation;
 use App\Models\User;
+use App\Notifications\TransactionOutcomeNotification;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
@@ -50,6 +54,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         protected AuditService $auditService,
         protected TellerAllocationService $tellerAllocationService,
         protected MathService $mathService,
+        protected TransactionConfirmationService $confirmationService,
     ) {}
 
     public function validateApprovalEligibility(Transaction $transaction, int $approverId): void
@@ -65,9 +70,54 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         }
     }
 
+    /**
+     * Reject a pending transaction and notify the originating teller.
+     *
+     * Centralizes validation, the PendingApproval -> Rejected transition and
+     * the teller outcome notification so both the web and API controllers
+     * share one path. The notification is queued (ShouldQueue) and failures
+     * are logged without ever failing the rejection itself.
+     */
+    public function reject(Transaction $transaction, int $rejectorId, string $reason): bool
+    {
+        $this->validateApprovalEligibility($transaction, $rejectorId);
+
+        if (! (new TransactionStateMachine($transaction, $this->auditService))->reject($reason)) {
+            return false;
+        }
+
+        $rejector = User::find($rejectorId);
+        $teller = $transaction->user()->first();
+
+        if ($teller && $teller->id !== $rejectorId) {
+            try {
+                $teller->notify(new TransactionOutcomeNotification(
+                    $transaction->fresh() ?? $transaction,
+                    'rejected',
+                    ($rejector !== null && $rejector->username !== null) ? $rejector->username : 'Unknown',
+                    $reason
+                ));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send transaction rejection notification', [
+                    'transaction_id' => $transaction->id,
+                    'teller_id' => $teller->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return true;
+    }
+
     public function approve(Transaction $transaction, int $approverId, ?string $ipAddress = null): ApprovalResult
     {
         $ipAddress ??= optional(request())->ip();
+
+        // Segregation-of-duties gate: large transactions that enter the manager
+        // confirmation flow may only be approved once a TransactionConfirmation
+        // with status Confirmed exists. Without this gate the confirmation step
+        // could be bypassed by approving directly from the approval queue.
+        $this->enforceConfirmationGate($transaction);
 
         $amlResult = $this->monitoringService->monitorTransaction($transaction);
         $blockResult = $this->handleAmlBlocks($transaction, $amlResult, $approverId, $ipAddress);
@@ -96,6 +146,30 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             return new ApprovalResult(success: false, message: $e->getMessage());
         } catch (\Exception $e) {
             return new ApprovalResult(success: false, message: 'Transaction approval failed: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Throw unless a Confirmed confirmation exists for transactions that
+     * require manager confirmation. Only PendingApproval transactions are
+     * gated: refunds and other statuses follow their own approval flows.
+     */
+    private function enforceConfirmationGate(Transaction $transaction): void
+    {
+        if ($transaction->status !== TransactionStatus::PendingApproval) {
+            return;
+        }
+
+        if (! $this->confirmationService->requiresConfirmation($transaction)) {
+            return;
+        }
+
+        $confirmed = TransactionConfirmation::where('transaction_id', $transaction->id)
+            ->where('status', TransactionConfirmationStatus::Confirmed->value)
+            ->exists();
+
+        if (! $confirmed) {
+            throw new TransactionConfirmationRequiredException($transaction->id);
         }
     }
 
@@ -224,9 +298,8 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         if ($transaction->is_refund) {
             $stateMachine->approve(); // PendingApproval -> Approved
 
-            $nowIso = now()->toIso8601String();
             $transaction->approved_by = $approverId;
-            $transaction->approved_at = $nowIso;
+            $transaction->approved_at = now();
             $transaction->save();
             $transaction->refresh();
 
@@ -239,9 +312,8 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
 
         // approveAndComplete doesn't set approved_by/approved_at for Completed status
         // Set them manually after the transition
-        $nowIso = now()->toIso8601String();
         $transaction->approved_by = $approverId;
-        $transaction->approved_at = $nowIso;
+        $transaction->approved_at = now();
         $transaction->save();
         $transaction->refresh();
 
@@ -264,7 +336,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             (string) $transaction->amount_foreign,
             (string) $transaction->rate,
             $transaction->type->value,
-            $transaction->branch_id ?? 'HQ'
+            $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ'
         );
 
         $this->tillBalanceManager->applyTransaction(
