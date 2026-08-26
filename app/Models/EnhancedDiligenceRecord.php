@@ -6,10 +6,43 @@ use App\Enums\EddRiskLevel;
 use App\Enums\EddStatus;
 use App\Enums\EmploymentStatus;
 use App\Models\Bases\ComplianceModel;
+use App\Models\Compliance\EddDocumentRequest;
 use App\Models\Compliance\EddQuestionnaireTemplate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int|null $flagged_transaction_id
+ * @property int $customer_id
+ * @property string $edd_reference EDD-YYYYMM-XXXX
+ * @property EddStatus $status
+ * @property EddRiskLevel $risk_level
+ * @property string|null $source_of_funds
+ * @property string|null $source_of_funds_description
+ * @property string|null $purpose_of_transaction
+ * @property string|null $business_justification
+ * @property EmploymentStatus|null $employment_status
+ * @property string|null $employer_name
+ * @property string|null $employer_address
+ * @property string|null $annual_income_range
+ * @property string|null $estimated_net_worth
+ * @property string|null $source_of_wealth
+ * @property string|null $source_of_wealth_description
+ * @property string|null $additional_information
+ * @property int|null $reviewed_by
+ * @property Carbon|null $reviewed_at
+ * @property string|null $review_notes
+ * @property array<mixed>|null $questionnaire_responses
+ * @property Carbon|null $questionnaire_completed_at
+ * @property int|null $questionnaire_completed_by
+ * @property int|null $approved_by
+ * @property Carbon|null $approved_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class EnhancedDiligenceRecord extends ComplianceModel
 {
     use HasFactory;
@@ -51,21 +84,41 @@ class EnhancedDiligenceRecord extends ComplianceModel
         'employment_status' => EmploymentStatus::class,
     ];
 
+    /**
+     * @return BelongsTo<FlaggedTransaction, $this>
+     */
     public function flaggedTransaction(): BelongsTo
     {
         return $this->belongsTo(FlaggedTransaction::class);
     }
 
+    /**
+     * @return HasMany<EddDocumentRequest, $this>
+     */
+    public function documentRequests(): HasMany
+    {
+        return $this->hasMany(EddDocumentRequest::class, 'edd_record_id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function questionnaireCompletedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'questionnaire_completed_by');
@@ -101,6 +154,9 @@ class EnhancedDiligenceRecord extends ComplianceModel
         ];
     }
 
+    /**
+     * @return BelongsTo<EddQuestionnaireTemplate, $this>
+     */
     public function template(): BelongsTo
     {
         return $this->belongsTo(EddQuestionnaireTemplate::class, 'edd_template_id');
