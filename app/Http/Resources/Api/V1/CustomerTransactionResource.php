@@ -2,14 +2,37 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
  * Public-facing summary of a transaction for nested customer payloads.
  *
  * Whitelists operational fields only - excludes journal/accounting
  * internals, rate-override workflow columns and other bookkeeping data.
+ *
+ * @property int $id
+ * @property int $customer_id
+ * @property int $user_id
+ * @property int|null $branch_id
+ * @property TransactionType $type
+ * @property string $currency_code
+ * @property string|null $counterparty_country
+ * @property string $amount_local
+ * @property string $amount_foreign
+ * @property string $rate
+ * @property string|null $base_rate
+ * @property string|null $purpose
+ * @property string|null $source_of_funds
+ * @property TransactionStatus $status
+ * @property string|null $hold_reason
+ * @property int|null $approved_by
+ * @property Carbon|null $approved_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class CustomerTransactionResource extends JsonResource
 {
