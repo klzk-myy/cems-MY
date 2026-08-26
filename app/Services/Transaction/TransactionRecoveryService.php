@@ -273,10 +273,14 @@ class TransactionRecoveryService
         // Order by id (not created_at): multiple failures within the same second
         // tie on created_at, and picking an arbitrary row breaks retry accounting.
         if ($transaction->relationLoaded('transactionErrors')) {
-            return $transaction->transactionErrors
+            $latest = $transaction->transactionErrors
                 ->whereNull('resolved_at')
                 ->sortByDesc('id')
                 ->first();
+
+            assert($latest instanceof TransactionError || $latest === null);
+
+            return $latest;
         }
 
         return $transaction->transactionErrors()
