@@ -2,6 +2,7 @@
 
 namespace App\Services\Reporting;
 
+use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportRunStatus;
 use App\Enums\ReportType;
 use App\Events\ReportGenerated;
@@ -9,7 +10,11 @@ use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
+use App\Services\AuditService;
+use App\ValueObjects\Quarter;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -20,6 +25,7 @@ class ReportSchedulingService
 {
     public function __construct(
         protected ReportingService $reportingService,
+        protected AuditService $auditService,
     ) {}
 
     /**
@@ -54,6 +60,213 @@ class ReportSchedulingService
             $reportRun->markAsFailed($e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * Process every active schedule whose next_run_at is due.
+     *
+     * Each schedule is isolated: a failing generator marks its run failed and
+     * still advances the schedule's next_run_at without blocking other rows.
+     *
+     * @return array{due: int, processed: int, failed: int}
+     */
+    public function processDueSchedules(): array
+    {
+        $due = ReportSchedule::active()
+            ->with('createdBy')
+            ->whereNotNull('next_run_at')
+            ->where('next_run_at', '<=', now())
+            ->get();
+
+        $processed = 0;
+        $failed = 0;
+
+        foreach ($due as $schedule) {
+            try {
+                $this->processSchedule($schedule);
+                $processed++;
+            } catch (\Throwable $e) {
+                $failed++;
+                Log::error('Report schedule processing failed', [
+                    'schedule_id' => $schedule->id,
+                    'report_type' => $schedule->report_type?->value,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return ['due' => $due->count(), 'processed' => $processed, 'failed' => $failed];
+    }
+
+    /**
+     * Run one due schedule: generate the report, persist the run outcome,
+     * register the artifact in reports_generated (so archival sweeps it),
+     * write an audit trail entry and advance next_run_at.
+     */
+    protected function processSchedule(ReportSchedule $schedule): void
+    {
+        $type = $schedule->report_type;
+        $params = $this->resolveRunParameters($schedule);
+        $period = $this->resolvePeriodString($type, $params);
+
+        $run = ReportRun::create([
+            'schedule_id' => $schedule->id,
+            'report_type' => $type,
+            'parameters' => $params,
+            'status' => ReportRunStatus::Running,
+            'started_at' => now(),
+            'generated_by' => $schedule->created_by ?? config('cems.system_user_id', 1),
+        ]);
+
+        try {
+            $filePath = $this->reportingService->generateReport($type->value, $period);
+
+            $meta = $this->getFileMeta($filePath);
+
+            $run->markAsCompleted($filePath, $meta['row_count']);
+
+            [$periodStart, $periodEnd] = $this->resolvePeriodBounds($type, $params);
+
+            $artifact = $this->reportingService->recordGeneratedReport(
+                $type,
+                $periodStart,
+                $periodEnd,
+                ReportGeneratedStatus::Generated->value,
+                'CSV'
+            );
+            $artifact->file_path = $filePath;
+            $artifact->save();
+
+            event(new ReportGenerated($run));
+
+            $this->auditService->logRegulatoryReportEvent('regulatory_report_generated', $artifact->id, [
+                'user_id' => $schedule->created_by ?? config('cems.system_user_id', 1),
+                'actor' => $schedule->createdBy !== null ? $schedule->createdBy->username : 'system',
+                'source' => 'schedule',
+                'schedule_id' => $schedule->id,
+                'report_run_id' => $run->id,
+                'new_values' => [
+                    'report_type' => $type->value,
+                    'period_start' => $periodStart->toDateString(),
+                    'period_end' => $periodEnd->toDateString(),
+                    'file_id' => $artifact->id,
+                    'file_path' => $filePath,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            $run->markAsFailed($e->getMessage());
+
+            throw $e;
+        } finally {
+            $schedule->last_run_at = now();
+            $schedule->updateNextRun();
+        }
+    }
+
+    /**
+     * Merge stored schedule parameters over sensible period defaults derived
+     * from the report type cadence (monthly types cover the previous month,
+     * daily types yesterday, quarterly the previous quarter).
+     *
+     * @return array<string, mixed>
+     */
+    protected function resolveRunParameters(ReportSchedule $schedule): array
+    {
+        $defaults = match ($schedule->report_type) {
+            ReportType::Msb2 => ['date' => now()->subDay()->toDateString()],
+            ReportType::Lmca => ['month' => now()->subMonthNoOverflow()->format('Y-m')],
+            ReportType::Qlvr => ['quarter' => now()->subMonths(3)->startOfQuarter()->format('Y-m')],
+            ReportType::TrialBalance,
+            ReportType::MonthEnd,
+            ReportType::ProfitLoss,
+            ReportType::BalanceSheet => ['period' => now()->subMonthNoOverflow()->format('Y-m')],
+            ReportType::Plr => [],
+        };
+
+        return array_merge($defaults, $schedule->parameters ?? []);
+    }
+
+    /**
+     * Normalize parameters into the single period string accepted by
+     * ReportingService::generateReport().
+     *
+     * @param  array<string, mixed>  $params
+     */
+    protected function resolvePeriodString(ReportType $type, array $params): string
+    {
+        return match ($type) {
+            ReportType::Msb2 => (string) ($params['date'] ?? now()->subDay()->toDateString()),
+            ReportType::Lmca => (string) ($params['month'] ?? now()->subMonthNoOverflow()->format('Y-m')),
+            ReportType::Qlvr => $this->normalizeQuarterToPeriod((string) ($params['quarter'] ?? '')),
+            ReportType::Plr => now()->toDateString(),
+            default => (string) ($params['period'] ?? now()->subMonthNoOverflow()->format('Y-m')),
+        };
+    }
+
+    /**
+     * generateReport() derives the quarter by parsing a date, so a stored
+     * "Y-Qn" parameter is converted to that quarter's start date first.
+     */
+    protected function normalizeQuarterToPeriod(string $quarter): string
+    {
+        if ($quarter !== '' && preg_match('/^\d{4}-Q[1-4]$/', $quarter) === 1) {
+            return Quarter::fromString($quarter)->startDate()->toDateString();
+        }
+
+        return $quarter !== '' ? $quarter : now()->subMonths(3)->startOfQuarter()->toDateString();
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function resolvePeriodBounds(ReportType $type, array $params): array
+    {
+        return match ($type) {
+            ReportType::Msb2 => $this->dayBounds((string) ($params['date'] ?? now()->subDay()->toDateString())),
+            ReportType::Lmca => $this->monthBounds((string) ($params['month'] ?? now()->subMonthNoOverflow()->format('Y-m'))),
+            ReportType::Qlvr => $this->quarterBounds((string) ($params['quarter'] ?? '')),
+            ReportType::Plr => [now()->startOfDay(), now()->endOfDay()],
+            default => $this->monthBounds((string) ($params['period'] ?? now()->subMonthNoOverflow()->format('Y-m'))),
+        };
+    }
+
+    /**
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function dayBounds(string $date): array
+    {
+        $day = Carbon::parse($date);
+
+        return [$day->copy()->startOfDay(), $day->copy()->endOfDay()];
+    }
+
+    /**
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function monthBounds(string $month): array
+    {
+        $monthDate = Carbon::parse($month)->startOfMonth();
+
+        return [$monthDate->copy()->startOfDay(), $monthDate->copy()->endOfMonth()->endOfDay()];
+    }
+
+    /**
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function quarterBounds(string $quarter): array
+    {
+        if ($quarter !== '' && preg_match('/^\d{4}-Q[1-4]$/', $quarter) === 1) {
+            $quarterVo = Quarter::fromString($quarter);
+
+            return [Carbon::parse($quarterVo->startDate())->startOfDay(), Carbon::parse($quarterVo->endDate())->endOfDay()];
+        }
+
+        $start = Carbon::parse(
+            $quarter !== '' ? $quarter : now()->subMonths(3)->startOfQuarter()->toDateString()
+        )->startOfQuarter()->startOfDay();
+
+        return [$start, $start->copy()->endOfQuarter()->endOfDay()];
     }
 
     /**
@@ -137,7 +350,7 @@ class ReportSchedulingService
                 'id' => $r->id,
                 'type' => $r->report_type,
                 'status' => $r->status->value,
-                'generated_by' => $r->generatedBy?->name,
+                'generated_by' => $r->generatedBy?->username,
                 'created_at' => $r->created_at->toIso8601String(),
             ]),
             'upcoming_schedules' => $upcomingSchedules->map(fn ($s) => [
