@@ -9,8 +9,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+/**
+ * @property int $id
+ * @property string $code
+ * @property string $name
+ * @property CounterStatus|null $status
+ * @property int|null $branch_id
+ * @property int|null $assigned_teller_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class Counter extends BaseModel
 {
     use BelongsToBranch, HasFactory, SoftDeletes;
@@ -63,11 +75,17 @@ class Counter extends BaseModel
         return $query->where('status', CounterStatus::Active->value);
     }
 
+    /**
+     * @return HasMany<CounterSession, $this>
+     */
     public function sessions(): HasMany
     {
         return $this->hasMany(CounterSession::class);
     }
 
+    /**
+     * @return HasOne<CounterSession, $this>
+     */
     public function currentSession(): HasOne
     {
         return $this->hasOne(CounterSession::class)
@@ -78,7 +96,7 @@ class Counter extends BaseModel
 
     public static function findByCodeOrId(string|int $identifier): ?static
     {
-        return self::where('code', $identifier)
+        return static::where('code', $identifier)
             ->orWhere('id', $identifier)
             ->first();
     }
