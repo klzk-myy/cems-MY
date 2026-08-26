@@ -47,6 +47,10 @@ class LabelHelper
             return $default;
         }
 
-        return (string) $value;
+        if (is_object($value)) {
+            return (string) $value;
+        }
+
+        return $value;
     }
 }
