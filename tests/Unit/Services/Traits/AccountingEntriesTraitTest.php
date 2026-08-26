@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
 use App\Services\Traits\AccountingEntriesTrait;
+use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 class AccountingEntriesTraitTest extends TestCase
@@ -24,6 +25,7 @@ class AccountingEntriesTraitTest extends TestCase
 
     public function test_create_accounting_entries_defers_enhanced_cdd_with_logging(): void
     {
+        /** @var AuditTrailHelper&MockObject $mockAudit */
         $mockAudit = $this->auditTrailHelper;
         $mockAudit->expects($this->once())
             ->method('recordTransaction')
@@ -33,6 +35,7 @@ class AccountingEntriesTraitTest extends TestCase
                 $this->callback(fn ($ctx) => $ctx['cdd_level'] === 'Enhanced')
             );
 
+        /** @var TransactionAccountingService&MockObject $mockTransactionAccounting */
         $mockTransactionAccounting = $this->transactionAccountingService;
         $mockTransactionAccounting->expects($this->never())
             ->method('createImmediateAccountingEntries');
@@ -47,10 +50,12 @@ class AccountingEntriesTraitTest extends TestCase
 
     public function test_create_accounting_entries_defers_enhanced_cdd_without_logging(): void
     {
+        /** @var AuditTrailHelper&MockObject $mockAudit */
         $mockAudit = $this->auditTrailHelper;
         $mockAudit->expects($this->never())
             ->method('recordTransaction');
 
+        /** @var TransactionAccountingService&MockObject $mockTransactionAccounting */
         $mockTransactionAccounting = $this->transactionAccountingService;
         $mockTransactionAccounting->expects($this->never())
             ->method('createImmediateAccountingEntries');
@@ -64,10 +69,12 @@ class AccountingEntriesTraitTest extends TestCase
 
     public function test_create_accounting_entries_calls_service_for_completed_transaction(): void
     {
+        /** @var AuditTrailHelper&MockObject $mockAudit */
         $mockAudit = $this->auditTrailHelper;
         $mockAudit->expects($this->never())
             ->method('recordTransaction');
 
+        /** @var TransactionAccountingService&MockObject $mockTransactionAccounting */
         $mockTransactionAccounting = $this->transactionAccountingService;
         $mockTransactionAccounting->expects($this->once())
             ->method('createImmediateAccountingEntries')
