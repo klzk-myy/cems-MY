@@ -165,4 +165,25 @@ class TransactionWizardTest extends TestCase
                 'hold_required' => true,
             ]);
     }
+
+    #[Test]
+    public function wizard_page_renders_for_authorized_teller(): void
+    {
+        $response = $this->actingAs($this->teller)
+            ->get('/transactions/wizard');
+
+        $response->assertStatus(200)
+            ->assertSee('Transaction Wizard');
+    }
+
+    #[Test]
+    public function wizard_page_is_forbidden_for_compliance(): void
+    {
+        $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+
+        $response = $this->actingAs($compliance)
+            ->get('/transactions/wizard');
+
+        $response->assertStatus(403);
+    }
 }
