@@ -10,15 +10,19 @@ use App\Http\Requests\AuthorizedFormRequest;
 class UpdateBudgetRequest extends AuthorizedFormRequest
 {
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, string>
+     * All users may generate these read-only reports; authorization is
+     * enforced by the reporting controllers.
      */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, string>
+     */
     public function rules(): array
     {
         return [
