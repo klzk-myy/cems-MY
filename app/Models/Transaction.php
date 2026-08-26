@@ -50,6 +50,25 @@ use Illuminate\Support\Carbon;
  * @property string|null $failure_reason Reason for failed status
  * @property string|null $rejection_reason Reason for rejected status
  * @property string|null $reversal_reason Reason for reversed status
+ * @property int|null $branch_id
+ * @property int|null $counter_id
+ * @property string $till_id
+ * @property string|null $base_rate
+ * @property bool $rate_override
+ * @property int|null $rate_override_approved_by
+ * @property Carbon|null $rate_override_approved_at
+ * @property int|null $journal_entry_id
+ * @property int|null $deferred_journal_entry_id
+ * @property Carbon|null $journal_entries_created_at
+ * @property bool $has_deferred_accounting
+ * @property bool $approval_sync_failed
+ * @property Carbon|null $approval_sync_failed_at
+ * @property string|null $approval_sync_error
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property-read string $reference Human-readable reference derived from id (TX-XXXXXXXX)
+ * @property-read string $status_variant UI status badge variant
  */
 class Transaction extends TransactionModel
 {
@@ -58,7 +77,7 @@ class Transaction extends TransactionModel
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<string>
+     * @var list<string>
      *
      * SECURITY NOTE: Only user-controllable fields are fillable.
      * System-managed fields (approvals, journal entries, sync status, etc.)
@@ -220,6 +239,8 @@ class Transaction extends TransactionModel
 
     /**
      * Get all flagged transactions related to this transaction.
+     *
+     * @return HasMany<FlaggedTransaction, $this>
      */
     public function flags(): HasMany
     {
@@ -228,6 +249,8 @@ class Transaction extends TransactionModel
 
     /**
      * Get stock reservations for this transaction.
+     *
+     * @return HasMany<StockReservation, $this>
      */
     public function stockReservations(): HasMany
     {
@@ -235,7 +258,19 @@ class Transaction extends TransactionModel
     }
 
     /**
+     * Get the manager confirmation requests for this transaction.
+     *
+     * @return HasMany<TransactionConfirmation, $this>
+     */
+    public function confirmations(): HasMany
+    {
+        return $this->hasMany(TransactionConfirmation::class);
+    }
+
+    /**
      * Get the refund transaction if this transaction was refunded.
+     *
+     * @return HasOne<Transaction, $this>
      */
     public function refundTransaction(): HasOne
     {
@@ -244,6 +279,8 @@ class Transaction extends TransactionModel
 
     /**
      * Get the original transaction if this is a refund.
+     *
+     * @return BelongsTo<Transaction, $this>
      */
     public function originalTransaction(): BelongsTo
     {
@@ -251,7 +288,37 @@ class Transaction extends TransactionModel
     }
 
     /**
+     * @return BelongsTo<Customer, $this>
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Alias of user() - the teller who created the transaction.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Alias of user() - the teller who handled the transaction.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function teller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
      * Get the user who cancelled this transaction.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function canceller(): BelongsTo
     {
@@ -260,17 +327,25 @@ class Transaction extends TransactionModel
 
     /**
      * Get all transaction errors for this transaction.
+     *
+     * @return HasMany<TransactionError, $this>
      */
     public function transactionErrors(): HasMany
     {
         return $this->hasMany(TransactionError::class);
     }
 
+    /**
+     * @return BelongsTo<JournalEntry, $this>
+     */
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
     }
 
+    /**
+     * @return BelongsTo<JournalEntry, $this>
+     */
     public function deferredJournalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class, 'deferred_journal_entry_id');
