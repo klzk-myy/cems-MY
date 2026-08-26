@@ -14,6 +14,7 @@ class CustomerRelationTest extends TestCase
     #[Test]
     public function customer_relation_can_store_engagement_assessment(): void
     {
+        /** @var CustomerRelation $relation */
         $relation = CustomerRelation::factory()->create();
 
         $relation->assessEngagement('direct', 'Works directly with PEP on financial transactions');
@@ -26,6 +27,7 @@ class CustomerRelationTest extends TestCase
     #[Test]
     public function customer_relation_can_store_indirect_engagement(): void
     {
+        /** @var CustomerRelation $relation */
         $relation = CustomerRelation::factory()->create();
 
         $relation->assessEngagement('indirect');
@@ -38,6 +40,7 @@ class CustomerRelationTest extends TestCase
     #[Test]
     public function customer_relation_can_store_minimal_engagement(): void
     {
+        /** @var CustomerRelation $relation */
         $relation = CustomerRelation::factory()->create();
 
         $relation->assessEngagement('minimal', 'Occasional social connection only');
