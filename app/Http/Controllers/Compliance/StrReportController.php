@@ -168,6 +168,10 @@ class StrReportController extends Controller
         return response()->streamDownload(function () use ($query): void {
             $handle = fopen('php://output', 'w');
 
+            if ($handle === false) {
+                throw new \RuntimeException('Unable to open output stream for CSV export.');
+            }
+
             fputcsv($handle, [
                 'Reference',
                 'BNM Reference',
@@ -185,7 +189,7 @@ class StrReportController extends Controller
                     fputcsv($handle, [
                         $report->reference(),
                         $report->bnm_reference,
-                        $report->customer?->id_number_masked ?? ('CUST-'.$report->customer_id),
+                        $report->customer->id_number_masked ?? ('CUST-'.$report->customer_id),
                         number_format((float) $report->trigger_amount, 4, '.', ''),
                         $report->trigger_reason,
                         $report->status->value,
