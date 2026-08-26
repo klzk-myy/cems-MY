@@ -13,6 +13,7 @@ use App\Events\CaseOpened;
 use App\Events\RiskScoreCalculated;
 use App\Events\RiskScoreUpdated;
 use App\Models\Alert;
+use App\Models\FlaggedTransaction;
 use App\Models\RiskScoreSnapshot;
 use App\Models\User;
 use App\Notifications\TransactionFlaggedNotification;
@@ -49,10 +50,12 @@ class ComplianceEventListener
 
         try {
             $flaggedTransaction = $alert->flaggedTransaction;
-            if ($flaggedTransaction) {
+            if ($flaggedTransaction instanceof FlaggedTransaction) {
+                $flaggedBy = $alert->assignedTo;
+
                 Notification::send(
                     $notifiableUsers,
-                    new TransactionFlaggedNotification($flaggedTransaction, $alert->assignedTo)
+                    new TransactionFlaggedNotification($flaggedTransaction, $flaggedBy instanceof User ? $flaggedBy : null)
                 );
             }
 
