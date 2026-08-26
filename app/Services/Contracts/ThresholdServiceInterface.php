@@ -6,7 +6,7 @@ interface ThresholdServiceInterface
 {
     public function set(string $category, string $key, string|int|float $value, ?string $reason = null): bool;
 
-    public function get(string $category, string $key, ?string $fallbackConstant = null): string|int|float;
+    public function get(string $category, string $key, string|int|float|null $fallback = null): string|int|float;
 
     public function getAutoApproveThreshold(): string;
 
