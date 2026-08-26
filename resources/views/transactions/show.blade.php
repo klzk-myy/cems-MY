@@ -88,6 +88,19 @@
             </div>
         </x-card>
 
+        @if($requiresManagerConfirmation ?? false)
+            <x-alert type="warning" title="Confirmation Required" role="alert">
+                This transaction exceeds the manager confirmation threshold and cannot be approved until it has been confirmed.
+                @can('approve', $transaction)
+                    <div class="mt-3">
+                        <x-button href="{{ route('transactions.confirm.show', $transaction->id) }}" variant="primary">
+                            Go to Confirmation
+                        </x-button>
+                    </div>
+                @endcan
+            </x-alert>
+        @endif
+
         <x-card title="Actions">
             <div class="flex items-center gap-4 flex-wrap">
                 @if(in_array($transaction->status?->value, ['Pending', 'PendingApproval'], true))
