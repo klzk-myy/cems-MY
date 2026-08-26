@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\SystemAlertLevel;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
@@ -9,6 +10,7 @@ use App\Models\CurrencyPosition;
 use App\Models\RevaluationEntry;
 use App\Services\AuditService;
 use App\Services\System\MathService;
+use App\Services\System\SystemAlertService;
 use App\Services\Transaction\RateApiService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
@@ -25,7 +27,12 @@ class RevaluationService
         protected RateApiService $rateApiService,
         protected AccountingService $accountingService,
         protected AuditService $auditService,
-    ) {}
+        protected ?SystemAlertService $alertService = null,
+    ) {
+        // Optional for backwards compatibility with callers constructing the
+        // service manually (unit tests); resolved from the container lazily.
+        $this->alertService ??= app(SystemAlertService::class);
+    }
 
     /**
      * Run revaluation for all currency positions in a branch.
@@ -72,7 +79,7 @@ class RevaluationService
 
         // Check for position limit breaches
         foreach ($results as $result) {
-            $this->checkPositionLimitBreach($result);
+            $this->checkPositionLimitBreach($result, $branchId);
         }
 
         return [
@@ -493,7 +500,6 @@ class RevaluationService
      * and is active in the chart of accounts when validation is enabled.
      *
      * @param  string  $configKey  Configuration key for the account code
-     * @param  string  $defaultCode  Default account code to use if config not set
      * @return string The validated account code
      *
      * @throws \InvalidArgumentException If account doesn't exist or is inactive (when validation enabled)
@@ -524,16 +530,17 @@ class RevaluationService
     /**
      * Check if a revaluation result breaches position limits.
      *
-     * Logs a warning event if the position balance exceeds configured limits.
+     * Logs a warning event and raises a SystemAlert (Warning when the breach
+     * is within 10% of the limit, Critical beyond it).
      *
      * @param  array  $result  Revaluation result containing currency and gain/loss
      */
-    protected function checkPositionLimitBreach(array $result): void
+    protected function checkPositionLimitBreach(array $result, ?string $branchId = null): void
     {
         $currencyCode = $result['currency'] ?? null;
         $gainLossAmount = $result['gain_loss'] ?? '0';
 
-        // Only log if there's a gain (position increase)
+        // Only alert if there's a gain (position increase)
         if ($this->mathService->compare($gainLossAmount, '0') <= 0) {
             return;
         }
@@ -541,16 +548,49 @@ class RevaluationService
         $limits = config('cems.position_limits', []);
 
         // Check if this currency has a configured limit
-        if (isset($limits[$currencyCode]) && $this->mathService->compare($gainLossAmount, (string) $limits[$currencyCode]) > 0) {
-            $positionLimit = $limits[$currencyCode];
-            $this->auditService->logPositionEvent('position_limit_breach', [
-                'new' => [
-                    'currency_code' => $currencyCode,
-                    'gain_loss' => $gainLossAmount,
-                    'limit' => $positionLimit,
-                    'breach_amount' => $this->mathService->subtract($gainLossAmount, (string) $positionLimit),
-                ],
-            ]);
+        if (! isset($limits[$currencyCode]) || $this->mathService->compare($gainLossAmount, (string) $limits[$currencyCode]) <= 0) {
+            return;
+        }
+
+        $positionLimit = (string) $limits[$currencyCode];
+        $breachAmount = $this->mathService->subtract($gainLossAmount, $positionLimit);
+
+        $this->auditService->logPositionEvent('position_limit_breach', [
+            'new' => [
+                'currency_code' => $currencyCode,
+                'gain_loss' => $gainLossAmount,
+                'limit' => $positionLimit,
+                'breach_amount' => $breachAmount,
+            ],
+        ]);
+
+        // Severity by breach magnitude: >10% over the limit is Critical.
+        $overRatio = '0';
+        if ($this->mathService->compare($positionLimit, '0') > 0) {
+            $overRatio = $this->mathService->divide($breachAmount, $positionLimit);
+        }
+        $level = $this->mathService->compare($overRatio, '0.10') > 0 ? SystemAlertLevel::Critical : SystemAlertLevel::Warning;
+
+        try {
+            $this->alertService->send(
+                "Position limit breached for {$currencyCode}"
+                .($branchId !== null ? " at branch {$branchId}" : '')
+                .": gain/loss {$gainLossAmount} exceeds limit {$positionLimit} (breach {$breachAmount})",
+                $level->value,
+                [
+                    'source' => 'revaluation',
+                    'metadata' => [
+                        'branch_id' => $branchId,
+                        'currency_code' => $currencyCode,
+                        'gain_loss' => $gainLossAmount,
+                        'limit' => $positionLimit,
+                        'breach_amount' => $breachAmount,
+                        'severity_ratio' => $overRatio,
+                    ],
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::error('Failed to raise position-limit breach alert: '.$e->getMessage());
         }
     }
 }
