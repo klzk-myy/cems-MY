@@ -28,10 +28,10 @@ class AllocationController extends Controller
             ->when($branch, fn ($q) => $q->where('branch_id', $branch->id));
 
         match ($status) {
-            'pending' => $query->where('status', TellerAllocationStatus::Pending),
-            'active' => $query->where('status', TellerAllocationStatus::Active),
-            'completed' => $query->where('status', TellerAllocationStatus::Completed),
-            'rejected' => $query->where('status', TellerAllocationStatus::Rejected),
+            'pending' => $query->where('status', TellerAllocationStatus::PENDING),
+            'active' => $query->where('status', TellerAllocationStatus::ACTIVE),
+            'completed' => $query->where('status', TellerAllocationStatus::CLOSED),
+            'rejected' => $query->where('status', TellerAllocationStatus::REJECTED),
             default => $query,
         };
 
