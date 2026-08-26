@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('reports_generated', function (Blueprint $table) {
             $table->enum('status', ['Generated', 'Submitted', 'Pending', 'Failed'])->default('Generated')->after('file_format');
             $table->timestamp('submitted_at')->nullable()->after('status');
-            $table->foreignId('submitted_by')->nullable()->constrained('users')->restrictOnDelete()->after('submitted_at');
+            $table->foreignId('submitted_by')->nullable()->after('submitted_at')->constrained('users')->restrictOnDelete();
         });
     }
 
