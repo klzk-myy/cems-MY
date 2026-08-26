@@ -75,12 +75,12 @@ class TransactionFlaggedNotification extends Notification implements ShouldQueue
             'flagged_transaction_id' => $this->flaggedTransaction->id,
             'transaction_id' => $this->flaggedTransaction->transaction_id,
             'customer_id' => $this->flaggedTransaction->customer_id,
-            'customer_name' => $this->flaggedTransaction->customer?->full_name ?? 'Unknown',
+            'customer_name' => $this->flaggedTransaction->customer->full_name ?? 'Unknown',
             'flag_type' => $this->flaggedTransaction->flag_type->value ?? null,
             'flag_reason' => $this->flaggedTransaction->flag_reason,
             'status' => $this->flaggedTransaction->status->value ?? null,
             'flagged_by' => $this->flaggedBy?->id,
-            'flagged_by_name' => $this->flaggedBy?->username ?? 'System',
+            'flagged_by_name' => $this->flaggedBy->username ?? 'System',
             'url' => route('compliance.flags.resolve', $this->flaggedTransaction->id),
         ];
     }
@@ -107,7 +107,7 @@ class TransactionFlaggedNotification extends Notification implements ShouldQueue
             ->where('notification_type', 'transaction_flagged')
             ->first();
 
-        return $preference?->email_enabled ?? true;
+        return $preference->email_enabled ?? true;
     }
 
     /**
