@@ -6,7 +6,25 @@ use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $report_type
+ * @property Carbon $period_start
+ * @property Carbon $period_end
+ * @property int $generated_by
+ * @property Carbon $generated_at
+ * @property string|null $file_path
+ * @property string $file_format 'CSV', 'PDF', 'XLSX'
+ * @property string|null $status 'Generated', 'Submitted', 'Pending', 'Archived'
+ * @property int $version
+ * @property string|null $notes
+ * @property Carbon|null $submitted_at
+ * @property int|null $submitted_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class ReportGenerated extends BaseModel
 {
     use HasFactory;
@@ -38,11 +56,17 @@ class ReportGenerated extends BaseModel
         'report_type' => ReportType::class,
     ];
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function generatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'generated_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function submittedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'submitted_by');
