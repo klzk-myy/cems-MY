@@ -8,6 +8,7 @@ use App\Http\Controllers\Concerns\EnsuresManagerOrAdmin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
 use App\Http\Requests\Api\V1\Counter\InitiateOpeningRequest;
+use App\Models\Branch;
 use App\Models\User;
 use App\Services\Branch\CounterOpeningWorkflowService;
 use Illuminate\Http\JsonResponse;
@@ -37,9 +38,12 @@ class CounterOpeningController extends Controller
      */
     public function pendingRequests(): JsonResponse
     {
+        /** @var User $user */
         $user = Auth::user();
 
-        if (! $user->branch) {
+        $branch = $user->branch;
+
+        if (! $branch instanceof Branch) {
             return $this->errorResponse('User has no assigned branch', [], 400);
         }
 
@@ -47,7 +51,7 @@ class CounterOpeningController extends Controller
             return $response;
         }
 
-        $pending = $this->workflowService->getPendingRequestsForBranch($user->branch);
+        $pending = $this->workflowService->getPendingRequestsForBranch($branch);
 
         return $this->successResponse($pending);
     }
@@ -58,6 +62,7 @@ class CounterOpeningController extends Controller
      */
     public function initiateOpeningRequest(InitiateOpeningRequest $request, int $counterId): JsonResponse
     {
+        /** @var User $user */
         $user = Auth::user();
 
         $counter = $this->authorizeCounter($counterId);
@@ -88,6 +93,7 @@ class CounterOpeningController extends Controller
      */
     public function approveAndOpen(ApproveAndOpenRequest $request, int $counterId): JsonResponse
     {
+        /** @var User $user */
         $user = Auth::user();
 
         if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can approve and open counters')) {
@@ -101,6 +107,7 @@ class CounterOpeningController extends Controller
 
         $validated = $request->validated();
 
+        /** @var User $teller */
         $teller = User::findOrFail($validated['teller_id']);
 
         // Verify teller belongs to same branch
