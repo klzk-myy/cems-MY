@@ -23,7 +23,7 @@ class TestRunnerService
             'test_suite' => $suite,
             'status' => 'running',
             'started_at' => now(),
-            'executed_by' => auth()->user()?->username ?? 'system',
+            'executed_by' => auth()->user()->username ?? 'system',
             'git_branch' => $this->getGitBranch(),
             'git_commit' => $this->getGitCommit(),
         ]);
