@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Enums\PepType;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
@@ -143,6 +144,51 @@ class TransactionControllerStoreTest extends TestCase
         $response->assertStatus(403);
         $response->assertJsonPath('success', false);
         $this->assertDatabaseCount('transactions', 0);
+    }
+
+    #[Test]
+    public function api_store_blocks_pep_transaction_without_source_of_wealth(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
+        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true, 'pep_type' => PepType::Domestic->value]);
+        $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
+        $counter = $this->setupStoreTest($teller, 'USD');
+
+        $response = $this->actingAs($teller)->postJson('/api/v1/transactions', $this->basePayload($customer, $counter, $currency));
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('success', false);
+        $this->assertDatabaseCount('transactions', 0);
+    }
+
+    #[Test]
+    public function api_store_creates_pep_transaction_with_source_of_wealth(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
+        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true, 'pep_type' => PepType::Domestic->value]);
+        $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
+        $counter = $this->setupStoreTest($teller, 'USD');
+
+        $payload = $this->basePayload($customer, $counter, $currency);
+        $payload['source_of_wealth'] = 'Investment Portfolio';
+
+        $response = $this->actingAs($teller)->postJson('/api/v1/transactions', $payload);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('transactions', [
+            'customer_id' => $customer->id,
+            'user_id' => $teller->id,
+            'source_of_funds' => 'Salary',
+            'source_of_wealth' => 'Investment Portfolio',
+        ]);
     }
 
     #[Test]
