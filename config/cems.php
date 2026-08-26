@@ -132,11 +132,38 @@ return [
         'contact_phone' => env('BNM_CONTACT_PHONE', ''),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Dormancy Threshold
+    |--------------------------------------------------------------------------
+    |
+    | Customers with no transactions for this many months are stamped as
+    | dormant by the customers:mark-dormant sweep (monthly schedule).
+    |
+    */
+    'dormancy_months' => (int) env('DORMANCY_MONTHS', 12),
+
     'system_user_id' => (int) env('SYSTEM_USER_ID', 1),
 
     'api_rates' => [
-        'currencies' => explode(',', env('API_RATES_CURRENCIES', 'USD,EUR,GBP,SGD,AUD,CAD,CHF,JPY')),
+        'currencies' => explode(',', (string) env('API_RATES_CURRENCIES', 'USD,EUR,GBP,SGD,AUD,CAD,CHF,JPY')),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Exchange Rate Staleness & Auto Fetch
+    |--------------------------------------------------------------------------
+    |
+    | rate_staleness_hours: how long since the newest exchange_rates row was
+    | refreshed before the hourly staleness check raises a system alert.
+    |
+    | rate_auto_fetch_enabled: opt-in scheduled refresh of rates from the
+    | upstream exchange-rate API every two hours (RATE_AUTO_FETCH_ENABLED).
+    |
+    */
+    'rate_staleness_hours' => (int) env('RATE_STALENESS_HOURS', 8),
+
+    'rate_auto_fetch_enabled' => (bool) env('RATE_AUTO_FETCH_ENABLED', false),
 
     'batch_import' => [
         'columns' => [
@@ -149,7 +176,7 @@ return [
             'source_of_funds',
             'till_id',
         ],
-        'sample_currencies' => explode(',', env('API_RATES_CURRENCIES', 'USD')),
+        'sample_currencies' => explode(',', (string) env('API_RATES_CURRENCIES', 'USD')),
     ],
 
     'demo' => [
