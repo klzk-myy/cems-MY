@@ -3,92 +3,83 @@
         <x-page-header
             title="Risk Dashboard"
             description="Customer risk overview and analytics"
-        />
+        >
+            <x-slot:actions>
+                <x-button variant="secondary" href="{{ route('compliance.risk-dashboard.trends') }}">
+                    View Trends
+                </x-button>
+            </x-slot:actions>
+        </x-page-header>
+
+        @if (! $sanctionsLoaded)
+            <x-alert type="warning" title="Sanctions lists not loaded">
+                Sanction entries are empty - sanctions screening is ineffective until the lists are imported.
+                Run <code>php artisan sanctions:update</code> immediately, or trigger an import from the
+                <a href="{{ route('compliance.sanctions.index') }}" class="underline font-medium">sanctions lists screen</a>.
+            </x-alert>
+        @endif
 
         <x-stat-grid cols="4">
-            <x-stat-card label="High Risk" value="12" color="red" />
-            <x-stat-card label="Medium Risk" value="28" color="yellow" />
-            <x-stat-card label="Low Risk" value="156" color="green" />
-            <x-stat-card label="PEP Customers" value="8" color="purple" />
+            <x-stat-card label="Critical Risk (Today)" :value="$summary['critical_risk']" color="red" />
+            <x-stat-card label="High Risk (Today)" :value="$summary['high_risk']" color="yellow" />
+            <x-stat-card label="Medium Risk (Today)" :value="$summary['medium_risk']" color="blue" />
+            <x-stat-card label="Low Risk (Today)" :value="$summary['low_risk']" color="green" />
         </x-stat-grid>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <x-card title="Risk Distribution">
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-ink-muted">High Risk</span>
-                        <div class="flex items-center gap-3">
-                            <x-progress-bar :value="6" :max="100" width="w-48" />
-                            <span class="text-sm font-medium text-ink">6%</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-ink-muted">Medium Risk</span>
-                        <div class="flex items-center gap-3">
-                            <x-progress-bar :value="14" :max="100" width="w-48" />
-                            <span class="text-sm font-medium text-ink">14%</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-ink-muted">Low Risk</span>
-                        <div class="flex items-center gap-3">
-                            <x-progress-bar :value="80" :max="100" width="w-48" />
-                            <span class="text-sm font-medium text-ink">80%</span>
-                        </div>
-                    </div>
-                </div>
-            </x-card>
+        <x-stat-grid cols="3">
+            <x-stat-card label="Customers Scored Today" :value="$summary['total_scored_today']" />
+            <x-stat-card label="Deteriorating Trend" :value="$summary['deteriorating_trend']" color="red" />
+            <x-stat-card label="Needs Re-screening" :value="$summary['needs_rescreening']" color="yellow" />
+        </x-stat-grid>
 
-            <x-card title="High Risk Customers">
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-ink">Ahmad Razali</p>
-                            <p class="text-xs text-ink-muted">CUST-001</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-ink">Siti Nurhaliza</p>
-                            <p class="text-xs text-ink-muted">CUST-042</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-ink">Tan Wei Ming</p>
-                            <p class="text-xs text-ink-muted">CUST-108</p>
-                        </div>
-                    </div>
-                </div>
-            </x-card>
-        </div>
+        <x-filter-bar method="GET">
+            <x-select
+                name="threshold"
+                :options="['40' => 'Score 40+', '60' => 'Score 60+ (High)', '80' => 'Score 80+ (Critical)']"
+                placeholder=""
+                :selected="(string) $threshold"
+                inline
+            />
+            <x-button variant="primary" type="submit">Apply Threshold</x-button>
+        </x-filter-bar>
 
-        <x-card title="Recent Risk Score Changes">
-            <x-table>
-                <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Previous Score</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">New Score</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Change Reason</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                </x-slot:thead>
-                <x-slot:tbody>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-ink">Ahmad Razali</td>
-                        <td class="px-4 py-3 text-sm"><x-badge>Medium</x-badge></td>
-                        <td class="px-4 py-3 text-sm"><x-badge>High</x-badge></td>
-                        <td class="px-4 py-3 text-sm text-ink-muted">Velocity alert triggered</td>
-                        <td class="px-4 py-3 text-sm text-ink-muted">2024-01-15</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-ink">Lee Mei Ling</td>
-                        <td class="px-4 py-3 text-sm"><x-badge variant="success">Low</x-badge></td>
-                        <td class="px-4 py-3 text-sm"><x-badge>Medium</x-badge></td>
-                        <td class="px-4 py-3 text-sm text-ink-muted">Transaction pattern change</td>
-                        <td class="px-4 py-3 text-sm text-ink-muted">2024-01-14</td>
-                    </tr>
-                </x-slot:tbody>
-            </x-table>
+        <x-card title="High-Risk Customers (score {{ $threshold }}+)">
+            <div class="overflow-x-auto">
+                <x-table>
+                    <x-slot:thead>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Risk Level</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Score</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Review</th>
+                    </x-slot:thead>
+                    <x-slot:tbody>
+                        @forelse ($customers as $customer)
+                            @php
+                                $snapshot = $customer->latestRiskSnapshot;
+                                $score = $snapshot?->overall_score ?? $customer->risk_score;
+                            @endphp
+                            <tr class="border-t border-border hover:bg-canvas-subtle">
+                                <td class="px-4 py-3 text-sm">
+                                    <a href="{{ route('compliance.risk-dashboard.customer', $customer) }}"
+                                       class="text-primary hover:underline">
+                                        {{ $customer->full_name }}
+                                    </a>
+                                    <div class="text-xs text-ink-muted">#{{ $customer->id }}</div>
+                                </td>
+                                <td class="px-4 py-3 text-sm"><x-risk-badge :customer="$customer" /></td>
+                                <td class="px-4 py-3 text-sm text-ink tabular-nums">{{ $score }}</td>
+                                <td class="px-4 py-3 text-sm text-ink-muted whitespace-nowrap">
+                                    {{ $snapshot?->snapshot_date?->format('d M Y') ?? $customer->risk_assessed_at?->format('d M Y') ?? 'Never' }}
+                                </td>
+                            </tr>
+                        @empty
+                            <x-empty-state message="No customers at or above the selected risk threshold." :colspan="4" />
+                        @endforelse
+                    </x-slot:tbody>
+                </x-table>
+            </div>
         </x-card>
+
+        {{ $customers->links() }}
     </div>
 </x-app-layout>
