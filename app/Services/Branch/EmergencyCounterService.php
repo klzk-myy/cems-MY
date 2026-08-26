@@ -10,6 +10,7 @@ use App\Exceptions\Domain\UnauthorizedException;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\EmergencyClosure;
+use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\User;
 use App\Notifications\EmergencyCounterClosureNotification;
@@ -57,8 +58,10 @@ class EmergencyCounterService
 
             // Only roll an ACTIVE allocation back into the pool - returning a
             // returned/rejected/closed allocation would clobber its status.
-            if ($session->tellerAllocation?->status->isActive()) {
-                $this->allocationService->returnToPool($session->tellerAllocation);
+            $tellerAllocation = $session->tellerAllocation;
+
+            if ($tellerAllocation instanceof TellerAllocation && $tellerAllocation->status->isActive()) {
+                $this->allocationService->returnToPool($tellerAllocation);
             }
 
             return $closure;
