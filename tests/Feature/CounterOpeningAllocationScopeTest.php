@@ -26,7 +26,7 @@ class CounterOpeningAllocationScopeTest extends TestCase
     private function makeWorkflow(): CounterOpeningWorkflowService
     {
         $mathService = new MathService;
-        $branchPoolService = new BranchPoolService($mathService);
+        $branchPoolService = new BranchPoolService(new AuditService, $mathService);
         $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService);
         $counterService = new CounterService(
             $tellerAllocationService,
