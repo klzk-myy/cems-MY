@@ -2,15 +2,19 @@
 
 namespace Tests\Unit;
 
+use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Models\ScreeningResult;
 use App\Models\Transaction;
+use App\Models\User;
+use App\Notifications\SanctionsMatchNotification;
 use App\Services\CustomerScreeningService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -225,7 +229,7 @@ class CustomerScreeningServiceTest extends TestCase
         ]);
 
         // Simulate confirmed sanctions match
-        $_result = $this->service->handleConfirmedMatch($customer, 'UNSCR', 'AL_QAEDA');
+        $_result = $this->service->handleConfirmedMatch($customer, 'UNSCR');
 
         $customer->refresh();
 
@@ -242,7 +246,7 @@ class CustomerScreeningServiceTest extends TestCase
             'is_active' => false,
         ]);
 
-        $_result = $this->service->handleConfirmedMatch($customer, 'DOMESTIC', 'SPECIFIED_ENTITY');
+        $_result = $this->service->handleConfirmedMatch($customer, 'DOMESTIC');
 
         $customer->refresh();
 
@@ -258,11 +262,35 @@ class CustomerScreeningServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->service->handleConfirmedMatch($customer, 'UNSCR', 'TEST_ENTITY');
+        $this->service->handleConfirmedMatch($customer, 'UNSCR');
 
         $customer->refresh();
 
         $this->assertTrue($customer->transactions_blocked);
+    }
+
+    #[Test]
+    public function confirmed_match_notifies_compliance_officers_of_sanctions_match(): void
+    {
+        Notification::fake();
+
+        $officer = User::factory()->complianceOfficer()->create();
+        $manager = User::factory()->manager()->create();
+        User::factory()->teller()->create();
+
+        $customer = Customer::factory()->create([
+            'full_name' => 'Sanctioned Customer',
+            'is_active' => true,
+        ]);
+
+        $this->service->handleConfirmedMatch($customer, 'UNSCR');
+
+        Notification::assertSentToTimes($officer, SanctionsMatchNotification::class, 1);
+        Notification::assertSentToTimes($manager, SanctionsMatchNotification::class, 1);
+        Notification::assertNotSentTo(
+            User::where('role', UserRole::Teller->value)->first(),
+            SanctionsMatchNotification::class
+        );
     }
 
     #[Test]
