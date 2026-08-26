@@ -6,7 +6,7 @@ class TransactionWizardStep3Request extends AuthorizedFormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->role->canCreateTransactions();
+        return $this->user()->role->canCreateTransaction();
     }
 
     public function rules(): array
@@ -14,7 +14,7 @@ class TransactionWizardStep3Request extends AuthorizedFormRequest
         return [
             'wizard_session_id' => ['required', 'string'],
             'confirm_details' => ['required', 'accepted'],
-            'idempotency_key' => ['required', 'string', 'unique:transactions,idempotency_key'],
+            'idempotency_key' => ['required', 'string'],
         ];
     }
 
