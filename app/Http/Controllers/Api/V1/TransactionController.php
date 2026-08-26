@@ -13,14 +13,17 @@ use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\Transaction;
 use App\Services\Contracts\TransactionCreationServiceInterface;
+use App\Services\Transaction\ReceiptGenerationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 
 class TransactionController extends Controller
 {
     use ApiResponse, BranchScopedQuery;
 
     public function __construct(
-        protected TransactionCreationServiceInterface $creationService
+        protected TransactionCreationServiceInterface $creationService,
+        protected ReceiptGenerationService $receiptService
     ) {}
 
     /**
@@ -47,7 +50,7 @@ class TransactionController extends Controller
         $ipAddress = $request->ip();
 
         try {
-            $transaction = $this->creationService->prepareAndCreate($validated, auth()->id(), $ipAddress);
+            $transaction = $this->creationService->prepareAndCreate($validated, (int) auth()->id(), $ipAddress);
 
             $transaction->load(['customer', 'user', 'approver']);
 
@@ -76,5 +79,29 @@ class TransactionController extends Controller
         $this->authorize('view', $transaction);
 
         return $this->resourceWithSuccess(new TransactionResource($transaction), 'Transaction retrieved successfully.');
+    }
+
+    /**
+     * Stream a PDF receipt for a completed transaction.
+     *
+     * Mirrors the web TransactionController::receipt gating: branch-scoped
+     * lookup, view policy, and completed-status requirement.
+     */
+    public function receipt(int $id): JsonResponse|Response
+    {
+        $transaction = $this->scopeByBranch(Transaction::with(['customer', 'user', 'approver']))
+            ->findOrFail($id);
+
+        $this->authorize('view', $transaction);
+
+        if (! $transaction->status->isCompleted()) {
+            return $this->errorResponse(
+                'Receipts can only be generated for completed transactions.',
+                [],
+                422
+            );
+        }
+
+        return $this->receiptService->generate($transaction);
     }
 }
