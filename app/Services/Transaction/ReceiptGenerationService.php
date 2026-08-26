@@ -45,17 +45,27 @@ class ReceiptGenerationService
     private function generateQrCode(Transaction $transaction): ?string
     {
         try {
+            $payload = json_encode([
+                'id' => $transaction->id,
+                'amount' => $transaction->amount_local,
+                'currency' => $transaction->currency_code,
+                'date' => $transaction->created_at->toIso8601String(),
+                'customer_id' => $transaction->customer_id,
+                'type' => $transaction->type->value,
+                'verify' => route('verification.transaction', ['reference' => $transaction->reference]),
+            ]);
+
+            if ($payload === false) {
+                return null;
+            }
+
             $data = QrCode::format('png')
                 ->size(150)
-                ->generate(json_encode([
-                    'id' => $transaction->id,
-                    'amount' => $transaction->amount_local,
-                    'currency' => $transaction->currency_code,
-                    'date' => $transaction->created_at->toIso8601String(),
-                    'customer_id' => $transaction->customer_id,
-                    'type' => $transaction->type->value,
-                    'verify' => url('/verify/transaction/'.$transaction->id),
-                ]));
+                ->generate($payload);
+
+            if (! is_string($data)) {
+                return null;
+            }
 
             return 'data:image/png;base64,'.base64_encode($data);
         } catch (\Exception $e) {
