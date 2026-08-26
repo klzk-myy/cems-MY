@@ -41,11 +41,13 @@ class TransactionApprovedListener implements ShouldQueue
     {
         $notifiableUsers = collect();
 
+        /** @var User|null $teller */
         $teller = User::find($transaction->user_id);
         if ($teller) {
             $notifiableUsers->push($teller);
         }
 
+        /** @var User|null $approver */
         $approver = User::find($transaction->approved_by);
         if ($approver && $approver->id !== $teller?->id) {
             $notifiableUsers->push($approver);
