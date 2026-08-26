@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property Carbon $start_date Start date of the accounting period
  * @property Carbon $end_date End date of the accounting period
  * @property string $period_type Type of period (e.g., monthly, quarterly, yearly)
- * @property string $status Current status: 'open' or 'closed'
+ * @property AccountingPeriodStatus $status Current period status
  * @property Carbon|null $closed_at Timestamp when the period was closed
  * @property int|null $closed_by ID of the user who closed the period
  * @property Carbon|null $created_at
