@@ -45,9 +45,9 @@ class ReportRunFactory extends Factory
             'completed_at' => $completedAt,
             'file_path' => $status === ReportRunStatus::Completed ? 'reports/'.$this->faker->unique()->word.'.csv' : null,
             'generated_by' => User::factory(),
-            'row_count' => $status === ReportStatus::Completed ? $this->faker->numberBetween(100, 10000) : null,
+            'row_count' => $status === ReportRunStatus::Completed ? $this->faker->numberBetween(100, 10000) : null,
             'error_message' => $status === ReportRunStatus::Failed ? $this->faker->sentence() : null,
-            'downloaded_count' => $status === ReportStatus::Completed ? $this->faker->numberBetween(0, 50) : 0,
+            'downloaded_count' => $status === ReportRunStatus::Completed ? $this->faker->numberBetween(0, 50) : 0,
         ];
     }
 
