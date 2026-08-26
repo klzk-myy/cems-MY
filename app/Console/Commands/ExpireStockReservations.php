@@ -64,6 +64,7 @@ class ExpireStockReservations extends Command
     {
         $transaction = $reservation->transaction;
         if ($transaction) {
+            /** @var User|null $teller */
             $teller = User::find($transaction->user_id);
             if ($teller) {
                 $teller->notify(new ReservationExpiredNotification($reservation));
