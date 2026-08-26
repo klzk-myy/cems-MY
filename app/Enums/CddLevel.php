@@ -43,14 +43,31 @@ enum CddLevel: string
             return self::Enhanced;
         }
 
+        if (! is_numeric($amount)) {
+            throw new \InvalidArgumentException('Transaction amount must be numeric.');
+        }
+
+        /** @var numeric-string $amount */
         // Amount thresholds per pd-00.md 14C.12
         // >= RM 10,000: Standard CDD
-        if (bccomp($amount, self::getStandardCddThreshold()) >= 0) {
+        $standardThreshold = self::getStandardCddThreshold();
+
+        if (! is_numeric($standardThreshold)) {
+            throw new \LogicException('Configured standard CDD threshold must be numeric.');
+        }
+
+        if (bccomp($amount, $standardThreshold) >= 0) {
             return self::Standard;
         }
 
         // RM 3,000 - 10,000: Specific CDD
-        if (bccomp($amount, self::getSpecificCddThreshold()) >= 0) {
+        $specificThreshold = self::getSpecificCddThreshold();
+
+        if (! is_numeric($specificThreshold)) {
+            throw new \LogicException('Configured specific CDD threshold must be numeric.');
+        }
+
+        if (bccomp($amount, $specificThreshold) >= 0) {
             return self::Specific;
         }
 
@@ -115,7 +132,7 @@ enum CddLevel: string
 
         return match ($this) {
             self::Simplified => "< RM {$specific}",
-            self::Specific => "RM {$specific} - ".($standard - 1),
+            self::Specific => "RM {$specific} - ".bcsub($standard, '1'),
             self::Standard => "≥ RM {$standard}",
             self::Enhanced => 'Risk-based',
         };
