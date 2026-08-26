@@ -8,7 +8,27 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $customer_id
+ * @property int|null $previous_score
+ * @property string|null $previous_rating
+ * @property Carbon $snapshot_date
+ * @property int $overall_score
+ * @property string|null $overall_rating_label
+ * @property int $velocity_score
+ * @property int $structuring_score
+ * @property int $geographic_score
+ * @property int $amount_score
+ * @property RiskTrend $trend
+ * @property array|null $factors
+ * @property Carbon|null $next_screening_date
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class RiskScoreSnapshot extends BaseModel
 {
     use HasFactory, SoftDeletes;
@@ -42,6 +62,9 @@ class RiskScoreSnapshot extends BaseModel
         'previous_rating' => RiskRating::class,
     ];
 
+    /**
+     * @return BelongsTo<Customer, $this>
+     */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
