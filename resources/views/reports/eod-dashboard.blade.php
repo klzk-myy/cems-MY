@@ -47,43 +47,52 @@
                             <td class="py-2 px-4 text-right">{{ number_format((float) ($report['totals']['cash_received'] ?? 0), 2) }}</td>
                         </tr>
                         <tr class="border-b border-border">
-                            <td class="py-2 px-4">Cash Paid</td>
-                            <td class="py-2 px-4 text-right">{{ number_format((float) ($report['totals']['cash_paid'] ?? 0), 2) }}</td>
+                            <td class="py-2 px-4">Cash Paid Out</td>
+                            <td class="py-2 px-4 text-right">{{ number_format((float) ($report['totals']['cash_paid_out'] ?? 0), 2) }}</td>
                         </tr>
                         <tr class="border-b border-border font-bold">
-                            <td class="py-2 px-4">Closing Float</td>
-                            <td class="py-2 px-4 text-right">{{ number_format((float) ($report['totals']['closing_float'] ?? 0), 2) }}</td>
+                            <td class="py-2 px-4">Closing Float (Expected)</td>
+                            <td class="py-2 px-4 text-right">{{ number_format((float) ($report['totals']['closing_expected'] ?? 0), 2) }}</td>
+                        </tr>
+                        <tr class="border-b border-border font-bold">
+                            <td class="py-2 px-4">Closing Float (Actual)</td>
+                            <td class="py-2 px-4 text-right">{{ number_format((float) ($report['totals']['closing_actual'] ?? 0), 2) }}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </x-card>
 
-        @if(!empty($report['variance_status']))
-            @php
-                $vs = $report['variance_status'];
-                $alertClass = match($vs['status'] ?? 'ok') {
-                    'critical' => 'bg-red-50 border-red-200 text-red-800',
-                    'warning' => 'bg-yellow-50 border-yellow-200 text-yellow-800',
-                    'minor' => 'bg-yellow-50 border-yellow-200 text-yellow-800',
-                    default => 'bg-green-50 border-green-200 text-green-800'
-                };
-                $varianceLabel = match($vs['status'] ?? 'ok') {
-                    'critical' => 'CRITICAL VARIANCE',
-                    'warning' => 'Variance Warning',
-                    'minor' => 'Minor Variance',
-                    default => 'No Variance'
-                };
-            @endphp
-            <x-card>
-                <div class="p-4 rounded-lg border {{ $alertClass }}">
-                    <strong>{{ $varianceLabel }}</strong>
-                    @if(isset($vs['variance_amount'])) — RM {{ number_format((float) $vs['variance_amount'], 2) }}{{ endif }}
-                </div>
-            </x-card>
-        @endif
+        @php
+            $variance = (string) ($report['totals']['variance'] ?? '0');
+            $absVariance = ltrim($variance, '-');
+            $redThreshold = (string) config('thresholds.variance.red', '500.00');
+            $yellowThreshold = (string) config('thresholds.variance.yellow', '100.00');
 
-        @if(!empty($report['counter_details']))
+            if (bccomp($absVariance, $redThreshold, 2) === 1) {
+                $alertClass = 'bg-red-50 border-red-200 text-red-800';
+                $varianceLabel = 'CRITICAL VARIANCE';
+            } elseif (bccomp($absVariance, $yellowThreshold, 2) === 1) {
+                $alertClass = 'bg-yellow-50 border-yellow-200 text-yellow-800';
+                $varianceLabel = 'Variance Warning';
+            } elseif (bccomp($variance, '0', 2) !== 0) {
+                $alertClass = 'bg-yellow-50 border-yellow-200 text-yellow-800';
+                $varianceLabel = 'Minor Variance';
+            } else {
+                $alertClass = 'bg-green-50 border-green-200 text-green-800';
+                $varianceLabel = 'No Variance';
+            }
+        @endphp
+        <x-card>
+            <div class="p-4 rounded-lg border {{ $alertClass }}">
+                <strong>{{ $varianceLabel }}</strong>
+                @if(bccomp($variance, '0', 2) !== 0)
+                    — RM {{ number_format((float) $variance, 2) }}
+                @endif
+            </div>
+        </x-card>
+
+        @if(!empty($report['counter_summaries']))
             <x-card title="Counter Details">
                 <div class="overflow-x-auto">
                     <x-table>
@@ -92,22 +101,24 @@
                             <th>Status</th>
                             <th>Teller</th>
                             <th>Opening Float</th>
-                            <th>Closing Float</th>
+                            <th>Closing Expected</th>
+                            <th>Closing Actual</th>
                             <th>Variance</th>
                         </x-slot:thead>
                         <x-slot:tbody>
-                            @foreach($report['counter_details'] as $counter)
+                            @foreach($report['counter_summaries'] as $counter)
                                 <tr>
                                     <td>{{ $counter['counter_name'] ?? 'N/A' }}</td>
                                     <td>
-                                        <x-badge variant="{{ ($counter['status'] ?? '') === 'Closed' ? 'success' : 'warning' }}">
-                                            {{ $counter['status'] ?? 'Unknown' }}
+                                        <x-badge variant="{{ ($counter['session']['status'] ?? '') === 'Closed' ? 'success' : 'warning' }}">
+                                            {{ $counter['session']['status'] ?? 'Unknown' }}
                                         </x-badge>
                                     </td>
-                                    <td>{{ $counter['teller_name'] ?? 'N/A' }}</td>
+                                    <td>{{ $counter['session']['current_user']['name'] ?? $counter['session']['opened_by']['name'] ?? 'N/A' }}</td>
                                     <td>{{ number_format((float) ($counter['opening_float'] ?? 0), 2) }}</td>
-                                    <td>{{ number_format((float) ($counter['closing_float'] ?? 0), 2) }}</td>
-                                    <td class="{{ (float) ($counter['variance'] ?? 0) !== 0.0 ? 'text-red-600 font-bold' : '' }}">
+                                    <td>{{ number_format((float) ($counter['closing_float_expected'] ?? 0), 2) }}</td>
+                                    <td>{{ number_format((float) ($counter['closing_float_actual'] ?? 0), 2) }}</td>
+                                    <td class="{{ bccomp((string) ($counter['variance'] ?? '0'), '0', 2) !== 0 ? 'text-red-600 font-bold' : '' }}">
                                         {{ number_format((float) ($counter['variance'] ?? 0), 2) }}
                                     </td>
                                 </tr>
@@ -115,6 +126,10 @@
                         </x-slot:tbody>
                     </x-table>
                 </div>
+            </x-card>
+        @else
+            <x-card>
+                <p class="text-center text-ink-muted py-8">No counter sessions found for {{ $date->format('Y-m-d') }}.</p>
             </x-card>
         @endif
     </div>
