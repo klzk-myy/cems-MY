@@ -8,7 +8,21 @@ use App\Models\Traits\HasNotes;
 use App\Models\Traits\HasStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $transaction_id
+ * @property int $user_id
+ * @property int|null $confirmed_by
+ * @property Carbon|null $confirmed_at
+ * @property TransactionConfirmationStatus $status
+ * @property string|null $confirmation_token
+ * @property Carbon|null $expires_at
+ * @property string|null $notes
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class TransactionConfirmation extends BaseModel
 {
     use BelongsToUser, HasFactory, HasNotes, HasStatus;
@@ -44,6 +58,8 @@ class TransactionConfirmation extends BaseModel
 
     /**
      * Get the transaction being confirmed.
+     *
+     * @return BelongsTo<Transaction, $this>
      */
     public function transaction(): BelongsTo
     {
@@ -52,6 +68,8 @@ class TransactionConfirmation extends BaseModel
 
     /**
      * Get the user who requested the confirmation.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function requester(): BelongsTo
     {
@@ -60,6 +78,11 @@ class TransactionConfirmation extends BaseModel
 
     /**
      * Get the user who confirmed/rejected the confirmation.
+     */
+    /**
+     * Get the user who confirmed (or rejected) the request.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function confirmer(): BelongsTo
     {
