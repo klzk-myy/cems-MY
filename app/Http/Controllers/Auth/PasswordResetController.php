@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Rules\PasswordComplexityRule;
+use App\Rules\PasswordNotRecentlyUsed;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -41,7 +44,14 @@ class PasswordResetController extends Controller
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'password' => 'required|min:8|confirmed',
+            'password' => [
+                'required',
+                'confirmed',
+                new PasswordComplexityRule,
+                new PasswordNotRecentlyUsed(
+                    User::where('email', (string) $request->input('email'))->first()
+                ),
+            ],
         ]);
 
         $status = Password::reset(
