@@ -32,7 +32,7 @@ class PeriodController extends Controller
     public function closePeriod(ClosePeriodRequest $request, AccountingPeriod $period): RedirectResponse
     {
         try {
-            $result = $this->periodCloseService->closePeriod($period, auth()->id());
+            $result = $this->periodCloseService->closePeriod($period, (int) auth()->id());
 
             return redirect()->route('accounting.periods')
                 ->with('success', "Period {$period->period_code} closed successfully");
