@@ -28,7 +28,7 @@ class RevaluationNotificationService
                 UserRole::ComplianceOfficer->value,
                 UserRole::Admin->value,
             ])
-            ->only(['id', 'name', 'email', 'role'])
+            ->select(['id', 'name', 'email', 'role'])
             ->get()
             ->toArray();
     }
