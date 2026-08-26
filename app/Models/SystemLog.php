@@ -6,6 +6,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int|null $user_id
+ * @property string $action
+ * @property string|null $description
+ * @property string $severity 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+ * @property string|null $entity_type
+ * @property int|null $entity_id
+ * @property array|null $old_values
+ * @property array|null $new_values
+ * @property string|null $ip_address
+ * @property string|null $user_agent
+ * @property string|null $session_id
+ * @property string|null $previous_hash Tamper-evidence chain hash of the previous entry
+ * @property string|null $entry_hash Tamper-evidence hash of this entry
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class SystemLog extends BaseModel
 {
     use HasFactory;
@@ -103,6 +121,9 @@ class SystemLog extends BaseModel
         };
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
