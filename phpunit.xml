@@ -36,10 +36,10 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
-        <env name="CACHE_DRIVER" value="array"/>
         <env name="REDIS_CLIENT" value="phpredis"/>
         <env name="REDIS_HOST" value="127.0.0.1"/>
         <env name="REDIS_PASSWORD" value="Klzk@9199"/>
+        <env name="BACKUP_NOTIFY_EMAIL" value="backups@example.com"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="ALLOW_DERIVED_ENCRYPTION_SALT" value="false"/>
         <env name="SECURITY_IP_BLOCKING_ENABLED" value="false"/>
