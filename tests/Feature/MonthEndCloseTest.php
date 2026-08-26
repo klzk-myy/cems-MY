@@ -6,6 +6,7 @@ use App\Enums\AccountingPeriodStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Models\AccountingPeriod;
+use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\FiscalYear;
@@ -40,6 +41,22 @@ class MonthEndCloseTest extends TestCase
             ['code' => 'USD'],
             ['name' => 'US Dollar', 'symbol' => '$', 'decimal_places' => 2, 'is_active' => true]
         );
+
+        // Period close now delegates to PeriodCloseService, which requires
+        // configured P&L summary / retained earnings accounts.
+        config([
+            'accounting.revenue_summary_account' => '4201',
+            'accounting.expense_summary_account' => '4202',
+            'accounting.retained_earnings_account' => '4300',
+        ]);
+
+        foreach (['4201', '4202', '4300'] as $code) {
+            ChartOfAccount::factory()->create([
+                'account_code' => $code,
+                'account_type' => 'Equity',
+                'account_class' => 'Equity',
+            ]);
+        }
 
         $this->service = app(MonthEndCloseService::class);
     }
@@ -199,5 +216,49 @@ class MonthEndCloseTest extends TestCase
         $period->refresh();
         $this->assertEquals(AccountingPeriodStatus::Closed, $period->status);
         $this->assertNotNull($period->closed_at);
+    }
+
+    #[Test]
+    public function close_period_is_idempotent_for_already_closed_periods(): void
+    {
+        $date = Carbon::parse('2026-03-31');
+        $period = AccountingPeriod::factory()->create([
+            'period_code' => '2026-03',
+            'start_date' => '2026-03-01',
+            'end_date' => '2026-03-31',
+            'period_type' => 'month',
+            'status' => 'Open',
+        ]);
+
+        $first = $this->service->closePeriod($date);
+        $this->assertArrayNotHasKey('note', $first);
+
+        // A rerun (scheduled monthly task) must not fail; it reports success with a note.
+        $second = $this->service->closePeriod($date);
+
+        $this->assertEquals($period->id, $second['period_id']);
+        $this->assertEquals('2026-03', $second['period_code']);
+        $this->assertArrayHasKey('note', $second);
+        $this->assertStringContainsString('already closed', (string) ($second['note'] ?? ''));
+    }
+
+    #[Test]
+    public function close_period_records_closer_when_user_is_authenticated(): void
+    {
+        $date = Carbon::parse('2026-03-31');
+        AccountingPeriod::factory()->create([
+            'period_code' => '2026-03',
+            'start_date' => '2026-03-01',
+            'end_date' => '2026-03-31',
+            'period_type' => 'month',
+            'status' => 'Open',
+        ]);
+
+        $this->actingAs($this->manager);
+        $result = $this->service->closePeriod($date);
+
+        $period = AccountingPeriod::findOrFail($result['period_id']);
+        $this->assertEquals(AccountingPeriodStatus::Closed, $period->status);
+        $this->assertEquals($this->manager->id, $period->closed_by);
     }
 }
