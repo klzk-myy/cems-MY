@@ -8,7 +8,28 @@ use App\Enums\CheckStatus;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $account_code
+ * @property Carbon $statement_date
+ * @property string|null $reference
+ * @property string|null $check_number
+ * @property Carbon|null $check_date
+ * @property string|null $check_status 'issued', 'presented', 'cleared', 'returned', 'stopped'
+ * @property string|null $check_payee
+ * @property string $description
+ * @property string $debit
+ * @property string $credit
+ * @property string $status 'unmatched', 'matched', 'exception'
+ * @property int|null $matched_to_journal_entry_id
+ * @property int $created_by
+ * @property Carbon|null $matched_at
+ * @property string|null $notes
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class BankReconciliation extends BaseModel
 {
     use HasFactory;
@@ -42,16 +63,25 @@ class BankReconciliation extends BaseModel
         'check_status' => CheckStatus::class,
     ];
 
+    /**
+     * @return BelongsTo<ChartOfAccount, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'account_code', 'account_code');
     }
 
+    /**
+     * @return BelongsTo<JournalEntry, $this>
+     */
     public function matchedEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class, 'matched_to_journal_entry_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
