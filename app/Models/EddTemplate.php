@@ -7,7 +7,20 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $type
+ * @property string|null $description
+ * @property array|null $questions
+ * @property int $version
+ * @property bool $is_active
+ * @property int|null $created_by
+ * @property-read Carbon|null $created_at
+ * @property-read Carbon|null $updated_at
+ */
 class EddTemplate extends BaseModel
 {
     use HasFactory;
