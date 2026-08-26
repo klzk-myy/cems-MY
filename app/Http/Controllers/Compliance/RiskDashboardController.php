@@ -7,10 +7,11 @@ use App\Http\Requests\RescreenCustomerRequest;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
+use App\Models\SanctionEntry;
 use App\Services\Compliance\CustomerRiskScoringService;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -36,7 +37,8 @@ class RiskDashboardController extends Controller
 
         $summary = $this->riskScoringService->getDashboardSummary();
 
-        return view('compliance.risk-dashboard.index', compact('customers', 'summary', 'threshold'));
+        return view('compliance.risk-dashboard.index', compact('customers', 'summary', 'threshold'))
+            ->with('sanctionsLoaded', SanctionEntry::exists());
     }
 
     public function customer(Customer $customer): View
@@ -44,6 +46,11 @@ class RiskDashboardController extends Controller
         $this->requireManagerOrAdmin();
 
         $trends = $this->riskScoringService->getRiskTrend($customer->id, 6);
+
+        $customer->load([
+            'riskHistory' => fn ($query) => $query->latest()->limit(10),
+            'riskHistory.assessor',
+        ]);
 
         return view('compliance.risk-dashboard.customer', compact('customer', 'trends'));
     }
