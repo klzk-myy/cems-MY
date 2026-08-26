@@ -59,7 +59,7 @@ class CaseManagementController extends Controller
         try {
             $case = $this->caseManagementService->createFromAlerts(
                 $validated['alert_ids'],
-                auth()->id()
+                (int) auth()->id()
             );
         } catch (CaseManagementException $e) {
             return redirect()->back()->with('error', 'Failed to create case. Please try again.');
@@ -103,6 +103,7 @@ class CaseManagementController extends Controller
         // Merging mutates both records, so both need update permission.
         $this->authorize('update', $case);
 
+        /** @var ComplianceCase $targetCase */
         $targetCase = ComplianceCase::findOrFail($request->target_case_id);
         $this->authorize('update', $targetCase);
 
@@ -120,6 +121,7 @@ class CaseManagementController extends Controller
     {
         $this->authorize('update', $case);
 
+        /** @var Alert $alert */
         $alert = Alert::findOrFail($request->alert_id);
 
         try {
@@ -138,7 +140,7 @@ class CaseManagementController extends Controller
         $document = $this->caseManagementService->addDocument(
             $case->id,
             $request->file('file'),
-            auth()->id()
+            (int) auth()->id()
         );
 
         return redirect()->back()->with('success', 'Document uploaded');
@@ -152,7 +154,7 @@ class CaseManagementController extends Controller
             abort(403, 'Document does not belong to this case');
         }
 
-        $this->caseManagementService->verifyDocument($document->id, auth()->id());
+        $this->caseManagementService->verifyDocument($document->id, (int) auth()->id());
 
         return redirect()->back()->with('success', 'Document verified');
     }
