@@ -32,7 +32,7 @@ class ConfirmationRequiredNotification extends Notification implements ShouldQue
         return (new MailMessage)
             ->subject('Transaction Confirmation Required')
             ->line('A transaction requires your confirmation.')
-            ->line('Transaction ID: '.($tx?->id ?? 'N/A'))
+            ->line('Transaction ID: '.($tx->id ?? 'N/A'))
             ->line('Confirmation ID: '.$this->confirmation->id)
             ->action('View Confirmation', url('/'));
     }
