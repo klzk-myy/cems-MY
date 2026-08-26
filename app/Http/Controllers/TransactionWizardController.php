@@ -20,6 +20,7 @@ use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\TransactionApprovalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
 
@@ -39,14 +40,23 @@ class TransactionWizardController extends Controller
     ) {}
 
     /**
+     * Render the transaction wizard page.
+     */
+    public function index(): Response
+    {
+        return response()->view('transaction-wizard.index');
+    }
+
+    /**
      * Step 1: Initial transaction data + CDD assessment
      */
     public function step1(TransactionWizardStep1Request $request): JsonResponse
     {
         $validated = $request->validated();
+        /** @var Customer|null $customer */
         $customer = Customer::find($validated['customer_id']);
 
-        if (! $customer) {
+        if (! $customer instanceof Customer) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Customer not found.',
@@ -181,6 +191,8 @@ class TransactionWizardController extends Controller
                 $transactionData['currency_code']
             );
 
+            /** @var Customer $customer */
+            /** @var Customer $customer */
             $customer = Customer::findOrFail($transactionData['customer_id']);
 
             // Re-check branch isolation at creation time (fail closed).
@@ -193,7 +205,14 @@ class TransactionWizardController extends Controller
             $this->validationService->validatePepRequirements($customer, $transactionData);
 
             $user = User::findOrFail(auth()->id());
-            $allocation = $this->determineTellerAllocation($user, $transactionData, $amountLocal);
+            $allocation = $this->determineTellerAllocation(
+                $user,
+                [
+                    'type' => (string) $transactionData['type'],
+                    'currency_code' => (string) $transactionData['currency_code'],
+                ],
+                $amountLocal
+            );
 
             $holdRequired = (bool) $sessionData['hold_required'];
             $status = $this->determineInitialStatus($amountLocal, $holdRequired);
@@ -219,7 +238,7 @@ class TransactionWizardController extends Controller
             return response()->json([
                 'status' => 'success',
                 'transaction_id' => $transaction->id,
-                'transaction_number' => $transaction->transaction_number,
+                'transaction_number' => $transaction->reference,
                 'transaction_status' => $transaction->status->value,
                 'message' => $holdRequired
                     ? 'Transaction created and pending approval'
@@ -409,10 +428,11 @@ class TransactionWizardController extends Controller
     private function prepareTransactionSummary(array $sessionData): array
     {
         $data = $sessionData['transaction_data'];
+        /** @var Customer|null $customer */
         $customer = Customer::find($data['customer_id']);
 
         return [
-            'customer_name' => $customer?->full_name ?? 'Unknown',
+            'customer_name' => $customer === null ? 'Unknown' : $customer->full_name,
             'type' => $data['type'],
             'currency' => $data['currency_code'],
             'amount_foreign' => $data['amount_foreign'],
