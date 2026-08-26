@@ -172,7 +172,7 @@ class TestResultsController extends Controller
      * Build daily trend data for the pass rate chart.
      *
      * @param  Collection<int, TestResult>  $runs
-     * @return Collection<int, array<string, mixed>>
+     * @return Collection<int, array{date: string, pass_rate: float, total_runs: int, failed_count: int}>
      */
     private function buildTrendData(Collection $runs): Collection
     {
@@ -252,11 +252,20 @@ class TestResultsController extends Controller
     {
         $latest = TestResult::latest()->first();
 
+        if ($latest === null) {
+            return response()->json([
+                'status' => 'unknown',
+                'pass_rate' => 0,
+                'total_tests' => 0,
+                'last_run' => 'Never',
+            ]);
+        }
+
         return response()->json([
-            'status' => $latest?->status?->value ?? 'unknown',
-            'pass_rate' => $latest?->pass_rate ?? 0,
-            'total_tests' => $latest?->total_tests ?? 0,
-            'last_run' => $latest?->created_at?->diffForHumans() ?? 'Never',
+            'status' => $latest->status?->value ?? 'unknown',
+            'pass_rate' => $latest->pass_rate,
+            'total_tests' => $latest->total_tests,
+            'last_run' => $latest->created_at?->diffForHumans() ?? 'Never',
         ]);
     }
 }
