@@ -543,7 +543,7 @@ class ValidateRouteConsistency extends Command
         }
 
         $infoItems = array_filter($this->info, fn ($i) => str_starts_with($i, '  ✓'));
-        $infoCount = count(array_filter($this->info, fn ($i) => preg_match('/^  ✓/', $i)));
+        $infoCount = count(array_filter($this->info, fn ($i) => is_string($i) && preg_match('/^  ✓/', $i) === 1));
 
         $this->info('SUMMARY:');
         $this->info('  Critical: '.count($critical));
