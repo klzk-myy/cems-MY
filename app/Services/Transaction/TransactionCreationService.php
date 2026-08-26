@@ -12,20 +12,28 @@ use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\CustomerBlockedException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
+use App\Exceptions\Domain\KycExpiredException;
 use App\Exceptions\Domain\PermissionDeniedException;
 use App\Exceptions\Domain\PositionLimitExceededException;
 use App\Exceptions\Domain\TransactionBlockedException;
+use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\StockReservation;
+use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
+use App\Models\TransactionConfirmation;
 use App\Models\User;
+use App\Notifications\LargeTransactionNotification;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
+use App\Services\Compliance\AlertTriageService;
+use App\Services\Compliance\KycDocumentExpiryService;
+use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
@@ -35,7 +43,6 @@ use App\Services\ThresholdService;
 use App\Services\Traits\AccountingEntriesTrait;
 use App\Services\Traits\TillBalanceTrait;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
@@ -58,6 +65,8 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         protected TellerAllocationService $tellerAllocationService,
         protected TransactionErrorHandler $errorHandler,
         protected TransactionRecoveryService $recoveryService,
+        protected KycDocumentExpiryService $kycDocumentExpiryService,
+        protected RateManagementServiceInterface $rateManagementService,
     ) {}
 
     public function prepareAndCreate(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction
@@ -70,6 +79,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $this->validationService->validateIpAddress($ipAddress);
 
         $tillBalance = $this->validationService->validateTillBalance($data['till_id'], $data['currency_code']);
+        /** @var Customer $customer */
         $customer = Customer::findOrFail($data['customer_id']);
 
         // Frozen/blocked customers cannot book new transactions (BNM
@@ -81,9 +91,34 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             );
         }
 
+        // KYC document lifecycle enforcement (BNM): customers whose identity
+        // documents have all expired past the grace period cannot book new
+        // transactions. Customers without documents are unaffected.
+        if ($this->kycDocumentExpiryService->hasAllIdentityDocumentsExpired($customer)) {
+            throw new KycExpiredException((int) $customer->id);
+        }
+
         // Branch isolation: fail closed when the user's branch has no
         // relationship with this customer (same rule as CustomerPolicy::view).
         $this->ensureCustomerIsWithinUserBranch($customer, $user);
+
+        // Rate tolerance guard: the teller-entered rate must sit within the
+        // configured deviation of the current market rate, mirroring the
+        // bulk-import check so manual bookings cannot bypass it. Skipped
+        // when no market rate is configured for the currency.
+        $rateCheck = $this->rateManagementService->validateTransactionRate(
+            (string) $data['rate'],
+            (string) $data['currency_code'],
+            strtolower((string) $data['type']),
+            $user->branch_id
+        );
+
+        if (! ($rateCheck['valid'] ?? true)) {
+            throw new TransactionValidationException(
+                field: 'rate',
+                message: $rateCheck['reason'] ?? 'Rate deviation exceeds the maximum allowed'
+            );
+        }
 
         $amountLocal = $this->mathService->multiply(
             (string) $data['amount_foreign'],
@@ -98,7 +133,14 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             throw new TransactionBlockedException($validationResult->getBlocks()[0]['message']);
         }
 
-        $allocation = $this->determineTellerAllocation($user, $data, $amountLocal);
+        $allocation = $this->determineTellerAllocation(
+            $user,
+            [
+                'type' => (string) $data['type'],
+                'currency_code' => (string) $data['currency_code'],
+            ],
+            $amountLocal
+        );
         $status = $this->determineInitialStatus($amountLocal, $validationResult->isHoldRequired());
 
         $context = new TransactionCreationContext(
@@ -149,9 +191,15 @@ class TransactionCreationService implements TransactionCreationServiceInterface
                 return $existingByIdempotencyKey;
             }
 
-            $recentDuplicate = $this->idempotencyService->checkRecentDuplicate($userId, $data, 30);
-            if ($recentDuplicate) {
-                throw new DuplicateTransactionException;
+            // The 30-second heuristic window only guards interactive teller
+            // double-clicks. Import rows carry deterministic idempotency keys
+            // and are already deduplicated by findDuplicate above, so two
+            // legitimately identical rows in one file must not be rejected.
+            if (empty($data['idempotency_key'])) {
+                $recentDuplicate = $this->idempotencyService->checkRecentDuplicate($userId, $data, 30);
+                if ($recentDuplicate) {
+                    throw new DuplicateTransactionException;
+                }
             }
 
             $transaction = $this->createTransactionRecord($data, $context);
@@ -193,7 +241,49 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $this->recordCreationAudit($transaction, $user, $ipAddress);
         $this->dispatchCreationEvent($transaction);
 
+        $this->escalateLargeTransactionToCompliance($transaction);
+
         return $transaction;
+    }
+
+    /**
+     * BNM large-transaction oversight: bookings at or above the configured
+     * cdd.large_transaction threshold are escalated to compliance officers so
+     * the approval queue is not the only control watching high-value deals.
+     *
+     * The escalation targets PendingApproval deals - the transactions actually
+     * awaiting manager confirmation. Already-Completed bookings were approved
+     * through the normal flow and must not receive retroactive confirmation
+     * emails; Failed bookings were never booked.
+     */
+    private function escalateLargeTransactionToCompliance(Transaction $transaction): void
+    {
+        try {
+            if ($transaction->status !== TransactionStatus::PendingApproval) {
+                return;
+            }
+
+            if ($this->mathService->compare($transaction->amount_local, $this->thresholdService->getLargeTransactionThreshold()) < 0) {
+                return;
+            }
+
+            // The booking itself has no manager-confirmation record yet, so a
+            // transient instance carries the association the notification needs.
+            $confirmation = new TransactionConfirmation(['transaction_id' => $transaction->id]);
+
+            foreach (app(AlertTriageService::class)->getAvailableOfficers() as $officer) {
+                if ($officer->id === auth()->id()) {
+                    continue;
+                }
+
+                $officer->notify(new LargeTransactionNotification($transaction, $confirmation));
+            }
+        } catch (Throwable $e) {
+            Log::warning('Failed to escalate large transaction to compliance', [
+                'transaction_id' => $transaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -371,8 +461,10 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             return;
         }
 
+        // CurrencyPosition carries the foreign-currency quantity; foreign_total
+        // belongs to TillBalance, not positions.
         $projected = $this->mathService->add(
-            (string) $position->foreign_total,
+            (string) ($position->quantity ?? '0'),
             (string) $data['amount_foreign']
         );
 
@@ -493,7 +585,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
      *
      * @throws AllocationValidationException When the active allocation cannot cover the transaction.
      */
-    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?Model
+    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?TellerAllocation
     {
         if (! $user->isTeller()) {
             return null;
