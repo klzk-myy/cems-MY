@@ -30,14 +30,21 @@ class CustomerRiskReviewService
             }
 
             try {
-                $oldScore = $customer->risk_score;
+                $rescreenResult = $this->riskScoringService->rescreenCustomer($customer->id, 'review');
 
-                $rescreenResult = $this->riskScoringService->rescreenCustomer($customer->id);
+                // Locked profiles are left untouched by the rescreen; count
+                // them as processed without flagging a change.
+                if (! empty($rescreenResult['locked'])) {
+                    $results['processed']++;
 
-                $customer->refresh();
+                    continue;
+                }
 
-                $newSnapshot = $rescreenResult['snapshot'] ?? null;
-                $newScore = $newSnapshot?->overall_score ?? $customer->risk_score;
+                // Both values come from the snapshot series, so the comparison
+                // is now same-scale (previously it compared a stored customer
+                // score against a freshly computed snapshot score).
+                $oldScore = $rescreenResult['previous_score'];
+                $newScore = $rescreenResult['new_score'];
 
                 if ($oldScore !== $newScore) {
                     $results['changed']++;
