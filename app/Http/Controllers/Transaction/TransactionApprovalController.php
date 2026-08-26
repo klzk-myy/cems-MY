@@ -58,7 +58,7 @@ class TransactionApprovalController extends Controller
         $this->requireManagerOrAdmin();
         $this->ensureCanApproveForBranch($transaction, auth()->user(), 'approve');
 
-        $result = $this->approveAction->execute($transaction, auth()->id(), $request->ip());
+        $result = $this->approveAction->execute($transaction, (int) auth()->id(), $request->ip());
 
         if (! $result->ok) {
             return back()->with('error', $result->message);
@@ -80,9 +80,7 @@ class TransactionApprovalController extends Controller
         $this->ensureCanApproveForBranch($transaction, auth()->user(), 'reject');
 
         try {
-            $this->approvalService->validateApprovalEligibility($transaction, auth()->id());
-
-            if (! $this->stateMachineFactory->make($transaction)->reject($request->input('reason', 'Rejected by manager'))) {
+            if (! $this->approvalService->reject($transaction, (int) auth()->id(), $request->input('reason', 'Rejected by manager'))) {
                 return back()->with('error', 'Transaction cannot be rejected from its current status.');
             }
 
@@ -116,7 +114,7 @@ class TransactionApprovalController extends Controller
                 ->with('error', 'This transaction does not require confirmation.');
         }
 
-        $confirmation = $this->confirmationService->requestConfirmation($transaction, auth()->id());
+        $confirmation = $this->confirmationService->requestConfirmation($transaction, (int) auth()->id());
 
         $transaction->load(['customer', 'user']);
 
@@ -161,7 +159,7 @@ class TransactionApprovalController extends Controller
         $validated = $request->validated();
 
         try {
-            $result = $this->confirmationService->confirm($confirmation, $validated, auth()->id());
+            $result = $this->confirmationService->confirm($confirmation, $validated, (int) auth()->id());
 
             return redirect()->route('transactions.show', $transaction)
                 ->with($result['success'] ? 'success' : 'error', $result['message']);
