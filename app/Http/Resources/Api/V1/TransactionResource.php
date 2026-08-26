@@ -2,11 +2,54 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Enums\CddLevel;
+use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
+use App\Models\FlaggedTransaction;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
  * Transform a transaction into a JSON resource.
+ *
+ * @property int $id
+ * @property int $customer_id
+ * @property int $user_id
+ * @property int|null $branch_id
+ * @property int|null $counter_id
+ * @property string $till_id
+ * @property TransactionType $type
+ * @property string $currency_code
+ * @property string|null $counterparty_country
+ * @property string $amount_local
+ * @property string $amount_foreign
+ * @property string $rate
+ * @property string|null $base_rate
+ * @property bool $rate_override
+ * @property int|null $rate_override_approved_by
+ * @property Carbon|null $rate_override_approved_at
+ * @property string|null $purpose
+ * @property string|null $source_of_funds
+ * @property string|null $source_of_wealth
+ * @property TransactionStatus $status
+ * @property string|null $hold_reason
+ * @property int|null $approved_by
+ * @property Carbon|null $approved_at
+ * @property CddLevel $cdd_level
+ * @property Carbon|null $cancelled_at
+ * @property int|null $cancelled_by
+ * @property string|null $cancellation_reason
+ * @property int|null $original_transaction_id
+ * @property bool $is_refund
+ * @property int|null $journal_entry_id
+ * @property int|null $deferred_journal_entry_id
+ * @property Carbon|null $journal_entries_created_at
+ * @property bool $has_deferred_accounting
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, FlaggedTransaction>|null $flags
  */
 class TransactionResource extends JsonResource
 {
