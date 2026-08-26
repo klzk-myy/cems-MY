@@ -80,7 +80,7 @@ class SealAuditHashJob implements ShouldQueue
             }
 
             // Get the predecessor's hash (already locked, so stable)
-            $previousHash = $predecessor?->entry_hash ?? null;
+            $previousHash = $predecessor !== null ? $predecessor->entry_hash : null;
 
             // Compute this entry's hash. v2 payload: covers old_values,
             // new_values, severity and ip_address so post-seal payload edits
