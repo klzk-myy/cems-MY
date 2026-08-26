@@ -21,11 +21,13 @@ class PerformanceTrackingMiddleware
         $duration = (microtime(true) - $start) * 1000;
 
         if (! app()->isProduction()) {
+            $statusCode = $response instanceof Response ? $response->getStatusCode() : null;
+
             Log::info('Request performance', [
                 'url' => $request->url(),
                 'method' => $request->method(),
                 'duration_ms' => round($duration, 2),
-                'status' => $response->status(),
+                'status' => $statusCode,
             ]);
         }
 
