@@ -2,6 +2,7 @@
 
 namespace App\Http\Concerns;
 
+use App\Enums\FindingStatus;
 use App\Models\Compliance\ComplianceFinding;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -10,13 +11,13 @@ trait FiltersComplianceFindings
 {
     protected function applyFindingFilters(Builder $query, Request $request, string $dateFromKey = 'date_from', string $dateToKey = 'date_to'): void
     {
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
-        if ($request->has('severity')) {
+        if ($request->filled('severity')) {
             $query->where('severity', $request->input('severity'));
         }
-        if ($request->has('type')) {
+        if ($request->filled('type')) {
             $query->where('finding_type', $request->input('type'));
         }
         if ($request->has($dateFromKey)) {
@@ -30,7 +31,7 @@ trait FiltersComplianceFindings
     protected function getFindingStats(): array
     {
         $total = ComplianceFinding::count();
-        $newCount = ComplianceFinding::new()->count();
+        $newCount = ComplianceFinding::where('status', FindingStatus::New->value)->count();
 
         $bySeverity = ComplianceFinding::query()
             ->selectRaw('severity, count(*) as count')
