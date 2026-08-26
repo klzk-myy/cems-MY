@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\CurrentUserController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EmergencyCounterController;
 use App\Http\Controllers\Api\V1\EodReconciliationController;
+use App\Http\Controllers\Api\V1\MfaController as MfaApiController;
 use App\Http\Controllers\Api\V1\MonthEndCloseController;
 use App\Http\Controllers\Api\V1\RateController;
 use App\Http\Controllers\Api\V1\ReportController;
@@ -45,6 +46,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('throttle:60,1')
         ->name('api.v1.user');
 
+    // MFA lifecycle for API clients: enrollment is required because
+    // mfa.verified-protected endpoints would otherwise only be reachable via
+    // the web flows. Password re-entry guards every sensitive operation.
+    Route::prefix('mfa')->middleware('throttle:sensitive')->group(function () {
+        Route::post('/enroll', [MfaApiController::class, 'enroll'])
+            ->name('api.v1.mfa.enroll');
+        Route::post('/verify', [MfaApiController::class, 'verify'])
+            ->name('api.v1.mfa.verify');
+        Route::post('/recovery-codes/regenerate', [MfaApiController::class, 'regenerateRecoveryCodes'])
+            ->name('api.v1.mfa.recovery-codes.regenerate');
+        Route::post('/disable', [MfaApiController::class, 'disable'])
+            ->name('api.v1.mfa.disable');
+    });
+
     Route::middleware(['branch.scope'])->group(function () {
         // Transactions API
         Route::get('/transactions', [TransactionController::class, 'index'])
@@ -56,6 +71,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])
             ->middleware('throttle:60,1')
             ->name('api.v1.transactions.show');
+        Route::get('/transactions/{transaction}/receipt', [TransactionController::class, 'receipt'])
+            ->middleware('throttle:export') // PDF export shares the export limiter
+            ->name('api.v1.transactions.receipt');
         Route::post('/transactions/{transaction}/approve', [TransactionApprovalController::class, 'approve'])
             ->middleware(['role:manager', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.approve');
