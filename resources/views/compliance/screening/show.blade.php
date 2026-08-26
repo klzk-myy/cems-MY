@@ -1,125 +1,191 @@
-<x-app-layout title="Screening Result">
+<x-app-layout title="Customer Screening">
     <div class="space-y-6">
-        <x-page-header title="Screening Result" :actions="true">
-            Transaction ID: TXN-2024-001
-
+        <x-page-header
+            title="Customer Screening"
+            :description="'Sanctions screening profile for '.$customer->full_name"
+        >
             <x-slot:actions>
-                <x-button variant="secondary" href="{{ url()->previous() }}">Back</x-button>
+                <x-button variant="secondary" href="{{ route('customers.show', $customer) }}">
+                    View Customer Profile
+                </x-button>
+                <form method="POST" action="{{ route('compliance.screening.screen', $customer->id) }}">
+                    @csrf
+                    <x-button variant="primary" type="submit">Re-screen Customer</x-button>
+                </form>
             </x-slot:actions>
         </x-page-header>
 
-        <x-card title="Transaction Details">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div>
-                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Transaction ID</label>
-                    <p class="text-sm text-ink">TXN-2024-001</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Date</label>
-                    <p class="text-sm text-ink">2024-01-15 10:30:00</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Type</label>
-                    <p class="text-sm text-ink">Buy USD</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Amount</label>
-                    <p class="text-sm text-ink">RM 28,000</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Customer</label>
-                    <p class="text-sm text-ink">Ahmad Razali</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Counter</label>
-                    <p class="text-sm text-ink">Counter 1 - KL Main</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Teller</label>
-                    <p class="text-sm text-ink">Mike Tan</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Screening Status</label>
-                    <p class="text-sm text-ink">
-                        <x-badge variant="warning">Pending Review</x-badge>
-                    </p>
-                </div>
-            </div>
-        </x-card>
+        @if (session('success'))
+            <x-alert type="success">{{ session('success') }}</x-alert>
+        @endif
 
-        <x-card title="Sanctions Screening">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <x-card title="Sanctions Check" :actions="true">
-                    <x-slot:actions>
-                        <x-badge variant="success">Clear</x-badge>
-                    </x-slot:actions>
+        @if (session('error'))
+            <x-alert type="danger">{{ session('error') }}</x-alert>
+        @endif
 
-                    <div class="p-4 space-y-2">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-ink-muted">OFAC SDN</span>
-                            <span class="text-success-text">Clear</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-ink-muted">UN Security Council</span>
-                            <span class="text-success-text">Clear</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-ink-muted">EU Sanctions</span>
-                            <span class="text-success-text">Clear</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-ink-muted">BNM List</span>
-                            <span class="text-success-text">Clear</span>
-                        </div>
+        @if (session('warning'))
+            <x-alert type="warning">{{ session('warning') }}</x-alert>
+        @endif
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <x-card title="Customer Information">
+                <dl class="space-y-4">
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-ink-muted">Name</dt>
+                        <dd class="text-sm text-ink font-medium text-right">{{ $customer->full_name }}</dd>
                     </div>
-                </x-card>
-
-                <x-card title="AML Screening" :actions="true">
-                    <x-slot:actions>
-                        <x-badge variant="warning">Review</x-badge>
-                    </x-slot:actions>
-
-                    <div class="p-4 space-y-2">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-ink-muted">Velocity Check</span>
-                            <span class="text-warning-text">Flagged</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-ink-muted">Structuring Check</span>
-                            <span class="text-warning-text">Flagged</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-ink-muted">PEP Check</span>
-                            <span class="text-success-text">Clear</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-ink-muted">Adverse Media</span>
-                            <span class="text-success-text">Clear</span>
-                        </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-ink-muted">Customer ID</dt>
+                        <dd class="text-sm text-ink">#{{ $customer->id }}</dd>
                     </div>
-                </x-card>
-            </div>
-        </x-card>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-ink-muted">ID Type / Number</dt>
+                        <dd class="text-sm text-ink">{{ $customer->id_type }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-ink-muted">Nationality</dt>
+                        <dd class="text-sm text-ink">{{ $customer->nationality }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-ink-muted">Risk Rating</dt>
+                        <dd><x-risk-badge :customer="$customer" /></dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-ink-muted">PEP Status</dt>
+                        <dd>
+                            @if ($customer->pep_status)
+                                <x-badge variant="purple">PEP</x-badge>
+                            @else
+                                <span class="text-sm text-ink-muted">Not a PEP</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-ink-muted">Account Status</dt>
+                        <dd>
+                            @if ($customer->is_frozen)
+                                <x-badge variant="danger">Frozen</x-badge>
+                            @elseif (! $customer->is_active)
+                                <x-badge variant="gray">Inactive</x-badge>
+                            @else
+                                <x-badge variant="success">Active</x-badge>
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
+            </x-card>
 
-        <x-card title="Risk Indicators">
-            <div class="space-y-4">
-                <x-alert type="warning" title="High Transaction Velocity" :icon="true" class="mb-0">
-                    Customer has conducted 5 transactions totaling RM 45,000 in the last 7 days
-                </x-alert>
+            <x-card title="Current Screening Status">
+                @php
+                    $resultVariant = match ($status['last_result'] ?? null) {
+                        'clear' => 'success',
+                        'flag' => 'warning',
+                        'block' => 'danger',
+                        default => 'gray',
+                    };
+                @endphp
+                <dl class="space-y-4">
+                    <div class="flex justify-between gap-4 items-center">
+                        <dt class="text-sm text-ink-muted">Latest Result</dt>
+                        <dd>
+                            @isset($status['last_result'])
+                                <x-badge :variant="$resultVariant">{{ ucfirst($status['last_result']) }}</x-badge>
+                            @else
+                                <x-badge variant="gray">Never Screened</x-badge>
+                            @endisset
+                        </dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-ink-muted">Last Match Score</dt>
+                        <dd class="text-sm text-ink tabular-nums">
+                            @isset($status['last_match_score'])
+                                {{ number_format($status['last_match_score'], 1) }}%
+                            @else
+                                —
+                            @endisset
+                        </dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-ink-muted">Last Screened At</dt>
+                        <dd class="text-sm text-ink">
+                            @isset($status['last_screened_at'])
+                                {{ \Illuminate\Support\Carbon::parse($status['last_screened_at'])->format('d M Y H:i') }}
+                            @else
+                                —
+                            @endisset
+                        </dd>
+                    </div>
+                    <div class="flex justify-between gap-4 items-center">
+                        <dt class="text-sm text-ink-muted">Sanctions Hit Flag</dt>
+                        <dd>
+                            @if ($status['sanction_hit'])
+                                <x-badge variant="danger">Hit</x-badge>
+                            @else
+                                <x-badge variant="success">Clear</x-badge>
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
 
-                <x-alert type="warning" title="Approaching STR Threshold" :icon="true" class="mb-0">
-                    Transaction plus recent activity approaches RM 50,000 STR threshold
-                </x-alert>
-            </div>
-        </x-card>
+                <div class="mt-6 pt-4 border-t border-border">
+                    <a href="{{ route('compliance.screening.matches.index', ['customer_id' => $customer->id]) }}"
+                       class="text-sm text-primary hover:underline">
+                        View pending screening matches for this customer &rarr;
+                    </a>
+                </div>
+            </x-card>
+        </div>
 
-        <x-card title="Actions">
-            <div class="flex flex-wrap gap-3">
-                <x-button variant="primary">Approve Transaction</x-button>
-                <x-button variant="secondary">Hold for Review</x-button>
-                <x-button variant="secondary">Create Alert</x-button>
-                <x-button variant="secondary">View Customer Profile</x-button>
-                <x-button variant="danger">Reject Transaction</x-button>
+        <x-card title="Screening History">
+            <div class="overflow-x-auto">
+                <x-table>
+                    <x-slot:thead>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Screened Name</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Match Score</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Result</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Matched Fields</th>
+                    </x-slot:thead>
+                    <x-slot:tbody>
+                        @forelse ($history as $row)
+                            <tr class="border-t border-border hover:bg-canvas-subtle">
+                                <td class="px-4 py-3 text-sm text-ink-muted whitespace-nowrap">
+                                    {{ \Illuminate\Support\Carbon::parse($row['created_at'])->format('d M Y H:i') }}
+                                </td>
+                                <td class="px-4 py-3 text-sm text-ink">{{ $row['screened_name'] ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-sm text-ink tabular-nums">
+                                    @isset($row['match_score'])
+                                        {{ number_format((float) $row['match_score'] * 100, 1) }}%
+                                    @else
+                                        —
+                                    @endisset
+                                </td>
+                                <td class="px-4 py-3 text-sm">
+                                    @php
+                                        $variant = match ($row['result'] ?? null) {
+                                            'clear' => 'success',
+                                            'flag' => 'warning',
+                                            'block' => 'danger',
+                                            default => 'gray',
+                                        };
+                                    @endphp
+                                    <x-badge :variant="$variant">{{ ucfirst($row['result'] ?? 'Unknown') }}</x-badge>
+                                </td>
+                                <td class="px-4 py-3 text-sm text-ink-muted">
+                                    @if (! empty($row['matched_fields']))
+                                        {{ collect($row['matched_fields'])
+                                            ->map(fn ($v, $k) => is_array($v) ? $k : (is_string($k) ? $k.': '.$v : $v))
+                                            ->implode(', ') }}
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <x-empty-state message="No screening history recorded for this customer yet." :colspan="5" />
+                        @endforelse
+                    </x-slot:tbody>
+                </x-table>
             </div>
         </x-card>
     </div>
