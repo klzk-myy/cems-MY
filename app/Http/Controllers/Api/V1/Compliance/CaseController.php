@@ -79,6 +79,7 @@ class CaseController extends Controller
         $validated = $request->validated();
 
         if (! empty($validated['finding_id'])) {
+            /** @var ComplianceFinding $finding */
             $finding = ComplianceFinding::findOrFail($validated['finding_id']);
             $case = $this->caseService->createCaseFromFinding(
                 finding: $finding,
@@ -144,7 +145,7 @@ class CaseController extends Controller
 
         $note = $this->caseService->addNote(
             case: $case,
-            authorId: auth()->id(),
+            authorId: (int) auth()->id(),
             noteType: CaseNoteType::from($validated['note_type']),
             content: $validated['content'],
             isInternal: $validated['is_internal'] ?? true
@@ -204,7 +205,7 @@ class CaseController extends Controller
             $timeline->push([
                 'type' => 'note',
                 'timestamp' => $note->created_at->toIso8601String(),
-                'author' => $note->author?->full_name ?? 'Unknown',
+                'author' => $note->author->full_name ?? 'Unknown',
                 'content' => $note->content,
                 'note_type' => $note->note_type->value,
             ]);
