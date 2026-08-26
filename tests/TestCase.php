@@ -16,6 +16,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Testing\PendingCommand;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -88,6 +89,19 @@ abstract class TestCase extends BaseTestCase
             $this->app[Kernel::class]->setArtisan(null);
             RefreshDatabaseState::$inMemoryConnections[$connectionName] = $connection->getPdo();
         }
+    }
+
+    /**
+     * Run an artisan command returning the pending-command expectation builder.
+     *
+     * @param  array<string, mixed>  $parameters
+     */
+    protected function artisanCommand(string $command, array $parameters = []): PendingCommand
+    {
+        $pending = $this->artisan($command, $parameters);
+        assert($pending instanceof PendingCommand);
+
+        return $pending;
     }
 
     /**
