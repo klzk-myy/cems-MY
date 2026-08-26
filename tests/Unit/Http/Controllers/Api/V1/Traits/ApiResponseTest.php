@@ -76,7 +76,7 @@ class ApiResponseTest extends TestCase
 
     public function test_server_error_response_logs_exception_when_provided(): void
     {
-        Log::spy();
+        $log = Log::spy();
         $exception = new \Exception('Something went wrong');
 
         $response = $this->serverErrorResponse('Server error.', $exception);
@@ -87,7 +87,7 @@ class ApiResponseTest extends TestCase
             'message' => 'Server error.',
             'errors' => [],
         ], $response->getData(true));
-        Log::shouldHaveReceived('error')->once()->with('Server error.', [
+        $log->shouldHaveReceived('error')->once()->with('Server error.', [
             'exception' => 'Something went wrong',
             'trace' => $exception->getTraceAsString(),
         ]);
@@ -95,7 +95,7 @@ class ApiResponseTest extends TestCase
 
     public function test_server_error_response_does_not_log_without_exception(): void
     {
-        Log::spy();
+        $log = Log::spy();
 
         $response = $this->serverErrorResponse('Server error.');
 
@@ -105,7 +105,7 @@ class ApiResponseTest extends TestCase
             'message' => 'Server error.',
             'errors' => [],
         ], $response->getData(true));
-        Log::shouldNotHaveReceived('error');
+        $log->shouldNotHaveReceived('error');
     }
 
     public function test_success_response_includes_meta_keys(): void
