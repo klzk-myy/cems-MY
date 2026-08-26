@@ -36,7 +36,7 @@ class BranchService
 
     public function createBranch(array $data, ?int $userId = null, string $ip = ''): Branch
     {
-        $userId = $userId ?? Auth::id();
+        $userId = $userId ?? (Auth::id() !== null ? (int) Auth::id() : null);
 
         if (! empty($data['is_main'])) {
             $this->ensureSingleMainBranch();
@@ -76,7 +76,7 @@ class BranchService
 
     public function updateBranch(Branch $branch, array $data, ?int $userId = null, string $ip = ''): Branch
     {
-        $userId = $userId ?? Auth::id();
+        $userId = $userId ?? (Auth::id() !== null ? (int) Auth::id() : null);
 
         $oldValues = [
             'code' => $branch->code,
@@ -126,7 +126,7 @@ class BranchService
 
     public function deactivateBranch(Branch $branch, ?int $userId = null, string $ip = ''): void
     {
-        $userId = $userId ?? Auth::id();
+        $userId = $userId ?? (Auth::id() !== null ? (int) Auth::id() : null);
 
         if ($branch->is_main) {
             throw new BranchDeactivationException('Cannot deactivate the main branch');
