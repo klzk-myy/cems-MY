@@ -112,7 +112,7 @@ class TransactionImportService
 
             // Validate header
             $expectedHeader = ['customer_id', 'type', 'currency_code', 'amount_foreign', 'rate', 'purpose', 'source_of_funds', 'till_id'];
-            $headerLower = array_map('strtolower', $header);
+            $headerLower = array_map(fn ($column): string => strtolower((string) $column), $header);
             if (count(array_diff($expectedHeader, $headerLower)) > 0) {
                 throw new ImportValidationException('Invalid CSV header. Expected columns: '.implode(', ', $expectedHeader));
             }
@@ -129,6 +129,12 @@ class TransactionImportService
             while (($row = fgetcsv($handle)) !== false) {
                 $rowNumber++;
                 $this->processRow($import, $row, $rowNumber, $threshold, $importUser);
+
+                // Live progress counter for the polling results page. Each
+                // row commits in its own transaction, so a job death mid-file
+                // leaves processed_rows reflecting real progress; re-running
+                // is safe because rows dedupe on idempotency_key.
+                $import->increment('processed_rows');
             }
 
             $this->import->update([
@@ -166,7 +172,13 @@ class TransactionImportService
                     'till_id' => isset($row[7]) && ! empty(trim($row[7])) ? trim($row[7]) : 'MAIN',
                 ];
 
-                $data['idempotency_key'] = hash('sha256', json_encode($data));
+                $encoded = json_encode($data);
+
+                if ($encoded === false) {
+                    throw new ImportValidationException('Row data could not be encoded for idempotency key');
+                }
+
+                $data['idempotency_key'] = hash('sha256', $encoded);
 
                 // Check for duplicate transaction (idempotency)
                 $existingTransaction = Transaction::where('idempotency_key', $data['idempotency_key'])->first();
@@ -184,10 +196,12 @@ class TransactionImportService
                     throw new ImportValidationException('Missing required fields');
                 }
 
+                $data['customer_id'] = (int) $data['customer_id'];
+
                 // Validate customer exists
                 $customer = Customer::find($data['customer_id']);
                 if (! $customer) {
-                    throw new CustomerNotFoundException($data['customer_id']);
+                    throw new CustomerNotFoundException((int) $data['customer_id']);
                 }
 
                 // Validate currency exists (cached per import - avoids one query per row)
@@ -266,12 +280,12 @@ class TransactionImportService
                 if ($data['type'] === TransactionType::Buy->value) {
                     // Buy: customer buys foreign currency with MYR - check till has enough MYR
                     $tillMyrBalance = $this->tillBalanceManager->currentBalance($counter, 'MYR');
-                    if (! $tillMyrBalance || $this->mathService->compare($tillMyrBalance->balance, $amountLocal) < 0) {
+                    if (! $tillMyrBalance || $this->mathService->compare((string) $tillMyrBalance->opening_balance, $amountLocal) < 0) {
                         throw new ImportValidationException('Insufficient MYR balance in till for buy transaction');
                     }
                 } else {
                     // Sell: customer sells foreign currency for MYR - check till has enough foreign currency
-                    if (! $tillBalance || $this->mathService->compare($tillBalance->balance, $amountForeign) < 0) {
+                    if ($this->mathService->compare((string) $tillBalance->opening_balance, $amountForeign) < 0) {
                         throw new ImportValidationException("Insufficient {$data['currency_code']} balance in till for sell transaction");
                     }
                 }
