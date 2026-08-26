@@ -3,6 +3,9 @@
 namespace App\Models\Traits;
 
 use App\Models\Currency;
+/**
+ * @property string $currency_code
+ */
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 trait BelongsToCurrency
@@ -12,6 +15,9 @@ trait BelongsToCurrency
         $this->mergeFillable(['currency_code']);
     }
 
+    /**
+     * @return BelongsTo<Currency, $this>
+     */
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code');
