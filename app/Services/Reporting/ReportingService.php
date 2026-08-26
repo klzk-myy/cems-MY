@@ -421,7 +421,7 @@ class ReportingService implements ReportingServiceInterface
             'by_currency' => $byCurrency,
             'data' => $transactions->map(function ($txn) {
                 return [
-                    'Transaction_ID' => 'TXN-'.str_pad($txn->id, 8, '0', STR_PAD_LEFT),
+                    'Transaction_ID' => 'TXN-'.str_pad((string) $txn->id, 8, '0', STR_PAD_LEFT),
                     'Date' => $txn->created_at->format('Y-m-d'),
                     'Customer_Name' => $this->maskName($txn->customer->full_name),
                     'Amount_Local' => $txn->amount_local,
