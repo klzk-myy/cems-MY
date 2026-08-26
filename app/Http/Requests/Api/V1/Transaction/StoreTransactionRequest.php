@@ -25,6 +25,7 @@ class StoreTransactionRequest extends ApiFormRequest
             'rate' => ['required', new ValidRate],
             'purpose' => 'required|string|max:255',
             'source_of_funds' => 'required|string|max:255',
+            'source_of_wealth' => 'nullable|string|max:500',
             'till_id' => ['required', 'string', new ValidTill],
             'idempotency_key' => 'nullable|string|max:100',
         ];
