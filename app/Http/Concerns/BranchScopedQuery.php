@@ -43,6 +43,11 @@ trait BranchScopedQuery
 
     /**
      * Apply branch scoping to a query builder.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
      */
     protected function scopeByBranch(Builder $query, ?int $branchId = null): Builder
     {
@@ -63,7 +68,12 @@ trait BranchScopedQuery
         $branchId = $branchId ?? $this->currentUserBranchId();
 
         if ($branchId !== null) {
-            return $collection->filter(fn ($item) => (int) ($item instanceof Model ? $item->branch_id : $item['branch_id']) === (int) $branchId);
+            return $collection->filter(function ($item) use ($branchId): bool {
+                /** @var Model&object{branch_id:int|string|null}|array{branch_id:int|string|null} $item */
+                $value = $item instanceof Model ? $item->branch_id : $item['branch_id'];
+
+                return (int) $value === (int) $branchId;
+            });
         }
 
         return $collection;
@@ -74,6 +84,8 @@ trait BranchScopedQuery
      *
      * Returns true for admins / "manage all" users, or when the model's
      * branch_id matches the user's branch_id.
+     *
+     * @param  Model&object{branch_id:int|string|null}  $model
      */
     protected function belongsToCurrentUserBranch(Model $model): bool
     {
