@@ -9,7 +9,31 @@ use App\Models\Traits\BelongsToBranch;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property int $branch_id
+ * @property int|null $counter_id
+ * @property string $currency_code
+ * @property string $allocated_amount
+ * @property string $current_balance
+ * @property string $requested_amount
+ * @property string $daily_limit_myr
+ * @property string $daily_used_myr
+ * @property TellerAllocationStatus $status 'pending', 'approved', 'active', 'returned', 'closed', 'auto_returned', 'rejected'
+ * @property Carbon $session_date
+ * @property int|null $approved_by
+ * @property Carbon|null $approved_at
+ * @property Carbon|null $opened_at
+ * @property Carbon|null $closed_at
+ * @property Carbon|null $rejected_at
+ * @property int|null $rejected_by
+ * @property string|null $rejection_reason
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class TellerAllocation extends BaseModel
 {
     use BelongsToBranch, HasFactory;
@@ -59,19 +83,36 @@ class TellerAllocation extends BaseModel
         'rejected_at' => 'datetime',
     ];
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsTo<Counter, $this>
+     */
     public function counter(): BelongsTo
     {
         return $this->belongsTo(Counter::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * @return BelongsTo<Currency, $this>
+     */
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'currency_code', 'code');
     }
 
     public function isPending(): bool
@@ -118,7 +159,7 @@ class TellerAllocation extends BaseModel
         $affected = static::query()
             ->where($this->getKeyName(), $this->getKey())
             ->where('current_balance', '>=', $amount)
-            ->decrement('current_balance', $amount);
+            ->decrement('current_balance', $this->toNumericAmount($amount));
 
         $this->refresh();
 
@@ -135,20 +176,37 @@ class TellerAllocation extends BaseModel
 
     public function add(float|string $amount): void
     {
-        $this->increment('current_balance', $amount);
+        $this->increment('current_balance', $this->toNumericAmount($amount));
         $this->refresh();
     }
 
     public function addDailyUsed(float|string $amountMyr): void
     {
-        $this->increment('daily_used_myr', $amountMyr);
+        $this->increment('daily_used_myr', $this->toNumericAmount($amountMyr));
         $this->refresh();
     }
 
     public function subtractDailyUsed(float|string $amountMyr): void
     {
-        $this->decrement('daily_used_myr', $amountMyr);
+        $this->decrement('daily_used_myr', $this->toNumericAmount($amountMyr));
         $this->refresh();
+    }
+
+    /**
+     * Normalize a validated numeric amount into the float|int shape the
+     * query builder's increment/decrement expects.
+     */
+    private function toNumericAmount(float|int|string $amount): float|int
+    {
+        if (is_int($amount) || is_float($amount)) {
+            return $amount;
+        }
+
+        if (is_numeric($amount)) {
+            return (float) $amount;
+        }
+
+        throw new \InvalidArgumentException('Allocation amount must be numeric.');
     }
 
     public function hasDailyLimitRemaining(float|string $amountMyr): bool
