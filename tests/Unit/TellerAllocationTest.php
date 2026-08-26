@@ -42,6 +42,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function has_pending_status_check(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->pending()->create();
 
         $this->assertTrue($allocation->isPending());
@@ -53,6 +54,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function has_available_uses_bccomp(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
             'current_balance' => '5000.0000',
         ]);
@@ -65,6 +67,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function deduct_reduces_balance(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
             'current_balance' => '10000.0000',
         ]);
@@ -77,6 +80,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function add_increases_balance(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
             'current_balance' => '10000.0000',
         ]);
@@ -89,6 +93,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function add_daily_used(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
             'daily_used_myr' => '0.0000',
         ]);
@@ -101,6 +106,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function has_daily_limit_remaining(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
             'daily_limit_myr' => '50000.0000',
             'daily_used_myr' => '20000.0000',
@@ -128,6 +134,7 @@ class TellerAllocationTest extends TestCase
     public function approve_updates_status_and_amounts(): void
     {
         $approver = User::factory()->create();
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->pending()->create([
             'allocated_amount' => '0.0000',
             'current_balance' => '0.0000',
@@ -146,6 +153,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function activate_updates_status_and_timestamp(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->approved()->create();
 
         $allocation->activate();
@@ -157,6 +165,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function return_to_pool(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->active()->create();
 
         $allocation->returnToPool();
@@ -168,6 +177,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function force_return(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->active()->create();
 
         $allocation->forceReturn();
