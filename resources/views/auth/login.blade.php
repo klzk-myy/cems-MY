@@ -13,6 +13,10 @@
             <div class="p-8 space-y-6">
                 <x-page-header title="{{ config('app.name') }}" class="justify-center" />
 
+                @if(session('info'))
+                    <x-alert type="info" title="Action required">{{ session('info') }}</x-alert>
+                @endif
+
                 <form method="POST" action="{{ route('login') }}" class="space-y-4">
                     @csrf
 
