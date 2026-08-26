@@ -24,6 +24,9 @@ class LoginControllerTest extends TestCase
         $user = User::factory()->create([
             'username' => 'alice',
             'password_hash' => Hash::make('correct-password'),
+            // Fresh rotation timestamp so login proceeds to the dashboard
+            // instead of the forced password.change screen.
+            'password_changed_at' => now(),
             'is_active' => true,
         ]);
 
@@ -37,17 +40,36 @@ class LoginControllerTest extends TestCase
     }
 
     #[Test]
+    public function login_redirects_to_forced_password_change_when_rotation_is_due(): void
+    {
+        $user = User::factory()->create([
+            'username' => 'stale-password-user',
+            'password_hash' => Hash::make('correct-password'),
+            // No rotation timestamp means the BNM policy forces a change.
+            'is_active' => true,
+        ]);
+
+        $this->post('/login', [
+            'username' => 'stale-password-user',
+            'password' => 'correct-password',
+            'ip' => '127.0.0.1',
+        ])->assertRedirect(route('password.change'));
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    #[Test]
     public function login_with_wrong_password_returns_error(): void
     {
         User::factory()->create([
             'username' => 'bob',
-            'password_hash' => Hash::make('secret'),
+            'password_hash' => Hash::make('wrong-password-x'),
             'is_active' => true,
         ]);
 
         $this->post('/login', [
             'username' => 'bob',
-            'password' => 'wrong',
+            'password' => 'not-the-right-one',
             'ip' => '127.0.0.1',
         ])->assertRedirect()
             ->assertSessionHasErrors('username');
@@ -60,13 +82,13 @@ class LoginControllerTest extends TestCase
     {
         User::factory()->create([
             'username' => 'inactive',
-            'password_hash' => Hash::make('pass'),
+            'password_hash' => Hash::make('inactive-pass'),
             'is_active' => false,
         ]);
 
         $this->post('/login', [
             'username' => 'inactive',
-            'password' => 'pass',
+            'password' => 'inactive-pass',
             'ip' => '127.0.0.1',
         ])->assertRedirect()->assertSessionHasErrors('username');
 
@@ -78,7 +100,7 @@ class LoginControllerTest extends TestCase
     {
         $this->post('/login', [
             'username' => 'nobody',
-            'password' => 'pass',
+            'password' => 'unknown-user-pass',
             'ip' => '127.0.0.1',
         ])->assertRedirect()->assertSessionHasErrors('username');
 
