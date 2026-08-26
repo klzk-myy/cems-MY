@@ -295,7 +295,7 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
     public function assignFlag(int $flagId, int $userId): bool
     {
-        return FlaggedTransaction::where('id', $flagId)
+        return (bool) FlaggedTransaction::where('id', $flagId)
             ->update([
                 'assigned_to' => $userId,
                 'status' => FlagStatus::UnderReview,
@@ -304,7 +304,7 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
     public function resolveFlag(int $flagId, int $userId, ?string $notes = null): bool
     {
-        return FlaggedTransaction::where('id', $flagId)
+        return (bool) FlaggedTransaction::where('id', $flagId)
             ->update([
                 'reviewed_by' => $userId,
                 'notes' => $notes,
