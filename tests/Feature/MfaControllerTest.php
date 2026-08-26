@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\System\MfaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\Test;
@@ -53,5 +54,69 @@ class MfaControllerTest extends TestCase
         $this->actingAs($this->user)
             ->get('/mfa/recovery')
             ->assertStatus(200);
+    }
+
+    #[Test]
+    public function disable_rejects_wrong_password_without_consuming_code_attempt(): void
+    {
+        $service = app(MfaService::class);
+        $secretData = $service->generateSecret('alice@test.com');
+        $service->storeSecret($this->user, $secretData['secret']);
+        $this->user->mfa_enabled = true;
+        $this->user->save();
+
+        $code = $service->generateCode($secretData['secret']);
+
+        $response = $this->actingAs($this->user)
+            ->from('/mfa/trusted-devices')
+            ->post('/mfa/disable', [
+                'current_password' => 'wrong-password',
+                'code' => $code,
+            ]);
+
+        $response->assertRedirect('/mfa/trusted-devices');
+        $response->assertSessionHasErrors('current_password');
+
+        // Wrong password must not count as a code attempt (lockout counter).
+        $this->assertSame(0, $service->failedAttemptCount($this->user));
+
+        // MFA must remain enabled.
+        $this->assertTrue($this->user->fresh()->mfa_enabled);
+
+        // The valid code is still usable afterwards with the right password.
+        $response = $this->actingAs($this->user)
+            ->post('/mfa/disable', [
+                'current_password' => 'pass',
+                'code' => $code,
+            ]);
+
+        $response->assertRedirect('/dashboard');
+        $response->assertSessionHas('status');
+
+        $fresh = $this->user->fresh();
+        $this->assertFalse($fresh->mfa_enabled);
+        $this->assertNull($fresh->mfa_secret);
+    }
+
+    #[Test]
+    public function disable_requires_current_password_field(): void
+    {
+        $service = app(MfaService::class);
+        $secretData = $service->generateSecret('alice@test.com');
+        $service->storeSecret($this->user, $secretData['secret']);
+        $this->user->mfa_enabled = true;
+        $this->user->save();
+
+        $code = $service->generateCode($secretData['secret']);
+
+        $response = $this->actingAs($this->user)
+            ->post('/mfa/disable', [
+                'code' => $code,
+            ]);
+
+        $response->assertSessionHasErrors('current_password');
+
+        $this->assertTrue($this->user->fresh()->mfa_enabled);
+        $this->assertSame(0, $service->failedAttemptCount($this->user));
     }
 }
