@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $reference_type
  * @property int|null $reference_id
  * @property string|null $description
- * @property string $status Draft, Pending, Posted, Reversed, Rejected
+ * @property JournalEntryStatus $status Draft, Pending, Posted, Reversed, Rejected
  * @property int|null $posted_by
  * @property Carbon|null $posted_at
  * @property int|null $reversed_by
