@@ -56,9 +56,9 @@ class ComplianceCaseAssignedNotification extends Notification implements ShouldQ
                 'complianceCase' => $this->complianceCase,
                 'customer' => $customer,
                 'assignedBy' => $this->assignedBy,
-                'caseType' => $this->complianceCase->case_type?->label() ?? 'Unknown',
-                'priority' => $this->complianceCase->priority?->label() ?? 'Unknown',
-                'severity' => $this->complianceCase->severity?->label() ?? 'Unknown',
+                'caseType' => $this->complianceCase->case_type !== null ? $this->complianceCase->case_type->label() : 'Unknown',
+                'priority' => $this->complianceCase->priority !== null ? $this->complianceCase->priority->label() : 'Unknown',
+                'severity' => $this->complianceCase->severity !== null ? $this->complianceCase->severity->label() : 'Unknown',
                 'slaDeadline' => $slaDeadline,
                 'daysUntilDeadline' => $slaDeadline ? now()->diffInDays($slaDeadline, false) : null,
             ]);
@@ -77,16 +77,16 @@ class ComplianceCaseAssignedNotification extends Notification implements ShouldQ
             'type' => 'compliance_case_assigned',
             'case_id' => $this->complianceCase->id,
             'case_number' => $this->complianceCase->case_number,
-            'case_type' => $this->complianceCase->case_type?->value ?? null,
-            'case_type_label' => $this->complianceCase->case_type?->label() ?? 'Unknown',
+            'case_type' => $this->complianceCase->case_type?->value,
+            'case_type_label' => $this->complianceCase->case_type !== null ? $this->complianceCase->case_type->label() : 'Unknown',
             'customer_id' => $this->complianceCase->customer_id,
-            'customer_name' => $this->complianceCase->customer?->full_name ?? 'Unknown',
-            'priority' => $this->complianceCase->priority?->value ?? null,
-            'severity' => $this->complianceCase->severity?->value ?? null,
+            'customer_name' => $this->complianceCase->customer->full_name ?? 'Unknown',
+            'priority' => $this->complianceCase->priority?->value,
+            'severity' => $this->complianceCase->severity?->value,
             'sla_deadline' => $slaDeadline?->toIso8601String(),
             'days_until_deadline' => $slaDeadline ? now()->diffInDays($slaDeadline, false) : null,
             'assigned_by' => $this->assignedBy?->id,
-            'assigned_by_name' => $this->assignedBy?->username ?? 'System',
+            'assigned_by_name' => $this->assignedBy->username ?? 'System',
             'url' => route('compliance.cases.show', $this->complianceCase->id),
         ];
     }
@@ -113,7 +113,7 @@ class ComplianceCaseAssignedNotification extends Notification implements ShouldQ
             ->where('notification_type', 'compliance_case_assigned')
             ->first();
 
-        return $preference?->email_enabled ?? true;
+        return $preference->email_enabled ?? true;
     }
 
     /**
