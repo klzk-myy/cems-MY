@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Customer\CustomerIndexAction;
 use App\Http\Concerns\HandlesControllerErrors;
+use App\Http\Requests\CloseCustomerRequest;
 use App\Http\Requests\FreezeCustomerRequest;
 use App\Http\Requests\StoreCustomerNoteRequest;
 use App\Http\Requests\StoreCustomerRequest;
@@ -113,7 +114,7 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $result = $this->customerService->createCustomerAction($validated, auth()->id());
+            $result = $this->customerService->createCustomerAction($validated, (int) auth()->id());
         } catch (\Throwable $e) {
             return $this->handleExceptionWeb(
                 $e,
@@ -156,19 +157,6 @@ class CustomerController extends Controller
 
         // Get customer show data from service (document status and compliance stats)
         $customerShowData = $this->customerService->getCustomerShowData($customer);
-
-        $notes = $customer->notes()
-            ->with('creator')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Calculate transaction stats
-        $transactionStats = [
-            'total_transactions' => $customer->transactions_count,
-            'total_volume' => $customer->transactions_sum_amount_local,
-            'avg_transaction' => $customer->transactions_avg_amount_local ?? 0,
-            'last_transaction' => $customer->last_transaction_at,
-        ];
 
         return view('customers.show', compact(
             'customer',
@@ -279,6 +267,47 @@ class CustomerController extends Controller
     }
 
     /**
+     * Close the specified customer (manager/admin only).
+     *
+     * Route wiring (central): POST customers/{customer}/close with
+     * role:manager,admin middleware. The inline role gate below keeps the
+     * endpoint safe even if the route is registered without it.
+     */
+    public function close(CloseCustomerRequest $request, Customer $customer): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user || (! $user->isManager() && ! $user->isAdmin())) {
+            abort(403, 'Unauthorized. Manager or Admin access required.');
+        }
+
+        if ($customer->closed_at !== null) {
+            return back()->with('error', 'Customer is already closed.');
+        }
+
+        $blocking = $customer->openBlockingTransactions();
+        if ($blocking->isNotEmpty()) {
+            return back()->with('error', sprintf(
+                'Cannot close customer: %d transaction(s) pending approval or cancellation. Resolve them first.',
+                $blocking->count()
+            ));
+        }
+
+        try {
+            $this->customerService->closeCustomer($customer, $request->validated('reason'), $user);
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb(
+                $e,
+                'Customer closure failed',
+                'Failed to close customer. Please contact support.',
+                ['customer_id' => $customer->id]
+            );
+        }
+
+        return back()->with('success', 'Customer closed.');
+    }
+
+    /**
      * Show the form for editing the specified customer.
      */
     public function edit(Customer $customer): View
@@ -310,7 +339,7 @@ class CustomerController extends Controller
         $validated = $request->validated();
 
         try {
-            $result = $this->customerService->updateCustomerAction($customer, $validated, auth()->id());
+            $result = $this->customerService->updateCustomerAction($customer, $validated, (int) auth()->id());
         } catch (\Throwable $e) {
             return $this->handleExceptionWeb(
                 $e,
