@@ -13,10 +13,11 @@ use App\Enums\FlagStatus;
 use App\Exceptions\Domain\CaseManagementException;
 use App\Models\Alert;
 use App\Models\Bases\ComplianceModel;
+use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Cache\Lock;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +26,30 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * @property int $id
+ * @property string $case_number
+ * @property ComplianceCaseType $case_type
+ * @property ComplianceCaseStatus $status
+ * @property FindingSeverity $severity
+ * @property ComplianceCasePriority $priority
+ * @property int|null $customer_id
+ * @property int|null $primary_flag_id
+ * @property int|null $primary_finding_id
+ * @property int $assigned_to
+ * @property string|null $case_summary
+ * @property \Illuminate\Support\Carbon $sla_deadline
+ * @property \Illuminate\Support\Carbon|null $escalated_at
+ * @property \Illuminate\Support\Carbon|null $resolved_at
+ * @property CaseResolution|null $resolution
+ * @property string|null $resolution_notes
+ * @property array|null $metadata
+ * @property string $created_via
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read Customer|null $customer
+ */
 class ComplianceCase extends ComplianceModel
 {
     use HasFactory, SoftDeletes;
@@ -237,12 +262,16 @@ class ComplianceCase extends ComplianceModel
      */
     public function addNote(int $authorId, CaseNoteType $noteType, string $content, bool $isInternal = true): ComplianceCaseNote
     {
-        return $this->notes()->create([
+        $note = $this->notes()->create([
             'author_id' => $authorId,
             'note_type' => $noteType,
             'content' => $content,
             'is_internal' => $isInternal,
         ]);
+
+        assert($note instanceof ComplianceCaseNote);
+
+        return $note;
     }
 
     /**
@@ -250,7 +279,7 @@ class ComplianceCase extends ComplianceModel
      */
     public function assignTo(int $officerId): void
     {
-        $this->assigned_to = $officerId;
+        $this->assigned_to = max(0, $officerId);
         $this->save();
     }
 
@@ -260,7 +289,7 @@ class ComplianceCase extends ComplianceModel
     public function close(CaseResolution $resolution, ?string $notes = null): void
     {
         $this->status = ComplianceCaseStatus::Closed;
-        $this->resolution = $resolution->value;
+        $this->resolution = $resolution;
         $this->resolution_notes = $notes;
         $this->resolved_at = now();
         $this->save();
@@ -281,15 +310,31 @@ class ComplianceCase extends ComplianceModel
      */
     public function addLink(string $type, int $id): ComplianceCaseLink
     {
-        return $this->links()->create([
+        $link = $this->links()->create([
             'linked_type' => $type,
             'linked_id' => $id,
             'created_at' => now(),
         ]);
+
+        assert($link instanceof ComplianceCaseLink);
+
+        return $link;
+    }
+
+    /**
+     * Get the customer this case is raised against.
+     *
+     * @return BelongsTo<Customer, $this>
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 
     /**
      * Get the primary flagged transaction.
+     *
+     * @return BelongsTo<FlaggedTransaction, $this>
      */
     public function primaryFlag(): BelongsTo
     {
@@ -298,6 +343,8 @@ class ComplianceCase extends ComplianceModel
 
     /**
      * Get the primary compliance finding.
+     *
+     * @return BelongsTo<ComplianceFinding, $this>
      */
     public function primaryFinding(): BelongsTo
     {
@@ -306,6 +353,8 @@ class ComplianceCase extends ComplianceModel
 
     /**
      * Get the compliance officer assigned to this case.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function assignee(): BelongsTo
     {
@@ -314,6 +363,8 @@ class ComplianceCase extends ComplianceModel
 
     /**
      * Get the notes for this case.
+     *
+     * @return HasMany<ComplianceCaseNote, $this>
      */
     public function notes(): HasMany
     {
@@ -322,6 +373,8 @@ class ComplianceCase extends ComplianceModel
 
     /**
      * Get the documents for this case.
+     *
+     * @return HasMany<ComplianceCaseDocument, $this>
      */
     public function documents(): HasMany
     {
@@ -330,6 +383,8 @@ class ComplianceCase extends ComplianceModel
 
     /**
      * Get the links for this case.
+     *
+     * @return HasMany<ComplianceCaseLink, $this>
      */
     public function links(): HasMany
     {
