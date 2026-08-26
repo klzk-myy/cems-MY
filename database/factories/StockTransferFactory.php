@@ -22,7 +22,7 @@ class StockTransferFactory extends Factory
         static $transferNumberCounter = 0;
 
         return [
-            'transfer_number' => 'TRF-'.now()->format('Ymd').'-'.str_pad(++$transferNumberCounter, 4, '0', STR_PAD_LEFT),
+            'transfer_number' => 'TRF-'.now()->format('Ymd').'-'.str_pad((string) ++$transferNumberCounter, 4, '0', STR_PAD_LEFT),
             'type' => $this->faker->randomElement(['Standard', 'Emergency', 'Scheduled', 'Return']),
             'status' => $this->faker->randomElement([
                 StockTransferStatus::Requested->value,
