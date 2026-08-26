@@ -80,6 +80,7 @@ class CounterController extends Controller
     {
         $this->ensureCounterBranchAccess($counter);
 
+        /** @var User $user */
         $user = auth()->user();
         $openingFloats = $request->input('opening_floats');
         $today = now()->toDateString();
@@ -127,6 +128,7 @@ class CounterController extends Controller
     {
         $this->ensureCounterBranchAccess($counter);
 
+        /** @var User $user */
         $user = auth()->user();
         $closingFloats = $request->input('closing_floats');
         $notes = $request->input('notes');
@@ -236,8 +238,9 @@ class CounterController extends Controller
     {
         $this->ensureCounterBranchAccess($counter);
 
+        /** @var User|null $fromUser */
         $fromUser = User::find($request->input('from_user_id'));
-        if (! $fromUser) {
+        if (! ($fromUser instanceof User)) {
             return back()->with('error', 'From user not found.');
         }
         $today = now()->toDateString();
@@ -248,12 +251,14 @@ class CounterController extends Controller
             return back()->with('error', 'No open session found for this counter and user today.');
         }
 
+        /** @var User|null $toUser */
         $toUser = User::find($request->input('to_user_id'));
-        if (! $toUser) {
+        if (! ($toUser instanceof User)) {
             return back()->with('error', 'To user not found.');
         }
+        /** @var User|null $supervisor */
         $supervisor = User::find($request->input('supervisor_id'));
-        if (! $supervisor) {
+        if (! ($supervisor instanceof User)) {
             return back()->with('error', 'Supervisor not found.');
         }
 
@@ -274,7 +279,7 @@ class CounterController extends Controller
                 $supervisor,
                 $physicalCounts
             ),
-            successMessage: "Counter {$counter->code} handed over to {$toUser->name}",
+            successMessage: "Counter {$counter->code} handed over to {$toUser->username}",
             redirectRoute: 'counters.index',
             auditContext: [
                 'user_id' => $fromUser->id,
@@ -316,6 +321,7 @@ class CounterController extends Controller
     {
         $this->ensureCounterBranchAccess($counter);
 
+        /** @var User $user */
         $user = auth()->user();
 
         try {
@@ -351,6 +357,7 @@ class CounterController extends Controller
     {
         $this->ensureCounterBranchAccess($counter);
 
+        /** @var User $user */
         $user = auth()->user();
         $today = now()->toDateString();
 
@@ -372,6 +379,7 @@ class CounterController extends Controller
     {
         $this->ensureCounterBranchAccess($counter);
 
+        /** @var User $user */
         $user = auth()->user();
         $today = now()->toDateString();
 
@@ -459,6 +467,7 @@ class CounterController extends Controller
      */
     private function ensureCounterBranchAccess(Counter $counter): void
     {
+        /** @var User $user */
         $user = auth()->user();
 
         if ($user->role->canManageAllBranches()) {
