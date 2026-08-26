@@ -47,7 +47,7 @@ class SanctionsWebhookController extends Controller
         $source = $request->input('source');
         $dispatched = [];
 
-        if ($source) {
+        if (is_string($source) && $source !== '') {
             $dispatched = $this->dispatchSourceUpdate($source);
         } else {
             // Update all sources
