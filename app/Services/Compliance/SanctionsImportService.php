@@ -11,6 +11,7 @@ use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use App\Services\System\MathService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use SimpleXMLElement;
@@ -34,6 +35,30 @@ class SanctionsImportService
         $data = $this->fetchSource($list->source_url);
 
         return $this->importWithData($list, $data, $manual);
+    }
+
+    /**
+     * Build the attribution columns for a SanctionImportLog row.
+     *
+     * Manual imports are attributed to the authenticated officer; scheduled
+     * (job-driven) imports run without a session, so user_id stays null and
+     * triggered_by records the scheduler.
+     *
+     * @return array{triggered_by: string, user_id: int|null}
+     */
+    protected function attributionFor(bool $manual): array
+    {
+        $userId = null;
+
+        if ($manual) {
+            $authenticatedId = auth()->id();
+            $userId = $authenticatedId === null ? null : (int) $authenticatedId;
+        }
+
+        return [
+            'triggered_by' => $manual ? 'manual' : 'scheduled',
+            'user_id' => $userId,
+        ];
     }
 
     public function importWithData(SanctionList $list, array $data, bool $manual = false): array
@@ -61,6 +86,7 @@ class SanctionsImportService
                 'records_updated' => $this->updated,
                 'records_deactivated' => $this->deactivated,
                 'is_manual' => $manual,
+                ...$this->attributionFor($manual),
                 'status' => UpdateStatus::Success->value,
             ]);
 
@@ -80,6 +106,7 @@ class SanctionsImportService
                 'records_updated' => $this->updated,
                 'records_deactivated' => $this->deactivated,
                 'is_manual' => $manual,
+                ...$this->attributionFor($manual),
                 'status' => UpdateStatus::Failed->value,
                 'error_message' => $e->getMessage(),
             ]);
@@ -192,7 +219,16 @@ class SanctionsImportService
                 if ($response->successful()) {
                     $data = $response->json();
 
-                    if (! isset($data['results']) && ! is_array($data)) {
+                    if (! is_array($data)) {
+                        Log::warning('OpenSanctions import: unexpected data structure', [
+                            'url' => $url,
+                            'type' => get_debug_type($data),
+                        ]);
+
+                        return [];
+                    }
+
+                    if (! isset($data['results'])) {
                         Log::warning('OpenSanctions import: unexpected data structure', [
                             'url' => $url,
                             'keys' => array_keys($data),
