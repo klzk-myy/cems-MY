@@ -31,7 +31,7 @@ class TransactionExportService
         $rows = $transactions->map(fn ($t) => [
             'id' => $t->id,
             'date' => $t->created_at?->format('Y-m-d H:i'),
-            'customer' => $t->customer?->name,
+            'customer' => $t->customer?->full_name,
             'type' => $t->type,
             'currency' => $t->currency_code,
             'foreign_amount' => $t->amount_foreign,
