@@ -38,6 +38,10 @@ class BranchClosingService
     {
         $branch = $workflow->branch;
 
+        if (! $branch instanceof Branch) {
+            throw new \RuntimeException("Closure workflow {$workflow->id} has no branch assigned.");
+        }
+
         return [
             'counters_closed' => $this->checkCountersClosed($branch),
             'allocations_returned' => $this->checkAllocationsReturned($branch),
@@ -80,6 +84,10 @@ class BranchClosingService
     {
         DB::transaction(function () use ($workflow, $settler) {
             $branch = $workflow->branch;
+
+            if (! $branch instanceof Branch) {
+                throw new \RuntimeException("Closure workflow {$workflow->id} has no branch assigned.");
+            }
 
             // Return all active allocations to branch pool
             $activeAllocations = TellerAllocation::query()
