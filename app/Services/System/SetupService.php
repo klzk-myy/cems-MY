@@ -2,7 +2,9 @@
 
 namespace App\Services\System;
 
+use App\Enums\UserRole;
 use App\Models\Branch;
+use App\Models\PasswordHistory;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
@@ -64,16 +66,21 @@ class SetupService
     {
         $this->validateAdminPassword($config['admin_password'] ?? '');
 
-        $admin = User::create([
+        // Route through the password mutator: User::creating rejects any
+        // creation attempt whose password_hash is still empty.
+        $admin = new User([
             'username' => $config['admin_username'] ?? 'admin',
             'email' => $config['admin_email'],
+            'password' => $config['admin_password'],
             'mfa_enabled' => false,
             'is_active' => true,
         ]);
 
-        $admin->role = 'admin';
-        $admin->password_hash = Hash::make($config['admin_password']);
+        $admin->role = UserRole::Admin;
         $admin->save();
+
+        // Seed history with the initial hash so reuse prevention covers it.
+        PasswordHistory::record($admin->id, $admin->password_hash);
 
         Artisan::call('db:seed', [
             '--class' => 'CurrencySeeder',
@@ -81,7 +88,7 @@ class SetupService
         ]);
 
         Artisan::call('db:seed', [
-            '--class' => 'ChartOfAccountsSeeder',
+            '--class' => 'EnhancedChartOfAccountsSeeder',
             '--force' => true,
         ]);
 
@@ -92,11 +99,33 @@ class SetupService
             'is_active' => true,
             'is_main' => true,
         ]);
+
+        $this->ensureFiscalYearAndPeriods();
+    }
+
+    /**
+     * Ensure the current fiscal year and monthly accounting periods exist
+     * and are open. Shared by both setup paths (quick setup and step
+     * wizard) so accounting preconditions can never diverge between them.
+     */
+    public function ensureFiscalYearAndPeriods(): void
+    {
+        Artisan::call('db:seed', [
+            '--class' => 'FiscalYearSeeder',
+            '--force' => true,
+        ]);
+
+        Artisan::call('db:seed', [
+            '--class' => 'AccountingPeriodSeeder',
+            '--force' => true,
+        ]);
     }
 
     public function seedOptionalData(array $config): void
     {
-        if ($config['setup_exchange_rates'] ?? false) {
+        // Default-enabled unless explicitly opted out so fresh installs get
+        // usable reference rates without an extra decision during setup.
+        if ($config['setup_exchange_rates'] ?? true) {
             Artisan::call('db:seed', [
                 '--class' => 'ExchangeRateSeeder',
                 '--force' => true,
