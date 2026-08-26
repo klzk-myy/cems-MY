@@ -2,110 +2,79 @@
 
 namespace Database\Seeders;
 
-use App\Enums\JournalEntryStatus;
-use App\Models\AccountingPeriod;
-use App\Models\ChartOfAccount;
+use App\Enums\AccountCode;
+use App\Enums\FiscalYearStatus;
+use App\Enums\UserRole;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
-use App\Models\JournalLine;
 use App\Models\User;
+use App\Services\Accounting\AccountingService;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Seeds a single balanced opening-balance journal entry.
+ *
+ * Debit Cash MYR 500,000 / Credit Capital Paid-In 500,000, posted through
+ * AccountingService so balance validation and ledger rows are handled by the
+ * canonical posting path. The entry is only booked when an open fiscal year
+ * and an admin user exist, and it is never duplicated on rerun.
+ */
 class OpeningBalanceSeeder extends Seeder
 {
+    protected const OPENING_AMOUNT = '500000.00';
+
+    public function __construct(protected AccountingService $accountingService) {}
+
     public function run(): void
     {
-        $this->command->info('Creating opening balance journal entries...');
+        $this->command->info('Creating opening balance journal entry...');
 
-        $fiscalYear = FiscalYear::where('status', 'open')->first();
+        if (JournalEntry::where('reference_type', 'Opening Balance')->exists()) {
+            $this->command->info('Opening balance entry already exists. Skipping.');
+
+            return;
+        }
+
+        $fiscalYear = FiscalYear::where('status', FiscalYearStatus::Open->value)
+            ->orderBy('start_date')
+            ->first();
+
         if (! $fiscalYear) {
             $this->command->warn('No open fiscal year found. Skipping opening balances.');
 
             return;
         }
 
-        $period = AccountingPeriod::where('fiscal_year_id', $fiscalYear->id)
-            ->where('status', 'open')
-            ->first();
+        $adminUser = User::where('role', UserRole::Admin->value)->first();
 
-        if (! $period) {
-            $this->command->warn('No open accounting period found. Skipping opening balances.');
-
-            return;
-        }
-
-        $adminUser = User::where('role', 'admin')->first();
         if (! $adminUser) {
             $this->command->warn('No admin user found. Skipping opening balances.');
 
             return;
         }
 
-        $openingDate = $fiscalYear->start_date;
-        $entryNumber = 'OB-'.$fiscalYear->year_code.'-0001';
+        $entry = $this->accountingService->createJournalEntry(
+            lines: [
+                [
+                    'account_code' => AccountCode::CASH_MYR->value,
+                    'debit' => self::OPENING_AMOUNT,
+                    'credit' => '0',
+                    'description' => 'Opening balance - Cash (MYR)',
+                ],
+                [
+                    'account_code' => AccountCode::CAPITAL_PAID_IN->value,
+                    'debit' => '0',
+                    'credit' => self::OPENING_AMOUNT,
+                    'description' => 'Opening balance - Capital Paid-In',
+                ],
+            ],
+            referenceType: 'Opening Balance',
+            description: 'Opening Balance - Business commencement',
+            entryDate: $fiscalYear->start_date->toDateString(),
+            createdBy: $adminUser->id,
+        );
 
-        DB::transaction(function () use ($fiscalYear, $period, $adminUser, $openingDate, $entryNumber) {
-            $journalEntry = JournalEntry::create([
-                'entry_number' => $entryNumber,
-                'fiscal_year_id' => $fiscalYear->id,
-                'period_id' => $period->id,
-                'entry_date' => $openingDate,
-                'reference_type' => 'Opening Balance',
-                'reference_id' => null,
-                'description' => 'Initial opening balances - Business commencement',
-                'total_amount' => '500000.00',
-                'status' => JournalEntryStatus::Posted,
-                'created_by' => $adminUser->id,
-                'posted_by' => $adminUser->id,
-                'posted_at' => now(),
-            ]);
-
-            $openingBalances = [
-                ['account_code' => '1000', 'debit' => '100000.00', 'credit' => '0.00'],
-                ['account_code' => '1010', 'debit' => '50000.00', 'credit' => '0.00'],
-                ['account_code' => '1011', 'debit' => '40000.00', 'credit' => '0.00'],
-                ['account_code' => '1013', 'debit' => '35000.00', 'credit' => '0.00'],
-                ['account_code' => '1300', 'debit' => '150000.00', 'credit' => '0.00'],
-                ['account_code' => '1400', 'debit' => '25000.00', 'credit' => '0.00'],
-                ['account_code' => '3000', 'debit' => '0.00', 'credit' => '400000.00'],
-                ['account_code' => '4000', 'debit' => '0.00', 'credit' => '100000.00'],
-            ];
-
-            $totalDebits = 0;
-            $totalCredits = 0;
-
-            foreach ($openingBalances as $balance) {
-                $account = ChartOfAccount::where('account_code', $balance['account_code'])->first();
-
-                if (! $account) {
-                    $this->command->warn("Account {$balance['account_code']} not found");
-
-                    continue;
-                }
-
-                JournalLine::create([
-                    'journal_entry_id' => $journalEntry->id,
-                    'account_id' => $account->id,
-                    'debit_amount' => $balance['debit'],
-                    'credit_amount' => $balance['credit'],
-                    'description' => 'Opening balance',
-                ]);
-
-                $totalDebits += (float) $balance['debit'];
-                $totalCredits += (float) $balance['credit'];
-
-                $this->command->info("Created journal line: {$account->account_name} - Dr: {$balance['debit']}, Cr: {$balance['credit']}");
-            }
-
-            $this->command->info("Opening balance journal entry created: {$entryNumber}");
-            $this->command->info("Total Debits: {$totalDebits}, Total Credits: {$totalCredits}");
-
-            if ($totalDebits !== $totalCredits) {
-                $this->command->error('WARNING: Debits and credits do not balance!');
-            }
-        });
-
+        $this->command->info("Opening balance journal entry created: {$entry->id}");
         $this->command->info('Opening balance seeding completed');
     }
 }
