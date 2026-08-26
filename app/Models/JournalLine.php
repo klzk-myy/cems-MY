@@ -48,7 +48,7 @@ class JournalLine extends AccountingModel
     /**
      * Get the parent journal entry that this line belongs to.
      *
-     * @return BelongsTo<JournalEntry, self>
+     * @return BelongsTo<JournalEntry, \$this>
      */
     public function journalEntry(): BelongsTo
     {
@@ -58,7 +58,7 @@ class JournalLine extends AccountingModel
     /**
      * Get the chart of account associated with this journal line.
      *
-     * @return BelongsTo<ChartOfAccount, self>
+     * @return BelongsTo<ChartOfAccount, \$this>
      */
     public function account(): BelongsTo
     {
