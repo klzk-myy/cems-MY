@@ -64,9 +64,9 @@ class FiscalYearService
      * Close a fiscal year.
      *
      * Creates closing entries:
-     * 1. Close all Revenue accounts → Income Summary (4998)
-     * 2. Close all Expense accounts → Income Summary (4998)
-     * 3. Close Income Summary → Retained Earnings (4999)
+     * 1. Close all Revenue accounts → Income Summary (4201)
+     * 2. Close all Expense accounts → Income Summary (4201)
+     * 3. Close Income Summary → Retained Earnings (4100)
      *
      * @param  int|null  $userId  Optional user ID for testing (defaults to auth()->id())
      * @return array Year-end report data
@@ -75,11 +75,9 @@ class FiscalYearService
      */
     public function closeFiscalYear(FiscalYear $year, ?int $userId = null): array
     {
-        $userId = $userId ?? auth()->id();
-        $user = User::find($userId);
-
+        $userId = $userId ?? auth()->user()?->id;
         // Validate user permissions
-        if (! $this->canCloseYear($user)) {
+        if ($userId === null || ! $this->canCloseYear(User::find($userId))) {
             throw new PermissionDeniedException('close fiscal years');
         }
 
@@ -113,17 +111,17 @@ class FiscalYearService
             // Step 2: Create closing entries
             $closingEntries = [];
 
-            // Close Revenue accounts to Income Summary (4998)
+            // Close Revenue accounts to Income Summary (4201)
             if ($this->mathService->compare($revenueTotal, '0') !== 0) {
                 $closingEntries[] = $this->closeRevenueToIncomeSummary($revenueTotal, $yearEndDate, $userId);
             }
 
-            // Close Expense accounts to Income Summary (4998)
+            // Close Expense accounts to Income Summary (4201)
             if ($this->mathService->compare($expenseTotal, '0') !== 0) {
                 $closingEntries[] = $this->closeExpensesToIncomeSummary($expenseTotal, $yearEndDate, $userId);
             }
 
-            // Close Income Summary to Retained Earnings (4999)
+            // Close Income Summary to Retained Earnings (4100)
             if ($this->mathService->compare($netIncome, '0') !== 0) {
                 $closingEntries[] = $this->closeIncomeSummaryToRetained($netIncome, $yearEndDate, $userId);
             }
@@ -201,7 +199,7 @@ class FiscalYearService
 
         // Create opening entries to transfer retained earnings
         return DB::transaction(function () use ($year, $userId) {
-            $userId = $userId ?? auth()->id();
+            $userId = $userId ?? auth()->user()?->id;
             $openingDate = $year->start_date->toDateString();
 
             // Get retained earnings from closing
@@ -279,6 +277,11 @@ class FiscalYearService
 
     /**
      * Get aggregated closing balances for a set of account codes.
+     *
+     * Returns AccountLedger models augmented with the aggregate columns
+     * `total_debit` and `total_credit`, keyed by account_code.
+     *
+     * @return Collection<int, AccountLedger>
      */
     protected function getClosingBalancesForAccounts(array $accountCodes, string $entryDate): Collection
     {
@@ -467,10 +470,10 @@ class FiscalYearService
         foreach ($entry->lines as $line) {
             $currentBalance = $this->getAccountBalance($line->account_code, $entry->entry_date);
 
-            // Income Summary (4998) is treated as a special debit-normal equity account
+            // Income Summary (4201) is treated as a special debit-normal equity account
             // for closing entry calculations, despite being classified as Equity.
-            // When closing revenue: credit to 4998 increases balance
-            // When closing expenses: debit to 4998 decreases balance
+            // When closing revenue: credit to 4201 increases balance
+            // When closing expenses: debit to 4201 decreases balance
             if ($line->account_code === AccountCode::INCOME_SUMMARY->value) {
                 $newBalance = $this->mathService->add(
                     $this->mathService->add($currentBalance, (string) $line->debit),
@@ -517,6 +520,7 @@ class FiscalYearService
             return $total;
         }
 
+        /** @var Collection<int, object{account_code:string, total_debit:?string, total_credit:?string}> $totals */
         $totals = AccountLedger::whereIn('account_code', $accountCodes)
             ->whereBetween('entry_date', [$fromDate, $toDate])
             ->selectRaw('account_code, SUM(debit) as total_debit, SUM(credit) as total_credit')
