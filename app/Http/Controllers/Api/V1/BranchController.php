@@ -51,7 +51,7 @@ class BranchController extends Controller
     {
         $validated = $request->validated();
 
-        $branch = $this->branchService->createBranch($validated, Auth::id(), $request->ip());
+        $branch = $this->branchService->createBranch($validated, (int) Auth::id(), $request->ip());
 
         return $this->successResponse($branch, 'Branch created successfully', 201);
     }
@@ -81,7 +81,7 @@ class BranchController extends Controller
 
         $validated = $request->validated();
 
-        $branch = $this->branchService->updateBranch($branch, $validated, Auth::id(), $request->ip());
+        $branch = $this->branchService->updateBranch($branch, $validated, (int) Auth::id(), $request->ip());
 
         return $this->successResponse($branch->fresh(), 'Branch updated successfully');
     }
@@ -94,7 +94,7 @@ class BranchController extends Controller
         $branch = Branch::findOrFail($id);
 
         try {
-            $this->branchService->deactivateBranch($branch, Auth::id(), $request->ip());
+            $this->branchService->deactivateBranch($branch, (int) Auth::id(), $request->ip());
 
             return $this->successResponse(null, 'Branch deactivated successfully');
         } catch (\RuntimeException $e) {
