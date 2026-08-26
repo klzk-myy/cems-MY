@@ -119,7 +119,7 @@ class SystemHealthCheck extends SystemModel
         }
 
         foreach ($latestChecks as $check) {
-            if ($check !== null && $check->status === SystemHealthCheckStatus::Warning) {
+            if ($check->status === SystemHealthCheckStatus::Warning) {
                 return SystemHealthCheckStatus::Warning->value;
             }
         }
@@ -132,10 +132,10 @@ class SystemHealthCheck extends SystemModel
      */
     public function getStatusColorClass(): string
     {
-        return match ($this->status) {
-            SystemHealthCheckStatus::Ok => 'green',
-            SystemHealthCheckStatus::Warning => 'yellow',
-            SystemHealthCheckStatus::Critical => 'red',
+        return match ($this->status->value) {
+            'ok' => 'green',
+            'warning' => 'yellow',
+            'critical' => 'red',
             default => 'gray',
         };
     }
