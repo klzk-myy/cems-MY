@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Api\V1\Traits;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 
 trait ApiResponse
 {
+    /**
+     * @param  array<string, mixed>  $meta
+     */
     protected function successResponse(
         mixed $data = null,
         string $message = 'Success',
@@ -20,6 +24,10 @@ trait ApiResponse
         ], $meta), $code);
     }
 
+    /**
+     * @param  array<string, mixed>  $errors
+     * @param  array<string, mixed>  $meta
+     */
     protected function errorResponse(
         string $message,
         array $errors = [],
@@ -44,6 +52,13 @@ trait ApiResponse
         ])->response()->setStatusCode($code);
     }
 
+    /**
+     * @template TResource of JsonResource
+     *
+     * @param  TResource  $resource
+     * @param  array<string, mixed>  $meta
+     * @return TResource
+     */
     protected function resourceWithSuccess(
         JsonResource $resource,
         string $message = 'Success',
@@ -65,7 +80,7 @@ trait ApiResponse
         ?\Throwable $e = null
     ): JsonResponse {
         if ($e !== null) {
-            \Log::error($message, ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            Log::error($message, ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
 
         return $this->errorResponse($message, [], 500);
