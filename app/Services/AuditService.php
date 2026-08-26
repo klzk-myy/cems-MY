@@ -28,7 +28,10 @@ class AuditService implements AuditServiceInterface
      * Each entry maps a specific action name to its severity. The special
      * '*' key is the default for any action in that domain not explicitly listed.
      */
-    private const array SEVERITY_MAPS = [
+    /**
+     * @var array<string, array<string, string>>
+     */
+    private const SEVERITY_MAPS = [
         'compliance_flag_' => [
             'compliance_flag_assigned' => 'WARNING',
             'compliance_flag_resolved' => 'INFO',
@@ -119,7 +122,7 @@ class AuditService implements AuditServiceInterface
                     return $map[$action];
                 }
 
-                return $map['*'] ?? $domainDefault;
+                return $map['*'];
             }
         }
 
@@ -277,7 +280,7 @@ class AuditService implements AuditServiceInterface
                 return true;
             }
 
-            $previousHash = $predecessor?->entry_hash ?? null;
+            $previousHash = $predecessor->entry_hash ?? null;
 
             // Seal with the v2 formula: the hash covers old_values,
             // new_values, severity and ip_address so post-seal payload edits
@@ -318,6 +321,7 @@ class AuditService implements AuditServiceInterface
         $log = SystemLog::create([
             'user_id' => $userId,
             'action' => $action,
+            'description' => $data['description'] ?? null,
             'severity' => $severity,
             'entity_type' => $data['entity_type'] ?? null,
             'entity_id' => $data['entity_id'] ?? null,
@@ -349,6 +353,7 @@ class AuditService implements AuditServiceInterface
         $log = SystemLog::create([
             'user_id' => $userId,
             'action' => $action,
+            'description' => $data['description'] ?? null,
             'severity' => $severity,
             'entity_type' => $data['entity_type'] ?? null,
             'entity_id' => $data['entity_id'] ?? null,
@@ -634,9 +639,17 @@ class AuditService implements AuditServiceInterface
             'new_values' => [
                 'accessed_branch_id' => $accessedBranchId,
                 'accessed_branch_name' => $data['branch_name'] ?? null,
-                'user_branch_id' => auth()->user()?->branch_id ?? null,
+                'user_branch_id' => auth()->user()->branch_id ?? null,
             ],
         ], 'WARNING');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function logBranchEvent(string $action, int $branchId, array $data = []): SystemLog
+    {
+        return $this->logAction($action, 'Branch', $branchId, $data);
     }
 
     public function logBatchOperationEvent(string $action, array $data = []): SystemLog
