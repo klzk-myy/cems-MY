@@ -39,7 +39,7 @@ class SendNotificationJob implements ShouldBeUnique, ShouldQueue
     /**
      * The notification instance
      */
-    public Notification $notification;
+    public object $notification;
 
     /**
      * Custom queue name (optional)
@@ -70,7 +70,7 @@ class SendNotificationJob implements ShouldBeUnique, ShouldQueue
      */
     public function __construct(
         mixed $notifiable,
-        Notification $notification,
+        object $notification,
         ?array $channels = null,
         ?string $queueName = null
     ) {
@@ -123,11 +123,11 @@ class SendNotificationJob implements ShouldBeUnique, ShouldQueue
         // Create a proxy that overrides via() to return our custom channels
         $proxyNotification = new class($notification, $this->channels) extends Notification
         {
-            private Notification $innerNotification;
+            private object $innerNotification;
 
             private array $customChannels;
 
-            public function __construct(Notification $innerNotification, array $customChannels)
+            public function __construct(object $innerNotification, array $customChannels)
             {
                 $this->innerNotification = $innerNotification;
                 $this->customChannels = $customChannels;
@@ -140,12 +140,16 @@ class SendNotificationJob implements ShouldBeUnique, ShouldQueue
 
             public function toMail($notifiable)
             {
-                return $this->innerNotification->toMail($notifiable);
+                return method_exists($this->innerNotification, 'toMail')
+                    ? $this->innerNotification->toMail($notifiable)
+                    : null;
             }
 
             public function toArray($notifiable): array
             {
-                return $this->innerNotification->toArray($notifiable);
+                return method_exists($this->innerNotification, 'toArray')
+                    ? $this->innerNotification->toArray($notifiable)
+                    : [];
             }
 
             public function toBroadcast($notifiable)
