@@ -10,6 +10,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -85,7 +86,7 @@ class Handler extends ExceptionHandler
                 ], $e->getStatusCode());
             }
 
-            return back()->with('error', $e->getMessage());
+            return back()->withInput()->with('error', $e->getMessage());
         }
 
         // Log all unhandled exceptions with full details for debugging
@@ -131,7 +132,7 @@ class Handler extends ExceptionHandler
     protected function resolveApiStatusCode(Throwable $e): int
     {
         return match (true) {
-            $this->isHttpException($e) => $e->getStatusCode(),
+            $e instanceof HttpExceptionInterface => $e->getStatusCode(),
             $e instanceof ValidationException => 400,
             $e instanceof DomainException => $e->getStatusCode(),
             $e instanceof \RuntimeException => 409,
