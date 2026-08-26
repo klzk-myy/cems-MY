@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @extends Factory<Customer>
+ */
 class CustomerFactory extends Factory
 {
     protected $model = Customer::class;
@@ -33,6 +36,10 @@ class CustomerFactory extends Factory
     {
         $raw = $this->raw();
         $result = parent::make($attributes, $parent);
+
+        assert($result instanceof Customer || $result instanceof Collection);
+
+        /** @var Collection<int, Customer> $customers */
         $customers = $result instanceof Collection
             ? $result
             : new Collection([$result]);
