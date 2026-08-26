@@ -64,7 +64,7 @@ class CustomerSearchController extends Controller
 
         $validated = $request->validated();
 
-        $customer = $this->customerService->createCustomer($validated, auth()->id());
+        $customer = $this->customerService->createCustomer($validated, (int) auth()->id());
 
         $exchangeRates = Cache::remember(CacheKeys::ExchangeRates->value, 300, fn () => ExchangeRate::all()
             ->mapWithKeys(fn ($r) => [$r->currency_code => [
