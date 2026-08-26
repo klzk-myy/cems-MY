@@ -70,7 +70,7 @@ class ImportSanctionsJob implements ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        $listId = $this->sanctionList?->id ?? $this->listSlug;
+        $listId = $this->sanctionList !== null ? $this->sanctionList->id : $this->listSlug;
         Log::critical('ImportSanctionsJob: Import failed permanently', [
             'list_id' => $listId,
             'error' => $exception->getMessage(),
@@ -79,7 +79,7 @@ class ImportSanctionsJob implements ShouldQueue
 
     public function tags(): array
     {
-        $listId = $this->sanctionList?->id ?? $this->listSlug ?? 'unknown';
+        $listId = $this->sanctionList !== null ? $this->sanctionList->id : ($this->listSlug ?? 'unknown');
 
         return [
             'sanctions',
