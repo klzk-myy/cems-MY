@@ -2,26 +2,18 @@
     <div class="space-y-6">
         <x-page-header
             title="Risk Trends"
-            description="Historical risk metrics and analysis"
-        />
-
-        <x-filter-bar>
-            <x-select
-                name="range"
-                :options="['30' => 'Last 30 Days', '90' => 'Last 90 Days', '180' => 'Last 6 Months', '365' => 'Last Year']"
-                inline
-            />
-            <x-select
-                name="branch"
-                :options="['' => 'All Branches', 'kl' => 'Kuala Lumpur', 'penang' => 'Penang', 'johor' => 'Johor']"
-                inline
-            />
-            <x-button variant="primary" type="submit">Apply Filter</x-button>
-        </x-filter-bar>
+            description="Historical risk metrics and analysis over the last 6 months"
+        >
+            <x-slot:actions>
+                <x-button variant="secondary" href="{{ route('compliance.risk-dashboard.index') }}">
+                    Back to Dashboard
+                </x-button>
+            </x-slot:actions>
+        </x-page-header>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <x-chart-trend
-                title="High Risk Customer Trend"
+                title="High Risk Customer Trend (score 60+)"
                 :labels="$highRiskTrend['labels']"
                 :values="$highRiskTrend['values']"
                 color="red"
@@ -35,54 +27,41 @@
             />
         </div>
 
-        <x-card title="Risk Score Distribution Over Time">
-            <x-table>
-                <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">High Risk</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Medium Risk</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Low Risk</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Total</th>
-                </x-slot:thead>
-                <x-slot:tbody>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-ink">January 2024</td>
-                        <td class="px-4 py-3 text-sm text-danger-text font-medium">12</td>
-                        <td class="px-4 py-3 text-sm text-warning-text">28</td>
-                        <td class="px-4 py-3 text-sm text-success-text">156</td>
-                        <td class="px-4 py-3 text-sm text-ink">196</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-ink">December 2023</td>
-                        <td class="px-4 py-3 text-sm text-danger-text font-medium">8</td>
-                        <td class="px-4 py-3 text-sm text-warning-text">24</td>
-                        <td class="px-4 py-3 text-sm text-success-text">148</td>
-                        <td class="px-4 py-3 text-sm text-ink">180</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-ink">November 2023</td>
-                        <td class="px-4 py-3 text-sm text-danger-text font-medium">6</td>
-                        <td class="px-4 py-3 text-sm text-warning-text">22</td>
-                        <td class="px-4 py-3 text-sm text-success-text">142</td>
-                        <td class="px-4 py-3 text-sm text-ink">170</td>
-                    </tr>
-                </x-slot:tbody>
-            </x-table>
-        </x-card>
-
-        <x-card title="Key Insights">
-            <div class="space-y-3">
-                <x-alert type="danger" title="High Risk Customers Increased" :icon="true" class="mb-0">
-                    High risk customer count increased by 50% compared to last month
-                </x-alert>
-
-                <x-alert type="warning" title="Alert Volume Up" :icon="true" class="mb-0">
-                    Total alerts increased by 41% month-over-month
-                </x-alert>
-
-                <x-alert type="success" title="EDD Completion Rate Good" :icon="true" class="mb-0">
-                    95% of EDD reviews completed within SLA
-                </x-alert>
+        <x-card title="Customers Needing Re-screening">
+            <div class="overflow-x-auto">
+                <x-table>
+                    <x-slot:thead>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Risk Level</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Score</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Next Screening Due</th>
+                    </x-slot:thead>
+                    <x-slot:tbody>
+                        @forelse ($needsRescreening as $customer)
+                            @php
+                                $snapshot = $customer->latestRiskSnapshot;
+                            @endphp
+                            <tr class="border-t border-border hover:bg-canvas-subtle">
+                                <td class="px-4 py-3 text-sm">
+                                    <a href="{{ route('compliance.risk-dashboard.customer', $customer) }}"
+                                       class="text-primary hover:underline">
+                                        {{ $customer->full_name }}
+                                    </a>
+                                    <div class="text-xs text-ink-muted">#{{ $customer->id }}</div>
+                                </td>
+                                <td class="px-4 py-3 text-sm"><x-risk-badge :customer="$customer" /></td>
+                                <td class="px-4 py-3 text-sm text-ink tabular-nums">
+                                    {{ $snapshot?->overall_score ?? $customer->risk_score }}
+                                </td>
+                                <td class="px-4 py-3 text-sm text-ink-muted whitespace-nowrap">
+                                    {{ $snapshot?->next_screening_date?->format('d M Y') ?? 'Overdue' }}
+                                </td>
+                            </tr>
+                        @empty
+                            <x-empty-state message="No customers are due for re-screening." :colspan="4" />
+                        @endforelse
+                    </x-slot:tbody>
+                </x-table>
             </div>
         </x-card>
     </div>
