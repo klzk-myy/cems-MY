@@ -151,18 +151,20 @@ class QueueHealthCheck extends Command
         $connection = Redis::connection();
         $client = $connection->client();
 
-        $prefix = '';
-        if ($client instanceof \Redis) {
-            $prefix = (string) $client->getOption(\Redis::OPT_PREFIX);
+        if (! $client instanceof \Redis) {
+            return false;
         }
+
+        // phpredis applies OPT_PREFIX transparently to KEYS but NOT to SCAN
+        // MATCH patterns, so the configured prefix must be included in the
+        // pattern explicitly. The initial cursor must be null - a literal "0"
+        // makes phpredis short-circuit the iteration.
+        $prefix = (string) $client->getOption(\Redis::OPT_PREFIX);
 
         $cursor = null;
 
         for ($batches = 0; $batches < 100; $batches++) {
-            $result = $connection->scan($cursor, [
-                'match' => $prefix.'horizon:master:*',
-                'count' => 200,
-            ]);
+            $result = $client->scan($cursor, $prefix.'horizon:master:*', 200);
 
             // PhpRedisConnection::scan returns false when the full keyspace
             // was scanned and nothing matched, else [cursor, keys].
@@ -173,7 +175,7 @@ class QueueHealthCheck extends Command
             [$cursor, $keys] = $result;
 
             foreach ((array) $keys as $key) {
-                if ($key !== false && $key !== null && $key !== '') {
+                if ($key !== '') {
                     return true;
                 }
             }
