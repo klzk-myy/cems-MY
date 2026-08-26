@@ -36,7 +36,7 @@ class AmlRule extends BaseModel
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $fillable = [
         'rule_code',
