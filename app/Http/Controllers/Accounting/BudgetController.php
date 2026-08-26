@@ -35,7 +35,7 @@ class BudgetController extends Controller
                 $budgetData['account_code'],
                 $validated['period_code'],
                 $budgetData['amount'],
-                auth()->id()
+                (int) auth()->id()
             );
         }
 
