@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AccountType;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Services\System\MathService;
@@ -70,6 +71,7 @@ class LedgerService
      * total_debits: string,
      * total_credits: string,
      * total_balance: string,
+     * totals_by_type: array{Asset: string, Liability: string, Equity: string, Revenue: string, Expense: string},
      * is_balanced: bool,
      * as_of_date: string
      * } Trial balance data with accounts list, totals, and balance status
@@ -96,8 +98,9 @@ class LedgerService
 
             foreach ($accounts as $account) {
                 $balance = $balances[$account->account_code] ?? '0';
+                $accountType = $account->account_type instanceof AccountType ? $account->account_type->value : (string) $account->account_type;
 
-                if (in_array($account->account_type, ['Liability', 'Equity', 'Revenue'])) {
+                if (in_array($accountType, ['Liability', 'Equity', 'Revenue'])) {
                     $debit = $this->mathService->compare($balance, '0') < 0 ? $this->mathService->multiply($balance, '-1') : '0';
                     $credit = $this->mathService->compare($balance, '0') >= 0 ? $balance : '0';
                 } else {
@@ -108,7 +111,7 @@ class LedgerService
                 $trialBalance[] = [
                     'account_code' => $account->account_code,
                     'account_name' => $account->account_name,
-                    'account_type' => $account->account_type,
+                    'account_type' => $accountType,
                     'debit' => $debit,
                     'credit' => $credit,
                     'balance' => $balance,
@@ -147,6 +150,17 @@ class LedgerService
         });
     }
 
+    /**
+     * @return array{
+     * accounts: array<int, array{account_code: string, account_name: string, account_type: string, debit: string, credit: string, balance: string}>,
+     * total_debits: string,
+     * total_credits: string,
+     * total_balance: string,
+     * totals_by_type: array{Asset: string, Liability: string, Equity: string, Revenue: string, Expense: string},
+     * is_balanced: bool,
+     * as_of_date: string
+     * }
+     */
     private function emptyTrialBalance(string $asOfDate): array
     {
         return [
@@ -198,8 +212,8 @@ class LedgerService
      * entries: Collection<int, AccountLedger>,
      * opening_balance: string,
      * closing_balance: string,
-     * total_debits: float,
-     * total_credits: float,
+     * total_debits: string,
+     * total_credits: string,
      * period: array{from: string, to: string}
      * } Account ledger data with entries and balance information
      */
@@ -533,6 +547,7 @@ class LedgerService
             // Eloquent query on AccountLedger joined to ChartOfAccount.
             // with([]) suppresses the default eager-load of 'account' so we
             // don't fire a second select per group.
+            /** @var \Illuminate\Support\Collection<int, object{account_code:string, account_name:string, total_debit:?string, total_credit:?string}> $results */
             $results = AccountLedger::query()
                 ->with([])
                 ->join('chart_of_accounts', 'account_ledger.account_code', '=', 'chart_of_accounts.account_code')
@@ -585,6 +600,7 @@ class LedgerService
      */
     protected function getAggregatedAccountBalances(?string $fromDate = null, ?string $toDate = null, ?int $branchId = null): \Illuminate\Support\Collection
     {
+        /** @var \Illuminate\Support\Collection<int, object{account_code:string, total_debit:?string, total_credit:?string}> $results */
         $results = AccountLedger::query()
             ->with([])
             ->select('account_code')
