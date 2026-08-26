@@ -22,10 +22,29 @@ class ReportScheduleController extends Controller
      */
     public function index(Request $request): View
     {
-        $filters = $request->only(['status', 'type']);
-        $schedules = $this->reportSchedulingService->getReportHistory($filters);
+        $query = ReportSchedule::query()->orderByDesc('created_at');
 
-        return view('reports.schedules.index', compact('schedules'));
+        $type = $request->string('type')->toString();
+        if ($type !== '' && ReportType::tryFrom($type)) {
+            $query->where('report_type', $type);
+        }
+
+        $status = $request->string('status')->toString();
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        $schedules = $query->paginate(15)->withQueryString();
+
+        return view('reports.schedules.index', [
+            'schedules' => $schedules,
+            'reportTypes' => collect(ReportType::cases())->map(fn (ReportType $t) => [
+                'value' => $t->value,
+                'label' => $t->value,
+            ]),
+        ]);
     }
 
     /**
@@ -53,7 +72,33 @@ class ReportScheduleController extends Controller
      */
     public function show(ReportSchedule $schedule): View
     {
-        return view('reports.schedules.show', compact('schedule'));
+        $recentRuns = $schedule->reportRuns()
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        return view('reports.schedules.show', compact('schedule', 'recentRuns'));
+    }
+
+    /**
+     * Pause the specified report schedule.
+     */
+    public function pause(ReportSchedule $schedule): RedirectResponse
+    {
+        $schedule->update(['is_active' => false]);
+
+        return redirect()->route('reports.schedules.show', $schedule)->with('success', 'Report schedule paused.');
+    }
+
+    /**
+     * Resume the specified report schedule.
+     */
+    public function resume(ReportSchedule $schedule): RedirectResponse
+    {
+        $schedule->update(['is_active' => true]);
+        $schedule->updateNextRun();
+
+        return redirect()->route('reports.schedules.show', $schedule)->with('success', 'Report schedule resumed.');
     }
 
     /**
