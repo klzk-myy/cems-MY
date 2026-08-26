@@ -196,7 +196,7 @@ class TransactionReversalService
     public function reversePositions(Transaction $transaction): void
     {
         $position = $this->positionLockService->findForUpdate(
-            $transaction->branch_id,
+            $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ',
             $transaction->currency_code
         );
 
@@ -224,7 +224,7 @@ class TransactionReversalService
             $transaction->amount_foreign,
             $transaction->rate,
             $reversalType->value,
-            $transaction->branch_id
+            $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ'
         );
 
         Log::info('Positions reversed for transaction', [
@@ -282,7 +282,7 @@ class TransactionReversalService
 
     public function createReversingJournalEntries(Transaction $transaction, ?int $reversedBy = null): void
     {
-        $reversedBy = $reversedBy ?? auth()->id();
+        $reversedBy = $reversedBy ?? auth()->user()?->id;
 
         $originalEntries = JournalEntry::where('reference_type', 'Transaction')
             ->where('reference_id', $transaction->id)
