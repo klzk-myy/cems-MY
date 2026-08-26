@@ -64,7 +64,7 @@ class UserController extends Controller
     {
         $this->requireAdmin();
 
-        $user = $this->userService->createUser($request->validated(), auth()->id());
+        $user = $this->userService->createUser($request->validated(), (int) auth()->id());
 
         return redirect()->route('users.index')
             ->with('success', "User {$user->username} created successfully!");
@@ -103,7 +103,7 @@ class UserController extends Controller
     {
         $this->requireAdmin();
 
-        $user = $this->userService->updateUser($user, $request->validated(), auth()->id());
+        $user = $this->userService->updateUser($user, $request->validated(), (int) auth()->id());
 
         return redirect()->route('users.index')
             ->with('success', "User {$user->username} updated successfully!");
@@ -116,7 +116,7 @@ class UserController extends Controller
     {
         $this->requireAdmin();
 
-        $this->userService->resetPassword($user, $request->validated('password'), auth()->id());
+        $this->userService->resetPassword($user, $request->validated('password'), (int) auth()->id());
 
         return redirect()->route('users.index')
             ->with('success', "Password for {$user->username} has been reset!");
