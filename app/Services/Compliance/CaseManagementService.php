@@ -18,6 +18,10 @@ use App\Models\Compliance\ComplianceCaseDocument;
 use App\Models\Compliance\ComplianceCaseLink;
 use App\Models\Compliance\ComplianceCaseNote;
 use App\Models\Compliance\ComplianceFinding;
+use App\Models\User;
+use App\Notifications\ComplianceCaseAssignedNotification;
+use App\Notifications\ComplianceCaseSlaBreachedNotification;
+use App\Services\System\SystemAlertService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -36,6 +40,10 @@ class CaseManagementService
      * Mirrors UploadCaseDocumentRequest validation.
      */
     private const ALLOWED_DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+
+    public function __construct(
+        protected SystemAlertService $alertService,
+    ) {}
 
     /**
      * Create a compliance case from a finding.
@@ -115,9 +123,37 @@ class CaseManagementService
      */
     public function assignCase(ComplianceCase $case, int $officerId): ComplianceCase
     {
+        $previousAssignee = $case->assigned_to;
+
         $case->assignTo($officerId);
 
+        if ($previousAssignee !== $officerId) {
+            $this->notifyAssignee($case, $officerId);
+        }
+
         return $case->fresh();
+    }
+
+    /**
+     * Notify the newly-assigned officer of the case, including SLA runway.
+     */
+    protected function notifyAssignee(ComplianceCase $case, int $assigneeId): void
+    {
+        try {
+            $assignee = User::find($assigneeId);
+
+            if (! $assignee) {
+                return;
+            }
+
+            $assignee->notify(new ComplianceCaseAssignedNotification($case, auth()->user()));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to notify case assignee', [
+                'case_id' => $case->id,
+                'assignee_id' => $assigneeId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -347,11 +383,17 @@ class CaseManagementService
      */
     public function assignToOfficer(ComplianceCase $case, int $userId): ComplianceCase
     {
-        return DB::transaction(function () use ($case, $userId) {
+        $previousAssignee = $case->assigned_to;
+
+        return DB::transaction(function () use ($case, $userId, $previousAssignee) {
             $case->update(['assigned_to' => $userId]);
 
             if ($case->status === ComplianceCaseStatus::Open) {
                 $case->update(['status' => ComplianceCaseStatus::UnderReview]);
+            }
+
+            if ($previousAssignee !== $userId) {
+                $this->notifyAssignee($case, $userId);
             }
 
             return $case->fresh();
@@ -527,13 +569,17 @@ class CaseManagementService
         $filename = Str::uuid().'.'.$extension;
         $path = $file->storeAs($storagePath, $filename);
 
-        return $case->documents()->create([
+        $document = $case->documents()->create([
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $path,
             'file_type' => $file->getMimeType(),
             'uploaded_by' => $uploadedBy,
             'uploaded_at' => now(),
         ]);
+
+        assert($document instanceof ComplianceCaseDocument);
+
+        return $document;
     }
 
     /**
@@ -582,5 +628,89 @@ class CaseManagementService
     public function getCaseLinks(int $caseId): Collection
     {
         return ComplianceCase::findOrFail($caseId)->links()->get();
+    }
+
+    /**
+     * Proactively alert on open cases whose SLA deadline has passed.
+     *
+     * Designed to be called from the scheduler (see bootstrap notes: daily).
+     * Raises ONE summary SystemAlert grouped by priority (no per-case spam)
+     * and notifies each case's assignee individually so officers hear about
+     * their own overdue cases.
+     *
+     * @return array{breached: int, notified: int, by_priority: array<string, int>}
+     */
+    public function alertBreachedCases(): array
+    {
+        $breached = ComplianceCase::with('assignee')
+            ->open()
+            ->where('sla_deadline', '<', now())
+            ->orderBy('sla_deadline')
+            ->get();
+
+        if ($breached->isEmpty()) {
+            return ['breached' => 0, 'notified' => 0, 'by_priority' => []];
+        }
+
+        $byPriority = [];
+        foreach ($breached as $case) {
+            $byPriority[$case->priority->value] = ($byPriority[$case->priority->value] ?? 0) + 1;
+        }
+
+        // Worst offenders: longest overdue first.
+        $worstRefs = $breached
+            ->take(5)
+            ->map(fn (ComplianceCase $case) => sprintf(
+                '%s (%s, %dh overdue)',
+                $case->case_number,
+                $case->priority->value,
+                (int) $case->sla_deadline->diffInHours(now())
+            ))
+            ->implode(', ');
+
+        $prioritySummary = implode(', ', array_map(
+            fn ($priority, $count) => "{$count} {$priority}",
+            array_keys($byPriority),
+            $byPriority
+        ));
+
+        try {
+            $this->alertService->critical(
+                "SLA breached on {$breached->count()} open compliance case(s) [{$prioritySummary}]. Worst: {$worstRefs}",
+                [
+                    'source' => 'case_sla_breach',
+                    'metadata' => [
+                        'breached_count' => $breached->count(),
+                        'by_priority' => $byPriority,
+                        'worst_case_numbers' => $breached->take(5)->pluck('case_number')->all(),
+                    ],
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::error('Failed to raise SLA breach summary alert: '.$e->getMessage());
+        }
+
+        $notified = 0;
+        foreach ($breached as $case) {
+            if (! $case->assignee) {
+                continue;
+            }
+
+            try {
+                $case->assignee->notify(new ComplianceCaseSlaBreachedNotification(
+                    $case,
+                    max(0, (int) $case->sla_deadline->diffInHours(now()))
+                ));
+                $notified++;
+            } catch (\Throwable $e) {
+                Log::error("Failed to notify assignee of SLA breach for case {$case->case_number}: ".$e->getMessage());
+            }
+        }
+
+        return [
+            'breached' => $breached->count(),
+            'notified' => $notified,
+            'by_priority' => $byPriority,
+        ];
     }
 }
