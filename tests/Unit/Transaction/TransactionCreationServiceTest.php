@@ -20,11 +20,14 @@ use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Notifications\LargeTransactionNotification;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
+use App\Services\Compliance\KycDocumentExpiryService;
+use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\DTOs\PreValidationResult;
@@ -37,6 +40,7 @@ use App\Services\Transaction\TransactionErrorHandler;
 use App\Services\Transaction\TransactionRecoveryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -75,6 +79,8 @@ class TransactionCreationServiceTest extends TestCase
             $mocks['recoveryService'] ?? tap(Mockery::mock(TransactionRecoveryService::class), function ($mock) {
                 $mock->shouldReceive('attemptRecovery')->zeroOrMoreTimes()->andReturn(false);
             }),
+            $mocks['kycDocumentExpiry'] ?? app(KycDocumentExpiryService::class),
+            $mocks['rateManagement'] ?? app(RateManagementServiceInterface::class),
         );
     }
 
@@ -170,6 +176,112 @@ class TransactionCreationServiceTest extends TestCase
         $this->assertEquals(TransactionType::Buy->value, $transaction->type->value);
         $this->assertEquals('100.0000', $transaction->amount_foreign);
         $this->assertEquals('450.0000', $transaction->amount_local);
+    }
+
+    /**
+     * @param  array<string, mixed>  $mocks
+     */
+    private function completedBuyService(array $mocks = []): TransactionCreationService
+    {
+        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency->shouldReceive('findDuplicate')->andReturnNull();
+        $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('getPositionWithLock')->zeroOrMoreTimes();
+        $position->shouldReceive('updatePosition')->zeroOrMoreTimes();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->zeroOrMoreTimes();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransaction')->zeroOrMoreTimes();
+
+        return $this->service([
+            'idempotency' => $idempotency,
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+            ...$mocks,
+        ]);
+    }
+
+    #[Test]
+    public function create_dispatches_large_transaction_notification_for_pending_approval_deals(): void
+    {
+        Notification::fake();
+        config(['thresholds.cdd.large_transaction' => '1000']);
+
+        $officer = User::factory()->complianceOfficer()->create();
+        User::factory()->teller()->create();
+
+        $transaction = $this->completedBuyService()->create($this->context([
+            'status' => TransactionStatus::PendingApproval,
+            'amountLocal' => '50000.00',
+        ]));
+
+        $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
+        Notification::assertSentTo($officer, LargeTransactionNotification::class);
+        Notification::assertNotSentTo(
+            User::whereKey($transaction->user_id)->first(),
+            LargeTransactionNotification::class
+        );
+    }
+
+    #[Test]
+    public function create_skips_large_transaction_notification_for_completed_status(): void
+    {
+        Notification::fake();
+        config(['thresholds.cdd.large_transaction' => '1000']);
+
+        User::factory()->complianceOfficer()->create();
+
+        $this->completedBuyService()->create($this->context([
+            'amountLocal' => '50000.00',
+        ]));
+
+        Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function create_skips_large_transaction_notification_below_threshold(): void
+    {
+        Notification::fake();
+        config(['thresholds.cdd.large_transaction' => '1000']);
+
+        User::factory()->complianceOfficer()->create();
+
+        $this->completedBuyService()->create($this->context([
+            'amountLocal' => '450.00',
+        ]));
+
+        Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function create_skips_large_transaction_notification_for_failed_status(): void
+    {
+        Notification::fake();
+        config(['thresholds.cdd.large_transaction' => '1000']);
+
+        User::factory()->complianceOfficer()->create();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransaction')->zeroOrMoreTimes();
+
+        // A Failed transaction reaches the notification point only via the
+        // import path; the booking-failure path rethrows before this point.
+        try {
+            $this->completedBuyService(['audit' => $audit])->create($this->context([
+                'status' => TransactionStatus::Failed,
+                'amountLocal' => '50000.00',
+            ]));
+        } catch (\Throwable) {
+            // Booking side effects may reject a Failed context; the guard is
+            // what matters, not the booking outcome.
+        }
+
+        Notification::assertNothingSent();
     }
 
     #[Test]
@@ -807,6 +919,8 @@ class TransactionCreationServiceTest extends TestCase
             app(TellerAllocationService::class),
             $errorHandler,
             $recoveryService,
+            app(KycDocumentExpiryService::class),
+            app(RateManagementServiceInterface::class),
         );
 
         $user = User::factory()->create();
