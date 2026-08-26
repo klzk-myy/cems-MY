@@ -24,18 +24,15 @@ class ComplianceCaseLinkFactory extends Factory
         return [
             'case_id' => ComplianceCase::factory(),
             'linked_type' => $this->faker->randomElement(['App\Models\Customer', 'App\Models\Transaction', 'App\Models\User']),
-            'linked_id' => function (array $attributes) {
-                $type = $attributes['linked_type'] ?? 'App\Models\Customer';
-                switch ($type) {
-                    case 'App\Models\Customer':
-                        return Customer::factory()->create()->id;
-                    case 'App\Models\Transaction':
-                        return Transaction::factory()->create()->id;
-                    case 'App\Models\User':
-                        return User::factory()->create()->id;
-                    default:
-                        return 1;
-                }
+            'linked_id' => function (array $attributes): int {
+                /** @var Customer|Transaction|User $linked */
+                $linked = match ($attributes['linked_type'] ?? 'App\\Models\\Customer') {
+                    'App\\Models\\Transaction' => Transaction::factory()->create(),
+                    'App\\Models\\User' => User::factory()->create(),
+                    default => Customer::factory()->create(),
+                };
+
+                return $linked->id;
             },
             'created_at' => $this->faker->dateTimeThisMonth(),
         ];
