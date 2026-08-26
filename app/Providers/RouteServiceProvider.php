@@ -88,7 +88,7 @@ class RouteServiceProvider extends ServiceProvider
 
         // Transaction rate limit: 10 per minute per user (reduced from 30)
         RateLimiter::for('transactions', function (Request $request) {
-            $key = $request->user()?->id ?? $request->ip();
+            $key = $request->user()->id ?? $request->ip();
 
             return Limit::perMinute(
                 config('security.rate_limits.transactions.attempts', 10)
@@ -105,7 +105,7 @@ class RouteServiceProvider extends ServiceProvider
 
         // Bulk operations rate limit: 1 per 5 minutes per user
         RateLimiter::for('bulk', function (Request $request) {
-            $key = $request->user()?->id ?? $request->ip();
+            $key = $request->user()->id ?? $request->ip();
             $config = config('security.rate_limits.bulk');
 
             return Limit::perMinutes(
@@ -124,7 +124,7 @@ class RouteServiceProvider extends ServiceProvider
 
         // Export operations rate limit: 5 per minute per user
         RateLimiter::for('export', function (Request $request) {
-            $key = $request->user()?->id ?? $request->ip();
+            $key = $request->user()->id ?? $request->ip();
 
             return Limit::perMinute(
                 config('security.rate_limits.export.attempts', 5)
@@ -141,7 +141,7 @@ class RouteServiceProvider extends ServiceProvider
 
         // Sensitive operations rate limit: 3 per minute per user
         RateLimiter::for('sensitive', function (Request $request) {
-            $key = $request->user()?->id ?? $request->ip();
+            $key = $request->user()->id ?? $request->ip();
 
             return Limit::perMinute(
                 config('security.rate_limits.sensitive.attempts', 3)
