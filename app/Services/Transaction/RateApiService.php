@@ -118,6 +118,10 @@ class RateApiService
 
     protected function roundRate(string $rate): string
     {
+        if (! is_numeric($rate)) {
+            throw new \InvalidArgumentException('Exchange rate must be a numeric string.');
+        }
+
         return bcadd($rate, '0', $this->precision);
     }
 
