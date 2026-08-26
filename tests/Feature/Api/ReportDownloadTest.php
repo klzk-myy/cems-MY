@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Enums\UserRole;
 use App\Models\Branch;
+use App\Models\SystemLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,8 @@ class ReportDownloadTest extends TestCase
     public function download_streams_the_report_file(): void
     {
         Storage::fake('local');
-        Storage::put('reports/msb2_2026-08-07.csv', "currency,buy,sell\nUSD,100,50\n");
+        // DocumentStorageService resolves every path under its 'documents/' base.
+        Storage::put('documents/reports/msb2_2026-08-07.csv', "currency,buy,sell\nUSD,100,50\n");
 
         $branch = Branch::factory()->create();
         $manager = User::factory()->create([
@@ -33,6 +35,31 @@ class ReportDownloadTest extends TestCase
             ->get('/api/v1/reports/download/msb2_2026-08-07.csv')
             ->assertOk()
             ->assertDownload('msb2_2026-08-07.csv');
+    }
+
+    #[Test]
+    public function download_writes_report_access_audit_row(): void
+    {
+        Storage::fake('local');
+        Storage::put('documents/reports/msb2_2026-08-07.csv', "currency,buy,sell\nUSD,100,50\n");
+
+        $branch = Branch::factory()->create();
+        $manager = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $branch->id,
+        ]);
+
+        $this->actingAs($manager, 'sanctum')
+            ->get('/api/v1/reports/download/msb2_2026-08-07.csv')
+            ->assertOk();
+
+        $audit = SystemLog::where('action', 'report_downloaded')
+            ->where('user_id', $manager->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($audit, 'Report downloads should write an access audit row');
+        $this->assertSame('Report', $audit->entity_type);
     }
 
     #[Test]
