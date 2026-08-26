@@ -7,7 +7,43 @@ use App\Enums\SanctionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $list_id
+ * @property string|null $list_source
+ * @property string $entity_name
+ * @property string|null $normalized_name
+ * @property string|null $soundex_code
+ * @property string|null $metaphone_code
+ * @property SanctionStatus $status
+ * @property EntityType $entity_type
+ * @property array|null $aliases
+ * @property string|null $nationality
+ * @property Carbon|null $date_of_birth
+ * @property string|null $reference_number
+ * @property Carbon|null $listing_date
+ * @property string|null $address
+ * @property string|null $city
+ * @property string|null $country
+ * @property string|null $postal_code
+ * @property array|null $details
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ *
+ * Runtime screening-context attributes stamped onto the instance by the
+ * screening pipeline before a match notification is dispatched (not columns):
+ * @property int|null $sanction_list_id
+ * @property int|null $customer_id
+ * @property int|null $transaction_id
+ * @property string|null $screened_name
+ * @property string|null $matched_name
+ * @property string|\BackedEnum|null $match_type
+ * @property float|null $match_score 0.0-1.0 similarity score
+ * @property bool|null $is_whitelisted
+ */
 class SanctionEntry extends BaseModel
 {
     use HasFactory, SoftDeletes;
@@ -118,6 +154,9 @@ class SanctionEntry extends BaseModel
         return array_filter(array_map('trim', explode("\n", $aliases)));
     }
 
+    /**
+     * @return BelongsTo<SanctionList, $this>
+     */
     public function sanctionList(): BelongsTo
     {
         return $this->belongsTo(SanctionList::class, 'list_id');
