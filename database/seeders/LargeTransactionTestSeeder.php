@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Enums\UserRole;
 use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\Customer;
@@ -142,7 +143,7 @@ class LargeTransactionTestSeeder extends Seeder
                 'is_active' => true,
             ]);
 
-            $user->role = 'teller';
+            $user->role = UserRole::Teller;
             $user->password_hash = bcrypt('password');
             $user->save();
         }
