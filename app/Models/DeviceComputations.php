@@ -4,7 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string|null $device_name
+ * @property string $device_fingerprint
+ * @property string|null $ip_address
+ * @property Carbon|null $expires_at
+ * @property Carbon|null $last_used_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class DeviceComputations extends BaseModel
 {
     use HasFactory;
@@ -29,6 +41,9 @@ class DeviceComputations extends BaseModel
 
     /**
      * Get the user that owns the trusted device.
+     */
+    /**
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
