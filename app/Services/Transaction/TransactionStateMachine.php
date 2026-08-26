@@ -374,6 +374,11 @@ class TransactionStateMachine
      * Place transaction on hold (compliance review required).
      * Transitions to PendingApproval for manager review.
      *
+     * This is the sanctioned hold/release entry point: holds map to
+     * PendingApproval, and manager approve/reject acts as the release path.
+     * The legacy OnHold enum case is NOT part of the transition map and must
+     * not be introduced into new flows.
+     *
      * @param  string  $reason  The reason for hold
      * @return bool True if transition was successful
      */
