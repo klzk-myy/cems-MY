@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\Branch;
 use App\Models\BranchPool;
+use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,7 +20,7 @@ class BranchPoolServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new BranchPoolService(new MathService);
+        $this->service = new BranchPoolService(new AuditService, new MathService);
     }
 
     #[Test]
