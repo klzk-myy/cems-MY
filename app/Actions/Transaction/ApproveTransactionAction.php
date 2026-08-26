@@ -5,6 +5,7 @@ namespace App\Actions\Transaction;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\SelfApprovalException;
+use App\Exceptions\Domain\TransactionConfirmationRequiredException;
 use App\Models\Transaction;
 use App\Services\Transaction\TransactionApprovalService;
 use Illuminate\Support\Facades\Log;
@@ -37,6 +38,10 @@ class ApproveTransactionAction
         } catch (SelfApprovalException) {
             return TransactionApprovalResult::error(
                 'You cannot approve your own transaction. Segregation of duties requires a different approver.'
+            );
+        } catch (TransactionConfirmationRequiredException $e) {
+            return TransactionApprovalResult::error(
+                'Manager confirmation is required before this transaction can be approved.'
             );
         } catch (InsufficientStockException) {
             return TransactionApprovalResult::error('Insufficient stock available to complete this transaction.');
