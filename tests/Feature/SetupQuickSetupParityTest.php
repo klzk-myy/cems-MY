@@ -1,0 +1,147 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\JournalEntryStatus;
+use App\Models\AccountingPeriod;
+use App\Models\ExchangeRate;
+use App\Models\FiscalYear;
+use App\Services\Accounting\AccountingService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+class SetupQuickSetupParityTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    protected function validPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'business_name' => 'Test Money Changer',
+            'admin_email' => 'admin@example.com',
+            'admin_password' => 'Sup3rSecure!Pass',
+            'base_currency' => 'MYR',
+        ], $overrides);
+    }
+
+    #[Test]
+    public function quick_setup_seeds_current_fiscal_year_and_open_monthly_periods(): void
+    {
+        $response = $this->postJson(route('setup.quick'), $this->validPayload());
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        $this->assertTrue(
+            FiscalYear::where('year_code', 'FY'.now()->year)
+                ->where('status', 'Open')
+                ->exists(),
+            'Current fiscal year must exist and be open after quick setup'
+        );
+
+        foreach ([now(), now()->subMonth(), now()->addMonth()] as $month) {
+            $period = AccountingPeriod::where('period_code', $month->format('Y-m'))->first();
+
+            $this->assertNotNull($period, "Period {$month->format('Y-m')} must exist after quick setup");
+            $this->assertTrue($period->isOpen(), "Period {$month->format('Y-m')} must be open after quick setup");
+        }
+    }
+
+    #[Test]
+    public function quick_setup_seeds_exchange_rates_by_default(): void
+    {
+        $response = $this->postJson(route('setup.quick'), $this->validPayload());
+
+        $response->assertOk();
+
+        $this->assertTrue(ExchangeRate::exists(), 'Exchange rates must be seeded by default');
+    }
+
+    #[Test]
+    public function quick_setup_skips_exchange_rates_when_explicitly_opted_out_but_still_seeds_fiscal_preconditions(): void
+    {
+        $response = $this->postJson(route('setup.quick'), $this->validPayload([
+            'setup_exchange_rates' => false,
+        ]));
+
+        $response->assertOk();
+
+        $this->assertFalse(ExchangeRate::exists(), 'Exchange rates must not be seeded when opted out');
+        $this->assertTrue(FiscalYear::where('status', 'Open')->exists());
+        $this->assertTrue(
+            AccountingPeriod::whereDate('start_date', '<=', now())
+                ->whereDate('end_date', '>=', now())
+                ->where('status', 'Open')
+                ->exists()
+        );
+    }
+
+    #[Test]
+    public function transaction_posting_succeeds_end_to_end_after_quick_setup(): void
+    {
+        $this->postJson(route('setup.quick'), $this->validPayload())->assertOk();
+
+        /** @var AccountingService $accounting */
+        $accounting = app(AccountingService::class);
+
+        $entry = $accounting->createJournalEntry(
+            lines: [
+                ['account_code' => '1000', 'debit' => '1000.00', 'credit' => '0', 'description' => 'Cash in'],
+                ['account_code' => '4000', 'debit' => '0', 'credit' => '1000.00', 'description' => 'Owner equity'],
+            ],
+            referenceType: 'Manual',
+            description: 'End-to-end posting after quick setup',
+            entryDate: now()->toDateString(),
+        );
+
+        $this->assertSame(JournalEntryStatus::Posted, $entry->status);
+
+        $expectedPeriodId = AccountingPeriod::forDate(now()->toDateString())->value('id');
+        $this->assertSame($expectedPeriodId, $entry->period_id, 'Entry must be attached to the quick-setup period');
+    }
+
+    #[Test]
+    public function wizard_completion_path_still_seeds_fiscal_year_and_period_and_flashes_sanctions_notice(): void
+    {
+        $this->withSession([
+            'setup' => [
+                'business' => ['business_name' => 'Wizard Co'],
+                'admin' => [
+                    'admin_name' => 'admin',
+                    'admin_email' => 'wizard-admin@example.com',
+                    'admin_password' => 'Sup3rSecure!Pass',
+                ],
+            ],
+        ]);
+
+        $response = $this->postJson(route('setup.complete'));
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        $this->assertTrue(FiscalYear::where('status', 'Open')->exists());
+        $this->assertTrue(AccountingPeriod::where('status', 'Open')->exists());
+        $this->assertEquals(
+            'Sanctions lists are not loaded yet. Run "php artisan sanctions:update" now - '
+            .'sanctions screening is ineffective until the lists are imported.',
+            session('info')
+        );
+    }
+
+    #[Test]
+    public function quick_setup_flashes_sanctions_bootstrap_notice(): void
+    {
+        $response = $this->postJson(route('setup.quick'), $this->validPayload());
+
+        $response->assertOk();
+
+        $this->assertEquals(
+            'Sanctions lists are not loaded yet. Run "php artisan sanctions:update" now - '
+            .'sanctions screening is ineffective until the lists are imported.',
+            session('info')
+        );
+    }
+}
