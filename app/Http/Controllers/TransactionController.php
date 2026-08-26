@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\DomainException;
@@ -21,6 +22,7 @@ use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Reporting\TransactionExportService;
 use App\Services\Transaction\ReceiptGenerationService;
 use App\Services\Transaction\TransactionCancellationService;
+use App\Services\Transaction\TransactionConfirmationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +38,7 @@ class TransactionController extends Controller
         protected TransactionCancellationService $cancellationService,
         protected ReceiptGenerationService $receiptService,
         protected TransactionExportService $transactionExportService,
+        protected TransactionConfirmationService $confirmationService,
     ) {}
 
     /**
@@ -95,6 +98,7 @@ class TransactionController extends Controller
             ->whereNull('closed_at')
             ->with('currency');
 
+        /** @var User|null $user */
         $user = auth()->user();
         if ($user && $user->branch_id !== null) {
             $tillQuery->where('branch_id', $user->branch_id);
@@ -117,11 +121,12 @@ class TransactionController extends Controller
         $validated = $request->validated();
         $ipAddress = $request->ip();
 
+        /** @var Counter|null $counter */
         $counter = Counter::find($validated['counter_id']);
         $validated['till_id'] = $counter ? (string) $counter->code : (string) $validated['counter_id'];
 
         try {
-            $transaction = $this->creationService->prepareAndCreate($validated, auth()->id(), $ipAddress);
+            $transaction = $this->creationService->prepareAndCreate($validated, (int) auth()->id(), $ipAddress);
 
             if ($transaction->status === TransactionStatus::PendingApproval) {
                 return redirect()->route('transactions.show', $transaction)
@@ -154,7 +159,16 @@ class TransactionController extends Controller
 
         $transaction->load(['customer', 'user', 'approver', 'flags']);
 
-        return view('transactions.show', compact('transaction'));
+        // Surface the confirmation gate to approvers: a PendingApproval deal
+        // that requires manager confirmation but has no Confirmed record yet
+        // cannot be approved and must be routed through the confirmation flow.
+        $requiresManagerConfirmation = $transaction->status === TransactionStatus::PendingApproval
+            && $this->confirmationService->requiresConfirmation($transaction)
+            && ! $transaction->confirmations()
+                ->where('status', TransactionConfirmationStatus::Confirmed->value)
+                ->exists();
+
+        return view('transactions.show', compact('transaction', 'requiresManagerConfirmation'));
     }
 
     /**
@@ -258,7 +272,7 @@ class TransactionController extends Controller
      */
     public function export(ExportTransactionRequest $request): BinaryFileResponse
     {
-        $filePath = $this->transactionExportService->exportTransactions($request->validated(), auth()->id());
+        $filePath = $this->transactionExportService->exportTransactions($request->validated(), (int) auth()->id());
 
         return response()->download($filePath);
     }
