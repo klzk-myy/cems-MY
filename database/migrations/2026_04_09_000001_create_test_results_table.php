@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('failed')->default(0)->comment('Number of failed tests');
             $table->integer('skipped')->default(0)->comment('Number of skipped tests');
             $table->integer('assertions')->default(0)->comment('Total assertions count');
-            $table->float('duration', 8, 2)->comment('Test duration in seconds');
+            $table->decimal('duration', 8, 2)->comment('Test duration in seconds');
             $table->enum('status', ['passed', 'failed', 'error', 'running'])->default('running')->comment('Overall test status');
             $table->longText('output')->nullable()->comment('Full test output');
             $table->longText('failures')->nullable()->comment('JSON array of failed tests with details');
