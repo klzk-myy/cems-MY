@@ -159,7 +159,7 @@ class SendNotificationDigest extends Command
             $body .= "\nLog in to CEMS-MY to view and manage your notifications.";
 
             Mail::to($user->email)->send(new NotificationDigestMail(
-                $user->full_name,
+                $user->username,
                 $notifications->count(),
                 $digestData['notifications_by_type'],
                 $cutoff->diffForHumans()
