@@ -186,6 +186,10 @@ class ExportService
         $deleted = 0;
 
         $files = glob($this->basePath.'/*');
+        if ($files === false) {
+            $files = [];
+        }
+
         foreach ($files as $file) {
             if (is_file($file) && filemtime($file) < $cutoff->timestamp && unlink($file)) {
                 $deleted++;
