@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
+use App\Models\JournalLine;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class JournalLineFactory extends Factory
 {
-    protected $model = \App\Models\JournalLine::class;
+    protected $model = JournalLine::class;
 
     public function definition(): array
     {
