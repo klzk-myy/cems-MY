@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Update Frequency</label>
-                    <p class="text-sm text-ink">{{ $list->update_frequency ?: 'N/A' }}</p>
+                    <p class="text-sm text-ink">{{ $list->update_status ?: 'N/A' }}</p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Last Synced At</label>
