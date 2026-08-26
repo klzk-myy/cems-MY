@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Sanction\SearchSanctionRequest;
 use App\Services\CustomerScreeningService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class SanctionController extends Controller
 {
