@@ -4,7 +4,11 @@ namespace App\Services\Customer;
 
 use App\Enums\CddLevel;
 use App\Enums\RiskRating;
+use App\Enums\StrReportStatus;
+use App\Models\Alert;
 use App\Models\Customer;
+use App\Models\CustomerDocument;
+use App\Models\StrReport;
 use App\Models\User;
 use App\Repositories\CustomerRepository;
 use App\Services\Audit\AuditTrailHelper;
@@ -16,10 +20,10 @@ use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheKeys;
 use App\Services\System\CacheTagsService;
 use App\Services\System\EncryptionService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * Customer Service
@@ -419,6 +423,47 @@ class CustomerService implements CustomerServiceInterface
     }
 
     /**
+     * Soft-close a customer account.
+     *
+     * Guards against closing while transactions are still awaiting approval
+     * or cancellation approval, then deactivates the profile and records the
+     * closure reason and timestamp for the audit trail.
+     *
+     * @throws ValidationException when blocking transactions exist
+     */
+    public function closeCustomer(Customer $customer, string $reason, User $actor): Customer
+    {
+        $blocking = $customer->openBlockingTransactions();
+
+        if ($blocking->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'closure' => 'Cannot close customer: '.$blocking->count().' transaction(s) pending approval or cancellation. Resolve them first.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($customer, $reason, $actor) {
+            $customer->forceFill([
+                'is_active' => false,
+                'closure_reason' => $reason,
+                'closed_at' => now(),
+            ])->save();
+
+            $this->auditService->logCustomerEvent('customer_closed', $customer->id, [
+                'user_id' => $actor->id,
+                'new_values' => [
+                    'is_active' => false,
+                    'closure_reason' => $reason,
+                    'closed_at' => optional($customer->closed_at)->toIso8601String(),
+                ],
+            ], 'WARNING');
+
+            $this->cacheInvalidationService->forgetCustomer($customer->id);
+
+            return $customer;
+        });
+    }
+
+    /**
      * Calculate risk score for a customer.
      *
      * @param  Customer  $customer  Customer to assess
@@ -460,7 +505,7 @@ class CustomerService implements CustomerServiceInterface
      * @param  int  $uploadedBy  User ID uploading the document
      * @return CustomerDocument The persisted document record
      */
-    public function uploadDocument(Customer $customer, UploadedFile $file, string $documentType, int $uploadedBy): \App\Models\CustomerDocument
+    public function uploadDocument(Customer $customer, UploadedFile $file, string $documentType, int $uploadedBy): CustomerDocument
     {
         $path = $file->store('kyc/'.$customer->id, 'local');
 
