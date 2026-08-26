@@ -27,7 +27,7 @@ class RouteNamingPatternTest extends TestCase
     {
         $violations = [];
 
-        foreach (Route::getRoutes() as $route) {
+        foreach (Route::getRoutes()->getRoutes() as $route) {
             $name = $route->getName();
 
             if (empty($name)) {
