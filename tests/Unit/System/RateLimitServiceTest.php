@@ -128,14 +128,17 @@ class RateLimitServiceTest extends TestCase
         $service->blockIp('10.0.0.1');
         $service->blockIp('10.0.0.2');
 
-        $members = Cache::store('redis')->getStore()->connection()->smembers('ip_block:all');
+        /** @var RedisStore $redisStore */
+        $redisStore = Cache::store('redis')->getStore();
+
+        $members = $redisStore->connection()->smembers('ip_block:all');
         sort($members);
 
         $this->assertSame(['10.0.0.1', '10.0.0.2'], $members);
 
         $service->unblockIp('10.0.0.1');
 
-        $members = Cache::store('redis')->getStore()->connection()->smembers('ip_block:all');
+        $members = $redisStore->connection()->smembers('ip_block:all');
         sort($members);
 
         $this->assertSame(['10.0.0.2'], $members);
