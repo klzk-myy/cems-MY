@@ -18,8 +18,8 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
 
         // Only route failure mail when an address is actually configured;
         // passing '' would route mail to a blank recipient.
-        $horizonMailTo = env('HORIZON_MAIL_NOTIFICATIONS_TO', '');
-        if ($horizonMailTo !== '') {
+        $horizonMailTo = env('HORIZON_MAIL_NOTIFICATIONS_TO');
+        if (is_string($horizonMailTo) && $horizonMailTo !== '') {
             Horizon::routeMailNotificationsTo($horizonMailTo);
         }
     }
