@@ -94,7 +94,7 @@ class BranchPoolService
     {
         $amount = (string) $amount;
 
-        return DB::transaction(function () use ($branch, $currencyCode, $amount) {
+        return DB::transaction(function () use ($branch, $currencyCode, $amount, $approvedBy) {
             $pool = BranchPool::where('branch_id', $branch->id)
                 ->where('currency_code', $currencyCode)
                 ->lockForUpdate()
