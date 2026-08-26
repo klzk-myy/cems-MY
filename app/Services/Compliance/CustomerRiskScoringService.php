@@ -17,7 +17,9 @@ use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class CustomerRiskScoringService
 {
@@ -30,66 +32,102 @@ class CustomerRiskScoringService
         protected PepAssessmentService $pepAssessmentService,
         protected ?GeographicRiskService $geographicRiskService = null,
         protected ?AmountRiskService $amountRiskService = null,
-    ) {}
+        protected ?RiskScoreWriteBackService $writeBack = null,
+    ) {
+        $this->writeBack ??= app(RiskScoreWriteBackService::class);
+    }
 
     /**
      * Calculate and store risk score snapshot for a customer.
      */
-    public function calculateAndSnapshot(int $customerId): RiskScoreSnapshot
+    public function calculateAndSnapshot(int $customerId, string $trigger = 'rescreen'): RiskScoreSnapshot
     {
-        $customer = Customer::findOrFail($customerId);
+        return DB::transaction(function () use ($customerId, $trigger) {
+            $customer = Customer::findOrFail($customerId);
 
-        $scores = $this->calculateRiskScores($customer);
-        $previousSnapshots = $this->getRecentSnapshots($customerId);
-        $previous = $previousSnapshots->first();
-        $trend = RiskScoreSnapshot::calculateTrend($previousSnapshots->toArray());
-        $factors = $this->extractRiskFactors($customer, $scores);
+            $scores = $this->calculateRiskScores($customer);
+            $previousSnapshots = $this->getRecentSnapshots($customerId);
+            $previous = $previousSnapshots->first();
+            $trend = RiskScoreSnapshot::calculateTrend($previousSnapshots->toArray());
+            $factors = $this->extractRiskFactors($customer, $scores);
 
-        $snapshot = RiskScoreSnapshot::create([
-            'customer_id' => $customerId,
-            'snapshot_date' => today(),
-            'previous_score' => $previous?->overall_score,
-            'previous_rating' => $previous?->overall_score !== null
-                ? $this->ratingForScore($previous->overall_score)
-                : null,
-            'overall_score' => $scores['overall'],
-            'overall_rating_label' => $this->ratingForScore($scores['overall'])->label(),
-            'velocity_score' => $scores['velocity'],
-            'structuring_score' => $scores['structuring'],
-            'geographic_score' => $scores['geographic'],
-            'amount_score' => $scores['amount'],
-            'trend' => $trend,
-            'factors' => $factors,
-            'next_screening_date' => $this->calculateNextScreeningDate($scores['overall']),
-        ]);
+            $snapshot = RiskScoreSnapshot::create([
+                'customer_id' => $customerId,
+                'snapshot_date' => today(),
+                'previous_score' => $previous?->overall_score,
+                'previous_rating' => $previous?->overall_score !== null
+                    ? $this->ratingForScore($previous->overall_score)
+                    : null,
+                'overall_score' => $scores['overall'],
+                'overall_rating_label' => $this->ratingForScore($scores['overall'])->label(),
+                'velocity_score' => $scores['velocity'],
+                'structuring_score' => $scores['structuring'],
+                'geographic_score' => $scores['geographic'],
+                'amount_score' => $scores['amount'],
+                'trend' => $trend,
+                'factors' => $factors,
+                'next_screening_date' => $this->calculateNextScreeningDate($scores['overall']),
+            ]);
 
-        event(new RiskScoreUpdated($snapshot));
+            // Shared post-compute hook: persist score/rating on the customer
+            // and record history when changed - same transaction as the snapshot.
+            $this->writeBack->apply($customer, $scores['overall'], $trigger);
 
-        return $snapshot;
+            event(new RiskScoreUpdated($snapshot));
+
+            return $snapshot;
+        });
     }
 
     /**
      * Calculate all risk sub-scores for a customer.
+     *
+     * Overall mirrors RiskCalculationService::getOverallRiskScore: the sum of
+     * transaction-driven sub-scores capped at 100. (It was previously
+     * hardcoded to 0, which made every snapshot score - and any consumer of
+     * it - meaningless.)
      */
     public function calculateRiskScores(Customer $customer): array
     {
         $transactions = $this->getRecentTransactions($customer->id);
 
-        return [
+        $scores = [
             'velocity' => $this->calculateVelocityScore($customer->id),
             'structuring' => $this->calculateStructuringScore($customer->id),
             'geographic' => $this->calculateGeographicScore($customer),
             'amount' => $this->calculateAmountScore($transactions, $customer),
-            'overall' => 0,
         ];
+
+        $scores['overall'] = min($scores['velocity'] + $scores['structuring'] + $scores['amount'], 100);
+
+        return $scores;
     }
 
     /**
      * Perform full rescreening of a customer.
+     *
+     * Locked risk profiles (EDD review hold) are left untouched: no new
+     * snapshot, no customer score write-back, no audit side-effects -
+     * matching RiskScoringEngine::recalculateForCustomer semantics.
      */
-    public function rescreenCustomer(int $customerId): array
+    public function rescreenCustomer(int $customerId, string $trigger = 'rescreen'): array
     {
         $customer = Customer::findOrFail($customerId);
+
+        $lockedProfile = CustomerRiskProfile::where('customer_id', $customerId)->first();
+        if ($lockedProfile && $lockedProfile->isLocked()) {
+            return [
+                'customer_id' => $customerId,
+                'locked' => true,
+                'sanction_match' => false,
+                'sanction_confidence' => 0.0,
+                'previous_score' => null,
+                'new_score' => (int) $customer->risk_score,
+                'score_change' => 0,
+                'significant_change' => false,
+                'snapshot' => null,
+            ];
+        }
 
         $screeningResponse = $this->screeningService->screenCustomer($customer);
 
@@ -97,7 +135,7 @@ class CustomerRiskScoringService
             ->latest()
             ->first();
 
-        $newSnapshot = $this->calculateAndSnapshot($customerId);
+        $newSnapshot = $this->calculateAndSnapshot($customerId, $trigger);
 
         $scoreChange = $previousSnapshot
             ? abs($newSnapshot->overall_score - $previousSnapshot->overall_score)
@@ -121,6 +159,7 @@ class CustomerRiskScoringService
 
         return [
             'customer_id' => $customerId,
+            'locked' => false,
             'sanction_match' => $screeningResponse->action !== 'clear',
             'sanction_confidence' => $screeningResponse->confidenceScore,
             'previous_score' => $previousSnapshot?->overall_score,
@@ -148,6 +187,7 @@ class CustomerRiskScoringService
     public function getCustomersNeedingRescreening(): Collection
     {
         return Customer::whereHas('riskScoreSnapshots', function ($query) {
+            /** @var Builder<RiskScoreSnapshot> $query */
             $query->needsRescreening();
         })->with('latestRiskSnapshot')->get();
     }
