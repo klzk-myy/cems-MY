@@ -6,6 +6,7 @@ use App\Enums\AlertPriority;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Enums\RiskRating;
+use App\Enums\UserRole;
 use App\Events\AlertCreated;
 use App\Exceptions\Domain\CaseManagementException;
 use App\Models\Alert;
@@ -38,7 +39,11 @@ class AlertTriageService
         $customer = $flaggedTransaction->customer;
         $transaction = $flaggedTransaction->transaction;
 
-        $riskScore = $this->calculateRiskScore($flaggedTransaction, $customer, $transaction);
+        $riskScore = $this->calculateRiskScore(
+            $flaggedTransaction,
+            $customer instanceof Customer ? $customer : null,
+            $transaction instanceof Transaction ? $transaction : null
+        );
         $priority = AlertPriority::fromRiskScore($riskScore);
 
         $alert = Alert::create([
@@ -76,11 +81,11 @@ class AlertTriageService
             $highThreshold = $this->thresholdService->getAlertHighThreshold();
             $mediumThreshold = $this->thresholdService->getAlertMediumThreshold();
 
-            if ($criticalThreshold !== null && $this->mathService->compare($amount, $criticalThreshold) >= 0) {
+            if ($this->mathService->compare($amount, $criticalThreshold) >= 0) {
                 $score += 30;
-            } elseif ($highThreshold !== null && $this->mathService->compare($amount, $highThreshold) >= 0) {
+            } elseif ($this->mathService->compare($amount, $highThreshold) >= 0) {
                 $score += 20;
-            } elseif ($mediumThreshold !== null && $this->mathService->compare($amount, $mediumThreshold) >= 0) {
+            } elseif ($this->mathService->compare($amount, $mediumThreshold) >= 0) {
                 $score += 10;
             }
         }
@@ -137,11 +142,14 @@ class AlertTriageService
      */
     public function getUnassignedAlerts(): Collection
     {
-        return Alert::with(['customer', 'flaggedTransaction'])
+        /** @var Collection<int, Alert> $alerts */
+        $alerts = Alert::with(['customer', 'flaggedTransaction'])
             ->whereNull('case_id')
             ->orderByRaw("FIELD(priority, 'critical', 'high', 'medium', 'low')")
             ->orderByDesc('risk_score')
             ->get();
+
+        return $alerts;
     }
 
     /**
@@ -245,12 +253,12 @@ class AlertTriageService
 
     /**
      * Get available compliance officers.
+     *
+     * @return Collection<int, User>
      */
-    protected function getAvailableOfficers(): Collection
+    public function getAvailableOfficers(): Collection
     {
-        return User::whereHas('roles', function ($query) {
-            $query->whereIn('name', ['compliance', 'manager']);
-        })
+        return User::whereIn('role', [UserRole::ComplianceOfficer->value, UserRole::Manager->value])
             ->where('is_active', true)
             ->get();
     }
@@ -318,6 +326,7 @@ class AlertTriageService
     public function bulkAssign(array $alertIds, int $userId): array
     {
         $results = ['success' => 0, 'failed' => 0, 'errors' => []];
+        /** @var Collection<int, Alert> $alerts */
         $alerts = Alert::whereIn('id', $alertIds)->get()->keyBy('id');
 
         foreach ($alertIds as $alertId) {
@@ -467,15 +476,15 @@ class AlertTriageService
 
             $this->auditService->logWithSeverity(
                 'alert_escalated',
-                "Alert #{$alert->id} escalated from {$currentPriority->value} to {$newPriority->value}: {$reason}",
-                'warning',
                 [
+                    'description' => "Alert #{$alert->id} escalated from {$currentPriority->value} to {$newPriority->value}: {$reason}",
                     'alert_id' => $alert->id,
                     'from_priority' => $currentPriority->value,
                     'to_priority' => $newPriority->value,
                     'reason' => $reason,
                     'escalated_by' => $escalatedBy,
-                ]
+                ],
+                'warning'
             );
 
             return $alert;
