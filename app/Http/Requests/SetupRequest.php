@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\PasswordComplexityRule;
+
 class SetupRequest extends AuthorizedFormRequest
 {
     public function authorize(): bool
@@ -47,7 +49,7 @@ class SetupRequest extends AuthorizedFormRequest
         return [
             'business_name' => 'required|string|max:255',
             'admin_email' => 'required|email',
-            'admin_password' => 'required|min:8',
+            'admin_password' => ['required', new PasswordComplexityRule],
             'base_currency' => 'required|string|size:3',
             'setup_exchange_rates' => 'boolean',
             'setup_branch_pools' => 'boolean',
@@ -69,7 +71,7 @@ class SetupRequest extends AuthorizedFormRequest
         return [
             'admin_name' => 'required|string|max:255',
             'admin_email' => 'required|email|unique:users,email',
-            'admin_password' => 'required|min:8|confirmed',
+            'admin_password' => ['required', 'confirmed', new PasswordComplexityRule],
         ];
     }
 
