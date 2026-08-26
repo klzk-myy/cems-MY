@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Exceptions\Domain\InvalidRateException;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Models\User;
@@ -12,6 +13,7 @@ use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -46,7 +48,7 @@ class RateManagementService implements RateManagementServiceInterface
 
     public function getCurrentRates(?int $branchId = null): Collection
     {
-        $query = ExchangeRate::query();
+        $query = ExchangeRate::query()->active();
 
         if ($branchId !== null) {
             $query->forBranch($branchId);
@@ -60,7 +62,7 @@ class RateManagementService implements RateManagementServiceInterface
         $cacheKey = $this->rateCacheKey($currencyCode, $branchId);
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($currencyCode, $branchId) {
-            $query = ExchangeRate::where('currency_code', $currencyCode);
+            $query = ExchangeRate::where('currency_code', $currencyCode)->active();
             if ($branchId !== null) {
                 $query->forBranch($branchId);
             }
@@ -109,7 +111,8 @@ class RateManagementService implements RateManagementServiceInterface
         string $newSellRate,
         User $approvedBy,
         ?string $reason = null,
-        ?int $branchId = null
+        ?int $branchId = null,
+        ?string $effectiveDate = null
     ): RateOverrideResult {
         if (! $approvedBy->role->isManager() && ! $approvedBy->role->isAdmin()) {
             return new RateOverrideResult(
@@ -133,7 +136,13 @@ class RateManagementService implements RateManagementServiceInterface
             );
         }
 
-        return DB::transaction(function () use ($currencyCode, $newBuyRate, $newSellRate, $approvedBy, $reason, $branchId) {
+        $this->assertSpreadWithinLimits($newBuyRate, $newSellRate);
+
+        $effectiveAt = $effectiveDate !== null
+            ? Carbon::parse($effectiveDate)
+            : now();
+
+        return DB::transaction(function () use ($currencyCode, $newBuyRate, $newSellRate, $approvedBy, $reason, $branchId, $effectiveAt) {
             $query = ExchangeRate::where('currency_code', $currencyCode);
             if ($branchId !== null) {
                 $query->forBranch($branchId);
@@ -149,6 +158,7 @@ class RateManagementService implements RateManagementServiceInterface
                         'rate_sell' => $newSellRate,
                         'source' => 'manual_override',
                         'fetched_at' => now(),
+                        'effective_date' => $effectiveAt,
                     ]);
                 } catch (UniqueConstraintViolationException $e) {
                     $exchangeRate = $query->lockForUpdate()->firstOrFail();
@@ -173,6 +183,7 @@ class RateManagementService implements RateManagementServiceInterface
                 'rate_sell' => $newSellRate,
                 'source' => 'manual_override',
                 'fetched_at' => now(),
+                'effective_date' => $effectiveAt,
             ]);
 
             // Invalidate cache
@@ -221,7 +232,7 @@ class RateManagementService implements RateManagementServiceInterface
 
     public function hasRateForCurrency(string $currencyCode, ?int $branchId = null): bool
     {
-        $query = ExchangeRate::where('currency_code', $currencyCode);
+        $query = ExchangeRate::where('currency_code', $currencyCode)->active();
 
         if ($branchId !== null) {
             $query->forBranch($branchId);
@@ -233,7 +244,7 @@ class RateManagementService implements RateManagementServiceInterface
     public function areAllRatesSet(array $currencyCodes, ?int $branchId = null): array
     {
         // Single query instead of one exists() query per currency code.
-        $query = ExchangeRate::whereIn('currency_code', $currencyCodes);
+        $query = ExchangeRate::whereIn('currency_code', $currencyCodes)->active();
 
         if ($branchId !== null) {
             $query->forBranch($branchId);
@@ -298,9 +309,51 @@ class RateManagementService implements RateManagementServiceInterface
         return '0';
     }
 
+    /**
+     * Reject overrides whose buy/sell spread falls outside the configured
+     * [min_spread, max_spread] band (thresholds.rates, expressed as a
+     * fraction of mid — e.g. 0.005 = 0.5%).
+     *
+     * spread = (sell - buy) / (2 * mid) = (sell - buy) / (buy + sell)
+     */
+    protected function assertSpreadWithinLimits(string $buyRate, string $sellRate): void
+    {
+        $minSpread = (string) config('thresholds.rates.min_spread', '0.005');
+        $maxSpread = (string) config('thresholds.rates.max_spread', '0.05');
+
+        $denominator = $this->mathService->add($buyRate, $sellRate);
+
+        if ($this->mathService->compare($denominator, '0') <= 0) {
+            return;
+        }
+
+        $spread = $this->mathService->divide(
+            $this->mathService->subtract($sellRate, $buyRate),
+            $denominator
+        );
+
+        if ($this->mathService->compare($spread, $maxSpread) > 0) {
+            throw new InvalidRateException(sprintf(
+                'Spread %.2f%% exceeds the maximum allowed spread of %.2f%%.',
+                (float) $this->mathService->multiply($spread, '100'),
+                (float) $this->mathService->multiply($maxSpread, '100')
+            ));
+        }
+
+        if ($this->mathService->compare($spread, $minSpread) < 0) {
+            throw new InvalidRateException(sprintf(
+                'Spread %.2f%% is below the minimum required spread of %.2f%%.',
+                (float) $this->mathService->multiply($spread, '100'),
+                (float) $this->mathService->multiply($minSpread, '100')
+            ));
+        }
+    }
+
     public function copyPreviousRates(string $targetDate, ?int $branchId = null): array
     {
-        $historyQuery = ExchangeRateHistory::where('effective_date', $targetDate);
+        // whereDate keeps the lookup correct regardless of whether the column
+        // stores a pure date or a datetime (and across DB drivers).
+        $historyQuery = ExchangeRateHistory::whereDate('effective_date', $targetDate);
         if ($branchId !== null) {
             $historyQuery->where('branch_id', $branchId);
         }
