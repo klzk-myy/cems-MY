@@ -14,10 +14,21 @@ trait HasNotificationTesting
     protected function getTargetUsers(?int $userId = null): Collection
     {
         if ($userId) {
+            // Explicit --user targeting is a manual override (e.g. testing a
+            // single user's digest) and bypasses the opt-in filter.
             return User::where('id', $userId)->where('is_active', true)->get();
         }
 
-        return User::where('is_active', true)->get();
+        // Bulk sends honour the digest_enabled preference stored in the
+        // users.notification_preferences JSON; missing key defaults to opted-in.
+        return User::where('is_active', true)
+            ->get()
+            ->filter(function (User $user) {
+                $prefs = $user->notification_preferences;
+
+                return ! is_array($prefs) || ($prefs['digest_enabled'] ?? true) === true;
+            })
+            ->values();
     }
 
     protected function sendTestNotification(User $user, $notification): void
