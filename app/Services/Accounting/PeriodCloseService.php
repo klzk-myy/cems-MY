@@ -56,12 +56,12 @@ class PeriodCloseService
      * updates the period status, and logs the action.
      *
      * @param  AccountingPeriod  $period  The accounting period to close
-     * @param  int  $closedBy  ID of the user closing the period
+     * @param  int|null  $closedBy  ID of the user closing the period (null for system-initiated closes)
      * @return array Result array containing 'success', 'period', and 'closing_entries'
      *
      * @throws Exception If period is already closed or unbalanced entries are found
      */
-    public function closePeriod(AccountingPeriod $period, int $closedBy): array
+    public function closePeriod(AccountingPeriod $period, ?int $closedBy = null): array
     {
         if ($period->isClosed()) {
             throw new ClosedPeriodException($period->period_code);
@@ -142,10 +142,10 @@ class PeriodCloseService
      * a journal entry to transfer the net income to retained earnings.
      *
      * @param  AccountingPeriod  $period  The accounting period being closed
-     * @param  int  $closedBy  ID of the user creating the closing entries
+     * @param  int|null  $closedBy  ID of the user creating the closing entries
      * @return array Array of created closing journal entries
      */
-    protected function createClosingEntries(AccountingPeriod $period, int $closedBy): array
+    protected function createClosingEntries(AccountingPeriod $period, ?int $closedBy): array
     {
         $entries = [];
         $asOfDate = $period->end_date->toDateString();
