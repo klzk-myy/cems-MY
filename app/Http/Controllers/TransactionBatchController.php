@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TransactionImportStatus;
+use App\Exceptions\Domain\FileOperationException;
 use App\Http\Requests\BatchUploadRequest;
+use App\Jobs\ProcessTransactionImportJob;
 use App\Models\TransactionImport;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
@@ -56,6 +58,10 @@ class TransactionBatchController extends Controller
         // Store file
         $path = $file->store('imports');
 
+        if ($path === false) {
+            return back()->with('error', 'Could not store the uploaded file.')->withInput();
+        }
+
         // Get the full file path - use actual file path for testing, Storage::path otherwise
         $fullPath = $this->documentStorageService->exists($path) ? $this->documentStorageService->path($path) : $file->getRealPath();
 
@@ -71,9 +77,8 @@ class TransactionBatchController extends Controller
             return back()->with('error', 'Could not read uploaded file.')->withInput();
         }
 
-        // Guard against pathological uploads: the import runs synchronously in
-        // the request, so cap the row count to keep it inside the request
-        // timeout and avoid a stuck 'Processing' import on script death.
+        // Guard against pathological uploads: cap the row count so a single
+        // import cannot monopolise the queue worker for an unreasonable time.
         $maxRows = (int) config('transactions.batch.max_rows', 5000);
         if ($rowCount > $maxRows) {
             Storage::delete($path);
@@ -90,21 +95,12 @@ class TransactionBatchController extends Controller
             'status' => TransactionImportStatus::Pending->value,
         ]);
 
-        try {
-            // Process import
-            $this->importService->process($import, $fullPath);
+        // Queue the heavy processing. The uploaded file is already persisted
+        // under storage/app/imports, so the job re-reads it from there.
+        ProcessTransactionImportJob::dispatch($import);
 
-            return redirect()->route('transactions.batch-upload.show', $import)
-                ->with('success', "Import completed. {$import->success_count} transactions imported, {$import->error_count} errors.");
-        } catch (\Exception $e) {
-            $this->logger->error('Transaction import failed', ['exception' => $e, 'import_id' => $import->id]);
-            $import->update([
-                'status' => TransactionImportStatus::Failed->value,
-                'completed_at' => now(),
-            ]);
-
-            return back()->with('error', 'Import failed. Please try again.');
-        }
+        return redirect()->route('transactions.batch-upload.show', $import)
+            ->with('success', "Import queued for processing ({$rowCount} rows). This page will refresh with progress.");
     }
 
     /**
