@@ -3,6 +3,7 @@
 namespace App\Services\Branch;
 
 use App\Enums\TransactionType;
+use App\Exceptions\Domain\NegativeTillCloseException;
 use App\Exceptions\Domain\TillAlreadyOpenException;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Exceptions\Domain\TillClosedException;
@@ -33,7 +34,7 @@ class TillBalanceManager
             throw new TillBalanceMissingException($currencyCode, $tillId);
         }
 
-        return $openedBy;
+        return (int) $openedBy;
     }
 
     public function openTill(
@@ -106,6 +107,20 @@ class TillBalanceManager
             (string) $netFlow
         );
         $variance = $this->mathService->subtract($closingBalance, $expectedClosing);
+
+        // A till cannot physically hold a negative amount of cash: reject
+        // negative closings outright unless an explicit tolerance is configured
+        // (config cems.till_negative_tolerance, e.g. for sealed-book handover).
+        if ($this->mathService->compare($closingBalance, '0') < 0) {
+            $tolerance = (string) config('cems.till_negative_tolerance', '0');
+
+            if ($this->mathService->compare(
+                $this->mathService->abs($closingBalance),
+                $tolerance
+            ) > 0) {
+                throw new NegativeTillCloseException($tillBalance->currency_code, $tillBalance->till_id);
+            }
+        }
 
         $tillBalance->update([
             'closing_balance' => $closingBalance,
