@@ -20,6 +20,7 @@ class CustomerActionTest extends TestCase
     #[Test]
     public function create_customer_action_returns_result_with_customer_and_message(): void
     {
+        /** @var Mockery\MockInterface&CustomerService $service */
         $service = Mockery::mock(CustomerService::class)->makePartial();
         $data = ['full_name' => 'Alice Smith'];
         $createdBy = 5;
@@ -41,6 +42,7 @@ class CustomerActionTest extends TestCase
     #[Test]
     public function create_customer_action_appends_sanction_warning_when_sanction_hit(): void
     {
+        /** @var Mockery\MockInterface&CustomerService $service */
         $service = Mockery::mock(CustomerService::class)->makePartial();
         $customer = new Customer(['full_name' => 'Alice Smith']);
         $customer->sanction_hit = true;
@@ -61,6 +63,7 @@ class CustomerActionTest extends TestCase
     #[Test]
     public function update_customer_action_returns_result_with_customer(): void
     {
+        /** @var Mockery\MockInterface&CustomerService $service */
         $service = Mockery::mock(CustomerService::class)->makePartial();
         $customer = new Customer(['id' => 1, 'full_name' => 'Alice Smith']);
         $data = ['full_name' => 'Alice Smith-Updated'];
@@ -82,6 +85,7 @@ class CustomerActionTest extends TestCase
     #[Test]
     public function create_customer_action_bubbles_exceptions_from_underlying_method(): void
     {
+        /** @var Mockery\MockInterface&CustomerService $service */
         $service = Mockery::mock(CustomerService::class)->makePartial();
         $service->shouldReceive('createCustomer')
             ->once()
@@ -96,6 +100,7 @@ class CustomerActionTest extends TestCase
     #[Test]
     public function update_customer_action_bubbles_exceptions_from_underlying_method(): void
     {
+        /** @var Mockery\MockInterface&CustomerService $service */
         $service = Mockery::mock(CustomerService::class)->makePartial();
         $service->shouldReceive('updateCustomer')
             ->once()
