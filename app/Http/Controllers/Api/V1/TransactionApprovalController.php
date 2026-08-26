@@ -31,7 +31,7 @@ class TransactionApprovalController extends Controller
 
         $this->authorize('approve', $transaction);
 
-        $result = $this->approveAction->execute($transaction, auth()->id(), $request->ip());
+        $result = $this->approveAction->execute($transaction, (int) auth()->id(), $request->ip());
 
         if (! $result->ok) {
             return $this->errorResponse($result->message, [], 422);
@@ -52,9 +52,7 @@ class TransactionApprovalController extends Controller
         $reason = $request->input('reason', 'Rejected by approver');
 
         try {
-            $this->approvalService->validateApprovalEligibility($transaction, auth()->id());
-
-            if (! $this->stateMachineFactory->make($transaction)->reject($reason)) {
+            if (! $this->approvalService->reject($transaction, (int) auth()->id(), $reason)) {
                 return $this->errorResponse('Transaction cannot be rejected from its current status.', [], 422);
             }
 
