@@ -192,7 +192,8 @@ EOT;
             $body .= "\nDetails:\n";
             foreach ($alert->metadata as $key => $value) {
                 if (! in_array($key, ['email_sent', 'email_sent_at', 'email_recipients'])) {
-                    $body .= '  '.htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8').': '.htmlspecialchars(json_encode($value), ENT_QUOTES, 'UTF-8')."\n";
+                    $encoded = json_encode($value);
+                    $body .= '  '.htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8').': '.htmlspecialchars($encoded === false ? '' : $encoded, ENT_QUOTES, 'UTF-8')."\n";
                 }
             }
         }
