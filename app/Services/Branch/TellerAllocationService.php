@@ -32,7 +32,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     {
         $branch = $teller->branch;
 
-        if (! $branch) {
+        if (! $branch instanceof Branch) {
             throw new TellerBranchRequiredException;
         }
 
@@ -75,7 +75,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 throw new InvalidAllocationStateException(TellerAllocationStatus::PENDING->value);
             }
 
-            if (! $this->branchPoolService->allocateToTeller($locked->branch, $locked->currency_code, $approvedAmount)) {
+            if (! $this->branchPoolService->allocateToTeller($this->allocationBranchOrFail($locked), $locked->currency_code, $approvedAmount)) {
                 throw new PoolAllocationException;
             }
 
@@ -120,7 +120,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 );
             }
 
-            $branch = $locked->branch;
+            $branch = $this->allocationBranchOrFail($locked);
 
             if ($isIncrease) {
                 if (! $this->branchPoolService->allocateToTeller($branch, $locked->currency_code, $newAmount)) {
@@ -185,7 +185,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             $returnAmount = $locked->current_balance;
 
             if ($this->mathService->compare($returnAmount, '0') > 0) {
-                $this->branchPoolService->deallocateFromTeller($locked->branch, $locked->currency_code, $returnAmount);
+                $this->branchPoolService->deallocateFromTeller($this->allocationBranchOrFail($locked), $locked->currency_code, $returnAmount);
             }
 
             $locked->returnToPool();
@@ -368,5 +368,20 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             'data' => $allocation,
             'message' => null,
         ];
+    }
+
+    /**
+     * Resolve the branch of an allocation, failing closed when the relation
+     * is missing (e.g. the branch was deleted mid-workflow).
+     */
+    private function allocationBranchOrFail(TellerAllocation $allocation): Branch
+    {
+        $branch = $allocation->branch;
+
+        if (! $branch instanceof Branch) {
+            throw new TellerBranchRequiredException;
+        }
+
+        return $branch;
     }
 }
