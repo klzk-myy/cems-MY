@@ -8,15 +8,22 @@ class EncryptionService
 {
     protected string $key;
 
-    public function __construct()
-    {
-        $rawKey = config('app.key');
+    /**
+     * Optional credential overrides allow instantiating the service with
+     * previous APP_KEY / APP_ENCRYPTION_SALT values during key/salt rotation
+     * (see customers:re-encrypt). When omitted, config values are used.
+     */
+    public function __construct(
+        protected ?string $keyOverride = null,
+        protected ?string $saltOverride = null,
+    ) {
+        $rawKey = $this->keyOverride ?? config('app.key');
         if (empty($rawKey)) {
             throw new EncryptionConfigurationException('Encryption key not configured');
         }
 
         // Use PBKDF2 for secure key derivation with proper salt and iteration count
-        $salt = config('app.encryption_salt');
+        $salt = $this->saltOverride ?? config('app.encryption_salt');
 
         if (empty($salt)) {
             throw new EncryptionConfigurationException('APP_ENCRYPTION_SALT is not configured. Set it to a 64-character hex string in .env to ensure encrypted data remains decryptable across restarts.');
