@@ -74,7 +74,7 @@ class RiskController extends Controller
 
         $profile = $this->findProfileOrFail($customerId);
 
-        $profile->lock(auth()->id(), $validated['reason']);
+        $profile->lock((int) auth()->id(), $validated['reason']);
 
         return $this->successResponse($profile, 'Risk profile locked.');
     }
