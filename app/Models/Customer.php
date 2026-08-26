@@ -6,14 +6,17 @@ use App\Casts\MoneyCast;
 use App\Enums\CddLevel;
 use App\Enums\IdType;
 use App\Enums\RiskRating;
+use App\Enums\TransactionStatus;
 use App\Models\Compliance\CustomerBehavioralBaseline;
 use App\Models\Compliance\CustomerRiskProfile;
+use App\Services\System\EncryptionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Customer Model
@@ -34,16 +37,41 @@ use Illuminate\Support\Carbon;
  * @property bool $sanction_hit Sanctions list match
  * @property int $risk_score 0-100
  * @property string $risk_rating 'Low', 'Medium', 'High'
- * @property string $cdd_level 'Simplified', 'Standard', 'Enhanced'
+ * @property CddLevel $cdd_level 'Simplified', 'Standard', 'Enhanced'
  * @property bool $is_active
  * @property string|null $occupation
  * @property string|null $employer_name
  * @property string|null $employer_address
  * @property float|null $annual_volume_estimate
+ * @property string $customer_type 'individual', 'corporate'
+ * @property string|null $id_number_hash Blind index for lookups
+ * @property string|null $pep_type
+ * @property Carbon|null $pep_role_ended_at
+ * @property string|null $current_role_domain
+ * @property string|null $former_pep_domain
+ * @property bool $is_pep_associate
+ * @property bool $is_frozen
+ * @property string|null $freeze_reason
+ * @property Carbon|null $frozen_at
+ * @property bool $transactions_blocked
+ * @property string|null $rejection_reason
+ * @property string|null $closure_reason
+ * @property Carbon|null $closed_at
+ * @property Carbon|null $dormant_at
+ * @property Carbon|null $sanctions_screened_at
  * @property Carbon|null $risk_assessed_at
  * @property Carbon|null $last_transaction_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property-read bool $is_pep
+ * @property-read bool $is_sanctioned
+ * @property-read string $cdd_level_label
+ * @property-read string $risk_variant UI risk badge variant
+ * @property-read string $id_number_masked PDPA-masked ID number
+ * @property-read string|null $ic_number Legacy masked IC number
+ * @property-read Branch|null $branch Branch of the latest transaction
+ * @property-read string|null $transactions_sum_amount_local Result of withSum('transactions', 'amount_local')
  */
 class Customer extends BaseModel
 {
@@ -52,7 +80,7 @@ class Customer extends BaseModel
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $fillable = [
         'full_name',
@@ -77,6 +105,7 @@ class Customer extends BaseModel
         'customer_type',
         'pep_type',
         'sanctions_screened_at',
+        'closure_reason',
     ];
 
     protected $hidden = [
@@ -109,6 +138,9 @@ class Customer extends BaseModel
         'sanctions_screened_at' => 'datetime',
         'freeze_reason' => 'string',
         'rejection_reason' => 'string',
+        'closure_reason' => 'string',
+        'closed_at' => 'datetime',
+        'dormant_at' => 'datetime',
     ];
 
     /**
@@ -133,6 +165,9 @@ class Customer extends BaseModel
         return $this->hasMany(Transaction::class);
     }
 
+    /**
+     * @return HasOne<Transaction, $this>
+     */
     public function latestTransaction(): HasOne
     {
         return $this->hasOne(Transaction::class)->latestOfMany();
@@ -143,6 +178,9 @@ class Customer extends BaseModel
         return $this->latestTransaction?->branch;
     }
 
+    /**
+     * @return Builder<Customer>
+     */
     public function scopeForBranch(Builder $query, int $branchId): Builder
     {
         return $query->whereHas('transactions', function ($q) use ($branchId) {
@@ -152,6 +190,8 @@ class Customer extends BaseModel
 
     /**
      * Get all notes associated with this customer.
+     *
+     * @return HasMany<CustomerNote, $this>
      */
     public function notes(): HasMany
     {
@@ -160,6 +200,8 @@ class Customer extends BaseModel
 
     /**
      * Get all documents associated with this customer.
+     *
+     * @return HasMany<CustomerDocument, $this>
      */
     public function documents(): HasMany
     {
@@ -168,6 +210,8 @@ class Customer extends BaseModel
 
     /**
      * Get risk assessment history for this customer.
+     *
+     * @return HasMany<CustomerRiskHistory, $this>
      */
     public function riskHistory(): HasMany
     {
@@ -176,6 +220,8 @@ class Customer extends BaseModel
 
     /**
      * Get risk score snapshots for this customer.
+     *
+     * @return HasMany<RiskScoreSnapshot, $this>
      */
     public function riskScoreSnapshots(): HasMany
     {
@@ -184,6 +230,8 @@ class Customer extends BaseModel
 
     /**
      * Get the latest risk score snapshot for this customer.
+     *
+     * @return HasOne<RiskScoreSnapshot, $this>
      */
     public function latestRiskSnapshot(): HasOne
     {
@@ -192,6 +240,8 @@ class Customer extends BaseModel
 
     /**
      * Get PEP relations for this customer.
+     *
+     * @return HasMany<CustomerRelation, $this>
      */
     public function pepRelations(): HasMany
     {
@@ -200,6 +250,8 @@ class Customer extends BaseModel
 
     /**
      * Get associate relations where this customer is the related party.
+     *
+     * @return HasMany<CustomerRelation, $this>
      */
     public function associateRelations(): HasMany
     {
@@ -208,6 +260,8 @@ class Customer extends BaseModel
 
     /**
      * Get behavioral baselines for this customer.
+     *
+     * @return HasMany<CustomerBehavioralBaseline, $this>
      */
     public function behavioralBaselines(): HasMany
     {
@@ -216,6 +270,8 @@ class Customer extends BaseModel
 
     /**
      * Get risk profiles for this customer.
+     *
+     * @return HasMany<CustomerRiskProfile, $this>
      */
     public function riskProfiles(): HasMany
     {
@@ -224,6 +280,8 @@ class Customer extends BaseModel
 
     /**
      * Get PEP approval requests for this customer.
+     *
+     * @return HasMany<PepApprovalRequest, $this>
      */
     public function pepApprovalRequests(): HasMany
     {
@@ -232,6 +290,8 @@ class Customer extends BaseModel
 
     /**
      * Get sanctions analyses for this customer.
+     *
+     * @return HasMany<SanctionsAnalysis, $this>
      */
     public function sanctionsAnalyses(): HasMany
     {
@@ -243,7 +303,7 @@ class Customer extends BaseModel
      */
     public function getCddLevelLabelAttribute(): string
     {
-        return $this->cdd_level ?? 'Simplified';
+        return $this->cdd_level?->value ?? 'Simplified';
     }
 
     public function getIsPepAttribute(): bool
@@ -297,6 +357,30 @@ class Customer extends BaseModel
         $this->freeze_reason = null;
         $this->frozen_at = null;
         $this->save();
+    }
+
+    /**
+     * Transactions that block closure (awaiting approval or cancellation).
+     *
+     * @return Collection<int, Transaction>
+     */
+    public function openBlockingTransactions(): Collection
+    {
+        return $this->transactions()
+            ->whereIn('status', [
+                TransactionStatus::PendingApproval->value,
+                TransactionStatus::PendingCancellation->value,
+            ])
+            ->get();
+    }
+
+    /**
+     * Check if the customer can be closed (no pending-approval or
+     * pending-cancellation transactions outstanding).
+     */
+    public function canBeClosed(): bool
+    {
+        return $this->openBlockingTransactions()->isEmpty();
     }
 
     public function reject(string $reason): void
