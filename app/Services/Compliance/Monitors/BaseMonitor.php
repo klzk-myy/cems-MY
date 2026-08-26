@@ -6,8 +6,12 @@ use App\Enums\FindingSeverity;
 use App\Enums\FindingStatus;
 use App\Enums\FindingType;
 use App\Models\Compliance\ComplianceFinding;
+use App\Notifications\Compliance\ComplianceFindingNotification;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Abstract base class for compliance monitors.
@@ -84,7 +88,10 @@ abstract class BaseMonitor
         )->first();
 
         if ($existing === null) {
-            return ComplianceFinding::create($findingData);
+            $finding = ComplianceFinding::create($findingData);
+            $this->notifyComplianceOfficers($finding);
+
+            return $finding;
         }
 
         $existing->details = $this->mergeFindingDetails(
@@ -95,6 +102,35 @@ abstract class BaseMonitor
         $existing->save();
 
         return null;
+    }
+
+    /**
+     * Notify compliance officers about a newly created finding.
+     *
+     * Only called after actual creation — merged duplicates never re-notify.
+     * The notification itself is queued; failures are logged and swallowed so
+     * a broken mail/broadcast backend can never fail a monitor run.
+     */
+    private function notifyComplianceOfficers(ComplianceFinding $finding): void
+    {
+        try {
+            $officers = app(AlertTriageService::class)->getAvailableOfficers();
+
+            if ($officers->isEmpty()) {
+                Log::warning('No active compliance officers to notify of finding', [
+                    'finding_id' => $finding->id,
+                ]);
+
+                return;
+            }
+
+            Notification::send($officers, new ComplianceFindingNotification($finding));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to dispatch compliance finding notification', [
+                'finding_id' => $finding->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
