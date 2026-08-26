@@ -43,7 +43,7 @@ class SanctionsStatus extends Command
                 $list->list_type,
                 $list->entry_count,
                 $list->last_updated_at ? $list->last_updated_at->format('Y-m-d H:i') : 'Never',
-                $this->formatStatus($list->update_status),
+                $this->formatStatus($list->update_status?->value),
                 $list->isAutoUpdated() ? 'Auto' : 'Manual',
             ];
         })->toArray();
@@ -98,7 +98,7 @@ class SanctionsStatus extends Command
             ['Entries', $list->entry_count],
             ['Last Updated', $list->last_updated_at ? $list->last_updated_at->format('Y-m-d H:i:s') : 'Never'],
             ['Last Attempted', $list->last_attempted_at ? $list->last_attempted_at->format('Y-m-d H:i:s') : 'Never'],
-            ['Update Status', $this->formatStatus($list->update_status)],
+            ['Update Status', $this->formatStatus($list->update_status?->value)],
             ['Checksum', $list->last_checksum ? substr($list->last_checksum, 0, 16).'...' : 'N/A'],
             ['Auto Updated', $list->isAutoUpdated() ? 'Yes' : 'No'],
         ];
