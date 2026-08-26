@@ -6,6 +6,9 @@ use App\Enums\FiscalYearStatus;
 use App\Models\FiscalYear;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<FiscalYear>
+ */
 class FiscalYearFactory extends Factory
 {
     protected $model = FiscalYear::class;
