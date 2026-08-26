@@ -72,7 +72,7 @@ class TransactionCancellationPendingNotification extends Notification implements
             'type' => 'transaction_cancellation_pending',
             'transaction_id' => $this->transaction->id,
             'customer_id' => $this->transaction->customer_id,
-            'customer_name' => $this->transaction->customer?->full_name ?? 'Unknown',
+            'customer_name' => $this->transaction->customer->full_name ?? 'Unknown',
             'amount_local' => $this->transaction->amount_local,
             'currency_code' => $this->transaction->currency_code,
             'reason' => $this->reason,
@@ -104,7 +104,7 @@ class TransactionCancellationPendingNotification extends Notification implements
             ->where('notification_type', 'transaction_cancellation_pending')
             ->first();
 
-        return $preference?->email_enabled ?? true;
+        return $preference->email_enabled ?? true;
     }
 
     /**
