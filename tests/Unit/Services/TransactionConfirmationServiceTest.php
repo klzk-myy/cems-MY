@@ -6,11 +6,15 @@ use App\Enums\TransactionConfirmationStatus;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Models\User;
+use App\Notifications\ConfirmationRequiredNotification;
+use App\Notifications\LargeTransactionNotification;
 use App\Services\AuditService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionConfirmationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -20,11 +24,11 @@ class TransactionConfirmationServiceTest extends TestCase
 
     private TransactionConfirmationService $service;
 
-    private AuditService $auditService;
+    private AuditService&MockInterface $auditService;
 
-    private ThresholdService $thresholdService;
+    private ThresholdService&MockInterface $thresholdService;
 
-    private MathService $mathService;
+    private MathService&MockInterface $mathService;
 
     protected function setUp(): void
     {
@@ -173,6 +177,44 @@ class TransactionConfirmationServiceTest extends TestCase
 
         $this->assertTrue($result['success']);
         $this->assertEquals('Transaction confirmed and pending final approval.', $result['message']);
+    }
+
+    #[Test]
+    public function test_request_confirmation_notifies_branch_managers_and_compliance_officers(): void
+    {
+        Notification::fake();
+
+        $transaction = Transaction::factory()->create();
+        $manager = User::factory()->create([
+            'role' => 'manager',
+            'branch_id' => $transaction->branch_id,
+            'is_active' => true,
+        ]);
+        $officer = User::factory()->complianceOfficer()->create();
+
+        $this->auditService->shouldReceive('logWithSeveritySealed')->once();
+
+        $confirmation = $this->service->requestConfirmation($transaction, $this->createUser()->id);
+
+        Notification::assertSentTo($manager, ConfirmationRequiredNotification::class);
+        Notification::assertSentTo($officer, LargeTransactionNotification::class);
+    }
+
+    #[Test]
+    public function test_request_confirmation_does_not_notify_when_confirmation_already_exists(): void
+    {
+        Notification::fake();
+
+        $user = $this->createUser();
+        $transaction = Transaction::factory()->create();
+        TransactionConfirmation::factory()->create([
+            'transaction_id' => $transaction->id,
+            'status' => TransactionConfirmationStatus::Pending->value,
+        ]);
+
+        $confirmation = $this->service->requestConfirmation($transaction, $user->id);
+
+        Notification::assertNothingSent();
     }
 
     // Helper to create a user
