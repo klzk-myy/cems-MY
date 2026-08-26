@@ -27,7 +27,7 @@ class RouteMiddlewareAliasTest extends TestCase
     {
         $violations = [];
 
-        foreach (Route::getRoutes() as $route) {
+        foreach (Route::getRoutes()->getRoutes() as $route) {
             $name = $route->getName() ?? $route->uri();
 
             if ($this->isVendorRoute($name)) {
