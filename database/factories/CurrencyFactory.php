@@ -3,15 +3,22 @@
 namespace Database\Factories;
 
 use App\Models\Currency;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @extends Factory<Currency>
+ */
 class CurrencyFactory extends Factory
 {
     protected $model = Currency::class;
 
     protected static $usedCodes = [];
 
+    /**
+     * @var array<string, array{name: string, symbol: string, decimal_places: int}>
+     */
     protected static $currencyDetails = [
         'USD' => ['name' => 'US Dollar', 'symbol' => '$', 'decimal_places' => 2],
         'EUR' => ['name' => 'Euro', 'symbol' => '€', 'decimal_places' => 2],
@@ -54,8 +61,11 @@ class CurrencyFactory extends Factory
     /**
      * Create a model and persist it to the database.
      *
-     * @param  array  $attributes
-     * @return Model
+     * If a currency with the given code already exists it is returned
+     * instead of creating a duplicate.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @return Currency|Collection<int, Currency>
      */
     public function create($attributes = [], ?Model $parent = null)
     {
