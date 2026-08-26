@@ -45,7 +45,7 @@ class MonthEndCloseCommand extends Command
             // close to an arbitrary user. Only an ACTIVE user qualifies -
             // deactivated accounts are skipped and soft-deleted users are
             // excluded automatically by the SoftDeletes global scope.
-            $user = auth()->user() ?? User::where('is_active', true)->find(config('cems.system_user_id'));
+            $user = auth()->user() ?? User::where('is_active', true)->whereKey(config('cems.system_user_id'))->first();
 
             if (! $user) {
                 $this->error('Month-end close aborted: set cems.system_user_id to an active user for audit attribution.');
