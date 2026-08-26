@@ -196,7 +196,12 @@ class SanctionsDownloadService
         $cutoff = time() - ($days * 86400);
         $deleted = 0;
 
-        foreach (glob($archiveDir.'/*') as $file) {
+        $archiveFiles = glob($archiveDir.'/*');
+        if ($archiveFiles === false) {
+            $archiveFiles = [];
+        }
+
+        foreach ($archiveFiles as $file) {
             if (is_file($file) && filemtime($file) < $cutoff) {
                 unlink($file);
                 $deleted++;
