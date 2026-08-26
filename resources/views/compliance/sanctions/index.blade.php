@@ -33,7 +33,7 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $list['source_format'] ?: 'N/A' }}</td>
-                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $list['update_frequency'] ?: 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $list['update_status'] ?: 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $list['last_synced_at'] ?: 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm">
                                 @php
