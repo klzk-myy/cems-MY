@@ -178,6 +178,7 @@ class BudgetServiceTest extends TestCase
         $account = ChartOfAccount::where('account_type', AccountType::Expense)->first();
         $this->assertNotNull($account, 'EnhancedChartOfAccountsSeeder should create an expense account');
 
+        /** @var Budget $budget */
         $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
@@ -199,6 +200,7 @@ class BudgetServiceTest extends TestCase
         $account = ChartOfAccount::where('account_type', AccountType::Expense)->first();
         $this->assertNotNull($account, 'EnhancedChartOfAccountsSeeder should create an expense account');
 
+        /** @var Budget $budget */
         $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
@@ -218,6 +220,7 @@ class BudgetServiceTest extends TestCase
         $account = ChartOfAccount::where('account_type', AccountType::Expense)->first();
         $this->assertNotNull($account, 'EnhancedChartOfAccountsSeeder should create an expense account');
 
+        /** @var Budget $budget */
         $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
