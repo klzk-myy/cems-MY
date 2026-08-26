@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\RelationType;
 use App\Enums\SystemAlertLevel;
 use App\Events\RelatedPartyOwnershipConcern;
+use App\Models\AdverseMediaEntry;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
 use App\Models\SanctionEntry;
@@ -12,6 +13,8 @@ use App\Models\SanctionsAnalysis;
 use App\Models\ScreeningResult;
 use App\Models\SystemAlert;
 use App\Models\Transaction;
+use App\Notifications\SanctionsMatchNotification;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Contracts\CustomerScreeningServiceInterface;
 use App\Services\System\MathService;
 use App\ValueObjects\ScreeningMatch;
@@ -19,6 +22,7 @@ use App\ValueObjects\ScreeningResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CustomerScreeningService implements CustomerScreeningServiceInterface
 {
@@ -34,6 +38,13 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
      * fuzzy match against an entry name token during candidate prefiltering.
      */
     protected const TOKEN_MATCH_THRESHOLD = 0.8;
+
+    /**
+     * Candidate source types persisted on screening_results.source.
+     */
+    public const SOURCE_SANCTIONS = 'sanctions';
+
+    public const SOURCE_ADVERSE_MEDIA = 'adverse_media';
 
     protected float $thresholdFlag;
 
@@ -91,8 +102,12 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
         $normalizedName = $this->normalizeName($name);
         $candidates = $this->findCandidates($normalizedName);
 
+        /** @var Collection<int, ScreeningMatch> $matches */
         $matches = new Collection;
+        /** @var Collection<int, ScreeningMatch> $adverseMatches */
+        $adverseMatches = new Collection;
         $highestScore = 0.0;
+        $highestAdverseScore = 0.0;
 
         foreach ($candidates as $entry) {
             $score = $this->calculateMatchScore($normalizedName, $entry, $dob, $nationality);
@@ -121,18 +136,66 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
             }
         }
 
+        foreach ($this->findAdverseMediaCandidates($normalizedName) as $entry) {
+            $score = $this->calculateAdverseMatchScore($normalizedName, $entry);
+
+            if ($score >= $this->thresholdFlag) {
+                $matchedFields = ['name'];
+
+                if ($entry->alias
+                    && $this->levenshteinSimilarity($normalizedName, mb_strtolower(trim($entry->alias))) >= self::TOKEN_MATCH_THRESHOLD
+                ) {
+                    $matchedFields[] = 'alias';
+                }
+
+                $adverseMatches->push(new ScreeningMatch(
+                    entryId: $entry->id,
+                    entityName: $entry->name,
+                    listName: 'Adverse Media',
+                    listSource: self::SOURCE_ADVERSE_MEDIA,
+                    matchScore: $score,
+                    matchedFields: $matchedFields,
+                    listingDate: null,
+                    dateOfBirth: null,
+                    nationality: null,
+                ));
+
+                $highestAdverseScore = max($highestAdverseScore, $score);
+            }
+        }
+
+        // Sanctions keep block semantics (>= threshold_block). Adverse media
+        // hits are always review-level: they escalate to 'flag' but never to
+        // 'block' because press allegations are not listing determinations.
         $action = 'clear';
         if ($matches->isNotEmpty()) {
             $action = $highestScore >= $this->thresholdBlock ? 'block' : 'flag';
+        } elseif ($adverseMatches->isNotEmpty()) {
+            $action = 'flag';
         }
+
+        $hasSanctionHits = $matches->isNotEmpty();
+        $bestSanctionEntryId = $hasSanctionHits ? $matches->first()?->entryId : null;
+        $bestAdverseEntryId = $adverseMatches
+            ->sortByDesc(fn (ScreeningMatch $match) => $match->matchScore)
+            ->first()
+            ?->entryId;
 
         $result = $this->createResult(
             customerId: $customerId,
             screenedName: $name,
-            entryId: $matches->first()?->entryId,
-            score: $highestScore,
+            entryId: $bestSanctionEntryId,
+            score: max($highestScore, $highestAdverseScore),
             action: $action,
-            matchedFields: $matches->map(fn (ScreeningMatch $m) => $m->matchedFields)->flatten()->toArray()
+            matchedFields: $matches
+                ->concat($adverseMatches)
+                ->map(fn (ScreeningMatch $m) => $m->matchedFields)
+                ->flatten()
+                ->toArray(),
+            source: $adverseMatches->isNotEmpty() && ! $hasSanctionHits
+                ? self::SOURCE_ADVERSE_MEDIA
+                : self::SOURCE_SANCTIONS,
+            adverseMediaEntryId: $bestAdverseEntryId
         );
 
         // Record the successful screening so rescreening schedulers
@@ -142,8 +205,8 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
 
         return new ScreeningResponse(
             action: $action,
-            confidenceScore: $highestScore,
-            matches: $matches,
+            confidenceScore: max($highestScore, $highestAdverseScore),
+            matches: $matches->concat($adverseMatches),
             screenedAt: Carbon::now(),
             resultId: $result->id,
         );
@@ -152,7 +215,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
     public function screenTransaction(Transaction $transaction): ScreeningResponse
     {
         $customerId = $transaction->customer_id;
-        $customerName = $transaction->customer?->full_name ?? 'Unknown Customer';
+        $customerName = $transaction->customer->full_name ?? 'Unknown Customer';
 
         return $this->screenName(
             name: $customerName,
@@ -235,6 +298,43 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
                 'requires_fiu_report' => true,
             ],
         ]);
+
+        $this->notifyOfficersOfConfirmedMatch($customer, $listType);
+    }
+
+    /**
+     * Escalate a confirmed sanctions match to compliance officers so the FIU
+     * report deadline is not missed.
+     */
+    private function notifyOfficersOfConfirmedMatch(Customer $customer, string $listType): void
+    {
+        try {
+            $latestEntry = SanctionEntry::whereHas('sanctionList', fn ($q) => $q->where('list_type', $listType))
+                ->inRandomOrder()
+                ->first();
+
+            $officers = app(AlertTriageService::class)->getAvailableOfficers();
+
+            foreach ($officers as $officer) {
+                try {
+                    $officer->notify(new SanctionsMatchNotification(
+                        $latestEntry ?? new SanctionEntry,
+                        "Confirmed {$listType} match on {$customer->full_name} — BNM FIU report due within 24 hours"
+                    ));
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to notify officer of confirmed sanctions match', [
+                        'officer_id' => $officer->id,
+                        'customer_id' => $customer->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to resolve officers for sanctions match escalation', [
+                'customer_id' => $customer->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function getStatus(Customer $customer): array
@@ -306,6 +406,116 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
         usort($ranked, fn (array $a, array $b) => $b['score'] <=> $a['score']);
 
         return new Collection(array_slice(array_column($ranked, 'entry'), 0, $this->maxCandidates));
+    }
+
+    /**
+     * Normalized tokens of an adverse media entry's name plus its alias.
+     *
+     * @return list<string>
+     */
+    protected function adverseEntryTokens(AdverseMediaEntry $entry): array
+    {
+        $tokens = $this->tokenize(mb_strtolower($entry->normalized_name ?? ''));
+
+        if ($entry->alias) {
+            $tokens = array_merge(
+                $tokens,
+                $this->tokenize(mb_strtolower(trim($entry->alias)))
+            );
+        }
+
+        return array_values(array_unique($tokens));
+    }
+
+    /**
+     * Adverse media candidate pool, built identically to findCandidates:
+     * token-level SQL prefilter against active entries, then in-memory
+     * fuzzy token ranking truncated to max_candidates.
+     *
+     * @return Collection<int, AdverseMediaEntry>
+     */
+    protected function findAdverseMediaCandidates(string $normalizedName): Collection
+    {
+        $inputTokens = $this->tokenize($normalizedName);
+
+        if ($inputTokens === []) {
+            return new Collection;
+        }
+
+        $pool = AdverseMediaEntry::query()
+            ->where('is_active', true)
+            ->where(function ($query) use ($inputTokens) {
+                foreach ($inputTokens as $token) {
+                    $escapedToken = $this->escapeLike($token);
+
+                    $query->orWhereRaw("normalized_name LIKE ? ESCAPE '\\'", ["%{$escapedToken}%"])
+                        ->orWhereRaw("alias LIKE ? ESCAPE '\\'", ["%{$escapedToken}%"]);
+                }
+            })
+            ->orderBy('id')
+            ->limit(self::CANDIDATE_POOL_LIMIT)
+            ->get();
+
+        $ranked = [];
+
+        foreach ($pool as $entry) {
+            $entryTokens = $this->adverseEntryTokens($entry);
+
+            if ($entryTokens === []) {
+                continue;
+            }
+
+            [$matchedTokens, $overlapScore] = $this->matchInputTokens($inputTokens, $entryTokens);
+
+            if ($matchedTokens < count($inputTokens)) {
+                continue;
+            }
+
+            $ranked[] = ['entry' => $entry, 'score' => $overlapScore];
+        }
+
+        usort($ranked, fn (array $a, array $b) => $b['score'] <=> $a['score']);
+
+        return new Collection(array_slice(array_column($ranked, 'entry'), 0, $this->maxCandidates));
+    }
+
+    /**
+     * Match scoring for adverse media candidates using identical weights to
+     * calculateMatchScore: levenshtein(40), token overlap(30), phonetics
+     * (15+15, computed dynamically from the article name since adverse media
+     * rows carry no stored soundex/metaphone columns), alias contributions.
+     */
+    protected function calculateAdverseMatchScore(string $normalizedName, AdverseMediaEntry $entry): float
+    {
+        $scores = [];
+
+        $entryName = mb_strtolower($entry->normalized_name ?? '');
+
+        $scores[] = $this->levenshteinSimilarity($normalizedName, $entryName) * 40;
+
+        $inputTokens = $this->tokenize($normalizedName);
+        $entryTokens = $this->tokenize($entryName);
+        $scores[] = $this->tokenMatchScore($inputTokens, $entryTokens) * 30;
+
+        if ($entryName !== '') {
+            $inputSoundex = soundex($normalizedName);
+            $inputMetaphone = metaphone($normalizedName);
+
+            if ($inputSoundex === soundex($entryName)) {
+                $scores[] = 15.0;
+            }
+            if ($inputMetaphone === metaphone($entryName)) {
+                $scores[] = 15.0;
+            }
+        }
+
+        if ($entry->alias && trim($entry->alias) !== '') {
+            $aliasNormalized = mb_strtolower(trim($entry->alias));
+            $scores[] = $this->levenshteinSimilarity($normalizedName, $aliasNormalized) * 20;
+            $scores[] = $this->tokenMatchScore($inputTokens, $this->tokenize($aliasNormalized)) * 10;
+        }
+
+        return min((array_sum($scores) / 100.0) * 100, 100.0);
     }
 
     /**
@@ -457,7 +667,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
 
         $chars = mb_str_split($value);
 
-        return $chars === false ? [] : $chars;
+        return $chars;
     }
 
     /**
@@ -502,8 +712,12 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
     protected function tokenize(string $text): array
     {
         $text = mb_strtolower($text);
-        $text = preg_replace('/[^\p{L}\p{N}\s]/u', '', $text);
+        $text = (string) preg_replace('/[^\p{L}\p{N}\s]/u', '', $text);
         $tokens = preg_split('/\s+/', trim($text), -1, PREG_SPLIT_NO_EMPTY);
+
+        if ($tokens === false) {
+            return [];
+        }
 
         return array_unique($tokens);
     }
@@ -725,7 +939,9 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
         ?int $entryId,
         float $score,
         string $action,
-        array $matchedFields
+        array $matchedFields,
+        string $source = self::SOURCE_SANCTIONS,
+        ?int $adverseMediaEntryId = null
     ): ScreeningResult {
         $matchType = 'levenshtein';
 
@@ -733,11 +949,49 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
             'customer_id' => $customerId,
             'screened_name' => $screenedName,
             'sanction_entry_id' => $entryId,
+            'adverse_media_entry_id' => $adverseMediaEntryId,
+            'source' => $source,
             'match_type' => $matchType,
             'match_score' => $score / 100,
             'result' => $action,
             'action_taken' => $action,
             'matched_fields' => $matchedFields,
         ]);
+    }
+
+    /**
+     * Confirmed adverse media match handling. Unlike confirmed sanctions
+     * matches (handleConfirmedMatch), adverse media confirmations do NOT
+     * freeze funds, block transactions or reject the customer: press
+     * allegations are not listing determinations. The confirmation instead
+     * escalates a compliance alert for EDD review and potential STR filing.
+     *
+     * @return array<string, mixed>
+     */
+    public function handleConfirmedAdverseMatch(Customer $customer, string $severity = AdverseMediaEntry::SEVERITY_MEDIUM): array
+    {
+        $level = $severity === AdverseMediaEntry::SEVERITY_HIGH
+            ? SystemAlertLevel::Critical
+            : SystemAlertLevel::Warning;
+
+        SystemAlert::create([
+            'level' => $level->value,
+            'message' => "Confirmed adverse media match on customer {$customer->full_name} (ID: {$customer->id}) - escalated for enhanced due diligence review",
+            'source' => 'adverse_media_screening',
+            'metadata' => [
+                'customer_id' => $customer->id,
+                'customer_name' => $customer->full_name,
+                'list_type' => 'adverse_media',
+                'severity' => $severity,
+                'action' => 'edd_review_required',
+                'requires_fiu_report' => false,
+            ],
+        ]);
+
+        return [
+            'action' => 'escalated_for_review',
+            'customer_id' => $customer->id,
+            'list_type' => 'adverse_media',
+        ];
     }
 }
