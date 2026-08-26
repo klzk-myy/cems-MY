@@ -34,6 +34,7 @@ return new class extends Migration
                     ->values();
 
                 foreach ($numericTillIds as $numericTillId) {
+                    /** @var Counter|null $counter */
                     $counter = Counter::withTrashed()->find($numericTillId);
 
                     if ($counter === null) {
