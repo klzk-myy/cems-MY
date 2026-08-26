@@ -4,12 +4,23 @@ namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
  * Lean representation of a KYC document for nested customer payloads.
  *
  * Deliberately excludes file_path and file_hash so filesystem locations
  * and integrity digests never leave the compliance boundary.
+ *
+ * @property int $id
+ * @property int $customer_id
+ * @property string $document_type
+ * @property string $status
+ * @property int|null $file_size
+ * @property Carbon|null $verified_at
+ * @property Carbon|null $expiry_date
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class CustomerDocumentResource extends JsonResource
 {
