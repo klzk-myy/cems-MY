@@ -39,7 +39,7 @@ class PasswordResetTest extends TestCase
         $user = User::factory()->create([
             'username' => 'reset-flow-user',
             'email' => 'reset-flow-user@example.com',
-            'password' => 'old-password-123',
+            'password' => 'OldPassword@123',
             'is_active' => true,
         ]);
 
@@ -64,8 +64,8 @@ class PasswordResetTest extends TestCase
         $response = $this->post('/reset-password', [
             'token' => $rawToken,
             'email' => $user->email,
-            'password' => 'new-password-456',
-            'password_confirmation' => 'new-password-456',
+            'password' => 'NewPassword@456',
+            'password_confirmation' => 'NewPassword@456',
         ]);
 
         $response->assertRedirect(route('login'));
@@ -75,15 +75,15 @@ class PasswordResetTest extends TestCase
         $user->refresh();
         $this->assertNotSame($oldHash, $user->password_hash);
         $this->assertTrue(
-            Hash::check('new-password-456', $user->password_hash),
+            Hash::check('NewPassword@456', $user->password_hash),
             'password_hash must be a verifiable hash of the new plaintext password'
         );
-        $this->assertFalse(Hash::check('old-password-123', $user->password_hash));
+        $this->assertFalse(Hash::check('OldPassword@123', $user->password_hash));
 
         // 5. Login with the new password succeeds; the old password is rejected.
         $login = $this->post('/login', [
             'username' => $user->username,
-            'password' => 'new-password-456',
+            'password' => 'NewPassword@456',
         ]);
         $login->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
@@ -92,7 +92,7 @@ class PasswordResetTest extends TestCase
 
         $failedLogin = $this->from(route('login'))->post('/login', [
             'username' => $user->username,
-            'password' => 'old-password-123',
+            'password' => 'OldPassword@123',
         ]);
         $failedLogin->assertInvalid(['username']);
         $this->assertGuest();
@@ -105,14 +105,14 @@ class PasswordResetTest extends TestCase
 
         $user = User::factory()->create([
             'email' => 'bad-token-user@example.com',
-            'password' => 'old-password-123',
+            'password' => 'OldPassword@123',
         ]);
 
         // Mismatched confirmation is refused by validation before any change.
         $this->post('/reset-password', [
             'token' => 'not-a-real-token',
             'email' => $user->email,
-            'password' => 'new-password-456',
+            'password' => 'NewPassword@456',
             'password_confirmation' => 'different-confirmation',
         ])->assertInvalid(['password']);
 
@@ -120,12 +120,12 @@ class PasswordResetTest extends TestCase
         $this->post('/reset-password', [
             'token' => 'not-a-real-token',
             'email' => $user->email,
-            'password' => 'new-password-456',
-            'password_confirmation' => 'new-password-456',
+            'password' => 'NewPassword@456',
+            'password_confirmation' => 'NewPassword@456',
         ])->assertSessionHasErrors(['email']);
 
         $user->refresh();
-        $this->assertTrue(Hash::check('old-password-123', $user->password_hash));
+        $this->assertTrue(Hash::check('OldPassword@123', $user->password_hash));
         $this->assertGuest();
     }
 }
