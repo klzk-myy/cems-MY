@@ -7,7 +7,11 @@ use Cron\CronExpression;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read User|null $createdBy
+ */
 class ReportSchedule extends BaseModel
 {
     use HasFactory;
@@ -30,6 +34,9 @@ class ReportSchedule extends BaseModel
         'notification_recipients' => 'array',
     ];
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -45,7 +52,7 @@ class ReportSchedule extends BaseModel
         return $query->where('is_active', true);
     }
 
-    public function calculateNextRun(): ?\DateTime
+    public function calculateNextRun(): ?Carbon
     {
         if (empty($this->cron_expression)) {
             return null;
@@ -54,7 +61,7 @@ class ReportSchedule extends BaseModel
         try {
             $cron = new CronExpression($this->cron_expression);
 
-            return $cron->getNextRunDate();
+            return Carbon::instance($cron->getNextRunDate());
         } catch (\Exception $e) {
             return null;
         }
