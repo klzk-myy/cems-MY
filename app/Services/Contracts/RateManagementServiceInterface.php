@@ -21,7 +21,8 @@ interface RateManagementServiceInterface
         string $newSellRate,
         User $approvedBy,
         ?string $reason = null,
-        ?int $branchId = null
+        ?int $branchId = null,
+        ?string $effectiveDate = null
     ): RateOverrideResult;
 
     public function validateTransactionRate(
