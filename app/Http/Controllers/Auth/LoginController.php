@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
+use App\Rules\PasswordComplexityRule;
+use App\Rules\PasswordNotRecentlyUsed;
 use App\Services\AuditService;
 use App\Services\System\RateLimitService;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class LoginController extends Controller
@@ -57,7 +60,7 @@ class LoginController extends Controller
 
                 return redirect()->intended('/dashboard');
             } catch (\Throwable $e) {
-                \Log::error('Login transaction failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+                Log::error('Login transaction failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
             }
         }
 
@@ -116,9 +119,15 @@ class LoginController extends Controller
 
         $validated = $request->validate([
             'current_password' => ['required'],
-            'password' => ['required', 'confirmed', 'min:12', 'different:current_password'],
+            'password' => [
+                'required',
+                'confirmed',
+                'different:current_password',
+                new PasswordComplexityRule,
+                new PasswordNotRecentlyUsed($user),
+            ],
         ], [
-            'password.min' => 'The new password must be at least 12 characters.',
+            'password.different' => 'The new password must be different from the current password.',
         ]);
 
         if (! Hash::check($validated['current_password'], $user->password_hash)) {
@@ -135,5 +144,43 @@ class LoginController extends Controller
         ], 'INFO');
 
         return redirect('/dashboard')->with('success', 'Password updated successfully.');
+    }
+
+    /**
+     * Invalidate every other session for the authenticated user after
+     * re-verifying their current password.
+     */
+    public function logoutOtherDevices(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+        ]);
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (! Hash::check($validated['current_password'], $user->password_hash)) {
+            return back()->withErrors(['current_password' => 'The current password is incorrect.']);
+        }
+
+        // Equivalent to Auth::logoutOtherDevices(), routed through the
+        // password mutator on purpose: EloquentUserProvider pre-hashes the
+        // value before assigning it, so calling the framework method here
+        // would store bcrypt(bcrypt(plain)) and lock the user out (see the
+        // reset flow note in PasswordResetController). Re-hashing changes
+        // the stored hash, so every other session fails validation against
+        // it while this device keeps working.
+        $user->forceFill(['password' => $validated['current_password']])->save();
+
+        // Refresh this device's stored hash so the current session stays
+        // valid under the auth.session middleware, then rotate the CSRF
+        // token. Only other devices are signed out.
+        $request->session()->put(
+            'password_hash_'.Auth::getDefaultDriver(),
+            $user->getAuthPassword()
+        );
+        $request->session()->regenerateToken();
+
+        return back()->with('success', 'All other devices have been logged out.');
     }
 }
