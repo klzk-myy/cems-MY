@@ -4,7 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $list_id
+ * @property Carbon $imported_at
+ * @property int $records_added
+ * @property int $records_updated
+ * @property int $records_deactivated
+ * @property string $status 'success', 'partial', 'failed'
+ * @property string|null $error_message
+ * @property string $triggered_by 'scheduled', 'manual'
+ * @property int|null $user_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class SanctionImportLog extends BaseModel
 {
     use HasFactory;
@@ -46,11 +61,17 @@ class SanctionImportLog extends BaseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<SanctionList, $this>
+     */
     public function sanctionList(): BelongsTo
     {
         return $this->belongsTo(SanctionList::class, 'list_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
