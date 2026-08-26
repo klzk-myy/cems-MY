@@ -4,9 +4,22 @@ namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
  * Lean representation of a risk score snapshot for nested customer payloads.
+ *
+ * @property int $id
+ * @property Carbon $snapshot_date
+ * @property int $overall_score
+ * @property int $velocity_score
+ * @property int $structuring_score
+ * @property int $geographic_score
+ * @property int $amount_score
+ * @property string $trend
+ * @property array|null $factors
+ * @property Carbon|null $next_screening_date
+ * @property Carbon|null $created_at
  */
 class CustomerRiskSnapshotResource extends JsonResource
 {
