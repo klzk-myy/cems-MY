@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
  *
  * @property string $account_code Primary key for the account
  * @property string $account_name Human-readable name of the account
- * @property string $account_type Type of account (Asset, Liability, Equity, Revenue, Expense)
+ * @property AccountType $account_type Type of account (Asset, Liability, Equity, Revenue, Expense)
  * @property string|null $account_class Account class (Cash, Receivable, Payable, etc.)
  * @property string|null $parent_code Reference to parent account in hierarchy
  * @property bool $is_active Whether the account is active
