@@ -3,12 +3,64 @@
 namespace App\Services\Compliance;
 
 use App\Enums\CddLevel;
+use App\Enums\DocumentType;
 use App\Models\Customer;
+use App\Models\CustomerDocument;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 
 class KycDocumentExpiryService
 {
+    /**
+     * Determine whether ALL verified identity documents are expired
+     * (past grace period). Customers without any documents are NOT
+     * blocked by this check — document-less customers keep transacting
+     * as before; only customers with documents whose identity documents
+     * have all lapsed are blocked.
+     */
+    public function hasAllIdentityDocumentsExpired(Customer $customer): bool
+    {
+        // Preserve legacy behaviour: no documents at all -> do not block.
+        if (! $customer->documents()->exists()) {
+            return false;
+        }
+
+        $cutoffDate = $this->graceCutoffDate();
+
+        // A single exists() query: any verified identity document that is
+        // un-expired (or has no expiry) means the customer may transact.
+        return ! $customer->documents()
+            ->verified()
+            ->whereIn('document_type', [DocumentType::MyKad->value, DocumentType::Passport->value])
+            ->where(function (Builder $query) use ($cutoffDate) {
+                $query->whereNull('expiry_date')
+                    ->orWhere('expiry_date', '>=', $cutoffDate);
+            })
+            ->exists();
+    }
+
+    /**
+     * Sweep: mark verified documents past their expiry date (including
+     * grace period) as expired. Returns the number of documents updated.
+     */
+    public function expireDocuments(): int
+    {
+        return CustomerDocument::query()
+            ->verified()
+            ->where('status', '!=', 'expired')
+            ->whereNotNull('expiry_date')
+            ->where('expiry_date', '<', $this->graceCutoffDate())
+            ->update(['status' => 'expired']);
+    }
+
+    protected function graceCutoffDate(): Carbon
+    {
+        $gracePeriodDays = config('thresholds.kyc.grace_period_days', 5);
+
+        return Carbon::now()->subDays($gracePeriodDays);
+    }
+
     public function mustBlockDueToExpiredDocuments(Customer $customer): bool
     {
         // Block if customer has no documents at all
