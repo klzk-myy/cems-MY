@@ -37,7 +37,8 @@ class EddCustomerController extends Controller
             abort(403, 'Invalid or expired signature.');
         }
 
-        $customer = Customer::find($request->query('customer_id'));
+        /** @var Customer|null $customer */
+        $customer = Customer::find((string) $request->query('customer_id'));
 
         if (! $customer) {
             abort(404, 'Customer not found.');
@@ -74,7 +75,9 @@ class EddCustomerController extends Controller
 
         $eddRecord->load(['documentRequests' => fn ($q) => $q->orderByDesc('created_at')]);
 
-        return view('compliance.edd.customer.show', compact('eddRecord'));
+        $customer = Customer::query()->find($eddRecord->customer_id);
+
+        return view('compliance.edd.customer.show', compact('eddRecord', 'customer'));
     }
 
     /**
@@ -102,12 +105,12 @@ class EddCustomerController extends Controller
 
         $this->auditService->logWithSeverity(
             'edd_document_uploaded',
-            'Customer uploaded EDD document: '.($eddDocumentRequest->document_type ?? 'unknown'),
-            'info',
             [
+                'description' => 'Customer uploaded EDD document: '.($eddDocumentRequest->document_type ?? 'unknown'),
                 'edd_document_request_id' => $eddDocumentRequest->id,
                 'customer_id' => $customer->id,
-            ]
+            ],
+            'info'
         );
 
         return back()->with('success', 'Document uploaded successfully.');
