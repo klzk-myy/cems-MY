@@ -15,6 +15,7 @@ class AuditLogController extends Controller
         $this->authorize('viewAny', SystemLog::class);
 
         $logs = SystemLog::query()
+            ->with('user')
             ->when($request->filled('action'), fn ($q) => $q->where('action', 'like', '%'.$request->string('action').'%'))
             ->when($request->filled('entity_type'), fn ($q) => $q->where('entity_type', $request->string('entity_type')))
             ->when($request->filled('severity'), fn ($q) => $q->where('severity', $request->string('severity')))
@@ -30,8 +31,12 @@ class AuditLogController extends Controller
 
     public function show(SystemLog $log): View
     {
-        $this->authorize('view', SystemLog::class);
+        $this->authorize('view', $log);
 
-        return view('admin.audit-logs.show', ['log' => $log]);
+        return view('admin.audit-logs.show', [
+            'log' => $log,
+            'prevId' => SystemLog::query()->where('id', '<', $log->id)->max('id'),
+            'nextId' => SystemLog::query()->where('id', '>', $log->id)->min('id'),
+        ]);
     }
 }
