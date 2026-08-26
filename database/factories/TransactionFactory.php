@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @extends Factory<Transaction>
+ */
 class TransactionFactory extends Factory
 {
     protected $model = Transaction::class;
@@ -33,7 +36,8 @@ class TransactionFactory extends Factory
                 TransactionType::Buy->value,
                 TransactionType::Sell->value,
             ]),
-            'currency_code' => fn () => Currency::inRandomOrder()->first()?->code ?? Currency::factory()->create()->code,
+            'currency_code' => fn () => (Currency::query()->inRandomOrder()->first()->code)
+                ?? Currency::factory()->create()->code,
             'amount_local' => $amountLocal,
             'amount_foreign' => $amountForeign,
             'rate' => $rate,
@@ -47,6 +51,10 @@ class TransactionFactory extends Factory
     {
         $raw = $this->raw();
         $result = parent::make($attributes, $parent);
+
+        assert($result instanceof Transaction || $result instanceof Collection);
+
+        /** @var Collection<int, Transaction> $transactions */
         $transactions = $result instanceof Collection
             ? $result
             : new Collection([$result]);
@@ -66,7 +74,7 @@ class TransactionFactory extends Factory
 
         $transactions->each(function (Transaction $transaction) use ($attributes, $workflowFields) {
             foreach ($workflowFields as $field) {
-                if (array_key_exists($field, $attributes)) {
+                if (is_array($attributes) && array_key_exists($field, $attributes)) {
                     $transaction->{$field} = $attributes[$field];
                 }
             }
