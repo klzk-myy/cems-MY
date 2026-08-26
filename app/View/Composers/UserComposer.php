@@ -15,6 +15,6 @@ class UserComposer
 
         $view->with('currentUser', $user);
         $view->with('userRole', $user?->role);
-        $view->with('userName', $user?->username ?? 'Guest');
+        $view->with('userName', $user ? $user->username : 'Guest');
     }
 }
