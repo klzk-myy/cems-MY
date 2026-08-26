@@ -9,7 +9,31 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property SanctionListType $list_type 'UNSCR', 'MOHA', 'Internal'
+ * @property string|null $source_url
+ * @property string|null $source_format 'XML', 'CSV', 'JSON'
+ * @property string|null $source_file
+ * @property int $uploaded_by
+ * @property bool $is_active
+ * @property Carbon $uploaded_at
+ * @property Carbon|null $last_updated_at
+ * @property Carbon|null $last_attempted_at
+ * @property UpdateStatus $update_status 'success', 'failed', 'pending', 'never_run'
+ * @property string|null $last_error_message
+ * @property int $entry_count
+ * @property string|null $last_checksum
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property int|null $auto_updated_by
+ * @property Carbon|null $deleted_at
+ * @property-read string $update_status_badge
+ */
 class SanctionList extends BaseModel
 {
     use HasFactory, SoftDeletes;
@@ -51,21 +75,33 @@ class SanctionList extends BaseModel
         });
     }
 
+    /**
+     * @return HasMany<SanctionEntry, $this>
+     */
     public function entries(): HasMany
     {
         return $this->hasMany(SanctionEntry::class, 'list_id');
     }
 
+    /**
+     * @return HasMany<SanctionImportLog, $this>
+     */
     public function importLogs(): HasMany
     {
         return $this->hasMany(SanctionImportLog::class, 'list_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function autoUpdatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'auto_updated_by');
@@ -88,7 +124,7 @@ class SanctionList extends BaseModel
 
     public function getUpdateStatusBadgeAttribute(): string
     {
-        return match ($this->update_status) {
+        return match ($this->update_status->value) {
             'success' => 'badge-success',
             'failed' => 'badge-error',
             'pending' => 'badge-warning',
