@@ -1,21 +1,27 @@
 <?php
 
 use App\Http\Controllers\Accounting\BudgetController;
+use App\Http\Controllers\Accounting\ChartOfAccountsController;
 use App\Http\Controllers\Accounting\JournalController;
 use App\Http\Controllers\Accounting\PeriodController;
 use App\Http\Controllers\Accounting\ReconciliationController;
 use App\Http\Controllers\Accounting\ReportController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\AllocationController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BranchClosingController;
+use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchPoolController;
 use App\Http\Controllers\Compliance\AlertTriageController;
 use App\Http\Controllers\Compliance\CaseManagementController;
 use App\Http\Controllers\Compliance\EddCustomerController;
+use App\Http\Controllers\Compliance\EddReviewController;
 use App\Http\Controllers\Compliance\FindingController;
 use App\Http\Controllers\Compliance\PepApprovalController;
 use App\Http\Controllers\Compliance\RiskDashboardController;
 use App\Http\Controllers\Compliance\SanctionListController;
 use App\Http\Controllers\Compliance\ScreeningController;
+use App\Http\Controllers\Compliance\ScreeningMatchController;
 use App\Http\Controllers\Compliance\StrReportController;
 use App\Http\Controllers\Compliance\UnifiedAlertController;
 use App\Http\Controllers\CounterController;
@@ -28,6 +34,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KycDocumentController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\PerformanceMonitoringController;
 use App\Http\Controllers\RateController;
 use App\Http\Controllers\Report\AnalyticsController;
@@ -37,6 +44,7 @@ use App\Http\Controllers\RevaluationController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StockCashController;
 use App\Http\Controllers\StockTransferController;
+use App\Http\Controllers\System\CurrencyController;
 use App\Http\Controllers\SystemAlertController;
 use App\Http\Controllers\TestResultsController;
 use App\Http\Controllers\Transaction\DlqController;
@@ -44,7 +52,9 @@ use App\Http\Controllers\Transaction\TransactionApprovalController;
 use App\Http\Controllers\Transaction\TransactionCancellationController;
 use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\TransactionWizardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VerificationController;
 use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Support\Facades\Route;
 
@@ -61,6 +71,12 @@ Route::get('/up', function () {
 Route::get('/health', [HealthCheckController::class, 'index'])
     ->middleware(['auth', 'role:admin', 'throttle:60,1'])
     ->name('health');
+
+// Public transaction verification (receipt QR codes). Throttled to slow
+// reference enumeration; intentionally outside the auth middleware group.
+Route::get('/verify/transaction/{reference}', [VerificationController::class, 'show'])
+    ->middleware('throttle:10,1')
+    ->name('verification.transaction');
 
 Route::prefix('setup')->name('setup.')->middleware(['setup.accessible'])->group(function () {
     Route::get('/', [SetupController::class, 'index'])->name('index');
@@ -82,6 +98,16 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Forced password rotation (BNM policy) and self-service security.
+    Route::get('/password/change', [LoginController::class, 'showChangePassword'])
+        ->name('password.change');
+    Route::post('/password/change', [LoginController::class, 'changePassword'])
+        ->name('password.change.submit')
+        ->middleware('throttle:5,1');
+    Route::post('/profile/devices/logout-others', [LoginController::class, 'logoutOtherDevices'])
+        ->name('profile.devices.logout-others')
+        ->middleware('throttle:5,1');
+
     Route::middleware(['role:manager'])->group(function () {
         Route::get('/performance', [PerformanceMonitoringController::class, 'index'])->name('performance');
     });
@@ -101,18 +127,25 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             ->middleware('throttle:5,1');
         Route::get('/recovery-codes', [MfaController::class, 'recoveryCodes'])->name('recovery-codes');
         Route::get('/trusted-devices', [MfaController::class, 'trustedDevices'])->name('trusted-devices');
+        Route::post('/recovery-codes/regenerate', [MfaController::class, 'regenerateRecoveryCodes'])
+            ->middleware('throttle:5,1')
+            ->name('recovery-codes.regenerate');
         Route::delete('/trusted-devices/{deviceId}', [MfaController::class, 'removeDevice'])->name('trusted-devices.remove');
     });
 
-    Route::middleware(['role:manager'])->prefix('rates')->name('rates.')->group(function () {
+    Route::middleware(['role:manager,admin'])->prefix('rates')->name('rates.')->group(function () {
         Route::get('/', [RateController::class, 'index'])->name('index');
     });
 
     Route::post('/rates/override', [RateController::class, 'override'])->name('rates.override')->middleware('role:manager,admin');
 
+    Route::post('/rates/copy-previous', [RateController::class, 'copyPrevious'])->name('rates.copy-previous')->middleware('role:manager,admin');
+
     Route::prefix('transactions')->name('transactions.')->group(function () {
         Route::get('/', [TransactionController::class, 'index'])->name('index');
 
+        Route::get('/wizard', [TransactionWizardController::class, 'index'])->name('wizard')
+            ->middleware('role:teller,manager,admin');
         Route::get('/create', [TransactionController::class, 'create'])->name('create')
             ->middleware('mfa.verified');
         Route::post('/', [TransactionController::class, 'store'])->name('store')
@@ -179,8 +212,11 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
         Route::post('/{customer}/notes', [CustomerController::class, 'storeNote'])->name('notes.store');
         Route::middleware('role:compliance,admin')->group(function () {
-            Route::post('/{customer}/freeze', [CustomerController::class, 'freeze'])->name('customers.freeze');
-            Route::post('/{customer}/unfreeze', [CustomerController::class, 'unfreeze'])->name('customers.unfreeze');
+            Route::post('/{customer}/freeze', [CustomerController::class, 'freeze'])->name('freeze');
+            Route::post('/{customer}/unfreeze', [CustomerController::class, 'unfreeze'])->name('unfreeze');
+        });
+        Route::middleware('role:manager,admin')->group(function () {
+            Route::post('/{customer}/close', [CustomerController::class, 'close'])->name('close');
         });
     });
 
@@ -332,10 +368,18 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             Route::get('/{customerId}/status', [ScreeningController::class, 'status'])->name('status');
         });
 
+        Route::prefix('compliance/screening-matches')->name('compliance.screening.matches.')->group(function () {
+            Route::get('/', [ScreeningMatchController::class, 'index'])->name('index');
+            Route::get('/{resultId}', [ScreeningMatchController::class, 'show'])->name('show');
+            Route::post('/{resultId}/confirm', [ScreeningMatchController::class, 'confirm'])->name('confirm');
+            Route::post('/{resultId}/dismiss', [ScreeningMatchController::class, 'dismiss'])->name('dismiss');
+        });
+
         Route::prefix('compliance/findings')->name('compliance.findings.')->group(function () {
             Route::get('/', [FindingController::class, 'index'])->name('index');
             Route::get('/{id}', [FindingController::class, 'show'])->name('show');
             Route::post('/{id}/dismiss', [FindingController::class, 'dismiss'])->name('dismiss');
+            Route::post('/{id}/create-case', [FindingController::class, 'createCase'])->name('create-case');
         });
 
         // STR filings (pd-00 s22): list/detail/draft/submit/acknowledge/export
@@ -346,6 +390,16 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             Route::post('/from-case/{case}', [StrReportController::class, 'createFromCase'])->name('create-from-case');
             Route::patch('/{strReport}/submit', [StrReportController::class, 'submit'])->name('submit');
             Route::patch('/{strReport}/acknowledge', [StrReportController::class, 'acknowledge'])->name('acknowledge');
+        });
+
+        // EDD staff review (mirrors the Api/V1 EddController approve/reject
+        // logic; prefix avoids colliding with the signed customer portal at
+        // compliance/edd/*).
+        Route::prefix('compliance/edd-review')->name('compliance.edd-reviews.')->group(function () {
+            Route::get('/', [EddReviewController::class, 'index'])->name('index');
+            Route::get('/records/{eddRecord}', [EddReviewController::class, 'show'])->name('show');
+            Route::post('/records/{eddRecord}/approve', [EddReviewController::class, 'approve'])->name('approve');
+            Route::post('/records/{eddRecord}/reject', [EddReviewController::class, 'reject'])->name('reject');
         });
     });
 
@@ -454,6 +508,15 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
     });
 
     Route::middleware(['role:admin'])->prefix('branches')->name('branches.')->group(function () {
+        // Branch management CRUD (plan WS-C2) - wraps the same BranchService
+        // used by Api/V1/BranchController so both paths share one business rule set.
+        Route::get('/', [BranchController::class, 'index'])->name('index');
+        Route::get('/create', [BranchController::class, 'create'])->name('create');
+        Route::post('/', [BranchController::class, 'store'])->name('store');
+        Route::get('/{branch}/edit', [BranchController::class, 'edit'])->name('edit');
+        Route::put('/{branch}', [BranchController::class, 'update'])->name('update');
+        Route::post('/{branch}/deactivate', [BranchController::class, 'deactivate'])->name('deactivate');
+
         // Branch Closing Workflow
         Route::get('/{branch}/closing', [BranchClosingController::class, 'show'])
             ->name('closing.show');
@@ -464,6 +527,24 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/{branch}/closing/finalize', [BranchClosingController::class, 'finalize'])
             ->name('closing.finalize');
     });
+
+    // Currency management (plan WS-C1). Currencies are seeded during setup;
+    // this surface allows post-setup creation and soft-disabling. Disabling
+    // is guarded against open transactions and non-zero currency positions.
+    Route::middleware(['role:admin'])->prefix('system/currencies')->name('system.currencies.')->group(function () {
+        Route::get('/', [CurrencyController::class, 'index'])->name('index');
+        Route::get('/create', [CurrencyController::class, 'create'])->name('create');
+        Route::post('/', [CurrencyController::class, 'store'])->name('store');
+        Route::get('/{currency}/edit', [CurrencyController::class, 'edit'])->name('edit');
+        Route::put('/{currency}', [CurrencyController::class, 'update'])->name('update');
+        Route::post('/{currency}/disable', [CurrencyController::class, 'disable'])->name('disable');
+    });
+
+    // Read-only chart of accounts viewer (plan WS-C3). Registered outside the
+    // manager-gated accounting group so Compliance Officers can inspect the
+    // COA; balances come from LedgerService::getTrialBalance as of today.
+    Route::middleware('role:admin,compliance')->get('accounting/chart-of-accounts', [ChartOfAccountsController::class, 'index'])
+        ->name('accounting.chart-of-accounts.index');
 
     Route::middleware(['role:admin', 'test.dashboard'])->prefix('test-results')->name('test-results.')->group(function () {
         Route::get('/compare', [TestResultsController::class, 'compare'])->name('compare');
@@ -486,10 +567,19 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/{alert}/acknowledge', [SystemAlertController::class, 'acknowledge'])->name('acknowledge');
     });
 
+    // Audit log viewer. The route gate mirrors SystemLogPolicy, which grants
+    // viewAny/view to Admin and Compliance Officer roles.
+    Route::middleware('role:admin,compliance')->prefix('admin/audit-logs')->name('admin.audit-logs.')->group(function () {
+        Route::get('/', [AuditLogController::class, 'index'])->name('index');
+        Route::get('/{log}', [AuditLogController::class, 'show'])->name('show');
+    });
+
     // Notifications - the header bell. Any authenticated user manages only
     // their own in-app notifications; the unread-count endpoint feeds the
     // bell's live badge polling.
     Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/preferences', [NotificationPreferenceController::class, 'show'])->name('preferences');
+        Route::post('/preferences', [NotificationPreferenceController::class, 'update'])->name('preferences.update');
         Route::post('/read-all', [NotificationController::class, 'markAllRead'])->name('read-all');
         Route::post('/{notification}/read', [NotificationController::class, 'markRead'])->name('read');
         Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
@@ -509,6 +599,8 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/create', [ReportScheduleController::class, 'create'])->name('create');
         Route::post('/', [ReportScheduleController::class, 'store'])->name('store');
         Route::get('/{schedule}', [ReportScheduleController::class, 'show'])->name('show');
+        Route::post('/{schedule}/pause', [ReportScheduleController::class, 'pause'])->name('pause');
+        Route::post('/{schedule}/resume', [ReportScheduleController::class, 'resume'])->name('resume');
         Route::get('/{schedule}/edit', [ReportScheduleController::class, 'edit'])->name('edit');
         Route::put('/{schedule}', [ReportScheduleController::class, 'update'])->name('update');
         Route::delete('/{schedule}', [ReportScheduleController::class, 'destroy'])->name('destroy');
