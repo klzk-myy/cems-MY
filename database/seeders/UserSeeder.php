@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -46,7 +47,7 @@ class UserSeeder extends Seeder
                     'mfa_enabled' => false,
                     'is_active' => true,
                 ]);
-                $user->role = $userData['role'];
+                $user->role = UserRole::from($userData['role']);
                 $user->password_hash = Hash::make($userData['password']); // Directly set hashed password
                 $user->save();
             }
