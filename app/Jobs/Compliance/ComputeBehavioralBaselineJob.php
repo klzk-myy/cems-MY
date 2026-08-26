@@ -38,6 +38,7 @@ class ComputeBehavioralBaselineJob implements ShouldQueue
 
         $windowStart = now()->subDays(90);
 
+        /** @var object{txn_count:int, avg_size:?string}|null $aggregate */
         $aggregate = Transaction::where('customer_id', $customer->id)
             ->where('status', TransactionStatus::Completed->value)
             ->where('created_at', '>=', $windowStart)
@@ -56,12 +57,11 @@ class ComputeBehavioralBaselineJob implements ShouldQueue
             ->distinct()->pluck('currency_code')->values()->all();
 
         DB::transaction(function () use ($customer, $aggregate, $frequency, $currencies) {
-            $baseline = CustomerBehavioralBaseline::withTrashed()
-                ->where('customer_id', $customer->id)
+            $baseline = CustomerBehavioralBaseline::where('customer_id', $customer->id)
                 ->orderByDesc('baseline_version')
                 ->first();
 
-            $nextVersion = ($baseline?->baseline_version ?? 0) + 1;
+            $nextVersion = ($baseline !== null ? $baseline->baseline_version : 0) + 1;
 
             CustomerBehavioralBaseline::create([
                 'customer_id' => $customer->id,
