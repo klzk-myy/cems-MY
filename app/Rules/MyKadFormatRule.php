@@ -69,7 +69,7 @@ class MyKadFormatRule implements ValidationRule
             return;
         }
 
-        $maxDay = self::DAYS_IN_MONTH[$month] ?? 31;
+        $maxDay = self::DAYS_IN_MONTH[$month];
 
         if ($day > $maxDay) {
             $fail("MyKad ID contains invalid day for month {$month}.");
