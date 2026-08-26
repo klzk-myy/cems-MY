@@ -34,6 +34,12 @@ class CreateUser extends Command
         );
 
         // Validate role
+        if (! is_string($role)) {
+            $this->error('Invalid role provided.');
+
+            return 1;
+        }
+
         try {
             $roleEnum = UserRole::from($role);
         } catch (\ValueError) {
