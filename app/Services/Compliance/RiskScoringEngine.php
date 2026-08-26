@@ -35,6 +35,8 @@ class RiskScoringEngine
 
     protected RiskCalculationService $riskCalculation;
 
+    protected RiskScoreWriteBackService $writeBack;
+
     /**
      * Base score for all customers.
      */
@@ -50,10 +52,11 @@ class RiskScoringEngine
      */
     protected const GEO_REGIONAL = 10;
 
-    public function __construct(MathService $math, RiskCalculationService $riskCalculation)
+    public function __construct(MathService $math, RiskCalculationService $riskCalculation, ?RiskScoreWriteBackService $writeBack = null)
     {
         $this->math = $math;
         $this->riskCalculation = $riskCalculation;
+        $this->writeBack = $writeBack ?? app(RiskScoreWriteBackService::class);
     }
 
     /**
@@ -121,17 +124,31 @@ class RiskScoringEngine
                     'recalculation_trigger' => RecalculationTrigger::EventDriven,
                 ]);
 
+                $this->writeBack->apply($customer, $result['score'], 'event_driven');
+
                 return $existingProfile->fresh();
             }
 
-            return CustomerRiskProfile::createForCustomer($customerId, $result['score']);
+            $profile = CustomerRiskProfile::createForCustomer($customerId, $result['score']);
+
+            $this->writeBack->apply($customer, $result['score'], 'initial');
+
+            return $profile;
         });
     }
 
     public function recalculate(int $customerId, RecalculationTrigger $trigger = RecalculationTrigger::EventDriven): ?CustomerRiskProfile
     {
         return DB::transaction(function () use ($customerId, $trigger) {
+            $customer = Customer::find($customerId);
             $existingProfile = CustomerRiskProfile::where('customer_id', $customerId)->first();
+
+            // Locked profiles must not be overwritten by any entry point,
+            // matching the guard applied in recalculateForCustomer().
+            if ($existingProfile && $existingProfile->isLocked()) {
+                return $existingProfile;
+            }
+
             $result = $this->calculateScoreWithFactors($customerId);
 
             if ($existingProfile) {
@@ -161,7 +178,15 @@ class RiskScoringEngine
                     'recalculation_trigger' => $trigger,
                 ]);
 
+                if ($customer) {
+                    $this->writeBack->apply($customer, $result['score'], $trigger->value);
+                }
+
                 return $existingProfile->fresh();
+            }
+
+            if ($customer) {
+                $this->writeBack->apply($customer, $result['score'], 'initial');
             }
 
             return CustomerRiskProfile::createForCustomer($customerId, $result['score']);
