@@ -119,7 +119,7 @@ class StockCashController extends Controller
                 $till,
                 $validated['currency_code'],
                 (string) $validated['opening_balance'],
-                auth()->id(),
+                (int) auth()->id(),
                 $validated['notes'] ?? null
             );
         } catch (\RuntimeException $e) {
@@ -133,7 +133,7 @@ class StockCashController extends Controller
         // Log till opening
         $this->auditService->log(
             'till_opened',
-            auth()->id(),
+            (int) auth()->id(),
             'TillBalance',
             $tillBalance->id,
             [],
@@ -172,7 +172,7 @@ class StockCashController extends Controller
             $tillBalance = $this->tillBalanceManager->closeTill(
                 $tillBalance,
                 (string) $validated['closing_balance'],
-                auth()->id(),
+                (int) auth()->id(),
                 $validated['difference_notes'] ?? null
             );
         } catch (\RuntimeException $e) {
@@ -186,7 +186,7 @@ class StockCashController extends Controller
         // Log till closing
         $this->auditService->log(
             'till_closed',
-            auth()->id(),
+            (int) auth()->id(),
             'TillBalance',
             $tillBalance->id,
             [
