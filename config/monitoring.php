@@ -16,7 +16,7 @@ return [
     |
     */
     'alert_recipients' => array_values(array_filter(
-        explode(',', env('SYSTEM_ALERT_RECIPIENTS', '')),
+        explode(',', (string) env('SYSTEM_ALERT_RECIPIENTS', '')),
         fn ($recipient) => trim($recipient) !== ''
     )),
 ];
