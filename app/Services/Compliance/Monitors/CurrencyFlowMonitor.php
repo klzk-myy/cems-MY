@@ -89,7 +89,7 @@ class CurrencyFlowMonitor extends BaseMonitor
             subjectType: 'Customer',
             subjectId: $customerId,
             details: [
-                'customer_name' => $customer?->full_name ?? 'Unknown',
+                'customer_name' => $customer->full_name ?? 'Unknown',
                 'round_trip_count' => count($roundTripPatterns),
                 'patterns' => $roundTripPatterns,
                 'recommendation' => 'Review currency flow patterns for potential layering',
