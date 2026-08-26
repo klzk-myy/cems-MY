@@ -22,6 +22,7 @@ class TestTransactionScenarios extends Command
 
     protected $description = 'Execute CDD/Risk test scenarios';
 
+    /** @var list<array<string, mixed>> */
     protected $results = [];
 
     protected $customers = [];
@@ -67,7 +68,7 @@ class TestTransactionScenarios extends Command
     protected function cleanTestData(): void
     {
         $this->info('Cleaning up test data...');
-        Transaction::whereIn('reference_no', array_column($this->results ?? [], 'reference_no'))->delete();
+        Transaction::whereIn('id', array_column($this->results ?? [], 'transaction_id'))->delete();
         Customer::where('email', 'LIKE', '%@test-cdd%')->delete();
         $this->info('Cleanup complete.');
     }
@@ -377,7 +378,6 @@ class TestTransactionScenarios extends Command
             'rate' => $scenario['rate'],
             'amount_local' => $myrAmount,
             'myr_at_closing' => $myrAmount,
-            'reference_no' => 'TXN-'.$scenario['id'].'-'.uniqid(),
             'idempotency_key' => uniqid(),
             'cdd_level' => $scenario['expected_cdd'],
         ]);
@@ -388,7 +388,8 @@ class TestTransactionScenarios extends Command
         // Store result
         $this->results[] = [
             'id' => $scenario['id'],
-            'reference_no' => $transaction->reference_no,
+            'transaction_id' => $transaction->id,
+            'reference_no' => $transaction->reference,
             'customer' => $scenario['customer_name'],
             'branch' => $scenario['branch'],
             'type' => $scenario['type'],
