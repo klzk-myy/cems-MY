@@ -4,7 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string $code_hash
+ * @property bool $used
+ * @property Carbon|null $used_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class MfaRecoveryCode extends BaseModel
 {
     use HasFactory;
@@ -27,6 +37,9 @@ class MfaRecoveryCode extends BaseModel
 
     /**
      * Get the user that owns the recovery code.
+     */
+    /**
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
