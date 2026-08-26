@@ -323,7 +323,7 @@ class MfaService
             ],
             [
                 'device_name' => $deviceName,
-                'ip_address' => request()?->ip(),
+                'ip_address' => request()->ip(),
                 'expires_at' => now()->addDays($days),
                 'last_used_at' => now(),
             ]
@@ -471,7 +471,7 @@ class MfaService
         }
 
         // Pad to multiple of 5
-        $binary = str_pad($binary, ceil(strlen($binary) / 5) * 5, '0', STR_PAD_RIGHT);
+        $binary = str_pad($binary, (int) (ceil(strlen($binary) / 5) * 5), '0', STR_PAD_RIGHT);
 
         // Split into 5-bit groups
         foreach (str_split($binary, 5) as $chunk) {
@@ -480,7 +480,7 @@ class MfaService
         }
 
         // Pad with '=' to make output multiple of 8
-        $output = str_pad($output, ceil(strlen($output) / 8) * 8, '=', STR_PAD_RIGHT);
+        $output = str_pad($output, (int) (ceil(strlen($output) / 8) * 8), '=', STR_PAD_RIGHT);
 
         return $output;
     }
@@ -503,12 +503,12 @@ class MfaService
         }
 
         // Pad to multiple of 8
-        $binary = str_pad($binary, ceil(strlen($binary) / 8) * 8, '0', STR_PAD_RIGHT);
+        $binary = str_pad($binary, (int) (ceil(strlen($binary) / 8) * 8), '0', STR_PAD_RIGHT);
 
         // Split into 8-bit groups
         $output = '';
         foreach (str_split($binary, 8) as $chunk) {
-            $output .= chr(bindec($chunk));
+            $output .= chr((int) bindec($chunk));
         }
 
         return $output;
