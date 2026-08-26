@@ -8,7 +8,9 @@ use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Models\User;
 use App\Notifications\ConfirmationRequiredNotification;
+use App\Notifications\LargeTransactionNotification;
 use App\Services\AuditService;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Support\Facades\DB;
@@ -39,13 +41,16 @@ class TransactionConfirmationService
      * Request confirmation for a large transaction.
      *
      * Creates a new TransactionConfirmation record if one doesn't already exist
-     * in pending or confirmed status. Returns the confirmation record.
+     * in pending or confirmed status, then notifies branch managers and
+     * escalates to compliance officers. Notifications fire only when a NEW
+     * confirmation is created - re-opening the confirmation page for an
+     * existing request never re-notifies.
      *
      * @throws \Exception If creation fails
      */
     public function requestConfirmation(Transaction $transaction, int $userId): TransactionConfirmation
     {
-        return DB::transaction(function () use ($transaction, $userId) {
+        [$confirmation, $created] = DB::transaction(function () use ($transaction, $userId) {
             // Lock the transaction row to serialise concurrent confirmation requests
             $lockedTransaction = Transaction::where('id', $transaction->id)
                 ->lockForUpdate()
@@ -60,7 +65,7 @@ class TransactionConfirmationService
                 ->first();
 
             if ($existing) {
-                return $existing;
+                return [$existing, false];
             }
 
             // Create new confirmation request
@@ -84,8 +89,14 @@ class TransactionConfirmationService
                 ],
             ], 'INFO');
 
-            return $confirmation;
+            return [$confirmation, true];
         });
+
+        if ($created) {
+            $this->notifyManager($confirmation);
+        }
+
+        return $confirmation;
     }
 
     /**
@@ -172,6 +183,9 @@ class TransactionConfirmationService
     /**
      * Handle confirmation action.
      */
+    /**
+     * @return array{success: bool, message: string}
+     */
     protected function handleConfirm(TransactionConfirmation $confirmation, int $userId, ?string $notes): array
     {
         $confirmation->markConfirmed($userId, $notes);
@@ -197,6 +211,9 @@ class TransactionConfirmationService
 
     /**
      * Handle rejection action.
+     */
+    /**
+     * @return array{success: bool, message: string}
      */
     protected function handleReject(TransactionConfirmation $confirmation, int $userId, ?string $notes): array
     {
@@ -300,6 +317,40 @@ class TransactionConfirmationService
                     'error' => $e->getMessage(),
                 ]);
             }
+        }
+
+        $this->notifyComplianceOfLargeTransaction($confirmation, $transaction);
+    }
+
+    /**
+     * Large-value transactions entering the confirmation flow are escalated to
+     * compliance officers for oversight (BNM large-transaction monitoring).
+     */
+    protected function notifyComplianceOfLargeTransaction(TransactionConfirmation $confirmation, Transaction $transaction): void
+    {
+        try {
+            $officers = app(AlertTriageService::class)->getAvailableOfficers();
+
+            foreach ($officers as $officer) {
+                if ($officer->id === auth()->id()) {
+                    continue;
+                }
+
+                try {
+                    $officer->notify(new LargeTransactionNotification($transaction, $confirmation));
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to notify compliance of large transaction', [
+                        'officer_id' => $officer->id,
+                        'transaction_id' => $transaction->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to resolve compliance officers for large transaction', [
+                'transaction_id' => $transaction->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
