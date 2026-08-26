@@ -80,7 +80,7 @@ class StructuringMonitor extends BaseMonitor
                 subjectType: 'Customer',
                 subjectId: $customerId,
                 details: [
-                    'customer_name' => $customer?->full_name ?? 'Unknown',
+                    'customer_name' => $customer->full_name ?? 'Unknown',
                     'transaction_count' => $transactionCount,
                     'total_amount' => $totalAmount,
                     'threshold' => $this->subThreshold,
