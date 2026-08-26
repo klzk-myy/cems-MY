@@ -1,17 +1,21 @@
 includes:
     - vendor/larastan/larastan/extension.neon
+    - vendor/phpstan/phpstan-mockery/extension.neon
     - phpstan-baseline.neon
 
 parameters:
-    level: 5
+    level: 7
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
     paths:
         - app
         - config
         - database
         - routes
+        - tests
     excludePaths:
         - vendor
         - storage
         - bootstrap/cache
         - node_modules
-        - .tmp (?)
+        - .tmp
