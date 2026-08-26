@@ -191,8 +191,8 @@ class StrReportService
             ->each(function (FlaggedTransaction $flag) use (&$total): void {
                 $amount = $flag->transaction?->amount_local;
 
-                if ($amount !== null && bccomp((string) $amount, '0', 4) > 0) {
-                    $total = bcadd($total, (string) $amount, 4);
+                if ($amount !== null && is_numeric($amount) && bccomp($amount, '0', 4) > 0) {
+                    $total = bcadd($total, $amount, 4);
                 }
             });
 
@@ -204,6 +204,10 @@ class StrReportService
      */
     public function meetsThreshold(string $amount): bool
     {
+        if (! is_numeric($amount)) {
+            throw new \InvalidArgumentException('STR aggregate amount must be numeric.');
+        }
+
         return bccomp($amount, self::THRESHOLD, 4) >= 0;
     }
 
