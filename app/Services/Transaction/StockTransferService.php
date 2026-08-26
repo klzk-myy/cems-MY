@@ -9,6 +9,7 @@ use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\StockTransfer;
+use App\Models\StockTransferItem;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
@@ -107,11 +108,11 @@ class StockTransferService
     public function approveByBranchManager(StockTransfer $transfer): void
     {
         if (! $this->requester->isManager() && ! $this->requester->isAdmin()) {
-            throw new TransactionApprovalException('Only managers can approve transfers');
+            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can approve transfers');
         }
 
         if (! $transfer->isPending()) {
-            throw new TransactionApprovalException('Transfer is not in requested status');
+            throw new TransactionApprovalException((int) $transfer->id, 'Transfer is not in requested status');
         }
 
         $transfer->approveByBranchManager($this->requester);
@@ -120,11 +121,11 @@ class StockTransferService
     public function approveByHQ(StockTransfer $transfer): void
     {
         if (! $this->requester->isAdmin()) {
-            throw new TransactionApprovalException('Only HQ (Admin) can approve transfers');
+            throw new TransactionApprovalException((int) $transfer->id, 'Only HQ (Admin) can approve transfers');
         }
 
         if ($transfer->status !== StockTransferStatus::BranchManagerApproved) {
-            throw new TransactionApprovalException('Transfer must be BM-approved before HQ approval');
+            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be BM-approved before HQ approval');
         }
 
         $transfer->approveByHQ($this->requester);
@@ -133,11 +134,11 @@ class StockTransferService
     public function dispatch(StockTransfer $transfer): void
     {
         if (! $this->requester->isAdmin()) {
-            throw new TransactionApprovalException('Only admin can dispatch transfers');
+            throw new TransactionApprovalException((int) $transfer->id, 'Only admin can dispatch transfers');
         }
 
         if ($transfer->status !== StockTransferStatus::HqApproved) {
-            throw new TransactionApprovalException('Transfer must be HQ-approved before dispatch');
+            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be HQ-approved before dispatch');
         }
 
         // Outbound stock movement: the SOURCE branch gives up the full
@@ -163,15 +164,16 @@ class StockTransferService
     public function receiveItems(StockTransfer $transfer, array $items): void
     {
         if (! $this->requester->isAdmin()) {
-            throw new TransactionApprovalException('Only admin can receive items');
+            throw new TransactionApprovalException((int) $transfer->id, 'Only admin can receive items');
         }
 
         if ($transfer->status !== StockTransferStatus::InTransit) {
-            throw new TransactionApprovalException('Transfer must be in transit to receive items');
+            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be in transit to receive items');
         }
 
         DB::transaction(function () use ($transfer, $items) {
             $itemIds = collect($items)->pluck('id');
+            /** @var Collection<(int|string), StockTransferItem> $existingItems */
             $existingItems = $transfer->items()
                 ->whereIn('id', $itemIds)
                 ->get()
@@ -209,7 +211,7 @@ class StockTransferService
 
                     $item->update([
                         'quantity_received' => $itemData['quantity_received'],
-                        'quantity_in_transit' => $this->mathService->subtract($item->quantity, $itemData['quantity_received']),
+                        'quantity_in_transit' => $this->mathService->subtract((string) $item->quantity, (string) $itemData['quantity_received']),
                     ]);
 
                     // Destination branch position grows by what actually arrived.
@@ -233,13 +235,12 @@ class StockTransferService
                             if ($this->mathService->compare($variancePercent, '5') > 0) {
                                 $this->auditService->logStockTransferEvent(
                                     'stock_transfer_variance_exceeded',
-                                    $transfer->id,
+                                    (int) $transfer->id,
                                     ['new_values' => [
                                         'item_id' => $item->id,
                                         'currency' => $item->currency_code,
                                         'variance_percent' => $variancePercent,
                                     ]],
-                                    'WARNING'
                                 );
                             }
                         }
@@ -260,11 +261,11 @@ class StockTransferService
     public function complete(StockTransfer $transfer): void
     {
         if (! $this->requester->isAdmin()) {
-            throw new TransactionApprovalException('Only admin can complete transfers');
+            throw new TransactionApprovalException((int) $transfer->id, 'Only admin can complete transfers');
         }
 
         if (! in_array($transfer->status, [StockTransferStatus::InTransit, StockTransferStatus::PartiallyReceived])) {
-            throw new TransactionApprovalException('Transfer must be in transit or partially received to complete');
+            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be in transit or partially received to complete');
         }
 
         // Finalise the inbound movement: whatever was dispatched but not yet
@@ -293,15 +294,15 @@ class StockTransferService
     public function cancel(StockTransfer $transfer, string $reason): void
     {
         if (! $this->requester->isManager() && ! $this->requester->isAdmin()) {
-            throw new TransactionApprovalException('Only managers can cancel transfers');
+            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can cancel transfers');
         }
 
         if ($transfer->isCompleted()) {
-            throw new TransactionApprovalException('Cannot cancel a completed transfer');
+            throw new TransactionApprovalException((int) $transfer->id, 'Cannot cancel a completed transfer');
         }
 
         if ($transfer->status === StockTransferStatus::Cancelled) {
-            throw new TransactionApprovalException('Transfer is already cancelled');
+            throw new TransactionApprovalException((int) $transfer->id, 'Transfer is already cancelled');
         }
 
         $transfer->cancel($reason);
@@ -310,7 +311,7 @@ class StockTransferService
     public function reject(StockTransfer $transfer, string $reason = ''): void
     {
         if (! $this->requester->isAdmin()) {
-            throw new TransactionApprovalException('Only admin can reject transfers');
+            throw new TransactionApprovalException((int) $transfer->id, 'Only admin can reject transfers');
         }
 
         if (! in_array($transfer->status, [
@@ -319,12 +320,16 @@ class StockTransferService
             StockTransferStatus::HqApproved,
             StockTransferStatus::InTransit,
         ])) {
-            throw new TransactionApprovalException('Transfer cannot be rejected in current state');
+            throw new TransactionApprovalException((int) $transfer->id, 'Transfer cannot be rejected in current state');
         }
 
         DB::transaction(function () use ($transfer, $reason) {
             $transfer->update(['status' => StockTransferStatus::Rejected]);
-            $transfer->addHistoryEntry(StockTransferStatus::Rejected, $this->requester->getId(), $reason);
+            $this->auditService->logStockTransferEvent(
+                'stock_transfer_rejected',
+                (int) $transfer->id,
+                ['reason' => $reason],
+            );
         });
     }
 
