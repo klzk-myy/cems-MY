@@ -16,6 +16,7 @@ use App\Models\ReportGenerated;
 use App\Models\SystemLog;
 use App\ValueObjects\Quarter;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -52,6 +53,7 @@ class ComplianceReportingService
      */
     protected function getCaseSummary(): array
     {
+        /** @var Collection<int, object{status:ComplianceCaseStatus|string, count:int}> $cases */
         $cases = ComplianceCase::query()
             ->select('status', DB::raw('COUNT(*) as count'))
             ->groupBy('status')
@@ -111,6 +113,7 @@ class ComplianceReportingService
         // Exclude by enum values: FindingStatus::CaseCreated is stored as
         // 'Case_Created' (underscored), so a literal 'CaseCreated' here never
         // matched and case-created findings were counted as pending.
+        /** @var Collection<int, object{severity:FindingSeverity|string, count:int}> $findings */
         $findings = ComplianceFinding::query()
             ->where('generated_at', '>=', $sevenDaysAgo)
             ->whereNotIn('status', [FindingStatus::Dismissed->value, FindingStatus::CaseCreated->value])
