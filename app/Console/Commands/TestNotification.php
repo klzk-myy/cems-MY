@@ -120,7 +120,7 @@ class TestNotification extends Command
         return $result;
     }
 
-    protected function createNotification(string $type): object
+    protected function createNotification(string $type): TransactionFlaggedNotification|ComplianceCaseAssignedNotification|LargeTransactionNotification|SanctionsMatchNotification|SystemHealthAlertNotification
     {
         return match ($type) {
             'transaction_flagged' => $this->createTransactionFlaggedNotification(),
