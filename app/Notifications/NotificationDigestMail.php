@@ -32,4 +32,27 @@ class NotificationDigestMail extends Mailable
             view: 'emails.notification-digest',
         );
     }
+
+    /**
+     * Digest recipients are stored keyed by email address so the bulk sender
+     * can audit exactly which addresses received each digest.
+     *
+     * @param  array<string, string|null>|string  $address
+     * @param  string|null  $name
+     */
+    public function to($address, $name = null)
+    {
+        $this->to = is_array($address) ? $address : [$address => $name];
+
+        return $this;
+    }
+
+    protected function buildRecipients($message)
+    {
+        foreach ($this->to as $email => $name) {
+            $message->to($email, $name);
+        }
+
+        return $this;
+    }
 }
