@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\Domain\InvalidRateException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\EnsuresManagerOrAdmin;
 use App\Http\Controllers\Controller;
@@ -60,7 +61,7 @@ class RateController extends Controller
         $user = Auth::user();
 
         if ($response = $this->ensureManagerOrAdminResponse(
-            fn () => $this->errorResponse('Only managers and admins can fetch rates from API', [], 403)
+            fn (): JsonResponse => $this->errorResponse('Only managers and admins can fetch rates from API', [], 403)
         )) {
             return $response;
         }
@@ -96,14 +97,19 @@ class RateController extends Controller
     {
         $validated = $request->validated();
 
-        $result = $this->rateService->overrideRate(
-            $currencyCode,
-            $validated['rate_buy'],
-            $validated['rate_sell'],
-            Auth::user(),
-            $validated['reason'] ?? null,
-            $validated['branch_id'] ?? null
-        );
+        try {
+            $result = $this->rateService->overrideRate(
+                $currencyCode,
+                $validated['rate_buy'],
+                $validated['rate_sell'],
+                Auth::user(),
+                $validated['reason'] ?? null,
+                $validated['branch_id'] ?? null,
+                $validated['effective_date'] ?? null
+            );
+        } catch (InvalidRateException $e) {
+            return $this->errorResponse($e->getMessage(), [], 422);
+        }
 
         return $this->successResponse($result, $result->message);
     }
@@ -117,7 +123,7 @@ class RateController extends Controller
         $user = Auth::user();
 
         if ($response = $this->ensureManagerOrAdminResponse(
-            fn () => $this->errorResponse('Only managers and admins can copy previous rates', [], 403)
+            fn (): JsonResponse => $this->errorResponse('Only managers and admins can copy previous rates', [], 403)
         )) {
             return $response;
         }
