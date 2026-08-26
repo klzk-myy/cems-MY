@@ -25,7 +25,7 @@ class ComplianceCaseDocumentFactory extends Factory
             'case_id' => ComplianceCase::factory(),
             'file_name' => 'document_'.++$caseIdCounter.'.pdf',
             'file_path' => 'compliance/documents/'.$this->faker->unique()->uuid.'.pdf',
-            'file_type' => $this->faker->mimeType('pdf'),
+            'file_type' => $this->faker->mimeType(),
             'uploaded_by' => User::factory(),
             'uploaded_at' => $this->faker->dateTimeThisMonth(),
             'verified_at' => $this->faker->optional()->dateTimeThisMonth(),
