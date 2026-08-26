@@ -107,11 +107,19 @@ class ClearStuckQueues extends Command
         // from the head, so before each removal re-read the payload at the
         // adjusted index and only delete when it is still the exact job that
         // was identified as stuck. Otherwise skip with a warning.
+        $client = Redis::connection()->client();
+
+        if (! $client instanceof \Redis) {
+            $this->error('queue:clear-stuck requires the phpredis client.');
+
+            return 1;
+        }
+
         $removed = 0;
         $skipped = 0;
         foreach ($stuckJobs as $stuckJob) {
             // Get the actual payload at the adjusted position
-            $jobPayload = Redis::lindex($redisKey, $stuckJob['index'] - $removed);
+            $jobPayload = $client->lindex($redisKey, (int) $stuckJob['index'] - $removed);
 
             if ($jobPayload === false || $jobPayload === null) {
                 $this->warn("Skipping job [{$stuckJob['id']}] - no longer present in queue.");
@@ -128,7 +136,7 @@ class ClearStuckQueues extends Command
             }
 
             // Count of 1 removes only this occurrence, never duplicates.
-            $result = Redis::lrem($redisKey, 1, $jobPayload);
+            $result = $client->lrem($redisKey, $jobPayload, 1);
             if ($result > 0) {
                 $removed++;
             } else {
