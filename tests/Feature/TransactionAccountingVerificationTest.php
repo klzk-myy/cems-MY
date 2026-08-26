@@ -29,6 +29,8 @@ use App\Services\Branch\CounterOpeningWorkflowService;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
+use App\Services\System\CacheInvalidationService;
+use App\Services\System\CacheTagsService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionService;
@@ -77,9 +79,9 @@ class TransactionAccountingVerificationTest extends TestCase
         $auditService = resolve(AuditService::class);
         $complianceService = resolve(ComplianceService::class);
 
-        $this->accountingService = new AccountingService($this->mathService, $auditService);
+        $this->accountingService = new AccountingService($this->mathService, $auditService, new CacheTagsService);
         $this->ledgerService = new LedgerService($this->mathService, $this->accountingService);
-        $this->positionService = new CurrencyPositionService($this->mathService, new CurrencyPositionLockService($this->mathService));
+        $this->positionService = new CurrencyPositionService($this->mathService, new CurrencyPositionLockService($this->mathService), new CacheInvalidationService);
 
         $this->transactionService = resolve(TransactionService::class);
 
@@ -119,7 +121,7 @@ class TransactionAccountingVerificationTest extends TestCase
         $auditService = resolve(AuditService::class);
         $complianceService = resolve(ComplianceService::class);
 
-        $branchPoolService = new BranchPoolService($mathService);
+        $branchPoolService = new BranchPoolService(new AuditService, $mathService);
         $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService);
         $counterService = new CounterService($tellerAllocationService, $thresholdService);
         $auditService = resolve(AuditService::class);
