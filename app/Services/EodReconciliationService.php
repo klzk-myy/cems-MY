@@ -105,7 +105,7 @@ class EodReconciliationService
         return [
             'date' => $date->toDateString(),
             'branch_id' => $branchId,
-            'branch_name' => $branchId ? Branch::find($branchId)?->name : 'All Branches',
+            'branch_name' => $branchId ? Branch::find($branchId)->name : 'All Branches',
             'generated_at' => now()->toIso8601String(),
             'summary' => [
                 'total_counters' => $counters->count(),
@@ -136,6 +136,8 @@ class EodReconciliationService
 
     /**
      * Build the base query for reconcilable transactions for a counter on a date.
+     *
+     * @return Builder<Transaction>
      */
     private function reconcilableTransactionsQuery(int $counterId, Carbon $date): Builder
     {
@@ -151,7 +153,7 @@ class EodReconciliationService
      * Generate per-counter reconciliation details.
      *
      * @param  int  $counterId  Counter ID
-     * @param  DateTime  $date  Reconciliation date
+     * @param  Carbon  $date  Reconciliation date
      * @return array Counter reconciliation details
      */
     public function generateCounterReconciliation(int $counterId, Carbon $date): array
@@ -250,15 +252,15 @@ class EodReconciliationService
                 'closed_at' => $session->closed_at?->toIso8601String(),
                 'opened_by' => $session->openedByUser ? [
                     'id' => $session->openedByUser->id,
-                    'name' => $session->openedByUser->name,
+                    'name' => $session->openedByUser->username,
                 ] : null,
                 'closed_by' => $session->closedByUser ? [
                     'id' => $session->closedByUser->id,
-                    'name' => $session->closedByUser->name,
+                    'name' => $session->closedByUser->username,
                 ] : null,
                 'current_user' => $session->user ? [
                     'id' => $session->user->id,
-                    'name' => $session->user->name,
+                    'name' => $session->user->username,
                 ] : null,
             ],
             'opening_float' => $openingFloat,
@@ -286,9 +288,9 @@ class EodReconciliationService
             ],
             'handover_history' => $handovers->map(fn ($h) => [
                 'id' => $h->id,
-                'from_user' => $h->fromUser ? ['id' => $h->fromUser->id, 'name' => $h->fromUser->name] : null,
-                'to_user' => $h->toUser ? ['id' => $h->toUser->id, 'name' => $h->toUser->name] : null,
-                'supervisor' => $h->supervisor ? ['id' => $h->supervisor->id, 'name' => $h->supervisor->name] : null,
+                'from_user' => $h->fromUser ? ['id' => $h->fromUser->id, 'name' => $h->fromUser->username] : null,
+                'to_user' => $h->toUser ? ['id' => $h->toUser->id, 'name' => $h->toUser->username] : null,
+                'supervisor' => $h->supervisor ? ['id' => $h->supervisor->id, 'name' => $h->supervisor->username] : null,
                 'handover_time' => $h->handover_time?->toIso8601String(),
                 'variance_myr' => $h->variance_myr,
                 'physical_count_verified' => $h->physical_count_verified,
@@ -300,7 +302,7 @@ class EodReconciliationService
      * Calculate variance between expected and actual closing float.
      *
      * @param  int  $counterId  Counter ID
-     * @param  DateTime  $date  Reconciliation date
+     * @param  Carbon  $date  Reconciliation date
      * @return string Variance amount (can be negative)
      */
     public function calculateVariance(int $counterId, Carbon $date): string
@@ -341,7 +343,7 @@ class EodReconciliationService
     /**
      * Generate formal reconciliation report with all details.
      *
-     * @param  DateTime  $date  Reconciliation date
+     * @param  Carbon  $date  Reconciliation date
      * @param  int|null  $branchId  Optional branch filter
      * @param  int|null  $counterId  Optional specific counter
      * @return array Formal reconciliation report
@@ -360,7 +362,7 @@ class EodReconciliationService
         $report['report_metadata'] = [
             'generated_at' => now()->toIso8601String(),
             'report_date' => $date->toDateString(),
-            'generated_by' => auth()->user()?->name ?? 'System',
+            'generated_by' => auth()->user()?->username ?? 'System',
             'branch_filter' => $branchId,
             'counter_filter' => $counterId,
             'version' => '1.0',
@@ -376,7 +378,7 @@ class EodReconciliationService
      * Get currency breakdown for a counter on a given date.
      *
      * @param  int  $counterId  Counter ID
-     * @param  DateTime  $date  Reconciliation date
+     * @param  Carbon  $date  Reconciliation date
      * @return array Currency breakdown
      */
     private function getCurrencyBreakdown(int $counterId, Carbon $date): array
@@ -391,7 +393,7 @@ class EodReconciliationService
         return $tillBalances->map(function ($balance) {
             return [
                 'currency_code' => $balance->currency_code,
-                'currency_name' => $balance->currency?->name ?? $balance->currency_code,
+                'currency_name' => $balance->currency->name ?? $balance->currency_code,
                 'opening_balance' => $balance->opening_balance,
                 'closing_balance' => $balance->closing_balance,
                 'variance' => $balance->variance,
@@ -427,13 +429,13 @@ class EodReconciliationService
     private function determineVarianceStatus(array $report): array
     {
         $variance = $report['variance'] ?? $report['totals']['variance'] ?? '0';
-        $absVariance = BcmathHelper::abs($variance);
+        $absVariance = BcmathHelper::abs((string) $variance);
 
         $status = 'ok';
         $severity = 'none';
 
-        $redThreshold = $this->thresholdService->get('variance', 'red', '500.00');
-        $yellowThreshold = $this->thresholdService->get('variance', 'yellow', '100.00');
+        $redThreshold = $this->resolveVarianceThreshold('red', '500.00');
+        $yellowThreshold = $this->resolveVarianceThreshold('yellow', '100.00');
 
         if (BcmathHelper::gt($absVariance, $redThreshold)) {
             $status = 'critical';
@@ -497,7 +499,7 @@ class EodReconciliationService
                     'branch_id' => $tx->branch_id,
                     'branch_name' => $tx->branch?->name,
                     'user_id' => $tx->user_id,
-                    'user_name' => $tx->user?->name,
+                    'user_name' => $tx->user?->username,
                     'approved_at' => $tx->approved_at?->toIso8601String(),
                     'approved_by' => $tx->approved_by,
                     'journal_entry_id' => $tx->journal_entry_id,
@@ -523,5 +525,19 @@ class EodReconciliationService
             })
             ->whereNull('journal_entry_id')
             ->count();
+    }
+
+    /**
+     * Resolve a variance threshold as a numeric string for bcmath helpers.
+     */
+    private function resolveVarianceThreshold(string $key, string $fallback): string
+    {
+        $value = $this->thresholdService->get('variance', $key, $fallback);
+
+        if (! is_numeric($value)) {
+            throw new \InvalidArgumentException("Configured variance {$key} threshold must be numeric.");
+        }
+
+        return (string) $value;
     }
 }
