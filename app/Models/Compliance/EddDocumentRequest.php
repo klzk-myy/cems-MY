@@ -10,7 +10,22 @@ use App\Models\Traits\HasStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $edd_record_id
+ * @property string $document_type
+ * @property EddDocumentStatus $status
+ * @property string|null $file_path
+ * @property string|null $rejection_reason
+ * @property Carbon|null $uploaded_at
+ * @property Carbon|null $verified_at
+ * @property int|null $verified_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class EddDocumentRequest extends BaseModel
 {
     use HasFactory;
@@ -61,11 +76,17 @@ class EddDocumentRequest extends BaseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<EnhancedDiligenceRecord, $this>
+     */
     public function eddRecord(): BelongsTo
     {
         return $this->belongsTo(EnhancedDiligenceRecord::class, 'edd_record_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function verifier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
@@ -74,6 +95,9 @@ class EddDocumentRequest extends BaseModel
     /**
      * The customer under review, reached through the parent EDD record
      * (edd_document_requests has no customer_id column of its own).
+     */
+    /**
+     * @return HasOneThrough<Customer, EnhancedDiligenceRecord, $this>
      */
     public function customer()
     {
