@@ -312,7 +312,9 @@ class QueryOptimizerService
             if ($method->class === get_class($model) && $method->isPublic()) {
                 $returnType = $method->getReturnType();
 
-                if ($returnType && str_contains($returnType->getName(), 'Illuminate\Database\Eloquent\Relations')) {
+                if ($returnType instanceof \ReflectionNamedType
+                    && str_contains($returnType->getName(), 'Illuminate\Database\Eloquent\Relations')
+                ) {
                     // This is a relation method
                     $relationName = $method->getName();
 
