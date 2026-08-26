@@ -12,7 +12,7 @@ class TransactionWizardStep2Request extends AuthorizedFormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->role->canCreateTransactions();
+        return $this->user()->role->canCreateTransaction();
     }
 
     public function rules(): array
