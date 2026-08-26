@@ -55,7 +55,15 @@ class MonitorCheckCommand extends Command
         $format = $this->option('output');
 
         if ($format === 'json') {
-            $this->line(json_encode($results, JSON_PRETTY_PRINT));
+            $encoded = json_encode($results, JSON_PRETTY_PRINT);
+
+            if ($encoded === false) {
+                $this->error('Failed to encode health check results as JSON.');
+
+                return;
+            }
+
+            $this->line($encoded);
 
             return;
         }
