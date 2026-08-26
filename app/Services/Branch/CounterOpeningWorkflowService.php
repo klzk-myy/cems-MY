@@ -27,7 +27,7 @@ class CounterOpeningWorkflowService
     {
         $branch = $teller->branch;
 
-        if (! $branch) {
+        if (! $branch instanceof Branch) {
             throw new TellerBranchRequiredException;
         }
 
