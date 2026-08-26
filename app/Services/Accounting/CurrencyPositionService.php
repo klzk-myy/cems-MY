@@ -145,6 +145,49 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         return $position;
     }
 
+    /**
+     * Reverse the position impact of a transaction (release/cancellation).
+     *
+     * Sign convention mirrors updatePosition: a Buy added amount_foreign to
+     * the position, so reversing it subtracts the same amount; a Sell removed
+     * it, so reversing it adds it back. The average cost basis is intentionally
+     * left untouched, matching updatePosition's behaviour on sells.
+     */
+    public function reversePositions(Transaction $transaction): void
+    {
+        DB::transaction(function () use ($transaction) {
+            $position = $this->lockService->findForUpdate(
+                (string) $transaction->branch_id,
+                $transaction->currency_code
+            );
+
+            if ($position === null) {
+                return;
+            }
+
+            $direction = $transaction->type === TransactionType::Buy ? 'subtract' : 'add';
+            $position = $this->lockService->adjust($position, (string) $transaction->amount_foreign, $direction);
+
+            $newBalance = $position->quantity;
+            $roundedAvgCost = $this->mathService->round($position->average_cost, $this->positionPrecision);
+            $roundedRate = $this->mathService->round($position->current_rate ?? $position->average_cost, $this->positionPrecision);
+
+            $position->update([
+                'unrealized_gain_loss' => $this->mathService->round(
+                    $this->mathService->calculateRevaluationPnl($newBalance, $roundedAvgCost, $roundedRate),
+                    $this->positionPrecision
+                ),
+                'last_revalued_at' => now(),
+            ]);
+        });
+
+        // Invalidate cache for available balance
+        $this->cacheInvalidationService->forgetPosition(
+            (string) $transaction->branch_id,
+            $transaction->currency_code
+        );
+    }
+
     public function getOrCreatePosition(int $branchId, string $currencyCode, string $rate): CurrencyPosition
     {
         return DB::transaction(function () use ($branchId, $currencyCode, $rate) {
@@ -261,6 +304,9 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * - Manager: sees only their own branch's positions
      * - Teller: sees only positions for their currently open counter session
      */
+    /**
+     * @return Collection<int, CurrencyPosition>
+     */
     public function getVisiblePositionsForUser(User $user): Collection
     {
         // Admin: consolidated view across all branches
@@ -286,10 +332,14 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             ->first();
 
         if ($activeSession) {
-            return $this->getAllPositions($activeSession->till_id);
+            // Till identifiers are counter codes (see convert_numeric_till_ids migration);
+            // counter_sessions has no till_id column, resolve it through the counter.
+            $activeSession->loadMissing('counter');
+
+            return $this->getAllPositions((string) $activeSession->counter?->code);
         }
 
-        return collect();
+        return new Collection;
     }
 
     /**
@@ -298,10 +348,14 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * For Admin dashboard view - shows total of each currency across all branches.
      * Uses weighted average for average_cost and sums unrealized_gain_loss.
      */
+    /**
+     * @return Collection<int, CurrencyPosition>
+     */
     protected function getConsolidatedPositions(): Collection
     {
         // Aggregate per currency in SQL so we fetch one row per currency instead of
         // the full positions table, then doing a PHP-side groupBy on the dashboard path.
+        /** @var \Illuminate\Support\Collection<int, object{currency_code:string, total_quantity:?string, total_value:?string, total_unrealized_gain_loss:?string, last_revalued_at:?string, latest_current_rate:?string}> $rows */
         $rows = CurrencyPosition::query()
             ->selectRaw('currency_code')
             ->selectRaw('SUM(quantity) AS total_quantity')
