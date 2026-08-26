@@ -45,10 +45,8 @@ trait EnsuresManagerOrAdmin
      */
     protected function requireManagerOrAdminResponse(string $message = 'Unauthorized. Manager or Admin access required.'): ?JsonResponse
     {
-        if ($this->ensureManagerOrAdminResponse(fn () => null) !== null) {
-            return $this->errorResponse($message, [], 403);
-        }
-
-        return null;
+        return $this->ensureManagerOrAdminResponse(
+            fn (): JsonResponse => $this->errorResponse($message, [], 403)
+        );
     }
 }
