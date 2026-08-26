@@ -11,15 +11,16 @@ use App\Services\Compliance\ComplianceFlagService;
 use App\Services\System\CacheTagsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 class ComplianceFlagServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private AuditService $auditService;
+    private AuditService&MockObject $auditService;
 
-    private CacheTagsService $cacheTagsService;
+    private CacheTagsService&MockObject $cacheTagsService;
 
     private ComplianceFlagService $service;
 
