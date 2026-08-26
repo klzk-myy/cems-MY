@@ -133,26 +133,26 @@ class ThresholdService implements ThresholdServiceInterface
      * always wins. Checking the DB first ensures runtime threshold changes made
      * via set() actually take effect across requests.
      */
-    public function get(string $category, string $key, ?string $fallbackConstant = null): string|int|float
+    public function get(string $category, string $key, string|int|float|null $fallback = null): string|int|float
     {
-        // 1. Check database for persisted overrides from previous set() calls
         $persisted = $this->getPersistedValue($category, $key);
         if ($persisted !== null) {
-            // Warm the config cache for subsequent calls in this request
             config(["thresholds.{$category}.{$key}" => $persisted]);
 
             return $persisted;
         }
 
-        // 2. Check config (env variables + config file defaults)
         $value = config("thresholds.{$category}.{$key}");
         if ($value !== null) {
             return $value;
         }
 
-        // 3. Fall back to constant defaults
-        if ($fallbackConstant !== null) {
-            return $this->getFallbackValue($fallbackConstant);
+        if ($fallback !== null) {
+            if (is_string($fallback)) {
+                return $this->getFallbackValue($fallback);
+            }
+
+            return $fallback;
         }
 
         throw new ThresholdNotFoundException("{$category}.{$key}");
