@@ -37,7 +37,7 @@ class NarrativeGenerator
             $narrative .= 'ID Number: '.($customer->id_number_decrypted ?? 'N/A')."\n";
             $narrative .= 'Nationality: '.($customer->nationality ?? 'N/A')."\n";
             $narrative .= 'Risk Rating: '.($customer->risk_rating ?? 'N/A')."\n";
-            $narrative .= 'CDD Level: '.($customer->cdd_level?->value ?? 'N/A')."\n";
+            $narrative .= 'CDD Level: '.($customer->cdd_level->value ?? 'N/A')."\n";
         } else {
             $narrative .= "Customer information not available.\n";
         }
@@ -65,7 +65,7 @@ class NarrativeGenerator
             $narrative .= 'Transaction Date: '.($flaggedTransaction->created_at?->toDateString() ?? 'N/A')."\n";
             $narrative .= 'Amount (MYR): '.number_format((float) ($flaggedTransaction->amount_local ?? 0), 2)."\n";
             $narrative .= 'Currency: '.($flaggedTransaction->currency_code ?? 'N/A')."\n";
-            $narrative .= 'Transaction Type: '.($flaggedTransaction->type?->value ?? $flaggedTransaction->type ?? 'N/A')."\n";
+            $narrative .= 'Transaction Type: '.($flaggedTransaction->flag_type?->value ?? 'N/A')."\n";
             $narrative .= 'Purpose: '.($flaggedTransaction->purpose ?? 'N/A')."\n";
         } else {
             $narrative .= "Transaction information not available.\n";
