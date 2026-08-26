@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\SystemAlertLevel;
+use App\Enums\SystemHealthCheckStatus;
 use App\Models\SystemAlert;
 use App\Models\SystemHealthCheck;
 use App\Services\System\SystemHealthService;
@@ -104,7 +106,8 @@ class MonitorStatusCommand extends Command
                 continue;
             }
 
-            $statusIcon = match ($check->status) {
+            $status = $check->status instanceof SystemHealthCheckStatus ? $check->status->value : (string) $check->status;
+            $statusIcon = match ($status) {
                 'ok' => '<fg=green>✓</>',
                 'warning' => '<fg=yellow>⚠</>',
                 'critical' => '<fg=red>✗</>',
@@ -120,7 +123,7 @@ class MonitorStatusCommand extends Command
 
     protected function displayCheckHistory(): void
     {
-        $limit = $this->option('limit');
+        $limit = (int) $this->option('limit');
 
         $this->line('Recent Check History:');
         $this->line(str_repeat('─', 60));
@@ -137,7 +140,8 @@ class MonitorStatusCommand extends Command
 
         $rows = [];
         foreach ($checks as $check) {
-            $statusColor = match ($check->status) {
+            $statusValue = $check->status instanceof SystemHealthCheckStatus ? $check->status->value : (string) $check->status;
+            $statusColor = match ($statusValue) {
                 'ok' => 'green',
                 'warning' => 'yellow',
                 'critical' => 'red',
@@ -158,7 +162,7 @@ class MonitorStatusCommand extends Command
 
     protected function displayAlerts(): void
     {
-        $limit = $this->option('limit');
+        $limit = (int) $this->option('limit');
 
         $this->line('Unacknowledged Alerts:');
         $this->line(str_repeat('─', 60));
@@ -176,7 +180,8 @@ class MonitorStatusCommand extends Command
 
         $rows = [];
         foreach ($alerts as $alert) {
-            $levelColor = match ($alert->level) {
+            $levelValue = $alert->level instanceof SystemAlertLevel ? $alert->level->value : (string) $alert->level;
+            $levelColor = match ($levelValue) {
                 'critical' => 'red',
                 'warning' => 'yellow',
                 'info' => 'blue',
