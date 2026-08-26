@@ -34,7 +34,7 @@ class PepApprovalController extends Controller
      */
     public function index(Request $request): View
     {
-        $pending = PepApprovalRequest::with(['customer', 'requestedBy'])
+        $pending = PepApprovalRequest::with(['customer'])
             ->where('status', 'pending')
             ->orderByDesc('created_at')
             ->paginate(25);
