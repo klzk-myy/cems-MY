@@ -30,12 +30,12 @@ class SanctionListController extends Controller
             ->map(fn ($list) => [
                 'id' => $list->id,
                 'name' => $list->name,
-                'list_type' => $list->list_type?->value ?? (string) $list->list_type,
+                'list_type' => $list->list_type->value,
                 'source_url' => $list->source_url,
                 'source_format' => $list->source_format,
-                'update_frequency' => $list->update_frequency,
+                'update_status' => $list->update_status->value,
                 'last_synced_at' => $list->last_updated_at?->toIso8601String(),
-                'status' => $list->update_status?->value ?? (string) $list->update_status,
+                'status' => $list->update_status->value,
                 'entries_count' => $list->entries_count,
             ]);
 
@@ -160,15 +160,30 @@ class SanctionListController extends Controller
             ->with('success', 'Sanction entry updated successfully');
     }
 
-    public function importLogs(): View
+    public function importLogs(Request $request): View
     {
-        $logs = SanctionImportLog::with('sanctionList')
-            ->orderBy('imported_at', 'desc')
+        $query = SanctionImportLog::with('sanctionList');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('source')) {
+            $source = $request->input('source');
+            $query->whereHas('sanctionList', fn ($listQuery) => $listQuery->where('slug', $source));
+        }
+
+        $logs = $query->orderBy('imported_at', 'desc')
             ->limit(50)
             ->get()
             ->map(fn ($log) => $log->toSummaryArray());
 
-        return view('compliance.sanctions.import-logs.index', compact('logs'));
+        $sources = SanctionList::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug'])
+            ->mapWithKeys(fn ($list) => [$list->slug => $list->name]);
+
+        return view('compliance.sanctions.import-logs.index', compact('logs', 'sources'));
     }
 
     public function triggerImport(int $listId): RedirectResponse
