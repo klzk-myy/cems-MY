@@ -78,7 +78,7 @@ class SystemAlertController extends Controller
         }
 
         try {
-            $alert->acknowledge(auth()->id());
+            $alert->acknowledge((int) auth()->id());
 
             // The dashboard monitoring widget caches alert counts/recent alerts
             // for 60s; drop it now so the acknowledged alert disappears from the
