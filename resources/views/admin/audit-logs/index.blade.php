@@ -30,9 +30,11 @@
             <x-slot:tbody>
                 @forelse ($logs as $log)
                     <tr class="border-t border-border hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 font-mono">{{ $log->id }}</td>
+                        <td class="px-4 py-3 font-mono">
+                            <a href="{{ route('admin.audit-logs.show', $log) }}" class="text-primary hover:underline">{{ $log->id }}</a>
+                        </td>
                         <td class="px-4 py-3 whitespace-nowrap">{{ $log->created_at?->format('Y-m-d H:i:s') }}</td>
-                        <td class="px-4 py-3">{{ $log->user_id ?? '-' }}</td>
+                        <td class="px-4 py-3">{{ $log->user?->username ?? '-' }}</td>
                         <td class="px-4 py-3">{{ $log->action }}</td>
                         <td class="px-4 py-3">{{ $log->entity_type }}{{ $log->entity_id ? '#'.$log->entity_id : '' }}</td>
                         <td class="px-4 py-3">{{ $log->severity ?? 'INFO' }}</td>
