@@ -39,6 +39,7 @@ class NotificationPreferenceController extends Controller
         $validated = $request->validate([
             'types' => ['nullable', 'array'],
             'types.*' => ['string'],
+            'digest_enabled' => ['nullable', 'boolean'],
         ]);
 
         /** @var User $user */
@@ -52,6 +53,10 @@ class NotificationPreferenceController extends Controller
                 $selected[$key] = true;
             }
         }
+
+        // Checkbox absent from the payload means the digest opt-out box was
+        // left unticked; the form always renders it so absence is explicit.
+        $selected['digest_enabled'] = $request->boolean('digest_enabled');
 
         $user->update(['notification_preferences' => $selected]);
 
