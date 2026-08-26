@@ -151,11 +151,22 @@ class LogRotationService
         $archiveFiles = [];
         if (is_dir($archiveDir)) {
             $files = glob($archiveDir.'/system_logs_archive_*.json');
+            if ($files === false) {
+                $files = [];
+            }
+
             foreach ($files as $file) {
+                $size = filesize($file);
+                $modifiedAt = filemtime($file);
+
+                if ($size === false || $modifiedAt === false) {
+                    continue;
+                }
+
                 $archiveFiles[] = [
                     'filename' => basename($file),
-                    'size' => $this->formatBytes(filesize($file)),
-                    'created' => date('Y-m-d H:i:s', filemtime($file)),
+                    'size' => $this->formatBytes($size),
+                    'created' => date('Y-m-d H:i:s', $modifiedAt),
                 ];
             }
         }
@@ -182,6 +193,10 @@ class LogRotationService
 
         if (is_dir($archiveDir)) {
             $files = glob($archiveDir.'/system_logs_archive_*.json');
+            if ($files === false) {
+                $files = [];
+            }
+
             foreach ($files as $file) {
                 if (filemtime($file) < $cutoffTime) {
                     unlink($file);
