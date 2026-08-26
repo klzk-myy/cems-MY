@@ -55,11 +55,11 @@ class TriggerSanctionsRescreening
         }
 
         Bus::batch(
-            $customersToRescreen->map(fn ($c) => new ComplianceScreeningJob($c->id))->toArray()
-        )->then(fn (Batch $batch) => Log::info("Screened {$batch->total()} customers"))
+            $customersToRescreen->map(fn (Customer $c) => new ComplianceScreeningJob($c->id))->toArray()
+        )->then(fn (Batch $batch) => Log::info("Screened {$batch->totalJobs} customers"))
             ->catch(fn (Batch $batch, \Throwable $e) => Log::error('Screening batch failed', [$e->getMessage()]))
             ->onQueue('compliance')
-            ->allOnConnection('redis')
+            ->onConnection('redis')
             ->dispatch();
     }
 
