@@ -2,6 +2,10 @@
 
 namespace App\Services\Compliance;
 
+use App\Enums\UserRole;
+use App\Models\SystemAlert;
+use App\Models\User;
+use App\Notifications\SystemHealthAlertNotification;
 use App\Services\Compliance\Monitors\BaseMonitor;
 use App\Services\Compliance\Monitors\CounterfeitAlertMonitor;
 use App\Services\Compliance\Monitors\CurrencyFlowMonitor;
@@ -10,6 +14,7 @@ use App\Services\Compliance\Monitors\SanctionsRescreeningMonitor;
 use App\Services\Compliance\Monitors\StructuringMonitor;
 use App\Services\Compliance\Monitors\VelocityMonitor;
 use App\Services\System\MathService;
+use App\Services\System\SystemAlertService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -30,7 +35,18 @@ class MonitoringEngine
 
     protected ComplianceService $complianceService;
 
+    protected SystemAlertService $alertService;
+
     protected array $failureLog = [];
+
+    /**
+     * In-memory dedup so a monitor that fails repeatedly only raises one
+     * Critical alert per engine instance (one run-cycle in scheduled usage),
+     * mirroring the BaseMonitor finding-dedup philosophy.
+     *
+     * @var array<string, true>
+     */
+    protected array $alertedMonitors = [];
 
     protected int $consecutiveFailures = 0;
 
@@ -40,10 +56,11 @@ class MonitoringEngine
 
     protected ?int $circuitBrokenAt = null;
 
-    public function __construct(MathService $mathService, ComplianceService $complianceService)
+    public function __construct(MathService $mathService, ComplianceService $complianceService, SystemAlertService $alertService)
     {
         $this->mathService = $mathService;
         $this->complianceService = $complianceService;
+        $this->alertService = $alertService;
         $this->registerDefaultMonitors();
     }
 
@@ -212,6 +229,9 @@ class MonitoringEngine
         }
     }
 
+    /**
+     * @param  array<int, string>  $monitorNames
+     */
     protected function sendFailureNotification(int $failureCount, array $monitorNames): void
     {
         Log::channel('audit')->warning('Compliance Monitor Failures', [
@@ -221,6 +241,78 @@ class MonitoringEngine
             'severity' => 'CRITICAL',
             'requires_action' => true,
         ]);
+
+        $errorsByMonitor = [];
+        foreach ($this->failureLog as $failure) {
+            $errorsByMonitor[$failure['monitor']][] = [
+                'exception' => $failure['exception'] ?? null,
+                'message' => $failure['message'] ?? null,
+            ];
+        }
+
+        $newlyAlerted = [];
+        $raisedAlert = null;
+
+        foreach ($monitorNames as $monitorName) {
+            if (isset($this->alertedMonitors[$monitorName])) {
+                continue;
+            }
+
+            $this->alertedMonitors[$monitorName] = true;
+            $newlyAlerted[] = $monitorName;
+
+            try {
+                $alert = $this->alertService->critical(
+                    "Compliance monitor failed: {$monitorName}",
+                    [
+                        'source' => 'compliance_monitor',
+                        'metadata' => [
+                            'monitor' => $monitorName,
+                            'errors' => $errorsByMonitor[$monitorName] ?? [],
+                            'failure_count' => $failureCount,
+                        ],
+                    ]
+                );
+                $raisedAlert ??= $alert;
+            } catch (\Throwable $e) {
+                Log::error("Failed to raise system alert for monitor {$monitorName}: ".$e->getMessage());
+            }
+        }
+
+        if ($newlyAlerted === [] || $raisedAlert === null) {
+            return;
+        }
+
+        $this->notifyOfficersOfMonitorFailure($raisedAlert, $newlyAlerted);
+    }
+
+    /**
+     * Escalate engine failures to compliance officers so a silent monitoring
+     * outage is not only visible in logs.
+     *
+     * @param  array<int, string>  $monitorNames
+     */
+    protected function notifyOfficersOfMonitorFailure(SystemAlert $systemAlert, array $monitorNames): void
+    {
+        try {
+            $officers = User::query()
+                ->whereIn('role', [UserRole::ComplianceOfficer->value, UserRole::Manager->value])
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($officers as $officer) {
+                try {
+                    $officer->notify(new SystemHealthAlertNotification($systemAlert));
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to notify officer of monitor failure', [
+                        'officer_id' => $officer->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to resolve officers for monitor failure notification: '.$e->getMessage());
+        }
     }
 
     public function getFailureLog(): array
@@ -231,5 +323,6 @@ class MonitoringEngine
     public function clearFailureLog(): void
     {
         $this->failureLog = [];
+        $this->alertedMonitors = [];
     }
 }
