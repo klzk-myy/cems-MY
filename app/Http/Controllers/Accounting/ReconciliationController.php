@@ -11,6 +11,7 @@ use App\Http\Requests\Accounting\ReconciliationReportRequest;
 use App\Models\BankReconciliation;
 use App\Models\ChartOfAccount;
 use App\Services\Accounting\BankReconciliationService;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -46,7 +47,7 @@ class ReconciliationController extends Controller
         $result = $this->bankReconciliationService->importStatement(
             $validated['account_code'],
             $validated['lines'],
-            auth()->id()
+            (int) auth()->id()
         );
 
         return redirect()->route('accounting.reconciliation')
@@ -57,13 +58,13 @@ class ReconciliationController extends Controller
     {
         $validated = $request->validated();
 
-        $this->bankReconciliationService->markAsException($reconciliation->id, $validated['reason'], auth()->id());
+        $this->bankReconciliationService->markAsException($reconciliation->id, $validated['reason'], (int) auth()->id());
 
         return redirect()->route('accounting.reconciliation')
             ->with('success', 'Item marked as exception.');
     }
 
-    private function getReconciliationReport(Request $request): array
+    private function getReconciliationReport(FormRequest $request): array
     {
         $validated = $request->validated();
 
