@@ -15,8 +15,8 @@ return new class extends Migration
             Schema::create('transaction_errors', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('transaction_id');
-                $table->string('error_type', 100)->notNull();
-                $table->text('error_message')->notNull();
+                $table->string('error_type', 100)->nullable(false);
+                $table->text('error_message')->nullable(false);
                 $table->json('error_context')->nullable();
                 $table->unsignedTinyInteger('retry_count')->default(0);
                 $table->unsignedTinyInteger('max_retries')->default(3);
