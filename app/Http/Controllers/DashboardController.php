@@ -144,7 +144,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function rememberDashboard(string $key, array $tags, callable $callback): mixed
+    private function rememberDashboard(string $key, array $tags, \Closure $callback): mixed
     {
         return $this->cacheOptimizationService->remember("dashboard.{$key}", 60, $tags, $callback);
     }
