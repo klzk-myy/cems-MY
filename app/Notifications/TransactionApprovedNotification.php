@@ -49,7 +49,7 @@ class TransactionApprovedNotification extends Notification implements ShouldQueu
             'type' => 'transaction_approved',
             'transaction_id' => $this->transaction->id,
             'customer_id' => $this->transaction->customer_id,
-            'customer_name' => $this->transaction->customer?->full_name ?? 'Unknown',
+            'customer_name' => $this->transaction->customer->full_name ?? 'Unknown',
             'amount_local' => $this->transaction->amount_local,
             'currency_code' => $this->transaction->currency_code,
             // 'type' is the notification discriminator consumed by
@@ -76,7 +76,7 @@ class TransactionApprovedNotification extends Notification implements ShouldQueu
             ->where('notification_type', 'transaction_approved')
             ->first();
 
-        return $preference?->email_enabled ?? true;
+        return $preference->email_enabled ?? true;
     }
 
     public function databaseType(User $notifiable): string
