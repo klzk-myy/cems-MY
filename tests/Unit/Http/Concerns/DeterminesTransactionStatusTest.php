@@ -13,17 +13,18 @@ use App\Services\DTOs\AllocationValidationResult;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use Mockery;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class DeterminesTransactionStatusTest extends TestCase
 {
     use DeterminesTransactionStatus;
 
-    private MathService $mathService;
+    private MathService&MockInterface $mathService;
 
-    private TellerAllocationService $tellerAllocationService;
+    private TellerAllocationService&MockInterface $tellerAllocationService;
 
-    private ThresholdService $thresholdService;
+    private ThresholdService&MockInterface $thresholdService;
 
     protected function setUp(): void
     {
