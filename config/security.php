@@ -122,7 +122,7 @@ return [
         'max_block_duration_minutes' => 1440,
         // Whitelisted IPs (never block) - supports exact IPs and CIDR notation
         // Examples: 192.168.1.1, 10.0.0.0/8, 172.16.0.0/12, 127.0.0.1
-        'whitelist' => array_filter(explode(',', env('SECURITY_IP_WHITELIST', '192.168.1.0/24,127.0.0.1'))),
+        'whitelist' => array_filter(explode(',', (string) env('SECURITY_IP_WHITELIST', '192.168.1.0/24,127.0.0.1'))),
         // Cache key prefix for Redis
         'cache_prefix' => 'ip_block:',
         'failed_attempts_prefix' => 'ip_failed:',
@@ -180,6 +180,8 @@ return [
         'require_lowercase' => true,
         'require_numbers' => true,
         'require_symbols' => true,
+        // Number of previous passwords that may not be reused.
+        'history_depth' => env('SECURITY_PASSWORD_HISTORY_DEPTH', 5),
         'max_attempts' => 5,
         'lockout_duration' => 15, // minutes
     ],
