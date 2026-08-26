@@ -404,7 +404,7 @@ class CounterService
             foreach ($perCurrencyVariances as $code => $variance) {
                 $absVar = BcmathHelper::abs($variance);
                 if (BcmathHelper::gt($absVar, $this->thresholdService->getVarianceRedThreshold())) {
-                    if (! $supervisor || ! $supervisor->isManager()) {
+                    if (! $supervisor->isManager()) {
                         throw new VarianceThresholdException('red', true);
                     }
                 } elseif (BcmathHelper::gt($absVar, $this->thresholdService->getVarianceYellowThreshold())) {
@@ -587,6 +587,6 @@ class CounterService
      */
     private function counterCode(CounterSession $session): string
     {
-        return Counter::find($session->counter_id)?->code ?? (string) $session->counter_id;
+        return Counter::find($session->counter_id)->code ?? (string) $session->counter_id;
     }
 }
