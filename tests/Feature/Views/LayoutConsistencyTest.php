@@ -15,9 +15,9 @@ class LayoutConsistencyTest extends TestCase
 
     #[DataProvider('sharedLayoutViewProvider')]
     #[Test]
-    public function view_extends_shared_layout(string $route, string $view): void
+    public function view_extends_shared_layout(string $route, string $view, string $role = 'compliance_officer'): void
     {
-        $user = User::factory()->create(['role' => 'compliance_officer']);
+        $user = User::factory()->create(['role' => $role]);
         $customer = Customer::factory()->create();
 
         $route = str_replace('{customer}', (string) $customer->id, $route);
@@ -42,12 +42,12 @@ class LayoutConsistencyTest extends TestCase
     public static function sharedLayoutViewProvider(): array
     {
         return [
-            'risk-dashboard-customer' => ['/compliance/risk-dashboard/customer/{customer}', 'compliance.risk-dashboard.customer'],
-            'risk-dashboard-trends' => ['/compliance/risk-dashboard/trends', 'compliance.risk-dashboard.trends'],
-            'sanctions-import-logs' => ['/compliance/sanctions/import-logs', 'compliance.sanctions.import-logs.index'],
-            'screening-show' => ['/compliance/screening/{customer}', 'compliance.screening.show'],
-            'unified-index' => ['/compliance/unified', 'compliance.unified.index'],
-            'mfa-recovery-codes' => ['/mfa/recovery-codes', 'mfa.recovery-codes'],
+            'risk-dashboard-customer' => ['/compliance/risk-dashboard/customer/{customer}', 'compliance.risk-dashboard.customer', 'manager'],
+            'risk-dashboard-trends' => ['/compliance/risk-dashboard/trends', 'compliance.risk-dashboard.trends', 'manager'],
+            'sanctions-import-logs' => ['/compliance/sanctions/import-logs', 'compliance.sanctions.import-logs.index', 'compliance_officer'],
+            'screening-show' => ['/compliance/screening/{customer}', 'compliance.screening.show', 'compliance_officer'],
+            'unified-index' => ['/compliance/unified', 'compliance.unified.index', 'compliance_officer'],
+            'mfa-recovery-codes' => ['/mfa/recovery-codes', 'mfa.recovery-codes', 'compliance_officer'],
         ];
     }
 
