@@ -14,7 +14,7 @@
         <x-slot:tbody>
             @forelse($fiscalYears ?? [] as $fiscalYear)
                 <tr>
-                    <td class="px-4 py-3 text-sm font-medium text-ink">{{ $fiscalYear->year_code }}</td>
+                    <td class="px-4 py-3 text-sm font-medium text-ink">FY {{ $fiscalYear->year_code }}</td>
                     <td class="px-4 py-3 text-sm text-ink">{{ $fiscalYear->start_date?->format('d M Y') }}</td>
                     <td class="px-4 py-3 text-sm text-ink">{{ $fiscalYear->end_date?->format('d M Y') }}</td>
                     <td class="px-4 py-3"><x-badge variant="success">{{ $fiscalYear->status ?? 'Active' }}</x-badge></td>
