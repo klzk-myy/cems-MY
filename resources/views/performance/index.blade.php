@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace('/', ' ', performance/index)) }}">
-    <x-page-header title="{{ ucfirst(str_replace('/', ' ', performance/index)) }}" description="Management" />
+<x-app-layout title="{{ Performance Index }}">
+    <x-page-header title="{{ Performance Index }}" description="Management" />
     <x-card>
         <p class="text-ink-muted">{{ performance/index }} view content.</p>
     </x-card>

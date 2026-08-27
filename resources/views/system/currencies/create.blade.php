@@ -1,6 +1,6 @@
-<x-app-layout title="{{ ucfirst(str_replace('/', ' ', $view)) }}">
-    <x-page-header title="{{ ucfirst(str_replace('/', ' ', $view)) }}" description="System management" />
+<x-app-layout title="{{ System Currencies Create }}">
+    <x-page-header title="{{ System Currencies Create }}" description="System management" />
     <x-card>
-        <p class="text-ink-muted">{{ $view }} view content.</p>
+        <p class="text-ink-muted">Create Currency view content.</p>
     </x-card>
 </x-app-layout>

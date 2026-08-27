@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace(['/', '-'], [' ', ' '], schedules/create)) }} Report">
-    <x-page-header title="{{ ucfirst(str_replace(['/', '-'], [' ', ' '], schedules/create)) }} Report" description="Reports and analytics" />
+<x-app-layout title="{{ Reports Schedules Create }} Report">
+    <x-page-header title="{{ Reports Schedules Create }} Report" description="Reports and analytics" />
     <x-card>
         <p class="text-ink-muted">Report {{ schedules/create }} view content.</p>
     </x-card>

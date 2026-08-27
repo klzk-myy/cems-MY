@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace(['/', '-'], [' ', ' '], reports/ledger-account)) }} Accounting">
-    <x-page-header title="{{ ucfirst(str_replace(['/', '-'], [' ', ' '], reports/ledger-account)) }} Accounting" description="Financial management" />
+<x-app-layout title="{{ Accounting Reports Ledger Account }} Accounting">
+    <x-page-header title="{{ Accounting Reports Ledger Account }} Accounting" description="Financial management" />
     <x-card>
         <p class="text-ink-muted">Accounting {{ reports/ledger-account }} view content.</p>
     </x-card>

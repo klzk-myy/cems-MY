@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace(['/', '-'], [' ', ' '], index)) }} Report">
-    <x-page-header title="{{ ucfirst(str_replace(['/', '-'], [' ', ' '], index)) }} Report" description="Reports and analytics" />
+<x-app-layout title="{{ Reports Index }} Report">
+    <x-page-header title="{{ Reports Index }} Report" description="Reports and analytics" />
     <x-card>
         <p class="text-ink-muted">Report {{ index }} view content.</p>
     </x-card>

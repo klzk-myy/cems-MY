@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace(['/', '-'], [' ', ' '], trial-balance)) }} Accounting">
-    <x-page-header title="{{ ucfirst(str_replace(['/', '-'], [' ', ' '], trial-balance)) }} Accounting" description="Financial management" />
+<x-app-layout title="{{ Accounting Trial Balance }} Accounting">
+    <x-page-header title="{{ Accounting Trial Balance }} Accounting" description="Financial management" />
     <x-card>
         <p class="text-ink-muted">Accounting {{ trial-balance }} view content.</p>
     </x-card>

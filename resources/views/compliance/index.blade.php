@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace('/', ' ', index)) }}">
-    <x-page-header title="{{ ucfirst(str_replace('/', ' ', index)) }}" description="Compliance management" />
+<x-app-layout title="{{ Compliance Index }}">
+    <x-page-header title="{{ Compliance Index }}" description="Compliance management" />
     <x-card>
         <p class="text-ink-muted">Compliance {{ index }} view content.</p>
     </x-card>

@@ -1,7 +1,7 @@
-<x-app-layout title="{{ ucfirst($view) }} User">
-    <x-page-header title="{{ ucfirst($view) }} User" description="User management" />
+<x-app-layout title="{{ ucfirst(Users Create) }} User">
+    <x-page-header title="{{ ucfirst(Users Create) }} User" description="User management" />
     <x-card>
-        @if($view === 'index')
+        @if(Users Create === 'index')
             <x-table>
                 <x-slot:thead>
                     <tr>
@@ -20,7 +20,7 @@
                     </tr>
                 </x-slot:tbody>
             </x-table>
-        @elseif($view === 'create' || $view === 'edit')
+        @elseif(Users Create === 'create' || Users Create === 'edit')
             <form method="POST" class="space-y-4">
                 @csrf
                 <x-input name="name" label="Full Name" :required="true" />

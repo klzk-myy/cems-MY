@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace('/', ' ', setup/index)) }}">
-    <x-page-header title="{{ ucfirst(str_replace('/', ' ', setup/index)) }}" description="Management" />
+<x-app-layout title="{{ Setup Index }}">
+    <x-page-header title="{{ Setup Index }}" description="Management" />
     <x-card>
         <p class="text-ink-muted">{{ setup/index }} view content.</p>
     </x-card>

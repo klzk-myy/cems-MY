@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace('/', ' ', screening/matches/index)) }}">
-    <x-page-header title="{{ ucfirst(str_replace('/', ' ', screening/matches/index)) }}" description="Compliance management" />
+<x-app-layout title="{{ Compliance Screening Matches Index }}">
+    <x-page-header title="{{ Compliance Screening Matches Index }}" description="Compliance management" />
     <x-card>
         <p class="text-ink-muted">Compliance {{ screening/matches/index }} view content.</p>
     </x-card>
