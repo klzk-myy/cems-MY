@@ -1,4 +1,7 @@
 <x-app-layout title="Transaction Wizard">
+    @php
+        $currencyOptions = json_encode($currencies ?? []);
+    @endphp
     <div class="space-y-6">
         <x-page-header title="New Transaction" description="Step-by-step transaction creation wizard" />
 
@@ -17,7 +20,7 @@
                 till_id: '',
                 purpose: '',
                 source_of_funds: '',
-                idempotency_key: '{{ Str::uuid() }}',
+                idempotency_key: '{{ $idempotencyKey }}',
                 occupation: '',
                 employer_name: '',
                 employer_address: '',
@@ -30,7 +33,7 @@
             wizard: { session_id: '', cdd_level: '', cdd_description: '', hold_required: false, risk_flags: [], required_documents: [], blockedMessage: '' },
             summary: {},
             result: { id: '', number: '', status: '' },
-            currencies: { USD: 'USD', EUR: 'EUR', GBP: 'GBP', SGD: 'SGD', JPY: 'JPY', AUD: 'AUD', CN: 'CNY', THB: 'THB', IDR: 'IDR' },
+            currencies: {{ $currencyOptions }},
             apiBase: '{{ url('api/v1') }}',
             csrf: document.querySelector('meta[name=csrf-token]')?.content ?? '',
             init() {
@@ -158,7 +161,7 @@
                 this.errorMessage = ''; this.wizard.blockedMessage = '';
                 this.wizard = { session_id: '', cdd_level: '', cdd_description: '', hold_required: false, risk_flags: [], required_documents: [], blockedMessage: '' };
                 this.summary = {}; this.result = { id: '', number: '', status: '' };
-                this.formData = { ...this.formData, customer_id: '', type: '', currency_code: '', amount_foreign: '', rate: '', till_id: '', purpose: '', source_of_funds: '', occupation: '', employer_name: '', employer_address: '', annual_volume_estimate: '', beneficial_owner: '', source_of_wealth: '', expected_frequency: '', idempotency_key: '{{ Str::uuid() }}' };
+                this.formData = { ...this.formData, customer_id: '', type: '', currency_code: '', amount_foreign: '', rate: '', till_id: '', purpose: '', source_of_funds: '', occupation: '', employer_name: '', employer_address: '', annual_volume_estimate: '', beneficial_owner: '', source_of_wealth: '', expected_frequency: '', idempotency_key: '{{ $idempotencyKey }}' };
                 this.files = { proof_of_address: null, passport: null };
             },
         }" class="max-w-4xl mx-auto">
@@ -181,16 +184,16 @@
             <div x-show="errorMessage" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm" x-text="errorMessage"></div>
 
             <!-- Step 1: Transaction Details -->
-            <div x-show="step === 1" class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div x-show="step === 1" class="bg-surface border border-border rounded-xl p-6">
                 <h2 class="text-lg font-semibold mb-4">Step 1: Transaction Details</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1">Customer ID</label>
-                        <input type="number" x-model="formData.customer_id" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <input type="number" x-model="formData.customer_id" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Transaction Type</label>
-                        <select x-model="formData.type" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <select x-model="formData.type" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                             <option value="">Select type</option>
                             <template x-for="(label, val) in { buy: 'Buy', sell: 'Sell' }" :key="val">
                                 <option :value="val" x-text="label"></option>
@@ -199,7 +202,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Currency</label>
-                        <select x-model="formData.currency_code" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <select x-model="formData.currency_code" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                             <option value="">Select currency</option>
                             <template x-for="(label, val) in currencies" :key="val">
                                 <option :value="val" x-text="label"></option>
@@ -208,19 +211,19 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Foreign Amount</label>
-                        <input type="number" step="0.01" x-model="formData.amount_foreign" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <input type="number" step="0.01" x-model="formData.amount_foreign" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Exchange Rate</label>
-                        <input type="number" step="0.0001" x-model="formData.rate" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <input type="number" step="0.0001" x-model="formData.rate" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Local Amount (MYR)</label>
-                        <input type="text" :value="amountLocal" readonly class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg bg-gray-50">
+                        <input type="text" :value="amountLocal" readonly class="w-full px-4 py-2.5 text-sm border border-border rounded-lg bg-canvas-subtle">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Till / Counter</label>
-                        <select x-model="formData.till_id" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <select x-model="formData.till_id" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                             <option value="">Select till</option>
                             <template x-for="(name, code) in counters" :key="code">
                                 <option :value="code" x-text="name + ' (' + code + ')'"></option>
@@ -229,7 +232,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Purpose</label>
-                        <select x-model="formData.purpose" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <select x-model="formData.purpose" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                             <option value="">Select purpose</option>
                             <template x-for="p in ['Travel', 'Education', 'Medical', 'Business', 'Investment', 'Family Support', 'Migration', 'Other']" :key="p">
                                 <option :value="p" x-text="p"></option>
@@ -238,7 +241,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium mb-1">Source of Funds</label>
-                        <input type="text" x-model="formData.source_of_funds" placeholder="e.g. Salary, Savings, Business Income" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <input type="text" x-model="formData.source_of_funds" placeholder="e.g. Salary, Savings, Business Income" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
                 </div>
 
@@ -249,11 +252,11 @@
             </div>
 
             <!-- Step 2: Customer Details & CDD -->
-            <div x-show="step === 2" class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div x-show="step === 2" class="bg-surface border border-border rounded-xl p-6">
                 <h2 class="text-lg font-semibold mb-1">Step 2: Customer Details</h2>
                 <p class="text-sm text-gray-500 mb-4">
                     <span x-text="wizard.cddDescription || 'Customer due diligence information'"></span>
-                    <span x-show="wizard.hold_required" class="ml-2 inline-block px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs">Compliance hold will apply</span>
+                    <span x-show="wizard.hold_required" class="ml-2 inline-block px-2 py-0.5 bg-amber-100 text-warning rounded text-xs">Compliance hold will apply</span>
                 </p>
 
                 <template x-if="wizard.risk_flags.length">
@@ -268,31 +271,31 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1">Occupation *</label>
-                        <input type="text" x-model="formData.occupation" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <input type="text" x-model="formData.occupation" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Employer Name</label>
-                        <input type="text" x-model="formData.employer_name" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <input type="text" x-model="formData.employer_name" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium mb-1">Employer Address</label>
-                        <input type="text" x-model="formData.employer_address" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <input type="text" x-model="formData.employer_address" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Estimated Annual Volume</label>
-                        <input type="number" step="0.01" x-model="formData.annual_volume_estimate" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                        <input type="number" step="0.01" x-model="formData.annual_volume_estimate" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
 
                     <!-- Enhanced CDD only -->
                     <template x-if="requireEnhanced">
-                        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-[#e5e5e5] pt-4 mt-2">
+                        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border pt-4 mt-2">
                             <div>
                                 <label class="block text-sm font-medium mb-1">Beneficial Owner *</label>
-                                <input type="text" x-model="formData.beneficial_owner" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                                <input type="text" x-model="formData.beneficial_owner" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1">Expected Frequency *</label>
-                                <select x-model="formData.expected_frequency" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg">
+                                <select x-model="formData.expected_frequency" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                                     <option value="">Select frequency</option>
                                     <template x-for="f in ['weekly', 'monthly', 'quarterly', 'annually']" :key="f">
                                         <option :value="f" x-text="f.charAt(0).toUpperCase() + f.slice(1)"></option>
@@ -301,14 +304,14 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium mb-1">Source of Wealth *</label>
-                                <textarea x-model="formData.source_of_wealth" rows="2" class="w-full px-4 py-2.5 text-sm border border-[#e5e5e5] rounded-lg"></textarea>
+                                <textarea x-model="formData.source_of_wealth" rows="2" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg"></textarea>
                             </div>
                         </div>
                     </template>
                 </div>
 
                 <!-- Document Uploads -->
-                <div class="mt-6 border-t border-[#e5e5e5] pt-4">
+                <div class="mt-6 border-t border-border pt-4">
                     <h3 class="text-sm font-semibold mb-3">Required Documents</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div x-show="requireProofOfAddress || requirePassport" class="md:col-span-2">
@@ -325,37 +328,37 @@
                             <label class="block text-sm font-medium mb-1">
                                 Proof of Address <span x-show="requireProofOfAddress" class="text-red-500">*</span>
                             </label>
-                            <input type="file" @change="files.proof_of_address = $event.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-sm border border-[#e5e5e5] rounded-lg p-2">
+                            <input type="file" @change="files.proof_of_address = $event.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-sm border border-border rounded-lg p-2">
                         </div>
                         <div x-show="requirePassport">
                             <label class="block text-sm font-medium mb-1">
                                 Passport <span class="text-red-500">*</span>
                             </label>
-                            <input type="file" @change="files.passport = $event.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-sm border border-[#e5e5e5] rounded-lg p-2">
+                            <input type="file" @change="files.passport = $event.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-sm border border-border rounded-lg p-2">
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Step 3: Review & Confirm -->
-            <div x-show="step === 3" class="bg-white border border-[#e5e5e5] rounded-xl p-6">
+            <div x-show="step === 3" class="bg-surface border border-border rounded-xl p-6">
                 <h2 class="text-lg font-semibold mb-4">Step 3: Review & Confirm</h2>
                 <div class="space-y-3 text-sm">
-                    <div class="flex justify-between py-2 border-b border-[#e5e5e5]"><span class="text-ink-muted">Customer</span><span x-text="summary.customer_name || '—'"></span></div>
-                    <div class="flex justify-between py-2 border-b border-[#e5e5e5]"><span class="text-ink-muted">Type</span><span x-text="summary.type || '—'"></span></div>
-                    <div class="flex justify-between py-2 border-b border-[#e5e5e5]"><span class="text-ink-muted">Currency</span><span x-text="summary.currency || '—'"></span></div>
-                    <div class="flex justify-between py-2 border-b border-[#e5e5e5]"><span class="text-ink-muted">Foreign Amount</span><span x-text="(summary.currency || '') + ' ' + (summary.amount_foreign || '—')"></span></div>
-                    <div class="flex justify-between py-2 border-b border-[#e5e5e5]"><span class="text-ink-muted">Rate</span><span x-text="summary.rate || '—'"></span></div>
-                    <div class="flex justify-between py-2 border-b border-[#e5e5e5] font-bold"><span class="text-ink-muted">Local Amount (MYR)</span><span x-text="summary.amount_local || '—'"></span></div>
-                    <div class="flex justify-between py-2 border-b border-[#e5e5e5]"><span class="text-ink-muted">Purpose</span><span x-text="summary.purpose || '—'"></span></div>
-                    <div class="flex justify-between py-2 border-b border-[#e5e5e5]"><span class="text-ink-muted">Source of Funds</span><span x-text="summary.source_of_funds || '—'"></span></div>
-                    <div class="flex justify-between py-2 border-b border-[#e5e5e5]"><span class="text-ink-muted">CDD Level</span><span x-text="(summary.cdd_level || '—').charAt(0).toUpperCase() + (summary.cdd_level || '').slice(1)"></span></div>
-                    <div x-show="summary.hold_required" class="flex justify-between py-2 border-b border-[#e5e5e5] text-amber-700"><span class="text-ink-muted">Status</span><span>Pending Compliance Approval</span></div>
+                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Customer</span><span x-text="summary.customer_name || '—'"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Type</span><span x-text="summary.type || '—'"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Currency</span><span x-text="summary.currency || '—'"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Foreign Amount</span><span x-text="(summary.currency || '') + ' ' + (summary.amount_foreign || '—')"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Rate</span><span x-text="summary.rate || '—'"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border font-bold"><span class="text-ink-muted">Local Amount (MYR)</span><span x-text="summary.amount_local || '—'"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Purpose</span><span x-text="summary.purpose || '—'"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Source of Funds</span><span x-text="summary.source_of_funds || '—'"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">CDD Level</span><span x-text="(summary.cdd_level || '—').charAt(0).toUpperCase() + (summary.cdd_level || '').slice(1)"></span></div>
+                    <div x-show="summary.hold_required" class="flex justify-between py-2 border-b border-border text-warning"><span class="text-ink-muted">Status</span><span>Pending Compliance Approval</span></div>
                 </div>
             </div>
 
             <!-- Step 4: Success -->
-            <div x-show="step === 4" class="bg-white border border-[#e5e5e5] rounded-xl p-6 text-center">
+            <div x-show="step === 4" class="bg-surface border border-border rounded-xl p-6 text-center">
                 <div class="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
                     <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 </div>
@@ -366,14 +369,14 @@
                 </p>
                 <div class="flex justify-center gap-3">
                     <a :href="'/transactions/' + result.id" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">View Transaction</a>
-                    <button @click="reset()" class="px-4 py-2 text-sm font-medium rounded-lg border border-[#e5e5e5]">New Transaction</button>
+                    <button @click="reset()" class="px-4 py-2 text-sm font-medium rounded-lg border border-border">New Transaction</button>
                 </div>
             </div>
 
             <!-- Navigation -->
             <div class="flex justify-between mt-6">
                 <button x-show="step > 1 && step < 4" @click="step--" :disabled="loading"
-                        class="px-4 py-2 text-sm font-medium rounded-lg border border-[#e5e5e5] disabled:opacity-50">
+                        class="px-4 py-2 text-sm font-medium rounded-lg border border-border disabled:opacity-50">
                     Previous
                 </button>
                 <div x-show="step === 1"></div>
