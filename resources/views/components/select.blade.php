@@ -1,48 +1,34 @@
 @props([
+    'name',
     'label' => null,
-    'name' => null,
     'options' => [],
+    'placeholder' => 'Select...',
     'required' => false,
-    'disabled' => false,
-    'placeholder' => 'Select an option',
-    'help' => null,
-    'inline' => false,
 ])
 
-<div class="{{ $inline ? '' : 'mb-4' }}">
-    @if($label)
-        <label for="{{ $name ?? $attributes->whereStartsWith('id')->first() }}"
-               class="block text-sm font-medium text-ink">
-            {{ $label }}
-            @if($required) <span class="text-danger">*</span> @endif
-        </label>
-    @endif
+@php
+$errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
+$hasError = $errors->has($name);
+@endphp
 
-    <select @if($name) name="{{ $name }}" id="{{ $name }}" @endif
-            @if($required) required @endif
-            @if($disabled) disabled @endif
-            {{ $attributes->except(['label', 'name', 'options', 'required', 'disabled', 'placeholder', 'help', 'inline']) }}
-            class="mt-1 w-full px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg
-                   focus:bg-surface text-ink
-                   focus:outline-none focus:ring-2 focus:ring-primary
-                   disabled:bg-canvas-subtle disabled:text-ink-muted
-                   @if(isset($errors) && $errors->has($name ?? '')) border-danger @endif
-                   {{ $attributes->get('class', '') }}">
+<div class="space-y-1">
+    @if($label)
+        <label for="{{ $name }}" class="block text-sm font-medium text-ink">{{ $label }}</label>
+    @endif
+    <select
+        name="{{ $name }}"
+        id="{{ $name }}"
+        @if($required) required @endif
+        {{ $attributes->merge([
+            'class' => 'w-full rounded-md border bg-canvas-subtle px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ' . ($hasError ? 'border-danger' : 'border-border'),
+        ]) }}
+    >
         <option value="">{{ $placeholder }}</option>
         @foreach($options as $value => $label)
-            <option value="{{ $value }}" @selected(old($name ?? '', $attributes->get('selected')) == $value)>
-                {{ $label }}
-            </option>
+            <option value="{{ $value }}">{{ $label }}</option>
         @endforeach
     </select>
-
-    @if($help)
-        <p class="mt-1 text-xs text-ink-muted">{{ $help }}</p>
-    @endif
-
-    @if($name && isset($errors))
-        @error($name)
-            <p class="mt-1 text-xs text-danger-text">{{ $message }}</p>
-        @enderror
+    @if($hasError)
+        <p class="text-xs text-danger-text">{{ $errors->first($name) }}</p>
     @endif
 </div>
