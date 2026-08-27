@@ -1,6 +1,6 @@
-<x-app-layout title="MFA Setup MFA">
-    <x-page-header title="MFA Setup MFA" description="Multi-factor authentication" />
+<x-app-layout title="MFA Setup">
+    <x-page-header title="MFA Setup" description="Multi-factor authentication" />
     <x-card>
-        <p class="text-ink-muted">MFA MFA Setup view content.</p>
+        <p class="text-ink-muted">MFA setup content.</p>
     </x-card>
 </x-app-layout>
