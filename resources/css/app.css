@@ -1,9 +1,133 @@
 @import "tailwindcss";
-@import "tokens.css";
 
-/* Alpine.js: keep x-show elements hidden until the framework hydrates.
-   Without this rule, dropdowns toggled with x-show flash visible before
-   Alpine initializes (and the existing dark-mode toggle icons do too). */
+@theme {
+  /* Canvas & Surface */
+  --color-canvas: #ffffff;
+  --color-canvas-subtle: #f7f7f8;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f7f7f8;
+  --color-surface-raised: #ffffff;
+  --color-surface-inverted: #171717;
+
+  /* Text */
+  --color-ink: #171717;
+  --color-ink-muted: #6b6b6b;
+
+  /* Border */
+  --color-border: #e5e5e5;
+
+  /* Primary */
+  --color-primary: #0a0a0a;
+  --color-primary-hover: #262626;
+  --color-on-primary: #ffffff;
+
+  /* Accent */
+  --color-accent: #d4a843;
+
+  /* Semantic colors */
+  --color-success: #22c55e;
+  --color-success-subtle: #f0fdf4;
+  --color-success-border: #bbf7d0;
+  --color-success-text: #15803d;
+  --color-success-hover: #15803d;
+  --color-on-success: #ffffff;
+
+  --color-warning: #f59e0b;
+  --color-warning-subtle: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #b45309;
+  --color-warning-hover: #b45309;
+  --color-on-warning: #ffffff;
+
+  --color-danger: #ef4444;
+  --color-danger-subtle: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-text: #b91c1c;
+  --color-danger-hover: #b91c1c;
+  --color-on-danger: #ffffff;
+
+  --color-info: #3b82f6;
+  --color-info-subtle: #eff6ff;
+  --color-info-border: #bfdbfe;
+  --color-info-text: #1d4ed8;
+  --color-info-hover: #1d4ed8;
+  --color-on-info: #ffffff;
+
+  /* Sidebar */
+  --color-sidebar: #171717;
+  --color-sidebar-hover: #262626;
+  --color-sidebar-border: #2d2d2d;
+  --color-sidebar-text: #ffffff;
+  --color-sidebar-text-muted: #9ca3af;
+  --color-sidebar-ring: #4b5563;
+
+  /* Typography */
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark {
+  --color-canvas: #171717;
+  --color-canvas-subtle: #262626;
+  --color-surface: #262626;
+  --color-surface-subtle: #171717;
+  --color-surface-raised: #262626;
+  --color-surface-inverted: #f7f7f8;
+
+  --color-ink: #f7f7f8;
+  --color-ink-muted: #9ca3af;
+
+  --color-border: #2d2d2d;
+
+  --color-primary: #f7f7f8;
+  --color-primary-hover: #e5e5e5;
+  --color-on-primary: #171717;
+
+  --color-accent: #d4a843;
+
+  --color-success: #4ade80;
+  --color-success-subtle: #14532d;
+  --color-success-border: #166534;
+  --color-success-text: #bbf7d0;
+  --color-success-hover: #4ade80;
+  --color-on-success: #171717;
+
+  --color-warning: #fbbf24;
+  --color-warning-subtle: #78350f;
+  --color-warning-border: #92400e;
+  --color-warning-text: #fde68a;
+  --color-warning-hover: #fbbf24;
+  --color-on-warning: #171717;
+
+  --color-danger: #f87171;
+  --color-danger-subtle: #7f1d1d;
+  --color-danger-border: #991b1b;
+  --color-danger-text: #fecaca;
+  --color-danger-hover: #f87171;
+  --color-on-danger: #171717;
+
+  --color-info: #60a5fa;
+  --color-info-subtle: #1e3a8a;
+  --color-info-border: #1e40af;
+  --color-info-text: #bfdbfe;
+  --color-info-hover: #60a5fa;
+  --color-on-info: #171717;
+
+  --color-sidebar: #0a0a0a;
+  --color-sidebar-hover: #262626;
+  --color-sidebar-border: #2d2d2d;
+  --color-sidebar-text: #f7f7f8;
+  --color-sidebar-text-muted: #9ca3af;
+  --color-sidebar-ring: #6b7280;
+}
+
 [x-cloak] {
-    display: none;
+  display: none;
 }
