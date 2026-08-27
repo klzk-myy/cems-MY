@@ -6,7 +6,28 @@
             </x-slot:actions>
         </x-page-header>
 
-        <form action="{{ route('accounting.journal.store') }}" method="POST" class="space-y-6">
+        <form action="{{ route('accounting.journal.store') }}" method="POST" class="space-y-6"
+              x-data="{
+                  lines: [
+                      { account: '', description: '', debit: '', credit: '' },
+                      { account: '', description: '', debit: '', credit: '' },
+                  ],
+                  addLine() {
+                      this.lines.push({ account: '', description: '', debit: '', credit: '' });
+                  },
+                  removeLine(index) {
+                      if (this.lines.length > 2) this.lines.splice(index, 1);
+                  },
+                  get totalDebit() {
+                      return this.lines.reduce((sum, l) => sum + (parseFloat(l.debit) || 0), 0).toFixed(2);
+                  },
+                  get totalCredit() {
+                      return this.lines.reduce((sum, l) => sum + (parseFloat(l.credit) || 0), 0).toFixed(2);
+                  },
+                  get difference() {
+                      return (parseFloat(this.totalDebit) - parseFloat(this.totalCredit)).toFixed(2);
+                  }
+              }">
             @csrf
 
             <x-card class="space-y-6">
@@ -34,64 +55,40 @@
                         <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Remove</th>
                     </x-slot:thead>
                     <x-slot:tbody>
-                        <tr>
-                            <td class="px-4 py-3">
-                                <x-select
-                                    name="lines[0][account]"
-                                    :options="[
-                                        '1100-001' => '1100-001 - Cash MYR',
-                                        '1100-002' => '1100-002 - Cash USD',
-                                        '2100-001' => '2100-001 - Accounts Payable',
-                                        '5100-001' => '5100-001 - Revenue',
-                                    ]"
-                                    placeholder="Select Account"
-                                    inline
-                                />
-                            </td>
-                            <td class="px-4 py-3">
-                                <x-input name="lines[0][description]" placeholder="Line description" inline />
-                            </td>
-                            <td class="px-4 py-3">
-                                <x-input type="number" name="lines[0][debit]" step="0.01" min="0" placeholder="0.00" class="text-right" inline />
-                            </td>
-                            <td class="px-4 py-3">
-                                <x-input type="number" name="lines[0][credit]" step="0.01" min="0" placeholder="0.00" class="text-right" inline />
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <x-button variant="danger" size="sm">Remove</x-button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="px-4 py-3">
-                                <x-select
-                                    name="lines[1][account]"
-                                    :options="[
-                                        '1100-001' => '1100-001 - Cash MYR',
-                                        '1100-002' => '1100-002 - Cash USD',
-                                        '2100-001' => '2100-001 - Accounts Payable',
-                                        '5100-001' => '5100-001 - Revenue',
-                                    ]"
-                                    placeholder="Select Account"
-                                    inline
-                                />
-                            </td>
-                            <td class="px-4 py-3">
-                                <x-input name="lines[1][description]" placeholder="Line description" inline />
-                            </td>
-                            <td class="px-4 py-3">
-                                <x-input type="number" name="lines[1][debit]" step="0.01" min="0" placeholder="0.00" class="text-right" inline />
-                            </td>
-                            <td class="px-4 py-3">
-                                <x-input type="number" name="lines[1][credit]" step="0.01" min="0" placeholder="0.00" class="text-right" inline />
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <x-button variant="danger" size="sm">Remove</x-button>
-                            </td>
-                        </tr>
+                        <template x-for="(line, index) in lines" :key="index">
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <x-select
+                                        :name="'lines[' + index + '][account]'"
+                                        :options="[
+                                            '1100-001' => '1100-001 - Cash MYR',
+                                            '1100-002' => '1100-002 - Cash USD',
+                                            '2100-001' => '2100-001 - Accounts Payable',
+                                            '5100-001' => '5100-001 - Revenue',
+                                        ]"
+                                        placeholder="Select Account"
+                                        x-model="line.account"
+                                        inline
+                                    />
+                                </td>
+                                <td class="px-4 py-3">
+                                    <x-input :name="'lines[' + index + '][description]'" placeholder="Line description" x-model="line.description" inline />
+                                </td>
+                                <td class="px-4 py-3">
+                                    <x-input type="number" :name="'lines[' + index + '][debit]'" step="0.01" min="0" placeholder="0.00" class="text-right" x-model="line.debit" inline />
+                                </td>
+                                <td class="px-4 py-3">
+                                    <x-input type="number" :name="'lines[' + index + '][credit]'" step="0.01" min="0" placeholder="0.00" class="text-right" x-model="line.credit" inline />
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <x-button type="button" variant="danger" size="sm" @click="removeLine(index)" :disabled="lines.length <= 2">Remove</x-button>
+                                </td>
+                            </tr>
+                        </template>
                     </x-slot:tbody>
                 </x-table>
                 <div class="px-4 py-3 border-t border-border">
-                    <x-button type="button" id="add-line" variant="secondary">+ Add Line</x-button>
+                    <x-button type="button" @click="addLine()" variant="secondary">+ Add Line</x-button>
                 </div>
             </x-card>
 
@@ -99,15 +96,15 @@
                 <div class="flex justify-end gap-8">
                     <div class="text-right">
                         <p class="text-sm text-ink-muted">Total Debit</p>
-                        <p class="text-lg font-semibold" id="total-debit">0.00</p>
+                        <p class="text-lg font-semibold" x-text="totalDebit">0.00</p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-ink-muted">Total Credit</p>
-                        <p class="text-lg font-semibold" id="total-credit">0.00</p>
+                        <p class="text-lg font-semibold" x-text="totalCredit">0.00</p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-ink-muted">Difference</p>
-                        <p class="text-lg font-semibold" id="difference">0.00</p>
+                        <p class="text-lg font-semibold" x-text="difference">0.00</p>
                     </div>
                 </div>
             </x-card>
