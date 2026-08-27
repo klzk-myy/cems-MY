@@ -22,16 +22,11 @@
                 <x-slot:actions>
                     @if($canSelectBranch)
                         <form method="GET" action="{{ route('rates.index') }}" class="flex items-center gap-2">
-                            <select name="branch_id"
-                                    onchange="this.form.submit()"
-                                    class="px-3 py-2 text-sm bg-surface border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-primary">
-                                <option value="">All branches</option>
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ $currentBranch && $currentBranch->id === $branch->id ? 'selected' : '' }}>
-                                        {{ $branch->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-select name="branch_id"
+                                :options="['' => 'All branches'] + $branches->pluck('name', 'id')->toArray()"
+                                :selected="$currentBranch?->id"
+                                onchange="this.form.submit()"
+                                inline />
                             <noscript><x-button type="submit" variant="secondary" size="sm">Go</x-button></noscript>
                         </form>
                     @endif
@@ -41,13 +36,10 @@
                             @if($currentBranch)
                                 <input type="hidden" name="branch_id" value="{{ $currentBranch->id }}">
                             @endif
-                            <select name="date"
-                                    class="px-3 py-2 text-sm bg-surface border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-primary">
-                                @foreach($availableDates as $date)
-                                    <option value="{{ $date }}">{{ $date }}</option>
-                                @endforeach
-                            </select>
-                            <x-button type="submit" variant="secondary" size="md">Copy Previous Day</x-button>
+                            <x-select name="date"
+                                :options="$availableDates"
+                                onchange="this.form.submit()"
+                                inline />
                         </form>
                     @endif
                 </x-slot:actions>
@@ -138,7 +130,7 @@
                             </svg>
                         </button>
                     </div>
-                    <form method="POST" action="{{ route('rates.override') }}">
+                    <form method="POST" action="{{ route('rates.override') }}" id="override-form">
                         @csrf
                         @if($currentBranch)
                             <input type="hidden" name="branch_id" value="{{ $currentBranch->id }}">
