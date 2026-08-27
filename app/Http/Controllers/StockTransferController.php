@@ -59,7 +59,7 @@ class StockTransferController extends Controller
 
         $transfers = $query->orderBy('created_at', 'desc')->paginate(25)->withQueryString();
 
-        return view('pages.stock-transfers.index', compact('transfers'));
+        return view('stock-transfers.index', compact('transfers'));
     }
 
     public function create(): View
