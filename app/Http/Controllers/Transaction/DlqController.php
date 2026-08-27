@@ -42,7 +42,7 @@ class DlqController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('pages.transactions.dlq', compact('transactions'));
+        return view('transactions.dlq', compact('transactions'));
     }
 
     /**
