@@ -1,3 +1,8 @@
+@props([
+    'thead' => '',
+    'tbody' => '',
+])
+
 <div {{ $attributes->merge(['class' => 'overflow-hidden rounded-xl border border-border bg-surface']) }}>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">

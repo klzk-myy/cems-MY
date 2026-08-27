@@ -19,7 +19,7 @@ $trendColor = $trend > 0 ? 'text-success-text' : 'text-danger';
 
 <div {{ $attributes->merge(['class' => 'rounded-xl border border-border bg-surface p-5']) }}>
     <p class="text-sm text-ink-muted">{{ $label }}</p>
-    <p class="mt-1 text-2xl font-bold text-ink">{{ $value }}</p>
+    <p class="mt-1 text-2xl font-bold {{ $colors[$color] }}">{{ $value }}</p>
     @if($trend !== null)
         <p class="mt-1 text-xs {{ $trendColor }}">
             {{ $trend > 0 ? '+' : '' }}{{ $trend }}%
