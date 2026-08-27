@@ -29,6 +29,17 @@
                 </dl>
             </x-card>
 
+            <x-card title="Notes">
+                @forelse($customer->notes ?? [] as $note)
+                    <div class="border-b border-border pb-3 last:border-0 last:pb-0">
+                        <p class="text-sm text-ink">{{ $note->note }}</p>
+                        <p class="mt-1 text-xs text-ink-muted">{{ $note->createdBy?->name ?? 'Unknown' }} &middot; {{ $note->created_at?->format('d M Y H:i') }}</p>
+                    </div>
+                @empty
+                    <p class="text-sm text-ink-muted">No notes yet.</p>
+                @endforelse
+            </x-card>
+
             <x-card title="Add Note">
                 <form method="POST" action="{{ route('customers.notes.store', $customer) }}" class="space-y-3">
                     @csrf
@@ -44,15 +55,11 @@
                 <dl class="space-y-3 text-sm">
                     <div class="flex justify-between">
                         <dt class="text-ink-muted">Total Transactions</dt>
-                        <dd class="font-medium text-ink">15</dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-ink-muted">Total Volume</dt>
-                        <dd class="font-medium text-ink">RM 125,000</dd>
+                        <dd class="font-medium text-ink">{{ $customer->transactions->count() ?? 0 }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-ink-muted">Member Since</dt>
-                        <dd class="font-medium text-ink">Jan 2024</dd>
+                        <dd class="font-medium text-ink">{{ $customer->created_at?->format('M Y') ?? 'Jan 2024' }}</dd>
                     </div>
                 </dl>
             </x-card>
