@@ -212,8 +212,10 @@ class TransactionCreationServiceTest extends TestCase
         Notification::fake();
         config(['thresholds.cdd.large_transaction' => '1000']);
 
+        $teller = User::factory()->teller()->create();
         $officer = User::factory()->complianceOfficer()->create();
-        User::factory()->teller()->create();
+
+        $this->actingAs($teller);
 
         $transaction = $this->completedBuyService()->create($this->context([
             'status' => TransactionStatus::PendingApproval,
