@@ -10,7 +10,8 @@ class TestDashboard
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! app()->isLocal()) {
+        // Allow access in local and testing environments
+        if (! app()->isLocal() && ! app()->runningUnitTests()) {
             abort(404);
         }
 
