@@ -15,7 +15,7 @@
             </x-card>
             <x-card title="Total Balance">
                 <p class="text-2xl font-bold">{{ number_format((float) ($branchPool->available_balance + $branchPool->allocated_balance), 4) }}</p>
-            </xcard>
+            </x-card>
         </div>
 
         @if(auth()->user()?->role->value !== 'teller')
