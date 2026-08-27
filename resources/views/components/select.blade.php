@@ -4,11 +4,13 @@
     'options' => [],
     'placeholder' => 'Select...',
     'required' => false,
+    'value' => null,
 ])
 
 @php
-$errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
+$errors = $errors ?? new \Illuminate\View\ViewErrorBag;
 $hasError = $errors->has($name);
+$selectedValue = old($name, $value instanceof \BackedEnum ? $value->value : $value);
 @endphp
 
 <div {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'space-y-1']) }}>
@@ -24,8 +26,8 @@ $hasError = $errors->has($name);
         ]) }}
     >
         <option value="">{{ $placeholder }}</option>
-        @foreach($options as $value => $label)
-            <option value="{{ $value }}">{{ $label }}</option>
+        @foreach($options as $optValue => $optLabel)
+            <option value="{{ $optValue }}" {{ $selectedValue == $optValue ? 'selected' : '' }}>{{ $optLabel }}</option>
         @endforeach
     </select>
     @if($hasError)
