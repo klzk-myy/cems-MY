@@ -1,134 +1,40 @@
 <x-app-layout title="Transaction Details">
-    <div class="space-y-6">
-        <x-page-header title="Transaction Details" :actions="true">
-            ID: {{ $transaction->id }}
+    <x-page-header title="Transaction Details" description="View transaction information">
+        <x-slot:actions>
+            <a href="{{ route('transactions.index') }}"><x-button variant="secondary">Back</x-button></a>
+        </x-slot:actions>
+    </x-page-header>
 
-            <x-slot:actions>
-                <x-badge
-                    :variant="match ($transaction->status?->value ?? '') {
-                        'Completed' => 'success',
-                        'Pending' => 'warning',
-                        'PendingApproval' => 'warning',
-                        'Cancelled' => 'danger',
-                        default => 'gray',
-                    }"
-                >
-                    {{ $transaction->status?->label() ?? 'N/A' }}
-                </x-badge>
-            </x-slot:actions>
-        </x-page-header>
-
-        <x-card title="Transaction Information">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Transaction Type</label>
-                    <x-badge
-                        :variant="$transaction->type?->value === 'Buy' ? 'success' : 'info'"
-                    >
-                        {{ $transaction->type?->label() ?? 'N/A' }}
-                    </x-badge>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Foreign Currency</label>
-                    <p class="text-sm text-ink">{{ $transaction->currency_code ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">FCY Amount</label>
-                    <p class="text-sm font-medium text-ink">{{ number_format((float) $transaction->amount_foreign, 2) }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Exchange Rate</label>
-                    <p class="text-sm text-ink">{{ $transaction->rate }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">MYR Amount</label>
-                    <p class="text-sm font-medium text-ink">{{ number_format((float) $transaction->amount_local, 2) }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Counter</label>
-                    <p class="text-sm text-ink">{{ $transaction->counter_id ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Branch</label>
-                    <p class="text-sm text-ink">{{ $transaction->branch?->name ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Created By</label>
-                    <p class="text-sm text-ink">{{ $transaction->user?->username ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Created At</label>
-                    <p class="text-sm text-ink">{{ $transaction->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</p>
-                </div>
-            </div>
-        </x-card>
-
-        <x-card title="Customer Details">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Customer Name</label>
-                    <p class="text-sm text-ink">{{ $transaction->customer?->full_name ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Customer ID</label>
-                    <p class="text-sm text-ink">{{ $transaction->customer_id ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">ID Type</label>
-                    <p class="text-sm text-ink">{{ $transaction->customer?->id_type?->value ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">ID Number</label>
-                    <p class="text-sm text-ink">{{ $transaction->customer->id_number_masked ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">CDD Level</label>
-                    <p class="text-sm text-ink">{{ $transaction->cdd_level?->value ?? 'N/A' }}</p>
-                </div>
-            </div>
-        </x-card>
-
-        @if($requiresManagerConfirmation ?? false)
-            <x-alert type="warning" title="Confirmation Required" role="alert">
-                This transaction exceeds the manager confirmation threshold and cannot be approved until it has been confirmed.
-                @can('approve', $transaction)
-                    <div class="mt-3">
-                        <x-button href="{{ route('transactions.confirm.show', $transaction->id) }}" variant="primary">
-                            Go to Confirmation
-                        </x-button>
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div class="lg:col-span-2 space-y-6">
+            <x-card title="Transaction Information">
+                <dl class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <dt class="text-ink-muted">Reference</dt>
+                        <dd class="font-medium text-ink">TXN-001</dd>
                     </div>
-                @endcan
-            </x-alert>
-        @endif
-
-        <x-card title="Actions">
-            <div class="flex items-center gap-4 flex-wrap">
-                @if(in_array($transaction->status?->value, ['Pending', 'PendingApproval'], true))
-                    @can('approve', $transaction)
-                        <form method="POST" action="{{ route('transactions.approve', $transaction->id) }}" class="contents">
-                            @csrf
-                            <x-button type="submit" variant="primary">Approve</x-button>
-                        </form>
-                        <form method="POST" action="{{ route('transactions.reject', $transaction->id) }}" class="contents">
-                            @csrf
-                            <x-button type="submit" variant="secondary">Reject</x-button>
-                        </form>
-                    @endcan
-                @endif
-                @if($transaction->status?->isPendingCancellation())
-                    @can('approveCancellation', $transaction)
-                        <x-button href="{{ route('transactions.approve-cancellation', $transaction->id) }}" variant="primary">Approve Cancellation</x-button>
-                        <x-button href="{{ route('transactions.reject-cancellation', $transaction->id) }}" variant="danger">Reject Cancellation</x-button>
-                    @endcan
-                @endif
-                @if($transaction->status?->isCompleted())
-                    @can('requestCancellation', $transaction)
-                        <x-button href="{{ route('transactions.cancel', $transaction->id) }}" variant="danger">Request Cancellation</x-button>
-                    @endcan
-                @endif
-                <x-button href="{{ route('transactions.print', $transaction->id) }}" variant="secondary">Print Receipt</x-button>
-                <x-button href="{{ route('transactions.index') }}" variant="secondary">Back to List</x-button>
-            </div>
-        </x-card>
+                    <div>
+                        <dt class="text-ink-muted">Status</dt>
+                        <dd><x-badge variant="success">Completed</x-badge></dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted">Customer</dt>
+                        <dd class="font-medium text-ink">John Doe</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted">Amount</dt>
+                        <dd class="font-medium text-ink">RM 10,000</dd>
+                    </div>
+                </dl>
+            </x-card>
+        </div>
+        <div>
+            <x-card title="Actions">
+                <div class="space-y-2">
+                    <x-button variant="secondary" class="w-full">Print Receipt</x-button>
+                    <x-button variant="danger" class="w-full">Cancel</x-button>
+                </div>
+            </x-card>
+        </div>
     </div>
 </x-app-layout>

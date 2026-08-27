@@ -1,31 +1,4 @@
-@component('mail::message')
-# {{ $severity }} Compliance Finding: {{ $findingType }}
-
-A new compliance finding has been generated and requires your attention.
-
-## Finding Details
-
-**Finding ID:** {{ $finding->id }}
-**Type:** {{ $findingType }}
-**Severity:** {{ $severity }}
-**Generated At:** {{ $generatedAt->format('Y-m-d H:i:s') }}
-
-@if($subjectInfo)
-**Subject:** {{ $subjectInfo->name ?? $subjectInfo->full_name ?? $subjectInfo->case_number ?? get_class($subjectInfo) }}
-@endif
-
-@if(count($details) > 0)
-## Details
-
-@foreach($details as $key => $value)
-- **{{ ucfirst(str_replace('_', ' ', (string) $key)) }}:** {{ is_scalar($value) ? $value : json_encode($value) }}
-@endforeach
-@endif
-
-@component('mail::button', ['url' => $url])
-View Finding
-@endcomponent
-
-Thank you,<br>
-{{ config('app.name') }}
-@endcomponent
+<x-email-layout title="{{ ucfirst(str_replace('-', ' ', compliance-finding)) }} Notification">
+    <p>This is an automated notification from CEMS regarding {{ str_replace('-', ' ', compliance-finding) }}.</p>
+    <p><a href="{{ url('/') }}" style="display: inline-block; padding: 12px 24px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View in CEMS</a></p>
+</x-email-layout>

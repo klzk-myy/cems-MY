@@ -1,10 +1,4 @@
-@component('mail::message')
-# {{ $subject }}
-
-Your report is ready and has been attached to this email.
-
-Please find the attached file for the full details.
-
-Thank you,<br>
-{{ config('app.name') }}
-@endcomponent
+<x-email-layout title="{{ ucfirst(str_replace('-', ' ', report)) }} Notification">
+    <p>This is an automated notification from CEMS regarding {{ str_replace('-', ' ', report) }}.</p>
+    <p><a href="{{ url('/') }}" style="display: inline-block; padding: 12px 24px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View in CEMS</a></p>
+</x-email-layout>

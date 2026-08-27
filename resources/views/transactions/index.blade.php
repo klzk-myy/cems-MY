@@ -1,62 +1,38 @@
 <x-app-layout title="Transactions">
-    <div class="space-y-6">
-        <x-page-header title="Transactions">
-            <x-slot:actions>
-                <x-button href="{{ route('transactions.create') }}" variant="primary">New Transaction</x-button>
-            </x-slot:actions>
-        </x-page-header>
+    <x-page-header title="Transactions" description="Manage all exchange transactions">
+        <x-slot:actions>
+            <a href="{{ route('transactions.create') }}">
+                <x-button variant="primary">New Transaction</x-button>
+            </a>
+        </x-slot:actions>
+    </x-page-header>
 
-        <x-filter-bar method="GET">
-            <x-input type="text" name="search" placeholder="Search by reference..." value="{{ request('search') }}" class="flex-1" inline />
-            <x-select name="status" :options="['' => 'All Status'] + $statusOptions" :selected="request('status')" inline />
-            <x-button type="submit" variant="primary">Filter</x-button>
-        </x-filter-bar>
+    <x-filter-bar>
+        <x-input name="search" placeholder="Search..." class="w-48" />
+        <x-select name="status" :options="['' => 'All', 'pending' => 'Pending', 'completed' => 'Completed']" class="w-36" />
+        <x-button variant="secondary">Filter</x-button>
+    </x-filter-bar>
 
-        <x-card>
-            <x-table>
-                <x-slot:thead>
-                    <tr class="text-left text-sm text-ink-muted">
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Amount</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Rate</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase"></th>
-                    </tr>
-                </x-slot:thead>
-                <x-slot:tbody>
-                    @forelse($transactions as $transaction)
-                        <tr class="border-t border-border hover:bg-canvas-subtle">
-                            <td class="px-4 py-3 font-mono text-sm">{{ $transaction->reference }}</td>
-                            <td class="px-4 py-3">{{ $transaction->created_at->format('M d, Y H:i') }}</td>
-                            <td class="px-4 py-3">{{ $transaction->customer->full_name ?? 'N/A' }}</td>
-                            <td class="px-4 py-3">
-                                <x-badge variant="{{ $transaction->type->value === 'Buy' ? 'success' : 'danger' }}">
-                                    {{ $transaction->type->label() }}
-                                </x-badge>
-                            </td>
-                            <td class="px-4 py-3">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</td>
-                            <td class="px-4 py-3">{{ number_format($transaction->rate, 4) }}</td>
-                            <td class="px-4 py-3">
-                                <x-badge variant="{{ $transaction->status->value === 'Completed' ? 'success' : ($transaction->status->value === 'Pending' ? 'warning' : 'gray') }}">
-                                    {{ $transaction->status->label() }}
-                                </x-badge>
-                            </td>
-                            <td class="px-4 py-3">
-                                <x-button href="{{ route('transactions.show', $transaction) }}" variant="ghost" size="sm">View</x-button>
-                            </td>
-                        </tr>
-                    @empty
-                        <x-empty-state message="No transactions found." :colspan="8" />
-                    @endforelse
-                </x-slot:tbody>
-            </x-table>
-        </x-card>
-
-        <div class="mt-4">
-            {{ $transactions->withQueryString()->links() }}
-        </div>
+    <div class="mt-4">
+        <x-table>
+            <x-slot:thead>
+                <tr>
+                    <th class="px-4 py-3">Reference</th>
+                    <th class="px-4 py-3">Customer</th>
+                    <th class="px-4 py-3">Type</th>
+                    <th class="px-4 py-3">Amount</th>
+                    <th class="px-4 py-3">Status</th>
+                    <th class="px-4 py-3">Date</th>
+                    <th class="px-4 py-3">Actions</th>
+                </tr>
+            </x-slot:thead>
+            <x-slot:tbody>
+                <tr>
+                    <td class="px-4 py-3 text-sm text-ink-muted" colspan="7">
+                        <x-empty-state title="No transactions found" description="Create your first transaction to get started." />
+                    </td>
+                </tr>
+            </x-slot:tbody>
+        </x-table>
     </div>
 </x-app-layout>

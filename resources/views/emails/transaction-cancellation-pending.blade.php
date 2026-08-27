@@ -1,24 +1,4 @@
-@component('mail::message')
-# Transaction Cancellation Pending Approval
-
-A cancellation request has been submitted for a transaction and is awaiting your approval.
-
-## Transaction Details
-
-**Transaction ID:** {{ $transaction->id }}
-**Customer:** {{ $customer?->full_name ?? 'N/A' }}
-**Amount:** {{ $transaction->amount_local ?? 'N/A' }} {{ $transaction->currency_code ?? '' }}
-**Type:** {{ $transaction->transaction_type?->label() ?? $transaction->type?->label() ?? 'N/A' }}
-
-## Cancellation Request
-
-**Requested By:** {{ $requestedBy->username ?? $requestedBy->full_name ?? 'N/A' }}
-**Reason:** {{ $reason }}
-
-@component('mail::button', ['url' => $url])
-Review Cancellation Request
-@endcomponent
-
-Thank you,<br>
-{{ config('app.name') }}
-@endcomponent
+<x-email-layout title="{{ ucfirst(str_replace('-', ' ', transaction-cancellation-pending)) }} Notification">
+    <p>This is an automated notification from CEMS regarding {{ str_replace('-', ' ', transaction-cancellation-pending) }}.</p>
+    <p><a href="{{ url('/') }}" style="display: inline-block; padding: 12px 24px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View in CEMS</a></p>
+</x-email-layout>

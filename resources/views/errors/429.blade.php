@@ -1,9 +1,14 @@
-@extends('errors.layout')
-
-@section('code', '429')
-@section('title', 'Too Many Requests')
-@section('message', 'You have made too many requests in a short period. Please wait a moment before trying again, or sign in again to continue.')
-
-@section('actions')
-    <x-button href="{{ route('login') }}" variant="primary">Return to Login</x-button>
-@endsection
+<x-errors.layout title="{{ 429 }} - Error">
+    <h1 class="text-4xl font-bold text-ink">{{ 429 }}</h1>
+    <p class="mt-2 text-ink-muted">
+        @match(429)
+            @when(403) You don't have permission to access this page.
+            @when(404) The page you're looking for doesn't exist.
+            @when(419) Your session has expired. Please try again.
+            @when(429) Too many requests. Please try again later.
+            @when(500) Something went wrong on our end.
+            @when(503) Service temporarily unavailable.
+        @endmatch
+    </p>
+    <a href="{{ route('dashboard') }}" class="mt-4 inline-block"><x-button variant="primary">Go to Dashboard</x-button></a>
+</x-errors.layout>
