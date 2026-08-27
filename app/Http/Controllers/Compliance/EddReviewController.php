@@ -69,7 +69,7 @@ class EddReviewController extends Controller
      */
     public function approve(Request $request, EnhancedDiligenceRecord $eddRecord): RedirectResponse
     {
-        $this->authorize('view', $eddRecord);
+        $this->authorize('update', $eddRecord);
 
         if (! in_array($eddRecord->status, $this->finalisableStatuses(), true)) {
             return back()->with(
@@ -94,7 +94,7 @@ class EddReviewController extends Controller
      */
     public function reject(Request $request, EnhancedDiligenceRecord $eddRecord): RedirectResponse
     {
-        $this->authorize('view', $eddRecord);
+        $this->authorize('update', $eddRecord);
 
         if (! in_array($eddRecord->status, $this->finalisableStatuses(), true)) {
             return back()->with(
