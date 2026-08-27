@@ -35,7 +35,11 @@ class LayoutConsistencyTest extends TestCase
         $viewPath = resource_path('views/'.str_replace('.', '/', $view).'.blade.php');
         $this->assertFileExists($viewPath);
         $content = file_get_contents($viewPath);
-        $this->assertStringContainsString('<x-app-layout', $content);
+        // Views should extend either app-layout (with sidebar) or auth-layout (without sidebar)
+        $this->assertTrue(
+            str_contains($content, '<x-app-layout') || str_contains($content, '<x-auth-layout'),
+            "View {$view} should extend either x-app-layout or x-auth-layout"
+        );
         $this->assertStringNotContainsString('<!DOCTYPE html>', $content);
     }
 

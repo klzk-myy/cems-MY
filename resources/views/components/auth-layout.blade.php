@@ -7,7 +7,7 @@
     <title>{{ $title ?? config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="h-full bg-canvas-subtle text-ink antialiased font-sans">
+<body class="h-full bg-canvas-subtle text-ink antialiased font-sans" {{ $attributes ?? '' }}>
     <div class="flex min-h-full items-center justify-center px-4">
         <div class="w-full max-w-md">
             {{ $slot }}
