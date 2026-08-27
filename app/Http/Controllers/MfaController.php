@@ -43,7 +43,7 @@ class MfaController extends Controller
         Session::put('mfa_pending_secret', $secretData['secret']);
         Session::put('mfa_setup_started_at', now()->timestamp);
 
-        return view('pages.mfa.setup', [
+        return view('mfa.setup', [
             'secret' => $secretData['secret'],
             'otpauthUrl' => $secretData['otpauth_url'],
             'issuer' => config('cems.mfa.issuer', 'CEMS-MY'),
@@ -109,7 +109,7 @@ class MfaController extends Controller
         // a later visit cannot re-display them.
         Session::forget('mfa_recovery_codes');
 
-        return view('pages.mfa.recovery-codes', [
+        return view('mfa.recovery-codes', [
             'recoveryCodes' => $recoveryCodes,
         ]);
     }
@@ -144,7 +144,7 @@ class MfaController extends Controller
             return redirect()->intended('/dashboard');
         }
 
-        return view('pages.mfa.verify', [
+        return view('mfa.verify', [
             'rememberDevice' => true,
         ]);
     }
