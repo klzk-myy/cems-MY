@@ -74,7 +74,7 @@ class ThemeTokenUsageTest extends TestCase
             'chart-bar-success' => ['components.chart-bar', ['value' => 80], ['bg-success']],
             'chart-bar-warning' => ['components.chart-bar', ['value' => 65], ['bg-warning']],
             'chart-bar-danger' => ['components.chart-bar', ['value' => 30], ['bg-danger']],
-            'info-link-text' => ['pages.mfa.verify', ['errors' => new ViewErrorBag], ['text-info']],
+            'info-link-text' => ['mfa.verify', ['errors' => new ViewErrorBag], ['text-info']],
             'success-status-dot' => ['test-results.statistics', [
                 'days' => 30,
                 'statistics' => [
