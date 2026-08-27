@@ -17,4 +17,9 @@ class EnhancedDiligenceRecordPolicy
     {
         return $user->role === UserRole::Admin || $user->role === UserRole::ComplianceOfficer || $user->role === UserRole::Manager;
     }
+
+    public function update(User $user, EnhancedDiligenceRecord $record): bool
+    {
+        return $user->role === UserRole::Admin || $user->role === UserRole::ComplianceOfficer;
+    }
 }
