@@ -391,16 +391,16 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
             Route::patch('/{strReport}/submit', [StrReportController::class, 'submit'])->name('submit');
             Route::patch('/{strReport}/acknowledge', [StrReportController::class, 'acknowledge'])->name('acknowledge');
         });
+    });
 
-        // EDD staff review (mirrors the Api/V1 EddController approve/reject
-        // logic; prefix avoids colliding with the signed customer portal at
-        // compliance/edd/*).
-        Route::prefix('compliance/edd-review')->name('compliance.edd-reviews.')->group(function () {
-            Route::get('/', [EddReviewController::class, 'index'])->name('index');
-            Route::get('/records/{eddRecord}', [EddReviewController::class, 'show'])->name('show');
-            Route::post('/records/{eddRecord}/approve', [EddReviewController::class, 'approve'])->name('approve');
-            Route::post('/records/{eddRecord}/reject', [EddReviewController::class, 'reject'])->name('reject');
-        });
+    // EDD staff review (mirrors the Api/V1 EddController approve/reject
+    // logic; prefix avoids colliding with the signed customer portal at
+    // compliance/edd/*). Accessible to both Compliance Officers and Admins.
+    Route::middleware('role:compliance,admin')->prefix('compliance/edd-review')->name('compliance.edd-reviews.')->group(function () {
+        Route::get('/', [EddReviewController::class, 'index'])->name('index');
+        Route::get('/records/{eddRecord}', [EddReviewController::class, 'show'])->name('show');
+        Route::post('/records/{eddRecord}/approve', [EddReviewController::class, 'approve'])->name('approve');
+        Route::post('/records/{eddRecord}/reject', [EddReviewController::class, 'reject'])->name('reject');
     });
 
     // Risk dashboard role matrix: the controller gates its GETs with
