@@ -12,4 +12,4 @@ $colors = [
 ];
 @endphp
 
-<span {{ $attributes->merge(['class' => 'inline-block h-2 w-2 rounded-full ' . $colors[$color]]) }}></span>
+<span {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'inline-block h-2 w-2 rounded-full ' . $colors[$color]]) }}></span>

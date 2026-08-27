@@ -3,7 +3,7 @@
     'description' => null,
 ])
 
-<div {{ $attributes->merge(['class' => 'rounded-xl border border-border bg-surface']) }}>
+<div {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'rounded-xl border border-border bg-surface']) }}>
     @if($title || $description)
         <div class="border-b border-border px-5 py-4">
             @if($title)

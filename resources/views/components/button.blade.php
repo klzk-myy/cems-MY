@@ -22,6 +22,6 @@ $sizes = [
 $classes = 'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ' . $variants[$variant] . ' ' . $sizes[$size];
 @endphp
 
-<button type="{{ $type }}" {{ $attributes->merge(['class' => $classes]) }}>
+<button type="{{ $type }}" {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => $classes]) }}>
     {{ $slot }}
 </button>

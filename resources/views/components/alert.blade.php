@@ -19,7 +19,7 @@ $icons = [
 ];
 @endphp
 
-<div {{ $attributes->merge(['class' => 'flex items-start gap-3 rounded-md border p-4 ' . $types[$type], 'role' => 'alert']) }}>
+<div {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'flex items-start gap-3 rounded-md border p-4 ' . $types[$type], 'role' => 'alert']) }}>
     <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icons[$type] }}" />
     </svg>

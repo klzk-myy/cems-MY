@@ -2,6 +2,6 @@
     'reference',
 ])
 
-<span {{ $attributes->merge(['class' => 'font-mono text-sm text-ink']) }}>
+<span {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'font-mono text-sm text-ink']) }}>
     {{ $reference }}
 </span>

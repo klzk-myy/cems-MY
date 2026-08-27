@@ -3,7 +3,7 @@
     'tbody' => '',
 ])
 
-<div {{ $attributes->merge(['class' => 'overflow-hidden rounded-xl border border-border bg-surface']) }}>
+<div {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'overflow-hidden rounded-xl border border-border bg-surface']) }}>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
             <thead class="border-b border-border bg-canvas-subtle text-xs uppercase tracking-wider text-ink-muted">

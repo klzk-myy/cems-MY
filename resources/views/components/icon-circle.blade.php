@@ -12,6 +12,6 @@ $colors = [
 ];
 @endphp
 
-<span {{ $attributes->merge(['class' => 'inline-flex h-8 w-8 items-center justify-center rounded-full ' . $colors[$color]]) }}>
+<span {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'inline-flex h-8 w-8 items-center justify-center rounded-full ' . $colors[$color]]) }}>
     {{ $slot }}
 </span>

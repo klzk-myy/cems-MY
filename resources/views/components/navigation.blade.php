@@ -4,7 +4,7 @@
 ])
 
 <aside
-    {{ $attributes->merge(['class' => 'flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar transition-all']) }}
+    {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar transition-all']) }}
     :class="{ 'w-20': sidebarCollapsed }"
 >
     <div class="flex h-16 items-center justify-between border-b border-sidebar-border px-4">

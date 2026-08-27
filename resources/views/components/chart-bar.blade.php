@@ -6,7 +6,7 @@
 $color = $value >= 75 ? 'bg-success' : ($value >= 50 ? 'bg-warning' : 'bg-danger');
 @endphp
 
-<div {{ $attributes->merge(['class' => 'space-y-1']) }}>
+<div {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'space-y-1']) }}>
     <div class="flex items-center justify-between text-xs text-ink-muted">
         <span>Label</span>
         <span>{{ $value }}%</span>
