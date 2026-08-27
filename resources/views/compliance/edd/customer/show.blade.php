@@ -39,10 +39,10 @@
         </x-card>
 
         @php
-            $eddStatusVariant = match ($eddRecord->status) {
-                App\Enums\EddStatus::Approved => 'success',
-                App\Enums\EddStatus::Rejected, App\Enums\EddStatus::Expired => 'danger',
-                App\Enums\EddStatus::PendingReview => 'warning',
+            $eddStatusVariant = match ($eddRecord->status->value) {
+                'Approved' => 'success',
+                'Rejected', 'Expired' => 'danger',
+                'Pending_Review' => 'warning',
                 default => 'info',
             };
         @endphp
@@ -138,7 +138,7 @@
                         <li class="flex flex-col md:flex-row md:items-center justify-between gap-3 border border-border rounded-lg p-3">
                             <div class="space-y-1">
                                 <span class="font-medium text-ink">{{ $docReq->document_type }}</span>
-                                <x-badge variant="{{ $docReq->status === App\Enums\EddDocumentStatus::Verified ? 'success' : ($docReq->status === App\Enums\EddDocumentStatus::Rejected ? 'danger' : ($docReq->status === App\Enums\EddDocumentStatus::Received ? 'info' : 'warning')) }}">
+                                <x-badge variant="{{ $docReq->status->value === 'Verified' ? 'success' : ($docReq->status->value === 'Rejected' ? 'danger' : ($docReq->status->value === 'Received' ? 'info' : 'warning')) }}">
                                     {{ $docReq->status->label() }}
                                 </x-badge>
                                 @if($docReq->rejection_reason)
@@ -146,7 +146,7 @@
                                 @endif
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
-                                @if($docReq->status === App\Enums\EddDocumentStatus::Pending)
+                                @if($docReq->status->value === 'Pending')
                                     <form action="{{ route('compliance.edd.customer.upload', $docReq->id) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
                                         @csrf
                                         <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required class="text-xs">
