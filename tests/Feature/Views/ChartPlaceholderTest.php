@@ -18,7 +18,7 @@ class ChartPlaceholderTest extends TestCase
     #[Test]
     public function risk_trends_renders_real_chart_data(): void
     {
-        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $user = User::factory()->create(['role' => UserRole::Manager]);
         $customer = Customer::factory()->create();
 
         RiskScoreSnapshot::factory()->count(3)->create([
@@ -49,7 +49,7 @@ class ChartPlaceholderTest extends TestCase
             'created_at' => now()->subDay(),
         ]);
 
-        $response = $this->actingAs($user)->get('/test-results/statistics');
+        $response = $this->actingAs($user)->get(route('test-results.statistics'));
 
         $response->assertStatus(200);
         $response->assertDontSee('Chart Placeholder', false);
