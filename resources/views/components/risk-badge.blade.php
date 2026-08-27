@@ -1,19 +1,16 @@
 @props([
-    'customer' => null,
+    'level' => 'low',
 ])
 
 @php
-    $riskValue = $customer?->risk_rating instanceof \App\Enums\RiskRating 
-        ? $customer->risk_rating->value 
-        : ($customer?->risk_rating ?? 'Medium');
-    
-    $variant = $customer?->risk_variant ?? match (strtolower($riskValue)) {
-        'high', 'critical' => 'danger',
-        'medium' => 'warning',
-        default => 'success',
-    };
+$levels = [
+    'low' => 'bg-success-subtle text-success-text',
+    'medium' => 'bg-warning-subtle text-warning-text',
+    'high' => 'bg-danger-subtle text-danger-text',
+    'critical' => 'bg-danger text-on-danger',
+];
 @endphp
 
-<x-badge :variant="$variant">
-    {{ ucfirst($riskValue) }} Risk
-</x-badge>
+<span {{ $attributes->merge(['class' => 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ' . $levels[$level]]) }}>
+    {{ ucfirst($level) }}
+</span>
