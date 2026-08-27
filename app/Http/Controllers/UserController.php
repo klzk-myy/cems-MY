@@ -34,7 +34,7 @@ class UserController extends Controller
         $this->requireAdmin();
         $users = User::with('branch')->paginate(20)->withQueryString();
 
-        return view('pages.users.index', compact('users'));
+        return view('users.index', compact('users'));
     }
 
     /**
