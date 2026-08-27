@@ -1,4 +1,4 @@
-<x-app-layout title="Login">
+<x-auth-layout title="Login">
     <div class="flex min-h-screen items-center justify-center">
         <div class="w-full max-w-md">
             <div class="rounded-xl border border-border bg-surface p-8">
@@ -20,4 +20,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-auth-layout>

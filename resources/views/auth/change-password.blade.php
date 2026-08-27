@@ -1,4 +1,4 @@
-<x-app-layout title="Change Password">
+<x-auth-layout title="Change Password">
     <x-page-header title="Change Password" description="Update your account password" />
 
     <x-card>
@@ -13,4 +13,4 @@
             </div>
         </form>
     </x-card>
-</x-app-layout>
+</x-auth-layout>

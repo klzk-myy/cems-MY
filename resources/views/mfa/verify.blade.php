@@ -1,4 +1,4 @@
-<x-app-layout title="Verify MFA" {{ $attributes ?? '' }}>
+<x-auth-layout title="Verify MFA" {{ $attributes ?? '' }}>
     <x-page-header title="Verify MFA" description="Multi-factor authentication" />
     <x-card>
         <form method="POST" action="{{ route('mfa.verify.store') }}" class="space-y-4">
@@ -10,4 +10,4 @@
             Lost your device? <a href="{{ route('mfa.recovery') }}" class="text-info hover:underline">Use recovery code</a>
         </p>
     </x-card>
-</x-app-layout>
+</x-auth-layout>

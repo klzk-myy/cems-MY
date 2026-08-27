@@ -1,4 +1,4 @@
-<x-app-layout title="MFA Recovery">
+<x-auth-layout title="MFA Recovery">
     <x-page-header title="MFA Recovery" description="Multi-factor authentication" />
     <x-card>
         <form method="POST" action="{{ route('mfa.recovery.verify') }}" class="space-y-4">
@@ -7,4 +7,4 @@
             <x-button type="submit" variant="primary" class="w-full">Verify</x-button>
         </form>
     </x-card>
-</x-app-layout>
+</x-auth-layout>
