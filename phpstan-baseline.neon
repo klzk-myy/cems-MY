@@ -8431,18 +8431,6 @@ parameters:
 			path: app/Services/Reporting/ReportSchedulingService.php
 
 		-
-			message: '#^Method App\\Services\\Reporting\\ReportSchedulingService\:\:getReportHistory\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/Reporting/ReportSchedulingService.php
-
-		-
-			message: '#^Method App\\Services\\Reporting\\ReportSchedulingService\:\:getReportHistory\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Services/Reporting/ReportSchedulingService.php
-
-		-
 			message: '#^Method App\\Services\\Reporting\\ReportSchedulingService\:\:updateSchedule\(\) has parameter \$data with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
