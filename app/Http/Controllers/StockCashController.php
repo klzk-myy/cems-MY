@@ -85,7 +85,7 @@ class StockCashController extends Controller
             '0'
         );
 
-        return view('pages.stock-cash.index', compact(
+        return view('stock-cash.index', compact(
             'positions',
             'totalPnl',
             'openTills',
