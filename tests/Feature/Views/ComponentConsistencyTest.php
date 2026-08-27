@@ -40,7 +40,7 @@ class ComponentConsistencyTest extends TestCase
             'textarea' => ['components.textarea', ['name' => 'notes', 'slot' => '']],
             'checkbox' => ['components.checkbox', ['name' => 'is_active', 'label' => 'Active', 'slot' => '']],
             'empty-state-div' => ['components.empty-state', ['as' => 'div', 'slot' => '']],
-            'verify-card' => ['pages.mfa.verify', []],
+            'verify-card' => ['mfa.verify', []],
 
             'status-dot' => ['components.status-dot', ['color' => 'success', 'slot' => '']],
             'icon-circle' => ['components.icon-circle', ['color' => 'info', 'slot' => '']],
@@ -58,7 +58,7 @@ class ComponentConsistencyTest extends TestCase
     #[Test]
     public function mfa_verify_uses_card_component(): void
     {
-        $path = resource_path('views/pages/mfa/verify.blade.php');
+        $path = resource_path('views/mfa/verify.blade.php');
         $content = file_get_contents($path);
 
         $this->assertStringContainsString('<x-card', $content);
