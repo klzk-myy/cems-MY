@@ -1,3 +1,7 @@
+@props([
+    'title' => null,
+])
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
 <head>
@@ -7,7 +11,7 @@
     <title>{{ $title ?? config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="h-full bg-canvas-subtle text-ink antialiased font-sans">
+<body class="h-full bg-canvas-subtle text-ink antialiased font-sans" {{ $attributes }}>
     <div class="flex h-full" x-data="{ sidebarCollapsed: false }">
         <x-navigation :collapsible="true" :collapsed="false" />
 
