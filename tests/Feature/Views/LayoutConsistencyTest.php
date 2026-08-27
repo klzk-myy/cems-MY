@@ -47,7 +47,7 @@ class LayoutConsistencyTest extends TestCase
             'sanctions-import-logs' => ['/compliance/sanctions/import-logs', 'compliance.sanctions.import-logs.index'],
             'screening-show' => ['/compliance/screening/{customer}', 'compliance.screening.show'],
             'unified-index' => ['/compliance/unified', 'compliance.unified.index'],
-            'mfa-recovery-codes' => ['/mfa/recovery-codes', 'pages.mfa.recovery-codes'],
+            'mfa-recovery-codes' => ['/mfa/recovery-codes', 'mfa.recovery-codes'],
         ];
     }
 
