@@ -1,4 +1,4 @@
-<x-app-layout title="Verify MFA">
+<x-app-layout title="Verify MFA" {{ $attributes ?? '' }}>
     <x-page-header title="Verify MFA" description="Multi-factor authentication" />
     <x-card>
         <form method="POST" action="{{ route('mfa.verify.store') }}" class="space-y-4">
