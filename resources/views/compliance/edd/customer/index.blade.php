@@ -19,12 +19,12 @@
                                     <li class="flex items-center justify-between border border-border rounded-lg p-3">
                                         <div>
                                             <span class="font-medium">{{ $docReq->document_type }}</span>
-                                            <x-badge variant="{{ $docReq->status === App\Enums\EddDocumentStatus::Received ? 'success' : ($docReq->status === App\Enums\EddDocumentStatus::Rejected ? 'danger' : 'warning') }}">
-                                                {{ $docReq->status->value }}
-                                            </x-badge>
-                                        </div>
-                                        <div class="flex gap-2">
-                                            @if($docReq->status === App\Enums\EddDocumentStatus::Pending)
+                    <x-badge variant="{{ $docReq->status === 'Received' ? 'success' : ($docReq->status === 'Rejected' ? 'danger' : 'warning') }}">
+                                                 {{ $docReq->status->value }}
+                                             </x-badge>
+                                         </div>
+                                         <div class="flex gap-2">
+                                             @if($docReq->status === 'Pending')
                                                 <form action="{{ route('compliance.edd.customer.upload', $docReq->id) }}" method="POST" enctype="multipart/form-data">
                                                     @csrf
                                                     <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required class="text-xs">
