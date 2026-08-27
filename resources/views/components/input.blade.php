@@ -4,11 +4,13 @@
     'type' => 'text',
     'placeholder' => '',
     'required' => false,
+    'value' => null,
 ])
 
 @php
 $errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
 $hasError = $errors->has($name);
+$inputValue = old($name, $value);
 @endphp
 
 <div {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'space-y-1']) }}>
@@ -20,6 +22,7 @@ $hasError = $errors->has($name);
         name="{{ $name }}"
         id="{{ $name }}"
         placeholder="{{ $placeholder }}"
+        value="{{ $inputValue }}"
         @if($required) required @endif
         {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge([
             'class' => 'w-full rounded-md border bg-canvas-subtle px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ' . ($hasError ? 'border-danger' : 'border-border'),

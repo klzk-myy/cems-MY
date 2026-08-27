@@ -8,7 +8,7 @@
 ])
 
 @php
-$errors = $errors ?? new \Illuminate\View\ViewErrorBag;
+$errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
 $hasError = $errors->has($name);
 $selectedValue = old($name, $value instanceof \BackedEnum ? $value->value : $value);
 @endphp
