@@ -38,8 +38,10 @@
         <x-card title="Pass Rate Trend">
             @php
                 $trendDataArray = $trendData instanceof \Illuminate\Support\Collection ? $trendData->toArray() : ($trendData ?? []);
+                $trendLabels = array_column($trendDataArray, 'date');
+                $trendValues = array_column($trendDataArray, 'pass_rate');
             @endphp
-            <x-chart-trend title="Pass Rate Trend" :labels="array_keys($trendDataArray)" :values="array_values($trendDataArray)" color="success" />
+            <x-chart-trend title="Pass Rate Trend" :labels="$trendLabels" :values="$trendValues" color="success" />
         </x-card>
     </div>
 </x-app-layout>
