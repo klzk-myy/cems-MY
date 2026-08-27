@@ -8,6 +8,7 @@ use App\Http\Concerns\DeterminesTransactionStatus;
 use App\Http\Requests\TransactionWizardStep1Request;
 use App\Http\Requests\TransactionWizardStep2Request;
 use App\Http\Requests\TransactionWizardStep3Request;
+use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\User;
 use App\Services\Branch\TellerAllocationService;
@@ -44,7 +45,9 @@ class TransactionWizardController extends Controller
      */
     public function index(): Response
     {
-        return response()->view('transaction-wizard.index');
+        $currencies = Currency::select('code', 'name')->where('is_active', true)->get()->pluck('name', 'code');
+
+        return response()->view('transaction-wizard.index', compact('currencies') + ['idempotencyKey' => Str::uuid()]);
     }
 
     /**
@@ -191,7 +194,6 @@ class TransactionWizardController extends Controller
                 $transactionData['currency_code']
             );
 
-            /** @var Customer $customer */
             /** @var Customer $customer */
             $customer = Customer::findOrFail($transactionData['customer_id']);
 
