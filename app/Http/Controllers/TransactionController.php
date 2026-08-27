@@ -26,6 +26,7 @@ use App\Services\Transaction\TransactionConfirmationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -75,7 +76,14 @@ class TransactionController extends Controller
 
         $transactions = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
 
-        return view('pages.transactions.index', compact('transactions'));
+        $statusOptions = Transaction::query()
+            ->select('status')
+            ->distinct()
+            ->pluck('status')
+            ->mapWithKeys(fn ($status) => [$status->value => $status->label()])
+            ->toArray();
+
+        return view('transactions.index', compact('transactions', 'statusOptions'));
     }
 
     /**
@@ -91,6 +99,7 @@ class TransactionController extends Controller
         $customers = Customer::orderBy('full_name')->pluck('full_name', 'id');
         $branches = Branch::select('id', 'name')->orderBy('name')->get();
         $counters = Counter::where('status', 'active')->orderBy('name')->pluck('name', 'id');
+        $idempotencyKey = Str::uuid()->toString();
 
         $suggested_rate = null;
 
@@ -105,7 +114,7 @@ class TransactionController extends Controller
         }
         $tillBalances = $tillQuery->get();
 
-        return view('pages.transactions.create', compact('currencies', 'customers', 'tillBalances', 'branches', 'counters', 'suggested_rate'));
+        return view('transactions.create', compact('currencies', 'customers', 'tillBalances', 'branches', 'counters', 'suggested_rate', 'idempotencyKey'));
     }
 
     /**
