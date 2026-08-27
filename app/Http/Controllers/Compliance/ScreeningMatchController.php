@@ -78,7 +78,7 @@ class ScreeningMatchController extends Controller
             // Adverse media confirmations escalate for review only - the
             // customer is not frozen, blocked or rejected.
             $listType = 'adverse_media';
-            $severity = $result->adverseMediaEntry->severity ?? 'medium';
+            $severity = $result->adverseMediaEntry === null ? 'medium' : $result->adverseMediaEntry->severity;
 
             $outcome = $this->screeningService->handleConfirmedAdverseMatch($customer, $severity);
         } else {
