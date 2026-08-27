@@ -11,7 +11,6 @@ use App\Models\CurrencyPosition;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -150,7 +149,7 @@ class CurrencyController extends Controller
      * select (all selects filter is_active = true) but historical records are
      * unaffected.
      */
-    public function disable(Request $request, Currency $currency): RedirectResponse
+    public function disable(Currency $currency): RedirectResponse
     {
         $this->requireAdmin();
 
