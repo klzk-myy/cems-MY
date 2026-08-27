@@ -4,7 +4,7 @@
 ])
 
 <aside
-    {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar transition-all']) }}
+    {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'flex h-full w-64 flex-col border-r border-sidebar-border bg-surface-inverted transition-all']) }}
     :class="{ 'w-20': sidebarCollapsed }"
 >
     <div class="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
@@ -33,7 +33,7 @@
             </li>
             <li>
                 <a href="{{ route('transactions.index') }}" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-text hover:bg-sidebar-hover">
-                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linkcap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
                     <span x-show="!sidebarCollapsed">Transactions</span>
                 </a>
             </li>
