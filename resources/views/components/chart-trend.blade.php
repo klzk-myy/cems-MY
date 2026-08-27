@@ -16,6 +16,8 @@ $colors = [
     'blue' => ['fill-info', 'text-info'],
     'purple' => ['fill-accent', 'text-accent'],
 ];
+$values = $values instanceof \Illuminate\Support\Collection ? $values->toArray() : ($values ?? []);
+$labels = $labels instanceof \Illuminate\Support\Collection ? $labels->toArray() : ($labels ?? []);
 $max = !empty($values) ? max($values) : 1;
 $colorSet = $colors[$color] ?? $colors['danger'];
 @endphp
