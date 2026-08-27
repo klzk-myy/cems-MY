@@ -10,7 +10,7 @@
             <form method="GET" class="flex flex-wrap gap-3 mb-4 items-end">
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Report Type</label>
-                    <select name="type" class="border border-line rounded px-3 py-2 text-sm bg-canvas">
+                    <select name="type" class="border border-border rounded px-3 py-2 text-sm bg-canvas">
                         <option value="">All Types</option>
                         @foreach ($reportTypes as $type)
                             <option value="{{ $type['value'] }}" {{ request('type') === $type['value'] ? 'selected' : '' }}>{{ $type['label'] }}</option>
@@ -19,7 +19,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Status</label>
-                    <select name="status" class="border border-line rounded px-3 py-2 text-sm bg-canvas">
+                    <select name="status" class="border border-border rounded px-3 py-2 text-sm bg-canvas">
                         <option value="">All</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                         <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
