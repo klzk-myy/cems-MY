@@ -118,7 +118,7 @@ class DashboardController extends Controller
 
         $this->cacheOptimizationService->putStats(now()->addSeconds(60));
 
-        return view('pages.dashboard', compact('stats', 'recent_transactions', 'monitoring'));
+        return view('dashboard.index', compact('stats', 'recent_transactions', 'monitoring'));
     }
 
     /**
@@ -172,7 +172,7 @@ class DashboardController extends Controller
 
         $stats = $this->complianceFlagService->getStatusCounts();
 
-        return view('pages.compliance.index', compact('flags', 'stats'));
+        return view('compliance.index', compact('flags', 'stats'));
     }
 
     /**
@@ -217,7 +217,7 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        return view('pages.reports.index', compact('recentReports'));
+        return view('reports.index', compact('recentReports'));
     }
 
     /**
