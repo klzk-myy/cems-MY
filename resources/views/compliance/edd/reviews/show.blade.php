@@ -22,7 +22,7 @@
                     @if($record->customer)
                         {{ $record->customer->full_name ?? $record->customer->name ?? 'Customer #'.$record->customer->id }}
                         @if($portalUrl)
-                            — <a href="{{ $portalUrl }}" class="text-blue-600 hover:underline dark:text-blue-400" target="_blank" rel="noopener">open customer portal</a>
+                            — <a href="{{ $portalUrl }}" class="text-primary hover:underline" target="_blank" rel="noopener">open customer portal</a>
                         @endif
                     @else
                         —
