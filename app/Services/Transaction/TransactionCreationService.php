@@ -4,6 +4,7 @@ namespace App\Services\Transaction;
 
 use App\Enums\CddLevel;
 use App\Enums\StockReservationStatus;
+use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
@@ -267,9 +268,12 @@ class TransactionCreationService implements TransactionCreationServiceInterface
                 return;
             }
 
-            // The booking itself has no manager-confirmation record yet, so a
-            // transient instance carries the association the notification needs.
-            $confirmation = new TransactionConfirmation(['transaction_id' => $transaction->id]);
+            $confirmation = TransactionConfirmation::create([
+                'transaction_id' => $transaction->id,
+                'user_id' => auth()->id(),
+                'status' => TransactionConfirmationStatus::Pending->value,
+                'expires_at' => now()->addMinutes(30),
+            ]);
 
             foreach (app(AlertTriageService::class)->getAvailableOfficers() as $officer) {
                 if ($officer->id === auth()->id()) {
