@@ -13,7 +13,6 @@ use App\Models\ReportSchedule;
 use App\Services\AuditService;
 use App\ValueObjects\Quarter;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -280,37 +279,6 @@ class ReportSchedulingService
             ReportType::Qlvr => $this->reportingService->generateQuarterlyLargeValueCsv($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
             ReportType::Plr => $this->reportingService->generatePositionLimitCsv(),
         };
-    }
-
-    /**
-     * Get report history with filters.
-     */
-    public function getReportHistory(array $filters = []): Builder
-    {
-        $query = ReportRun::with(['generatedBy', 'schedule'])
-            ->orderByDesc('created_at');
-
-        if (! empty($filters['report_type'])) {
-            $query->where('report_type', $filters['report_type']);
-        }
-
-        if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        if (! empty($filters['from_date'])) {
-            $query->whereDate('created_at', '>=', $filters['from_date']);
-        }
-
-        if (! empty($filters['to_date'])) {
-            $query->whereDate('created_at', '<=', $filters['to_date']);
-        }
-
-        if (! empty($filters['generated_by'])) {
-            $query->where('generated_by', $filters['generated_by']);
-        }
-
-        return $query;
     }
 
     /**
