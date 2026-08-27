@@ -57,7 +57,7 @@ class CounterController extends Controller
         $availableCounters = $this->counterService->getAvailableCounters();
         $currencies = $this->getActiveCurrencies();
 
-        return view('pages.counters.index', compact('counters', 'stats', 'availableCounters', 'currencies'));
+        return view('counters.index', compact('counters', 'stats', 'availableCounters', 'currencies'));
     }
 
     /**
@@ -70,7 +70,7 @@ class CounterController extends Controller
         $availableCounters = $this->counterService->getAvailableCounters();
         $currencies = $this->getActiveCurrencies();
 
-        return view('pages.counters.open', compact('counter', 'availableCounters', 'currencies'));
+        return view('counters.open', compact('counter', 'availableCounters', 'currencies'));
     }
 
     /**
