@@ -29,7 +29,7 @@ class BranchPoolController extends Controller
             ? $this->poolService->getAllPoolsForBranch($branch)
             : BranchPool::with('branch')->get();
 
-        return view('branch-pools.index', compact('pools'));
+        return view('branch.pools.index', compact('pools'));
     }
 
     /**
@@ -39,7 +39,7 @@ class BranchPoolController extends Controller
     {
         $branchPool->load('branch');
 
-        return view('branch-pools.show', compact('branchPool'));
+        return view('branch.pools.show', compact('branchPool'));
     }
 
     /**
