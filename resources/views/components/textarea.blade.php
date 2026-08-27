@@ -11,7 +11,7 @@ $errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
 $hasError = $errors->has($name);
 @endphp
 
-<div class="space-y-1">
+<div {{ $attributes->merge(['class' => 'space-y-1']) }}>
     @if($label)
         <label for="{{ $name }}" class="block text-sm font-medium text-ink">{{ $label }}</label>
     @endif

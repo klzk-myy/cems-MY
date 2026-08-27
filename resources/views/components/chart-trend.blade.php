@@ -11,7 +11,7 @@ $colors = [
     'warning' => ['fill-warning', 'text-warning'],
     'danger' => ['fill-danger', 'text-danger'],
 ];
-$max = max($values) ?: 1;
+$max = !empty($values) ? max($values) : 1;
 @endphp
 
 <div {{ $attributes->merge(['class' => 'rounded-xl border border-border bg-surface p-5']) }}>
