@@ -26,7 +26,7 @@ class RawColorCleanupTest extends TestCase
     #[Test]
     public function mfa_verify_has_no_raw_blue(): void
     {
-        $this->assertViewHasNoRawColor('pages.mfa.verify', ['text-blue-600']);
+        $this->assertViewHasNoRawColor('mfa.verify', ['text-blue-600']);
     }
 
     #[Test]
