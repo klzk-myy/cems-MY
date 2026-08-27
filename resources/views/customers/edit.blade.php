@@ -13,6 +13,7 @@
                 <x-input name="id_number" label="ID Number" :required="true" />
             </div>
             <x-textarea name="address" label="Address" />
+            <x-textarea name="notes" label="Notes" />
             <div class="flex justify-end gap-3">
                 <a href="{{ route('customers.index') }}"><x-button variant="secondary">Cancel</x-button></a>
                 <x-button type="submit" variant="primary">Update Customer</x-button>

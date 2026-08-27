@@ -1,41 +1,23 @@
-<x-app-layout title="{{ ucfirst(Users Create) }} User">
-    <x-page-header title="{{ ucfirst(Users Create) }} User" description="User management" />
+<x-app-layout title="Add User">
+    <x-page-header title="Add User" description="Create a new system user" />
+
     <x-card>
-        @if(Users Create === 'index')
-            <x-table>
-                <x-slot:thead>
-                    <tr>
-                        <th class="px-4 py-3">Name</th>
-                        <th class="px-4 py-3">Email</th>
-                        <th class="px-4 py-3">Role</th>
-                        <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3">Actions</th>
-                    </tr>
-                </x-slot:thead>
-                <x-slot:tbody>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-ink-muted" colspan="5">
-                            <x-empty-state title="No users found" description="Add your first user to get started." />
-                        </td>
-                    </tr>
-                </x-slot:tbody>
-            </x-table>
-        @elseif(Users Create === 'create' || Users Create === 'edit')
-            <form method="POST" class="space-y-4">
-                @csrf
+        <form method="POST" action="{{ route('users.store') }}" class="space-y-4">
+            @csrf
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <x-input name="name" label="Full Name" :required="true" />
                 <x-input name="email" label="Email" type="email" :required="true" />
-                <x-select name="role" label="Role" :options="['admin' => 'Admin', 'manager' => 'Manager', 'teller' => 'Teller']" :required="true" />
-                <x-checkbox name="is_active" label="Active" :checked="true" />
-                <div class="flex justify-end gap-3">
-                    <x-button type="submit" variant="primary">Save</x-button>
-                </div>
-            </form>
-        @else
-            <dl class="grid grid-cols-2 gap-4 text-sm">
-                <div><dt class="text-ink-muted">Name</dt><dd class="font-medium text-ink">John Doe</dd></div>
-                <div><dt class="text-ink-muted">Email</dt><dd class="font-medium text-ink">john@example.com</dd></div>
-            </dl>
-        @endif
+                <x-input name="password" label="Password" type="password" :required="true" />
+                <x-select name="role" label="Role" :options="['admin' => 'Admin', 'manager' => 'Manager', 'teller' => 'Teller', 'compliance_officer' => 'Compliance Officer']" :required="true" />
+            </div>
+            <div class="space-y-2">
+                <x-checkbox name="is_active" label="Active User" :checked="true" />
+                <x-checkbox name="mfa_enabled" label="Enable MFA (Required for all roles)" :checked="true" />
+            </div>
+            <div class="flex justify-end gap-3">
+                <a href="{{ route('users.index') }}"><x-button variant="secondary">Cancel</x-button></a>
+                <x-button type="submit" variant="primary">Create User</x-button>
+            </div>
+        </form>
     </x-card>
 </x-app-layout>
