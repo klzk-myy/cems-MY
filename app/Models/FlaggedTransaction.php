@@ -94,10 +94,7 @@ class FlaggedTransaction extends BaseModel
      */
     public function scopeHighPriority(Builder $query): Builder
     {
-        return $query->whereIn('flag_type', [
-            ComplianceFlagType::SanctionMatch,
-            ComplianceFlagType::Structuring,
-            ComplianceFlagType::Velocity,
-        ])->where('status', '!=', FlagStatus::Resolved);
+        return $query->whereIn('flag_type', ['Sanction_Match', 'Structuring', 'Velocity'])
+            ->where('status', '!=', FlagStatus::Resolved);
     }
 }

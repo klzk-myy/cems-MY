@@ -176,7 +176,7 @@ class Transaction extends TransactionModel
 
     public function scopePendingApproval(Builder $query): Builder
     {
-        return $query->where('status', TransactionStatus::PendingApproval->value);
+        return $query->where('status', TransactionStatus::PendingApproval);
     }
 
     public function scopeToday(Builder $query): Builder
