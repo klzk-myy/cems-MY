@@ -135,11 +135,9 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
 
     Route::middleware(['role:manager,admin'])->prefix('rates')->name('rates.')->group(function () {
         Route::get('/', [RateController::class, 'index'])->name('index');
+        Route::post('/override', [RateController::class, 'override'])->name('override');
+        Route::post('/copy-previous', [RateController::class, 'copyPrevious'])->name('copy-previous');
     });
-
-    Route::post('/rates/override', [RateController::class, 'override'])->name('rates.override')->middleware('role:manager,admin');
-
-    Route::post('/rates/copy-previous', [RateController::class, 'copyPrevious'])->name('rates.copy-previous')->middleware('role:manager,admin');
 
     Route::prefix('transactions')->name('transactions.')->group(function () {
         Route::get('/', [TransactionController::class, 'index'])->name('index');
