@@ -138,9 +138,10 @@ class CustomerController extends Controller
             $query->orderBy('created_at', 'desc')->limit(10);
         }]);
 
-        $customer->loadCount(['transactions', 'documents']);
-        $customer->loadSum('transactions', 'amount_local');
-        $customer->loadAvg('transactions', 'amount_local');
+        // Aggregate transaction stats in a single query instead of separate loadCount/loadSum/loadAvg
+        $stats = $customer->transactions()
+            ->selectRaw('COUNT(*) as count, SUM(amount_local) as sum, AVG(amount_local) as avg, MAX(created_at) as last_at')
+            ->first();
 
         $notes = $customer->notes()
             ->with('creator')
@@ -149,10 +150,10 @@ class CustomerController extends Controller
 
         // Calculate transaction stats
         $transactionStats = [
-            'total_transactions' => $customer->transactions_count,
-            'total_volume' => $customer->transactions_sum_amount_local,
-            'avg_transaction' => $customer->transactions_avg_amount_local ?? 0,
-            'last_transaction' => $customer->last_transaction_at,
+            'total_transactions' => (int) ($stats->count ?? 0),
+            'total_volume' => $stats->sum ?? 0,
+            'avg_transaction' => $stats->avg ?? 0,
+            'last_transaction' => $stats->last_at ?? ($customer->transactions->first()?->created_at ?? null),
         ];
 
         // Get customer show data from service (document status and compliance stats)
