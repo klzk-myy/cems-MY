@@ -144,13 +144,13 @@ class Customer extends BaseModel
 
     /**
      * Boot the model and register event listeners.
-     * Blind index (id_number_hash) is computed in CustomerService::encryptCustomerData()
+     * Blind index (id_number_hash) is computed in the encryption service
      * where the plaintext ID number is available before encryption.
      */
     protected static function booted(): void
     {
         // No model-level event listeners needed - encryption and blind index
-        // are handled in CustomerService to ensure plaintext is available.
+        // are handled in the service layer to ensure plaintext is available.
     }
 
     /**
