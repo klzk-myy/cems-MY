@@ -15,6 +15,12 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureMfaVerified
 {
+    // NOTE (O10): TrustedDeviceService does not exist. Trusted device bypass
+    // approach: inject TrustedDeviceService and add cookie check before MFA
+    // verification. When implemented, check cookie `trusted_device_{user->id}`
+    // via $this->trustedDeviceService->isValid() and return $next($request)
+    // if valid, else proceed with session/cookie verification as today.
+
     public function __construct(
         protected MfaService $mfaService
     ) {}
