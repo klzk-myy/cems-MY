@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\ReportGenerated;
 use App\Models\Transaction;
 use App\Services\Compliance\ComplianceFlagService;
+use App\Services\Dashboard\DashboardService;
 use App\Services\EodReconciliationService;
 use App\Services\System\CacheOptimizationService;
 use App\Services\System\SystemAlertService;
@@ -22,6 +22,7 @@ class DashboardController extends Controller
         protected SystemAlertService $systemAlertService,
         protected ComplianceFlagService $complianceFlagService,
         protected EodReconciliationService $eodService,
+        protected DashboardService $dashboardService,
     ) {}
 
     /**
@@ -40,61 +41,11 @@ class DashboardController extends Controller
         // never served to another branch (cache-poisoning cross-branch leak).
         $scopeSuffix = $branchId ? "branch.{$branchId}" : 'all';
 
-        $stats = [
-            'total_transactions' => $this->rememberDashboard(
-                "transactions.total.{$scopeSuffix}",
-                ['dashboard', 'transactions'],
-                function () use ($branchId) {
-                    return Transaction::whereDate('created_at', today())
-                        ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-                        ->count();
-                }
-            ),
-            'buy_volume' => $this->rememberDashboard(
-                "transactions.buy_volume.{$scopeSuffix}",
-                ['dashboard', 'transactions'],
-                function () use ($branchId) {
-                    return Transaction::completed()->whereDate('created_at', today())
-                        ->buy()
-                        ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-                        ->sum('amount_local');
-                }
-            ),
-            'sell_volume' => $this->rememberDashboard(
-                "transactions.sell_volume.{$scopeSuffix}",
-                ['dashboard', 'transactions'],
-                function () use ($branchId) {
-                    return Transaction::completed()->whereDate('created_at', today())
-                        ->sell()
-                        ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-                        ->sum('amount_local');
-                }
-            ),
-            // Open-compliance-flag count is compliance-sensitive: hide it from
-            // tellers and managers, not just by branch.
-            'flagged' => $user->isComplianceOfficer()
-                ? $this->rememberDashboard(
-                    "compliance.flagged.{$scopeSuffix}",
-                    ['dashboard', 'compliance'],
-                    fn () => FlaggedTransaction::where('status', 'Open')->count()
-                )
-                : 0,
-            'active_customers' => $this->rememberDashboard(
-                "customers.active.{$scopeSuffix}",
-                ['dashboard', 'customers'],
-                function () use ($branchId) {
-                    return Customer::when($branchId, fn ($q) => $q->forBranch($branchId))->count();
-                }
-            ),
-            // DLQ items are operations-sensitive and only actionable by admins.
-            'dlq_count' => $user->isAdmin()
-                ? $this->rememberDashboard(
-                    "transactions.dlq.{$scopeSuffix}",
-                    ['dashboard', 'transactions'],
-                    fn () => Transaction::where('is_dlq', true)->count()
-                )
-                : 0,
-        ];
+        $stats = $this->rememberDashboard(
+            "stats.{$scopeSuffix}",
+            ['dashboard', 'transactions', 'customers', 'compliance'],
+            fn () => $this->dashboardService->buildStats($branchId)
+        );
 
         $recent_transactions = $this->rememberDashboard(
             "transactions.recent.{$scopeSuffix}",

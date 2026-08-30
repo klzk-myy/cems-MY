@@ -6,6 +6,11 @@ use App\Models\Customer;
 
 interface CustomerServiceInterface
 {
+    // Note: Several controller-used methods are missing from this interface:
+    // createCustomerAction, updateCustomerAction, closeCustomer,
+    // getCustomerShowData, getTransactionStats, uploadDocument.
+    // searchCustomers is also called with an optional $branchId parameter
+    // that is not declared here.
     public function createCustomer(array $data, int $userId): Customer;
 
     public function updateCustomer(Customer $customer, array $data, int $userId): Customer;

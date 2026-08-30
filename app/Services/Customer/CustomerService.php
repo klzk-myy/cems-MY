@@ -1,5 +1,9 @@
 <?php
 
+// ARCHITECTURE NOTE (Task 4 / M5, O8): This service has multiple cross-cutting concerns.
+// Future split opportunity: extract CustomerScreeningService, CustomerEncryptionService,
+// CustomerSearchService, or similar focused sub-services.
+
 namespace App\Services\Customer;
 
 use App\Enums\CddLevel;
@@ -27,16 +31,28 @@ use Illuminate\Validation\ValidationException;
 /**
  * Customer Service
  *
- * Handles all customer-related business logic including:
- * - Customer creation and updates
- * - Encryption of sensitive data
- * - Sanctions screening
- * - Risk assessment
- * - PEP and high-risk determination
- * - Blind index operations
+ * Handles customer-related business logic. Key responsibilities:
+ * - Customer creation and updates (createCustomer, updateCustomer)
+ * - Action result wrapping (createCustomerAction, updateCustomerAction)
+ * - Customer search (searchCustomers, findByIdNumber)
+ * - Customer encryption/decryption (encryptCustomerData, decryptIdNumber, decryptAddress)
+ * - Sanctions screening (screenCustomer)
+ * - Risk scoring (calculateRiskScore, isHighRisk)
+ * - Customer closure (closeCustomer)
+ * - KYC document upload (uploadDocument)
+ * - Customer show data aggregation (getCustomerShowData)
+ * - Transaction stats aggregation (getTransactionStats)
+ * - PEP association check (isPepAssociate)
+ * - Cache and audit integration
  *
- * This service removes business logic from controllers and models,
- * ensuring proper MVC separation of concerns.
+ * Note: This service handles multiple cross-cutting concerns. Consider splitting
+ * into focused sub-services (e.g., CustomerScreeningService, CustomerEncryptionService,
+ * CustomerSearchService) for future architecture improvements.
+ *
+ * Interface gap note: Several controller-used methods are not declared in
+ * CustomerServiceInterface (e.g., createCustomerAction, updateCustomerAction,
+ * closeCustomer, getCustomerShowData, getTransactionStats, uploadDocument).
+ * The interface also lacks the optional $branchId parameter on searchCustomers.
  */
 class CustomerService implements CustomerServiceInterface
 {
