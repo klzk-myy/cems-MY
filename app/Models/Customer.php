@@ -9,7 +9,6 @@ use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Models\Compliance\CustomerBehavioralBaseline;
 use App\Models\Compliance\CustomerRiskProfile;
-use App\Services\System\EncryptionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
