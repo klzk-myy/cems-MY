@@ -17,11 +17,12 @@ $colors = [
 $trendColor = $trend > 0 ? 'text-success-text' : 'text-danger';
 @endphp
 
-<div {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'rounded-xl border border-border bg-surface p-5']) }}>
-    <p class="text-sm text-ink-muted">{{ $label }}</p>
-    <p class="mt-1 text-2xl font-bold {{ $colors[$color] }}">@if(trim((string) ($slot ?? '')) !== ''){{ $slot }}@else{{ $value }}@endif</p>
+{{-- Note: Add basic dark mode support (O9) — e.g. dark:text-ink-dark, dark:bg-card-dark --}}
+<div {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'rounded-xl border border-border bg-surface p-5 dark:bg-card-dark dark:border-border-dark']) }}>
+    <p class="text-sm text-ink-muted dark:text-ink-dark">{{ $label }}</p>
+    <p class="mt-1 text-2xl font-bold {{ $colors[$color] }} dark:text-ink-dark">@if(trim((string) ($slot ?? '')) !== ''){{ $slot }}@else{{ $value }}@endif</p>
     @if($trend !== null)
-        <p class="mt-1 text-xs {{ $trendColor }}">
+        <p class="mt-1 text-xs {{ $trendColor }} dark:text-ink-muted">
             {{ $trend > 0 ? '+' : '' }}{{ $trend }}%
         </p>
     @endif

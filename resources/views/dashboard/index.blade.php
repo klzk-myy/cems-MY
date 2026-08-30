@@ -6,10 +6,10 @@
     </x-page-header>
 
     <x-stat-grid>
-        <x-stat-card label="Total Transactions" value="1,234" color="blue" :trend="12" />
-        <x-stat-card label="Active Customers" value="567" color="green" :trend="8" />
-        <x-stat-card label="Revenue" color="purple" :trend="23"><x-money :amount="45678" currency="MYR" :decimals="0" /></x-stat-card>
-        <x-stat-card label="Alerts" value="12" color="red" :trend="-5" />
+        <x-stat-card label="Total Transactions" value="{{ $stats['total_transactions'] ?? 0 }}" color="blue" :trend="12" />
+        <x-stat-card label="Active Customers" value="{{ $stats['active_customers'] ?? 0 }}" color="green" :trend="8" />
+        <x-stat-card label="Revenue" color="purple" :trend="23"><x-money :amount="$stats['buy_volume'] ?? 0" currency="MYR" :decimals="0" /></x-stat-card>
+        <x-stat-card label="Alerts" value="{{ $stats['flagged'] ?? 0 }}" color="red" :trend="-5" />
     </x-stat-grid>
 
     <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
