@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Transaction;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\AuditService;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\Transaction\TransactionRecoveryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +23,7 @@ class DlqController extends Controller
     public function __construct(
         protected TransactionRecoveryService $recoveryService,
         protected AuditService $auditService,
-        protected CacheTagsService $cacheTagsService,
+        protected CacheInvalidationService $cacheInvalidationService,
     ) {}
 
     /**
@@ -65,7 +65,7 @@ class DlqController extends Controller
             // The DLQ count is cached for the header badge and dashboard
             // widget; refresh it now so the count drops immediately.
             if ($retried) {
-                $this->cacheTagsService->invalidate('dashboard');
+                $this->cacheInvalidationService->invalidate('dashboard');
             }
 
             return back()->with(
@@ -109,7 +109,7 @@ class DlqController extends Controller
             if ($purged) {
                 // The DLQ count is cached for the header badge and dashboard
                 // widget; refresh it now so the count drops immediately.
-                $this->cacheTagsService->invalidate('dashboard');
+                $this->cacheInvalidationService->invalidate('dashboard');
 
                 $this->auditService->logWithSeverity(
                     'transaction_dlq_purged',

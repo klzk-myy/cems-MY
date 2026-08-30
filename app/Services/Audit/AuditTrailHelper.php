@@ -5,19 +5,17 @@ namespace App\Services\Audit;
 use App\Models\AuditTrail;
 use App\Models\User;
 use App\Services\AuditService;
-use Illuminate\Support\Facades\Log;
 
 /**
- * Helper that records auditable events to both the application audit_trails
- * table and the tamper-evident system_logs stream via AuditService.
+ * Helper that records auditable events through AuditService, the canonical,
+ * tamper-evident write path.
  *
- * The dual-write design preserves the existing system_logs chain (hashed,
- * sequential, tamper-evident) while also populating the richer audit_trails
- * table used for business-level querying and reporting.
+ * AuditService writes to system_logs (hashed, sequential, tamper-evident) and
+ * mirrors the event into the richer audit_trails table used for business-level
+ * querying. There is a single write path: no divergent dual-write.
  *
  * All domain-specific methods (recordTransaction, recordCustomer, etc.)
- * delegate to recordEntity() with an entityType, sealed flag, and the audit
- * service method to call.
+ * delegate to recordEntity(), which calls the matching AuditService method.
  */
 class AuditTrailHelper
 {
@@ -46,8 +44,10 @@ class AuditTrailHelper
     }
 
     /**
-     * Unified dual-write: create an audit_trails row and best-effort log to
-     * system_logs via AuditService. Callers should use the domain-specific
+     * Record an auditable event through AuditService (the canonical,
+     * tamper-evident write path). AuditService writes to system_logs and
+     * mirrors the event into audit_trails, so there is a single write path
+     * with no divergent dual-write. Callers should use the domain-specific
      * wrappers (recordTransaction, recordCustomer) for clarity.
      *
      * @param  string  $entityType  'Transaction' or 'Customer'
@@ -63,29 +63,31 @@ class AuditTrailHelper
         ?string $ipAddress = null,
         string $sealed = 'log'
     ): AuditTrail {
-        $auditTrail = $this->record($entityType, $entityId, $action, $metadata, $user, $ipAddress);
+        $method = $sealed === 'logSealed'
+            ? "log{$entityType}Sealed"
+            : "log{$entityType}";
 
-        try {
-            $method = $sealed === 'logSealed'
-                ? "log{$entityType}Sealed"
-                : "log{$entityType}";
+        $this->auditService->{$method}($action, $entityId, [
+            'old' => $metadata['old'] ?? [],
+            'new' => $metadata['new'] ?? [],
+            'severity' => $severity,
+            'user_id' => $user?->id,
+            'ip_address' => $ipAddress,
+        ]);
 
-            $this->auditService->{$method}($action, $entityId, [
-                'old' => $metadata['old'] ?? [],
-                'new' => $metadata['new'] ?? [],
-                'severity' => $severity,
+        // Return the audit_trails mirror row AuditService just created so the
+        // method still satisfies its AuditTrail return type for existing callers.
+        return AuditTrail::where('auditable_type', $entityType)
+            ->where('auditable_id', $entityId)
+            ->where('action', $action)
+            ->latest('id')->first()
+            ?? new AuditTrail([
+                'auditable_type' => $entityType,
+                'auditable_id' => $entityId,
+                'action' => $action,
                 'user_id' => $user?->id,
                 'ip_address' => $ipAddress,
             ]);
-        } catch (\Exception $e) {
-            Log::error("AuditService {$entityType} {$sealed} write failed", [
-                'action' => $action,
-                "{$entityType}_id" => $entityId,
-                'exception' => $e->getMessage(),
-            ]);
-        }
-
-        return $auditTrail;
     }
 
     public function recordTransaction(

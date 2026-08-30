@@ -22,7 +22,6 @@ use App\Services\Transaction\TransactionIdempotencyService;
 use App\Services\Transaction\TransactionService;
 use App\Services\Transaction\TransactionStatusService;
 use App\Services\Transaction\TransactionValidationService;
-use App\View\Composers\NavigationComposer;
 use App\View\Composers\NotificationComposer;
 use App\View\Composers\UserComposer;
 use Carbon\Carbon;
@@ -210,7 +209,6 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function registerViewComposers(): void
     {
-        View::composer('*', NavigationComposer::class);
         View::composer('*', UserComposer::class);
         View::composer('components.app-layout', NotificationComposer::class);
     }

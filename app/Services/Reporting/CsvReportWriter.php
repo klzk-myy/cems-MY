@@ -51,38 +51,14 @@ class CsvReportWriter
     /**
      * Neutralize spreadsheet formula injection (CSV injection, OWASP).
      *
-     * Cells beginning with =, +, -, @, tab, or CR are interpreted by Excel and
-     * Google Sheets as formulas. Prefixing them with a single quote forces them
-     * to be treated as plain text. Non-string values (e.g. numeric amounts) are
-     * passed through untouched.
-     *
-     * Cells that parse as plain decimal numbers - including negative monetary
-     * values such as "-1234.50" - are exempt from prefixing: a leading "-" is
-     * how negative amounts are rendered in BNM exports, not an injection
-     * vector. Non-numeric cells starting with "-" keep the guard.
+     * Delegates to the canonical implementation in ExportService::sanitizeRow.
      *
      * @param  array<int, mixed>  $row
      * @return array<int, mixed>
      */
     public function sanitizeRow(array $row): array
     {
-        return array_map(function (mixed $value): mixed {
-            if (! is_string($value) || $value === '') {
-                return $value;
-            }
-
-            if (preg_match('/^-?\d+(\.\d+)?$/', $value) === 1) {
-                return $value;
-            }
-
-            $first = $value[0];
-
-            if (in_array($first, ['=', '+', '-', '@', "\t", "\r"], true)) {
-                return "'".$value;
-            }
-
-            return $value;
-        }, $row);
+        return ExportService::sanitizeRow($row);
     }
 
     /**

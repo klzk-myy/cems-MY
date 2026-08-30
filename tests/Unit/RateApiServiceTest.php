@@ -45,8 +45,8 @@ class RateApiServiceTest extends TestCase
         $this->assertEquals($expectedMid, $midRate);
 
         // Also verify buy and sell rates are returned correctly
-        $this->assertEquals('4.5000', $this->service->getCurrentRate('USD', 'buy'));
-        $this->assertEquals('4.6000', $this->service->getCurrentRate('USD', 'sell'));
+        $this->assertEquals('4.500000', $this->service->getCurrentRate('USD', 'buy'));
+        $this->assertEquals('4.600000', $this->service->getCurrentRate('USD', 'sell'));
     }
 
     #[Test]

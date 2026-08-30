@@ -31,7 +31,7 @@ use App\Services\Audit\AuditTrailHelper;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
@@ -49,7 +49,7 @@ class TransactionApprovalServiceTest extends TestCase
 
     private function service(array $mocks = []): TransactionApprovalService
     {
-        $cache = $mocks['cache'] ?? Mockery::mock(CacheTagsService::class);
+        $cache = $mocks['cache'] ?? Mockery::mock(CacheInvalidationService::class);
         if (! isset($mocks['cache'])) {
             $cache->shouldReceive('invalidate')->with('dashboard')->zeroOrMoreTimes();
         }
@@ -549,7 +549,7 @@ class TransactionApprovalServiceTest extends TestCase
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
-        $cache = Mockery::mock(CacheTagsService::class);
+        $cache = Mockery::mock(CacheInvalidationService::class);
         $cache->shouldReceive('invalidate')->once()->with('dashboard');
 
         $position = Mockery::mock(CurrencyPositionService::class);

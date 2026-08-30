@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\FlaggedTransaction;
 use App\Models\JournalEntry;
+use App\Models\StockTransfer;
 use App\Models\SystemLog;
 use App\Models\ThresholdAudit;
 use App\Models\Transaction;
@@ -22,6 +23,7 @@ use App\Policies\CustomerPolicy;
 use App\Policies\EnhancedDiligenceRecordPolicy;
 use App\Policies\FlaggedTransactionPolicy;
 use App\Policies\JournalEntryPolicy;
+use App\Policies\StockTransferPolicy;
 use App\Policies\SystemLogPolicy;
 use App\Policies\ThresholdAuditPolicy;
 use App\Policies\TransactionPolicy;
@@ -47,6 +49,7 @@ class AuthServiceProvider extends ServiceProvider
         JournalEntry::class => JournalEntryPolicy::class,
         FlaggedTransaction::class => FlaggedTransactionPolicy::class,
         Alert::class => AlertPolicy::class,
+        StockTransfer::class => StockTransferPolicy::class,
         ComplianceCase::class => ComplianceCasePolicy::class,
         EnhancedDiligenceRecord::class => EnhancedDiligenceRecordPolicy::class,
     ];

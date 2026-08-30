@@ -18,7 +18,6 @@ use App\Services\Contracts\CustomerServiceInterface;
 use App\Services\CustomerScreeningService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheKeys;
-use App\Services\System\CacheTagsService;
 use App\Services\System\EncryptionService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -47,7 +46,6 @@ class CustomerService implements CustomerServiceInterface
         protected RiskScoringEngine $riskScoringEngine,
         protected AuditService $auditService,
         protected AuditTrailHelper $auditTrailHelper,
-        protected CacheTagsService $cacheTagsService,
         protected CacheInvalidationService $cacheInvalidationService,
         protected CustomerRepository $customerRepository
     ) {}
@@ -135,7 +133,7 @@ class CustomerService implements CustomerServiceInterface
 
             return $customer;
         });
-        $this->cacheTagsService->invalidate('dashboard');
+        $this->cacheInvalidationService->invalidate('dashboard');
 
         return $customer;
     }
@@ -215,7 +213,7 @@ class CustomerService implements CustomerServiceInterface
 
             return $customer->fresh();
         });
-        $this->cacheTagsService->invalidate('dashboard');
+        $this->cacheInvalidationService->invalidate('dashboard');
         // Invalidate individual customer cache
         $this->cacheInvalidationService->forgetCustomer($customer->id);
 

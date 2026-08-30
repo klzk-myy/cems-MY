@@ -62,7 +62,7 @@ class CustomerServiceCacheTest extends TestCase
             'is_active' => true,
         ]);
 
-        // CacheTagsService calls Cache::getStore() to decide whether the store
+        // CacheInvalidationService calls Cache::getStore() to decide whether the store
         // supports tags, then Cache::tags(...)->flush() to invalidate 'dashboard'.
         $taggableStore = Mockery::mock(TaggableStore::class);
         Cache::shouldReceive('getStore')->once()->andReturn($taggableStore);

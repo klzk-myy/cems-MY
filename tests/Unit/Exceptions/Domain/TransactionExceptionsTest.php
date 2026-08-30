@@ -16,7 +16,7 @@ class TransactionExceptionsTest extends TestCase
     {
         $this->assertInstanceOf(TransactionException::class, new TransactionValidationException('validation failed'));
         $this->assertInstanceOf(TransactionException::class, new TransactionCreationException('creation failed'));
-        $this->assertInstanceOf(TransactionException::class, new TransactionApprovalException('approval failed'));
+        $this->assertInstanceOf(TransactionException::class, new TransactionApprovalException(12345, 'approval failed'));
     }
 
     #[Test]
@@ -24,6 +24,6 @@ class TransactionExceptionsTest extends TestCase
     {
         $this->assertSame(422, (new TransactionValidationException('validation failed'))->getStatusCode());
         $this->assertSame(422, (new TransactionCreationException('creation failed'))->getStatusCode());
-        $this->assertSame(422, (new TransactionApprovalException('approval failed'))->getStatusCode());
+        $this->assertSame(422, (new TransactionApprovalException(12345, 'approval failed'))->getStatusCode());
     }
 }

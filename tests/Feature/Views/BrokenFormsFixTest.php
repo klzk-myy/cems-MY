@@ -82,16 +82,16 @@ class BrokenFormsFixTest extends TestCase
 
         $response = $this->actingAs($this->manager)->post(route('rates.override'), [
             'currency_code' => 'USD',
-            'rate_buy' => '4.2500',
-            'rate_sell' => '4.3500',
+            'rate_buy' => '4.250000',
+            'rate_sell' => '4.350000',
             'reason' => 'Market adjustment',
         ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('exchange_rates', [
             'currency_code' => 'USD',
-            'rate_buy' => '4.2500',
-            'rate_sell' => '4.3500',
+            'rate_buy' => '4.250000',
+            'rate_sell' => '4.350000',
         ]);
     }
 

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SystemAlert;
 use App\Services\AuditService;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +21,7 @@ class SystemAlertController extends Controller
 {
     public function __construct(
         protected AuditService $auditService,
-        protected CacheTagsService $cacheTagsService,
+        protected CacheInvalidationService $cacheInvalidationService,
     ) {}
 
     /**
@@ -83,7 +83,7 @@ class SystemAlertController extends Controller
             // The dashboard monitoring widget caches alert counts/recent alerts
             // for 60s; drop it now so the acknowledged alert disappears from the
             // dashboard immediately instead of lingering as stale.
-            $this->cacheTagsService->invalidate('dashboard');
+            $this->cacheInvalidationService->invalidate('dashboard');
 
             $this->auditService->logWithSeverity(
                 'system_alert_acknowledged',

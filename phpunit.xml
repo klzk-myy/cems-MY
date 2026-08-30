@@ -25,24 +25,30 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="APP_KEY" value="base64:WlbBhnWV/8WIwLujIHnV4WqVBGA6jVh/6mAt4gt+NN8="/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
-        <env name="CACHE_DRIVER" value="array"/>
-        <env name="RATE_LIMIT_CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-        <env name="MAIL_MAILER" value="array"/>
-        <env name="PULSE_ENABLED" value="false"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
-        <env name="SESSION_DRIVER" value="array"/>
-        <env name="REDIS_CLIENT" value="phpredis"/>
-        <env name="REDIS_HOST" value="127.0.0.1"/>
-        <env name="REDIS_PASSWORD" value="Klzk@9199"/>
-        <env name="BACKUP_NOTIFY_EMAIL" value="backups@example.com"/>
-        <env name="TELESCOPE_ENABLED" value="false"/>
-        <env name="ALLOW_DERIVED_ENCRYPTION_SALT" value="false"/>
-        <env name="SECURITY_IP_BLOCKING_ENABLED" value="false"/>
-        <env name="XDEBUG_MODE" value="off"/>
+        <!-- force="true" is REQUIRED. PHPUnit's <env> silently skips any variable
+             already present in the shell environment. The deployment shell exports
+             DB_CONNECTION=mysql / DB_DATABASE=cems_my_staging (plus APP_KEY,
+             CACHE_DRIVER, QUEUE_CONNECTION, SESSION_DRIVER, REDIS_*), so without
+             force the suite runs against the LIVE staging database and
+             RefreshDatabase's migrate:fresh drops those tables. -->
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_KEY" value="base64:WlbBhnWV/8WIwLujIHnV4WqVBGA6jVh/6mAt4gt+NN8=" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <env name="CACHE_DRIVER" value="array" force="true"/>
+        <env name="RATE_LIMIT_CACHE_STORE" value="array" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="PULSE_ENABLED" value="false" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="REDIS_CLIENT" value="phpredis" force="true"/>
+        <env name="REDIS_HOST" value="127.0.0.1" force="true"/>
+        <env name="REDIS_PASSWORD" value="Klzk@9199" force="true"/>
+        <env name="BACKUP_NOTIFY_EMAIL" value="backups@example.com" force="true"/>
+        <env name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <env name="ALLOW_DERIVED_ENCRYPTION_SALT" value="false" force="true"/>
+        <env name="SECURITY_IP_BLOCKING_ENABLED" value="false" force="true"/>
+        <env name="XDEBUG_MODE" value="off" force="true"/>
     </php>
 </phpunit>

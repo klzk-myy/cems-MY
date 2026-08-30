@@ -30,7 +30,7 @@ use App\Services\Compliance\Monitors\StructuringMonitor;
 use App\Services\Compliance\Monitors\VelocityMonitor;
 use App\Services\Reporting\ExportService;
 use App\Services\Reporting\FinancialRatioService;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\StockTransferService;
@@ -175,7 +175,7 @@ class ReportingAccountingFixesTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $entry = $service->createJournalEntry(
             [
@@ -233,7 +233,7 @@ class ReportingAccountingFixesTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $entry = $service->createJournalEntry(
             [

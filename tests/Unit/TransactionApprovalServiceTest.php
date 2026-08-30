@@ -80,11 +80,8 @@ class TransactionApprovalServiceTest extends TestCase
             'status' => TransactionStatus::PendingApproval,
         ]);
 
-        try {
-            $this->approvalService->validateApprovalEligibility($transaction, 99);
-        } catch (\Throwable $e) {
-            $this->fail('PendingApproval transactions must pass eligibility regardless of approver, but got '.get_class($e).': '.$e->getMessage());
-        }
+        $result = $this->approvalService->validateApprovalEligibility($transaction, 99);
+        $this->assertTrue($result === null || (is_object($result) && get_class($result) === 'App\Services\DTOs\ApprovalResult' && $result->success === true && $result->message === 'Transaction approved. Refund requires compliance review before processing.'));
 
         $this->assertSame(
             TransactionStatus::PendingApproval,

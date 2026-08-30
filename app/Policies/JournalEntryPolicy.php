@@ -45,6 +45,15 @@ class JournalEntryPolicy
     }
 
     /**
+     * Determine whether the user can reverse the journal entry.
+     * Only managers and admins can reverse journal entries.
+     */
+    public function reverse(User $user, JournalEntry $journalEntry): bool
+    {
+        return in_array($user->role, [UserRole::Manager, UserRole::Admin]);
+    }
+
+    /**
      * Determine whether the user can delete the journal entry.
      * Only admins can delete journal entries.
      */

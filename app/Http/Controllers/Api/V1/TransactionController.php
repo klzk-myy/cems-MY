@@ -31,6 +31,8 @@ class TransactionController extends Controller
      */
     public function index(TransactionIndexRequest $request): TransactionCollection
     {
+        $this->authorize('viewAny', Transaction::class);
+
         $perPage = $request->get('per_page', 20);
         $query = Transaction::with(['customer', 'user', 'branch']);
 
@@ -46,6 +48,8 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request): JsonResponse
     {
+        $this->authorize('create', Transaction::class);
+
         $validated = $request->validated();
         $ipAddress = $request->ip();
 

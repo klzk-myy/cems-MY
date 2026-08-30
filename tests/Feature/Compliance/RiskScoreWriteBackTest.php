@@ -69,7 +69,6 @@ class RiskScoreWriteBackTest extends TestCase
             $screeningService,
             new AuditService,
             $mathService,
-            $thresholdService,
             $riskCalculationService,
             new PepAssessmentService,
             new GeographicRiskService($thresholdService),

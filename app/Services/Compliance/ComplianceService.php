@@ -102,8 +102,8 @@ class ComplianceService implements ComplianceServiceInterface
         $this->mathService = $mathService;
         $this->screeningService = $screeningService;
         $this->thresholdService = $thresholdService ?? new ThresholdService;
-        $this->velocityRiskService = $velocityRiskService;
-        $this->structuringRiskService = $structuringRiskService;
+        $this->velocityRiskService = $velocityRiskService ?? app(VelocityRiskService::class);
+        $this->structuringRiskService = $structuringRiskService ?? app(StructuringRiskService::class);
 
         // Create CddLevelDeterminationService with closure - container may auto-resolve
         // an instance without the closure, so we always create one with our closure
@@ -236,25 +236,7 @@ class ComplianceService implements ComplianceServiceInterface
      */
     public function checkVelocity(int $customerId, string $newAmount): array
     {
-        if ($this->velocityRiskService) {
-            return $this->velocityRiskService->checkAmountThreshold($customerId, $newAmount);
-        }
-
-        $startTime = now()->subHours(24);
-        $velocity = Transaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', $startTime)
-            ->whereIn('status', [TransactionStatus::Completed, TransactionStatus::Finalized])
-            ->selectRaw('CAST(SUM(amount_local) AS CHAR) as total')
-            ->value('total') ?? '0';
-
-        $total = $this->mathService->add((string) $velocity, $newAmount);
-
-        return [
-            'amount_24h' => (string) $velocity,
-            'with_new_transaction' => $total,
-            'threshold_exceeded' => $this->mathService->compare($total, $this->thresholdService->getVelocityAlertThreshold()) >= 0,
-            'threshold_amount' => $this->thresholdService->getVelocityAlertThreshold(),
-        ];
+        return $this->velocityRiskService->checkAmountThreshold($customerId, $newAmount);
     }
 
     /**
@@ -295,20 +277,7 @@ class ComplianceService implements ComplianceServiceInterface
      */
     public function checkStructuring(int $customerId): bool
     {
-        if ($this->structuringRiskService) {
-            return $this->structuringRiskService->isStructuring($customerId);
-        }
-
-        $hourlyWindow = $this->thresholdService->getStructuringHourlyWindow();
-        $minTransactions = $this->thresholdService->getStructuringMinTransactions();
-        $lookbackHours = now()->subHours($hourlyWindow);
-        $smallTransactions = Transaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', $lookbackHours)
-            ->whereIn('status', [TransactionStatus::Completed, TransactionStatus::Finalized])
-            ->where('amount_local', '<', $this->thresholdService->getStructuringSubThreshold())
-            ->count();
-
-        return $smallTransactions >= $minTransactions;
+        return $this->structuringRiskService->isStructuring($customerId);
     }
 
     /**

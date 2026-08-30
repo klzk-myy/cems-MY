@@ -13,6 +13,7 @@ use App\Models\TillBalance;
 use App\Models\User;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Cache;
@@ -60,34 +61,48 @@ abstract class TestCase extends BaseTestCase
      * between test classes. DatabaseTransactions has no migration logic and
      * no in-memory connection preservation, so we handle it here.
      *
-     * Only applies to tests using DatabaseTransactions — RefreshDatabase
-     * handles its own migration, and tests with no DB trait are unaffected.
+     * Only applies to tests using a DB trait — tests with no DB trait are
+     * unaffected.
      */
     protected function ensureInMemoryDatabaseReady(): void
     {
         $uses = array_flip(class_uses_recursive(static::class));
 
-        if (! isset($uses[DatabaseTransactions::class])) {
+        $isDatabaseTest = isset($uses[DatabaseTransactions::class])
+            || isset($uses[RefreshDatabase::class]);
+
+        if (! $isDatabaseTest) {
             return;
         }
 
         $default = config('database.default');
         $isInMemory = config("database.connections.{$default}.database") === ':memory:';
 
-        if (! $isInMemory) {
-            return;
-        }
-
-        $database = $this->app->make('db');
-        $connection = $database->connection();
+        $connection = $this->app->make('db')->connection();
         $connectionName = $connection->getName();
 
-        if (isset(RefreshDatabaseState::$inMemoryConnections[$connectionName])) {
-            $connection->setPdo(RefreshDatabaseState::$inMemoryConnections[$connectionName]);
-        } else {
-            $this->artisan('migrate:fresh', ['--force' => true]);
-            $this->app[Kernel::class]->setArtisan(null);
-            RefreshDatabaseState::$inMemoryConnections[$connectionName] = $connection->getPdo();
+        if ($isInMemory) {
+            if (isset(RefreshDatabaseState::$inMemoryConnections[$connectionName])) {
+                $connection->setPdo(RefreshDatabaseState::$inMemoryConnections[$connectionName]);
+            } else {
+                $this->artisan('migrate:fresh', ['--force' => true]);
+                $this->app[Kernel::class]->setArtisan(null);
+                RefreshDatabaseState::$inMemoryConnections[$connectionName] = $connection->getPdo();
+
+                // Without this a later RefreshDatabase class re-runs migrate:fresh
+                // against the shared PDO instead of reusing the migrated schema.
+                RefreshDatabaseState::$migrated = true;
+            }
+        }
+
+        // A test that opens a transaction and never finishes it leaves the
+        // in-memory PDO transaction open. Because that PDO is shared across
+        // test classes, the next beginDatabaseTransaction() throws "There is
+        // already an active transaction" and cascades a failure into every
+        // remaining test in the process. Discard the leaked transaction so one
+        // badly-behaved class cannot take down the rest of the suite.
+        if ($connection->getPdo()->inTransaction()) {
+            $connection->getPdo()->rollBack();
         }
     }
 

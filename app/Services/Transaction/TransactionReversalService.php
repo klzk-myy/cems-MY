@@ -34,7 +34,10 @@ class TransactionReversalService
         protected TellerAllocationService $tellerAllocationService,
         protected CurrencyPositionLockService $positionLockService,
         protected TillBalanceManager $tillBalanceManager,
-    ) {}
+        protected ?ExchangeCalculator $exchangeCalculator = null,
+    ) {
+        $this->exchangeCalculator ??= app(ExchangeCalculator::class);
+    }
 
     public function reverse(Transaction $transaction, User $requester, string $reason): bool
     {
@@ -132,10 +135,12 @@ class TransactionReversalService
             ? TransactionType::Sell
             : TransactionType::Buy;
 
-        $amountLocal = $this->mathService->multiply(
+        $amountLocal = $this->exchangeCalculator->calculate(
+            $oppositeType,
+            $original->currency_code,
             (string) $original->amount_foreign,
             (string) $original->rate
-        );
+        )['amount_local'];
 
         $customer = Customer::findOrFail($original->customer_id);
         $holdCheck = $this->complianceService->requiresHold($amountLocal, $customer);

@@ -2,8 +2,15 @@
 
 namespace App\Services\System;
 
+use App\Enums\JournalEntryStatus;
 use App\Enums\UserRole;
+use App\Models\AccountingPeriod;
 use App\Models\Branch;
+use App\Models\BranchPool;
+use App\Models\ChartOfAccount;
+use App\Models\FiscalYear;
+use App\Models\JournalEntry;
+use App\Models\JournalLine;
 use App\Models\PasswordHistory;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -13,6 +20,10 @@ use Illuminate\Support\Facades\Hash;
 
 class SetupService
 {
+    public function __construct(
+        protected MathService $mathService,
+    ) {}
+
     /**
      * Persist the immutable setup-completed marker.
      *
@@ -160,6 +171,132 @@ class SetupService
 
         if (! preg_match('/[^A-Za-z0-9]/', $password)) {
             throw new \InvalidArgumentException('Admin password must contain at least one special character');
+        }
+    }
+
+    /**
+     * Post the opening balance journal entry (cash debits + owner equity credit).
+     *
+     * Extracted from SetupController so the controller only coordinates setup.
+     * The financial behaviour (entry number, posted status, MYR/foreign cash
+     * debits, equity credit and the BCMath totals) is preserved exactly.
+     *
+     * @param  array<string, mixed>  $balanceData
+     */
+    public function createOpeningBalance(array $balanceData): void
+    {
+        $fiscalYear = FiscalYear::where('status', 'Open')->first();
+        $period = AccountingPeriod::where('status', 'Open')->first();
+        $adminUser = User::where('role', 'admin')->first();
+
+        if (! $fiscalYear || ! $period || ! $adminUser) {
+            return;
+        }
+
+        $openingDate = $fiscalYear->start_date;
+        $entryNumber = 'OB-'.$fiscalYear->year_code.'-0001';
+
+        // Calculate total opening balance using BCMath for precision
+        $totalMyr = $balanceData['opening_balance_myr'] ?? '0';
+        $totalForeign = '0';
+        foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $amount) {
+            $totalForeign = $this->mathService->add($totalForeign, (string) $amount);
+        }
+        $totalBalance = $this->mathService->add((string) $totalMyr, $totalForeign);
+
+        if ($this->mathService->compare($totalBalance, '0') <= 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($fiscalYear, $period, $adminUser, $openingDate, $entryNumber, $totalBalance, $balanceData) {
+            $journalEntry = JournalEntry::create([
+                'entry_number' => $entryNumber,
+                'fiscal_year_id' => $fiscalYear->id,
+                'period_id' => $period->id,
+                'entry_date' => $openingDate,
+                'reference_type' => 'Opening Balance',
+                'reference_id' => null,
+                'description' => 'Initial opening balances - Business commencement',
+                'total_amount' => (string) $totalBalance,
+                'status' => JournalEntryStatus::Posted,
+                'created_by' => $adminUser->id,
+                'posted_by' => $adminUser->id,
+                'posted_at' => now(),
+            ]);
+
+            // Cash in MYR
+            if ($balanceData['opening_balance_myr'] > 0) {
+                $cashMyrAccount = ChartOfAccount::where('account_code', '1010')->first();
+                if ($cashMyrAccount) {
+                    JournalLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'account_code' => $cashMyrAccount->account_code,
+                        'debit' => (string) $balanceData['opening_balance_myr'],
+                        'credit' => '0.00',
+                        'description' => 'Opening balance - MYR Cash',
+                    ]);
+                }
+            }
+
+            // Cash in Foreign Currencies (grouped)
+            $totalForeignBalance = '0';
+            foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $amount) {
+                if ($this->mathService->compare((string) $amount, '0') > 0) {
+                    $totalForeignBalance = $this->mathService->add($totalForeignBalance, (string) $amount);
+                }
+            }
+
+            if ($this->mathService->compare($totalForeignBalance, '0') > 0) {
+                $cashForeignAccount = ChartOfAccount::where('account_code', '1011')->first();
+                if ($cashForeignAccount) {
+                    JournalLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'account_code' => $cashForeignAccount->account_code,
+                        'debit' => (string) $totalForeignBalance,
+                        'credit' => '0.00',
+                        'description' => 'Opening balance - Foreign Cash',
+                    ]);
+                }
+            }
+
+            // Credit side - Equity
+            $equityAccount = ChartOfAccount::where('account_code', '3000')->first();
+            if ($equityAccount) {
+                JournalLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'account_code' => $equityAccount->account_code,
+                    'debit' => '0.00',
+                    'credit' => (string) $totalBalance,
+                    'description' => 'Opening balance - Owner Equity',
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Seed the HQ branch pool with the configured initial stock balances.
+     *
+     * Extracted from SetupController so the controller only coordinates setup.
+     * One BranchPool row per currency (only when the amount is positive) is
+     * created with the exact available/allocated balances as before.
+     *
+     * @param  array<string, mixed>  $stockData
+     */
+    public function createInitialStock(array $stockData): void
+    {
+        $branch = Branch::where('code', 'HQ')->first();
+
+        if ($branch && isset($stockData['initial_stock'])) {
+            foreach ($stockData['initial_stock'] as $currencyCode => $amount) {
+                if ($amount > 0) {
+                    BranchPool::create([
+                        'branch_id' => $branch->id,
+                        'currency_code' => $currencyCode,
+                        'available_balance' => (string) $amount,
+                        'allocated_balance' => '0.00',
+                    ]);
+                }
+            }
         }
     }
 }

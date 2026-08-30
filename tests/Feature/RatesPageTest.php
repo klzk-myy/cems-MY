@@ -118,7 +118,7 @@ class RatesPageTest extends TestCase
         $response->assertSessionHas('success');
 
         $rate = ExchangeRate::where('currency_code', 'USD')->first();
-        $this->assertEquals('4.5500', (string) $rate->rate_buy);
+        $this->assertEquals('4.550000', (string) $rate->rate_buy);
     }
 
     #[Test]
@@ -146,7 +146,7 @@ class RatesPageTest extends TestCase
         $response->assertSessionHas('error');
 
         $this->assertSame(
-            '4.5000',
+            '4.500000',
             (string) ExchangeRate::where('currency_code', 'USD')->value('rate_buy')
         );
     }

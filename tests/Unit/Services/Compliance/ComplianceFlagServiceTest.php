@@ -8,7 +8,7 @@ use App\Models\FlaggedTransaction;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Compliance\ComplianceFlagService;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -20,7 +20,7 @@ class ComplianceFlagServiceTest extends TestCase
 
     private AuditService&MockObject $auditService;
 
-    private CacheTagsService&MockObject $cacheTagsService;
+    private CacheInvalidationService&MockObject $cacheInvalidationService;
 
     private ComplianceFlagService $service;
 
@@ -29,8 +29,8 @@ class ComplianceFlagServiceTest extends TestCase
         parent::setUp();
 
         $this->auditService = $this->createMock(AuditService::class);
-        $this->cacheTagsService = $this->createMock(CacheTagsService::class);
-        $this->service = new ComplianceFlagService($this->auditService, $this->cacheTagsService);
+        $this->cacheInvalidationService = $this->createMock(CacheInvalidationService::class);
+        $this->service = new ComplianceFlagService($this->auditService, $this->cacheInvalidationService);
     }
 
     #[Test]
@@ -55,7 +55,7 @@ class ComplianceFlagServiceTest extends TestCase
                 'WARNING'
             );
 
-        $this->cacheTagsService->expects($this->once())
+        $this->cacheInvalidationService->expects($this->once())
             ->method('invalidate')
             ->with('dashboard');
 
@@ -90,7 +90,7 @@ class ComplianceFlagServiceTest extends TestCase
                 'INFO'
             );
 
-        $this->cacheTagsService->expects($this->once())
+        $this->cacheInvalidationService->expects($this->once())
             ->method('invalidate')
             ->with('dashboard');
 
@@ -108,7 +108,7 @@ class ComplianceFlagServiceTest extends TestCase
         $user = User::factory()->create();
         $flag = FlaggedTransaction::factory()->open()->create();
 
-        $this->cacheTagsService->expects($this->once())
+        $this->cacheInvalidationService->expects($this->once())
             ->method('invalidate')
             ->with('dashboard');
 
@@ -121,7 +121,7 @@ class ComplianceFlagServiceTest extends TestCase
         $user = User::factory()->create();
         $flag = FlaggedTransaction::factory()->underReview()->create();
 
-        $this->cacheTagsService->expects($this->once())
+        $this->cacheInvalidationService->expects($this->once())
             ->method('invalidate')
             ->with('dashboard');
 

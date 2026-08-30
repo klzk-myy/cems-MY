@@ -10,7 +10,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmTransactionApprovalRequest;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
-use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
@@ -21,7 +20,6 @@ use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionMonitoringService;
 use App\Services\Transaction\TransactionStateMachineFactory;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -55,8 +53,7 @@ class TransactionApprovalController extends Controller
      */
     public function approve(Request $request, Transaction $transaction): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
-        $this->ensureCanApproveForBranch($transaction, auth()->user(), 'approve');
+        $this->authorize('approve', $transaction);
 
         $result = $this->approveAction->execute($transaction, (int) auth()->id(), $request->ip());
 
@@ -76,8 +73,7 @@ class TransactionApprovalController extends Controller
      */
     public function reject(Request $request, Transaction $transaction): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
-        $this->ensureCanApproveForBranch($transaction, auth()->user(), 'reject');
+        $this->authorize('reject', $transaction);
 
         try {
             if (! $this->approvalService->reject($transaction, (int) auth()->id(), $request->input('reason', 'Rejected by manager'))) {
@@ -188,21 +184,6 @@ class TransactionApprovalController extends Controller
         $threshold = $this->thresholdService->getStrThreshold();
 
         return $this->mathService->compare($transaction->amount_local, $threshold) >= 0;
-    }
-
-    /**
-     * Ensure the authenticated user is allowed to manage the transaction branch.
-     *
-     * Managers can only approve or reject transactions within their own branch.
-     * Admins are exempt from this restriction.
-     */
-    private function ensureCanApproveForBranch(Transaction $transaction, User $user, string $action = 'manage'): void
-    {
-        $result = $this->authorizeBranchResource($transaction, $action);
-
-        if ($result instanceof JsonResponse) {
-            abort($result->getStatusCode(), $result->getData()->message ?? "You can only {$action} transactions for your own branch.");
-        }
     }
 
     /**

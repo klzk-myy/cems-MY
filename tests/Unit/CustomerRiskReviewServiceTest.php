@@ -69,7 +69,6 @@ class CustomerRiskReviewServiceTest extends TestCase
             $screeningService,
             $auditService,
             $mathService,
-            $thresholdService,
             $riskCalculationService,
             new PepAssessmentService,
             $geographicRiskService

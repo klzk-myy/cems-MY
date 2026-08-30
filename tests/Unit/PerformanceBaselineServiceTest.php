@@ -41,8 +41,8 @@ class PerformanceBaselineServiceTest extends TestCase
     #[Test]
     public function set_baseline_stores_values_in_cache()
     {
-        Cache::shouldReceive('forever')
-            ->with('performance_baseline', Mockery::any())
+        Cache::shouldReceive('put')
+            ->with('performance_baseline', Mockery::any(), Mockery::any())
             ->once();
 
         $thresholdService = Mockery::mock(ThresholdService::class);

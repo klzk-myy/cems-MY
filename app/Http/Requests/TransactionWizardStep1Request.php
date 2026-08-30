@@ -2,11 +2,12 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\TransactionType;
-use Illuminate\Validation\Rules\Enum;
+use App\Http\Requests\Concerns\HasTransactionValidationRules;
 
 class TransactionWizardStep1Request extends AuthorizedFormRequest
 {
+    use HasTransactionValidationRules;
+
     public function authorize(): bool
     {
         return $this->user()->role->canCreateTransaction();
@@ -15,14 +16,14 @@ class TransactionWizardStep1Request extends AuthorizedFormRequest
     public function rules(): array
     {
         return [
-            'customer_id' => ['required', 'integer', 'exists:customers,id'],
-            'type' => ['required', new Enum(TransactionType::class)],
-            'currency_code' => ['required', 'string', 'exists:currencies,code'],
-            'amount_foreign' => ['required', 'numeric', 'min:0.01', 'max:9999999999.9999'],
-            'rate' => ['required', 'numeric', 'min:0.0001', 'max:999999'],
+            'customer_id' => $this->customerIdRule(true),
+            'type' => $this->transactionTypeRule(),
+            'currency_code' => $this->currencyCodeRule(),
+            'amount_foreign' => $this->amountForeignRule(),
+            'rate' => $this->rateRule(),
             'till_id' => ['required', 'string', 'exists:counters,code'],
-            'purpose' => ['required', 'string', 'max:255'],
-            'source_of_funds' => ['required', 'string', 'max:255'],
+            'purpose' => $this->purposeRule(),
+            'source_of_funds' => $this->sourceOfFundsRule(),
             'collect_additional_details' => ['sometimes', 'boolean'],
         ];
     }

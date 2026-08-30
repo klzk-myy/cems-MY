@@ -61,7 +61,6 @@ class CustomerRiskScoringServiceTest extends TestCase
             $screeningService,
             $auditService,
             $this->mathService,
-            $this->thresholdService,
             $riskCalculationService,
             new PepAssessmentService,
         );

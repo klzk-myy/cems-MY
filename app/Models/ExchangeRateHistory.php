@@ -71,7 +71,7 @@ class ExchangeRateHistory extends BaseModel
         return $query->whereBetween('effective_date', [$from, $to]);
     }
 
-    public static function getLatestRate(string $currencyCode, ?int $branchId = null): ?float
+    public static function getLatestRate(string $currencyCode, ?int $branchId = null): ?string
     {
         $query = self::forCurrency($currencyCode);
         if ($branchId !== null) {
@@ -79,6 +79,6 @@ class ExchangeRateHistory extends BaseModel
         }
         $latest = $query->orderBy('effective_date', 'desc')->first();
 
-        return $latest ? (float) $latest->rate : null;
+        return $latest ? (string) $latest->rate : null;
     }
 }

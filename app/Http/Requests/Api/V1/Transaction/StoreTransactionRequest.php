@@ -3,31 +3,31 @@
 namespace App\Http\Requests\Api\V1\Transaction;
 
 use App\Http\Requests\ApiFormRequest;
-use App\Rules\ValidAmountForeign;
-use App\Rules\ValidCurrencyCode;
-use App\Rules\ValidRate;
-use App\Rules\ValidTill;
+use App\Http\Requests\Concerns\HasTransactionValidationRules;
+use App\Models\Transaction;
 
 class StoreTransactionRequest extends ApiFormRequest
 {
+    use HasTransactionValidationRules;
+
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('create', Transaction::class);
     }
 
     public function rules(): array
     {
         return [
-            'customer_id' => 'required|exists:customers,id',
-            'type' => ['required', 'in:Buy,Sell'],
-            'currency_code' => ['required', 'string', new ValidCurrencyCode],
-            'amount_foreign' => ['required', new ValidAmountForeign],
-            'rate' => ['required', new ValidRate],
-            'purpose' => 'required|string|max:255',
-            'source_of_funds' => 'required|string|max:255',
-            'source_of_wealth' => 'nullable|string|max:500',
-            'till_id' => ['required', 'string', new ValidTill],
-            'idempotency_key' => 'nullable|string|max:100',
+            'customer_id' => $this->customerIdRule(),
+            'type' => $this->transactionTypeRule(),
+            'currency_code' => $this->currencyCodeRuleStrict(),
+            'amount_foreign' => $this->amountForeignRuleStrict(),
+            'rate' => $this->rateRuleStrict(),
+            'purpose' => $this->purposeRule(),
+            'source_of_funds' => $this->sourceOfFundsRule(),
+            'source_of_wealth' => $this->sourceOfWealthRule(),
+            'till_id' => $this->tillIdRule(),
+            'idempotency_key' => $this->idempotencyKeyRule(false),
         ];
     }
 }

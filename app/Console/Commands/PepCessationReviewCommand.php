@@ -13,7 +13,6 @@ use App\Services\CustomerScreeningService;
 use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
 use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -81,7 +80,6 @@ class PepCessationReviewCommand extends Command
                         app(CustomerScreeningService::class),
                         app(AuditService::class),
                         app(MathService::class),
-                        app(ThresholdService::class),
                         app(RiskCalculationService::class),
                         $pepAssessmentService,
                         app(GeographicRiskService::class),

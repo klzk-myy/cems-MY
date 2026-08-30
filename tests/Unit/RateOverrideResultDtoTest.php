@@ -54,7 +54,7 @@ class RateOverrideResultDtoTest extends TestCase
         $result = $service->overrideRate('USD', '4.6000', '4.7000', $this->createManager());
 
         $this->assertTrue($result->success);
-        $this->assertEquals('4.5000', $result->previousRate);
+        $this->assertEquals('4.500000', $result->previousRate);
         $this->assertEquals('4.6000', $result->newRate);
     }
 

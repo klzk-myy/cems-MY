@@ -11,19 +11,37 @@ class TransactionImportIdempotencyTest extends TestCase
      */
     public function test_transaction_import_has_idempotency_check(): void
     {
-        $file = base_path('app/Services/Transaction/TransactionImportService.php');
-        $this->assertFileExists($file);
+        $content = $this->readSource('app/Services/Transaction/TransactionImportService.php');
 
-        $content = file_get_contents($file);
         $this->assertStringContainsString(
-            "\$data['idempotency_key'] = hash('sha256', json_encode(\$data));",
+            "\$data['idempotency_key'] = hash('sha256', \$encoded);",
             $content,
             'Should generate idempotency key for every import row'
+        );
+        $this->assertStringContainsString(
+            "throw new ImportValidationException('Row data could not be encoded for idempotency key')",
+            $content,
+            'Should fail loudly when a row cannot be encoded for its idempotency key'
         );
         $this->assertStringContainsString(
             'createForImport',
             $content,
             'Should delegate dedup to TransactionCreationService via createForImport'
         );
+    }
+
+    private function readSource(string $relativePath): string
+    {
+        $path = base_path($relativePath);
+
+        $this->assertFileExists($path);
+
+        $content = file_get_contents($path);
+
+        if ($content === false) {
+            $this->fail("Unable to read {$relativePath}");
+        }
+
+        return $content;
     }
 }

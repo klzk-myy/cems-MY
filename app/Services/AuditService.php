@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\Domain\AuditIntegrityException;
 use App\Jobs\Audit\SealAuditHashJob;
+use App\Models\AuditTrail;
 use App\Models\SystemLog;
 use App\Services\Contracts\AuditServiceInterface;
 use Illuminate\Support\Facades\Bus;
@@ -333,6 +334,31 @@ class AuditService implements AuditServiceInterface
             'previous_hash' => null,
             'entry_hash' => null,
         ]);
+
+        // Mirror the event into the audit_trails table so it is a complete,
+        // queryable record of every audited entity. system_logs remains the
+        // canonical, tamper-evident store; this mirror is best-effort so a
+        // mirror write failure can never compromise the canonical chain.
+        try {
+            if (($data['entity_type'] ?? null) !== null && ($data['entity_id'] ?? null) !== null) {
+                AuditTrail::create([
+                    'auditable_type' => $data['entity_type'],
+                    'auditable_id' => $data['entity_id'],
+                    'action' => $action,
+                    'user_id' => $userId,
+                    'metadata' => [
+                        'old' => $data['old_values'] ?? [],
+                        'new' => $data['new_values'] ?? [],
+                    ],
+                    'ip_address' => $ipAddress,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('audit_trails mirror write failed', [
+                'action' => $action,
+                'exception' => $e->getMessage(),
+            ]);
+        }
 
         SealAuditHashJob::dispatch($log->id);
 

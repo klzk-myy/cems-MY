@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\AlertPriority;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
-use App\Enums\SystemAlertLevel;
 use App\Models\Compliance\ComplianceCase;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -107,11 +106,11 @@ class Alert extends BaseModel
      */
     public function scopeCritical(Builder $query): Builder
     {
-        return $query->where('level', SystemAlertLevel::Critical);
+        return $query->where('priority', AlertPriority::Critical);
     }
 
     public function scopeUnacknowledged(Builder $query): Builder
     {
-        return $query->whereNull('acknowledged_at');
+        return $query->whereNull('assigned_to');
     }
 }

@@ -37,7 +37,10 @@
 
         <x-card title="Pass Rate Trend">
             @php
-                $trendDataArray = $trendData instanceof \Illuminate\Support\Collection ? $trendData->toArray() : ($trendData ?? []);
+                // Ensure trend data is in the expected format (array of arrays with date/pass_rate keys)
+                $trendDataArray = $trendData instanceof \Illuminate\Support\Collection
+                    ? $trendData->toArray()
+                    : (is_array($trendData) ? $trendData : []);
                 $trendLabels = array_column($trendDataArray, 'date');
                 $trendValues = array_column($trendDataArray, 'pass_rate');
             @endphp

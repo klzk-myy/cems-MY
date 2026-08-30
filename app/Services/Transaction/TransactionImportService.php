@@ -22,13 +22,14 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Services\Traits\ExchangeCalculatorTrait;
 use App\Services\Traits\TillBalanceTrait;
 use App\Support\BcmathHelper;
 use Illuminate\Support\Facades\DB;
 
 class TransactionImportService
 {
-    use TillBalanceTrait;
+    use ExchangeCalculatorTrait, TillBalanceTrait;
 
     protected ?TransactionImport $import = null;
 
@@ -52,6 +53,7 @@ class TransactionImportService
         protected TransactionCreationService $transactionCreationService,
         protected RateManagementService $rateManagementService,
         protected CurrencyPositionLockService $positionLockService,
+        protected ?ExchangeCalculator $exchangeCalculator = null,
     ) {}
 
     /**
@@ -271,10 +273,15 @@ class TransactionImportService
                     throw new ImportValidationException($rateCheck['reason'] ?? 'Rate deviation exceeds maximum allowed');
                 }
 
-                // Calculate local amount
+                // Calculate local amount (single source of truth for the conversion)
                 $amountForeign = (string) $data['amount_foreign'];
                 $rate = (string) $data['rate'];
-                $amountLocal = $this->mathService->multiply($amountForeign, $rate);
+                $amountLocal = $this->resolveExchangeCalculator()->calculate(
+                    TransactionType::from((string) $data['type']),
+                    $data['currency_code'],
+                    $amountForeign,
+                    $rate,
+                )['amount_local'];
 
                 // Validate till has sufficient balance for the transaction type
                 if ($data['type'] === TransactionType::Buy->value) {

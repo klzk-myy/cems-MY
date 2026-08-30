@@ -20,7 +20,7 @@ use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +40,7 @@ class FiscalYearService
         protected AuditService $auditService,
         protected MathService $mathService,
         protected LedgerService $ledgerService,
-        protected CacheTagsService $cacheTagsService,
+        protected CacheInvalidationService $cacheInvalidationService,
     ) {}
 
     /**
@@ -504,7 +504,7 @@ class FiscalYearService
 
         // Ledger financial reports are cached under the 'ledger' tag; flush it
         // so trial balances/balance sheets are not stale after a posting.
-        $this->cacheTagsService->invalidate('ledger');
+        $this->cacheInvalidationService->invalidate('ledger');
     }
 
     /**

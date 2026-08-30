@@ -34,7 +34,7 @@ class RateManagementServiceCacheTest extends TestCase
         $rate = $service->getRateForCurrency('USD');
 
         $this->assertInstanceOf(ExchangeRate::class, $rate);
-        $this->assertEquals('4.5000', $rate->rate_buy);
+        $this->assertEquals('4.500000', $rate->rate_buy);
     }
 
     #[Test]
@@ -82,18 +82,18 @@ class RateManagementServiceCacheTest extends TestCase
         // First override should succeed
         $result1 = $service->overrideRate('USD', '4.6000', '4.7000', $manager, 'First override');
         $this->assertTrue($result1->success);
-        $this->assertEquals('4.5000', $result1->previousRate);
+        $this->assertEquals('4.500000', $result1->previousRate);
         $this->assertEquals('4.6000', $result1->newRate);
 
         // Second override should also succeed (sequential, not concurrent)
         $result2 = $service->overrideRate('USD', '4.7000', '4.8000', $manager, 'Second override');
         $this->assertTrue($result2->success);
-        $this->assertEquals('4.6000', $result2->previousRate);
+        $this->assertEquals('4.600000', $result2->previousRate);
         $this->assertEquals('4.7000', $result2->newRate);
 
         // Verify final rate is the second override
         $rate = ExchangeRate::where('currency_code', 'USD')->first();
-        $this->assertEquals('4.7000', $rate->rate_buy);
-        $this->assertEquals('4.8000', $rate->rate_sell);
+        $this->assertEquals('4.700000', $rate->rate_buy);
+        $this->assertEquals('4.800000', $rate->rate_sell);
     }
 }

@@ -6,13 +6,13 @@ use App\Enums\FlagStatus;
 use App\Models\FlaggedTransaction;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 
 class ComplianceFlagService
 {
     public function __construct(
         protected AuditService $auditService,
-        protected CacheTagsService $cacheTagsService,
+        protected CacheInvalidationService $cacheInvalidationService,
     ) {}
 
     public function assignToCurrentUser(FlaggedTransaction $flaggedTransaction, User $user): void
@@ -25,7 +25,7 @@ class ComplianceFlagService
             'status' => FlagStatus::UnderReview->value,
         ]);
 
-        $this->cacheTagsService->invalidate('dashboard');
+        $this->cacheInvalidationService->invalidate('dashboard');
 
         $this->auditService->logFlaggedTransactionEvent(
             'compliance_flag_assigned',
@@ -56,7 +56,7 @@ class ComplianceFlagService
             'resolved_at' => now(),
         ]);
 
-        $this->cacheTagsService->invalidate('dashboard');
+        $this->cacheInvalidationService->invalidate('dashboard');
 
         $this->auditService->logFlaggedTransactionEvent(
             'compliance_flag_resolved',

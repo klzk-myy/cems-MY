@@ -182,7 +182,7 @@ class AuditTrailHelperTest extends TestCase
     }
 
     #[Test]
-    public function record_transaction_creates_audit_trail_when_audit_service_fails(): void
+    public function record_transaction_propagates_audit_service_failure_and_skips_mirror(): void
     {
         $user = User::factory()->create();
         $failingAuditService = $this->createMock(AuditService::class);
@@ -191,27 +191,29 @@ class AuditTrailHelperTest extends TestCase
 
         $helper = new AuditTrailHelper($failingAuditService);
 
-        $auditTrail = $helper->recordTransaction(
-            555,
-            'transaction_created',
-            ['new' => ['amount' => 100]],
-            $user,
-            'INFO',
-            '192.168.1.2'
-        );
+        try {
+            $helper->recordTransaction(
+                555,
+                'transaction_created',
+                ['new' => ['amount' => 100]],
+                $user,
+                'INFO',
+                '192.168.1.2'
+            );
+            $this->fail('Expected RuntimeException was not thrown');
+        } catch (\RuntimeException $e) {
+            // Expected: a canonical write failure must not silently produce a
+            // partial audit_trails mirror row.
+        }
 
-        $this->assertInstanceOf(AuditTrail::class, $auditTrail);
-        $this->assertDatabaseHas('audit_trails', [
-            'id' => $auditTrail->id,
+        $this->assertDatabaseMissing('audit_trails', [
             'auditable_type' => 'Transaction',
             'auditable_id' => 555,
-            'user_id' => $user->id,
-            'ip_address' => '192.168.1.2',
         ]);
     }
 
     #[Test]
-    public function record_customer_creates_audit_trail_when_audit_service_fails(): void
+    public function record_customer_propagates_audit_service_failure_and_skips_mirror(): void
     {
         $user = User::factory()->create();
         $failingAuditService = $this->createMock(AuditService::class);
@@ -220,22 +222,23 @@ class AuditTrailHelperTest extends TestCase
 
         $helper = new AuditTrailHelper($failingAuditService);
 
-        $auditTrail = $helper->recordCustomer(
-            666,
-            'customer_created',
-            ['new' => ['name' => 'Acme']],
-            $user,
-            'INFO',
-            '192.168.1.3'
-        );
+        try {
+            $helper->recordCustomer(
+                666,
+                'customer_created',
+                ['new' => ['name' => 'Acme']],
+                $user,
+                'INFO',
+                '192.168.1.3'
+            );
+            $this->fail('Expected RuntimeException was not thrown');
+        } catch (\RuntimeException $e) {
+            // Expected.
+        }
 
-        $this->assertInstanceOf(AuditTrail::class, $auditTrail);
-        $this->assertDatabaseHas('audit_trails', [
-            'id' => $auditTrail->id,
+        $this->assertDatabaseMissing('audit_trails', [
             'auditable_type' => 'Customer',
             'auditable_id' => 666,
-            'user_id' => $user->id,
-            'ip_address' => '192.168.1.3',
         ]);
     }
 }

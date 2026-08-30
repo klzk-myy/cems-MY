@@ -9,7 +9,7 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\AuditService;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,7 +30,7 @@ class AccountingServiceTest extends TestCase
     #[Test]
     public function journal_entry_must_be_balanced(): void
     {
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $result = $service->validateBalanced([
             ['debit' => '1000.00', 'credit' => '0'],
@@ -43,7 +43,7 @@ class AccountingServiceTest extends TestCase
     #[Test]
     public function unbalanced_entry_rejected(): void
     {
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $result = $service->validateBalanced([
             ['debit' => '1000.00', 'credit' => '0'],
@@ -56,7 +56,7 @@ class AccountingServiceTest extends TestCase
     #[Test]
     public function validate_balanced_returns_true_for_balanced_entry(): void
     {
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $result = $service->validateBalanced([
             ['debit' => '1000.00', 'credit' => '0'],
@@ -70,7 +70,7 @@ class AccountingServiceTest extends TestCase
     #[Test]
     public function validate_balanced_returns_false_for_unbalanced_entry(): void
     {
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $result = $service->validateBalanced([
             ['debit' => '1000.00', 'credit' => '0'],
@@ -108,7 +108,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $entry = $service->createJournalEntry(
             [
@@ -156,7 +156,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $original = $service->createJournalEntry(
             [
@@ -203,7 +203,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $entry = $service->createJournalEntry(
             [
@@ -251,7 +251,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $service->createJournalEntry(
             [
@@ -272,7 +272,7 @@ class AccountingServiceTest extends TestCase
     #[Test]
     public function get_account_balance_returns_zero_for_no_entries(): void
     {
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $balance = $service->getAccountBalance('9999');
         $this->assertEquals('0', $balance);
@@ -306,7 +306,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $service->createJournalEntry(
             [
@@ -376,7 +376,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $service->createJournalEntry(
             [
@@ -446,7 +446,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $service->createJournalEntry(
             [
@@ -492,7 +492,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $service->createJournalEntry(
             [
@@ -538,7 +538,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $service->createJournalEntry(
             [
@@ -574,7 +574,7 @@ class AccountingServiceTest extends TestCase
     #[Test]
     public function balance_calculation_with_zero_amounts(): void
     {
-        $service = new AccountingService($this->mathService, new AuditService, new CacheTagsService);
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
 
         $result = $service->validateBalanced([
             ['debit' => '0.00', 'credit' => '0.00'],
@@ -604,7 +604,7 @@ class AccountingServiceTest extends TestCase
         ]);
 
         $auditService = new AuditService;
-        $accountingService = new AccountingService($this->mathService, $auditService, new CacheTagsService);
+        $accountingService = new AccountingService($this->mathService, $auditService, new CacheInvalidationService);
 
         $initialCount = AccountLedger::count();
 
@@ -675,7 +675,7 @@ class AccountingServiceTest extends TestCase
         $user = User::factory()->create();
 
         $auditService = new AuditService;
-        $accountingService = new AccountingService($this->mathService, $auditService, new CacheTagsService);
+        $accountingService = new AccountingService($this->mathService, $auditService, new CacheInvalidationService);
 
         $sellEntry = $accountingService->createJournalEntry(
             [

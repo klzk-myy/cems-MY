@@ -8,7 +8,7 @@
     <x-stat-grid>
         <x-stat-card label="Total Transactions" value="1,234" color="blue" :trend="12" />
         <x-stat-card label="Active Customers" value="567" color="green" :trend="8" />
-        <x-stat-card label="Revenue" value="RM 45,678" color="purple" :trend="23" />
+        <x-stat-card label="Revenue" color="purple" :trend="23"><x-money :amount="45678" currency="MYR" :decimals="0" /></x-stat-card>
         <x-stat-card label="Alerts" value="12" color="red" :trend="-5" />
     </x-stat-grid>
 

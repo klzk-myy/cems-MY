@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,8 +22,8 @@ class ExchangeRate extends BaseModel
     ];
 
     protected $casts = [
-        'rate_buy' => 'decimal:4',
-        'rate_sell' => 'decimal:4',
+        'rate_buy' => MoneyCast::class.':6',
+        'rate_sell' => MoneyCast::class.':6',
         'fetched_at' => 'datetime',
         'effective_date' => 'datetime',
     ];

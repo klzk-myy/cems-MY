@@ -12,9 +12,7 @@ return new class extends Migration
             $table->index(['branch_id', 'status', 'created_at'], 'idx_transactions_branch_status_date');
         });
 
-        Schema::table('till_balances', function (Blueprint $table) {
-            $table->index(['updated_at'], 'idx_till_balances_updated');
-        });
+        // Skipped broken index: 'updated_at' column missing on till_balances.
 
         Schema::table('flagged_transactions', function (Blueprint $table) {
             $table->index(['status', 'created_at'], 'idx_flagged_transactions_status_date');
@@ -24,9 +22,7 @@ return new class extends Migration
             $table->index(['ip_address', 'created_at'], 'idx_audit_trails_ip_date');
         });
 
-        Schema::table('customers', function (Blueprint $table) {
-            $table->index(['risk_rating_changed_at'], 'idx_customers_risk_rating_changed_at');
-        });
+        // Skipped broken index: 'risk_rating_changed_at' column missing on customers.
     }
 
     public function down(): void
@@ -35,10 +31,7 @@ return new class extends Migration
             $table->dropIndex('idx_transactions_branch_status_date');
         });
 
-        Schema::table('till_balances', function (Blueprint $table) {
-            $table->dropIndex('idx_till_balances_updated');
-        });
-
+        // Broken index skipped in up(); no drop needed.
         Schema::table('flagged_transactions', function (Blueprint $table) {
             $table->dropIndex('idx_flagged_transactions_status_date');
         });
@@ -47,8 +40,6 @@ return new class extends Migration
             $table->dropIndex('idx_audit_trails_ip_date');
         });
 
-        Schema::table('customers', function (Blueprint $table) {
-            $table->dropIndex('idx_customers_risk_rating_changed_at');
-        });
+        // Broken index skipped in up(); no drop needed.
     }
 };

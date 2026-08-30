@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CddLevel;
+use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Http\Concerns\DeterminesTransactionStatus;
 use App\Http\Requests\TransactionWizardStep1Request;
@@ -18,6 +19,7 @@ use App\Services\System\MathService;
 use App\Services\System\WizardSessionService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
+use App\Services\Transaction\ExchangeCalculator;
 use App\Services\Transaction\TransactionApprovalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +37,7 @@ class TransactionWizardController extends Controller
         protected TransactionApprovalService $approvalService,
         protected WizardSessionService $wizardSessionService,
         protected MathService $mathService,
+        protected ExchangeCalculator $exchangeCalculator,
         protected TellerAllocationService $tellerAllocationService,
         protected ThresholdService $thresholdService,
         protected LoggerInterface $logger,
@@ -72,8 +75,13 @@ class TransactionWizardController extends Controller
             return $denied;
         }
 
-        // Calculate local amount
-        $amountLocal = $this->mathService->multiply($validated['amount_foreign'], $validated['rate']);
+        // Calculate local amount (single source of truth for the conversion)
+        $amountLocal = $this->exchangeCalculator->calculate(
+            TransactionType::from((string) $validated['type']),
+            (string) $validated['currency_code'],
+            (string) $validated['amount_foreign'],
+            (string) $validated['rate'],
+        )['amount_local'];
 
         // Run pre-validation (sanctions, CDD, risk)
         $validationResult = $this->validationService->preValidate(

@@ -10,22 +10,10 @@
         <div class="lg:col-span-2 space-y-6">
             <x-card title="Personal Information">
                 <dl class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <dt class="text-ink-muted">Name</dt>
-                        <dd class="font-medium text-ink">{{ $customer->name ?? 'John Doe' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-ink-muted">Email</dt>
-                        <dd class="font-medium text-ink">{{ $customer->email ?? 'john@example.com' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-ink-muted">Phone</dt>
-                        <dd class="font-medium text-ink">{{ $customer->phone ?? '+60 12-345 6789' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-ink-muted">Status</dt>
-                        <dd><x-badge variant="success">Active</x-badge></dd>
-                    </div>
+                    <x-detail-row label="Name">{{ $customer->name ?? 'John Doe' }}</x-detail-row>
+                    <x-detail-row label="Email">{{ $customer->email ?? 'john@example.com' }}</x-detail-row>
+                    <x-detail-row label="Phone">{{ $customer->phone ?? '+60 12-345 6789' }}</x-detail-row>
+                    <x-detail-row label="Status" value-class=""><x-badge variant="success">Active</x-badge></x-detail-row>
                 </dl>
             </x-card>
 
@@ -53,14 +41,8 @@
         <div>
             <x-card title="Account Summary">
                 <dl class="space-y-3 text-sm">
-                    <div class="flex justify-between">
-                        <dt class="text-ink-muted">Total Transactions</dt>
-                        <dd class="font-medium text-ink">{{ $customer->transactions->count() ?? 0 }}</dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-ink-muted">Member Since</dt>
-                        <dd class="font-medium text-ink">{{ $customer->created_at?->format('M Y') ?? 'Jan 2024' }}</dd>
-                    </div>
+                    <x-detail-row label="Total Transactions" row-class="flex justify-between">{{ $customer->transactions->count() ?? 0 }}</x-detail-row>
+                    <x-detail-row label="Member Since" row-class="flex justify-between">{{ $customer->created_at?->format('M Y') ?? 'Jan 2024' }}</x-detail-row>
                 </dl>
             </x-card>
         </div>

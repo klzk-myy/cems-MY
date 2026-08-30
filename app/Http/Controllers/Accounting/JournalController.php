@@ -21,6 +21,8 @@ class JournalController extends Controller
 
     public function index(): View
     {
+        $this->authorize('viewAny', JournalEntry::class);
+
         $entries = JournalEntry::with(['lines', 'postedBy', 'creator', 'approver'])
             ->orderBy('entry_date', 'desc')
             ->orderBy('id', 'desc')
@@ -31,6 +33,8 @@ class JournalController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', JournalEntry::class);
+
         $accounts = ChartOfAccount::where('is_active', true)
             ->orderBy('account_code')
             ->get();
@@ -40,6 +44,8 @@ class JournalController extends Controller
 
     public function store(StoreJournalEntryRequest $request): RedirectResponse
     {
+        $this->authorize('create', JournalEntry::class);
+
         $validated = $request->validated();
 
         try {
@@ -63,6 +69,8 @@ class JournalController extends Controller
 
     public function show(JournalEntry $entry): View
     {
+        $this->authorize('view', $entry);
+
         $entry->load('lines.account', 'postedBy', 'reversedBy');
 
         return view('accounting.journal.show', compact('entry'));
@@ -70,6 +78,8 @@ class JournalController extends Controller
 
     public function reverse(ReverseJournalEntryRequest $request, JournalEntry $entry): RedirectResponse
     {
+        $this->authorize('reverse', $entry);
+
         if ($entry->isReversed()) {
             return back()->with('error', 'Entry is already reversed.');
         }

@@ -9,22 +9,10 @@
         <div class="lg:col-span-2 space-y-6">
             <x-card title="Transaction Information">
                 <dl class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <dt class="text-ink-muted">Reference</dt>
-                        <dd class="font-medium text-ink">TXN-001</dd>
-                    </div>
-                    <div>
-                        <dt class="text-ink-muted">Status</dt>
-                        <dd><x-badge variant="success">Completed</x-badge></dd>
-                    </div>
-                    <div>
-                        <dt class="text-ink-muted">Customer</dt>
-                        <dd class="font-medium text-ink">John Doe</dd>
-                    </div>
-                    <div>
-                        <dt class="text-ink-muted">Amount</dt>
-                        <dd class="font-medium text-ink">RM 10,000</dd>
-                    </div>
+                    <x-detail-row label="Reference">TXN-001</x-detail-row>
+                    <x-detail-row label="Status" value-class=""><x-badge variant="success">Completed</x-badge></x-detail-row>
+                    <x-detail-row label="Customer">John Doe</x-detail-row>
+                    <x-detail-row label="Amount"><x-money :amount="10000" currency="MYR" :decimals="0" /></x-detail-row>
                 </dl>
             </x-card>
         </div>

@@ -38,10 +38,11 @@ use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Traits\AccountingEntriesTrait;
+use App\Services\Traits\ExchangeCalculatorTrait;
 use App\Services\Traits\TillBalanceTrait;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +52,7 @@ use Throwable;
 
 class TransactionCreationService implements TransactionCreationServiceInterface
 {
-    use AccountingEntriesTrait, TillBalanceTrait;
+    use AccountingEntriesTrait, ExchangeCalculatorTrait, TillBalanceTrait;
 
     public function __construct(
         protected TransactionIdempotencyServiceInterface $idempotencyService,
@@ -59,7 +60,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         protected TransactionAccountingService $transactionAccountingService,
         protected AuditTrailHelper $auditTrailHelper,
         protected TillBalanceManager $tillBalanceManager,
-        protected CacheTagsService $cacheTagsService,
+        protected CacheInvalidationService $cacheInvalidationService,
         protected TransactionValidationInterface $validationService,
         protected MathService $mathService,
         protected ThresholdService $thresholdService,
@@ -68,6 +69,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         protected TransactionRecoveryService $recoveryService,
         protected KycDocumentExpiryService $kycDocumentExpiryService,
         protected RateManagementServiceInterface $rateManagementService,
+        protected ?ExchangeCalculator $exchangeCalculator = null,
     ) {}
 
     public function prepareAndCreate(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction
@@ -121,10 +123,12 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             );
         }
 
-        $amountLocal = $this->mathService->multiply(
+        $amountLocal = $this->resolveExchangeCalculator()->calculate(
+            TransactionType::from((string) $data['type']),
+            (string) $data['currency_code'],
             (string) $data['amount_foreign'],
-            (string) $data['rate']
-        );
+            (string) $data['rate'],
+        )['amount_local'];
 
         $this->validationService->validatePepRequirements($customer, $data);
 
@@ -523,7 +527,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
     {
         DB::afterCommit(function () use ($transaction) {
             Event::dispatch(new TransactionCreated($transaction));
-            $this->cacheTagsService->invalidate('dashboard');
+            $this->cacheInvalidationService->invalidate('dashboard');
         });
     }
 

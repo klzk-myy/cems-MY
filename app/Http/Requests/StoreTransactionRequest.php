@@ -2,15 +2,16 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\TransactionType;
+use App\Http\Requests\Concerns\HasTransactionValidationRules;
 use App\Models\Transaction;
-use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Validates web transaction creation data extracted from TransactionController.
  */
 class StoreTransactionRequest extends AuthorizedFormRequest
 {
+    use HasTransactionValidationRules;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -36,22 +37,22 @@ class StoreTransactionRequest extends AuthorizedFormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'customer_id' => 'required|exists:customers,id',
-            'type' => ['required', 'in:'.TransactionType::Buy->value.','.TransactionType::Sell->value],
-            'currency_code' => 'required|exists:currencies,code',
-            'amount_foreign' => 'required|numeric|min:0.01|max:9999999999.9999',
-            'rate' => 'required|numeric|min:0.0001|max:999999',
-            'purpose' => 'required|string|max:255',
-            'source_of_funds' => 'required|string|max:255',
-            'source_of_wealth' => 'nullable|string|max:500',
+            'customer_id' => $this->customerIdRule(),
+            'type' => $this->transactionTypeRule(),
+            'currency_code' => $this->currencyCodeRule(),
+            'amount_foreign' => $this->amountForeignRule(),
+            'rate' => $this->rateRule(),
+            'purpose' => $this->purposeRule(),
+            'source_of_funds' => $this->sourceOfFundsRule(),
+            'source_of_wealth' => $this->sourceOfWealthRule(),
             'branch_id' => 'required|exists:branches,id',
             'counter_id' => 'required|exists:counters,id',
-            'idempotency_key' => 'required|string|max:100',
+            'idempotency_key' => $this->idempotencyKeyRule(),
         ];
     }
 

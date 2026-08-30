@@ -30,7 +30,6 @@ use App\Services\Branch\CounterService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\CacheInvalidationService;
-use App\Services\System\CacheTagsService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionService;
@@ -79,7 +78,7 @@ class TransactionAccountingVerificationTest extends TestCase
         $auditService = resolve(AuditService::class);
         $complianceService = resolve(ComplianceService::class);
 
-        $this->accountingService = new AccountingService($this->mathService, $auditService, new CacheTagsService);
+        $this->accountingService = new AccountingService($this->mathService, $auditService, new CacheInvalidationService);
         $this->ledgerService = new LedgerService($this->mathService, $this->accountingService);
         $this->positionService = new CurrencyPositionService($this->mathService, new CurrencyPositionLockService($this->mathService), new CacheInvalidationService);
 

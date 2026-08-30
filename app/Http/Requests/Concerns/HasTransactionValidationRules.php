@@ -1,0 +1,151 @@
+<?php
+
+namespace App\Http\Requests\Concerns;
+
+use App\Enums\TransactionType;
+use App\Rules\ValidAmountForeign;
+use App\Rules\ValidCurrencyCode;
+use App\Rules\ValidRate;
+use App\Rules\ValidTill;
+
+/**
+ * Shared validation rules for transaction creation across the web, API, and
+ * wizard workflows.
+ *
+ * Fields whose rules differ in meaning between workflows (e.g. the API's
+ * stricter custom Rule classes that also enforce currency/till state) are
+ * exposed as dedicated ``*Strict`` methods so each workflow can reuse the same
+ * rule set without changing its validated behaviour.
+ */
+trait HasTransactionValidationRules
+{
+    /**
+     * Common customer reference rule.
+     *
+     * The wizard additionally requires the id to be an integer.
+     *
+     * @return array<array-key, string>|string
+     */
+    protected function customerIdRule(bool $requireInteger = false): array|string
+    {
+        if ($requireInteger) {
+            return ['required', 'integer', 'exists:customers,id'];
+        }
+
+        return 'required|exists:customers,id';
+    }
+
+    /**
+     * Common transaction type rule (Buy/Sell).
+     *
+     * @return array<array-key, string>
+     */
+    protected function transactionTypeRule(): array
+    {
+        return ['required', 'in:'.TransactionType::Buy->value.','.TransactionType::Sell->value];
+    }
+
+    /**
+     * Common currency_code rule for the web and wizard workflows.
+     *
+     * The API exposes a stricter variant via {@see currencyCodeRuleStrict()}.
+     *
+     * @return array<array-key, string>
+     */
+    protected function currencyCodeRule(): array
+    {
+        return ['required', 'string', 'exists:currencies,code'];
+    }
+
+    /**
+     * Common foreign amount rule for the web and wizard workflows.
+     *
+     * The API exposes a stricter variant via {@see amountForeignRuleStrict()}.
+     */
+    protected function amountForeignRule(): string
+    {
+        return 'required|numeric|min:0.01|max:9999999999.9999';
+    }
+
+    /**
+     * Common exchange rate rule for the web and wizard workflows.
+     *
+     * The API exposes a stricter variant via {@see rateRuleStrict()}.
+     */
+    protected function rateRule(): string
+    {
+        return 'required|numeric|min:0.0001|max:999999';
+    }
+
+    /**
+     * Common purpose rule.
+     */
+    protected function purposeRule(): string
+    {
+        return 'required|string|max:255';
+    }
+
+    /**
+     * Common source of funds rule.
+     */
+    protected function sourceOfFundsRule(): string
+    {
+        return 'required|string|max:255';
+    }
+
+    /**
+     * Common source of wealth rule.
+     */
+    protected function sourceOfWealthRule(): string
+    {
+        return 'nullable|string|max:500';
+    }
+
+    /**
+     * Common idempotency key rule.
+     */
+    protected function idempotencyKeyRule(bool $required = true): string
+    {
+        return $required ? 'required|string|max:100' : 'nullable|string|max:100';
+    }
+
+    /**
+     * Strict currency_code rule used by the API; also checks the currency is active.
+     *
+     * @return array<array-key, string|ValidCurrencyCode>
+     */
+    protected function currencyCodeRuleStrict(): array
+    {
+        return ['required', 'string', new ValidCurrencyCode];
+    }
+
+    /**
+     * Strict foreign amount rule used by the API.
+     *
+     * @return array<array-key, string|ValidAmountForeign>
+     */
+    protected function amountForeignRuleStrict(): array
+    {
+        return ['required', new ValidAmountForeign];
+    }
+
+    /**
+     * Strict exchange rate rule used by the API.
+     *
+     * @return array<array-key, string|ValidRate>
+     */
+    protected function rateRuleStrict(): array
+    {
+        return ['required', new ValidRate];
+    }
+
+    /**
+     * Strict till rule used by the API; validates branch scoping and open status.
+     *
+     * @return array<array-key, string|ValidTill>
+     */
+    protected function tillIdRule(): array
+    {
+        return ['required', 'string', new ValidTill];
+    }
+}

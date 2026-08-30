@@ -32,7 +32,7 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\AmlRuleEvaluator;
 use App\Services\Contracts\TransactionApprovalServiceInterface;
 use App\Services\DTOs\ApprovalResult;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\Traits\AccountingEntriesTrait;
 use App\Services\Traits\TillBalanceTrait;
@@ -50,7 +50,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         protected TransactionAccountingService $transactionAccountingService,
         protected AuditTrailHelper $auditTrailHelper,
         protected TillBalanceManager $tillBalanceManager,
-        protected CacheTagsService $cacheTagsService,
+        protected CacheInvalidationService $cacheInvalidationService,
         protected AuditService $auditService,
         protected TellerAllocationService $tellerAllocationService,
         protected MathService $mathService,
@@ -433,7 +433,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
     {
         Event::dispatch(new TransactionApproved($transaction, $approverId));
 
-        DB::afterCommit(fn () => $this->cacheTagsService->invalidate('dashboard'));
+        DB::afterCommit(fn () => $this->cacheInvalidationService->invalidate('dashboard'));
     }
 
     private function updateTellerAllocation(Transaction $transaction): void

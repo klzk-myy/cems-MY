@@ -57,12 +57,12 @@ class RateOverrideEffectiveDateTest extends TestCase
         Cache::forget('rate:USD');
 
         $rates = $service->getCurrentRates();
-        $this->assertEquals('5.0000', $rates->firstWhere('currency_code', 'USD')->rate_buy);
-        $this->assertEquals('5.1000', $rates->firstWhere('currency_code', 'USD')->rate_sell);
+        $this->assertEquals('5.000000', $rates->firstWhere('currency_code', 'USD')->rate_buy);
+        $this->assertEquals('5.100000', $rates->firstWhere('currency_code', 'USD')->rate_sell);
 
         $servedRate = $service->getRateForCurrency('USD');
         $this->assertInstanceOf(ExchangeRate::class, $servedRate);
-        $this->assertEquals('5.0000', $servedRate->rate_buy);
+        $this->assertEquals('5.000000', $servedRate->rate_buy);
 
         Carbon::setTestNow();
     }
@@ -85,7 +85,7 @@ class RateOverrideEffectiveDateTest extends TestCase
         $this->assertTrue($result->success);
 
         $rate = $service->getCurrentRates()->firstWhere('currency_code', 'EUR');
-        $this->assertEquals('5.1000', $rate->rate_buy);
+        $this->assertEquals('5.100000', $rate->rate_buy);
         // Immediate overrides are effective right away.
         $this->assertTrue($rate->effective_date->lessThanOrEqualTo(now()));
     }

@@ -33,10 +33,10 @@ class ExportService
         }
 
         if (! empty($data)) {
-            fputcsv($handle, $this->sanitizeRow(array_keys($data[0])));
+            fputcsv($handle, self::sanitizeRow(array_keys($data[0])));
 
             foreach ($data as $row) {
-                fputcsv($handle, $this->sanitizeRow(array_values($row)));
+                fputcsv($handle, self::sanitizeRow(array_values($row)));
             }
         }
 
@@ -87,7 +87,7 @@ class ExportService
      * @param  array<int, mixed>  $row
      * @return array<int, mixed>
      */
-    protected function sanitizeRow(array $row): array
+    public static function sanitizeRow(array $row): array
     {
         return array_map(function (mixed $value): mixed {
             if (! is_string($value) || $value === '') {

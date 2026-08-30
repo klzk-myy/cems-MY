@@ -17,7 +17,7 @@ use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\DTOs\ApprovalResult;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
@@ -35,7 +35,7 @@ class ProcessTransactionRetryTest extends TestCase
 
     private function approvalService(array $mocks = []): TransactionApprovalService
     {
-        $cache = $mocks['cache'] ?? Mockery::mock(CacheTagsService::class);
+        $cache = $mocks['cache'] ?? Mockery::mock(CacheInvalidationService::class);
         if (! isset($mocks['cache'])) {
             $cache->shouldReceive('invalidate')->with('dashboard')->zeroOrMoreTimes();
         }

@@ -31,7 +31,7 @@ use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\DTOs\PreValidationResult;
-use App\Services\System\CacheTagsService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
@@ -51,7 +51,7 @@ class TransactionCreationServiceTest extends TestCase
 
     private function service(array $mocks = []): TransactionCreationService
     {
-        $cache = $mocks['cache'] ?? Mockery::mock(CacheTagsService::class);
+        $cache = $mocks['cache'] ?? Mockery::mock(CacheInvalidationService::class);
         if (! isset($mocks['cache'])) {
             $cache->shouldReceive('invalidate')->with('dashboard')->zeroOrMoreTimes();
         }
@@ -762,7 +762,7 @@ class TransactionCreationServiceTest extends TestCase
         $audit = Mockery::mock(AuditTrailHelper::class);
         $audit->shouldReceive('recordTransaction')->once();
 
-        $cache = Mockery::mock(CacheTagsService::class);
+        $cache = Mockery::mock(CacheInvalidationService::class);
         $cache->shouldReceive('invalidate')->once()->with('dashboard');
 
         $service = $this->service([
@@ -914,7 +914,7 @@ class TransactionCreationServiceTest extends TestCase
             $accounting,
             $audit,
             app(TillBalanceManager::class),
-            app(CacheTagsService::class),
+            app(CacheInvalidationService::class),
             $validation,
             app(MathService::class),
             app(ThresholdService::class),
