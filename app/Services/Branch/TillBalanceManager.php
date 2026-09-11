@@ -47,30 +47,31 @@ class TillBalanceManager
         $currency = Currency::where('code', $currencyCode)->firstOrFail();
         $openedBy = $this->resolveOpenedBy($openedBy, $currency->code, $till->code);
 
-        $existing = TillBalance::where('till_id', $till->code)
-            ->where('currency_code', $currency->code)
-            ->whereDate('date', today())
-            ->first();
+        // The (till_id, date, currency_code) unique index was dropped, so the
+        // duplicate check below can race with a concurrent openTill. Lock the
+        // counter row as a stable serialization anchor for the whole open.
+        return DB::transaction(function () use ($till, $currency, $openingBalance, $openedBy, $notes) {
+            Counter::whereKey($till->id)->lockForUpdate()->firstOrFail();
 
-        if ($existing) {
-            throw new TillAlreadyOpenException($till->code);
-        }
+            $existing = TillBalance::where('till_id', $till->code)
+                ->where('currency_code', $currency->code)
+                ->whereDate('date', today())
+                ->first();
 
-        return TillBalance::create([
-            'till_id' => $till->code,
-            'currency_code' => $currency->code,
-            'branch_id' => $till->branch_id,
-            'opening_balance' => $openingBalance,
-            'closing_balance' => null,
-            'variance' => null,
-            'foreign_total' => '0',
-            'transaction_total' => '0',
-            'buy_total_foreign' => '0',
-            'sell_total_foreign' => '0',
-            'date' => today(),
-            'opened_by' => $openedBy,
-            'notes' => $notes,
-        ]);
+            if ($existing) {
+                throw new TillAlreadyOpenException($till->code);
+            }
+
+            return TillBalance::openFor(
+                $till->code,
+                $currency->code,
+                $till->branch_id,
+                $openingBalance,
+                today(),
+                $openedBy,
+                ['notes' => $notes]
+            );
+        });
     }
 
     public function closeTill(
@@ -144,6 +145,11 @@ class TillBalanceManager
         // duplicate open rows. Lock candidate rows inside a transaction and
         // create only when no open row exists yet.
         return DB::transaction(function () use ($till, $currency, $openedBy) {
+            // Serialize on the counter row: when no open row exists yet, the
+            // lockForUpdate below locks nothing and two callers could both
+            // insert.
+            Counter::whereKey($till->id)->lockForUpdate()->firstOrFail();
+
             $existing = TillBalance::where('till_id', $till->code)
                 ->where('currency_code', $currency->code)
                 ->whereDate('date', today())
@@ -155,20 +161,14 @@ class TillBalanceManager
                 return $existing;
             }
 
-            return TillBalance::create([
-                'till_id' => $till->code,
-                'currency_code' => $currency->code,
-                'branch_id' => $till->branch_id,
-                'opening_balance' => '0',
-                'closing_balance' => null,
-                'variance' => null,
-                'foreign_total' => '0',
-                'transaction_total' => '0',
-                'buy_total_foreign' => '0',
-                'sell_total_foreign' => '0',
-                'date' => today(),
-                'opened_by' => $openedBy,
-            ]);
+            return TillBalance::openFor(
+                $till->code,
+                $currency->code,
+                $till->branch_id,
+                '0',
+                today(),
+                $openedBy
+            );
         });
     }
 
