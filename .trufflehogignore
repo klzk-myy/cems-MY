@@ -24,6 +24,8 @@
 ^storage/
 ^bootstrap/cache/
 ^\.phpunit\.cache/
+\.phpunit\.result.*cache$
+^\.git/
 
 # Test/load artifacts
 ^load-tests/
