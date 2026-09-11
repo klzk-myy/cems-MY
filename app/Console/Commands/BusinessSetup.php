@@ -8,14 +8,16 @@ use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\TellerAllocation;
 use App\Models\User;
+use Database\Seeders\SchemaSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 
 class BusinessSetup extends Command
 {
-    protected $signature = 'business:setup 
-                            {--fresh : Run fresh migrations before setup}
-                            {--seed-only : Only run seeders without migrations}
+    protected $signature = 'business:setup
+                            {--fresh : Rebuild the schema via SchemaSeeder, dropping ALL existing data}
+                            {--seed-only : Only run seeders, leaving the schema untouched}
                             {--with-demo : Include demo data}';
 
     protected $description = 'Complete business setup for CEMS-MY - initializes all required components for operations';
@@ -34,15 +36,20 @@ class BusinessSetup extends Command
                 return 1;
             }
 
-            $this->info('Running fresh migrations...');
-            Artisan::call('migrate:fresh', ['--force' => true]);
-            $this->info('Migrations complete.');
-        }
-
-        if (! $this->option('seed-only')) {
-            $this->info('Running database migrations...');
-            Artisan::call('migrate', ['--force' => true]);
-            $this->info('Migrations complete.');
+            $this->info('Running fresh schema setup...');
+            Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+            $this->info('Schema setup complete.');
+        } elseif (! $this->option('seed-only')) {
+            // Non-destructive path: build the schema only when it is missing.
+            // SchemaSeeder drops every table, so it must never re-run against
+            // a populated database; an existing schema is treated as current.
+            if (Schema::hasTable('users')) {
+                $this->info('Schema already present; skipping schema creation (use --fresh to rebuild).');
+            } else {
+                $this->info('Schema not found; creating via SchemaSeeder...');
+                Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+                $this->info('Schema setup complete.');
+            }
         }
 
         $this->info('');
@@ -54,7 +61,6 @@ class BusinessSetup extends Command
         Artisan::call('db:seed', ['--class' => 'CurrencySeeder', '--force' => true]);
         $this->info('Currencies created');
 
-        Artisan::call('db:seed', ['--class' => 'ChartOfAccountsSeeder', '--force' => true]);
         Artisan::call('db:seed', ['--class' => 'EnhancedChartOfAccountsSeeder', '--force' => true]);
         $this->info('Chart of accounts created');
 
