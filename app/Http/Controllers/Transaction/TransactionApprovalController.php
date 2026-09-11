@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Actions\Transaction\ApproveTransactionAction;
-use App\Enums\TransactionConfirmationStatus;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmTransactionApprovalRequest;
 use App\Models\Transaction;
-use App\Models\TransactionConfirmation;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
@@ -76,7 +74,7 @@ class TransactionApprovalController extends Controller
         $this->authorize('reject', $transaction);
 
         try {
-            if (! $this->approvalService->reject($transaction, (int) auth()->id(), $request->input('reason', 'Rejected by manager'))) {
+            if (! $this->approvalService->reject($transaction, (int) auth()->id(), $request->input('reason', 'Rejected by approver'))) {
                 return back()->with('error', 'Transaction cannot be rejected from its current status.');
             }
 
@@ -132,24 +130,15 @@ class TransactionApprovalController extends Controller
                 ->with('error', 'This transaction does not require confirmation.');
         }
 
-        $confirmation = TransactionConfirmation::where('transaction_id', $transaction->id)
-            ->where('status', TransactionConfirmationStatus::Pending->value)
-            ->first();
+        $confirmation = $this->confirmationService->pendingConfirmationFor($transaction);
 
         if (! $confirmation) {
             return redirect()->route('transactions.show', $transaction)
-                ->with('error', 'No pending confirmation found.');
+                ->with('error', 'No pending confirmation found. If one expired, please request a new confirmation.');
         }
 
         if ($response = $this->ensureNotSelfConfirmation($transaction)) {
             return $response;
-        }
-
-        if ($confirmation->isExpired()) {
-            $confirmation->markExpired();
-
-            return redirect()->route('transactions.show', $transaction)
-                ->with('error', 'Confirmation has expired. Please request a new confirmation.');
         }
 
         $validated = $request->validated();
