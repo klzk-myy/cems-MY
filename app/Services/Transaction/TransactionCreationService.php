@@ -426,6 +426,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         } else {
             $availableBalance = $this->positionService->getAvailableBalance(
                 $data['currency_code'],
+                isset($data['branch_id']) ? (string) $data['branch_id'] : (string) $tillBalance->branch_id,
                 (string) $tillBalance->till_id
             );
         }
@@ -568,7 +569,8 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             $data['amount_foreign'],
             $data['rate'],
             $data['type'],
-            (string) $context->tillBalance->branch_id
+            (string) $context->tillBalance->branch_id,
+            $transaction
         );
 
         $this->tillBalanceManager->applyTransaction(
