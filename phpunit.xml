@@ -54,7 +54,7 @@
         <!-- The local Redis requires the auth password from .env; keep this in
              sync with REDIS_PASSWORD there. Tests stay hermetic because
              CACHE_DRIVER/RATE_LIMIT_CACHE_STORE/SESSION_DRIVER are all array. -->
-        <env name="REDIS_PASSWORD" value="Klzk@9199" force="true"/>
+        <env name="REDIS_PASSWORD" value="redpass" force="true"/>
         <env name="BACKUP_NOTIFY_EMAIL" value="backups@example.com" force="true"/>
         <env name="TELESCOPE_ENABLED" value="false" force="true"/>
         <env name="ALLOW_DERIVED_ENCRYPTION_SALT" value="false" force="true"/>
