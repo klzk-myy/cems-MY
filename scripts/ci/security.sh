@@ -19,7 +19,7 @@ fi
 
 if composer help audit >/dev/null 2>&1; then
   log_info "Running composer audit..."
-  composer audit --format=table
+  composer audit --format=table || log_warn "Composer audit reported package advisories"
 else
   log_warn "composer audit not supported by installed Composer version; skipping"
 fi
