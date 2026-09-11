@@ -24,6 +24,10 @@ use Illuminate\Support\Carbon;
  * @property int|null $assigned_to
  * @property int|null $case_id
  * @property FlagStatus $status
+ * @property int|null $reviewed_by
+ * @property Carbon|null $resolved_at
+ * @property Carbon|null $escalated_at
+ * @property string|null $escalation_reason
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -43,6 +47,10 @@ class Alert extends BaseModel
         'assigned_to',
         'case_id',
         'status',
+        'reviewed_by',
+        'resolved_at',
+        'escalated_at',
+        'escalation_reason',
     ];
 
     protected $casts = [
@@ -50,6 +58,8 @@ class Alert extends BaseModel
         'priority' => AlertPriority::class,
         'status' => FlagStatus::class,
         'risk_score' => 'integer',
+        'resolved_at' => 'datetime',
+        'escalated_at' => 'datetime',
     ];
 
     /**
