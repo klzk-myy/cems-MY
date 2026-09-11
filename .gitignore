@@ -59,12 +59,12 @@ opencode.json
 .codex
 /storage/framework/views
 
-# Root markdown files: only README.md, AGENTS.md, CLAUDE.md, and IMPLEMENTATION_PLAN.md are tracked
+# Root markdown files: only README.md, AGENTS.md, CLAUDE.md, and spec.md are tracked
 /*.md
 !README.md
 !AGENTS.md
 !CLAUDE.md
-!IMPLEMENTATION_PLAN.md
+!spec.md
 
 # Ephemeral Superpowers docs are ignored; other docs remain tracked
 /docs/superpowers/plans/
@@ -75,3 +75,18 @@ opencode.json
 cems_my
 /.tmp
 /storage/test-results
+# Simulation harness artifacts contain plaintext Sanctum tokens for seeded
+# roles; they must never be committed.
+/storage/simulation
+
+# Server deployment artifacts (aaPanel/nginx runtime files) - present on the
+# host but not part of the application source
+/.htaccess
+/.user.ini
+/index.html
+/404.html
+/502.html
+/.phpunit.result.cache
+
+# Syncthing conflict copies
+*.sync-conflict-*
