@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string|null $entry_number Unique entry number (JE-YYYYMM-XXXX)
  * @property int $period_id
+ * @property int|null $branch_id
  * @property Carbon $entry_date
  * @property string|null $reference_type
  * @property int|null $reference_id
