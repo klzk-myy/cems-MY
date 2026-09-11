@@ -298,6 +298,16 @@ class AccountingService implements AccountingServiceInterface
     protected function updateLedger(JournalEntry $entry): void
     {
         foreach ($entry->lines as $line) {
+            // Serialize writers per account: lock the chart-of-accounts anchor
+            // row so a concurrent posting to the same account cannot read the
+            // same running_balance and corrupt the balance chain. The lock is
+            // held until the enclosing transaction commits (no-op on SQLite).
+            // isDebitAccount() already resolves the account; this lock must
+            // happen BEFORE the balance read below.
+            ChartOfAccount::where('account_code', $line->account_code)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             // Scope the running balance to the entry's branch so multi-branch
             // ledger activity can never contaminate another branch's balance.
             $currentBalance = $this->getAccountBalance($line->account_code, null, $entry->branch_id);
@@ -328,6 +338,11 @@ class AccountingService implements AccountingServiceInterface
         // Ledger financial reports are cached under the 'ledger' tag; flush it
         // so trial balances/balance sheets are not stale after a posting.
         $this->cacheInvalidationService->invalidate('ledger');
+
+        // Cash-flow and report aggregates derive from the same ledger rows and
+        // are cached under the 'reports' tag; flush it too or cash-flow views
+        // stay stale up to their TTL after every posting.
+        $this->cacheInvalidationService->invalidate('reports');
     }
 
     /**
