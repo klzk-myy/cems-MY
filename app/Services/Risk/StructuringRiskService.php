@@ -27,6 +27,13 @@ class StructuringRiskService
     {
         $score = 0;
 
+        $config = config('thresholds.structuring', []);
+        $highCount = (int) ($config['score_min_count_high'] ?? 3);
+        $highScore = (int) ($config['score_high'] ?? 25);
+        $lowCount = (int) ($config['score_min_count_low'] ?? 2);
+        $lowScore = (int) ($config['score_low'] ?? 10);
+        $cap = (int) ($config['score_cap'] ?? 30);
+
         $subThreshold = $this->thresholdService->getStructuringSubThreshold();
         $window = now()->subHours($windowHours);
 
@@ -39,14 +46,14 @@ class StructuringRiskService
         $hourlyGroups = $structuringTransactions->groupBy(fn ($t) => $t->created_at->format('Y-m-d H'));
 
         foreach ($hourlyGroups as $hour => $txns) {
-            if ($txns->count() >= 3) {
-                $score += 25;
-            } elseif ($txns->count() >= 2) {
-                $score += 10;
+            if ($txns->count() >= $highCount) {
+                $score += $highScore;
+            } elseif ($txns->count() >= $lowCount) {
+                $score += $lowScore;
             }
         }
 
-        return min($score, 30);
+        return min($score, $cap);
     }
 
     /**
