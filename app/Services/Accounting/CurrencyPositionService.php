@@ -76,9 +76,10 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         string $amount,
         string $rate,
         string $type,
-        string $branchId = 'HQ'
+        string $branchId = 'HQ',
+        ?Transaction $snapshotFor = null,
     ): CurrencyPosition {
-        $position = DB::transaction(function () use ($currencyCode, $amount, $rate, $type, $branchId) {
+        $position = DB::transaction(function () use ($currencyCode, $amount, $rate, $type, $branchId, $snapshotFor) {
             if ($type === TransactionType::Buy->value) {
                 // Buying foreign currency - lock or create the position
                 $position = $this->lockService->lock($branchId, $currencyCode);
@@ -117,8 +118,17 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
 
                 $oldAvgCost = $position->average_cost;
                 $newAvgCost = $oldAvgCost; // Cost basis doesn't change on sale
+                $oldBalance = $position->quantity;
 
                 $position = $this->lockService->adjust($position, $amount, 'subtract');
+            }
+
+            if ($snapshotFor !== null) {
+                // Snapshot the pre-mutation position state so a later reversal
+                // can restore the exact cost basis (plan §1.3).
+                $snapshotFor->prev_quantity = $oldBalance;
+                $snapshotFor->prev_average_cost = $oldAvgCost;
+                $snapshotFor->save();
             }
 
             $newBalance = $position->quantity;
@@ -150,8 +160,20 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      *
      * Sign convention mirrors updatePosition: a Buy added amount_foreign to
      * the position, so reversing it subtracts the same amount; a Sell removed
-     * it, so reversing it adds it back. The average cost basis is intentionally
-     * left untouched, matching updatePosition's behaviour on sells.
+     * it, so reversing it adds it back.
+     *
+     * Average-cost handling: reversing a Sell leaves the cost basis untouched
+     * (mirroring updatePosition's sell behaviour, which does not change it).
+     * Reversing a Buy restores the pre-buy weighted average by algebraically
+     * removing this buy's contribution:
+     *
+     *     avg_before = (avg_after * qty_after - rate * amount) / (qty_after - amount)
+     *
+     * This is exact when no other Buy intervened; otherwise it is the best
+     * available restoration. If the result would be negative or the position
+     * is emptied, the cost basis falls back to zero/unchanged rather than
+     * drifting further. No insufficient-balance guard is applied: a reversal
+     * is compensating and must not hard-fail the cancellation.
      */
     public function reversePositions(Transaction $transaction): void
     {
@@ -165,14 +187,56 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 return;
             }
 
-            $direction = $transaction->type === TransactionType::Buy ? 'subtract' : 'add';
-            $position = $this->lockService->adjust($position, (string) $transaction->amount_foreign, $direction);
+            $isBuyReversal = $transaction->type === TransactionType::Buy;
+            $amount = (string) $transaction->amount_foreign;
+
+            $qtyBeforeAdjust = $position->quantity;
+            $avgBeforeAdjust = $position->average_cost;
+
+            $direction = $isBuyReversal ? 'subtract' : 'add';
+            $position = $this->lockService->adjust($position, $amount, $direction);
 
             $newBalance = $position->quantity;
-            $roundedAvgCost = $this->mathService->round($position->average_cost, $this->positionPrecision);
-            $roundedRate = $this->mathService->round($position->current_rate ?? $position->average_cost, $this->positionPrecision);
+            $restoredAvgCost = $avgBeforeAdjust;
+
+            // Exact cost-basis restore (plan §1.3): when the forward mutation
+            // recorded a snapshot and the reversal lands the position exactly
+            // back at the pre-mutation quantity, restore the snapshot verbatim.
+            // On any drift (intervening trades), fall through to the algebraic
+            // reconstruction below.
+            $snapshotApplies = $isBuyReversal
+                && $transaction->prev_quantity !== null
+                && $transaction->prev_average_cost !== null
+                && $this->mathService->compare($newBalance, (string) $transaction->prev_quantity) === 0;
+
+            if ($snapshotApplies) {
+                $restoredAvgCost = (string) $transaction->prev_average_cost;
+            }
+
+            if ($isBuyReversal && ! $snapshotApplies) {
+                if ($this->mathService->compare($newBalance, '0') > 0) {
+                    $numerator = $this->mathService->subtract(
+                        $this->mathService->multiply($avgBeforeAdjust, $qtyBeforeAdjust),
+                        $this->mathService->multiply((string) $transaction->rate, $amount)
+                    );
+                    $candidate = $this->mathService->divide($numerator, $newBalance);
+
+                    // Fall back to the current average when intervening buys at
+                    // other rates make the algebraic restoration incoherent.
+                    $restoredAvgCost = $this->mathService->compare($candidate, '0') >= 0
+                        ? $candidate
+                        : $avgBeforeAdjust;
+                } else {
+                    // Position emptied by the reversal: no residual cost basis.
+                    $restoredAvgCost = '0';
+                }
+            }
+
+            $roundedAvgCost = $this->mathService->round($restoredAvgCost, $this->positionPrecision);
+            $roundedRate = $this->mathService->round($position->current_rate ?? $restoredAvgCost, $this->positionPrecision);
 
             $position->update([
+                'average_cost' => $roundedAvgCost,
                 'unrealized_gain_loss' => $this->mathService->round(
                     $this->mathService->calculateRevaluationPnl($newBalance, $roundedAvgCost, $roundedRate),
                     $this->positionPrecision
@@ -453,18 +517,26 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     /**
      * Get available balance excluding pending reservations.
      *
+     * Positions are keyed by branch; stock reservations are keyed by till.
+     * Callers whose till code differs from the branch id MUST pass both,
+     * otherwise the position lookup silently misses and Sell approvals throw
+     * false InsufficientStockException errors.
+     *
      * @param  string  $currencyCode  Currency code
-     * @param  string  $locationId  Branch identifier (used for position and reservation lookup)
+     * @param  string  $branchId  Branch identifier (position lookup)
+     * @param  string|null  $tillId  Till identifier (reservation lookup); defaults to $branchId
      * @return string Available balance as string
      */
-    public function getAvailableBalance(string $currencyCode, string $locationId): string
+    public function getAvailableBalance(string $currencyCode, string $branchId, ?string $tillId = null): string
     {
-        return DB::transaction(function () use ($currencyCode, $locationId) {
-            $position = $this->lockService->findForUpdate($locationId, $currencyCode);
+        $tillId = $tillId ?? $branchId;
+
+        return DB::transaction(function () use ($currencyCode, $branchId, $tillId) {
+            $position = $this->lockService->findForUpdate($branchId, $currencyCode);
             $quantity = $position ? $position->quantity : '0';
 
             $reserved = StockReservation::where('currency_code', $currencyCode)
-                ->where('till_id', $locationId)
+                ->where('till_id', $tillId)
                 ->where('status', StockReservationStatus::Pending)
                 ->where('expires_at', '>', now())
                 ->lockForUpdate()
