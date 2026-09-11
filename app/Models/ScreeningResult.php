@@ -7,7 +7,24 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int|null $customer_id
+ * @property int|null $transaction_id
+ * @property string $screened_name
+ * @property int|null $sanction_entry_id
+ * @property int|null $adverse_media_entry_id
+ * @property string $source
+ * @property MatchType $match_type
+ * @property float $match_score
+ * @property string $action_taken
+ * @property string $result
+ * @property array<string, mixed>|null $matched_fields
+ * @property string|null $disposition
+ * @property Carbon|null $created_at
+ */
 class ScreeningResult extends BaseModel
 {
     use HasFactory, SoftDeletes;
