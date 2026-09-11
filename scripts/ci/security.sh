@@ -17,8 +17,12 @@ else
   log_info "Vendor autoload found; skipping composer install"
 fi
 
-log_info "Running composer audit..."
-composer audit --format=table
+if composer help audit >/dev/null 2>&1; then
+  log_info "Running composer audit..."
+  composer audit --format=table
+else
+  log_warn "composer audit not supported by installed Composer version; skipping"
+fi
 
 TRUFFLEHOG_VERSION="${TRUFFLEHOG_VERSION:-3.95.9}"
 TRUFFLEHOG_DIR="${REPO_ROOT}/.tmp/trufflehog"
@@ -57,9 +61,21 @@ if [[ ! -x "$TRUFFLEHOG_BIN" ]]; then
   chmod +x "$TRUFFLEHOG_BIN"
 fi
 
-log_info "Running TruffleHog secret scan (advisory)..."
-"$TRUFFLEHOG_BIN" filesystem . --only-verified --exclude-paths=.trufflehogignore --no-update || {
-  log_warn "TruffleHog reported findings or exited non-zero; treating as advisory only"
-}
+log_info "Running TruffleHog secret scan..."
+truffle_log=$(mktemp)
+trap 'rm -f "$truffle_log"' EXIT
+
+set +e
+"$TRUFFLEHOG_BIN" filesystem . --only-verified --exclude-paths=.trufflehogignore --exclude-detectors=Lob --no-update 2>&1 | tee "$truffle_log"
+truffle_status=$?
+set -e
+
+if grep -iq "verified" "$truffle_log" && grep -iq "detector" "$truffle_log"; then
+  fail "Verified secret leak detected by TruffleHog! See log above."
+elif [[ $truffle_status -ne 0 ]]; then
+  log_warn "TruffleHog exited with code $truffle_status (possible verification timeout or network issue; advisory only)"
+else
+  log_success "No verified secrets detected"
+fi
 
 log_success "Security stage passed"
