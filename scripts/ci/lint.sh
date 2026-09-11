@@ -8,6 +8,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 cd "$REPO_ROOT"
 
+export APP_ENV="${APP_ENV:-testing}"
+export APP_KEY="${APP_KEY:-base64:WlbBhnWV/8WIwLujIHnV4WqVBGA6jVh/6mAt4gt+NN8=}"
+
 log_info "Validating composer files..."
 composer validate --strict
 
