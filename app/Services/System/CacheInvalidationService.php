@@ -33,6 +33,9 @@ class CacheInvalidationService
     public function forgetExchangeRates(?int $branchId = null): void
     {
         Cache::forget(CacheKeys::exchangeRates($branchId));
+        // The transaction form caches the full rate table under a separate key;
+        // forgetting only the branch key left tellers reading stale rates until TTL.
+        Cache::forget(CacheKeys::ExchangeRates->value);
     }
 
     public function forgetWizardSession(string $sessionId): void
