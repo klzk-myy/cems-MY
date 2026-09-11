@@ -61,7 +61,7 @@ class SetupService
 
     /**
      * Clear the marker. Only reachable through the admin-gated,
-     * non-production reset endpoint; migrate:fresh already drops the table,
+     * non-production reset endpoint; SchemaSeeder already drops the table,
      * this is belt-and-braces for partial failures.
      */
     public function clearCompleted(): void
