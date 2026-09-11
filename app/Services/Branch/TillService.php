@@ -65,13 +65,18 @@ class TillService
         // Only Completed/Finalized transactions actually moved till cash (via
         // applyTransaction). Counting cancelled, failed, or pending transactions
         // would distort the expected closing balance and variance at close time.
+        //
+        // Bucket by when the cash actually moved: approved_at for approved
+        // transactions (applyTransaction runs at approval), created_at for
+        // auto-completed ones. A pending transaction created before midnight
+        // and approved after belongs to the approval day, not the request day.
         $netFlow = Transaction::where('till_id', $tillId)
             ->where('currency_code', $currencyCode)
             ->whereIn('status', [
                 TransactionStatus::Completed->value,
                 TransactionStatus::Finalized->value,
             ])
-            ->whereBetween('created_at', [
+            ->whereRaw('COALESCE(approved_at, created_at) BETWEEN ? AND ?', [
                 Carbon::parse($date)->startOfDay(),
                 Carbon::parse($date)->endOfDay(),
             ])
