@@ -130,9 +130,8 @@ class TransactionController extends Controller
         $validated = $request->validated();
         $ipAddress = $request->ip();
 
-        /** @var Counter|null $counter */
-        $counter = Counter::find($validated['counter_id']);
-        $validated['till_id'] = $counter ? (string) $counter->code : (string) $validated['counter_id'];
+        // The Form Request already mapped counter_id → till_id during
+        // prepareForValidation; no additional mapping is needed here.
 
         try {
             $transaction = $this->creationService->prepareAndCreate($validated, (int) auth()->id(), $ipAddress);
