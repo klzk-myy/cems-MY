@@ -57,20 +57,30 @@ class ComputeBehavioralBaselineJob implements ShouldQueue
             ->distinct()->pluck('currency_code')->values()->all();
 
         DB::transaction(function () use ($customer, $aggregate, $frequency, $currencies) {
+            // The schema enforces one baseline row per customer
+            // (customer_behavioral_baselines_customer_id_unique). Update the
+            // existing row in place, bumping the version, instead of
+            // inserting versioned rows — a second approval for the same
+            // customer must not crash on the unique key.
             $baseline = CustomerBehavioralBaseline::where('customer_id', $customer->id)
-                ->orderByDesc('baseline_version')
+                ->lockForUpdate()
                 ->first();
 
-            $nextVersion = ($baseline !== null ? $baseline->baseline_version : 0) + 1;
-
-            CustomerBehavioralBaseline::create([
-                'customer_id' => $customer->id,
+            $values = [
                 'currency_codes' => $currencies ?: null,
                 'avg_transaction_size_myr' => (string) ($aggregate->avg_size ?? '0'),
                 'avg_transaction_frequency' => (string) $frequency,
                 'last_calculated_at' => now(),
-                'baseline_version' => $nextVersion,
-            ]);
+            ];
+
+            if ($baseline !== null) {
+                $baseline->update($values + ['baseline_version' => $baseline->baseline_version + 1]);
+            } else {
+                CustomerBehavioralBaseline::create($values + [
+                    'customer_id' => $customer->id,
+                    'baseline_version' => 1,
+                ]);
+            }
         });
     }
 }
