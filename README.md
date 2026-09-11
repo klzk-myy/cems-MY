@@ -113,12 +113,13 @@ npm install
 cp .env.example .env
 php artisan key:generate
 php artisan sanctum:secret  # for API auth
-php artisan migrate
-php artisan db:seed  # optional
+php artisan db:seed --class=SchemaSeeder  # migration-free schema setup
 php artisan serve
 ```
 
-**Note:** Ensure MySQL and Redis services are running before migrating.
+**Note:** Ensure MySQL and Redis services are running before seeding.
+
+The project is migration-free: `database/seeders/SchemaSeeder.php` is the single source of truth for schema creation. It drops and recreates every table, so run it only on an empty database or through the guarded setup/reset flows.
 
 ## Configuration
 
@@ -206,6 +207,17 @@ php artisan audit:rotate                    # Rotate audit logs
 
 ```bash
 php artisan user:create --role=teller --name="John Doe" --email=john@example.com
+```
+
+### Simulation Harness
+
+The project includes a black-box HTTP simulation harness for verifying both web and API behavior.
+
+```bash
+php artisan simulation:issue-token          # Issue a Sanctum token for a simulation role
+php artisan simulation:run --wave=A --surface=both
+php artisan simulation:run --wave=B --surface=web
+php artisan simulation:run --wave=C --surface=api
 ```
 
 ### All Artisan Commands
@@ -441,10 +453,11 @@ php artisan dusk                 # Browser tests
 
 ### Database
 
+The schema is migration-free: `database/seeders/SchemaSeeder.php` is the single source of truth.
+
 ```bash
-php artisan migrate:fresh          # Rollback and re-migrate
-php artisan db:seed                # Seed with test data
-php artisan migrate:fresh --seed   # Fresh migrate + seed
+php artisan db:seed --class=SchemaSeeder   # Recreate schema from the seeder
+php artisan db:seed                        # Seed with test data
 ```
 
 ### Queue Workers
