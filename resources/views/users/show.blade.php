@@ -1,41 +1,30 @@
-<x-app-layout title="{{ ucfirst(Users Show) }} User">
-    <x-page-header title="{{ ucfirst(Users Show) }} User" description="User management" />
-    <x-card>
-        @if(Users Show === 'index')
-            <x-table>
-                <x-slot:thead>
-                    <tr>
-                        <th class="px-4 py-3">Name</th>
-                        <th class="px-4 py-3">Email</th>
-                        <th class="px-4 py-3">Role</th>
-                        <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3">Actions</th>
-                    </tr>
-                </x-slot:thead>
-                <x-slot:tbody>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-ink-muted" colspan="5">
-                            <x-empty-state title="No users found" description="Add your first user to get started." />
-                        </td>
-                    </tr>
-                </x-slot:tbody>
-            </x-table>
-        @elseif(Users Show === 'create' || Users Show === 'edit')
-            <form method="POST" class="space-y-4">
-                @csrf
-                <x-input name="name" label="Full Name" :required="true" />
-                <x-input name="email" label="Email" type="email" :required="true" />
-                <x-select name="role" label="Role" :options="['admin' => 'Admin', 'manager' => 'Manager', 'teller' => 'Teller']" :required="true" />
-                <x-checkbox name="is_active" label="Active" :checked="true" />
-                <div class="flex justify-end gap-3">
-                    <x-button type="submit" variant="primary">Save</x-button>
-                </div>
-            </form>
-        @else
+<x-app-layout title="User Details">
+    <x-page-header title="User Details" description="View user information">
+        <x-slot:actions>
+            <a href="{{ route('users.index') }}">
+                <x-button variant="secondary">Back to Users</x-button>
+            </a>
+        </x-slot:actions>
+    </x-page-header>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <x-card class="lg:col-span-2">
+            <h3 class="text-lg font-semibold text-ink mb-4">User Information</h3>
             <dl class="grid grid-cols-2 gap-4 text-sm">
-                <div><dt class="text-ink-muted">Name</dt><dd class="font-medium text-ink">John Doe</dd></div>
-                <div><dt class="text-ink-muted">Email</dt><dd class="font-medium text-ink">john@example.com</dd></div>
+                <div><dt class="text-ink-muted">Name</dt><dd class="font-medium text-ink">{{ $user->name }}</dd></div>
+                <div><dt class="text-ink-muted">Username</dt><dd class="font-medium text-ink">{{ $user->username }}</dd></div>
+                <div><dt class="text-ink-muted">Email</dt><dd class="font-medium text-ink">{{ $user->email }}</dd></div>
+                <div><dt class="text-ink-muted">Phone</dt><dd class="font-medium text-ink">{{ $user->phone ?? '—' }}</dd></div>
+                <div><dt class="text-ink-muted">Role</dt><dd class="font-medium text-ink">{{ $user->role->label() }}</dd></div>
+                <div><dt class="text-ink-muted">Status</dt><dd class="font-medium text-ink">{{ $user->is_active ? 'Active' : 'Inactive' }}</dd></div>
+                <div><dt class="text-ink-muted">Created</dt><dd class="font-medium text-ink">{{ $user->created_at->format('M j, Y') }}</dd></div>
+                <div><dt class="text-ink-muted">Last Active</dt><dd class="font-medium text-ink">{{ $user->last_active_at ? $user->last_active_at->format('M j, Y') : '—' }}</dd></div>
             </dl>
-        @endif
-    </x-card>
+        </x-card>
+
+        <x-card>
+            <h3 class="text-lg font-semibold text-ink mb-4">Branch</h3>
+            <p class="text-sm text-ink">{{ $user->branch ? $user->branch->name : 'Not assigned' }}</p>
+        </x-card>
+    </div>
 </x-app-layout>

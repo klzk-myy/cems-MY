@@ -1,2 +1,0 @@
-{"sequence":1,"timestamp":"2026-08-23T04:40:32.919054313+08:00","event_type":"state_change","task_id":"20260822-180421.078171940-sensenova-6.8-flash-lite--bash-35","session_id":"20260822-180421.078171940-sensenova-6.8-flash-lite","state":"running","runtime_state":"alive"}
-{"sequence":2,"timestamp":"2026-08-23T04:40:44.283922398+08:00","event_type":"state_change","task_id":"20260822-180421.078171940-sensenova-6.8-flash-lite--bash-35","session_id":"20260822-180421.078171940-sensenova-6.8-flash-lite","state":"succeeded","runtime_state":"exited"}

@@ -43,6 +43,8 @@ boost.json
 /.kilo
 /.claude
 **/.mimocode/
+.mimocode
+.reasonix
 **/.gitnexusignore
 /load-tests
 /.mcp.json
