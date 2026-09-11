@@ -67,6 +67,9 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ * @property bool $is_dlq
+ * @property string|null $prev_quantity Pre-mutation position snapshot (reversal restore)
+ * @property string|null $prev_average_cost Pre-mutation average cost snapshot (reversal restore)
  * @property-read string $reference Human-readable reference derived from id (TX-XXXXXXXX)
  * @property-read string $status_variant UI status badge variant
  */
@@ -143,6 +146,8 @@ class Transaction extends TransactionModel
         'cancelled_by' => 'integer',
         'cancellation_reason' => 'string',
         'is_dlq' => 'boolean',
+        'prev_quantity' => MoneyCast::class,
+        'prev_average_cost' => MoneyCast::class.':6',
     ];
 
     /**
