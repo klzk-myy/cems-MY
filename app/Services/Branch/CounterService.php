@@ -77,13 +77,28 @@ class CounterService
                 $currencyCode = $currencies[$float['currency_id']] ?? null;
 
                 if ($currencyCode) {
-                    TillBalance::create([
-                        'till_id' => (string) $counter->code,
-                        'currency_code' => $currencyCode,
-                        'opening_balance' => $float['amount'],
-                        'date' => $today,
-                        'opened_by' => $user->id,
-                    ]);
+                    // Guard against duplicates: an open till row for
+                    // (counter, currency, today) may already exist if it was
+                    // opened through TillBalanceManager::openTill first.
+                    $existing = TillBalance::where('till_id', (string) $counter->code)
+                        ->where('currency_code', $currencyCode)
+                        ->whereDate('date', $today)
+                        ->whereNull('closed_at')
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($existing) {
+                        throw new TillAlreadyOpenException((string) $counter->code);
+                    }
+
+                    TillBalance::openFor(
+                        (string) $counter->code,
+                        $currencyCode,
+                        $counter->branch_id,
+                        $float['amount'],
+                        $today,
+                        $user->id
+                    );
                 }
             }
 
@@ -233,7 +248,9 @@ class CounterService
                 ->first();
 
             if ($allocation) {
-                $allocation->returnToPool();
+                // Use the service (not the model method) so the branch pool is
+                // actually credited — the model method only flips the status.
+                $this->tellerAllocationService->returnToPool($allocation);
             }
 
             return $closedSession;
@@ -447,13 +464,14 @@ class CounterService
                     ]);
 
                     // Create new open balance for new session
-                    TillBalance::create([
-                        'till_id' => $this->counterCode($session),
-                        'currency_code' => $currencyCode,
-                        'opening_balance' => $closingBalance,
-                        'date' => $today,
-                        'opened_by' => $toUser->id,
-                    ]);
+                    TillBalance::openFor(
+                        $this->counterCode($session),
+                        $currencyCode,
+                        $session->counter?->branch_id,
+                        $closingBalance,
+                        $today,
+                        $toUser->id
+                    );
                 } elseif ($closed) {
                     // Reopen the closed balance for new session
                     $closed->update([
@@ -467,13 +485,14 @@ class CounterService
                     ]);
                 } else {
                     // No existing balance at all - create new
-                    TillBalance::create([
-                        'till_id' => $this->counterCode($session),
-                        'currency_code' => $currencyCode,
-                        'opening_balance' => $closingBalance,
-                        'date' => $today,
-                        'opened_by' => $toUser->id,
-                    ]);
+                    TillBalance::openFor(
+                        $this->counterCode($session),
+                        $currencyCode,
+                        $session->counter?->branch_id,
+                        $closingBalance,
+                        $today,
+                        $toUser->id
+                    );
                 }
             }
 
