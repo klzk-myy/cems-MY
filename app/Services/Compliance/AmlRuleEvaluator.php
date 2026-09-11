@@ -40,10 +40,16 @@ class AmlRuleEvaluator
         $triggered = false;
         $reason = null;
 
-        // Read the stored (pre-cast) value defensively: legacy seeded rules
-        // store types outside the AmlRuleType enum (e.g. 'threshold'), so
-        // going through the cast would throw a ValueError before tryFrom runs.
-        $ruleTypeValue = $rule->getRawOriginal('rule_type');
+        // Resolve the stored rule type defensively. getRawOriginal() reflects
+        // the DB-load snapshot, but newly-built (unsaved) rules have no original
+        // yet, so fall back to the live attributes. Legacy seeded rules store
+        // types outside the AmlRuleType enum (e.g. 'threshold'), so going
+        // through the cast would throw a ValueError before tryFrom runs.
+        $ruleTypeValue = $rule->getRawOriginal('rule_type') ?? ($rule->getAttributes()['rule_type'] ?? null);
+
+        if ($ruleTypeValue instanceof AmlRuleType) {
+            $ruleTypeValue = $ruleTypeValue->value;
+        }
 
         if (is_string($ruleTypeValue)) {
             $ruleTypeValue = AmlRuleType::tryFrom($ruleTypeValue);
