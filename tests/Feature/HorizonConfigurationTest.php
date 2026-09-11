@@ -16,10 +16,35 @@ class HorizonConfigurationTest extends TestCase
         $supervisor = $config['supervisor-1'];
 
         $this->assertEquals('redis', $supervisor['connection']);
-        $this->assertEquals(['high', 'default', 'low'], $supervisor['queue']);
+        // compliance/audit queues are intentionally included: AuditService
+        // dispatches SealAuditHashJob onQueue('audit') and
+        // TriggerSanctionsRescreening pushes onQueue('compliance').
+        $this->assertEquals(
+            ['high', 'default', 'low', 'compliance', 'audit'],
+            $supervisor['queue']
+        );
         $this->assertEquals('auto', $supervisor['balance']);
         $this->assertGreaterThanOrEqual(5, $supervisor['maxProcesses']);
         $this->assertGreaterThanOrEqual(3600, $supervisor['timeout']);
+    }
+
+    #[Test]
+    public function horizon_consumes_compliance_and_audit_queues_in_all_environments()
+    {
+        foreach (config('horizon.environments') as $environment => $supervisors) {
+            foreach ($supervisors as $supervisor) {
+                $this->assertContains(
+                    'compliance',
+                    $supervisor['queue'],
+                    "The [{$environment}] environment must consume the compliance queue."
+                );
+                $this->assertContains(
+                    'audit',
+                    $supervisor['queue'],
+                    "The [{$environment}] environment must consume the audit queue."
+                );
+            }
+        }
     }
 
     #[Test]

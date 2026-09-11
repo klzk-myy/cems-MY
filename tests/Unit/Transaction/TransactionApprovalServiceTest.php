@@ -406,7 +406,7 @@ class TransactionApprovalServiceTest extends TestCase
         $position = Mockery::mock(CurrencyPositionService::class);
         $position->shouldReceive('getPositionWithLock')->andReturn(CurrencyPosition::factory()->make());
         $position->shouldReceive('getAvailableBalance')
-            ->with($transaction->currency_code, (string) $transaction->till_id)
+            ->with($transaction->currency_code, (string) $transaction->branch_id, (string) $transaction->till_id)
             ->andReturn('100.00');
         $position->shouldReceive('consumeStockReservation')->never();
 
@@ -700,7 +700,7 @@ class TransactionApprovalServiceTest extends TestCase
             ->with($transaction->currency_code, (string) $transaction->branch_id)
             ->andReturn(CurrencyPosition::factory()->make());
         $position->shouldReceive('getAvailableBalance')
-            ->with($transaction->currency_code, (string) $transaction->till_id)
+            ->with($transaction->currency_code, (string) $transaction->branch_id, (string) $transaction->till_id)
             ->andReturn('1000.00');
         $position->shouldReceive('consumeStockReservation')
             ->with($transaction->id)

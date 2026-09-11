@@ -321,6 +321,14 @@ class ConcurrencyFixesTest extends TestCase
         $teller = User::factory()->for($branch)->create();
         $customer = Customer::factory()->create();
 
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'balance' => '1000.00',
+            'avg_cost_rate' => '4.70',
+            'last_valuation_rate' => '4.70',
+        ]);
+
         return Transaction::factory()
             ->for($branch)
             ->for($customer)

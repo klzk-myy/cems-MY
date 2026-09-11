@@ -34,6 +34,20 @@ class TransactionServicePreValidationTest extends TestCase
     }
 
     #[Test]
+    public function sanctions_block_writes_audit_record(): void
+    {
+        $customer = Customer::factory()->create(['sanction_hit' => true]);
+
+        $result = $this->service->preValidate($customer, '1000.00', 'USD');
+
+        $this->assertTrue($result->isBlocked());
+        $this->assertDatabaseHas('system_logs', [
+            'action' => 'pre_validation_blocked',
+            'entity_id' => $customer->id,
+        ]);
+    }
+
+    #[Test]
     public function enhanced_cdd_requires_hold(): void
     {
         $customer = Customer::factory()->create([

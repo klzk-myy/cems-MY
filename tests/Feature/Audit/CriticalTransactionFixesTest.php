@@ -135,6 +135,14 @@ class CriticalTransactionFixesTest extends TestCase
             'transaction_total' => '1000.00',
         ]);
 
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'balance' => '1000.00',
+            'avg_cost_rate' => '4.70',
+            'last_valuation_rate' => '4.70',
+        ]);
+
         $transaction = Transaction::factory()->buy()->create([
             'customer_id' => $customer->id,
             'user_id' => $teller->id,

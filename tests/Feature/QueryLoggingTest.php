@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Customer;
-use App\Models\User;
 use App\Services\System\QueryLoggingService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Config;
@@ -74,36 +73,5 @@ class QueryLoggingTest extends TestCase
         });
 
         $this->assertGreaterThan(1, count($customerQueries));
-    }
-
-    #[Test]
-    public function middleware_logs_queries_when_config_enabled()
-    {
-        Config::set('database.logging', true);
-
-        $admin = User::factory()->create(['role' => 'admin']);
-        $response = $this->actingAs($admin)->get('/test/query-log');
-
-        $response->assertStatus(200);
-        $data = $response->json();
-
-        $this->assertArrayHasKey('queries', $data);
-        $this->assertNotEmpty($data['queries']);
-        $this->assertStringContainsString('customers', $data['queries'][0]['query']);
-    }
-
-    #[Test]
-    public function middleware_does_not_log_queries_when_config_disabled()
-    {
-        Config::set('database.logging', false);
-
-        $admin = User::factory()->create(['role' => 'admin']);
-        $response = $this->actingAs($admin)->get('/test/query-log');
-
-        $response->assertStatus(200);
-        $data = $response->json();
-
-        $this->assertArrayHasKey('queries', $data);
-        $this->assertEmpty($data['queries']);
     }
 }

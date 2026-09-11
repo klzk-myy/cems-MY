@@ -10,9 +10,13 @@ use App\Models\CurrencyPosition;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
+use App\Services\System\CacheInvalidationService;
+use App\Services\System\CacheKeys;
 use App\Services\Transaction\TransactionCancellationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Tests\TestCase;
 
 class TransactionCancellationServiceTest extends TestCase
@@ -125,7 +129,7 @@ class TransactionCancellationServiceTest extends TestCase
     }
 
     #[Test]
-    public function reverse_positions_handles_nonexistent_position(): void
+    public function reverse_positions_throws_on_nonexistent_position(): void
     {
         $transaction = Transaction::factory()->make([
             'id' => 99904,
@@ -138,15 +142,10 @@ class TransactionCancellationServiceTest extends TestCase
             'status' => TransactionStatus::Completed,
         ]);
 
-        // Should not throw, just log warning
+        // A missing position must abort the cancellation, not commit without restoring state.
+        $this->expectException(RuntimeException::class);
+
         $this->cancellationService->reversePositions($transaction);
-
-        // No position found, nothing to reverse
-        $position = CurrencyPosition::where('currency_code', 'XYZ')
-            ->where('branch_id', 'NONEXISTENT-BRANCH')
-            ->first();
-
-        $this->assertNull($position);
     }
 
     #[Test]
@@ -170,6 +169,7 @@ class TransactionCancellationServiceTest extends TestCase
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => $transaction->till_id,
+            'branch_id' => $transaction->branch_id,
             'balance' => '5000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
@@ -206,6 +206,7 @@ class TransactionCancellationServiceTest extends TestCase
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'till_id' => $transaction->till_id,
+            'branch_id' => $transaction->branch_id,
             'balance' => '5000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
@@ -264,5 +265,45 @@ class TransactionCancellationServiceTest extends TestCase
 
         $this->assertNotNull($rejectionEntry, 'Rejection should be recorded in transition history');
         $this->assertArrayNotHasKey('forced', $rejectionEntry, 'Rejection should not use forced transition');
+    }
+
+    #[Test]
+    public function approve_cancellation_flushes_dashboard_ledger_and_report_caches(): void
+    {
+        $requester = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::Manager]);
+
+        $transaction = Transaction::factory()->create([
+            'user_id' => $requester->id,
+            'type' => TransactionType::Sell,
+            'currency_code' => 'USD',
+            'amount_foreign' => '100.00',
+            'rate' => '4.50',
+            'status' => TransactionStatus::Completed,
+            'created_at' => now(),
+        ]);
+
+        Cache::tags(['dashboard'])->put('probe_dash', 'stale', 600);
+        Cache::tags(['ledger'])->put('probe_ledger', 'stale', 600);
+        Cache::tags(['reports'])->put('probe_reports', 'stale', 600);
+
+        $this->cancellationService->requestCancellation($transaction, $requester, 'customer changed mind');
+        $this->cancellationService->approveCancellation($transaction, $approver);
+
+        $this->assertNull(Cache::tags(['dashboard'])->get('probe_dash'));
+        $this->assertNull(Cache::tags(['ledger'])->get('probe_ledger'));
+        $this->assertNull(Cache::tags(['reports'])->get('probe_reports'));
+    }
+
+    #[Test]
+    public function forget_exchange_rates_clears_both_rate_cache_keys(): void
+    {
+        Cache::put(CacheKeys::exchangeRates(), 'stale', 600);
+        Cache::put(CacheKeys::ExchangeRates->value, 'stale', 600);
+
+        app(CacheInvalidationService::class)->forgetExchangeRates();
+
+        $this->assertNull(Cache::get(CacheKeys::exchangeRates()));
+        $this->assertNull(Cache::get(CacheKeys::ExchangeRates->value));
     }
 }

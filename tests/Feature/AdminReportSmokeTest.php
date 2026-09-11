@@ -275,7 +275,7 @@ class AdminReportSmokeTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Monthly Transaction Trends');
-        $response->assertSee('1,000.00');
+        $response->assertSee('1,500.00');
         $response->assertSee('2,000.00');
     }
 

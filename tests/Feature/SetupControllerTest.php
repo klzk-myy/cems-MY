@@ -34,6 +34,8 @@ class SetupControllerTest extends TestCase
         Branch::factory()->create();
 
         $response = $this->get(route('setup.index'));
-        $response->assertNotFound();
+        // Middleware hard-blocks with 403 Forbidden once setup is complete
+        // (commit 10a44f5a: "block setup wizard in all environments").
+        $response->assertForbidden();
     }
 }

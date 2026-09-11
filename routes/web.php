@@ -186,7 +186,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm.store')
             ->middleware('role:manager');
 
-        Route::middleware(['role:manager', 'mfa.verified'])->group(function () {
+        Route::middleware(['role:manager,compliance', 'mfa.verified'])->group(function () {
             Route::get('/{transaction}/approve-cancellation', [TransactionCancellationController::class, 'showApproveCancel'])
                 ->name('approve-cancellation');
             Route::post('/{transaction}/approve-cancellation', [TransactionCancellationController::class, 'approveCancel'])

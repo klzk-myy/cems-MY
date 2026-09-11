@@ -19,16 +19,23 @@ class AccountingFixesTest extends TestCase
     {
         parent::setUp();
 
-        // Remove seeded account so the test can reuse the code expected by the regression test.
-        ChartOfAccount::where('account_code', '5100')->delete();
-
-        // The new closing logic requires a retained earnings account to exist.
-        ChartOfAccount::factory()->create([
-            'account_code' => '3100',
-            'account_name' => 'Retained Earnings',
-            'account_type' => 'Equity',
-            'account_class' => 'Equity',
+        // Period close validates that the configured P&L summary / retained
+        // earnings accounts exist. Point config at dedicated fixture codes
+        // (mirroring MonthEndCloseTest) instead of deleting the enum-backed
+        // chart of accounts, which collides with .env-configured codes.
+        config([
+            'accounting.revenue_summary_account' => '4201',
+            'accounting.expense_summary_account' => '4202',
+            'accounting.retained_earnings_account' => '4300',
         ]);
+
+        foreach (['4201', '4202', '4300'] as $code) {
+            ChartOfAccount::factory()->create([
+                'account_code' => $code,
+                'account_type' => 'Equity',
+                'account_class' => 'Equity',
+            ]);
+        }
     }
 
     public function test_period_close_uses_enum_value(): void
@@ -48,8 +55,17 @@ class AccountingFixesTest extends TestCase
     public function test_period_close_zeros_revenue_and_expense_accounts(): void
     {
         $period = AccountingPeriod::factory()->create();
-        $revenue = ChartOfAccount::factory()->create(['account_type' => 'Revenue', 'account_code' => '4100']);
-        $expense = ChartOfAccount::factory()->create(['account_type' => 'Expense', 'account_code' => '5100']);
+        // 4100/5100 already exist in the enum-backed chart of accounts
+        // (Retained Earnings / Revaluation Gain); update their type instead
+        // of inserting duplicates.
+        $revenue = ChartOfAccount::updateOrCreate(
+            ['account_code' => '4100'],
+            ['account_type' => 'Revenue', 'is_active' => true]
+        );
+        $expense = ChartOfAccount::updateOrCreate(
+            ['account_code' => '5100'],
+            ['account_type' => 'Expense', 'is_active' => true]
+        );
 
         // Seed balances
         AccountLedger::factory()->create([

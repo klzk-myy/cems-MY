@@ -21,14 +21,20 @@ class TestRunnerServiceTest extends TestCase
         $reflection = new \ReflectionMethod($service, 'buildCommand');
         $reflection->setAccessible(true);
 
-        // Test with malicious suite name containing command injection
-        $command = $reflection->invoke($service, 'unit; rm -rf /', []);
+        // Suite names are whitelist-validated (this is the injection guard):
+        // a value containing shell metacharacters must be rejected outright.
+        try {
+            $reflection->invoke($service, 'unit; rm -rf /', []);
+            $this->fail('Expected InvalidArgumentException for an unknown test suite');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('Invalid test suite', $e->getMessage());
+        }
 
-        // The suite should be passed as a single quoted argument to --filter, e.g. --filter='unit; rm -rf /'
-        $this->assertStringContainsString("--filter='unit; rm -rf /'", $command, 'Suite should be escaped as a single quoted string');
-
-        // Ensure there is no unquoted semicolon that could be used for command chaining
-        $this->assertStringNotContainsString("; '", $command, 'No semicolon should appear outside quotes');
+        // Known suites render the filter as a single quoted argument so even a
+        // future change cannot chain commands through the filter value.
+        $command = $reflection->invoke($service, 'Transaction', []);
+        $this->assertStringNotContainsString('; ', $command, 'No semicolon should appear outside quotes');
+        $this->assertStringContainsString("php artisan test --filter='Transaction'", $command);
     }
 
     #[Test]

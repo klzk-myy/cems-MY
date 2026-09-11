@@ -98,7 +98,7 @@ class BranchAllocationWorkflowTest extends TestCase
 
         $mathService = new MathService;
         $branchPoolService = new BranchPoolService(new AuditService, $mathService);
-        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService);
+        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class));
         $this->branchPoolService = $branchPoolService;
         $this->tellerAllocationService = $tellerAllocationService;
         $counterService = new CounterService($tellerAllocationService, new ThresholdService);
@@ -259,5 +259,45 @@ class BranchAllocationWorkflowTest extends TestCase
         );
 
         $this->assertNotNull($session);
+    }
+
+    #[Test]
+    public function close_session_and_return_to_pool_credits_branch_pool(): void
+    {
+        $approvedAmount = '40000.0000';
+
+        $this->workflowService->initiateOpeningRequest(
+            $this->tellerA,
+            $this->counter,
+            ['USD' => '50000.0000']
+        );
+
+        $session = $this->workflowService->approveAndOpen(
+            $this->manager,
+            $this->counter,
+            $this->tellerA,
+            ['USD' => $approvedAmount],
+            ['USD' => '150000.0000']
+        );
+
+        $this->pool->refresh();
+        $this->assertEquals('60000.0000', $this->pool->available_balance);
+        $this->assertEquals('40000.0000', $this->pool->allocated_balance);
+
+        $this->counterService->closeSessionAndReturnToPool(
+            $session,
+            $this->tellerA,
+            [['currency_id' => 'USD', 'amount' => $approvedAmount]]
+        );
+
+        $allocation = TellerAllocation::where('user_id', $this->tellerA->id)
+            ->where('currency_code', 'USD')
+            ->first();
+
+        $this->assertEquals(TellerAllocationStatus::RETURNED, $allocation->fresh()->status);
+
+        $this->pool->refresh();
+        $this->assertEquals('100000.0000', $this->pool->available_balance);
+        $this->assertEquals('0.0000', $this->pool->allocated_balance);
     }
 }

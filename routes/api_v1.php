@@ -80,6 +80,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/transactions/{transaction}/reject', [TransactionApprovalController::class, 'reject'])
             ->middleware(['role:manager', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.reject');
+        Route::post('/transactions/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])
+            ->middleware(['role:manager', 'mfa.verified', 'throttle:20,1'])
+            ->name('api.v1.transactions.confirm');
         Route::post('/transactions/{transaction}/request-cancellation', [TransactionCancellationController::class, 'requestCancellation'])
             ->middleware(['role:manager', 'mfa.verified', 'throttle:10,1'])
             ->name('api.v1.transactions.request-cancellation');

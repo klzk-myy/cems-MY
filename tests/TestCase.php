@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\User;
+use Database\Seeders\SchemaSeeder;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -85,12 +86,15 @@ abstract class TestCase extends BaseTestCase
             if (isset(RefreshDatabaseState::$inMemoryConnections[$connectionName])) {
                 $connection->setPdo(RefreshDatabaseState::$inMemoryConnections[$connectionName]);
             } else {
-                $this->artisan('migrate:fresh', ['--force' => true]);
+                // Schema is provided by SchemaSeeder (the migration-free source of
+                // truth) rather than migrate:fresh, because the migrations
+                // directory has been retired.
+                SchemaSeeder::seedNow($this->app);
                 $this->app[Kernel::class]->setArtisan(null);
                 RefreshDatabaseState::$inMemoryConnections[$connectionName] = $connection->getPdo();
 
-                // Without this a later RefreshDatabase class re-runs migrate:fresh
-                // against the shared PDO instead of reusing the migrated schema.
+                // Without this a later RefreshDatabase class re-runs the schema
+                // seed against the shared PDO instead of reusing the seeded schema.
                 RefreshDatabaseState::$migrated = true;
             }
         }

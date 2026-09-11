@@ -24,7 +24,8 @@ class TellerAllocationValidationTest extends TestCase
 
         $this->service = new TellerAllocationService(
             new BranchPoolService(new AuditService, new MathService),
-            new MathService
+            new MathService,
+            app(AuditService::class)
         );
     }
 

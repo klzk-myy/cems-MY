@@ -4,8 +4,11 @@ namespace Tests\Feature\Compliance;
 
 use App\Enums\AlertPriority;
 use App\Enums\FlagStatus;
+use App\Exceptions\Domain\CaseManagementException;
 use App\Models\Alert;
+use App\Models\SystemLog;
 use App\Models\User;
+use App\Services\Compliance\AlertTriageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -158,5 +161,29 @@ class AlertTriageControllerTest extends TestCase
                 'reason' => 'Double dismiss attempt',
             ])
             ->assertStatus(403);
+    }
+
+    #[Test]
+    public function resolve_alert_is_rejected_via_service_when_alert_already_terminal(): void
+    {
+        $alert = Alert::factory()->create(['status' => FlagStatus::Resolved]);
+        $service = app(AlertTriageService::class);
+
+        $this->expectException(CaseManagementException::class);
+
+        $service->resolveAlert($alert, $this->officer->id);
+    }
+
+    #[Test]
+    public function assign_alert_via_bulk_assign_writes_audit_record_per_alert(): void
+    {
+        $alerts = Alert::factory()->count(2)->create(['case_id' => null]);
+        $service = app(AlertTriageService::class);
+
+        $service->bulkAssign($alerts->pluck('id')->all(), $this->officer->id);
+
+        $this->assertEquals(2, SystemLog::query()
+            ->where('action', 'alert_assigned')
+            ->count());
     }
 }

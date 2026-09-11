@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Enums\FlagStatus;
 use App\Enums\UserRole;
+use App\Exceptions\Domain\CaseManagementException;
 use App\Models\Alert;
 use App\Models\User;
+use App\Services\Compliance\AlertTriageService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -193,5 +195,33 @@ class AlertDismissTest extends TestCase
         $response = $this->actingAs($user)->post(route('compliance.alerts.dismiss', $alert));
 
         $response->assertStatus(403);
+    }
+
+    #[Test]
+    public function resolving_an_already_resolved_alert_throws(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $alert = Alert::factory()->create(['status' => FlagStatus::Resolved]);
+
+        $this->expectException(CaseManagementException::class);
+
+        app(AlertTriageService::class)->resolveAlert($alert, $user->id);
+    }
+
+    #[Test]
+    public function resolving_alert_persists_reviewer_timestamp_and_audit(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
+
+        $resolved = app(AlertTriageService::class)->resolveAlert($alert, $user->id, 'clean bill');
+
+        $this->assertSame(FlagStatus::Resolved, $resolved->status);
+        $this->assertSame($user->id, $resolved->reviewed_by);
+        $this->assertNotNull($resolved->resolved_at);
+
+        $this->assertDatabaseHas('system_logs', [
+            'action' => 'alert_resolved',
+        ]);
     }
 }

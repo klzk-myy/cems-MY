@@ -3,6 +3,7 @@
 namespace Tests\Unit\FormRequests;
 
 use App\Http\Requests\StoreTransactionRequest;
+use App\Rules\ValidAmountForeign;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -47,13 +48,16 @@ class StoreTransactionRequestTest extends TestCase
     }
 
     #[Test]
-    public function it_requires_amount_foreign_to_be_numeric(): void
+    public function it_requires_amount_foreign_with_strict_rule(): void
     {
         $request = new StoreTransactionRequest;
         $rules = $request->rules();
 
-        $this->assertStringContainsString('required', $rules['amount_foreign']);
-        $this->assertStringContainsString('numeric', $rules['amount_foreign']);
-        $this->assertStringContainsString('min:0.01', $rules['amount_foreign']);
+        // Web and API now share the strict rule set: required + ValidAmountForeign.
+        $this->assertContains('required', $rules['amount_foreign']);
+        $this->assertContainsOnlyInstancesOf(
+            ValidAmountForeign::class,
+            array_filter($rules['amount_foreign'], fn ($rule) => is_object($rule))
+        );
     }
 }

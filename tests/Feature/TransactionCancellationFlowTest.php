@@ -195,7 +195,7 @@ class TransactionCancellationFlowTest extends TestCase
             'confirm_understanding' => 'on',
         ]);
 
-        $response->assertSessionHasErrors('cancellation_reason');
+        $response->assertSessionHasErrors('reason');
 
         // Try with short reason
         $response = $this->actingAs($manager)->post("/transactions/{$transaction->id}/cancel", [
@@ -203,7 +203,7 @@ class TransactionCancellationFlowTest extends TestCase
             'confirm_understanding' => 'on',
         ]);
 
-        $response->assertSessionHasErrors('cancellation_reason');
+        $response->assertSessionHasErrors('reason');
     }
 
     #[Test]

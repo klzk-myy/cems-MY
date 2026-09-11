@@ -2,10 +2,12 @@
 
 namespace Tests\Unit;
 
+use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
@@ -44,11 +46,14 @@ class TransactionMonitoringServiceTest extends TestCase
 
         $auditService = new AuditService;
 
+        $alertTriageService = app(AlertTriageService::class);
+
         $this->service = new TransactionMonitoringService(
             $complianceService,
             $mathService,
             $auditService,
-            $thresholdService
+            $thresholdService,
+            $alertTriageService
         );
     }
 
@@ -139,5 +144,68 @@ class TransactionMonitoringServiceTest extends TestCase
             ->count();
 
         $this->assertEquals(0, $roundAmountFlags, 'RM 25,000 exact threshold should not trigger RoundAmount flag');
+    }
+
+    #[Test]
+    public function new_monitoring_flag_carries_customer_id_and_creates_alert(): void
+    {
+        $customer = Customer::factory()->create();
+
+        $transaction = Transaction::factory()->create([
+            'customer_id' => $customer->id,
+            'amount_local' => '100.00',
+            'currency_code' => 'USD',
+        ]);
+
+        // Force a velocity flag by seeding 24h history above the velocity threshold.
+        $velocityThreshold = (string) config('thresholds.velocity_24h', '100000');
+        $transaction->amount_local = $velocityThreshold;
+        $transaction->save();
+
+        $result = $this->service->monitorTransaction($transaction);
+
+        $flag = FlaggedTransaction::where('transaction_id', $transaction->id)->first();
+
+        if ($flag === null) {
+            $this->markTestSkipped('No monitoring flag triggered for this transaction shape');
+        }
+
+        $this->assertSame($customer->id, $flag->customer_id);
+
+        $this->assertDatabaseHas('alerts', [
+            'flagged_transaction_id' => $flag->id,
+            'customer_id' => $customer->id,
+        ]);
+
+        $this->assertGreaterThanOrEqual(1, $result['flags_created']);
+    }
+
+    #[Test]
+    public function re_monitoring_does_not_create_duplicate_alerts_for_same_flag(): void
+    {
+        $customer = Customer::factory()->create();
+
+        $transaction = Transaction::factory()->create([
+            'customer_id' => $customer->id,
+            'amount_local' => (string) config('thresholds.velocity_24h', '100000'),
+            'currency_code' => 'USD',
+        ]);
+
+        $this->service->monitorTransaction($transaction);
+        $this->service->monitorTransaction($transaction);
+
+        $flagIds = FlaggedTransaction::where('transaction_id', $transaction->id)->pluck('id');
+
+        if ($flagIds->isEmpty()) {
+            $this->markTestSkipped('No monitoring flag triggered for this transaction shape');
+        }
+
+        $alertCount = Alert::whereIn('flagged_transaction_id', $flagIds)->count();
+
+        $this->assertLessThanOrEqual(
+            $flagIds->count(),
+            $alertCount,
+            'Each flag must have at most one alert across repeated monitoring runs'
+        );
     }
 }

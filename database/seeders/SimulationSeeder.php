@@ -3,18 +3,17 @@
 namespace Database\Seeders;
 
 use App\Enums\CddLevel;
-use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Models\Branch;
+use App\Models\BranchPool;
 use App\Models\Counter;
-use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\Customer;
+use App\Models\ExchangeRate;
 use App\Models\TellerAllocation;
-use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -37,8 +36,11 @@ class SimulationSeeder extends Seeder
         [$hq, $br1, $br2] = $this->createBranches();
         [$counterHq, $counterBr1, $counterBr2] = $this->createCounters($hq, $br1, $br2);
         [$teller, $manager, $compliance, $admin] = $this->createUsers($hq, $counterHq);
-        $this->openCounterSession($counterHq, $teller);
-        $this->createTillBalances($counterHq);
+        // No pre-opened counter session or till balances: Wave A step A2 opens the
+        // counter, which creates the till balances. Later steps depend on
+        // those being created by the open flow.
+        $this->createBranchPools($hq);
+        $this->createExchangeRates($hq);
         $this->createAllocations($hq, $counterHq, $teller);
         $customer = $this->createCustomer($hq, $teller);
         $this->createTransactions($counterHq, $hq, $customer, $teller);
@@ -112,32 +114,49 @@ class SimulationSeeder extends Seeder
         $make = function (string $username, string $email, UserRole $role, Branch $branch) {
             return User::updateOrCreate(
                 ['username' => $username],
-                ['email' => $email, 'password' => Hash::make('Test@1234'), 'role' => $role, 'branch_id' => $branch->id, 'is_active' => true, 'mfa_enabled' => false]
+                ['email' => $email, 'password' => Hash::make('Test@1234'), 'password_hash' => Hash::make('Test@1234'), 'role' => $role, 'branch_id' => $branch->id, 'is_active' => true, 'mfa_enabled' => false, 'password_changed_at' => now()]
             );
         };
 
         $teller = $make('sim_teller', 'sim_teller@cems.my', UserRole::Teller, $hq);
         $manager = $make('sim_manager', 'sim_manager@cems.my', UserRole::Manager, $hq);
+        // Second manager so the cancellation flow can satisfy segregation of
+        // duties on the web surface (requester and approver must differ, and
+        // the web cancellation routes are role:manager only).
+        $make('sim_manager2', 'sim_manager2@cems.my', UserRole::Manager, $hq);
         $compliance = $make('sim_compliance', 'sim_compliance@cems.my', UserRole::ComplianceOfficer, $hq);
         $admin = $make('sim_admin', 'sim_admin@cems.my', UserRole::Admin, $hq);
 
         return [$teller, $manager, $compliance, $admin];
     }
 
-    private function openCounterSession(Counter $counter, User $teller): void
+    /**
+     * Seed official exchange rates so the rate-deviation guard
+     * (thresholds.rates.max_deviation_percent) is active during simulations.
+     * Wave A books USD at exactly 4.50 (0% deviation, passes); Wave B books
+     * the same currency at 9.00 (100% deviation, must be rejected).
+     */
+    private function createExchangeRates(Branch $branch): void
     {
-        CounterSession::updateOrCreate(
-            ['counter_id' => $counter->id, 'user_id' => $teller->id, 'session_date' => now()->toDateString()],
-            ['status' => CounterSessionStatus::Open->value, 'opened_at' => now(), 'opened_by' => $teller->id]
-        );
+        $rates = [
+            ['USD', '4.5000', '4.6000'],
+            ['EUR', '4.7900', '4.8500'],
+            ['GBP', '5.1000', '5.2000'],
+        ];
+        foreach ($rates as [$code, $buy, $sell]) {
+            ExchangeRate::updateOrCreate(
+                ['branch_id' => $branch->id, 'currency_code' => $code],
+                ['rate_buy' => $buy, 'rate_sell' => $sell, 'source' => 'simulation', 'fetched_at' => now()]
+            );
+        }
     }
 
-    private function createTillBalances(Counter $counter): void
+    private function createBranchPools(Branch $branch): void
     {
         foreach (['USD', 'EUR', 'GBP', 'MYR'] as $currency) {
-            TillBalance::updateOrCreate(
-                ['till_id' => (string) $counter->code, 'currency_code' => $currency, 'date' => now()->toDateString()],
-                ['opening_balance' => 100000, 'closing_balance' => 100000, 'variance' => 0, 'opened_by' => 1]
+            BranchPool::updateOrCreate(
+                ['branch_id' => $branch->id, 'currency_code' => $currency],
+                ['available_balance' => 500000, 'allocated_balance' => 0]
             );
         }
     }
@@ -214,6 +233,12 @@ class SimulationSeeder extends Seeder
             $tx->idempotency_key = uniqid('sim_');
             $tx->cdd_level = CddLevel::Simplified;
             $tx->status = TransactionStatus::from($status);
+            // Backdate outside the 1-hour structuring window so the seeded
+            // history does not trip structuring detection when the harness
+            // books and approves its own transactions. Same calendar day, so
+            // EOD and reporting scopes still include them.
+            $tx->created_at = now()->subHours(3);
+            $tx->updated_at = now()->subHours(3);
             $tx->save();
         }
     }

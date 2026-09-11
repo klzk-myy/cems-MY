@@ -29,7 +29,8 @@ class SanctionListSeederTest extends TestCase
 
         $lists = SanctionList::all();
 
-        $this->assertCount(2, $lists);
+        // The seeder is config-driven: one list per config('sanctions.sources') key.
+        $this->assertCount(count(config('sanctions.sources')), $lists);
 
         foreach ($lists as $list) {
             $this->assertContains($list->source_format, ['XML', 'CSV', 'JSON']);
@@ -57,7 +58,7 @@ class SanctionListSeederTest extends TestCase
         $this->seed(SanctionListSeeder::class);
         $this->seed(SanctionListSeeder::class);
 
-        $this->assertSame(2, SanctionList::count());
+        $this->assertSame(count(config('sanctions.sources')), SanctionList::count());
         $this->assertSame(3, SanctionEntry::count());
     }
 }

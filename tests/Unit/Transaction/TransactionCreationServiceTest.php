@@ -236,13 +236,15 @@ class TransactionCreationServiceTest extends TestCase
         Notification::fake();
         config(['thresholds.cdd.large_transaction' => '1000']);
 
-        User::factory()->complianceOfficer()->create();
+        $officer = User::factory()->complianceOfficer()->create();
 
         $this->completedBuyService()->create($this->context([
             'amountLocal' => '50000.00',
         ]));
 
-        Notification::assertNothingSent();
+        // Scoped assertion: monitoring flags may legitimately produce alert
+        // notifications; this test only guards the large-transaction path.
+        Notification::assertNotSentTo($officer, LargeTransactionNotification::class);
     }
 
     #[Test]
@@ -251,13 +253,13 @@ class TransactionCreationServiceTest extends TestCase
         Notification::fake();
         config(['thresholds.cdd.large_transaction' => '1000']);
 
-        User::factory()->complianceOfficer()->create();
+        $officer = User::factory()->complianceOfficer()->create();
 
         $this->completedBuyService()->create($this->context([
             'amountLocal' => '450.00',
         ]));
 
-        Notification::assertNothingSent();
+        Notification::assertNotSentTo($officer, LargeTransactionNotification::class);
     }
 
     #[Test]
@@ -266,7 +268,7 @@ class TransactionCreationServiceTest extends TestCase
         Notification::fake();
         config(['thresholds.cdd.large_transaction' => '1000']);
 
-        User::factory()->complianceOfficer()->create();
+        $officer = User::factory()->complianceOfficer()->create();
 
         $audit = Mockery::mock(AuditTrailHelper::class);
         $audit->shouldReceive('recordTransaction')->zeroOrMoreTimes();
@@ -283,7 +285,7 @@ class TransactionCreationServiceTest extends TestCase
             // what matters, not the booking outcome.
         }
 
-        Notification::assertNothingSent();
+        Notification::assertNotSentTo($officer, LargeTransactionNotification::class);
     }
 
     #[Test]

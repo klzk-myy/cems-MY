@@ -196,4 +196,29 @@ class TillServiceTest extends TestCase
         $this->assertSame(0, bccomp($result['total_myr_variance'], '-100', 4));
         $this->assertSame(0, bccomp($result['total_fcy_variance'], '0', 4));
     }
+
+    #[Test]
+    public function net_flow_buckets_by_approval_day_for_late_approved_transactions(): void
+    {
+        $counter = Counter::factory()->create(['code' => 'T-NET-APPR']);
+
+        // Created yesterday, approved (cash moved) today.
+        Transaction::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'USD',
+            'type' => TransactionType::Buy->value,
+            'amount_local' => '500.00',
+            'status' => TransactionStatus::Completed->value,
+            'created_at' => now()->subDay(),
+            'approved_at' => now(),
+        ]);
+
+        $service = new TillService(new MathService);
+
+        $todayNet = $service->calculateNetFlow($counter->code, 'USD', now()->toDateString());
+        $yesterdayNet = $service->calculateNetFlow($counter->code, 'USD', now()->subDay()->toDateString());
+
+        $this->assertSame(0, bccomp($todayNet, '500', 2), 'Approval-day flow includes the late-approved transaction');
+        $this->assertSame(0, bccomp($yesterdayNet, '0', 2), 'Request day must not be charged for cash that moved later');
+    }
 }

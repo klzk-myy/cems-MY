@@ -25,7 +25,6 @@ class RouteNamingConsistencyTest extends TestCase
 
         $requiredNamedUris = [
             'login',
-            'test/query-log',
         ];
 
         foreach ($requiredNamedUris as $uri) {

@@ -27,7 +27,7 @@ class CounterOpeningAllocationScopeTest extends TestCase
     {
         $mathService = new MathService;
         $branchPoolService = new BranchPoolService(new AuditService, $mathService);
-        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService);
+        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class));
         $counterService = new CounterService(
             $tellerAllocationService,
             new ThresholdService

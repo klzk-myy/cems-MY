@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\FiscalYearService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -185,6 +186,78 @@ class AccountingWorkflowTest extends TestCase
             ->get('/accounting/balance-sheet');
 
         $response->assertStatus(200);
+    }
+
+    #[Test]
+    public function sequential_postings_chain_running_balances_per_account(): void
+    {
+        $service = app(AccountingService::class);
+
+        $first = $service->createJournalEntry(
+            [
+                ['account_code' => $this->cashAccount->account_code, 'debit' => '100.00', 'credit' => '0.00'],
+                ['account_code' => $this->revenueAccount->account_code, 'debit' => '0.00', 'credit' => '100.00'],
+            ],
+            'Test',
+            null,
+            'First posting',
+            now()->toDateString(),
+            $this->manager->id,
+            $this->branch->id
+        );
+
+        $second = $service->createJournalEntry(
+            [
+                ['account_code' => $this->cashAccount->account_code, 'debit' => '250.00', 'credit' => '0.00'],
+                ['account_code' => $this->revenueAccount->account_code, 'debit' => '0.00', 'credit' => '250.00'],
+            ],
+            'Test',
+            null,
+            'Second posting',
+            now()->toDateString(),
+            $this->manager->id,
+            $this->branch->id
+        );
+
+        $balances = AccountLedger::where('account_code', $this->cashAccount->account_code)
+            ->where('branch_id', $this->branch->id)
+            ->orderBy('journal_entry_id')
+            ->pluck('running_balance')
+            ->all();
+
+        // 100 after the first entry, then 350 after the second: the second
+        // posting must read the balance written by the first, not a stale 0.
+        $this->assertSame(['100.0000', '350.0000'], array_map(
+            fn ($v) => bcadd((string) $v, '0', 4),
+            $balances
+        ));
+
+        $this->assertNotNull($first->id);
+        $this->assertNotNull($second->id);
+    }
+
+    #[Test]
+    public function journal_posting_flushes_ledger_and_reports_cache_tags(): void
+    {
+        Cache::tags(['ledger', 'trial-balance'])->put('tb_probe', 'stale', 600);
+        Cache::tags(['reports', 'cash-flow'])->put('cf_probe', 'stale', 600);
+
+        $service = app(AccountingService::class);
+        $service->createJournalEntry(
+            [
+                ['account_code' => $this->cashAccount->account_code, 'debit' => '50.00', 'credit' => '0.00'],
+                ['account_code' => $this->revenueAccount->account_code, 'debit' => '0.00', 'credit' => '50.00'],
+            ],
+            'Test',
+            null,
+            'Cache invalidation probe',
+            now()->toDateString(),
+            $this->manager->id,
+            $this->branch->id
+        );
+
+        $this->assertNull(Cache::tags(['ledger', 'trial-balance'])->get('tb_probe'));
+        $this->assertNull(Cache::tags(['reports', 'cash-flow'])->get('cf_probe'));
     }
 
     #[Test]

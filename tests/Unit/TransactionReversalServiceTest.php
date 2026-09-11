@@ -9,10 +9,12 @@ use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Transaction\TransactionReversalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Tests\TestCase;
 
 class TransactionReversalServiceTest extends TestCase
@@ -26,6 +28,143 @@ class TransactionReversalServiceTest extends TestCase
         parent::setUp();
         $this->createTestBranch();
         $this->service = app(TransactionReversalService::class);
+    }
+
+    #[Test]
+    public function reverse_positions_restores_average_cost_for_buy_reversal(): void
+    {
+        $branch = $this->createTestBranch();
+
+        // Position after a Buy of 1000 @ 4.60 layered onto 1000 @ 4.40:
+        // qty 2000, avg 4.50. Reversing that Buy must restore qty 1000 @ 4.40.
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'balance' => '2000.0000',
+            'avg_cost_rate' => '4.500000',
+            'last_valuation_rate' => '4.50',
+        ]);
+
+        $buy = Transaction::factory()->make([
+            'id' => 99911,
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'type' => TransactionType::Buy,
+            'amount_foreign' => '1000.00',
+            'rate' => '4.60',
+            'status' => TransactionStatus::Completed,
+        ]);
+
+        $this->service->reversePositions($buy);
+
+        $position = CurrencyPosition::where('currency_code', 'USD')
+            ->where('branch_id', $branch->id)
+            ->first();
+
+        $this->assertEquals('1000.0000', $position->balance);
+        $this->assertEquals('4.4000', bcadd($position->average_cost, '0', 4));
+    }
+
+    #[Test]
+    public function reversal_restores_snapshot_average_cost_after_intervening_buys(): void
+    {
+        $branch = $this->createTestBranch();
+        $service = app(CurrencyPositionService::class);
+
+        // 1. Establish initial position 1000 @ 4.40.
+        $service->updatePosition('USD', '1000.00', '4.40', 'Buy', (string) $branch->id);
+
+        // 2. Target Buy of 1000 @ 4.60 → qty 2000 @ 4.50; snapshot (1000, 4.40) recorded.
+        $target = Transaction::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'type' => TransactionType::Buy,
+            'amount_foreign' => '1000.00',
+            'rate' => '4.60',
+            'status' => TransactionStatus::Completed,
+        ]);
+        $service->updatePosition('USD', '1000.00', '4.60', 'Buy', (string) $branch->id, $target);
+
+        $target->refresh();
+        $this->assertEquals('1000.0000', (string) $target->prev_quantity);
+        $this->assertNotNull($target->prev_average_cost);
+
+        // 3. Reversing the target Buy must restore exactly the snapshot (1000, 4.40).
+        $this->service->reversePositions($target);
+
+        $position = CurrencyPosition::where('currency_code', 'USD')
+            ->where('branch_id', $branch->id)
+            ->first();
+
+        $this->assertEquals('1000.0000', $position->balance);
+        $this->assertEquals('4.4000', bcadd($position->average_cost, '0', 4));
+    }
+
+    #[Test]
+    public function reversing_buy_after_position_partially_depleted_does_not_throw(): void
+    {
+        $branch = $this->createTestBranch();
+
+        // Only 400 left, but the original Buy was for 1000 — the guard-based
+        // path used to abort the whole cancellation here.
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'balance' => '400.0000',
+            'avg_cost_rate' => '4.50',
+            'last_valuation_rate' => '4.50',
+        ]);
+
+        $buy = Transaction::factory()->make([
+            'id' => 99912,
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'type' => TransactionType::Buy,
+            'amount_foreign' => '1000.00',
+            'rate' => '4.50',
+            'status' => TransactionStatus::Completed,
+        ]);
+
+        $this->service->reversePositions($buy);
+
+        $position = CurrencyPosition::where('currency_code', 'USD')
+            ->where('branch_id', $branch->id)
+            ->first();
+
+        $this->assertEquals('-600.0000', $position->balance);
+    }
+
+    #[Test]
+    public function reverse_positions_keeps_average_cost_for_sell_reversal(): void
+    {
+        $branch = $this->createTestBranch();
+
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'balance' => '500.0000',
+            'avg_cost_rate' => '4.45',
+            'last_valuation_rate' => '4.50',
+        ]);
+
+        $sell = Transaction::factory()->make([
+            'id' => 99913,
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'type' => TransactionType::Sell,
+            'amount_foreign' => '200.00',
+            'rate' => '4.70',
+            'status' => TransactionStatus::Completed,
+        ]);
+
+        $this->service->reversePositions($sell);
+
+        $position = CurrencyPosition::where('currency_code', 'USD')
+            ->where('branch_id', $branch->id)
+            ->first();
+
+        $this->assertEquals('700.0000', $position->balance);
+        $this->assertEquals('4.4500', bcadd($position->average_cost, '0', 4));
     }
 
     #[Test]
@@ -172,7 +311,7 @@ class TransactionReversalServiceTest extends TestCase
     }
 
     #[Test]
-    public function reverse_positions_handles_nonexistent_position(): void
+    public function reverse_positions_throws_on_nonexistent_position(): void
     {
         $transaction = Transaction::factory()->make([
             'id' => 99904,
@@ -185,13 +324,9 @@ class TransactionReversalServiceTest extends TestCase
             'status' => TransactionStatus::Completed,
         ]);
 
+        $this->expectException(RuntimeException::class);
+
         $this->service->reversePositions($transaction);
-
-        $position = CurrencyPosition::where('currency_code', 'XYZ')
-            ->where('branch_id', 'NONEXISTENT-BRANCH')
-            ->first();
-
-        $this->assertNull($position);
     }
 
     #[Test]
@@ -216,6 +351,15 @@ class TransactionReversalServiceTest extends TestCase
         $rate = '4.50';
 
         Currency::factory()->create(['code' => $currencyCode]);
+
+        // The Sell reversal path refunds foreign currency into this position.
+        CurrencyPosition::factory()->create([
+            'currency_code' => $currencyCode,
+            'branch_id' => $branch->id,
+            'balance' => '1000.00',
+            'avg_cost_rate' => $rate,
+            'last_valuation_rate' => $rate,
+        ]);
 
         // Simulate the till state after the original Sell transaction.
         $foreignBalance = $manager->openBalance($till, $currencyCode, $user->id);

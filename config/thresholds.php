@@ -39,9 +39,17 @@ return [
     |--------------------------------------------------------------------------
     */
     'risk_scoring' => [
+        // Cash/amount thresholds used by AmountRiskService / VelocityRiskService
+        // (compare transaction amounts in MYR).
         'high' => env('THRESHOLD_RISK_HIGH', '50000'),
         'medium' => env('THRESHOLD_RISK_MEDIUM', '30000'),
         'low' => env('THRESHOLD_RISK_LOW', '10000'),
+        // risk_score band thresholds (customer score on a 0-100 scale) used by
+        // CustomerRepository::getCustomersNeedingRescreening() — never re-use
+        // the MYR amount keys above for score comparisons.
+        'score_high' => env('THRESHOLD_RISK_SCORE_HIGH', '75'),
+        'score_medium' => env('THRESHOLD_RISK_SCORE_MEDIUM', '50'),
+        'score_low' => env('THRESHOLD_RISK_SCORE_LOW', '25'),
     ],
 
     /*
@@ -75,6 +83,43 @@ return [
         'min_transactions' => env('THRESHOLD_STRUCTURING_MIN_TXNS', 3),
         'hourly_window' => env('THRESHOLD_STRUCTURING_HOURS', 1),
         'lookup_days' => env('THRESHOLD_STRUCTURING_LOOKUP_DAYS', 7),
+        // Risk scoring tiers: transactions per hour -> score points.
+        'score_min_count_high' => (int) env('THRESHOLD_STRUCTURING_SCORE_HIGH_COUNT', 3),
+        'score_high' => (int) env('THRESHOLD_STRUCTURING_SCORE_HIGH', 25),
+        'score_min_count_low' => (int) env('THRESHOLD_STRUCTURING_SCORE_LOW_COUNT', 2),
+        'score_low' => (int) env('THRESHOLD_STRUCTURING_SCORE_LOW', 10),
+        'score_cap' => (int) env('THRESHOLD_STRUCTURING_SCORE_CAP', 30),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Monitoring Pattern Detection
+    |--------------------------------------------------------------------------
+    */
+    'monitoring' => [
+        // Transactions deviating from the customer's trailing average by more
+        // than this multiplier over the lookback window are flagged.
+        'unusual_pattern_lookback_days' => (int) env('THRESHOLD_UNUSUAL_LOOKBACK_DAYS', 90),
+        'unusual_pattern_multiplier' => (string) env('THRESHOLD_UNUSUAL_MULTIPLIER', '2'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Compliance SLAs (hours)
+    |--------------------------------------------------------------------------
+    */
+    'alert_sla_hours' => [
+        'critical' => (int) env('SLA_ALERT_CRITICAL', 4),
+        'high' => (int) env('SLA_ALERT_HIGH', 8),
+        'medium' => (int) env('SLA_ALERT_MEDIUM', 24),
+        'low' => (int) env('SLA_ALERT_LOW', 72),
+    ],
+
+    'case_sla_hours' => [
+        'critical' => (int) env('SLA_CASE_CRITICAL', 24),
+        'high' => (int) env('SLA_CASE_HIGH', 48),
+        'medium' => (int) env('SLA_CASE_MEDIUM', 120),
+        'low' => (int) env('SLA_CASE_LOW', 240),
     ],
 
     /*

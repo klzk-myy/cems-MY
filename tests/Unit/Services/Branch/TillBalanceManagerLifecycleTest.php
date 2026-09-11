@@ -8,6 +8,7 @@ use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\TillBalance;
 use App\Models\User;
+use App\Services\Branch\CounterService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Branch\TillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -51,6 +52,41 @@ class TillBalanceManagerLifecycleTest extends TestCase
         $this->assertEquals('Morning float', $balance->notes);
         $this->assertNull($balance->closing_balance);
         $this->assertNull($balance->closed_at);
+    }
+
+    #[Test]
+    public function open_session_rejects_till_already_opened_via_open_till(): void
+    {
+        $counter = Counter::factory()->create();
+        $currency = Currency::factory()->create();
+        $user = User::factory()->create();
+
+        // Till opened directly (e.g. by a supervisor) before the session opens.
+        $this->manager->openTill($counter, $currency->code, '500.00', $user->id);
+
+        $this->expectException(TillAlreadyOpenException::class);
+
+        app(CounterService::class)->openSession($counter, $user, [
+            ['currency_id' => $currency->code, 'amount' => '500.00'],
+        ]);
+    }
+
+    #[Test]
+    public function open_session_creates_till_for_each_float(): void
+    {
+        $counter = Counter::factory()->create();
+        $currency = Currency::factory()->create();
+        $user = User::factory()->create();
+
+        $session = app(CounterService::class)->openSession($counter, $user, [
+            ['currency_id' => $currency->code, 'amount' => '250.00'],
+        ]);
+
+        $this->assertNotNull($session);
+        $this->assertDatabaseHas('till_balances', [
+            'till_id' => $counter->code,
+            'currency_code' => $currency->code,
+        ]);
     }
 
     #[Test]

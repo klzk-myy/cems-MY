@@ -3,6 +3,7 @@
 namespace Tests\Unit\FormRequests;
 
 use App\Http\Requests\StoreUserRequest;
+use App\Rules\PasswordComplexityRule;
 use Illuminate\Validation\Rules\Unique;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -30,7 +31,11 @@ class StoreUserRequestTest extends TestCase
         $rules = $request->rules();
 
         $this->assertContains('required', (array) $rules['password']);
-        $this->assertContains('min:12', (array) $rules['password']);
+        $this->assertContains('confirmed', (array) $rules['password']);
+        $this->assertTrue(
+            collect((array) $rules['password'])->contains(fn ($rule) => $rule instanceof PasswordComplexityRule),
+            'New-user passwords must be validated by PasswordComplexityRule (min 12 chars, mixed case, number, symbol).'
+        );
     }
 
     #[Test]

@@ -8,13 +8,16 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Models\Branch;
 use App\Models\BranchPool;
+use App\Models\ChartOfAccount;
 use App\Models\Counter;
 use App\Models\Currency;
+use App\Models\JournalEntry;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Branch\BranchClosingService;
 use App\Services\Branch\BranchPoolService;
+use App\Services\Branch\CounterService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -143,7 +146,7 @@ class BranchClosingWorkflowTest extends TestCase
     {
         $mathService = new MathService;
         $branchPoolService = new BranchPoolService(new AuditService, $mathService);
-        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService);
+        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class));
 
         $allocation = $tellerAllocationService->requestAllocation(
             $this->tellerA,
@@ -279,5 +282,62 @@ class BranchClosingWorkflowTest extends TestCase
 
         $response->assertStatus(400);
         $response->assertJson(['success' => false]);
+    }
+
+    #[Test]
+    public function finalize_is_idempotent_for_finalized_workflow(): void
+    {
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+
+        $this->branchClosingService->finalize($workflow, $this->manager);
+        $finalizedAt = $workflow->fresh()->finalized_at;
+
+        $this->branchClosingService->finalize($workflow, $this->manager);
+
+        $workflow->refresh();
+        $this->assertEquals(BranchClosureStatus::Finalized, $workflow->status);
+        $this->assertEquals($finalizedAt, $workflow->finalized_at);
+    }
+
+    #[Test]
+    public function settle_twice_does_not_duplicate_hq_journal_entries(): void
+    {
+        // Ensure settlement accounts exist for the HQ-transfer journals.
+        foreach ([
+            ['1100', 'Foreign Currency Inventory', 'Asset'],
+            ['9000', 'HQ Suspense', 'Asset'],
+        ] as [$code, $name, $type]) {
+            ChartOfAccount::firstOrCreate(
+                ['account_code' => $code],
+                ['account_name' => $name, 'account_type' => $type, 'is_active' => true]
+            );
+        }
+
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+
+        $this->branchClosingService->settle($workflow, $this->manager);
+        $workflow->refresh();
+        $this->assertEquals(BranchClosureStatus::Settled, $workflow->status);
+
+        $journalCountAfterFirst = JournalEntry::where('reference_type', 'BranchSettlement')->count();
+        $this->assertGreaterThan(0, $journalCountAfterFirst, 'First settle must post HQ-transfer journals');
+
+        // Second settle must be a no-op: no duplicate journals, status stays settled.
+        $this->branchClosingService->settle($workflow, $this->manager);
+
+        $this->assertSame($journalCountAfterFirst, JournalEntry::where('reference_type', 'BranchSettlement')->count());
+        $this->assertEquals(BranchClosureStatus::Settled, $workflow->fresh()->status);
+    }
+
+    #[Test]
+    public function settle_throws_when_counters_still_open(): void
+    {
+        $counterService = app(CounterService::class);
+        $counterService->openSession($this->counter, $this->tellerA, []);
+
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+
+        $this->expectException(BranchClosingChecklistIncompleteException::class);
+        $this->branchClosingService->settle($workflow, $this->manager);
     }
 }

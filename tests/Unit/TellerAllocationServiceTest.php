@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Enums\TellerAllocationStatus;
+use App\Exceptions\Domain\AllocationValidationException;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\TellerAllocation;
@@ -27,7 +28,7 @@ class TellerAllocationServiceTest extends TestCase
     {
         parent::setUp();
         $this->branchPoolService = new BranchPoolService(new AuditService, new MathService);
-        $this->service = new TellerAllocationService($this->branchPoolService, new MathService);
+        $this->service = new TellerAllocationService($this->branchPoolService, new MathService, app(AuditService::class));
     }
 
     #[Test]
@@ -290,6 +291,54 @@ class TellerAllocationServiceTest extends TestCase
         $result = $this->service->transferToTeller($allocation, $teller2);
 
         $this->assertEquals($teller2->id, $result->user_id);
+
+        $this->assertDatabaseHas('system_logs', [
+            'action' => 'teller_allocation_transferred',
+            'entity_id' => $allocation->id,
+        ]);
+    }
+
+    #[Test]
+    public function transfer_to_teller_rejects_cross_branch_target(): void
+    {
+        $branch = Branch::factory()->create();
+        $otherBranch = Branch::factory()->create();
+        $teller1 = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+        $teller2 = User::factory()->create(['role' => 'teller', 'branch_id' => $otherBranch->id]);
+        $allocation = TellerAllocation::factory()->create([
+            'user_id' => $teller1->id,
+            'branch_id' => $branch->id,
+            'currency_code' => 'MYR',
+            'status' => TellerAllocationStatus::ACTIVE,
+            'session_date' => now()->toDateString(),
+        ]);
+
+        $this->expectException(AllocationValidationException::class);
+
+        $this->service->transferToTeller($allocation, $teller2);
+    }
+
+    #[Test]
+    public function request_allocation_writes_audit_record(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+        $approver = User::factory()->create(['role' => 'manager', 'branch_id' => $branch->id]);
+
+        BranchPool::factory()->create([
+            'branch_id' => $branch->id,
+            'currency_code' => 'MYR',
+            'available_balance' => '10000.0000',
+            'allocated_balance' => '0.0000',
+        ]);
+
+        $allocation = $this->service->requestAllocation($teller, $approver, 'MYR', '5000.0000');
+
+        $this->assertNotNull($allocation->id);
+        $this->assertDatabaseHas('system_logs', [
+            'action' => 'teller_allocation_requested',
+            'entity_id' => $allocation->id,
+        ]);
     }
 
     #[Test]

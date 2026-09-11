@@ -7,7 +7,8 @@ namespace Tests\Http\Simulation\Support;
  *
  * Carries the seeded identity graph (branch / counter / user ids, the
  * teller's Sanctum token) plus arbitrary step-created ids so later steps
- * can assert on state produced earlier in the sweep.
+ * can assert on state produced earlier in the sweep. The oracle is injected
+ * by the base class so steps can read derived DB state.
  */
 class SimulationState
 {
@@ -30,6 +31,12 @@ class SimulationState
 
     public ?int $transactionId = null;  // last booked tx
 
+    public ?int $webTransactionId = null;   // A4 web-booked tx
+
+    public ?int $apiTransactionId = null;   // A4b API-booked tx
+
     /** @var list<string> */
     public array $created = []; // arbitrary step-created ids
+
+    public ?SimulationOracle $oracle = null;
 }

@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Enums\UserRole;
 use App\Exceptions\Domain\TransactionValidationException;
+use App\Models\CurrencyPosition;
 use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\AuditService;
@@ -36,10 +37,7 @@ class StockTransferServiceTest extends TestCase
     #[Test]
     public function create_request_validates_source_and_destination_branches(): void
     {
-        $this->expectException(TransactionValidationException::class);
-        $this->expectExceptionMessage('Source and destination branches are required');
-
-        $this->stockTransferService->createRequest([
+        $this->assertValidationError('Source and destination branches are required', [
             'source_branch_name' => '',
             'destination_branch_name' => '',
             'items' => [],
@@ -49,10 +47,7 @@ class StockTransferServiceTest extends TestCase
     #[Test]
     public function create_request_validates_source_and_destination_not_same(): void
     {
-        $this->expectException(TransactionValidationException::class);
-        $this->expectExceptionMessage('Source and destination branches cannot be the same');
-
-        $this->stockTransferService->createRequest([
+        $this->assertValidationError('Source and destination branches cannot be the same', [
             'source_branch_name' => 'Branch A',
             'destination_branch_name' => 'Branch A',
             'items' => [],
@@ -62,10 +57,7 @@ class StockTransferServiceTest extends TestCase
     #[Test]
     public function create_request_validates_items_not_empty(): void
     {
-        $this->expectException(TransactionValidationException::class);
-        $this->expectExceptionMessage('At least one item is required');
-
-        $this->stockTransferService->createRequest([
+        $this->assertValidationError('At least one item is required', [
             'source_branch_name' => 'Branch A',
             'destination_branch_name' => 'Branch B',
             'items' => [],
@@ -75,10 +67,7 @@ class StockTransferServiceTest extends TestCase
     #[Test]
     public function create_request_validates_currency_code_required(): void
     {
-        $this->expectException(TransactionValidationException::class);
-        $this->expectExceptionMessage('Currency code is required for each item');
-
-        $this->stockTransferService->createRequest([
+        $this->assertValidationError('Currency code is required for each item', [
             'source_branch_name' => 'Branch A',
             'destination_branch_name' => 'Branch B',
             'items' => [
@@ -90,10 +79,7 @@ class StockTransferServiceTest extends TestCase
     #[Test]
     public function create_request_validates_quantity_positive(): void
     {
-        $this->expectException(TransactionValidationException::class);
-        $this->expectExceptionMessage('Quantity must be a positive number');
-
-        $this->stockTransferService->createRequest([
+        $this->assertValidationError('Quantity must be a positive number', [
             'source_branch_name' => 'Branch A',
             'destination_branch_name' => 'Branch B',
             'items' => [
@@ -105,10 +91,7 @@ class StockTransferServiceTest extends TestCase
     #[Test]
     public function create_request_validates_rate_positive(): void
     {
-        $this->expectException(TransactionValidationException::class);
-        $this->expectExceptionMessage('Rate must be a positive number');
-
-        $this->stockTransferService->createRequest([
+        $this->assertValidationError('Rate must be a positive number', [
             'source_branch_name' => 'Branch A',
             'destination_branch_name' => 'Branch B',
             'items' => [
@@ -120,10 +103,7 @@ class StockTransferServiceTest extends TestCase
     #[Test]
     public function create_request_validates_currency_exists(): void
     {
-        $this->expectException(TransactionValidationException::class);
-        $this->expectExceptionMessage('Currency XXX does not exist');
-
-        $this->stockTransferService->createRequest([
+        $this->assertValidationError('Currency XXX does not exist', [
             'source_branch_name' => 'Branch A',
             'destination_branch_name' => 'Branch B',
             'items' => [
@@ -135,10 +115,7 @@ class StockTransferServiceTest extends TestCase
     #[Test]
     public function create_request_validates_total_value_matches_items(): void
     {
-        $this->expectException(TransactionValidationException::class);
-        $this->expectExceptionMessage('Total value does not match sum of item values');
-
-        $this->stockTransferService->createRequest([
+        $this->assertValidationError('Total value does not match sum of item values', [
             'source_branch_name' => 'Branch A',
             'destination_branch_name' => 'Branch B',
             'items' => [
@@ -146,6 +123,25 @@ class StockTransferServiceTest extends TestCase
             ],
             'total_value_myr' => '5000.00', // Should be 4500.00
         ]);
+    }
+
+    /**
+     * Assert createRequest() rejects the payload with the given rule detail.
+     *
+     * TransactionValidationException carries the human-readable rule detail in
+     * ->field (the message stays the generic "Transaction validation failed"),
+     * so the rule text is asserted on the field rather than the message.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function assertValidationError(string $expectedDetail, array $payload): void
+    {
+        try {
+            $this->stockTransferService->createRequest($payload);
+            $this->fail('Expected TransactionValidationException');
+        } catch (TransactionValidationException $e) {
+            $this->assertStringContainsString($expectedDetail, (string) $e->field);
+        }
     }
 
     #[Test]
@@ -189,6 +185,16 @@ class StockTransferServiceTest extends TestCase
         ]);
         $service = new StockTransferService(new MathService, new AuditService, $admin);
 
+        // Dispatch decrements the SOURCE branch position, so the source must
+        // actually hold the transferred quantity. positionBranchKey() maps the
+        // free-text name to a position key (no Branch row is seeded here, so
+        // the raw identifier is used).
+        CurrencyPosition::create([
+            'branch_id' => 'Branch A',
+            'currency_code' => 'USD',
+            'quantity' => '1000',
+        ]);
+
         $transfer = $service->createRequest([
             'source_branch_name' => 'Branch A',
             'destination_branch_name' => 'Branch B',
@@ -220,6 +226,13 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Admin,
         ]);
         $service = new StockTransferService(new MathService, new AuditService, $admin);
+
+        // Same source-position fixture as full_workflow_approve_dispatch_complete_succeeds.
+        CurrencyPosition::create([
+            'branch_id' => 'Branch A',
+            'currency_code' => 'USD',
+            'quantity' => '1000',
+        ]);
 
         $transfer = $service->createRequest([
             'source_branch_name' => 'Branch A',
