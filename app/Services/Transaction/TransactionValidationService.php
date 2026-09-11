@@ -129,6 +129,21 @@ class TransactionValidationService implements TransactionValidationInterface
         // 1. Sanctions screening (blocking)
         $sanctionResult = $this->checkSanctions($customer);
         if ($sanctionResult->isBlocked()) {
+            // Audit the blocked attempt BEFORE returning — a block that leaves
+            // no audit record is invisible to compliance review.
+            $this->auditService->logPreTransactionEvent(
+                'pre_validation_blocked',
+                $customer->id,
+                ['new_values' => [
+                    'customer_id' => $customer->id,
+                    'amount' => $amount,
+                    'currency_code' => $currencyCode,
+                    'block_reason' => 'sanctions',
+                    'message' => $sanctionResult->getMessage(),
+                ]],
+                'CRITICAL'
+            );
+
             $result->addBlock('sanctions', $sanctionResult->getMessage());
 
             return $result;
