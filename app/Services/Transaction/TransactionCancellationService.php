@@ -17,6 +17,7 @@ use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -46,6 +47,7 @@ class TransactionCancellationService
         protected TellerAllocationService $tellerAllocationService,
         protected TransactionReversalService $reversalService,
         protected StockReleaseService $stockReleaseService,
+        protected CacheInvalidationService $cacheInvalidationService,
     ) {}
 
     /**
@@ -217,6 +219,14 @@ class TransactionCancellationService
                 );
 
                 Event::dispatch(new TransactionCancelled($lockedTransaction, $reason, $approver->id));
+
+                // A cancellation changes positions, tills and journal state —
+                // flush dashboard/report caches so readers never see stale data.
+                DB::afterCommit(function (): void {
+                    $this->cacheInvalidationService->invalidate('dashboard');
+                    $this->cacheInvalidationService->invalidate('ledger');
+                    $this->cacheInvalidationService->invalidate('reports');
+                });
             }
 
             return $result;
