@@ -1,7 +1,6 @@
-<x-app-layout title="{{ ucfirst(Users Index) }} User">
-    <x-page-header title="{{ ucfirst(Users Index) }} User" description="User management" />
+<x-app-layout title="Users Index User">
+    <x-page-header title="Users Index User" description="User management" />
     <x-card>
-        @if(Users Index === 'index')
             <x-table>
                 <x-slot:thead>
                     <tr>
@@ -20,22 +19,5 @@
                     </tr>
                 </x-slot:tbody>
             </x-table>
-        @elseif(Users Index === 'create' || Users Index === 'edit')
-            <form method="POST" class="space-y-4">
-                @csrf
-                <x-input name="name" label="Full Name" :required="true" />
-                <x-input name="email" label="Email" type="email" :required="true" />
-                <x-select name="role" label="Role" :options="['admin' => 'Admin', 'manager' => 'Manager', 'teller' => 'Teller']" :required="true" />
-                <x-checkbox name="is_active" label="Active" :checked="true" />
-                <div class="flex justify-end gap-3">
-                    <x-button type="submit" variant="primary">Save</x-button>
-                </div>
-            </form>
-        @else
-            <dl class="grid grid-cols-2 gap-4 text-sm">
-                <div><dt class="text-ink-muted">Name</dt><dd class="font-medium text-ink">John Doe</dd></div>
-                <div><dt class="text-ink-muted">Email</dt><dd class="font-medium text-ink">john@example.com</dd></div>
-            </dl>
-        @endif
     </x-card>
 </x-app-layout>
