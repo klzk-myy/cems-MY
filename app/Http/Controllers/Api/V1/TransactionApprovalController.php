@@ -6,8 +6,10 @@ use App\Actions\Transaction\ApproveTransactionAction;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ConfirmTransactionApprovalRequest;
 use App\Models\Transaction;
 use App\Services\Transaction\TransactionApprovalService;
+use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionStateMachineFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +21,8 @@ class TransactionApprovalController extends Controller
     public function __construct(
         protected ApproveTransactionAction $approveAction,
         protected TransactionApprovalService $approvalService,
-        protected TransactionStateMachineFactory $stateMachineFactory
+        protected TransactionStateMachineFactory $stateMachineFactory,
+        protected TransactionConfirmationService $confirmationService
     ) {}
 
     /**
@@ -64,5 +67,44 @@ class TransactionApprovalController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse('Rejection failed due to a system error. Please contact support.', [], 500);
         }
+    }
+
+    /**
+     * Confirm a large transaction (parity with the web confirmation flow).
+     *
+     * Managers confirm or reject transactions exceeding the configured
+     * threshold. Self-confirmation is prohibited for segregation of duties.
+     */
+    public function confirm(ConfirmTransactionApprovalRequest $request, int $transactionId): JsonResponse
+    {
+        $transaction = Transaction::findOrFail($transactionId);
+
+        $this->authorize('approve', $transaction);
+
+        if (! $this->confirmationService->requiresConfirmation($transaction)) {
+            return $this->errorResponse('This transaction does not require confirmation.', [], 422);
+        }
+
+        $confirmation = $this->confirmationService->pendingConfirmationFor($transaction);
+
+        if (! $confirmation) {
+            return $this->errorResponse('No pending confirmation found. If one expired, please request a new confirmation.', [], 422);
+        }
+
+        if ($transaction->user_id === (int) auth()->id()) {
+            return $this->errorResponse('You cannot confirm your own transaction. Segregation of duties requires a different manager.', [], 422);
+        }
+
+        $result = $this->confirmationService->confirm(
+            $confirmation,
+            $request->validated(),
+            (int) auth()->id()
+        );
+
+        if (! $result['success']) {
+            return $this->errorResponse($result['message'], [], 422);
+        }
+
+        return $this->successResponse($confirmation->fresh(), $result['message']);
     }
 }
