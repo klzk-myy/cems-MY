@@ -30,7 +30,7 @@ class TransactionCancellationController extends Controller
         $result = $this->requestAction->execute(
             $transaction,
             auth()->user(),
-            $validated['cancellation_reason']
+            $validated['reason']
         );
 
         if (! $result->ok) {
@@ -74,7 +74,7 @@ class TransactionCancellationController extends Controller
 
     public function showRejectCancel(Transaction $transaction): View|RedirectResponse
     {
-        $this->authorize('approveCancellation', $transaction);
+        $this->authorize('rejectCancellation', $transaction);
 
         if (! $transaction->status->isPendingCancellation()) {
             return back()->with('error', 'This transaction is not pending cancellation.');
@@ -85,7 +85,7 @@ class TransactionCancellationController extends Controller
 
     public function rejectCancel(RejectCancelRequest $request, Transaction $transaction): RedirectResponse
     {
-        $this->authorize('approveCancellation', $transaction);
+        $this->authorize('rejectCancellation', $transaction);
 
         $validated = $request->validated();
 
