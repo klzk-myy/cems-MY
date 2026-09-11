@@ -241,11 +241,13 @@ class ComplianceCase extends ComplianceModel
      */
     public static function slaHoursFor(FindingSeverity $severity): int
     {
+        $config = config('thresholds.case_sla_hours', []);
+
         return match ($severity) {
-            FindingSeverity::Critical => 24,
-            FindingSeverity::High => 48,
-            FindingSeverity::Medium => 120,
-            FindingSeverity::Low => 240,
+            FindingSeverity::Critical => (int) ($config['critical'] ?? 24),
+            FindingSeverity::High => (int) ($config['high'] ?? 48),
+            FindingSeverity::Medium => (int) ($config['medium'] ?? 120),
+            FindingSeverity::Low => (int) ($config['low'] ?? 240),
         };
     }
 
