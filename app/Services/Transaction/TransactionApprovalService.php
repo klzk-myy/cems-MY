@@ -336,7 +336,8 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             (string) $transaction->amount_foreign,
             (string) $transaction->rate,
             $transaction->type->value,
-            $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ'
+            $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ',
+            $transaction
         );
 
         $this->tillBalanceManager->applyTransaction(
@@ -367,6 +368,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
 
         $available = $this->positionService->getAvailableBalance(
             $transaction->currency_code,
+            (string) $transaction->branch_id,
             (string) $transaction->till_id
         );
 
