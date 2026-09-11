@@ -319,6 +319,10 @@ class AuditService implements AuditServiceInterface
         $userId = array_key_exists('user_id', $data) ? $data['user_id'] : auth()->id();
         $ipAddress = array_key_exists('ip_address', $data) ? $data['ip_address'] : Request::ip();
 
+        // system_logs.severity is an uppercase enum (INFO/WARNING/ERROR/CRITICAL);
+        // normalize so legacy lowercase call sites cannot trip the CHECK constraint.
+        $severity = strtoupper($severity);
+
         $log = SystemLog::create([
             'user_id' => $userId,
             'action' => $action,
@@ -375,6 +379,8 @@ class AuditService implements AuditServiceInterface
     ): SystemLog {
         $userId = array_key_exists('user_id', $data) ? $data['user_id'] : auth()->id();
         $ipAddress = array_key_exists('ip_address', $data) ? $data['ip_address'] : Request::ip();
+
+        $severity = strtoupper($severity);
 
         $log = SystemLog::create([
             'user_id' => $userId,
