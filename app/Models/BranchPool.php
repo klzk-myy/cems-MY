@@ -7,6 +7,14 @@ use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $branch_id
+ * @property string $currency_code
+ * @property string $available_balance
+ * @property string $allocated_balance
+ * @property string $total_balance
+ */
 class BranchPool extends BaseModel
 {
     use HasFactory;
