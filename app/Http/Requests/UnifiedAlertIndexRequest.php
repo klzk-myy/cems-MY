@@ -17,7 +17,7 @@ class UnifiedAlertIndexRequest extends FormRequest
     {
         return [
             'source' => ['nullable', Rule::in(['all', 'alert', 'finding'])],
-            'priority' => ['nullable', Rule::in(array_column(AlertPriority::cases(), 'value'))],
+            'priority' => ['nullable', Rule::in(array_map('strtolower', array_column(AlertPriority::cases(), 'value')))],
             'status' => ['nullable', Rule::in(['open', 'in_review', 'resolved', 'dismissed'])],
             'type' => ['nullable', 'string', 'max:100'],
             'customer' => ['nullable', 'string', 'max:255'],
@@ -25,5 +25,16 @@ class UnifiedAlertIndexRequest extends FormRequest
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
             'page' => ['nullable', 'integer', 'min:1'],
         ];
+    }
+
+    /**
+     * Normalize the priority filter so "Critical", "CRITICAL" and "critical"
+     * are accepted interchangeably (enum values are stored lowercase).
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('priority')) {
+            $this->merge(['priority' => strtolower((string) $this->input('priority'))]);
+        }
     }
 }
