@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Models\FlaggedTransaction;
 use App\Models\SanctionEntry;
+use App\Models\ScreeningResult;
 use App\Models\Transaction;
 use App\Repositories\CustomerRepository;
 use App\Services\Contracts\ComplianceServiceInterface;
@@ -308,7 +309,7 @@ class ComplianceService implements ComplianceServiceInterface
             $reasons[] = ComplianceFlagType::PepStatus->value;
         }
 
-        if ($this->checkSanctionMatch($customer)) {
+        if ($this->recentSanctionMatch($customer)) {
             $reasons[] = ComplianceFlagType::SanctionMatch->value;
         }
 
@@ -320,6 +321,48 @@ class ComplianceService implements ComplianceServiceInterface
             requiresHold: ! empty($reasons),
             reasons: $reasons,
         );
+    }
+
+    /**
+     * Sanction-match check that reuses fresh ScreeningResult rows.
+     *
+     * Pre-transaction validation already screens the customer and persists a
+     * ScreeningResult; re-running the fuzzy screen inside requiresHold()
+     * (called from queued monitoring minutes later) doubled both the DB writes
+     * and the scan cost per transaction. Reuse the latest result within
+     * compliance.screening_reuse_minutes; screen fresh when no result exists.
+     * Set compliance.rescreen_on_monitor=true to disable reuse entirely and
+     * always re-screen during monitoring (an intentional double-check).
+     */
+    private function recentSanctionMatch(Customer $customer): bool
+    {
+        if ((bool) $customer->sanction_hit) {
+            return true;
+        }
+
+        if ($this->screeningService === null) {
+            return $this->checkSanctionMatch($customer);
+        }
+
+        // Plan §2.3 guard flag: when the double-check is intentional, never
+        // short-circuit on a prior result — always run a fresh screen.
+        if (config('compliance.rescreen_on_monitor', false)) {
+            return $this->checkSanctionMatch($customer);
+        }
+
+        $windowMinutes = (int) config('compliance.screening_reuse_minutes', 60);
+
+        $recent = ScreeningResult::where('customer_id', $customer->id)
+            ->where('created_at', '>=', now()->subMinutes($windowMinutes))
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($recent === null) {
+            return $this->checkSanctionMatch($customer);
+        }
+
+        return $recent->result !== 'clear';
     }
 
     /**
@@ -471,8 +514,9 @@ class ComplianceService implements ComplianceServiceInterface
     {
         $documents = CustomerDocument::where('customer_id', $customer->id)->get();
 
-        // Define required document types per CDD level
-        $requiredDocs = match ($cddLevel) {
+        // Required document types per CDD level (config: compliance.cdd_required_documents)
+        $docMap = config('compliance.cdd_required_documents', []);
+        $requiredDocs = $docMap[$cddLevel->name] ?? match ($cddLevel) {
             CddLevel::Simplified => ['MyKad'],
             CddLevel::Specific,
             CddLevel::Standard => ['MyKad', 'Proof_of_Address'],
