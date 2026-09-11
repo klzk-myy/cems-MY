@@ -15,6 +15,7 @@ use App\Models\Counter;
 use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\AuditService;
 use App\Services\Contracts\TellerAllocationServiceInterface;
 use App\Services\DTOs\AllocationValidationResult;
 use App\Services\System\MathService;
@@ -26,6 +27,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     public function __construct(
         protected BranchPoolService $branchPoolService,
         protected MathService $mathService,
+        protected AuditService $auditService,
     ) {}
 
     public function requestAllocation(User $teller, User $approver, string $currencyCode, string $requestedAmount, ?string $dailyLimitMyr = null, ?Counter $counter = null): TellerAllocation
@@ -59,9 +61,25 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             $allocationData['daily_limit_myr'] = $dailyLimitMyr;
         }
 
-        $allocation = TellerAllocation::create($allocationData);
+        return DB::transaction(function () use ($allocationData, $teller, $approver, $currencyCode, $requestedAmount) {
+            $allocation = TellerAllocation::create($allocationData);
 
-        return $allocation;
+            $this->auditService->log(
+                'teller_allocation_requested',
+                $teller->id,
+                'TellerAllocation',
+                $allocation->id,
+                [],
+                [
+                    'requested_by' => $teller->id,
+                    'approver_id' => $approver->id,
+                    'currency_code' => $currencyCode,
+                    'requested_amount' => $requestedAmount,
+                ]
+            );
+
+            return $allocation;
+        });
     }
 
     public function approveAllocation(TellerAllocation $allocation, User $approver, string $approvedAmount, ?string $dailyLimitMyr = null): TellerAllocation
@@ -146,6 +164,15 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
                 $locked->allocated_amount = $this->mathService->subtract($locked->allocated_amount, $newAmount);
             }
+
+            // NOTE on intentional drift: after partial sells, allocated_amount
+            // (bookkeeping) and the pool's allocated_balance (funds) diverge by
+            // design — sold float was paid out to customers and is NOT credited
+            // back to the pool. A naive allocated==pool invariant is therefore
+            // invalid; reconciliation happens at EOD via closeSessionAndReturnToPool/
+            // BranchClosingService::settle, which return only current_balance.
+            // There is deliberately no assert here: current_balance may exceed
+            // allocated_amount after intraday buys (buy adds float, not allocation).
 
             $locked->save();
 
@@ -237,11 +264,39 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
     public function transferToTeller(TellerAllocation $allocation, User $toTeller): TellerAllocation
     {
-        $allocation->update([
-            'user_id' => $toTeller->id,
-        ]);
+        return DB::transaction(function () use ($allocation, $toTeller) {
+            $locked = TellerAllocation::where('id', $allocation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        return $allocation;
+            // Target must be a teller in the same branch as the allocation.
+            if ($toTeller->branch_id !== $locked->branch_id) {
+                throw new AllocationValidationException(
+                    'Cannot transfer allocation to a teller in a different branch.'
+                );
+            }
+
+            if (! $toTeller->isTeller()) {
+                throw new AllocationValidationException(
+                    'Allocation can only be transferred to a teller.'
+                );
+            }
+
+            $fromUserId = $locked->user_id;
+
+            $locked->update(['user_id' => $toTeller->id]);
+
+            $this->auditService->log(
+                'teller_allocation_transferred',
+                $toTeller->id,
+                'TellerAllocation',
+                $locked->id,
+                ['user_id' => $fromUserId],
+                ['user_id' => $toTeller->id, 'currency_code' => $locked->currency_code]
+            );
+
+            return $locked->refresh();
+        });
     }
 
     public function validateTransaction(User $teller, string $currencyCode, string $amountMyr, bool $isBuy, ?string $amountForeign = null): AllocationValidationResult
