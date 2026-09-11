@@ -56,6 +56,39 @@ class TillBalance extends BaseModel
         'sell_total_foreign',
     ];
 
+    /**
+     * Create an open till-balance row.
+     *
+     * Single creation point so no call site can omit `branch_id` (branch
+     * isolation depends on it) or the zeroed counters.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    public static function openFor(
+        string $tillId,
+        string $currencyCode,
+        ?int $branchId,
+        string|int|float $openingBalance,
+        string|Carbon $date,
+        int $openedBy,
+        array $overrides = []
+    ): self {
+        return self::create(array_merge([
+            'till_id' => $tillId,
+            'currency_code' => $currencyCode,
+            'branch_id' => $branchId,
+            'opening_balance' => $openingBalance,
+            'closing_balance' => null,
+            'variance' => null,
+            'foreign_total' => '0',
+            'transaction_total' => '0',
+            'buy_total_foreign' => '0',
+            'sell_total_foreign' => '0',
+            'date' => $date,
+            'opened_by' => $openedBy,
+        ], $overrides));
+    }
+
     protected $casts = [
         'opening_balance' => MoneyCast::class,
         'closing_balance' => MoneyCast::class,
