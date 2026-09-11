@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace('-', ' ', $view)) }} Counter">
-    <x-page-header title="{{ ucfirst(str_replace('-', ' ', $view)) }} Counter" description="Counter management" />
+<x-app-layout title="Counter Counter">
+    <x-page-header title="Counter Counter" description="Counter management" />
     <x-card>
         <form method="POST" class="space-y-4">
             @csrf
