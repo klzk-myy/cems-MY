@@ -10,6 +10,9 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  BACKUP_NOTIFY_EMAIL: backups@example.com
+
 jobs:
   lint:
     name: Lint & static analysis
