@@ -11,6 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  APP_ENV: testing
+  APP_KEY: base64:WlbBhnWV/8WIwLujIHnV4WqVBGA6jVh/6mAt4gt+NN8=
   BACKUP_NOTIFY_EMAIL: backups@example.com
 
 jobs:
