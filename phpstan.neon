@@ -14,8 +14,9 @@ parameters:
         - routes
         - tests
     excludePaths:
-        - vendor
-        - storage
-        - bootstrap/cache
-        - node_modules
-        - .tmp
+        analyseAndScan:
+            - vendor
+            - storage
+            - bootstrap/cache
+            - node_modules (?)
+            - .tmp (?)
