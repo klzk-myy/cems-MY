@@ -32,7 +32,7 @@ interface CurrencyPositionServiceInterface
 
     public function aggregateForUser(User $user): array;
 
-    public function getAvailableBalance(string $currencyCode, string $tillId): string;
+    public function getAvailableBalance(string $currencyCode, string $branchId, ?string $tillId = null): string;
 
     public function reserveStock(Transaction $transaction): StockReservation;
 
