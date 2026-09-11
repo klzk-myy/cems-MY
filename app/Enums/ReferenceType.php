@@ -14,6 +14,7 @@ enum ReferenceType: string
     case Reversal = 'Reversal';
     case Test = 'Test';
     case PeriodClose = 'Period_Close';
+    case BranchSettlement = 'BranchSettlement';
 
     public function label(): string
     {
@@ -28,6 +29,7 @@ enum ReferenceType: string
             self::Reversal => 'Reversal',
             self::Test => 'Test',
             self::PeriodClose => 'Period Close',
+            self::BranchSettlement => 'Branch Settlement',
         };
     }
 }
