@@ -43,28 +43,46 @@ parameters:
 			path: app/Casts/MoneyCast.php
 
 		-
-			message: '#^Method App\\Config\\Navigation\:\:get\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_name\.$#'
+			identifier: property.notFound
 			count: 1
-			path: app/Config/Navigation.php
+			path: app/Console/Commands/Backup/ListCommand.php
 
 		-
-			message: '#^Method App\\Config\\Navigation\:\:getForRole\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_type\.$#'
+			identifier: property.notFound
 			count: 1
-			path: app/Config/Navigation.php
+			path: app/Console/Commands/Backup/ListCommand.php
 
 		-
-			message: '#^Method App\\Config\\Navigation\:\:getTopLevel\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$disk\.$#'
+			identifier: property.notFound
 			count: 1
-			path: app/Config/Navigation.php
+			path: app/Console/Commands/Backup/ListCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$started_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/ListCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/ListCommand.php
 
 		-
 			message: '#^Method App\\Console\\Commands\\Backup\\ListCommand\:\:formatBytes\(\) has parameter \$bytes with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
 			path: app/Console/Commands/Backup/ListCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Console/Commands/Backup/MonitorCommand.php
 
 		-
 			message: '#^Method App\\Console\\Commands\\Backup\\MonitorCommand\:\:attemptFixes\(\) has parameter \$results with no value type specified in iterable type array\.$#'
@@ -77,6 +95,72 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Console/Commands/Backup/MonitorCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_name\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Console/Commands/Backup/RestoreCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RestoreCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RunCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RunCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$disk\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RunCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$error_message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/RunCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_name\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Console/Commands/Backup/VerifyCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/VerifyCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$file_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/VerifyCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$verification_error\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Console/Commands/Backup/VerifyCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$verified_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/Backup/VerifyCommand.php
 
 		-
 			message: '#^Method App\\Console\\Commands\\ComprehensiveSetup\:\:createBranches\(\) return type has no value type specified in iterable type array\.$#'
@@ -151,6 +235,48 @@ parameters:
 			path: app/Console/Commands/MonitorCheckCommand.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemHealthCheck\:\:\$check_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemHealthCheck\:\:\$checked_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemHealthCheck\:\:\$message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemHealthCheck\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/MonitorStatusCommand.php
+
+		-
 			message: '#^Method App\\Console\\Commands\\MonitorStatusCommand\:\:displayChecks\(\) has parameter \$checks with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -163,16 +289,52 @@ parameters:
 			path: app/Console/Commands/MonitorStatusCommand.php
 
 		-
-			message: '#^Part \$alert\-\>level \(App\\Enums\\SystemAlertLevel\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$phone_hash\.$#'
+			identifier: property.notFound
 			count: 1
-			path: app/Console/Commands/MonitorStatusCommand.php
+			path: app/Console/Commands/ReEncryptCustomers.php
 
 		-
-			message: '#^Part \$check\-\>status \(App\\Enums\\SystemHealthCheckStatus\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$id_number_encrypted\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Console/Commands/ReEncryptCustomers.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$failed\.$#'
+			identifier: property.notFound
 			count: 1
-			path: app/Console/Commands/MonitorStatusCommand.php
+			path: app/Console/Commands/RunTestsCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$passed\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/RunTestsCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$run_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/RunTestsCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/RunTestsCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$test_suite\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/RunTestsCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$total_tests\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/RunTestsCommand.php
 
 		-
 			message: '#^Method App\\Console\\Commands\\SanctionsImportCommand\:\:formatImportResult\(\) has parameter \$result with no value type specified in iterable type array\.$#'
@@ -187,10 +349,28 @@ parameters:
 			path: app/Console/Commands/SanctionsImportCommand.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$notification_preferences\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/SendNotificationDigest.php
+
+		-
 			message: '#^Method App\\Console\\Commands\\SendNotificationDigest\:\:sendTestNotification\(\) has parameter \$notification with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
 			path: app/Console/Commands/SendNotificationDigest.php
+
+		-
+			message: '#^Unable to resolve the template type TGroupKey in call to method Illuminate\\Support\\Collection\<int,Illuminate\\Notifications\\DatabaseNotification\>\:\:groupBy\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Console/Commands/SendNotificationDigest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$notification_preferences\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/TestNotification.php
 
 		-
 			message: '#^Method App\\Console\\Commands\\TestNotification\:\:displayResults\(\) has parameter \$results with no value type specified in iterable type array\.$#'
@@ -415,12 +595,6 @@ parameters:
 			path: app/Http/Controllers/Accounting/ReconciliationController.php
 
 		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Admin/AuditLogController.php
-
-		-
 			message: '#^Method App\\Http\\Controllers\\Api\\SanctionsWebhookController\:\:dispatchAllUpdates\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -439,151 +613,7 @@ parameters:
 			path: app/Http/Controllers/Api/SanctionsWebhookController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\BranchClosingController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/BranchClosingController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\BranchClosingController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/BranchClosingController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\BranchClosingController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/BranchClosingController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\BranchClosingController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/BranchClosingController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\BranchController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/BranchController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\BranchController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/BranchController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\BranchController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/BranchController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\BranchController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/BranchController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\AlertController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/AlertController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\AlertController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/AlertController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\AlertController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/AlertController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\AlertController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/AlertController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\CaseController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/CaseController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\CaseController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/CaseController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\CaseController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/CaseController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\CaseController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/CaseController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\DashboardController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/DashboardController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\DashboardController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/DashboardController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\DashboardController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/DashboardController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\DashboardController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/DashboardController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\EddController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/EddController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\EddController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/EddController.php
-
-		-
 			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\EddController\:\:finalisableStatuses\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/EddController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\EddController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/EddController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\EddController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Http/Controllers/Api/V1/Compliance/EddController.php
@@ -595,218 +625,14 @@ parameters:
 			path: app/Http/Controllers/Api/V1/Compliance/FindingController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\FindingController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/FindingController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\FindingController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/FindingController.php
-
-		-
 			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\FindingController\:\:getFindingStats\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Http/Controllers/Api/V1/Compliance/FindingController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\FindingController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/FindingController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\FindingController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/FindingController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\RiskController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/RiskController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\RiskController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/RiskController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\RiskController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/RiskController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\Compliance\\RiskController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/Compliance/RiskController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterApiController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterApiController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterApiController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterApiController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterApiController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterApiController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterApiController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterApiController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterHandoverController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterHandoverController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterHandoverController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterHandoverController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterHandoverController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterHandoverController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterHandoverController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterHandoverController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterOpeningController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterOpeningController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterOpeningController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterOpeningController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterOpeningController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterOpeningController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CounterOpeningController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CounterOpeningController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CurrentUserController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CurrentUserController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CurrentUserController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CurrentUserController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CurrentUserController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CurrentUserController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CurrentUserController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CurrentUserController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CustomerController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CustomerController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CustomerController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CustomerController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CustomerController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CustomerController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\CustomerController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/CustomerController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\EmergencyCounterController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/EmergencyCounterController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\EmergencyCounterController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/EmergencyCounterController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\EmergencyCounterController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/EmergencyCounterController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\EmergencyCounterController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/EmergencyCounterController.php
-
-		-
 			message: '#^Method App\\Http\\Controllers\\Api\\V1\\EodReconciliationController\:\:canAccessEod\(\) has parameter \$user with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: app/Http/Controllers/Api/V1/EodReconciliationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\EodReconciliationController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/EodReconciliationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\EodReconciliationController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
 			count: 1
 			path: app/Http/Controllers/Api/V1/EodReconciliationController.php
 
@@ -817,254 +643,14 @@ parameters:
 			path: app/Http/Controllers/Api/V1/EodReconciliationController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\EodReconciliationController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/EodReconciliationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\EodReconciliationController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/EodReconciliationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\MonthEndCloseController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/MonthEndCloseController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\MonthEndCloseController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/MonthEndCloseController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\MonthEndCloseController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/MonthEndCloseController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\MonthEndCloseController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/MonthEndCloseController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\RateController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/RateController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\RateController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/RateController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\RateController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/RateController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\RateController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/RateController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\ReportController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/ReportController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\ReportController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/ReportController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\ReportController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/ReportController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\ReportController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/ReportController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\SanctionController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/SanctionController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\SanctionController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/SanctionController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\SanctionController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/SanctionController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\SanctionController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/SanctionController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\SanctionListController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/SanctionListController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\SanctionListController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/SanctionListController.php
-
-		-
 			message: '#^Method App\\Http\\Controllers\\Api\\V1\\SanctionListController\:\:normalizeEntityName\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Http/Controllers/Api/V1/SanctionListController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\SanctionListController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/SanctionListController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\SanctionListController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/SanctionListController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\ScreeningController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/ScreeningController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\ScreeningController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/ScreeningController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\ScreeningController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/ScreeningController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\ScreeningController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/ScreeningController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TellerAllocationController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TellerAllocationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TellerAllocationController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TellerAllocationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TellerAllocationController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TellerAllocationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TellerAllocationController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TellerAllocationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionApprovalController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionApprovalController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionApprovalController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionApprovalController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionApprovalController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionApprovalController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionApprovalController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionApprovalController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionCancellationController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionCancellationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionCancellationController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionCancellationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionCancellationController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionCancellationController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionCancellationController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionCancellationController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branch_id\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
 			count: 1
 			path: app/Http/Controllers/Api/V1/TransactionController.php
 
@@ -1081,32 +667,26 @@ parameters:
 			path: app/Http/Controllers/Api/V1/TransactionController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Api\\V1\\TransactionController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Api/V1/TransactionController.php
-
-		-
 			message: '#^PHPDoc tag @var has invalid value \(Model&object\{branch_id\:int\|string\|null\}\|array\{branch_id\:int\|string\|null\} \$item\)\: Unexpected token "\|", expected TOKEN_OTHER at offset 48 on line 1$#'
 			identifier: phpDoc.parseError
 			count: 1
 			path: app/Http/Controllers/Api/V1/TransactionController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Compliance\\EddCustomerController\:\:download\(\) has no return type specified\.$#'
-			identifier: missingType.return
+			message: '#^Access to an undefined property App\\Models\\Compliance\\ComplianceCaseDocument\:\:\$case_id\.$#'
+			identifier: property.notFound
 			count: 1
-			path: app/Http/Controllers/Compliance/EddCustomerController.php
+			path: app/Http/Controllers/Compliance/CaseManagementController.php
 
 		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
+			message: '#^Access to an undefined property App\\Models\\Compliance\\ComplianceCaseLink\:\:\$case_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Compliance/CaseManagementController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Compliance\\EddCustomerController\:\:download\(\) has no return type specified\.$#'
+			identifier: missingType.return
 			count: 1
 			path: app/Http/Controllers/Compliance/EddCustomerController.php
 
@@ -1127,6 +707,18 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Http/Controllers/Compliance/SanctionListController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StrReport\:\:\$acknowledged_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Compliance/StrReportController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StrReport\:\:\$trigger_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Compliance/StrReportController.php
 
 		-
 			message: '#^Method App\\Http\\Controllers\\Compliance\\UnifiedAlertController\:\:alertStats\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
@@ -1177,6 +769,54 @@ parameters:
 			path: app/Http/Controllers/CounterController.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$currency_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Customer/CustomerSearchController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_buy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Customer/CustomerSearchController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_sell\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Customer/CustomerSearchController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ExchangeRate\>\:\:mapWithKeys\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Customer/CustomerSearchController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ExchangeRate\>\:\:mapWithKeys\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/Customer/CustomerSearchController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$currency_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_buy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_sell\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
 			message: '#^Method App\\Http\\Controllers\\CustomerController\:\:handleExceptionApi\(\) has parameter \$extra with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -1197,6 +837,12 @@ parameters:
 		-
 			message: '#^Method App\\Http\\Controllers\\CustomerController\:\:withWebError\(\) has parameter \$extra with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>created_at" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/CustomerController.php
 
@@ -1237,6 +883,18 @@ parameters:
 			path: app/Http/Controllers/KycDocumentController.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Notifications\\DatabaseNotification\:\:\$notifiable_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/NotificationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Notifications\\DatabaseNotification\:\:\$notifiable_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/NotificationController.php
+
+		-
 			message: '#^Method App\\Http\\Controllers\\RateController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -1249,40 +907,16 @@ parameters:
 			path: app/Http/Controllers/RateController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Report\\AnalyticsController\:\:getCurrentRates\(\) has parameter \$currencyCodes with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_sell\.$#'
+			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Report/AnalyticsController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Report\\RegulatoryReportController\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
+			message: '#^Method App\\Http\\Controllers\\Report\\AnalyticsController\:\:getCurrentRates\(\) has parameter \$currencyCodes with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: app/Http/Controllers/Report/RegulatoryReportController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Report\\RegulatoryReportController\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Report/RegulatoryReportController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Report\\RegulatoryReportController\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Report/RegulatoryReportController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Report\\RegulatoryReportController\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Report/RegulatoryReportController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 3
-			path: app/Http/Controllers/ReportScheduleController.php
+			path: app/Http/Controllers/Report/AnalyticsController.php
 
 		-
 			message: '#^Method App\\Http\\Controllers\\SetupController\:\:createInitialStock\(\) has parameter \$stockData with no value type specified in iterable type array\.$#'
@@ -1351,20 +985,86 @@ parameters:
 			path: app/Http/Controllers/StockCashController.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/SystemAlertController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/SystemAlertController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$errors\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$failures\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$output\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$test_suite\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$total_tests\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TestResultsController\:\:buildTrendData\(\) should return Illuminate\\Support\\Collection\<int, array\{date\: string, pass_rate\: float, total_runs\: int, failed_count\: int\}\> but returns Illuminate\\Support\\Collection\<int, array\{date\: mixed, pass_rate\: float, total_runs\: int, failed_count\: int\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
+			message: '#^Unable to resolve the template type TGroupKey in call to method Illuminate\\Support\\Collection\<int,App\\Models\\TestResult\>\:\:groupBy\(\)$#'
+			identifier: argument.templateType
+			count: 3
+			path: app/Http/Controllers/TestResultsController.php
+
+		-
 			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/TestResultsController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branch_id\.$#'
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$imported_by\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/TransactionController.php
+			count: 2
+			path: app/Http/Controllers/TransactionBatchController.php
 
 		-
-			message: '#^Called ''pluck'' on Laravel collection, but could have been retrieved as a query\.$#'
-			identifier: larastan.noUnnecessaryCollectionCall
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branch_id\.$#'
+			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/TransactionController.php
 
@@ -2437,6 +2137,18 @@ parameters:
 			path: app/Jobs/ImportSanctionsJob.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$filename\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Jobs/ProcessTransactionImportJob.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Jobs/ProcessTransactionImportJob.php
+
+		-
 			message: '#^Method App\\Jobs\\ReportGenerationJob\:\:tags\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -2597,6 +2309,12 @@ parameters:
 			identifier: booleanAnd.alwaysFalse
 			count: 1
 			path: app/Listeners/ComplianceEventListener.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$is_pep\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Listeners/CustomerRelationListener.php
 
 		-
 			message: '#^Method App\\Listeners\\TransactionApprovedListener\:\:notifyTellerAndManager\(\) has parameter \$transaction with no type specified\.$#'
@@ -2809,6 +2527,18 @@ parameters:
 			path: app/Models/Alert.php
 
 		-
+			message: '#^Method App\\Models\\Alert\:\:scopeUnacknowledged\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Alert.php
+
+		-
+			message: '#^Method App\\Models\\Alert\:\:scopeUnacknowledged\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Alert.php
+
+		-
 			message: '#^Method App\\Models\\Alert\:\:scopeUnassigned\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
 			identifier: missingType.generics
 			count: 1
@@ -2921,6 +2651,36 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: app/Models/AuditTrail.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BackupLog.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$file_size\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BackupLog.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$started_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BackupLog.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/BackupLog.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$verification_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BackupLog.php
 
 		-
 			message: '#^Class App\\Models\\BackupLog uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
@@ -3407,6 +3167,18 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: app/Models/BranchPool.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$actual_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Budget.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$budget_amount\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/Budget.php
 
 		-
 			message: '#^Class App\\Models\\Budget uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
@@ -4003,12 +3775,6 @@ parameters:
 			path: app/Models/CustomerDocument.php
 
 		-
-			message: '#^Method App\\Models\\CustomerDocument\:\:customer\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Models/CustomerDocument.php
-
-		-
 			message: '#^Method App\\Models\\CustomerDocument\:\:scopeExpired\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
 			identifier: missingType.generics
 			count: 1
@@ -4085,6 +3851,12 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: app/Models/CustomerNote.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$is_pep\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/CustomerRelation.php
 
 		-
 			message: '#^Class App\\Models\\CustomerRelation uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
@@ -4459,6 +4231,12 @@ parameters:
 			path: app/Models/MfaRecoveryCode.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\PasswordHistory\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/PasswordHistory.php
+
+		-
 			message: '#^Class App\\Models\\PepApprovalRequest uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
@@ -4531,13 +4309,43 @@ parameters:
 			path: app/Models/ReportGenerated.php
 
 		-
-			message: '#^Class App\\Models\\ReportRun uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
-			identifier: missingType.generics
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/ReportRun.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$error_message\.$#'
+			identifier: property.notFound
 			count: 1
 			path: app/Models/ReportRun.php
 
 		-
-			message: '#^Method App\\Models\\ReportRun\:\:generatedBy\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$file_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/ReportRun.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$row_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/ReportRun.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$started_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/ReportRun.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/ReportRun.php
+
+		-
+			message: '#^Class App\\Models\\ReportRun uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
 			path: app/Models/ReportRun.php
@@ -4573,13 +4381,25 @@ parameters:
 			path: app/Models/ReportRun.php
 
 		-
-			message: '#^Class App\\Models\\ReportSchedule uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
-			identifier: missingType.generics
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$cron_expression\.$#'
+			identifier: property.notFound
 			count: 1
 			path: app/Models/ReportSchedule.php
 
 		-
-			message: '#^Method App\\Models\\ReportSchedule\:\:createdBy\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/ReportSchedule.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$next_run_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/ReportSchedule.php
+
+		-
+			message: '#^Class App\\Models\\ReportSchedule uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
 			path: app/Models/ReportSchedule.php
@@ -4819,24 +4639,6 @@ parameters:
 			path: app/Models/ScreeningResult.php
 
 		-
-			message: '#^Method App\\Models\\ScreeningResult\:\:customer\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Models/ScreeningResult.php
-
-		-
-			message: '#^Method App\\Models\\ScreeningResult\:\:sanctionEntry\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Models/ScreeningResult.php
-
-		-
-			message: '#^Method App\\Models\\ScreeningResult\:\:transaction\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Models/ScreeningResult.php
-
-		-
 			message: '#^Class App\\Models\\StockReservation uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
@@ -4885,6 +4687,12 @@ parameters:
 			path: app/Models/StockTransfer.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\StockTransferItem\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/StockTransferItem.php
+
+		-
 			message: '#^Class App\\Models\\StockTransferItem uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
@@ -4893,6 +4701,18 @@ parameters:
 		-
 			message: '#^Method App\\Models\\StockTransferItem\:\:currency\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
 			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockTransferItem.php
+
+		-
+			message: '#^Method App\\Models\\StockTransferItem\:\:quantityNumericString\(\) should return numeric\-string but returns float\|int\|numeric\-string\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/StockTransferItem.php
+
+		-
+			message: '#^Method App\\Models\\StockTransferItem\:\:receivedQuantity\(\) should return numeric\-string but returns float\|int\|numeric\-string\.$#'
+			identifier: return.type
 			count: 1
 			path: app/Models/StockTransferItem.php
 
@@ -4925,6 +4745,18 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: app/Models/StrReport.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$acknowledged_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/SystemAlert.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/SystemAlert.php
 
 		-
 			message: '#^Class App\\Models\\SystemAlert uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
@@ -5027,6 +4859,12 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 2
 			path: app/Models/SystemAlert.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemHealthCheck\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/SystemHealthCheck.php
 
 		-
 			message: '#^Class App\\Models\\SystemHealthCheck uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
@@ -5195,6 +5033,30 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: app/Models/TellerAllocation.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$duration\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/TestResult.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$passed\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/TestResult.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/TestResult.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$total_tests\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/TestResult.php
 
 		-
 			message: '#^Class App\\Models\\TestResult uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
@@ -5551,6 +5413,18 @@ parameters:
 			path: app/Models/TransactionError.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$error_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/TransactionImport.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/TransactionImport.php
+
+		-
 			message: '#^Class App\\Models\\TransactionImport uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
@@ -5591,6 +5465,12 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: app/Models/TransactionImport.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$password_changed_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/User.php
 
 		-
 			message: '#^Class App\\Models\\User uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
@@ -5785,6 +5665,18 @@ parameters:
 			path: app/Notifications/SanctionsMatchNotification.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/SystemAlertNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SystemAlertNotification.php
+
+		-
 			message: '#^Method App\\Notifications\\SystemAlertNotification\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -5795,6 +5687,48 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Notifications/SystemAlertNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$acknowledged_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$acknowledged_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$message\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$metadata\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/SystemHealthAlertNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$source\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/SystemHealthAlertNotification.php
 
 		-
 			message: '#^Method App\\Notifications\\TransactionApprovedNotification\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
@@ -5941,6 +5875,24 @@ parameters:
 			path: app/Services/Accounting/BankReconciliationService.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$account_code\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Accounting/BudgetService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$actual_amount\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Accounting/BudgetService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$budget_amount\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Accounting/BudgetService.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$account_name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -6059,12 +6011,6 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: app/Services/Accounting/LedgerService.php
-
-		-
-			message: '#^Method App\\Services\\Accounting\\MonthEndCloseService\:\:closePeriod\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/Accounting/MonthEndCloseService.php
 
 		-
 			message: '#^Method App\\Services\\Accounting\\MonthEndCloseService\:\:generateReports\(\) return type has no value type specified in iterable type array\.$#'
@@ -6673,12 +6619,6 @@ parameters:
 			path: app/Services/Branch/TillService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Compliance/AlertTriageService.php
-
-		-
 			message: '#^Method App\\Services\\Compliance\\AlertTriageService\:\:autoAssignAlerts\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -6721,12 +6661,6 @@ parameters:
 			path: app/Services/Compliance/AlertTriageService.php
 
 		-
-			message: '#^Method App\\Services\\Compliance\\AlertTriageService\:\:getAvailableOfficers\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Services/Compliance/AlertTriageService.php
-
-		-
 			message: '#^Method App\\Services\\Compliance\\AlertTriageService\:\:getByIds\(\) has parameter \$alertIds with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -6747,12 +6681,6 @@ parameters:
 		-
 			message: '#^Method App\\Services\\Compliance\\AlertTriageService\:\:getUnassignedAlerts\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
 			identifier: missingType.generics
-			count: 1
-			path: app/Services/Compliance/AlertTriageService.php
-
-		-
-			message: '#^PHPDoc tag @return with type Illuminate\\Support\\Collection\<int, App\\Models\\User\> is not subtype of native type Illuminate\\Database\\Eloquent\\Collection\.$#'
-			identifier: return.phpDocType
 			count: 1
 			path: app/Services/Compliance/AlertTriageService.php
 
@@ -7009,40 +6937,10 @@ parameters:
 			path: app/Services/Compliance/CustomerRiskScoringService.php
 
 		-
-			message: '#^Method App\\Services\\Compliance\\CustomerRiskScoringService\:\:legacyCalculateAmountScore\(\) has parameter \$transactions with generic class Illuminate\\Support\\Collection but does not specify its types\: TKey, TValue$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Services/Compliance/CustomerRiskScoringService.php
-
-		-
 			message: '#^Method App\\Services\\Compliance\\CustomerRiskScoringService\:\:rescreenCustomer\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Compliance/CustomerRiskScoringService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$edd_reference\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Compliance/EddService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$purpose_of_transaction\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Compliance/EddService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$risk_level\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Compliance/EddService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$source_of_funds\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Compliance/EddService.php
 
 		-
 			message: '#^Method App\\Services\\Compliance\\EddService\:\:createEddRecord\(\) has parameter \$data with no value type specified in iterable type array\.$#'
@@ -7055,6 +6953,12 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Compliance/EddService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/EddTemplateService.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\EnhancedDiligenceRecord\:\:\$questions\.$#'
@@ -7179,12 +7083,6 @@ parameters:
 		-
 			message: '#^Method App\\Services\\Compliance\\MonitoringEngine\:\:runMonitor\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'
 			identifier: missingType.generics
-			count: 1
-			path: app/Services/Compliance/MonitoringEngine.php
-
-		-
-			message: '#^Method App\\Services\\Compliance\\MonitoringEngine\:\:sendFailureNotification\(\) has parameter \$monitorNames with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Compliance/MonitoringEngine.php
 
@@ -7591,6 +7489,12 @@ parameters:
 			path: app/Services/Compliance/SanctionsOrchestrationService.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\StrReport\:\:\$acknowledged_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Compliance/StrReportService.php
+
+		-
 			message: '#^Method App\\Services\\Contracts\\AccountingServiceInterface\:\:createJournalEntry\(\) has parameter \$lines with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -7963,6 +7867,30 @@ parameters:
 			path: app/Services/Contracts/TransactionValidationInterface.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$customer_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Customer/CustomerRelationService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$is_pep\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Customer/CustomerRelationService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$related_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Customer/CustomerRelationService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$relation_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Customer/CustomerRelationService.php
+
+		-
 			message: '#^Method App\\Services\\Customer\\CustomerRelationService\:\:addRelation\(\) has parameter \$data with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -7991,6 +7919,18 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Customer/CustomerRelationService.php
+
+		-
+			message: '#^Parameter \#1 \$customer of method App\\Services\\Customer\\CustomerRelationService\:\:updateCustomerPepAssociateStatus\(\) expects App\\Models\\Customer, App\\Models\\Customer\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Customer\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Customer/CustomerRelationService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$phone_hash\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Customer/CustomerService.php
 
 		-
 			message: '#^Method App\\Services\\Customer\\CustomerService\:\:createCustomer\(\) has parameter \$data with no value type specified in iterable type array\.$#'
@@ -8063,6 +8003,12 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Customer/UserService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$relation_type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/CustomerScreeningService.php
 
 		-
 			message: '#^Method App\\Services\\CustomerScreeningService\:\:analyzeRelatedPartyTransactions\(\) return type has no value type specified in iterable type array\.$#'
@@ -8195,6 +8141,12 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/DTOs/ValidationResult.php
+
+		-
+			message: '#^Method App\\Services\\Dashboard\\DashboardService\:\:buildStats\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Dashboard/DashboardService.php
 
 		-
 			message: '#^Method App\\Services\\EodReconciliationService\:\:checkMissingAccountingEntries\(\) return type has no value type specified in iterable type array\.$#'
@@ -8365,8 +8317,86 @@ parameters:
 			path: app/Services/Reporting/FinancialRatioService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$username\.$#'
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$completed_at\.$#'
 			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$report_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$schedule_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$started_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$cron_expression\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$last_run_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$next_run_at\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$notification_recipients\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$parameters\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$report_type\.$#'
+			identifier: property.notFound
+			count: 6
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: mixed$#'
+			identifier: match.unhandled
 			count: 1
 			path: app/Services/Reporting/ReportSchedulingService.php
 
@@ -8443,9 +8473,21 @@ parameters:
 			path: app/Services/Reporting/ReportSchedulingService.php
 
 		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ReportSchedule\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
 			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ReportRun\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: method.unresolvableReturnType
 			count: 1
+			path: app/Services/Reporting/ReportSchedulingService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ReportSchedule\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 2
 			path: app/Services/Reporting/ReportSchedulingService.php
 
 		-
@@ -8581,6 +8623,36 @@ parameters:
 			path: app/Services/Security/IpValidationService.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$backup_name\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$checksum\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$disk\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/System/BackupService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BackupLog\:\:\$file_path\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Services/System/BackupService.php
+
+		-
 			message: '#^Method App\\Services\\System\\BackupService\:\:cleanOldBackups\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -8657,6 +8729,18 @@ parameters:
 			identifier: offsetAccess.notFound
 			count: 1
 			path: app/Services/System/MfaService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Notifications\\DatabaseNotification\:\:\$data\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/System/NotificationBadgeService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$notification_preferences\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/System/NotificationDispatcher.php
 
 		-
 			message: '#^Method App\\Services\\System\\NotificationDispatcher\:\:dispatchSafe\(\) has parameter \$channels with no value type specified in iterable type array\.$#'
@@ -8863,6 +8947,30 @@ parameters:
 			path: app/Services/System/SetupService.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$message\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$source\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/System/SystemAlertService.php
+
+		-
 			message: '#^Method App\\Services\\System\\SystemAlertService\:\:critical\(\) has parameter \$options with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -8915,6 +9023,60 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\SystemAlert\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\SystemAlert\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/System/SystemAlertService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemHealthCheck\:\:\$checked_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/System/SystemHealthService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/System/SystemHealthService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$failed\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/System/SystemHealthService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$passed\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/System/SystemHealthService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$run_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/System/SystemHealthService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/System/SystemHealthService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TestResult\:\:\$total_tests\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/System/SystemHealthService.php
 
 		-
 			message: '#^Method App\\Services\\System\\SystemHealthService\:\:checkCache\(\) return type has no value type specified in iterable type array\.$#'
@@ -9037,10 +9199,28 @@ parameters:
 			path: app/Services/System/WizardSessionService.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\ThresholdAudit\:\:\$new_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ThresholdService.php
+
+		-
 			message: '#^Method App\\Services\\Transaction\\DTOs\\TransactionCreationContext\:\:__construct\(\) has parameter \$data with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Transaction/DTOs/TransactionCreationContext.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_buy\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/Transaction/RateApiService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_sell\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Transaction/RateApiService.php
 
 		-
 			message: '#^Method App\\Services\\Transaction\\RateApiService\:\:fetchLatestRates\(\) return type has no value type specified in iterable type array\.$#'
@@ -9103,6 +9283,18 @@ parameters:
 			path: app/Services/Transaction/RateApiService.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_buy\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Transaction/RateManagementService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_sell\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Transaction/RateManagementService.php
+
+		-
 			message: '#^Method App\\Services\\Transaction\\RateManagementService\:\:areAllRatesSet\(\) has parameter \$currencyCodes with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -9149,6 +9341,18 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Transaction/RateManagementService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockTransferItem\:\:\$currency_code\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/Transaction/StockTransferService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockTransferItem\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 7
+			path: app/Services/Transaction/StockTransferService.php
 
 		-
 			message: '#^Method App\\Services\\Transaction\\StockTransferService\:\:createRequest\(\) has parameter \$data with no value type specified in iterable type array\.$#'
@@ -9313,8 +9517,20 @@ parameters:
 			path: app/Services/Transaction/TransactionIdempotencyService.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$imported_by\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Transaction/TransactionImportService.php
+
+		-
 			message: '#^Method App\\Services\\Transaction\\TransactionImportService\:\:processRow\(\) has parameter \$row with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Transaction/TransactionImportService.php
+
+		-
+			message: '#^Parameter \#5 \$importUser of method App\\Services\\Transaction\\TransactionImportService\:\:processRow\(\) expects App\\Models\\User, App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\> given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Services/Transaction/TransactionImportService.php
 
@@ -9481,12 +9697,6 @@ parameters:
 			path: app/Support/AccountCodes.php
 
 		-
-			message: '#^Method App\\ValueObjects\\Money\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/ValueObjects/Money.php
-
-		-
 			message: '#^Method App\\ValueObjects\\RiskAnalysisResult\:\:addFlag\(\) has parameter \$flag with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -9535,10 +9745,10 @@ parameters:
 			path: app/ValueObjects/ScreeningResponse.php
 
 		-
-			message: '#^Class Database\\Factories\\AccountingPeriodFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
-			identifier: missingType.generics
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
 			count: 1
-			path: database/factories/AccountingPeriodFactory.php
+			path: app/View/Components/ErrorsLayout.php
 
 		-
 			message: '#^Class Database\\Factories\\AlertFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
@@ -9577,18 +9787,6 @@ parameters:
 			path: database/factories/Compliance/EddQuestionnaireTemplateFactory.php
 
 		-
-			message: '#^Class Database\\Factories\\CurrencyFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: database/factories/CurrencyFactory.php
-
-		-
-			message: '#^Method Database\\Factories\\CurrencyFactory\:\:create\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: database/factories/CurrencyFactory.php
-
-		-
 			message: '#^Property Database\\Factories\\CurrencyFactory\:\:\$usedCodes has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
@@ -9599,18 +9797,6 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: database/factories/CurrencyPositionFactory.php
-
-		-
-			message: '#^Class Database\\Factories\\CustomerDocumentFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: database/factories/CustomerDocumentFactory.php
-
-		-
-			message: '#^Class Database\\Factories\\CustomerFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: database/factories/CustomerFactory.php
 
 		-
 			message: '#^Class Database\\Factories\\CustomerNoteFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
@@ -9673,12 +9859,6 @@ parameters:
 			path: database/factories/ExchangeRateFactory.php
 
 		-
-			message: '#^Class Database\\Factories\\FiscalYearFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: database/factories/FiscalYearFactory.php
-
-		-
 			message: '#^Class Database\\Factories\\ReportGeneratedFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
 			identifier: missingType.generics
 			count: 1
@@ -9739,34 +9919,10 @@ parameters:
 			path: database/factories/TransactionErrorFactory.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: database/factories/TransactionFactory.php
-
-		-
 			message: '#^Class Database\\Factories\\UserNotificationPreferenceFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
 			identifier: missingType.generics
 			count: 1
 			path: database/factories/UserNotificationPreferenceFactory.php
-
-		-
-			message: '#^Method Illuminate\\Database\\Migrations\\Migration@anonymous/database/migrations/2026_06_21_000001_add_missing_model_indexes\.php\:8\:\:makeIndexName\(\) has parameter \$columns with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: database/migrations/2026_06_21_000001_add_missing_model_indexes.php
-
-		-
-			message: '#^Property Illuminate\\Database\\Migrations\\Migration@anonymous/database/migrations/2026_06_21_000001_add_missing_model_indexes\.php\:8\:\:\$indexes type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: database/migrations/2026_06_21_000001_add_missing_model_indexes.php
-
-		-
-			message: '#^Property Illuminate\\Database\\Migrations\\Migration@anonymous/database/migrations/2026_06_21_000002_align_foreign_keys\.php\:8\:\:\$fks type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: database/migrations/2026_06_21_000002_align_foreign_keys.php
 
 		-
 			message: '#^Method Database\\Seeders\\SanctionListSeeder\:\:getDemoEntries\(\) return type has no value type specified in iterable type array\.$#'
@@ -9775,15 +9931,15 @@ parameters:
 			path: database/seeders/SanctionListSeeder.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Feature/AccountingWorkflowTest.php
+			message: '#^Method Database\\Seeders\\SchemaSeeder\:\:createSchema\(\) has parameter \$tables with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: database/seeders/SchemaSeeder.php
 
 		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 4
+			message: '#^Parameter \#1 \$num1 of function bcadd expects numeric\-string, string given\.$#'
+			identifier: argument.type
+			count: 1
 			path: tests/Feature/AccountingWorkflowTest.php
 
 		-
@@ -9799,39 +9955,33 @@ parameters:
 			path: tests/Feature/AccountingWorkflowTest.php
 
 		-
-			message: '#^Property Tests\\Feature\\AccountingWorkflowTest\:\:\$fiscalYear \(App\\Models\\FiscalYear\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Feature/AccountingWorkflowTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 6
-			path: tests/Feature/AdminReportSmokeTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/AdminReportSmokeTest.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 5
 			path: tests/Feature/AdminReportSmokeTest.php
 
 		-
-			message: '#^Call to an undefined method Database\\Factories\\CustomerFactory\:\:hasTransactions\(\)\.$#'
-			identifier: method.notFound
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
+			identifier: property.notFound
 			count: 1
-			path: tests/Feature/AdminReportSmokeTest.php
+			path: tests/Feature/AdverseMediaScreeningTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$metadata\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/AdverseMediaScreeningTest.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 5
+			path: tests/Feature/AlertDismissTest.php
+
+		-
+			message: '#^Parameter \#1 \$alert of method App\\Services\\Compliance\\AlertTriageService\:\:resolveAlert\(\) expects App\\Models\\Alert, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 2
 			path: tests/Feature/AlertDismissTest.php
 
 		-
@@ -9861,14 +10011,8 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 4
-			path: tests/Feature/Api/ApiV1BranchIsolationTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
 			count: 3
-			path: tests/Feature/Api/BranchScopeAuthorizationTest.php
+			path: tests/Feature/Api/ApiV1BranchIsolationTest.php
 
 		-
 			message: '#^Unable to resolve the template type TKey in call to function collect$#'
@@ -9883,28 +10027,10 @@ parameters:
 			path: tests/Feature/Api/BranchScopeAuthorizationTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Api/CaseApiTest.php
-
-		-
 			message: '#^Method Tests\\Feature\\Api\\CaseApiTest\:\:show_still_returns_legacy_envelope\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: tests/Feature/Api/CaseApiTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Api/CustomerApiTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 9
-			path: tests/Feature/Api/CustomerApiTest.php
 
 		-
 			message: '#^Method Tests\\Feature\\Api\\CustomerApiTest\:\:customer_history_returns_transaction_collection\(\) has no return type specified\.$#'
@@ -9937,24 +10063,6 @@ parameters:
 			path: tests/Feature/Api/CustomerApiTest.php
 
 		-
-			message: '#^Parameter \#1 \$customer of class App\\Services\\Customer\\CustomerActionResult constructor expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Feature/Api/CustomerApiTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Api/CustomerDocumentUploadTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Feature/Api/RiskPortfolioApiTest.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -9965,18 +10073,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: tests/Feature/Api/TellerAllocationMyActiveTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Feature/Api/TransactionApiTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Feature/Api/TransactionApiTest.php
 
 		-
 			message: '#^Method Tests\\Feature\\Api\\TransactionApiTest\:\:show_returns_transaction_with_loaded_relations\(\) has no return type specified\.$#'
@@ -9997,64 +10093,10 @@ parameters:
 			path: tests/Feature/Api/TransactionCancellationApiTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Api/V1/SellDoesNotCreateEmptyPositionTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Api/V1/TransactionControllerStoreTest.php
-
-		-
 			message: '#^Method Tests\\Feature\\Api\\V1\\TransactionControllerStoreTest\:\:basePayload\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Feature/Api/V1/TransactionControllerStoreTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method Tests\\Feature\\Api\\V1\\TransactionControllerStoreTest\:\:basePayload\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 5
-			path: tests/Feature/Api/V1/TransactionControllerStoreTest.php
-
-		-
-			message: '#^Parameter \#3 \$currency of method Tests\\Feature\\Api\\V1\\TransactionControllerStoreTest\:\:basePayload\(\) expects App\\Models\\Currency, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 5
-			path: tests/Feature/Api/V1/TransactionControllerStoreTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Api/V1/TransactionStoreResponseShapeTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Api/V1/TransactionStoreResponseShapeTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$end_date\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Audit/AccountingFixesTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Audit/AccountingFixesTest.php
-
-		-
-			message: '#^Parameter \#1 \$period of method App\\Services\\Accounting\\PeriodCloseService\:\:closePeriod\(\) expects App\\Models\\AccountingPeriod, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Feature/Audit/AccountingFixesTest.php
 
 		-
 			message: '#^Method App\\Http\\Requests\\AuthorizedFormRequest@anonymous/tests/Feature/Audit/ApiSecurityFixesTest\.php\:176\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
@@ -10107,17 +10149,11 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 5
+			count: 2
 			path: tests/Feature/Audit/ComplianceControllersFixTest.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_balance\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Audit/ConcurrencyFixesTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Feature/Audit/ConcurrencyFixesTest.php
@@ -10153,38 +10189,26 @@ parameters:
 			path: tests/Feature/Audit/ConcurrencyFixesTest.php
 
 		-
-			message: '#^Parameter \$customer of class App\\Services\\Transaction\\DTOs\\TransactionCreationContext constructor expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Feature/Audit/ConcurrencyFixesTest.php
-
-		-
 			message: '#^Parameter \$tillBalance of class App\\Services\\Transaction\\DTOs\\TransactionCreationContext constructor expects App\\Models\\TillBalance, Illuminate\\Database\\Eloquent\\Model given\.$#'
 			identifier: argument.type
 			count: 1
 			path: tests/Feature/Audit/ConcurrencyFixesTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Audit/CriticalTransactionFixesTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_active\.$#'
+			message: '#^Access to an undefined property App\\Models\\StockTransferItem\:\:\$quantity\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Feature/Audit/CriticalTransactionFixesTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sanction_hit\.$#'
-			identifier: property.notFound
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\StockTransferItem\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
 			count: 1
 			path: tests/Feature/Audit/CriticalTransactionFixesTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$start_date\.$#'
-			identifier: property.notFound
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\StockTransferItem\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
 			count: 1
 			path: tests/Feature/Audit/CriticalTransactionFixesTest.php
 
@@ -10213,15 +10237,21 @@ parameters:
 			path: tests/Feature/Audit/ReportDownloadSanitizationTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			message: '#^Access to an undefined property App\\Models\\AccountLedger\:\:\$branch_id\.$#'
 			identifier: property.notFound
-			count: 4
+			count: 2
 			path: tests/Feature/Audit/ReportingAccountingFixesTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			message: '#^Access to an undefined property App\\Models\\StockTransferItem\:\:\$quantity_in_transit\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
+			path: tests/Feature/Audit/ReportingAccountingFixesTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockTransferItem\:\:\$quantity_received\.$#'
+			identifier: property.notFound
+			count: 1
 			path: tests/Feature/Audit/ReportingAccountingFixesTest.php
 
 		-
@@ -10247,36 +10277,6 @@ parameters:
 			identifier: argument.type
 			count: 2
 			path: tests/Feature/Audit/TransactionImportBranchFixTest.php
-
-		-
-			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Feature/Audit/TransactionImportIdempotencyTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Audit/TransactionImportProcessTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Audit/TransactionImportProcessTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Audit/TransactionImportThresholdTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Audit/TransactionImportThresholdTest.php
 
 		-
 			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\) expects string, string\|false given\.$#'
@@ -10339,16 +10339,58 @@ parameters:
 			path: tests/Feature/BranchClosingWorkflowTest.php
 
 		-
+			message: '#^Cannot call method expectsConfirmation\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: tests/Feature/BusinessSetupGuardTest.php
+
+		-
+			message: '#^Comparison operation "\>" between 0 and 0 is always false\.$#'
+			identifier: greater.alwaysFalse
+			count: 1
+			path: tests/Feature/BusinessSetupGuardTest.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 3
 			path: tests/Feature/Compliance/AlertTriageControllerTest.php
 
 		-
-			message: '#^Property Tests\\Feature\\Compliance\\CustomerFreezeEndpointsTest\:\:\$customer \(App\\Models\\Customer\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
+			message: '#^Parameter \#1 \$alert of method App\\Services\\Compliance\\AlertTriageService\:\:resolveAlert\(\) expects App\\Models\\Alert, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
 			count: 1
-			path: tests/Feature/Compliance/CustomerFreezeEndpointsTest.php
+			path: tests/Feature/Compliance/AlertTriageControllerTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRiskHistory\:\:\$new_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Compliance/RiskScoreWriteBackTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRiskHistory\:\:\$old_rating\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Compliance/RiskScoreWriteBackTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ScreeningResult\:\:\$disposition_reason\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Compliance/ScreeningMatchDispositionTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ScreeningResult\:\:\$dispositioned_by\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Compliance/ScreeningMatchDispositionTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Compliance/ScreeningMatchDispositionTest.php
 
 		-
 			message: '#^Method Tests\\Feature\\Compliance\\SoftDeletesMigrationTest\:\:softDeleteModelsProvider\(\) return type has no value type specified in iterable type array\.$#'
@@ -10357,34 +10399,40 @@ parameters:
 			path: tests/Feature/Compliance/SoftDeletesMigrationTest.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\StrReport\:\:\$acknowledged_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Compliance/StrReportTest.php
+
+		-
 			message: '#^Method Tests\\Feature\\Compliance\\StrReportTest\:\:makeClosedCase\(\) has parameter \$amounts with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Feature/Compliance/StrReportTest.php
 
 		-
-			message: '#^Property Tests\\Feature\\Compliance\\StrReportTest\:\:\$customer \(App\\Models\\Customer\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 4
+			path: tests/Feature/ComplianceQuickWinsTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$message\.$#'
+			identifier: property.notFound
 			count: 1
-			path: tests/Feature/Compliance/StrReportTest.php
+			path: tests/Feature/ComplianceQuickWinsTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$metadata\.$#'
+			identifier: property.notFound
+			count: 6
+			path: tests/Feature/ComplianceQuickWinsTest.php
 
 		-
 			message: '#^Method Tests\\Feature\\CounterHandoverAcknowledgeTest\:\:createPendingHandover\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Feature/CounterHandoverAcknowledgeTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/CounterHandoverBranchScopeTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/CounterOpeningAllocationScopeTest.php
 
 		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertNotNull\(\) with App\\Models\\Transaction and ''Transaction 1…'' will always evaluate to true\.$#'
@@ -10411,31 +10459,7 @@ parameters:
 			path: tests/Feature/CriticalTransactionWorkflowTest.php
 
 		-
-			message: '#^Parameter \#2 \$customer of method Tests\\Feature\\CriticalTransactionWorkflowTest\:\:getCddLevel\(\) expects App\\Models\\Customer\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Feature/CriticalTransactionWorkflowTest.php
-
-		-
-			message: '#^Property Tests\\Feature\\CriticalTransactionWorkflowTest\:\:\$currency \(App\\Models\\Currency\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Feature/CriticalTransactionWorkflowTest.php
-
-		-
-			message: '#^Property Tests\\Feature\\CriticalTransactionWorkflowTest\:\:\$customer \(App\\Models\\Customer\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Feature/CriticalTransactionWorkflowTest.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Feature/CustomerIndexPerformanceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$latestRiskSnapshot\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Feature/CustomerIndexPerformanceTest.php
@@ -10445,6 +10469,12 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Feature/CustomerSearchControllerTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\HorizonConfigurationTest\:\:horizon_consumes_compliance_and_audit_queues_in_all_environments\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: tests/Feature/HorizonConfigurationTest.php
 
 		-
 			message: '#^Method Tests\\Feature\\HorizonConfigurationTest\:\:horizon_has_optimized_configuration\(\) has no return type specified\.$#'
@@ -10477,28 +10507,16 @@ parameters:
 			path: tests/Feature/MfaRequirementTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$closed_at\.$#'
+			message: '#^Access to an undefined property Illuminate\\Notifications\\DatabaseNotification\:\:\$read_at\.$#'
 			identifier: property.notFound
-			count: 1
-			path: tests/Feature/MonthEndCloseTest.php
+			count: 5
+			path: tests/Feature/NotificationBellTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/MonthEndCloseTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$notification_preferences\.$#'
 			identifier: property.notFound
 			count: 2
-			path: tests/Feature/MonthEndCloseTest.php
-
-		-
-			message: '#^Method Tests\\Feature\\MonthEndCloseTest\:\:createFiscalYearAndPeriod\(\) should return App\\Models\\AccountingPeriod but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: tests/Feature/MonthEndCloseTest.php
+			path: tests/Feature/NotificationPreferencesTest.php
 
 		-
 			message: '#^Method Tests\\Feature\\PerformanceMonitoringControllerTest\:\:performance_dashboard_accessible_by_admin\(\) has no return type specified\.$#'
@@ -10525,40 +10543,46 @@ parameters:
 			path: tests/Feature/PerformanceTrackingMiddlewareTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$error_message\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/ProcessDueReportSchedulesTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$file_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/ProcessDueReportSchedulesTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$parameters\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/ProcessDueReportSchedulesTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$report_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/ProcessDueReportSchedulesTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ReportRun\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 3
-			path: tests/Feature/Policies/AuthorizationTest.php
+			path: tests/Feature/ProcessDueReportSchedulesTest.php
 
 		-
-			message: '#^Parameter \#2 \$customer of method App\\Policies\\CustomerPolicy\:\:delete\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Feature/Policies/AuthorizationTest.php
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$last_run_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/ProcessDueReportSchedulesTest.php
 
 		-
-			message: '#^Parameter \#2 \$customer of method App\\Policies\\CustomerPolicy\:\:update\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
+			message: '#^Access to an undefined property App\\Models\\ReportSchedule\:\:\$next_run_at\.$#'
+			identifier: property.notFound
 			count: 3
-			path: tests/Feature/Policies/AuthorizationTest.php
-
-		-
-			message: '#^Parameter \#2 \$customer of method App\\Policies\\CustomerPolicy\:\:view\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Feature/Policies/AuthorizationTest.php
-
-		-
-			message: '#^Method Tests\\Feature\\QueryLoggingTest\:\:middleware_does_not_log_queries_when_config_disabled\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Feature/QueryLoggingTest.php
-
-		-
-			message: '#^Method Tests\\Feature\\QueryLoggingTest\:\:middleware_logs_queries_when_config_enabled\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Feature/QueryLoggingTest.php
+			path: tests/Feature/ProcessDueReportSchedulesTest.php
 
 		-
 			message: '#^Method Tests\\Feature\\QueryLoggingTest\:\:n_plus_one_detection_logs_duplicate_queries\(\) has no return type specified\.$#'
@@ -10589,6 +10613,30 @@ parameters:
 			identifier: missingType.return
 			count: 1
 			path: tests/Feature/QueryLoggingTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/RateStalenessCommandTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_buy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/RatesPageTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$phone_hash\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/ReEncryptCustomersCommandTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$id_number_encrypted\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/ReEncryptCustomersCommandTest.php
 
 		-
 			message: '#^Unable to resolve the template type TKey in call to function collect$#'
@@ -10723,18 +10771,6 @@ parameters:
 			path: tests/Feature/RouteVerificationTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 6
-			path: tests/Feature/ScreeningApiTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/SecurityTest.php
-
-		-
 			message: '#^Method Tests\\Feature\\SecurityTest\:\:hasUnescapedScript\(\) has parameter \$response with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
@@ -10759,16 +10795,22 @@ parameters:
 			path: tests/Feature/SecurityTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 5
-			path: tests/Feature/StockCashTillLifecycleTest.php
-
-		-
 			message: '#^Method Tests\\Feature\\StockReservationIndexTest\:\:stock_reservations_has_transaction_id_index\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: tests/Feature/StockReservationIndexTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$acknowledged_at\.$#'
+			identifier: property.notFound
+			count: 3
+			path: tests/Feature/SystemAlertsPageTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$acknowledged_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/SystemAlertsPageTest.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\JournalEntry\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\JournalEntry\>\:\:\$id\.$#'
@@ -10778,12 +10820,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Models\\JournalEntry\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\JournalEntry\>\:\:\$lines\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/TransactionAccountingVerificationTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Feature/TransactionAccountingVerificationTest.php
@@ -10843,34 +10879,40 @@ parameters:
 			path: tests/Feature/TransactionCancellationTest.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/TransactionImportQueueTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$error_count\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/TransactionImportQueueTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$processed_rows\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/TransactionImportQueueTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/TransactionImportQueueTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TransactionImport\:\:\$success_count\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/TransactionImportQueueTest.php
+
+		-
 			message: '#^Cannot call method assertSuccessful\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
 			identifier: method.nonObject
 			count: 1
 			path: tests/Feature/TransactionRecoveryCommandTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 6
-			path: tests/Feature/TransactionWizardTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Feature/TransactionWorkflowTest.php
-
-		-
-			message: '#^Property Tests\\Feature\\TransactionWorkflowTest\:\:\$customer \(App\\Models\\Customer\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Feature/TransactionWorkflowTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 12
-			path: tests/Feature/UnifiedComplianceAlertsTest.php
 
 		-
 			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\) expects string, string\|false given\.$#'
@@ -10889,18 +10931,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: tests/Feature/Views/BrokenFormsFixTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Feature/Views/BrokenFormsFixTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Views/ChartPlaceholderTest.php
 
 		-
 			message: '#^Method Tests\\Feature\\Views\\ComponentConsistencyTest\:\:components_forward_attributes\(\) has parameter \$data with no value type specified in iterable type array\.$#'
@@ -10951,26 +10981,8 @@ parameters:
 			path: tests/Feature/Views/ComponentSyntaxTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Views/LayoutConsistencyTest.php
-
-		-
 			message: '#^Method Tests\\Feature\\Views\\LayoutConsistencyTest\:\:sharedLayoutViewProvider\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Feature/Views/LayoutConsistencyTest.php
-
-		-
-			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Feature/Views/LayoutConsistencyTest.php
-
-		-
-			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringNotContainsString\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
 			count: 1
 			path: tests/Feature/Views/LayoutConsistencyTest.php
 
@@ -11029,46 +11041,100 @@ parameters:
 			path: tests/Feature/Views/ThemeTokenUsageTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Web/TransactionApprovalControllerTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Web/TransactionApprovalControllerTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Web/TransactionControllerStoreTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Web/TransactionControllerStoreTest.php
-
-		-
 			message: '#^Method Tests\\Feature\\Web\\TransactionControllerStoreTest\:\:basePayload\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Feature/Web/TransactionControllerStoreTest.php
 
 		-
-			message: '#^Parameter \#1 \$customer of method Tests\\Feature\\Web\\TransactionControllerStoreTest\:\:basePayload\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 3
-			path: tests/Feature/Web/TransactionControllerStoreTest.php
+			message: '#^Method Tests\\Http\\Simulation\\Support\\SimulationTestCase\:\:afterRefreshingDatabase\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: tests/Http/Simulation/Support/SimulationTestCase.php
 
 		-
-			message: '#^Parameter \#3 \$currency of method Tests\\Feature\\Web\\TransactionControllerStoreTest\:\:basePayload\(\) expects App\\Models\\Currency, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 3
-			path: tests/Feature/Web/TransactionControllerStoreTest.php
+			message: '#^Method Tests\\Http\\Simulation\\Support\\SimulationTestCase\:\:apiData\(\) has parameter \$response with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/SimulationTestCase.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\SimulationTestCase\:\:assertSurfaceStatus\(\) has parameter \$response with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/SimulationTestCase.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\SimulationTestCase\:\:migrateDatabases\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: tests/Http/Simulation/Support/SimulationTestCase.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\SimulationTestCase\:\:webRequester\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/SimulationTestCase.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\SimulationTestCase\:\:webRequester\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/SimulationTestCase.php
+
+		-
+			message: '#^Property Illuminate\\Foundation\\Testing\\TestCase\:\:\$defaultCookies \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: tests/Http/Simulation/Support/SimulationTestCase.php
+
+		-
+			message: '#^Property Illuminate\\Foundation\\Testing\\TestCase\:\:\$defaultHeaders \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: tests/Http/Simulation/Support/SimulationTestCase.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\WebClient\:\:fetch\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/WebClient.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\WebClient\:\:get\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/WebClient.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\WebClient\:\:post\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/WebClient.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\WebClient\:\:post\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/WebClient.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\WebClient\:\:put\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/WebClient.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\Support\\WebClient\:\:put\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/Support/WebClient.php
+
+		-
+			message: '#^Method Tests\\Http\\Simulation\\WaveB\\EdgeAndAttackTest\:\:bookOverWeb\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Http/Simulation/WaveB/EdgeAndAttackTest.php
 
 		-
 			message: '#^Method Tests\\TestCase\:\:createTestBranch\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
@@ -11095,12 +11161,6 @@ parameters:
 			path: tests/TestCase.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/AccountingServiceTest.php
-
-		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertNotNull\(\) with App\\Models\\JournalEntry will always evaluate to true\.$#'
 			identifier: method.alreadyNarrowedType
 			count: 1
@@ -11109,7 +11169,7 @@ parameters:
 		-
 			message: '#^Cannot access property \$value on string\.$#'
 			identifier: property.nonObject
-			count: 3
+			count: 1
 			path: tests/Unit/AccountingServiceTest.php
 
 		-
@@ -11137,12 +11197,6 @@ parameters:
 			path: tests/Unit/BoundaryValueTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$period_code\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Unit/BudgetServiceTest.php
-
-		-
 			message: '#^Access to an undefined property Tests\\Unit\\BudgetServiceTest\:\:\$adminUser\.$#'
 			identifier: property.notFound
 			count: 10
@@ -11161,22 +11215,10 @@ parameters:
 			path: tests/Unit/CacheMonitoringServiceTest.php
 
 		-
-			message: '#^Parameter \#2 \$customer of method App\\Services\\Compliance\\CddLevelDeterminationService\:\:determineCDDLevel\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 12
-			path: tests/Unit/CddLevelDeterminationServiceTest.php
-
-		-
 			message: '#^Method Tests\\Unit\\ChartOfAccountTest\:\:unused_methods_removed\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: tests/Unit/ChartOfAccountTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Unit/ComplianceScreeningJobPerformanceTest.php
 
 		-
 			message: '#^Method Tests\\Unit\\ComplianceScreeningJobPerformanceTest\:\:compliance_screening_job_logs_performance\(\) has no return type specified\.$#'
@@ -11189,24 +11231,6 @@ parameters:
 			identifier: missingType.return
 			count: 1
 			path: tests/Unit/ComplianceScreeningJobPerformanceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Unit/ComplianceServiceTest.php
-
-		-
-			message: '#^Parameter \#2 \$customer of method App\\Services\\Compliance\\ComplianceService\:\:determineCDDLevel\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 6
-			path: tests/Unit/ComplianceServiceTest.php
-
-		-
-			message: '#^Parameter \#2 \$customer of method App\\Services\\Compliance\\ComplianceService\:\:requiresHold\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 6
-			path: tests/Unit/ComplianceServiceTest.php
 
 		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertNotNull\(\) with ''COUNTER\-001'' will always evaluate to true\.$#'
@@ -11251,196 +11275,58 @@ parameters:
 			path: tests/Unit/CurrencyPositionServiceTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$customer_id\.$#'
 			identifier: property.notFound
-			count: 14
+			count: 1
 			path: tests/Unit/CustomerRelationServiceTest.php
 
 		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Customer\\CustomerRelationService\:\:calculateRelationRiskScore\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$is_pep\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/CustomerRelationServiceTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$related_name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Unit/CustomerRelationServiceTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$relation_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/CustomerRelationServiceTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
 			count: 3
 			path: tests/Unit/CustomerRelationServiceTest.php
 
 		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Customer\\CustomerRelationService\:\:getRelatedCustomers\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRelationServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Customer\\CustomerRelationService\:\:getRelations\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRelationServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Customer\\CustomerRelationService\:\:isHighRiskRelation\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRelationServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Customer\\CustomerRelationService\:\:isPepAssociate\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Unit/CustomerRelationServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$engagement_assessed_at\.$#'
 			identifier: property.notFound
 			count: 2
-			path: tests/Unit/CustomerRepositorySearchTest.php
+			path: tests/Unit/CustomerRelationTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$engagement_level\.$#'
 			identifier: property.notFound
-			count: 4
-			path: tests/Unit/CustomerRiskReviewServiceTest.php
+			count: 3
+			path: tests/Unit/CustomerRelationTest.php
 
 		-
-			message: '#^Parameter \#2 \$auditService of class App\\Services\\Compliance\\CustomerRiskScoringService constructor expects App\\Services\\AuditService, App\\Services\\Compliance\\ComplianceService given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRiskReviewServiceTest.php
-
-		-
-			message: '#^Parameter \#3 \$mathService of class App\\Services\\Compliance\\CustomerRiskScoringService constructor expects App\\Services\\System\\MathService, App\\Services\\AuditService given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRiskReviewServiceTest.php
-
-		-
-			message: '#^Parameter \#4 \$thresholdService of class App\\Services\\Compliance\\CustomerRiskScoringService constructor expects App\\Services\\ThresholdService, App\\Services\\System\\MathService given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRiskReviewServiceTest.php
-
-		-
-			message: '#^Parameter \#5 \$riskCalculationService of class App\\Services\\Compliance\\CustomerRiskScoringService constructor expects App\\Services\\Compliance\\RiskCalculationService, App\\Services\\ThresholdService given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRiskReviewServiceTest.php
-
-		-
-			message: '#^Parameter \#6 \$pepAssessmentService of class App\\Services\\Compliance\\CustomerRiskScoringService constructor expects App\\Services\\Compliance\\PepAssessmentService, App\\Services\\Compliance\\RiskCalculationService given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRiskReviewServiceTest.php
-
-		-
-			message: '#^Parameter \#7 \$geographicRiskService of class App\\Services\\Compliance\\CustomerRiskScoringService constructor expects App\\Services\\Risk\\GeographicRiskService\|null, App\\Services\\Compliance\\PepAssessmentService given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRiskReviewServiceTest.php
-
-		-
-			message: '#^Parameter \#8 \$amountRiskService of class App\\Services\\Compliance\\CustomerRiskScoringService constructor expects App\\Services\\Risk\\AmountRiskService\|null, App\\Services\\Risk\\GeographicRiskService given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerRiskReviewServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			message: '#^Access to an undefined property App\\Models\\CustomerRelation\:\:\$engagement_notes\.$#'
 			identifier: property.notFound
-			count: 12
-			path: tests/Unit/CustomerRiskScoringServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Compliance\\CustomerRiskScoringService\:\:assessPepCessation\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 4
-			path: tests/Unit/CustomerRiskScoringServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$freeze_reason\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$frozen_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 9
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_frozen\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$rejection_reason\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$transactions_blocked\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
+			count: 3
+			path: tests/Unit/CustomerRelationTest.php
 
 		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertNotNull\(\) with App\\ValueObjects\\ScreeningResponse will always evaluate to true\.$#'
 			identifier: method.alreadyNarrowedType
 			count: 1
 			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\CustomerScreeningService\:\:conductRelatedPartiesDueDiligence\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\CustomerScreeningService\:\:getHistory\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\CustomerScreeningService\:\:getStatus\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\CustomerScreeningService\:\:handleConfirmedMatch\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 3
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\CustomerScreeningService\:\:screenCustomer\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 5
-			path: tests/Unit/CustomerScreeningServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Unit/CustomerServiceCacheTest.php
 
 		-
 			message: '#^Method Tests\\Unit\\CustomerServiceCacheTest\:\:get_customer_uses_cache\(\) has no return type specified\.$#'
@@ -11455,46 +11341,16 @@ parameters:
 			path: tests/Unit/CustomerServiceCacheTest.php
 
 		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Customer\\CustomerService\:\:updateCustomer\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/CustomerServiceCacheTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 9
-			path: tests/Unit/EddServiceTest.php
-
-		-
 			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
 			identifier: larastan.noEnvCallsOutsideOfConfig
 			count: 1
 			path: tests/Unit/EncryptionServiceTest.php
 
 		-
-			message: '#^Property Tests\\Unit\\EodReconciliationServiceTest\:\:\$customer \(App\\Models\\Customer\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Unit/EodReconciliationServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$transactionId of class App\\Exceptions\\Domain\\TransactionApprovalException constructor expects int, string given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Unit/Exceptions/Domain/TransactionExceptionsTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			message: '#^Access to an undefined property App\\Models\\HighRiskCountry\:\:\$risk_level\.$#'
 			identifier: property.notFound
-			count: 6
-			path: tests/Unit/FaultAnalysisTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Compliance\\ComplianceService\:\:checkSanctionMatch\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Unit/FaultAnalysisTest.php
+			count: 1
+			path: tests/Unit/Enums/HighRiskCountryRiskLevelTest.php
 
 		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\) with array will always evaluate to true\.$#'
@@ -11527,12 +11383,6 @@ parameters:
 			path: tests/Unit/FormRequests/StoreTransactionRequestTest.php
 
 		-
-			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\) expects string, array\<mixed\>\|Illuminate\\Contracts\\Validation\\ValidationRule\|string given\.$#'
-			identifier: argument.type
-			count: 5
-			path: tests/Unit/FormRequests/StoreTransactionRequestTest.php
-
-		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\) with array will always evaluate to true\.$#'
 			identifier: method.alreadyNarrowedType
 			count: 1
@@ -11549,42 +11399,6 @@ parameters:
 			identifier: method.alreadyNarrowedType
 			count: 1
 			path: tests/Unit/FormRequests/UpdateUserRequestTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 6
-			path: tests/Unit/HistoricalRiskAnalysisServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Compliance\\HistoricalRiskAnalysisService\:\:analyze\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 4
-			path: tests/Unit/HistoricalRiskAnalysisServiceTest.php
-
-		-
-			message: '#^Method Tests\\Unit\\Http\\Controllers\\Api\\V1\\Traits\\ApiResponseTest\:\:errorResponse\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Http/Controllers/Api/V1/Traits/ApiResponseTest.php
-
-		-
-			message: '#^Method Tests\\Unit\\Http\\Controllers\\Api\\V1\\Traits\\ApiResponseTest\:\:errorResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Http/Controllers/Api/V1/Traits/ApiResponseTest.php
-
-		-
-			message: '#^Method Tests\\Unit\\Http\\Controllers\\Api\\V1\\Traits\\ApiResponseTest\:\:resourceWithSuccess\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Http/Controllers/Api/V1/Traits/ApiResponseTest.php
-
-		-
-			message: '#^Method Tests\\Unit\\Http\\Controllers\\Api\\V1\\Traits\\ApiResponseTest\:\:successResponse\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Http/Controllers/Api/V1/Traits/ApiResponseTest.php
 
 		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertTrue\(\) with true will always evaluate to true\.$#'
@@ -11611,18 +11425,6 @@ parameters:
 			path: tests/Unit/Jobs/Audit/SealAuditHashJobTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Unit/Jobs/ComplianceScreeningJobTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Jobs/RescreenHighRiskCustomersJobTest.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$document_type\.$#'
 			identifier: property.notFound
 			count: 1
@@ -11633,18 +11435,6 @@ parameters:
 			identifier: new.noConstructor
 			count: 1
 			path: tests/Unit/KycDocumentExpiryServiceTest.php
-
-		-
-			message: '#^Property Tests\\Unit\\KycDocumentExpiryServiceTest\:\:\$customer \(App\\Models\\Customer\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Unit/KycDocumentExpiryServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Unit/LedgerServiceBalanceTest.php
 
 		-
 			message: '#^Access to an undefined property Tests\\Unit\\LedgerServiceBalanceTest\:\:\$branch1\.$#'
@@ -11677,48 +11467,6 @@ parameters:
 			path: tests/Unit/Listeners/ComplianceEventListenerTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branch\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/CustomerBranchRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Unit/Models/CustomerBranchRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$documents\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/CustomerModelTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Unit/Models/CustomerModelTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$notes\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/CustomerModelTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$riskHistory\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/CustomerModelTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$transactions\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/CustomerModelTest.php
-
-		-
 			message: '#^Method Tests\\Unit\\Models\\EagerLoadingCoverageTest\:\:getModelWithProperty\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -11737,82 +11485,10 @@ parameters:
 			path: tests/Unit/Models/EagerLoadingPerformanceTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fiscalYear\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/AccountingPeriodRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/AccountingPeriodRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Unit/Models/Relationships/BranchCurrencyJournalInverseTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$exchangeRateHistories\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/BranchCurrencyJournalInverseTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$revaluationEntries\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/BranchCurrencyJournalInverseTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$stockTransferItems\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/BranchCurrencyJournalInverseTest.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$period\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Unit/Models/Relationships/BudgetRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$period_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/BudgetRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$behavioralBaselines\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/CustomerInverseRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Unit/Models/Relationships/CustomerInverseRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$pepApprovalRequests\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/CustomerInverseRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$riskProfiles\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/CustomerInverseRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sanctionsAnalyses\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/CustomerInverseRelationshipTest.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$assessor\.$#'
@@ -11822,12 +11498,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$customer\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Relationships/CustomerRiskHistoryRelationshipTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Unit/Models/Relationships/CustomerRiskHistoryRelationshipTest.php
@@ -11853,7 +11523,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: tests/Unit/Models/Relationships/EnhancedDiligenceRecordRelationshipTest.php
 
 		-
@@ -12859,42 +12529,6 @@ parameters:
 			path: tests/Unit/Models/Traits/MoneyCastTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/PepApprovalServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Compliance\\PepApprovalService\:\:getPendingApproval\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/PepApprovalServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Compliance\\PepApprovalService\:\:hasApprovedApproval\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/PepApprovalServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Compliance\\PepApprovalService\:\:hasPendingApproval\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/PepApprovalServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Compliance\\PepApprovalService\:\:requestApproval\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 6
-			path: tests/Unit/PepApprovalServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Compliance\\PepApprovalService\:\:requiresHeadOfficeApproval\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 7
-			path: tests/Unit/PepApprovalServiceTest.php
-
-		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertTrue\(\) with true will always evaluate to true\.$#'
 			identifier: method.alreadyNarrowedType
 			count: 1
@@ -12935,6 +12569,18 @@ parameters:
 			identifier: missingType.return
 			count: 1
 			path: tests/Unit/PerformanceBaselineServiceTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_buy\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Unit/RateManagementServiceCacheTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_sell\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/RateManagementServiceCacheTest.php
 
 		-
 			message: '#^Method Tests\\Unit\\RateManagementServiceCacheTest\:\:get_rate_for_currency_uses_cache\(\) has no return type specified\.$#'
@@ -12979,16 +12625,22 @@ parameters:
 			path: tests/Unit/RateOverrideResultDtoTest.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_buy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/RateOverrideSpreadLimitTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExchangeRate\:\:\$rate_sell\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/RateOverrideSpreadLimitTest.php
+
+		-
 			message: '#^Method Tests\\Unit\\ReportGenerationJobPerformanceTest\:\:report_generation_job_logs_performance\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: tests/Unit/ReportGenerationJobPerformanceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Unit/ReportingServiceTest.php
 
 		-
 			message: '#^Unable to resolve the template type TKey in call to function collect$#'
@@ -13009,12 +12661,6 @@ parameters:
 			path: tests/Unit/Repositories/CustomerRepositoryTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 5
-			path: tests/Unit/Repositories/CustomerRepositoryTest.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_rate\.$#'
 			identifier: property.notFound
 			count: 1
@@ -13023,12 +12669,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unrealized_gain_loss\.$#'
 			identifier: property.notFound
-			count: 1
-			path: tests/Unit/RevaluationServiceTest.php
-
-		-
-			message: '#^Method Tests\\Unit\\RevaluationServiceTest\:\:createTestAccountingPeriod\(\) should return App\\Models\\AccountingPeriod but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
 			count: 1
 			path: tests/Unit/RevaluationServiceTest.php
 
@@ -13049,12 +12689,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: tests/Unit/Risk/PatternRiskServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 24
-			path: tests/Unit/RiskCalculationServiceTest.php
 
 		-
 			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, Illuminate\\Routing\\RouteCollectionInterface given\.$#'
@@ -13171,9 +12805,9 @@ parameters:
 			path: tests/Unit/Services/Accounting/CurrencyPositionLockServiceTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 14
+			message: '#^Call to static method shouldReceive\(\) on an unknown class Log\.$#'
+			identifier: class.notFound
+			count: 1
 			path: tests/Unit/Services/AmlRuleEvaluatorTest.php
 
 		-
@@ -13189,12 +12823,6 @@ parameters:
 			path: tests/Unit/Services/Branch/TellerAllocationServiceTransactionTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Services/Branch/TillBalanceManagerApplyTransactionTest.php
-
-		-
 			message: '#^Method Tests\\Unit\\Services\\Branch\\TillBalanceManagerApplyTransactionTest\:\:openBalances\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -13205,18 +12833,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: tests/Unit/Services/Branch/TillBalanceManagerApplyTransactionTest.php
-
-		-
-			message: '#^Parameter \#2 \$foreignCurrency of method Tests\\Unit\\Services\\Branch\\TillBalanceManagerApplyTransactionTest\:\:openBalances\(\) expects App\\Models\\Currency, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 4
-			path: tests/Unit/Services/Branch/TillBalanceManagerApplyTransactionTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 7
-			path: tests/Unit/Services/Branch/TillBalanceManagerLifecycleTest.php
 
 		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertNotNull\(\) with App\\Models\\TillBalance will always evaluate to true\.$#'
@@ -13233,7 +12849,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$num1 of function bccomp expects numeric\-string, string given\.$#'
 			identifier: argument.type
-			count: 3
+			count: 5
 			path: tests/Unit/Services/Branch/TillServiceTest.php
 
 		-
@@ -13249,6 +12865,18 @@ parameters:
 			path: tests/Unit/Services/Branch/TillServiceTest.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Compliance\\ComplianceCaseDocument\:\:\$case_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/Services/Compliance/CaseManagementServiceTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Compliance\\ComplianceCaseLink\:\:\$case_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/Services/Compliance/CaseManagementServiceTest.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$case_id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -13257,7 +12885,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 21
+			count: 4
 			path: tests/Unit/Services/Compliance/CaseManagementServiceTest.php
 
 		-
@@ -13267,52 +12895,10 @@ parameters:
 			path: tests/Unit/Services/Compliance/CaseManagementServiceTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Unit/Services/Compliance/RiskScoringEngineTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Unit/Services/Reporting/TransactionReportQueryBuySellTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Unit/Services/Risk/AmountRiskServiceTest.php
-
-		-
-			message: '#^Parameter \#2 \$customer of method App\\Services\\Risk\\AmountRiskService\:\:calculateScore\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/Services/Risk/AmountRiskServiceTest.php
-
-		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\) with array will always evaluate to true\.$#'
 			identifier: method.alreadyNarrowedType
 			count: 1
 			path: tests/Unit/Services/Risk/GeographicRiskServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Risk\\GeographicRiskService\:\:calculateScore\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Unit/Services/Risk/GeographicRiskServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Risk\\GeographicRiskService\:\:getRiskTier\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/Services/Risk/GeographicRiskServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 23
-			path: tests/Unit/Services/Risk/StructuringRiskServiceTest.php
 
 		-
 			message: '#^Binary operation "\+" between string and ''1000'' results in an error\.$#'
@@ -13325,12 +12911,6 @@ parameters:
 			identifier: binaryOp.invalid
 			count: 10
 			path: tests/Unit/Services/Risk/StructuringRiskServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 5
-			path: tests/Unit/Services/Risk/VelocityRiskServiceTest.php
 
 		-
 			message: '#^Call to function is_subclass_of\(\) with ''App\\\\Services\\\\Accounting\\\\AccountingService''\|''App\\\\Services\\\\Accounting\\\\CurrencyPositionService''\|''App\\\\Services\\\\AuditService''\|''App\\\\Services\\\\Branch\\\\TellerAllocationService''\|''App\\\\Services\\\\Compliance\\\\ComplianceService''\|''App\\\\Services\\\\Customer\\\\CustomerService''\|''App\\\\Services\\\\CustomerScreeningService''\|''App\\\\Services\\\\Reporting\\\\ReportingService''\|''App\\\\Services\\\\System\\\\MathService''\|''App\\\\Services\\\\ThresholdService''\|''App\\\\Services\\\\Transaction\\\\RateManagementService''\|''App\\\\Services\\\\Transaction\\\\TransactionMonitoringService'' and ''App\\\\Services\\\\Contracts\\\\AccountingServiceInterface''\|''App\\\\Services\\\\Contracts\\\\AuditServiceInterface''\|''App\\\\Services\\\\Contracts\\\\ComplianceServiceInterface''\|''App\\\\Services\\\\Contracts\\\\CurrencyPositionServiceInterface''\|''App\\\\Services\\\\Contracts\\\\CustomerScreeningServiceInterface''\|''App\\\\Services\\\\Contracts\\\\CustomerServiceInterface''\|''App\\\\Services\\\\Contracts\\\\MathServiceInterface''\|''App\\\\Services\\\\Contracts\\\\RateManagementServiceInterface''\|''App\\\\Services\\\\Contracts\\\\ReportingServiceInterface''\|''App\\\\Services\\\\Contracts\\\\TellerAllocationServiceInterface''\|''App\\\\Services\\\\Contracts\\\\ThresholdServiceInterface''\|''App\\\\Services\\\\Contracts\\\\TransactionMonitoringServiceInterface'' will always evaluate to true\.$#'
@@ -13347,18 +12927,6 @@ parameters:
 		-
 			message: '#^Method Tests\\Unit\\Services\\Transaction\\TransactionServicePrepareTest\:\:baseData\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Services/Transaction/TransactionServicePrepareTest.php
-
-		-
-			message: '#^Property Tests\\Unit\\Services\\Transaction\\TransactionServicePrepareTest\:\:\$currency \(App\\Models\\Currency\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Unit/Services/Transaction/TransactionServicePrepareTest.php
-
-		-
-			message: '#^Property Tests\\Unit\\Services\\Transaction\\TransactionServicePrepareTest\:\:\$customer \(App\\Models\\Customer\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
 			count: 1
 			path: tests/Unit/Services/Transaction/TransactionServicePrepareTest.php
 
@@ -13384,6 +12952,12 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$available_balance\.$#'
 			identifier: property.notFound
 			count: 4
+			path: tests/Unit/TellerAllocationServiceTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
 			path: tests/Unit/TellerAllocationServiceTest.php
 
 		-
@@ -13413,7 +12987,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$allocation of method App\\Services\\Branch\\TellerAllocationService\:\:transferToTeller\(\) expects App\\Models\\TellerAllocation, Illuminate\\Database\\Eloquent\\Model given\.$#'
 			identifier: argument.type
-			count: 1
+			count: 2
 			path: tests/Unit/TellerAllocationServiceTest.php
 
 		-
@@ -13444,12 +13018,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$closed_at\.$#'
 			identifier: property.notFound
 			count: 3
-			path: tests/Unit/TellerAllocationTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 2
 			path: tests/Unit/TellerAllocationTest.php
 
 		-
@@ -13499,6 +13067,30 @@ parameters:
 			identifier: argument.type
 			count: 2
 			path: tests/Unit/ThresholdAccessCentralizedTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ThresholdAudit\:\:\$change_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/ThresholdServiceTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ThresholdAudit\:\:\$changed_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/ThresholdServiceTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ThresholdAudit\:\:\$new_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/ThresholdServiceTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ThresholdAudit\:\:\$old_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/ThresholdServiceTest.php
 
 		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertIsInt\(\) with int and ''getDurationCritical…''\|''getDurationWarningH…''\|''getStructuringHourl…''\|''getStructuringLooku…''\|''getStructuringMinTr…''\|''getVelocityWindowDa…'' will always evaluate to true\.$#'
@@ -13555,12 +13147,6 @@ parameters:
 			path: tests/Unit/Transaction/TransactionApprovalServiceTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 5
-			path: tests/Unit/Transaction/TransactionCreationServiceTest.php
-
-		-
 			message: '#^Method Tests\\Unit\\Transaction\\TransactionCreationServiceTest\:\:context\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -13591,28 +13177,10 @@ parameters:
 			path: tests/Unit/Transaction/TransactionCreationServiceTest.php
 
 		-
-			message: '#^Parameter \$customer of class App\\Services\\Transaction\\DTOs\\TransactionCreationContext constructor expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Unit/Transaction/TransactionCreationServiceTest.php
-
-		-
 			message: '#^Parameter \$tillBalance of class App\\Services\\Transaction\\DTOs\\TransactionCreationContext constructor expects App\\Models\\TillBalance, Illuminate\\Database\\Eloquent\\Model given\.$#'
 			identifier: argument.type
 			count: 2
 			path: tests/Unit/Transaction/TransactionCreationServiceTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Unit/Transaction/TransactionValidationServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Transaction\\TransactionValidationService\:\:preValidate\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 5
-			path: tests/Unit/Transaction/TransactionValidationServiceTest.php
 
 		-
 			message: '#^Parameter \#5 \$screeningService of class App\\Services\\Transaction\\TransactionValidationService constructor expects App\\Services\\CustomerScreeningService, PHPUnit\\Framework\\MockObject\\MockObject given\.$#'
@@ -13621,10 +13189,22 @@ parameters:
 			path: tests/Unit/Transaction/TransactionValidationServiceTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Unit/TransactionMonitoringServiceTest.php
+			message: '#^Call to function is_object\(\) with \*NEVER\* will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: tests/Unit/TransactionApprovalServiceTest.php
+
+		-
+			message: '#^Result of method App\\Services\\Transaction\\TransactionApprovalService\:\:validateApprovalEligibility\(\) \(void\) is used\.$#'
+			identifier: method.void
+			count: 1
+			path: tests/Unit/TransactionApprovalServiceTest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between void and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: tests/Unit/TransactionApprovalServiceTest.php
 
 		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertIsInt\(\) with int will always evaluate to true\.$#'
@@ -13633,28 +13213,10 @@ parameters:
 			path: tests/Unit/TransactionReversalServiceTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/TransactionServicePreValidationTest.php
-
-		-
-			message: '#^Parameter \#1 \$customer of method App\\Services\\Transaction\\TransactionService\:\:preValidate\(\) expects App\\Models\\Customer, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			message: '#^Parameter \#1 \$num1 of function bcadd expects numeric\-string, string given\.$#'
 			identifier: argument.type
-			count: 5
-			path: tests/Unit/TransactionServicePreValidationTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Unit/TransactionServiceTest.php
-
-		-
-			message: '#^Property Tests\\Unit\\TransactionServiceTest\:\:\$customer \(App\\Models\\Customer\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Unit/TransactionServiceTest.php
+			count: 3
+			path: tests/Unit/TransactionReversalServiceTest.php
 
 		-
 			message: '#^Property Tests\\Unit\\TransactionServiceTest\:\:\$tillBalance \(App\\Models\\TillBalance\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
@@ -13669,12 +13231,6 @@ parameters:
 			path: tests/Unit/TransactionStateMachineTest.php
 
 		-
-			message: '#^Property Tests\\Unit\\TransactionStateMachineTest\:\:\$customer \(App\\Models\\Customer\) does not accept Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Unit/TransactionStateMachineTest.php
-
-		-
 			message: '#^Method Tests\\Unit\\UserServiceCacheTest\:\:get_user_permissions_uses_cache\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -13685,3 +13241,15 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Unit/ValueObjects/QuarterTest.php
+
+		-
+			message: '#^Constructor of class finfo has an unused parameter \$flags\.$#'
+			identifier: constructor.unusedParameter
+			count: 1
+			path: tests/bootstrap.php
+
+		-
+			message: '#^Constructor of class finfo has an unused parameter \$magicDatabase\.$#'
+			identifier: constructor.unusedParameter
+			count: 1
+			path: tests/bootstrap.php
