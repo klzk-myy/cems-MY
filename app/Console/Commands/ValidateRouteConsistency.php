@@ -206,6 +206,19 @@ class ValidateRouteConsistency extends Command
 
     private function viewExists(string $path): bool
     {
+        // Namespaced views (e.g. horizon::layout, mail::*, vendor/*) are
+        // resolved by the framework view loader through namespace paths
+        // registered by service providers — they are NOT files under
+        // resources/views/ and would be false-positives if we only checked
+        // the filesystem.
+        if (preg_match('/::/', $path)) {
+            try {
+                return view()->exists($path);
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
         // Convert dot notation to slash path
         $path = str_replace('.', '/', $path);
 
