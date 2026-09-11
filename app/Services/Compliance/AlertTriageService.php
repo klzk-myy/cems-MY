@@ -161,7 +161,20 @@ class AlertTriageService
             throw new CaseManagementException('Alert is linked to a case; use case assignment workflow instead');
         }
 
+        $previousAssignee = $alert->assigned_to;
+
         $alert->update(['assigned_to' => $userId]);
+
+        $this->auditService->logWithSeverity(
+            'alert_assigned',
+            [
+                'description' => "Alert #{$alert->id} assigned to user {$userId}".($previousAssignee ? " (reassigned from {$previousAssignee})" : ''),
+                'alert_id' => $alert->id,
+                'assigned_to' => $userId,
+                'previous_assignee' => $previousAssignee,
+            ],
+            'INFO'
+        );
 
         return $alert->fresh();
     }
@@ -209,13 +222,23 @@ class AlertTriageService
     public function resolveAlert(Alert $alert, int $resolvedBy, ?string $notes = null): Alert
     {
         return DB::transaction(function () use ($alert, $resolvedBy, $notes) {
-            $alert->update([
+            // Re-read under a row lock so the state guard and the mutation are atomic;
+            // the stale in-memory status check before the transaction was a TOCTOU race.
+            $lockedAlert = Alert::whereKey($alert->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($lockedAlert->status === FlagStatus::Resolved || $lockedAlert->status === FlagStatus::Rejected) {
+                throw new CaseManagementException('Cannot resolve an already resolved or rejected alert.');
+            }
+
+            $lockedAlert->update([
                 'status' => FlagStatus::Resolved,
                 'case_id' => null,
+                'reviewed_by' => $resolvedBy,
+                'resolved_at' => now(),
             ]);
 
-            if ($alert->flaggedTransaction) {
-                $alert->flaggedTransaction->update([
+            if ($lockedAlert->flaggedTransaction) {
+                $lockedAlert->flaggedTransaction->update([
                     'status' => FlagStatus::Resolved,
                     'reviewed_by' => $resolvedBy,
                     'resolved_at' => now(),
@@ -223,31 +246,55 @@ class AlertTriageService
                 ]);
             }
 
-            return $alert->fresh();
+            $this->auditService->logWithSeverity(
+                'alert_resolved',
+                [
+                    'description' => "Alert #{$lockedAlert->id} resolved",
+                    'alert_id' => $lockedAlert->id,
+                    'resolved_by' => $resolvedBy,
+                    'notes' => $notes,
+                ],
+                'INFO'
+            );
+
+            return $lockedAlert->fresh();
         });
     }
 
     public function dismissAlert(Alert $alert, int $dismissedBy): Alert
     {
-        if ($alert->status === FlagStatus::Resolved || $alert->status === FlagStatus::Rejected) {
-            throw new CaseManagementException('Cannot dismiss an already resolved or rejected alert.');
-        }
-
         return DB::transaction(function () use ($alert, $dismissedBy) {
-            $alert->update([
+            $lockedAlert = Alert::whereKey($alert->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($lockedAlert->status === FlagStatus::Resolved || $lockedAlert->status === FlagStatus::Rejected) {
+                throw new CaseManagementException('Cannot dismiss an already resolved or rejected alert.');
+            }
+
+            $lockedAlert->update([
                 'status' => FlagStatus::Rejected,
                 'reviewed_by' => $dismissedBy,
+                'resolved_at' => now(),
             ]);
 
-            if ($alert->flaggedTransaction) {
-                $alert->flaggedTransaction->update([
+            if ($lockedAlert->flaggedTransaction) {
+                $lockedAlert->flaggedTransaction->update([
                     'status' => FlagStatus::Rejected,
                     'reviewed_by' => $dismissedBy,
                     'resolved_at' => now(),
                 ]);
             }
 
-            return $alert->fresh();
+            $this->auditService->logWithSeverity(
+                'alert_dismissed',
+                [
+                    'description' => "Alert #{$lockedAlert->id} dismissed",
+                    'alert_id' => $lockedAlert->id,
+                    'dismissed_by' => $dismissedBy,
+                ],
+                'INFO'
+            );
+
+            return $lockedAlert->fresh();
         });
     }
 
@@ -291,26 +338,25 @@ class AlertTriageService
      */
     protected function getOverdueCount(): int
     {
+        // SLA hours per priority, sourced from config (thresholds.alert_sla_hours).
+        $sla = config('thresholds.alert_sla_hours', []);
+
         // Compute overdue in database based on SLA hours per priority
         return Alert::query()
             ->whereNull('case_id')
-            ->where(function ($query) {
-                $query->where(function ($q) {
-                    // Critical: 4 hours
+            ->where(function ($query) use ($sla) {
+                $query->where(function ($q) use ($sla) {
                     $q->where('priority', AlertPriority::Critical->value)
-                        ->where('created_at', '<', now()->subHours(4));
-                })->orWhere(function ($q) {
-                    // High: 8 hours
+                        ->where('created_at', '<', now()->subHours((int) ($sla['critical'] ?? 4)));
+                })->orWhere(function ($q) use ($sla) {
                     $q->where('priority', AlertPriority::High->value)
-                        ->where('created_at', '<', now()->subHours(8));
-                })->orWhere(function ($q) {
-                    // Medium: 24 hours
+                        ->where('created_at', '<', now()->subHours((int) ($sla['high'] ?? 8)));
+                })->orWhere(function ($q) use ($sla) {
                     $q->where('priority', AlertPriority::Medium->value)
-                        ->where('created_at', '<', now()->subHours(24));
-                })->orWhere(function ($q) {
-                    // Low: 72 hours
+                        ->where('created_at', '<', now()->subHours((int) ($sla['medium'] ?? 24)));
+                })->orWhere(function ($q) use ($sla) {
                     $q->where('priority', AlertPriority::Low->value)
-                        ->where('created_at', '<', now()->subHours(72));
+                        ->where('created_at', '<', now()->subHours((int) ($sla['low'] ?? 72)));
                 });
             })
             ->count();
@@ -484,7 +530,7 @@ class AlertTriageService
                     'reason' => $reason,
                     'escalated_by' => $escalatedBy,
                 ],
-                'warning'
+                'WARNING'
             );
 
             return $alert;
