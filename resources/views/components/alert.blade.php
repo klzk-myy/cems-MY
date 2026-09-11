@@ -2,9 +2,17 @@
     'type' => 'info',
     'title' => null,
     'dismissible' => false,
+    'icon' => true,
 ])
 
 @php
+// 'danger' is a long-standing alias for 'error' styling. Normalise it here
+// so callers using either name get the same visual (and the component map
+// below stays the single source of truth).
+if ($type === 'danger') {
+    $type = 'error';
+}
+
 $types = [
     'success' => 'bg-success-subtle border-success-border text-success-text',
     'error' => 'bg-danger-subtle border-danger-border text-danger-text',
@@ -20,9 +28,11 @@ $icons = [
 @endphp
 
 <div {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'flex items-start gap-3 rounded-md border p-4 ' . $types[$type], 'role' => 'alert']) }}>
-    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icons[$type] }}" />
-    </svg>
+    @if($icon)
+        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icons[$type] }}" />
+        </svg>
+    @endif
     <div class="flex-1">
         @if($title)
             <p class="font-medium">{{ $title }}</p>
