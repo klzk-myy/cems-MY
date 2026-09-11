@@ -11,6 +11,7 @@ use App\Models\ExchangeRate;
 use App\Models\User;
 use App\Services\System\MathService;
 use App\Services\System\SetupService;
+use Database\Seeders\SchemaSeeder;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class SetupController extends Controller
@@ -217,10 +219,10 @@ class SetupController extends Controller
         }
 
         try {
-            Artisan::call('migrate:fresh', ['--force' => true]);
+            Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
             session()->forget('setup');
 
-            // migrate:fresh already drops setup_state; clear defensively in
+            // SchemaSeeder drops setup_state; clear defensively in
             // case the drop failed so the wizard can never stay locked out.
             $this->setupService->clearCompleted();
 
@@ -296,7 +298,15 @@ class SetupController extends Controller
 
     private function runMigrations(): void
     {
-        Artisan::call('migrate', ['--force' => true]);
+        // Build the schema only when it is missing. SchemaSeeder is
+        // destructive (drops every table), so on an already-populated
+        // database it must never re-run here; an existing schema is treated
+        // as current.
+        if (Schema::hasTable('users')) {
+            return;
+        }
+
+        Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
     }
 
     private function seedCoreData(array $config): void
