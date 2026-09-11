@@ -2,9 +2,11 @@
 
 namespace App\Services\Branch;
 
+use App\Enums\BranchClosureStatus;
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
+use App\Exceptions\Domain\InvalidStateException;
 use App\Models\Branch;
 use App\Models\BranchClosureWorkflow;
 use App\Models\BranchPool;
@@ -62,14 +64,25 @@ class BranchClosingService
 
     public function finalize(BranchClosureWorkflow $workflow, User $finalizer): void
     {
-        if (! $this->canFinalize($workflow)) {
-            throw new BranchClosingChecklistIncompleteException;
-        }
+        DB::transaction(function () use ($workflow) {
+            $lockedWorkflow = BranchClosureWorkflow::whereKey($workflow->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $workflow->update([
-            'status' => 'finalized',
-            'finalized_at' => now(),
-        ]);
+            // Idempotent: re-finalizing a finalized workflow is a no-op.
+            if ($lockedWorkflow->status === BranchClosureStatus::Finalized) {
+                return;
+            }
+
+            if (! $this->canFinalize($lockedWorkflow)) {
+                throw new BranchClosingChecklistIncompleteException;
+            }
+
+            $lockedWorkflow->update([
+                'status' => 'finalized',
+                'finalized_at' => now(),
+            ]);
+        });
     }
 
     public function getActiveWorkflow(Branch $branch): ?BranchClosureWorkflow
@@ -83,10 +96,32 @@ class BranchClosingService
     public function settle(BranchClosureWorkflow $workflow, User $settler): void
     {
         DB::transaction(function () use ($workflow, $settler) {
-            $branch = $workflow->branch;
+            $lockedWorkflow = BranchClosureWorkflow::whereKey($workflow->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Idempotent: settling an already-settled workflow must not post
+            // duplicate HQ-transfer journals for the same pool balances.
+            if ($lockedWorkflow->status === BranchClosureStatus::Settled) {
+                return;
+            }
+
+            if ($lockedWorkflow->status !== BranchClosureStatus::Initiated) {
+                throw new InvalidStateException(
+                    "Closure workflow {$lockedWorkflow->id} cannot be settled from status '{$lockedWorkflow->status->value}'."
+                );
+            }
+
+            $branch = $lockedWorkflow->branch;
 
             if (! $branch instanceof Branch) {
-                throw new \RuntimeException("Closure workflow {$workflow->id} has no branch assigned.");
+                throw new \RuntimeException("Closure workflow {$lockedWorkflow->id} has no branch assigned.");
+            }
+
+            // Settlement force-returns allocations and moves pool balances to
+            // HQ; running it over open counters would corrupt live sessions.
+            if (! $this->checkCountersClosed($branch)) {
+                throw new BranchClosingChecklistIncompleteException;
             }
 
             // Return all active allocations to branch pool
@@ -108,7 +143,7 @@ class BranchClosingService
                 'branch_settled',
                 $settler->id,
                 'BranchClosureWorkflow',
-                $workflow->id,
+                $lockedWorkflow->id,
                 [],
                 [
                     'branch_id' => $branch->id,
@@ -118,7 +153,7 @@ class BranchClosingService
                 ]
             );
 
-            $workflow->update([
+            $lockedWorkflow->update([
                 'status' => 'settled',
                 'settlement_at' => now(),
             ]);
