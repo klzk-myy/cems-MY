@@ -21,6 +21,7 @@ use App\Models\Compliance\ComplianceFinding;
 use App\Models\User;
 use App\Notifications\ComplianceCaseAssignedNotification;
 use App\Notifications\ComplianceCaseSlaBreachedNotification;
+use App\Services\AuditService;
 use App\Services\System\SystemAlertService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -43,6 +44,7 @@ class CaseManagementService
 
     public function __construct(
         protected SystemAlertService $alertService,
+        protected AuditService $auditService,
     ) {}
 
     /**
@@ -69,6 +71,17 @@ class CaseManagementService
             ]);
 
             $finding->markCaseCreated();
+
+            $this->auditService->logWithSeverity(
+                'compliance_case_created',
+                [
+                    'description' => "Compliance case {$case->case_number} created from finding #{$finding->id}",
+                    'case_id' => $case->id,
+                    'customer_id' => $case->customer_id,
+                    'finding_id' => $finding->id,
+                ],
+                'INFO'
+            );
 
             return $case;
         });
@@ -131,7 +144,27 @@ class CaseManagementService
             $this->notifyAssignee($case, $officerId);
         }
 
+        $this->auditCaseAssigned($case, $previousAssignee, $officerId);
+
         return $case->fresh();
+    }
+
+    /**
+     * Emit the canonical `compliance_case_assigned` audit record. Kept as a
+     * single source so assignCase() and assignToOfficer() cannot diverge.
+     */
+    protected function auditCaseAssigned(ComplianceCase $case, ?int $previousAssignee, int $assigneeId): void
+    {
+        $this->auditService->logWithSeverity(
+            'compliance_case_assigned',
+            [
+                'description' => "Compliance case {$case->case_number} assigned to officer #{$assigneeId}",
+                'case_id' => $case->id,
+                'previous_assignee' => $previousAssignee,
+                'assigned_to' => $assigneeId,
+            ],
+            'INFO'
+        );
     }
 
     /**
@@ -166,6 +199,17 @@ class CaseManagementService
     ): ComplianceCase {
         $case->close($resolution, $notes);
 
+        $this->auditService->logWithSeverity(
+            'compliance_case_closed',
+            [
+                'description' => "Compliance case {$case->case_number} closed ({$resolution->value})",
+                'case_id' => $case->id,
+                'resolution' => $resolution->value,
+                'notes' => $notes,
+            ],
+            'INFO'
+        );
+
         return $case->fresh();
     }
 
@@ -175,6 +219,15 @@ class CaseManagementService
     public function escalateCase(ComplianceCase $case): ComplianceCase
     {
         $case->escalate();
+
+        $this->auditService->logWithSeverity(
+            'compliance_case_escalated',
+            [
+                'description' => "Compliance case {$case->case_number} escalated",
+                'case_id' => $case->id,
+            ],
+            'WARNING'
+        );
 
         return $case->fresh();
     }
@@ -254,6 +307,18 @@ class CaseManagementService
                 $alert->update(['case_id' => $case->id]);
             }
 
+            $this->auditService->logWithSeverity(
+                'compliance_case_created',
+                [
+                    'description' => "Compliance case {$case->case_number} created from alerts",
+                    'case_id' => $case->id,
+                    'customer_id' => $case->customer_id,
+                    'alert_ids' => $alerts->pluck('id')->all(),
+                    'opened_by' => $openedBy,
+                ],
+                'INFO'
+            );
+
             event(new CaseOpened($case));
 
             return $case->load('alerts');
@@ -279,6 +344,16 @@ class CaseManagementService
             $alert->update(['case_id' => $case->id]);
             $this->recalculateCasePriority($case);
             $this->recalculateCaseSla($case);
+
+            $this->auditService->logWithSeverity(
+                'compliance_case_alerts_linked',
+                [
+                    'description' => "Alert #{$alert->id} linked to compliance case {$case->case_number}",
+                    'case_id' => $case->id,
+                    'alert_ids' => [$alert->id],
+                ],
+                'INFO'
+            );
 
             return $alert->fresh();
         });
@@ -321,6 +396,16 @@ class CaseManagementService
 
             $this->recalculateCasePriority($targetCase);
             $this->recalculateCaseSla($targetCase);
+
+            $this->auditService->logWithSeverity(
+                'compliance_case_merged',
+                [
+                    'description' => "Compliance case {$sourceCase->case_number} merged into {$targetCase->case_number}",
+                    'source_case_id' => $sourceCase->id,
+                    'target_case_id' => $targetCase->id,
+                ],
+                'INFO'
+            );
 
             return $targetCase->fresh()->load(['alerts', 'documents', 'links']);
         });
@@ -396,6 +481,8 @@ class CaseManagementService
                 $this->notifyAssignee($case, $userId);
             }
 
+            $this->auditCaseAssigned($case, $previousAssignee, $userId);
+
             return $case->fresh();
         });
     }
@@ -413,6 +500,17 @@ class CaseManagementService
             'status' => ComplianceCaseStatus::Closed,
             'resolved_at' => now(),
         ]);
+
+        $this->auditService->logWithSeverity(
+            'compliance_case_closed',
+            [
+                'description' => "Compliance case {$case->case_number} resolved by user #{$resolvedBy}",
+                'case_id' => $case->id,
+                'resolved_by' => $resolvedBy,
+                'notes' => $notes,
+            ],
+            'INFO'
+        );
 
         // pd-00 s22: qualifying closed cases auto-draft an STR filing.
         $this->autoDraftStrForClosedCase($case);
