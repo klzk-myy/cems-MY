@@ -6,7 +6,6 @@ use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Exceptions\Domain\TransactionAlreadyProcessedException;
-use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\JournalEntry;
@@ -22,6 +21,7 @@ use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class TransactionReversalService
 {
@@ -198,6 +198,16 @@ class TransactionReversalService
         return $refund;
     }
 
+    /**
+     * Reverse the currency-position impact of a transaction.
+     *
+     * Delegates to CurrencyPositionService::reversePositions(), the guard-free
+     * compensating path: routing through updatePosition() with the opposite
+     * type could hard-fail a Buy reversal (insufficient-balance guard) after
+     * the acquired currency was re-sold, and corrupted the average cost when
+     * reversing a Sell. A missing position throws so the cancellation
+     * cannot commit without restoring position state.
+     */
     public function reversePositions(Transaction $transaction): void
     {
         $position = $this->positionLockService->findForUpdate(
@@ -206,37 +216,21 @@ class TransactionReversalService
         );
 
         if (! $position) {
-            Log::warning('No position found for reversal', [
-                'transaction_id' => $transaction->id,
-                'currency_code' => $transaction->currency_code,
-                'branch_id' => $transaction->branch_id,
-            ]);
-
-            // TransactionException is abstract; use a concrete subclass so the
-            // DomainException lineage controllers catch is preserved.
-            throw new TransactionValidationException(
-                null,
-                "No position found for reversal: {$transaction->currency_code}"
-            );
+            throw new RuntimeException(sprintf(
+                'No currency position found to reverse transaction %d (currency %s, branch %s)',
+                $transaction->id,
+                $transaction->currency_code,
+                $transaction->branch_id ?? 'null'
+            ));
         }
 
-        $reversalType = $transaction->type === TransactionType::Buy
-            ? TransactionType::Sell
-            : TransactionType::Buy;
-
-        $this->positionService->updatePosition(
-            $transaction->currency_code,
-            $transaction->amount_foreign,
-            $transaction->rate,
-            $reversalType->value,
-            $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ'
-        );
+        $this->positionService->reversePositions($transaction);
 
         Log::info('Positions reversed for transaction', [
             'transaction_id' => $transaction->id,
             'currency_code' => $transaction->currency_code,
             'amount_foreign' => $transaction->amount_foreign,
-            'reversal_type' => $reversalType->value,
+            'type' => $transaction->type->value,
         ]);
     }
 
@@ -250,10 +244,10 @@ class TransactionReversalService
                 'till_id' => $transaction->till_id,
             ]);
 
-            throw new TransactionValidationException(
-                null,
-                "No counter found for reversal: {$transaction->till_id}"
-            );
+            // Same compensating semantics as a missing till balance: the till
+            // leg cannot be reversed, so signal the caller to skip it rather
+            // than aborting the whole reversal after positions were restored.
+            throw new TillBalanceMissingException($transaction->currency_code, (string) $transaction->till_id);
         }
 
         $tillBalance = $this->tillBalanceManager->currentBalance($counter, $transaction->currency_code, true);
