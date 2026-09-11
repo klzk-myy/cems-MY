@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Enums\CounterSessionStatus;
+use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\SchemaSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -30,7 +32,16 @@ class ResetTestDatabase extends Command
 
         if ($this->option('fresh')) {
             $this->warn('Dropping all tables and recreating...');
-            $this->call('migrate:fresh', ['--seed' => $this->option('seed')]);
+
+            // DatabaseSeeder leads with SchemaSeeder, so a --seed run needs
+            // only one call: seeding it directly avoids rebuilding the whole
+            // schema twice.
+            if ($this->option('seed')) {
+                $this->call('db:seed', ['--class' => DatabaseSeeder::class, '--force' => true]);
+            } else {
+                $this->call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+            }
+
             $this->info('Database refreshed with seeding.');
         } else {
             $this->truncateTestData();
