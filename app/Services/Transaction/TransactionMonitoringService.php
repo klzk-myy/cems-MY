@@ -5,10 +5,12 @@ namespace App\Services\Transaction;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Enums\TransactionStatus;
+use App\Models\Alert;
 use App\Models\FlaggedTransaction;
 use App\Models\HighRiskCountry;
 use App\Models\Transaction;
 use App\Services\AuditService;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Contracts\TransactionMonitoringServiceInterface;
 use App\Services\System\MathService;
@@ -26,7 +28,8 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
         ComplianceService $complianceService,
         MathService $mathService,
         protected AuditService $auditService,
-        protected ThresholdService $thresholdService
+        protected ThresholdService $thresholdService,
+        protected AlertTriageService $alertTriageService
     ) {
         $this->complianceService = $complianceService;
         $this->mathService = $mathService;
@@ -34,7 +37,7 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
     public function monitorTransaction(Transaction $transaction): array
     {
-        return DB::transaction(function () use ($transaction) {
+        $result = DB::transaction(function () use ($transaction) {
             $lockedTransaction = Transaction::where('id', $transaction->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -88,7 +91,8 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
             // Unusual pattern detection
             if ($this->isUnusualPattern($lockedTransaction)) {
-                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::ManualReview, 'Transaction deviates 200% from customer average');
+                $deviationPct = (float) config('thresholds.monitoring.unusual_pattern_multiplier', 2.0) * 100;
+                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::ManualReview, "Transaction deviates {$deviationPct}% from customer average");
             }
 
             // High-risk country transaction
@@ -126,6 +130,8 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
                 }
             }
 
+            $this->createAlertsForFlags($flags);
+
             return [
                 'transaction_id' => $lockedTransaction->id,
                 'flags_created' => count($flags),
@@ -133,12 +139,50 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
                 'status' => $lockedTransaction->status,
             ];
         });
+
+        return $result;
+    }
+
+    /**
+     * Ensure every monitoring flag has a corresponding alert for the triage queue.
+     *
+     * Runs inside the monitoring transaction (plan §1.1 step 4): flag and alert
+     * are atomic, so a flag can never persist without its triage alert and a
+     * failed alert rolls the flag back with it. Flags with an existing alert
+     * are skipped; a unique index on alerts.flagged_transaction_id makes the
+     * check-and-create race-free.
+     *
+     * @param  array<int, FlaggedTransaction>  $flags
+     */
+    protected function createAlertsForFlags(array $flags): void
+    {
+        foreach ($flags as $flag) {
+            if (! $flag instanceof FlaggedTransaction) {
+                continue;
+            }
+
+            try {
+                $hasAlert = Alert::where('flagged_transaction_id', $flag->id)->exists();
+
+                if (! $hasAlert) {
+                    $this->alertTriageService->createFromFlaggedTransaction($flag);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Failed to create alert for flagged transaction', [
+                    'flag_id' => $flag->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     protected function isUnusualPattern(Transaction $transaction): bool
     {
+        $lookbackDays = (int) config('thresholds.monitoring.unusual_pattern_lookback_days', 90);
+        $multiplier = (string) config('thresholds.monitoring.unusual_pattern_multiplier', 2.0);
+
         $customerAvg = Transaction::where('customer_id', $transaction->customer_id)
-            ->where('created_at', '>=', now()->subDays(90))
+            ->where('created_at', '>=', now()->subDays($lookbackDays))
             ->avg('amount_local');
 
         if (! $customerAvg || $this->mathService->compare((string) $customerAvg, '0') === 0) {
@@ -150,7 +194,7 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
             (string) $customerAvg
         );
 
-        return $this->mathService->compare($deviation, '2') > 0;
+        return $this->mathService->compare($deviation, $multiplier) > 0;
     }
 
     protected function isHighRiskCountry(Transaction $transaction): bool
@@ -270,6 +314,7 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
         // No existing flag, create new one
         $flag = FlaggedTransaction::create([
             'transaction_id' => $transaction->id,
+            'customer_id' => $transaction->customer_id,
             'flag_type' => $type,
             'flag_reason' => $reason,
             'status' => FlagStatus::Open,
@@ -279,6 +324,15 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
             'transaction_id' => $transaction->id,
             'flag_type' => $type->value,
             'flag_id' => $flag->id,
+        ]);
+
+        $this->auditService->logAmlMonitorEvent('aml_flag_created', $transaction->id, [
+            'entity_type' => 'Transaction',
+            'new' => [
+                'flag_id' => $flag->id,
+                'flag_type' => $type->value,
+                'customer_id' => $transaction->customer_id,
+            ],
         ]);
 
         return $flag;
@@ -295,21 +349,50 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
     public function assignFlag(int $flagId, int $userId): bool
     {
-        return (bool) FlaggedTransaction::where('id', $flagId)
+        $flag = FlaggedTransaction::find($flagId);
+
+        $updated = (bool) FlaggedTransaction::where('id', $flagId)
             ->update([
                 'assigned_to' => $userId,
                 'status' => FlagStatus::UnderReview,
             ]);
+
+        if ($updated && $flag) {
+            $this->auditService->logAmlMonitorEvent('aml_flag_assigned', $flag->transaction_id, [
+                'entity_type' => 'FlaggedTransaction',
+                'new' => [
+                    'flag_id' => $flagId,
+                    'assigned_to' => $userId,
+                ],
+            ]);
+        }
+
+        return $updated;
     }
 
     public function resolveFlag(int $flagId, int $userId, ?string $notes = null): bool
     {
-        return (bool) FlaggedTransaction::where('id', $flagId)
+        $flag = FlaggedTransaction::find($flagId);
+
+        $updated = (bool) FlaggedTransaction::where('id', $flagId)
             ->update([
                 'reviewed_by' => $userId,
                 'notes' => $notes,
                 'status' => FlagStatus::Resolved,
                 'resolved_at' => now(),
             ]);
+
+        if ($updated && $flag) {
+            $this->auditService->logAmlMonitorEvent('aml_flag_resolved', $flag->transaction_id, [
+                'entity_type' => 'FlaggedTransaction',
+                'new' => [
+                    'flag_id' => $flagId,
+                    'resolved_by' => $userId,
+                    'notes' => $notes,
+                ],
+            ]);
+        }
+
+        return $updated;
     }
 }
