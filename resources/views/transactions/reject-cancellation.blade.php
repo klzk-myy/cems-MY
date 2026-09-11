@@ -1,5 +1,5 @@
-<x-app-layout title="{{ ucfirst(str_replace('-', ' ', $view)) }} Transaction">
-    <x-page-header title="{{ ucfirst(str_replace('-', ' ', $view)) }} Transaction" description="Transaction management" />
+<x-app-layout title="Counter Transaction">
+    <x-page-header title="Counter Transaction" description="Transaction management" />
     <x-card>
         <form method="POST" class="space-y-4">
             @csrf
