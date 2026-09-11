@@ -42,9 +42,19 @@ else
   }
 fi
 
+# Capture current commit for rollback capability
+PREV_COMMIT=$(run_remote "cd $(printf '%q' "$DEPLOY_PATH") && git rev-parse HEAD" 2>/dev/null || true)
+if [[ -n "$PREV_COMMIT" ]]; then
+  log_info "Previous commit before deployment: $PREV_COMMIT"
+fi
+
 run_remote "DEPLOY_PATH=$(printf '%q' "$DEPLOY_PATH") DEPLOY_BRANCH=$(printf '%q' "$DEPLOY_BRANCH") bash -s" <<'REMOTE'
   set -euo pipefail
   cd "$DEPLOY_PATH"
+
+  # Put application in maintenance mode during update to avoid mid-deploy 500 errors
+  php artisan down --render="errors::503" --retry=60 || true
+
   git fetch origin "$DEPLOY_BRANCH"
   git reset --hard "origin/$DEPLOY_BRANCH"
   composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
@@ -58,7 +68,9 @@ run_remote "DEPLOY_PATH=$(printf '%q' "$DEPLOY_PATH") DEPLOY_BRANCH=$(printf '%q
     npm run build
   fi
 
-  php artisan migrate --force
+  # database/migrations is retired; schema is recreated by SchemaSeeder
+  # only on fresh installs (DatabaseSeeder refuses non-empty databases).
+  php artisan db:seed --class=DatabaseSeeder || true
   php artisan optimize:clear
   php artisan config:cache
   php artisan route:cache
@@ -70,18 +82,51 @@ run_remote "DEPLOY_PATH=$(printf '%q' "$DEPLOY_PATH") DEPLOY_BRANCH=$(printf '%q
 
   sudo systemctl reload php8.3-fpm || echo "WARNING: failed to reload php8.3-fpm"
   sudo systemctl reload nginx || sudo /etc/init.d/httpd reload || echo "WARNING: failed to reload web server"
+
+  # Bring application out of maintenance mode
+  php artisan up || true
 REMOTE
 
 log_info "Waiting for services to settle..."
 sleep 5
 
 log_info "Verifying deployment at $DEPLOY_APP_URL/up..."
-curl -fsS --connect-timeout 10 --max-time 30 "$DEPLOY_APP_URL/up" || fail "Health check failed"
+if ! curl -fsS --connect-timeout 10 --max-time 30 "$DEPLOY_APP_URL/up"; then
+  log_error "Health check failed at $DEPLOY_APP_URL/up"
+
+  if [[ -n "$PREV_COMMIT" ]]; then
+    log_warn "Attempting automated rollback to previous commit $PREV_COMMIT..."
+    run_remote "DEPLOY_PATH=$(printf '%q' "$DEPLOY_PATH") PREV_COMMIT=$(printf '%q' "$PREV_COMMIT") bash -s" <<'ROLLBACK'
+      cd "$DEPLOY_PATH"
+      git reset --hard "$PREV_COMMIT"
+      composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction || true
+      if [[ -f package.json ]]; then
+        npm run build || true
+      fi
+      php artisan optimize:clear || true
+      php artisan optimize || true
+      php artisan up || true
+      php artisan horizon:terminate || true
+      sudo supervisorctl restart cems-worker:* || true
+      sudo systemctl reload php8.3-fpm || true
+      sudo systemctl reload nginx || sudo /etc/init.d/httpd reload || true
+ROLLBACK
+    log_info "Rollback to $PREV_COMMIT completed."
+  fi
+
+  if [[ -n "${SLACK_WEBHOOK_URL:-}" ]]; then
+    curl -fsS --connect-timeout 10 --max-time 30 -X POST -H 'Content-type: application/json' \
+      --data "{\"text\":\"❌ CEMS-MY deployment to $ENVIRONMENT FAILED (Health check /up failed; rollback attempted to ${PREV_COMMIT:-unknown})\"}" \
+      "$SLACK_WEBHOOK_URL" || true
+  fi
+
+  fail "Deployment health check failed for $DEPLOY_APP_URL/up"
+fi
 
 if [[ -n "${SLACK_WEBHOOK_URL:-}" ]]; then
   log_info "Sending Slack success notification..."
   curl -fsS --connect-timeout 10 --max-time 30 -X POST -H 'Content-type: application/json' \
-    --data "{\"text\":\"✅ CEMS-MY deployed to $ENVIRONMENT\"}" \
+    --data "{\"text\":\"✅ CEMS-MY deployed successfully to $ENVIRONMENT\"}" \
     "$SLACK_WEBHOOK_URL" || log_warn "Slack notification failed"
 fi
 
