@@ -38,6 +38,31 @@ class TransactionConfirmationService
     }
 
     /**
+     * Fetch the pending confirmation for a transaction, auto-expiring stale ones.
+     *
+     * Returns null when no pending confirmation exists or the only pending one
+     * has expired (in which case it is marked Expired before returning null).
+     */
+    public function pendingConfirmationFor(Transaction $transaction): ?TransactionConfirmation
+    {
+        $confirmation = TransactionConfirmation::where('transaction_id', $transaction->id)
+            ->where('status', TransactionConfirmationStatus::Pending->value)
+            ->first();
+
+        if ($confirmation === null) {
+            return null;
+        }
+
+        if ($confirmation->isExpired()) {
+            $confirmation->markExpired();
+
+            return null;
+        }
+
+        return $confirmation;
+    }
+
+    /**
      * Request confirmation for a large transaction.
      *
      * Creates a new TransactionConfirmation record if one doesn't already exist
