@@ -55,7 +55,7 @@ class CustomerController extends Controller
 
         if ($request->has('search') && ! empty($request->search)) {
             $searchTerm = '%'.CustomerRepository::escapeLike($request->search).'%';
-            $query->whereRaw("full_name LIKE ? ESCAPE '\\'", [$searchTerm]);
+            $query->whereRaw('full_name LIKE ? ESCAPE ?', [$searchTerm, '\\']);
         }
 
         if ($request->has('risk_rating') && ! empty($request->risk_rating)) {

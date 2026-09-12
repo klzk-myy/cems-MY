@@ -159,11 +159,14 @@ class CustomerController extends Controller
         // Get customer show data from service (document status and compliance stats)
         $customerShowData = $this->customerService->getCustomerShowData($customer);
 
+        $decryptedPhone = $this->customerService->decryptPhone($customer);
+
         return view('customers.show', compact(
             'customer',
             'transactionStats',
             'notes',
-            'customerShowData'
+            'customerShowData',
+            'decryptedPhone'
         ));
     }
 
@@ -320,13 +323,17 @@ class CustomerController extends Controller
 
         // Decrypt ID number for display
         $decryptedIdNumber = $this->customerService->decryptIdNumber($customer);
+        $decryptedPhone = $this->customerService->decryptPhone($customer);
+        $decryptedAddress = $this->customerService->decryptAddress($customer);
 
         return view('customers.edit', compact(
             'customer',
             'idTypes',
             'riskRatings',
             'nationalities',
-            'decryptedIdNumber'
+            'decryptedIdNumber',
+            'decryptedPhone',
+            'decryptedAddress'
         ));
     }
 

@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Http\Requests\SetupRequest;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
+use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\User;
@@ -336,6 +337,27 @@ class SetupController extends Controller
     {
         $this->runMigrations();
 
+        $hqBranch = null;
+        if (isset($setupData['business'])) {
+            $hqBranch = Branch::create([
+                'code' => 'HQ',
+                'name' => $setupData['business']['business_name'],
+                'address' => $setupData['business']['business_address'] ?? null,
+                'phone' => $setupData['business']['business_phone'] ?? null,
+                'email' => $setupData['business']['business_email'] ?? null,
+                'type' => 'head_office',
+                'is_active' => true,
+                'is_main' => true,
+            ]);
+
+            // A usable business needs at least one till; there is no counter
+            // CRUD UI, so create a default counter bound to HQ.
+            Counter::firstOrCreate(
+                ['code' => 'C01'],
+                ['name' => 'Counter 1', 'status' => 'active', 'branch_id' => $hqBranch->id],
+            );
+        }
+
         if (isset($setupData['admin'])) {
             // Pass the plain password - the mutator hashes it once. Hashing
             // here as well would double-hash and lock the admin out.
@@ -343,6 +365,7 @@ class SetupController extends Controller
                 'username' => $setupData['admin']['admin_name'],
                 'email' => $setupData['admin']['admin_email'],
                 'password' => $setupData['admin']['admin_password'],
+                'branch_id' => $hqBranch?->id,
                 'mfa_enabled' => false,
                 'is_active' => true,
             ]);
@@ -354,22 +377,17 @@ class SetupController extends Controller
         Artisan::call('db:seed', ['--class' => 'CurrencySeeder', '--force' => true]);
         Artisan::call('db:seed', ['--class' => 'EnhancedChartOfAccountsSeeder', '--force' => true]);
 
+        // Honor the step-3 selection: deactivate currencies the business did
+        // not enable. MYR is the system base and must always stay active.
+        if (isset($setupData['currencies']['active_currencies'])) {
+            $active = $setupData['currencies']['active_currencies'];
+            $active[] = 'MYR';
+            Currency::whereNotIn('code', $active)->update(['is_active' => false]);
+        }
+
         // Shared with quickSetup so both install paths guarantee the same
         // fiscal-year / accounting-period preconditions.
         $this->setupService->ensureFiscalYearAndPeriods();
-
-        if (isset($setupData['business'])) {
-            Branch::create([
-                'code' => 'HQ',
-                'name' => $setupData['business']['business_name'],
-                'address' => $setupData['business']['business_address'] ?? null,
-                'phone' => $setupData['business']['business_phone'] ?? null,
-                'email' => $setupData['business']['business_email'] ?? null,
-                'type' => 'head_office',
-                'is_active' => true,
-                'is_main' => true,
-            ]);
-        }
 
         if (isset($setupData['rates']) && ($setupData['rates']['use_default_rates'] ?? false)) {
             Artisan::call('db:seed', ['--class' => 'ExchangeRateSeeder', '--force' => true]);

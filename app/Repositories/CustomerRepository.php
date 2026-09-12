@@ -46,8 +46,8 @@ class CustomerRepository
     {
         $pattern = '%'.self::escapeLike($query).'%';
 
-        return Customer::whereRaw("full_name LIKE ? ESCAPE '\\'", [$pattern])
-            ->orWhereRaw("id_number_hash LIKE ? ESCAPE '\\'", [$pattern])
+        return Customer::whereRaw('full_name LIKE ? ESCAPE ?', [$pattern, '\\'])
+            ->orWhereRaw('id_number_hash LIKE ? ESCAPE ?', [$pattern, '\\'])
             ->get();
     }
 
@@ -65,8 +65,8 @@ class CustomerRepository
         // scoping is its own grouped AND clause rather than a trailing orWhere
         // that would return customers matching neither name nor ID hash.
         $q = Customer::where(function ($query) use ($pattern) {
-            $query->whereRaw("full_name LIKE ? ESCAPE '\\'", [$pattern])
-                ->orWhereRaw("id_number_hash LIKE ? ESCAPE '\\'", [$pattern]);
+            $query->whereRaw('full_name LIKE ? ESCAPE ?', [$pattern, '\\'])
+                ->orWhereRaw('id_number_hash LIKE ? ESCAPE ?', [$pattern, '\\']);
         })
             ->where('is_active', true);
 

@@ -372,8 +372,8 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
                 foreach ($inputTokens as $token) {
                     $escapedToken = $this->escapeLike($token);
 
-                    $query->orWhereRaw("normalized_name LIKE ? ESCAPE '\\'", ["%{$escapedToken}%"])
-                        ->orWhereRaw("aliases LIKE ? ESCAPE '\\'", ["%{$escapedToken}%"]);
+                    $query->orWhereRaw('normalized_name LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\'])
+                        ->orWhereRaw('aliases LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\']);
                 }
             })
             ->with('sanctionList')
@@ -448,8 +448,8 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
                 foreach ($inputTokens as $token) {
                     $escapedToken = $this->escapeLike($token);
 
-                    $query->orWhereRaw("normalized_name LIKE ? ESCAPE '\\'", ["%{$escapedToken}%"])
-                        ->orWhereRaw("alias LIKE ? ESCAPE '\\'", ["%{$escapedToken}%"]);
+                    $query->orWhereRaw('normalized_name LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\'])
+                        ->orWhereRaw('alias LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\']);
                 }
             })
             ->orderBy('id')

@@ -34,14 +34,14 @@
                         selected="{{ old('nationality', $customer->nationality ?? '') }}"
                         required
                     />
-                    <x-input name="phone" label="Phone Number" value="{{ old('phone', $customer->phone ?? '') }}" />
+                    <x-input name="phone" label="Phone Number" value="{{ old('phone', $decryptedPhone ?? '') }}" />
                 </div>
 
                 <x-textarea
                     name="address"
                     label="Address"
                     rows="2"
-                >{{ old('address', $customer->address ?? '') }}</x-textarea>
+                >{{ old('address', $decryptedAddress ?? '') }}</x-textarea>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth', $customer->date_of_birth ?? '') }}" />

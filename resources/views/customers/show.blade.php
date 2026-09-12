@@ -62,7 +62,7 @@
                         </div>
                         <div>
                             <span class="text-ink-muted">Phone</span>
-                            <p class="font-medium">{{ $customer->phone ?? '-' }}</p>
+                            <p class="font-medium">{{ $decryptedPhone ?: '-' }}</p>
                         </div>
                     </div>
                 </x-card>

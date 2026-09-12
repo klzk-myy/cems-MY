@@ -210,11 +210,11 @@ class ComplianceService implements ComplianceServiceInterface
 
         $matches = $query
             ->whereRaw(
-                "entity_name {$operator} ? ESCAPE '\\'",
-                [$pattern]
+                "entity_name {$operator} ? ESCAPE ?",
+                [$pattern, '\\']
             )->orWhereRaw(
-                "aliases {$operator} ? ESCAPE '\\'",
-                [$pattern]
+                "aliases {$operator} ? ESCAPE ?",
+                [$pattern, '\\']
             )
             ->count();
 

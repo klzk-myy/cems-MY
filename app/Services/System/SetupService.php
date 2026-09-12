@@ -2,12 +2,15 @@
 
 namespace App\Services\System;
 
+use App\Enums\AccountCode;
 use App\Enums\JournalEntryStatus;
 use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\ChartOfAccount;
+use App\Models\CurrencyPosition;
+use App\Models\ExchangeRate;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
@@ -226,7 +229,7 @@ class SetupService
 
             // Cash in MYR
             if ($balanceData['opening_balance_myr'] > 0) {
-                $cashMyrAccount = ChartOfAccount::where('account_code', '1010')->first();
+                $cashMyrAccount = ChartOfAccount::where('account_code', AccountCode::CASH_MYR->value)->first();
                 if ($cashMyrAccount) {
                     JournalLine::create([
                         'journal_entry_id' => $journalEntry->id,
@@ -260,7 +263,7 @@ class SetupService
             }
 
             // Credit side - Equity
-            $equityAccount = ChartOfAccount::where('account_code', '3000')->first();
+            $equityAccount = ChartOfAccount::where('account_code', AccountCode::CAPITAL->value)->first();
             if ($equityAccount) {
                 JournalLine::create([
                     'journal_entry_id' => $journalEntry->id,
@@ -286,17 +289,44 @@ class SetupService
     {
         $branch = Branch::where('code', 'HQ')->first();
 
-        if ($branch && isset($stockData['initial_stock'])) {
-            foreach ($stockData['initial_stock'] as $currencyCode => $amount) {
-                if ($amount > 0) {
-                    BranchPool::create([
-                        'branch_id' => $branch->id,
-                        'currency_code' => $currencyCode,
-                        'available_balance' => (string) $amount,
-                        'allocated_balance' => '0.00',
-                    ]);
-                }
+        if (! $branch || ! isset($stockData['initial_stock'])) {
+            return;
+        }
+
+        $rates = ExchangeRate::query()
+            ->pluck('rate_buy', 'currency_code');
+
+        foreach ($stockData['initial_stock'] as $currencyCode => $amount) {
+            if ($amount <= 0) {
+                continue;
             }
+
+            BranchPool::create([
+                'branch_id' => $branch->id,
+                'currency_code' => $currencyCode,
+                'available_balance' => (string) $amount,
+                'allocated_balance' => '0.00',
+            ]);
+
+            // Transaction stock validation reads currency_positions, not
+            // branch_pools — seed both so a fresh install can actually sell
+            // the stock it was set up with.
+            $cost = $currencyCode === 'MYR'
+                ? '1'
+                : (string) ($rates[$currencyCode] ?? '0');
+            $totalCost = $this->mathService->multiply((string) $amount, $cost);
+
+            CurrencyPosition::create([
+                'branch_id' => $branch->id,
+                'currency_code' => $currencyCode,
+                'quantity' => (string) $amount,
+                'average_cost' => $cost,
+                'total_cost' => $totalCost,
+                'current_rate' => $cost,
+                'current_value' => $totalCost,
+                'unrealized_gain_loss' => '0',
+                'last_revalued_at' => null,
+            ]);
         }
     }
 }

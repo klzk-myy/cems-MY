@@ -8,7 +8,6 @@ use App\Models\PasswordHistory;
 use App\Models\User;
 use App\Services\AuditService;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * User Service
@@ -43,12 +42,12 @@ class UserService
             'username' => $data['username'],
             'email' => $data['email'],
             'branch_id' => $data['branch_id'] ?? null,
+            'password' => $data['password'],
             'mfa_enabled' => false,
             'is_active' => true,
         ]);
 
         $user->role = $data['role'];
-        $user->password_hash = Hash::make($data['password']);
         $user->save();
 
         // Seed history with the initial hash so reuse prevention covers it.

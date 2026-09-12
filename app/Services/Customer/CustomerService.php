@@ -368,6 +368,18 @@ class CustomerService implements CustomerServiceInterface
     }
 
     /**
+     * Decrypt a customer's encrypted phone number.
+     */
+    public function decryptPhone(Customer $customer): string
+    {
+        if (empty($customer->phone)) {
+            return '';
+        }
+
+        return $this->encryptionService->decrypt($customer->phone);
+    }
+
+    /**
      * Encrypt customer sensitive data.
      *
      * @param  array  $data  Customer data

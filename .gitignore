@@ -92,3 +92,4 @@ cems_my
 
 # Syncthing conflict copies
 *.sync-conflict-*
+/public/.user.ini

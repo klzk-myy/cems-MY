@@ -47,6 +47,16 @@
                     <x-alert type="error">{{ session('error') }}</x-alert>
                 @endif
 
+                @if($errors->any())
+                    <x-alert type="error">
+                        <ul class="list-disc list-inside">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </x-alert>
+                @endif
+
                 @switch($currentStep)
                     @case(1)
                     <form method="POST" action="{{ route('setup.step1') }}">
@@ -74,6 +84,7 @@
                             <x-input name="admin_name" label="Admin Name" inline required />
                             <x-input type="email" name="admin_email" label="Email" inline required />
                             <x-input type="password" name="admin_password" label="Password" inline required minlength="12" help="Minimum 12 characters with uppercase, lowercase, number and special character." />
+                            <x-input type="password" name="admin_password_confirmation" label="Confirm Password" inline required minlength="12" />
                         </div>
                         <div class="mt-6 flex justify-between">
                             <x-button href="{{ route('setup.index', ['step' => 1]) }}" variant="secondary">Previous</x-button>
@@ -87,15 +98,24 @@
                         @csrf
                         <h3 class="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Currencies</h3>
                         <p class="text-sm text-ink-muted mb-4">Select the currencies your business will trade in.</p>
-                        <div class="space-y-3">
-                            @foreach($currencies as $currency)
-                                <x-checkbox
-                                    name="currency_codes[]"
-                                    value="{{ $currency->code }}"
-                                    label="{{ $currency->code }} - {{ $currency->name }}"
-                                    :checked="true"
-                                />
-                            @endforeach
+                        <div class="space-y-4">
+                            <x-select
+                                name="base_currency"
+                                label="Base Currency"
+                                :options="$currencies->pluck('code', 'code')->toArray()"
+                                value="MYR"
+                                required
+                            />
+                            <div class="space-y-3">
+                                @foreach($currencies as $currency)
+                                    <x-checkbox
+                                        name="active_currencies[]"
+                                        value="{{ $currency->code }}"
+                                        label="{{ $currency->code }} - {{ $currency->name }}"
+                                        :checked="true"
+                                    />
+                                @endforeach
+                            </div>
                         </div>
                         <div class="mt-6 flex justify-between">
                             <x-button href="{{ route('setup.index', ['step' => 2]) }}" variant="secondary">Previous</x-button>
@@ -112,6 +132,7 @@
                         <div class="space-y-4">
                             <x-checkbox
                                 name="use_default_rates"
+                                value="1"
                                 label="Use Default Rates"
                                 help="Seed with standard exchange rates for selected currencies."
                                 :checked="true"
@@ -165,9 +186,72 @@
                         </div>
                         <div class="mt-6 flex justify-between">
                             <x-button href="{{ route('setup.index', ['step' => 5]) }}" variant="secondary">Previous</x-button>
-                            <x-button type="submit" variant="primary">Complete Setup</x-button>
+                            <x-button type="submit" variant="primary">Next: Review</x-button>
                         </div>
                     </form>
+                    @break
+
+                    @case(7)
+                    @php($setupData = session('setup', []))
+                    <h3 class="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Review &amp; Complete</h3>
+                    <p class="text-sm text-ink-muted mb-4">Review your configuration, then finish setup.</p>
+                    <dl class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <dt class="text-ink-muted">Business</dt>
+                            <dd class="text-ink font-medium">{{ $setupData['business']['business_name'] ?? '—' }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-ink-muted">Admin</dt>
+                            <dd class="text-ink font-medium">{{ $setupData['admin']['admin_email'] ?? '—' }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-ink-muted">Currencies</dt>
+                            <dd class="text-ink font-medium">{{ isset($setupData['currencies']['active_currencies']) ? implode(', ', $setupData['currencies']['active_currencies']) : '—' }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-ink-muted">Default Rates</dt>
+                            <dd class="text-ink font-medium">{{ !empty($setupData['rates']['use_default_rates']) ? 'Yes' : 'No' }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-ink-muted">MYR Cash</dt>
+                            <dd class="text-ink font-medium">{{ number_format((float) ($setupData['stock']['initial_myr_cash'] ?? 0), 2) }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-ink-muted">Opening Balance (MYR)</dt>
+                            <dd class="text-ink font-medium">{{ number_format((float) ($setupData['opening_balance']['opening_balance_myr'] ?? 0), 2) }}</dd>
+                        </div>
+                    </dl>
+                    <div id="setup-complete-error" class="hidden mt-4 text-sm text-danger-text"></div>
+                    <div class="mt-6 flex justify-between">
+                        <x-button href="{{ route('setup.index', ['step' => 6]) }}" variant="secondary">Previous</x-button>
+                        <x-button id="complete-setup-btn" type="button" variant="primary">Complete Setup</x-button>
+                    </div>
+                    <script>
+                        document.getElementById('complete-setup-btn').addEventListener('click', function () {
+                            var btn = this;
+                            var err = document.getElementById('setup-complete-error');
+                            btn.disabled = true;
+                            fetch('{{ route('setup.complete') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json',
+                                },
+                            }).then(function (res) { return res.json(); }).then(function (data) {
+                                if (data.success && data.redirect) {
+                                    window.location.href = data.redirect;
+                                } else {
+                                    err.textContent = data.message || 'Setup could not be completed.';
+                                    err.classList.remove('hidden');
+                                    btn.disabled = false;
+                                }
+                            }).catch(function () {
+                                err.textContent = 'Setup could not be completed. Please try again.';
+                                err.classList.remove('hidden');
+                                btn.disabled = false;
+                            });
+                        });
+                    </script>
                     @break
                 @endswitch
             </x-card>

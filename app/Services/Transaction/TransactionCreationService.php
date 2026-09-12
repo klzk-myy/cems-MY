@@ -539,6 +539,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             'user_id' => $context->user->id,
             'branch_id' => $context->tillBalance->branch_id,
             'till_id' => $data['till_id'],
+            'counter_id' => $data['counter_id'] ?? null,
             'type' => $data['type'],
             'currency_code' => $data['currency_code'],
             'amount_foreign' => $data['amount_foreign'],
