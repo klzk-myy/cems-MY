@@ -68,7 +68,9 @@ class StockTransferController extends Controller
     {
         $this->requireManagerOrAdmin();
 
-        $branches = Branch::orderBy('name')->pluck('name', 'id');
+        // Transfers store branch names (schema contract), so options are
+        // keyed by name.
+        $branches = Branch::orderBy('name')->pluck('name', 'name');
         // Currency's primary key is its ISO code, so options are keyed by code.
         $currencies = Currency::where('is_active', true)->orderBy('name')->pluck('name', 'code');
 

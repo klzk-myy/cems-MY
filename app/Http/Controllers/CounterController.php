@@ -120,8 +120,12 @@ class CounterController extends Controller
         }
 
         $currencies = $this->getActiveCurrencies();
+        $supervisors = User::where('branch_id', $counter->branch_id)
+            ->whereIn('role', [UserRole::Manager->value, UserRole::Admin->value])
+            ->orderBy('username')
+            ->get(['id', 'username']);
 
-        return view('counters.close', compact('counter', 'session', 'currencies'));
+        return view('counters.close', compact('counter', 'session', 'currencies', 'supervisors'));
     }
 
     /**
@@ -233,12 +237,14 @@ class CounterController extends Controller
 
         $availableUsers = User::select('id', 'username', 'role')
             ->where('is_active', true)
+            ->where('branch_id', $counter->branch_id)
             ->where('id', '!=', auth()->id())
             ->get();
 
         $supervisors = User::select('id', 'username', 'role')
             ->where('is_active', true)
-            ->whereIn('role', [UserRole::Manager, UserRole::Admin])
+            ->where('branch_id', $counter->branch_id)
+            ->whereIn('role', [UserRole::Manager->value, UserRole::Admin->value])
             ->get();
 
         $currencies = $this->getActiveCurrencies();

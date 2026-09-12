@@ -13,7 +13,7 @@
                 </div>
                 <div>
                     <span class="text-ink-muted text-sm">Operator</span>
-                    <p class="font-semibold text-lg">{{ auth()->user()->name }}</p>
+                    <p class="font-semibold text-lg">{{ auth()->user()->username }}</p>
                 </div>
                 <div>
                     <span class="text-ink-muted text-sm">Session Started</span>
@@ -32,67 +32,44 @@
                 @csrf
 
                 <div class="space-y-4 mb-6">
-                    <x-input
-                        type="text"
-                        name="myr_cash"
-                        label="MYR Cash Count"
-                        :value="old('myr_cash', $closingBalance['MYR'] ?? '')"
-                        required
-                        inline
-                    />
-
-                    @foreach($currencies ?? ['USD', 'SGD', 'THB'] as $currency)
-                        <div>
-                            <label class="block text-sm font-medium text-ink-muted mb-1">{{ $currency }} Closing Amount</label>
-                            <div class="grid grid-cols-3 gap-4">
-                                <div>
-                                    <span class="text-xs text-ink-muted">Count</span>
-                                    <x-input
-                                        type="number"
-                                        step="0.01"
-                                        name="currencies[{{ $currency }}][count]"
-                                        placeholder="0.00"
-                                        inline
-                                    />
-                                </div>
-                                <div>
-                                    <span class="text-xs text-ink-muted">Rate</span>
-                                    <x-input
-                                        type="text"
-                                        :value="$rates[$currency] ?? '0.00'"
-                                        readonly
-                                        inline
-                                    />
-                                </div>
-                                <div>
-                                    <span class="text-xs text-ink-muted">MYR Value</span>
-                                    <x-input
-                                        type="text"
-                                        readonly
-                                        inline
-                                    />
-                                </div>
-                            </div>
+                    @foreach($currencies as $currency)
+                        <div class="flex items-center gap-4">
+                            <label class="w-20 text-sm font-medium text-ink-muted">{{ $currency->code }}</label>
+                            <x-input
+                                type="text"
+                                name="closing_floats[{{ $currency->code }}]"
+                                class="flex-1 w-full"
+                                placeholder="0.00"
+                                value="{{ old('closing_floats.' . $currency->code, '0.00') }}"
+                                inputmode="decimal"
+                                inline
+                            />
+                            @error('closing_floats.' . $currency->code)
+                                <span class="text-xs text-danger">{{ $message }}</span>
+                            @enderror
                         </div>
                     @endforeach
                 </div>
 
-                <x-textarea
-                    name="summary"
-                    label="Cash Summary"
-                    rows="3"
-                    placeholder="Enter cash counts summary..."
-                >{{ old('summary') }}</x-textarea>
-
                 <div class="mb-6">
-                    <x-input
-                        type="text"
-                        name="notes"
-                        label="Notes (Optional)"
-                        placeholder="Any remarks for this session..."
-                        inline
-                    />
+                    <label for="supervisor_id" class="block text-sm font-medium text-ink-muted mb-1">Supervisor (required if variance exceeds the red threshold)</label>
+                    <select id="supervisor_id" name="supervisor_id" class="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                        <option value="">— None —</option>
+                        @foreach($supervisors ?? [] as $supervisor)
+                            <option value="{{ $supervisor->id }}" @selected((string) old('supervisor_id') === (string) $supervisor->id)>{{ $supervisor->username }}</option>
+                        @endforeach
+                    </select>
+                    @error('supervisor_id')
+                        <span class="text-xs text-danger">{{ $message }}</span>
+                    @enderror
                 </div>
+
+                <x-textarea
+                    name="notes"
+                    label="Notes (Optional)"
+                    rows="3"
+                    placeholder="Any remarks for this session..."
+                >{{ old('notes') }}</x-textarea>
 
                 <div class="flex gap-3">
                     <x-button type="submit" variant="primary">Close Counter</x-button>

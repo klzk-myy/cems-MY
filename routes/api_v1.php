@@ -418,8 +418,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ->name('api.v1.counters.emergency.acknowledge');
 
             // Handover Acknowledge
+            // Recipient or supervisor may acknowledge — enforced inside
+            // CounterHandoverService (to_user_id / supervisor_id check).
             Route::post('/{counterId}/handover/{handoverId}/acknowledge', [CounterHandoverController::class, 'acknowledge'])
-                ->middleware(['role:manager', 'mfa.verified'])
+                ->middleware(['role:teller,manager,admin', 'mfa.verified'])
                 ->name('api.v1.counters.handover.acknowledge');
 
             // Counter Close

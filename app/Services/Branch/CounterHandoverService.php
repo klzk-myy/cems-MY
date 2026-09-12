@@ -23,7 +23,10 @@ class CounterHandoverService
                 $query->where('counter_id', $counterId)
                     ->whereDate('session_date', $date);
             })
-            ->where('to_user_id', $userId)
+            ->where(function ($query) use ($userId) {
+                $query->where('to_user_id', $userId)
+                    ->orWhere('supervisor_id', $userId);
+            })
             ->whereNull('acknowledged_at')
             ->first();
     }
@@ -34,9 +37,12 @@ class CounterHandoverService
         bool $verified,
         ?string $notes
     ): void {
-        // Only managers can acknowledge handovers (S2 compliance)
-        if (! $user->isManager()) {
-            throw new UnauthorizedException('Only managers can acknowledge handovers');
+        // The designated recipient confirms receipt of custody, or the
+        // recorded supervisor may confirm on their behalf. The previous
+        // manager-only rule deadlocked: findPendingHandover scopes to
+        // to_user_id, so a teller recipient could never acknowledge.
+        if ($user->id !== $handover->to_user_id && $user->id !== $handover->supervisor_id) {
+            throw new UnauthorizedException('Only the designated recipient or the supervisor can acknowledge this handover');
         }
 
         DB::transaction(function () use ($handover, $verified, $notes) {

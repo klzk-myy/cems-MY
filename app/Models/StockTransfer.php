@@ -161,7 +161,7 @@ class StockTransfer extends BaseModel
 
     public function canComplete(): bool
     {
-        return in_array($this->status, [StockTransferStatus::InTransit, StockTransferStatus::PartiallyReceived]);
+        return in_array($this->status, [StockTransferStatus::InTransit, StockTransferStatus::PartiallyReceived, StockTransferStatus::Received]);
     }
 
     public function canCancel(): bool

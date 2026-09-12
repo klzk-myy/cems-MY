@@ -271,6 +271,50 @@ class CounterHandoverAcknowledgeTest extends TestCase
     }
 
     #[Test]
+    public function teller_recipient_can_acknowledge_handover(): void
+    {
+        // Regression: the previous isManager() gate deadlocked teller
+        // recipients — findPendingHandover scopes to to_user_id, so no
+        // actor could ever acknowledge a handover addressed to a teller.
+        $result = $this->createPendingHandover();
+        $handover = $result['handover'];
+
+        $response = $this->actingAs($this->teller2, 'sanctum')
+            ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
+                'verified' => true,
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson(['success' => true]);
+
+        $handover->refresh();
+        $this->assertNotNull($handover->acknowledged_at);
+    }
+
+    #[Test]
+    public function unrelated_manager_cannot_acknowledge_handover(): void
+    {
+        $result = $this->createPendingHandover();
+        $handover = $result['handover'];
+
+        $otherManager = User::factory()->create([
+            'username' => 'other'.substr(uniqid(), -6),
+            'email' => 'other-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Manager,
+            'branch_id' => $this->branch->id,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($otherManager, 'sanctum')
+            ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
+                'verified' => true,
+            ]);
+
+        $response->assertStatus(403);
+    }
+
+    #[Test]
     public function yellow_variance_requires_acknowledgment(): void
     {
         // Create a handover with yellow_variance flag set to true

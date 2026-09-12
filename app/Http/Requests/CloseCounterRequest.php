@@ -9,6 +9,21 @@ class CloseCounterRequest extends AuthorizedFormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $floats = $this->input('closing_floats', []);
+
+        if (is_array($floats) && $floats !== [] && ! array_is_list($floats)) {
+            $this->merge([
+                'closing_floats' => array_map(
+                    static fn (string|int $code, mixed $amount): array => ['currency_id' => (string) $code, 'amount' => $amount],
+                    array_keys($floats),
+                    $floats,
+                ),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [

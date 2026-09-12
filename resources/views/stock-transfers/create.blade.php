@@ -9,11 +9,22 @@
             <form action="{{ route('stock-transfers.store') }}" method="POST">
                 @csrf
 
-                <x-select name="source_branch_id" label="Source Branch" :options="$branches ?? []" required placeholder="Select Source Branch" />
-                <x-select name="destination_branch_id" label="Destination Branch" :options="$branches ?? []" required placeholder="Select Destination Branch" />
-                <x-select name="currency_id" label="Currency" :options="$currencies ?? []" required placeholder="Select Currency" />
+                <x-select name="source_branch_name" label="Source Branch" :options="$branches ?? []" required placeholder="Select Source Branch" />
+                <x-select name="destination_branch_name" label="Destination Branch" :options="$branches ?? []" required placeholder="Select Destination Branch" />
+                <x-select
+                    name="type"
+                    label="Transfer Type"
+                    :options="['Standard' => 'Standard', 'Emergency' => 'Emergency', 'Scheduled' => 'Scheduled', 'Return' => 'Return']"
+                    required
+                    placeholder="Select Type"
+                />
+                <x-select name="items[0][currency_code]" label="Currency" :options="$currencies ?? []" required placeholder="Select Currency" />
 
-                <x-input type="text" name="amount" id="amount" label="Amount" placeholder="0.00" required />
+                <div class="grid grid-cols-3 gap-4">
+                    <x-input type="text" name="items[0][quantity]" label="Quantity" placeholder="0.00" required inputmode="decimal" />
+                    <x-input type="text" name="items[0][rate]" label="Rate (MYR)" placeholder="0.0000" required inputmode="decimal" />
+                    <x-input type="text" name="items[0][value_myr]" label="Value (MYR)" placeholder="0.00" required inputmode="decimal" />
+                </div>
 
                 <x-textarea
                     name="notes"

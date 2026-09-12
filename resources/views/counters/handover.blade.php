@@ -14,7 +14,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">Current Operator</label>
-                        <p class="font-semibold text-lg text-ink">{{ auth()->user()->name }}</p>
+                        <p class="font-semibold text-lg text-ink">{{ auth()->user()->username }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">Session Started</label>
@@ -31,10 +31,14 @@
                 <h2 class="text-lg font-semibold mb-4 text-ink">Transfer Details</h2>
                 <form method="POST" action="{{ route('counters.handover', $counter ?? 1) }}">
                     @csrf
+                    <input type="hidden" name="from_user_id" value="{{ $session->user_id }}">
 
                     @php
                         $operatorOptions = collect($availableUsers ?? [])->mapWithKeys(function ($user) {
-                            return [$user->id => $user->username . ' (' . $user->role . ')'];
+                            return [$user->id => $user->username . ' (' . $user->role->label() . ')'];
+                        })->toArray();
+                        $supervisorOptions = collect($supervisors ?? [])->mapWithKeys(function ($user) {
+                            return [$user->id => $user->username . ' (' . $user->role->label() . ')'];
                         })->toArray();
                     @endphp
 
@@ -50,13 +54,37 @@
                     </div>
 
                     <div class="mb-4">
-                        <x-input
-                            type="password"
-                            name="pin"
-                            label="Your PIN to Confirm"
+                        <x-select
+                            name="supervisor_id"
+                            label="Supervisor"
+                            :options="$supervisorOptions"
+                            placeholder="-- Select Supervisor --"
                             required
                             inline
                         />
+                    </div>
+
+                    <div class="mb-4">
+                        <h3 class="text-sm font-medium text-ink-muted mb-2">Physical Counts</h3>
+                        <div class="space-y-3">
+                            @foreach($currencies as $currency)
+                                <div class="flex items-center gap-4">
+                                    <label class="w-20 text-sm font-medium text-ink-muted">{{ $currency->code }}</label>
+                                    <x-input
+                                        type="text"
+                                        name="physical_counts[{{ $currency->code }}]"
+                                        class="flex-1 w-full"
+                                        placeholder="0.00"
+                                        value="{{ old('physical_counts.' . $currency->code, '0.00') }}"
+                                        inputmode="decimal"
+                                        inline
+                                    />
+                                    @error('physical_counts.' . $currency->code)
+                                        <span class="text-xs text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
 
                     <x-textarea

@@ -59,8 +59,24 @@
             <x-card>
                 <form method="POST" action="{{ route('counters.handover.acknowledge', $counter) }}">
                     @csrf
+                    <input type="hidden" name="verified" value="0">
                     <div class="mb-4">
-                        <x-input type="password" name="pin" label="Your PIN" required inline />
+                        <label class="flex items-center gap-2 text-sm font-medium text-ink-muted">
+                            <input type="checkbox" name="verified" value="1" class="rounded border-border" @checked(old('verified')) required>
+                            I have physically counted the till and verify the amounts above
+                        </label>
+                        @error('verified')
+                            <span class="text-xs text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="mb-4">
+                        <x-input
+                            type="text"
+                            name="notes"
+                            label="Notes (Optional)"
+                            placeholder="Any remarks on the physical count..."
+                            inline
+                        />
                     </div>
                     <div class="flex gap-3">
                         <x-button type="submit" variant="primary" class="flex-1">Confirm Receipt</x-button>

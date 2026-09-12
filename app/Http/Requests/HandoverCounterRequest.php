@@ -9,6 +9,21 @@ class HandoverCounterRequest extends AuthorizedFormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $counts = $this->input('physical_counts', []);
+
+        if (is_array($counts) && $counts !== [] && ! array_is_list($counts)) {
+            $this->merge([
+                'physical_counts' => array_map(
+                    static fn (string|int $code, mixed $amount): array => ['currency_id' => (string) $code, 'amount' => $amount],
+                    array_keys($counts),
+                    $counts,
+                ),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
