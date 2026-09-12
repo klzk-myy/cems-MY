@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AccountingPeriod;
+use App\Models\FiscalYear;
 use Illuminate\Database\Seeder;
 
 class AccountingPeriodSeeder extends Seeder
@@ -10,6 +11,15 @@ class AccountingPeriodSeeder extends Seeder
     public function run(): void
     {
         $now = now();
+
+        $openYears = FiscalYear::where('status', 'Open')->get();
+
+        // Attach each period to the open fiscal year covering its start date,
+        // if one exists — keeps the year view's period list and the
+        // all-periods-closed year-close guard accurate.
+        $fiscalYearIdFor = fn (string $startDate) => $openYears
+            ->first(fn (FiscalYear $y) => $startDate >= $y->start_date->toDateString()
+                && $startDate <= $y->end_date->toDateString())?->id;
 
         // Create current month period if not exists
         $currentPeriodCode = $now->format('Y-m');
@@ -23,6 +33,7 @@ class AccountingPeriodSeeder extends Seeder
                 'end_date' => $currentEnd->toDateString(),
                 'period_type' => 'month',
                 'status' => 'Open',
+                'fiscal_year_id' => $fiscalYearIdFor($currentStart->toDateString()),
             ]
         );
 
@@ -38,6 +49,7 @@ class AccountingPeriodSeeder extends Seeder
                 'end_date' => $prevEnd->toDateString(),
                 'period_type' => 'month',
                 'status' => 'Open',
+                'fiscal_year_id' => $fiscalYearIdFor($prevStart->toDateString()),
             ]
         );
 
@@ -53,6 +65,7 @@ class AccountingPeriodSeeder extends Seeder
                 'end_date' => $nextEnd->toDateString(),
                 'period_type' => 'month',
                 'status' => 'Open',
+                'fiscal_year_id' => $fiscalYearIdFor($nextStart->toDateString()),
             ]
         );
 

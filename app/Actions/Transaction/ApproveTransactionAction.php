@@ -6,6 +6,7 @@ use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Exceptions\Domain\TransactionConfirmationRequiredException;
+use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Transaction;
 use App\Services\Transaction\TransactionApprovalService;
 use Illuminate\Support\Facades\Log;
@@ -49,6 +50,8 @@ class ApproveTransactionAction
             return TransactionApprovalResult::error('This transaction appears to be a duplicate. Please verify and try again.');
         } catch (\InvalidArgumentException) {
             return TransactionApprovalResult::error('The transaction is not eligible for approval in its current state.');
+        } catch (TransactionValidationException $e) {
+            return TransactionApprovalResult::error($e->getMessage());
         } catch (\RuntimeException) {
             return TransactionApprovalResult::error('Transaction approval failed due to a system error. Please contact support.');
         } catch (\Exception $e) {

@@ -185,6 +185,10 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
     {
         $ipAddress ??= optional(request())->ip();
 
+        // Self-guard so direct service callers (not just ApproveTransactionAction)
+        // cannot approve non-pending, self-created, or compliance-held transactions.
+        $this->validateApprovalEligibility($transaction, $approverId);
+
         $this->validateApproverTier($transaction, $approverId);
 
         // Segregation-of-duties gate: large transactions that enter the manager

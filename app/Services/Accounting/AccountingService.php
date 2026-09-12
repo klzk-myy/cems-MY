@@ -15,6 +15,7 @@ use App\Services\AuditService;
 use App\Services\Contracts\AccountingServiceInterface;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -129,7 +130,7 @@ class AccountingService implements AccountingServiceInterface
 
             // Journal entry number is derived from the id so it is unique
             // by construction without requiring a sequence table.
-            $entry->entry_number = 'JE-'.date('Ym', strtotime($entryDate)).'-'.str_pad((string) $entry->id, 4, '0', STR_PAD_LEFT);
+            $entry->entry_number = 'JE-'.Carbon::parse($entryDate)->format('Ym').'-'.str_pad((string) $entry->id, 4, '0', STR_PAD_LEFT);
             $entry->save();
 
             foreach ($lines as $line) {

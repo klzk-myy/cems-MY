@@ -53,12 +53,21 @@ class FiscalYearService
      */
     public function createFiscalYear(string $yearCode, string $startDate, string $endDate): FiscalYear
     {
-        return FiscalYear::create([
+        $year = FiscalYear::create([
             'year_code' => $yearCode,
             'start_date' => $startDate,
             'end_date' => $endDate,
             'status' => 'Open',
         ]);
+
+        // Attach any existing unlinked periods that fall inside the year so
+        // the year view and closeFiscalYear()'s all-periods-closed guard see them.
+        AccountingPeriod::whereNull('fiscal_year_id')
+            ->where('start_date', '>=', $startDate)
+            ->where('end_date', '<=', $endDate)
+            ->update(['fiscal_year_id' => $year->id]);
+
+        return $year;
     }
 
     /**
