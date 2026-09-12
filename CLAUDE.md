@@ -9,9 +9,11 @@ CEMS-MY is a Laravel 12.x Currency Exchange Management System for Malaysian Mone
 ## Local Development Notes
 
 ### Redis
-Local development uses Redis **without authentication**. Keep `REDIS_PASSWORD=` empty in `.env` and `.env.example`. The test suite (`phpunit.xml`) also expects an empty Redis password.
+Local Redis runs **with authentication**: `REDIS_PASSWORD=redpass` in `.env`, mirrored by `phpunit.xml` (`<env name="REDIS_PASSWORD" value="redpass" force="true"/>`). Keep the two in sync — `phpunit.xml`'s comment states the local Redis requires the auth password from `.env`.
 
-Do not configure a Redis password for local development, and do not re-add tests that enforce one. Staging and production environments must configure Redis `requirepass` and set a matching strong `REDIS_PASSWORD`.
+Do not change the local password without updating both files. Staging and production must configure Redis `requirepass` with a strong `REDIS_PASSWORD`.
+
+Note: `.env.example` still documents the older no-auth setup (`REDIS_PASSWORD=` empty) — that file is stale relative to the current local config.
 
 ### Laravel Boost MCP
 The project includes Laravel Boost as an MCP server. Start it with:
@@ -20,7 +22,7 @@ The project includes Laravel Boost as an MCP server. Start it with:
 php artisan boost:mcp
 ```
 
-If Kimi reports MCP error **32603** (Internal Error), check `storage/logs/laravel.log`. The most common cause is a `REDIS_PASSWORD` mismatch: Laravel is trying to AUTH to Redis, but local Redis has no password configured. Ensure `.env` has `REDIS_PASSWORD=` (empty).
+If the MCP client reports error **32603** (Internal Error), check `storage/logs/laravel.log`. The most common cause is a `REDIS_PASSWORD` mismatch: Laravel's AUTH must match the password local Redis is configured with (`redpass` in `.env`).
 
 ## Common Commands
 
@@ -53,21 +55,22 @@ php artisan report:msb2 --date=2026-04-06
 
 ```
 app/
-├── Console/Commands/  # 35 Artisan commands
-├── Enums/  # 44 PHP 8.3 enums (10 new in May 2026: CounterStatus, FiscalYearStatus, AccountingPeriodStatus, BranchClosureStatus, TransactionConfirmationStatus, BankReconciliationStatus, SystemAlertLevel, SystemHealthCheckStatus, HighRiskCountryRiskLevel, ReportGeneratedStatus)
+├── Console/Commands/  # 56 Artisan commands
+├── Enums/  # 64 PHP 8.3 enums
 ├── Events/  # 13 Event classes (TransactionCreated, CounterSessionOpened, etc.)
-├── Exceptions/Domain/  # 43 typed domain exceptions (InsufficientStockException, etc.)
+├── Exceptions/Domain/  # 71 typed domain exceptions (InsufficientStockException, etc.)
 ├── Http/
-│   ├── Controllers/  # 61 controllers (42 web + 19 API)
-│   ├── Middleware/  # 21 middleware classes
+│   ├── Controllers/  # 88 controllers (59 web + 29 API)
+│   ├── Middleware/  # 19 middleware classes
 │   ├── Requests/  # Form request validation classes
-│   └── Resources/  # API resource transformers
-├── Jobs/  # 23 background jobs (Compliance, Sanctions, Accounting subdirs)
-├── Jobs/Audit/  # Async jobs (SealAuditHashJob)
-├── Models/  # 62 Eloquent models
-├── Observers/  # Model observers for event-driven hooks
-└── Services/  # 83 services
+│   └── Resources/  # 12 API resource transformers
+├── Jobs/  # 15 background jobs (7 root + 6 Compliance + 1 Accounting + 1 Audit)
+├── Models/  # 92 Eloquent models
+├── Policies/  # 15 authorization policies
+└── Services/  # 154 services
 ```
+
+There is no `app/Observers/` directory — model event hooks are handled via listeners and service calls, not observers.
 
 ### Key Architectural Patterns
 
@@ -131,7 +134,7 @@ All monetary calculations use `App\Services\MathService` (BCMath), not floats. N
 Events fire for critical operations (`TransactionCreated`, `CounterSessionOpened`, etc.) with listeners for audit logging, notifications, and compliance triggers.
 
 **9. Background Processing**
-Laravel queues handle async compliance screening, STR report submission, and sanctions rescreening via `App\Jobs\` (8 main + 8 Compliance + 5 Sanctions jobs). Laravel Horizon provides a dashboard to monitor queue jobs, failures, and throughput (`php artisan horizon`).
+Laravel queues handle async compliance screening, STR report submission, and sanctions rescreening via `App\Jobs\` (15 jobs: 7 root-level + 6 Compliance + 1 Accounting + 1 Audit). Laravel Horizon provides a dashboard to monitor queue jobs, failures, and throughput (`php artisan horizon`).
 
 **10. Role Hierarchy**
 Permissions inherit upward: `Admin` > `ComplianceOfficer` > `Manager` > `Teller`.
@@ -248,8 +251,6 @@ Rate configuration via `config/thresholds.php`:
 - `PUT /api/v1/rates/{currency}` - Manual override (Manager+)
 - `GET /api/v1/rates/check` - Check if all required rates are set
 
-See `buz.opn.brc.md` for complete business opening and daily branch opening workflow documentation.
-
 ### Counter Management
 
 Counters (tills) with full lifecycle:
@@ -328,6 +329,7 @@ Tests use `RefreshDatabase` trait and are in `tests/Feature/` and `tests/Unit/`.
 - **Concurrency**: Use `lockForUpdate()` for position updates to prevent race conditions.
 - **Database Transactions**: Wrap multi-step financial operations in `DB::transaction()` for atomicity (especially transactions ≥ RM 25,000).
 - **Thresholds**: All threshold values must be accessed via `ThresholdService` (read from `config/thresholds.php`). No hardcoded threshold constants in services.
+- **Schema**: `database/migrations/` is retired. `database/seeders/SchemaSeeder.php` is the schema source of truth — edit it for schema changes, never create migrations.
 
 ### Frontend Styling
 
@@ -348,6 +350,14 @@ Tailwind v4 with CSS-based `@theme` configuration — single source of truth for
 | `.btn-secondary` | `px-4 py-2 text-sm font-medium rounded-lg bg-white border border-[#e5e5e5]` |
 | `.form-input`  | `w-full px-4 py-2.5 text-sm bg-white border border-[#e5e5e5] rounded-lg` |
 | `.badge-success` | `inline-flex px-2.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700` |
+
+## Task Completion
+
+When a task is implemented, always finish with these steps in order:
+
+1. **Code review** — re-read every file you changed; check for correctness, edge cases, consistency with existing conventions, and leftover debug/scratch artifacts.
+2. **Partial tests** — run the tests that cover the code you edited (e.g. `php artisan test --filter="<related>"` or the specific test files), not the whole suite.
+3. **Commit and push** — stage the changed files, commit with a message explaining *why* (matching existing commit style), then `git push` to the remote.
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
