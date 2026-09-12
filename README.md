@@ -15,7 +15,6 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 - [User Roles](#user-roles)
 - [Security](#security)
 - [Compliance](#compliance)
-- [API Documentation](docs/API.md)
 - [Development](#development)
 
 ## Features

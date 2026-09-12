@@ -67,9 +67,8 @@ opencode.json
 !README.md
 !spec.md
 
-# Ephemeral Superpowers docs are ignored; other docs remain tracked
-/docs/superpowers/plans/
-/docs/superpowers/specs/
+# All docs are local-only (specs, plans, operational notes)
+/docs/
 
 /browser-test.sh
 /run-tests.sh
