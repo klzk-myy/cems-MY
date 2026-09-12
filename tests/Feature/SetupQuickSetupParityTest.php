@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\JournalEntryStatus;
 use App\Models\AccountingPeriod;
+use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\FiscalYear;
 use App\Services\Accounting\AccountingService;
@@ -129,6 +130,112 @@ class SetupQuickSetupParityTest extends TestCase
             .'sanctions screening is ineffective until the lists are imported.',
             session('info')
         );
+    }
+
+    #[Test]
+    public function step3_folds_a_custom_currency_into_the_active_selection(): void
+    {
+        $response = $this->post(route('setup.step3'), [
+            'base_currency' => 'MYR',
+            'active_currencies' => ['MYR', 'USD'],
+            'custom_currency_code' => 'thb',
+            'custom_currency_name' => 'Thai Baht',
+            'custom_currency_symbol' => '฿',
+        ]);
+
+        $response->assertRedirect(route('setup.wizard', ['step' => 4]));
+
+        $currencies = session('setup.currencies');
+        $this->assertSame('THB', $currencies['custom_currency_code']);
+        $this->assertEqualsCanonicalizing(
+            ['MYR', 'USD', 'THB'],
+            $currencies['active_currencies'],
+            'Custom code must be uppercased and merged into the active set'
+        );
+    }
+
+    #[Test]
+    public function step3_requires_a_name_when_a_custom_currency_code_is_given(): void
+    {
+        $response = $this->post(route('setup.step3'), [
+            'base_currency' => 'MYR',
+            'active_currencies' => ['MYR'],
+            'custom_currency_code' => 'THB',
+        ]);
+
+        $response->assertSessionHasErrors('custom_currency_name');
+    }
+
+    #[Test]
+    public function step4_requires_buy_and_sell_rates_for_a_custom_currency(): void
+    {
+        $this->withSession([
+            'setup.currencies' => [
+                'base_currency' => 'MYR',
+                'active_currencies' => ['MYR', 'THB'],
+                'custom_currency_code' => 'THB',
+                'custom_currency_name' => 'Thai Baht',
+            ],
+        ]);
+
+        $response = $this->post(route('setup.step4'), [
+            'use_default_rates' => '1',
+        ]);
+
+        $response->assertSessionHasErrors([
+            'custom_rates.THB.buy',
+            'custom_rates.THB.sell',
+        ]);
+    }
+
+    #[Test]
+    public function wizard_completion_creates_custom_currency_rate_stock_and_position(): void
+    {
+        $this->withSession([
+            'setup' => [
+                'business' => ['business_name' => 'Wizard Co'],
+                'admin' => [
+                    'admin_name' => 'admin',
+                    'admin_email' => 'wizard-admin@example.com',
+                    'admin_password' => 'Sup3rSecure!Pass',
+                ],
+                'currencies' => [
+                    'base_currency' => 'MYR',
+                    'active_currencies' => ['MYR', 'USD', 'THB'],
+                    'custom_currency_code' => 'THB',
+                    'custom_currency_name' => 'Thai Baht',
+                    'custom_currency_symbol' => '฿',
+                ],
+                'rates' => [
+                    'use_default_rates' => '1',
+                    'custom_rates' => ['THB' => ['buy' => '0.1280', 'sell' => '0.1320']],
+                ],
+                'stock' => [
+                    'initial_myr_cash' => '1000',
+                    'initial_stock' => ['USD' => '500', 'THB' => '20000'],
+                ],
+                'opening_balance' => [
+                    'opening_balance_myr' => '1000',
+                    'opening_balance_foreign' => ['USD' => '500', 'THB' => '20000'],
+                ],
+            ],
+        ]);
+
+        $response = $this->postJson(route('setup.complete'));
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        $currency = Currency::where('code', 'THB')->first();
+        $this->assertNotNull($currency, 'Custom currency must be created');
+        $this->assertSame('Thai Baht', $currency->name);
+        $this->assertTrue($currency->is_active);
+
+        $rate = ExchangeRate::where('currency_code', 'THB')->first();
+        $this->assertNotNull($rate, 'Custom currency must get an exchange rate');
+        $this->assertSame('setup_custom', $rate->source);
+
+        $this->assertDatabaseHas('branch_pools', ['currency_code' => 'THB', 'available_balance' => '20000.0000']);
+        $this->assertDatabaseHas('currency_positions', ['currency_code' => 'THB', 'quantity' => '20000.0000']);
     }
 
     #[Test]

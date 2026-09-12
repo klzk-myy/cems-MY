@@ -40,10 +40,12 @@ GET `/` on a fresh DB redirects to `/setup`. Each step POSTs `setup/step/N` whic
 |---|---|---|---|
 | 1 | `setup/step/1` | `business_name`*, `business_address`, `business_phone`, `business_email` | `setup.business` |
 | 2 | `setup/step/2` | `admin_name`* (becomes `username`), `admin_email`* (unique), `admin_password`* + `admin_password_confirmation` (required, `confirmed` rule + `PasswordComplexityRule`: ≥12 chars, mixed case, digit, symbol) | `setup.admin` |
-| 3 | `setup/step/3` | `base_currency`* (3 chars, use `MYR`), `active_currencies[]`* (min 1) | `setup.currencies` |
-| 4 | `setup/step/4` | `use_default_rates` (boolean — checkbox must submit `value="1"`, not `"on"`) | `setup.rates` |
-| 5 | `setup/step/5` | `initial_myr_cash`* (numeric ≥0), `initial_stock[CODE]` | `setup.stock` |
-| 6 | `setup/step/6` | `opening_balance_myr`* (numeric ≥0), `opening_balance_foreign[CODE]` | `setup.opening_balance` |
+| 3 | `setup/step/3` | `base_currency`* (3 chars, use `MYR`), `active_currencies[]`* (min 1), optional custom currency: `custom_currency_code` (3 alpha) + `custom_currency_name` (required with code) + `custom_currency_symbol` | `setup.currencies` |
+| 4 | `setup/step/4` | `use_default_rates` (boolean — checkbox must submit `value="1"`, not `"on"`), `custom_rates[CODE][buy/sell]` (required when a custom currency was entered in step 3) | `setup.rates` |
+| 5 | `setup/step/5` | `initial_myr_cash`* (numeric ≥0), `initial_stock[CODE]` — one input per step-3 selection incl. custom currency | `setup.stock` |
+| 6 | `setup/step/6` | `opening_balance_myr`* (numeric ≥0), `opening_balance_foreign[CODE]` — same currency set as step 5 | `setup.opening_balance` |
+
+**Custom ("other") currency path**: step 3 accepts a code not in the seeded list — code is uppercased and folded into `active_currencies`, so steps 5/6 render inputs for it even though it is not yet in `currencies`. Step 4 then requires its buy/sell rates (`custom_rates[CODE]`, rendered automatically). On completion, `executeSetup` `firstOrCreate`s the currency (`decimal_places=2`, `is_active=1`, name/symbol from step 3, code as fallback) and writes the rate as an `exchange_rates` row with `source=setup_custom`. Verified with `thb` (lowercase input) → `THB Thai Baht ฿`, rate 0.1280/0.1320, pool+position 20,000 with avg_cost = buy rate.
 
 `executeSetup()` then: creates `HQ` head-office `Branch` + default `Counter` C01 (bound to HQ — no counter CRUD UI exists), creates admin `User` (username = `admin_name`, role `Admin`, `branch_id`=HQ, `mfa_enabled=false`), seeds `CurrencySeeder` + `EnhancedChartOfAccountsSeeder`, applies `active_currencies` → `currencies.is_active` (MYR always stays active), `ensureFiscalYearAndPeriods()`, optionally seeds `ExchangeRateSeeder` (10 currency rows incl. non-active ones, `source=initial_seed`, `effective_date=NULL` = active immediately), writes `branch_pools` from `initial_stock`, posts opening-balance journal `OB-<year>-0001`, and marks `setup_state` complete. `setup/reset` re-runs SchemaSeeder (full wipe) — non-production only.
 
@@ -61,7 +63,7 @@ SELECT * FROM journal_lines;                               -- opening balance li
 SELECT * FROM setup_state;                                 -- completion marker
 ```
 
-**Invariant**: the opening-balance journal must balance — `SUM(debit) = SUM(credit)` per `journal_entry_id`. Debits: `1000` MYR cash + `1011` foreign cash. Credit: `4000` Capital (equity). `branch_pools` holds stock (NOT `currency_positions` — that stays empty until counter floats are assigned).
+**Invariant**: the opening-balance journal must balance — `SUM(debit) = SUM(credit)` per `journal_entry_id`. Debits: `1000` MYR cash + `1011` foreign cash. Credit: `4000` Capital (equity). Setup seeds BOTH `branch_pools` and `currency_positions` (position avg_cost = buy rate, MYR = 1.0) — both are required; Sell validates against `currency_positions`.
 
 ## 4. Bugs found & fixed during browser test (2026-09-12)
 

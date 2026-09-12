@@ -44,11 +44,33 @@ class SetupController extends Controller
 
         $step = $request->get('step', $this->getCurrentStep());
 
+        $currencies = Currency::select('code', 'name', 'symbol')->where('is_active', true)->get();
+
+        // Steps 5/6 must iterate the step-3 selection, not the DB list — that
+        // is where unchecked currencies get dropped and a custom "other"
+        // currency (not yet in the table) picks up its stock/balance inputs.
+        $selected = collect((array) session('setup.currencies.active_currencies', []))
+            ->map(fn ($c) => strtoupper((string) $c))
+            ->unique()
+            ->values();
+
+        $setupCurrencies = $selected->isEmpty()
+            ? $currencies
+            : $currencies->whereIn('code', $selected)->values()->toBase()
+                ->merge(
+                    $selected->diff($currencies->pluck('code'))->map(fn ($code) => (object) [
+                        'code' => $code,
+                        'name' => session('setup.currencies.custom_currency_name') ?: $code,
+                        'symbol' => session('setup.currencies.custom_currency_symbol') ?: $code,
+                    ])
+                );
+
         return view('setup.index', [
             'isSetupComplete' => false,
             'currentStep' => (int) $step,
             'progress' => $this->calculateProgress(),
-            'currencies' => Currency::select('code', 'name', 'symbol')->where('is_active', true)->get(),
+            'currencies' => $currencies,
+            'setupCurrencies' => $setupCurrencies,
         ]);
     }
 
@@ -121,6 +143,18 @@ class SetupController extends Controller
     public function step3Currencies(SetupRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+
+        // A custom currency is implicitly selected: fold its code into the
+        // active set so the review screen, stock/balance steps, and
+        // executeSetup all see it without special-casing.
+        $customCode = strtoupper(trim((string) ($validated['custom_currency_code'] ?? '')));
+
+        if ($customCode !== '') {
+            $validated['custom_currency_code'] = $customCode;
+            $validated['active_currencies'] = array_values(array_unique(
+                array_map('strtoupper', [...$validated['active_currencies'], $customCode])
+            ));
+        }
 
         session(['setup.currencies' => $validated]);
 
@@ -377,12 +411,28 @@ class SetupController extends Controller
         Artisan::call('db:seed', ['--class' => 'CurrencySeeder', '--force' => true]);
         Artisan::call('db:seed', ['--class' => 'EnhancedChartOfAccountsSeeder', '--force' => true]);
 
+        // A custom "other" currency entered in step 3 may not exist in the
+        // seeded list — create it before applying the active set.
+        $customCode = strtoupper(trim((string) ($setupData['currencies']['custom_currency_code'] ?? '')));
+        if ($customCode !== '') {
+            Currency::firstOrCreate(
+                ['code' => $customCode],
+                [
+                    'name' => $setupData['currencies']['custom_currency_name'] ?? $customCode,
+                    'symbol' => $setupData['currencies']['custom_currency_symbol'] ?? $customCode,
+                    'decimal_places' => 2,
+                    'is_active' => true,
+                ],
+            );
+        }
+
         // Honor the step-3 selection: deactivate currencies the business did
         // not enable. MYR is the system base and must always stay active.
         if (isset($setupData['currencies']['active_currencies'])) {
             $active = $setupData['currencies']['active_currencies'];
             $active[] = 'MYR';
             Currency::whereNotIn('code', $active)->update(['is_active' => false]);
+            Currency::whereIn('code', $active)->update(['is_active' => true]);
         }
 
         // Shared with quickSetup so both install paths guarantee the same
@@ -391,6 +441,25 @@ class SetupController extends Controller
 
         if (isset($setupData['rates']) && ($setupData['rates']['use_default_rates'] ?? false)) {
             Artisan::call('db:seed', ['--class' => 'ExchangeRateSeeder', '--force' => true]);
+        }
+
+        // Step-4 custom rates (e.g. for a step-3 "other" currency the seeder
+        // does not cover) become real exchange_rates rows.
+        foreach ($setupData['rates']['custom_rates'] ?? [] as $code => $rate) {
+            $code = strtoupper(trim((string) $code));
+            if ($code === '' || ! isset($rate['buy'], $rate['sell'])) {
+                continue;
+            }
+
+            ExchangeRate::updateOrCreate(
+                ['currency_code' => $code],
+                [
+                    'rate_buy' => $rate['buy'],
+                    'rate_sell' => $rate['sell'],
+                    'source' => 'setup_custom',
+                    'fetched_at' => now(),
+                ],
+            );
         }
 
         if (isset($setupData['stock'])) {

@@ -116,6 +116,15 @@
                                     />
                                 @endforeach
                             </div>
+                            <div class="border-t border-border pt-4">
+                                <label class="block text-sm font-medium text-ink-muted mb-2">Other Currency (optional)</label>
+                                <p class="text-xs text-ink-muted mb-3">Add a currency that is not in the list above. Filling in a code selects and activates it.</p>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <x-input name="custom_currency_code" label="Code" inline placeholder="e.g. THB" value="{{ old('custom_currency_code') }}" maxlength="3" />
+                                    <x-input name="custom_currency_name" label="Name" inline placeholder="e.g. Thai Baht" value="{{ old('custom_currency_name') }}" />
+                                    <x-input name="custom_currency_symbol" label="Symbol" inline placeholder="e.g. ฿" value="{{ old('custom_currency_symbol') }}" />
+                                </div>
+                            </div>
                         </div>
                         <div class="mt-6 flex justify-between">
                             <x-button href="{{ route('setup.index', ['step' => 2]) }}" variant="secondary">Previous</x-button>
@@ -138,6 +147,18 @@
                                 :checked="true"
                             />
                         </div>
+                        @php($customCode = strtoupper((string) session('setup.currencies.custom_currency_code', '')))
+                        @if($customCode !== '')
+                            <div class="mt-4 border-t border-border pt-4">
+                                <p class="text-sm text-ink-muted mb-2">
+                                    {{ $customCode }} has no default rate. Enter its opening rates against MYR.
+                                </p>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <x-input name="custom_rates[{{ $customCode }}][buy]" label="{{ $customCode }} Buy Rate" inline required placeholder="0.0000" inputmode="decimal" />
+                                    <x-input name="custom_rates[{{ $customCode }}][sell]" label="{{ $customCode }} Sell Rate" inline required placeholder="0.0000" inputmode="decimal" />
+                                </div>
+                            </div>
+                        @endif
                         <div class="mt-6 flex justify-between">
                             <x-button href="{{ route('setup.index', ['step' => 3]) }}" variant="secondary">Previous</x-button>
                             <x-button type="submit" variant="primary">Next: Initial Stock</x-button>
@@ -155,7 +176,7 @@
                             <div class="border-t border-border pt-4">
                                 <label class="block text-sm font-medium text-ink-muted mb-2">Foreign Currency Stock</label>
                                 <div class="grid grid-cols-2 gap-4">
-                                    @foreach($currencies->where('code', '!=', 'MYR') as $currency)
+                                    @foreach($setupCurrencies->where('code', '!=', 'MYR') as $currency)
                                         <x-input name="initial_stock[{{ $currency->code }}]" :label="$currency->code" inline placeholder="0.00" value="0.00" inputmode="decimal" />
                                     @endforeach
                                 </div>
@@ -178,7 +199,7 @@
                             <div class="border-t border-border pt-4">
                                 <label class="block text-sm font-medium text-ink-muted mb-2">Foreign Currency Opening Balances</label>
                                 <div class="grid grid-cols-2 gap-4">
-                                    @foreach($currencies->where('code', '!=', 'MYR') as $currency)
+                                    @foreach($setupCurrencies->where('code', '!=', 'MYR') as $currency)
                                         <x-input name="opening_balance_foreign[{{ $currency->code }}]" :label="$currency->code" inline placeholder="0.00" value="0.00" inputmode="decimal" />
                                     @endforeach
                                 </div>

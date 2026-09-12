@@ -81,17 +81,30 @@ class SetupRequest extends AuthorizedFormRequest
             'base_currency' => 'required|string|size:3',
             'active_currencies' => 'required|array|min:1',
             'active_currencies.*' => 'string|size:3',
+            'custom_currency_code' => 'nullable|string|alpha|size:3',
+            'custom_currency_name' => 'nullable|string|max:100|required_with:custom_currency_code',
+            'custom_currency_symbol' => 'nullable|string|max:10',
         ];
     }
 
     private function step4Rules(): array
     {
-        return [
+        $rules = [
             'use_default_rates' => 'boolean',
             'custom_rates' => 'nullable|array',
             'custom_rates.*.buy' => 'nullable|numeric|min:0.0001',
             'custom_rates.*.sell' => 'nullable|numeric|min:0.0001',
         ];
+
+        // A custom "other" currency has no seeded rate — without one it can
+        // never be traded, so its buy/sell rates are mandatory here.
+        $customCode = strtoupper(trim((string) session('setup.currencies.custom_currency_code', '')));
+        if ($customCode !== '') {
+            $rules["custom_rates.{$customCode}.buy"] = 'required|numeric|min:0.0001';
+            $rules["custom_rates.{$customCode}.sell"] = 'required|numeric|min:0.0001';
+        }
+
+        return $rules;
     }
 
     private function step5Rules(): array
