@@ -187,7 +187,7 @@
                         <x-button variant="secondary" type="button" @click="openModal = 'dismiss'">Dismiss</x-button>
                     </div>
 
-                    <div x-show="openModal === 'confirm'" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div x-show="openModal === 'confirm'" x-cloak @keydown.escape.window="openModal = null" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                         <div class="bg-surface rounded-lg shadow-xl max-w-md w-full p-6 space-y-4" @click.outside="openModal = null">
                             <h3 class="text-lg font-semibold text-ink">Confirm {{ $result->isAdverseMedia() ? 'Adverse Media' : 'Sanctions' }} Match</h3>
                             <p class="text-sm text-ink-muted">
@@ -209,7 +209,7 @@
                         </div>
                     </div>
 
-                    <div x-show="openModal === 'dismiss'" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div x-show="openModal === 'dismiss'" x-cloak @keydown.escape.window="openModal = null" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                         <div class="bg-surface rounded-lg shadow-xl max-w-md w-full p-6 space-y-4" @click.outside="openModal = null">
                             <h3 class="text-lg font-semibold text-ink">Dismiss Screening Match</h3>
                             <p class="text-sm text-ink-muted">The match will be marked as dismissed with your reason recorded in the audit log.</p>

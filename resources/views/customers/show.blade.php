@@ -117,8 +117,8 @@
                             @forelse($customer->transactions as $transaction)
                                 <tr class="hover:bg-canvas-subtle">
                                     <td class="px-4 py-3 text-sm">{{ $transaction->created_at->format('d M Y') }}</td>
-                                    <td class="px-4 py-3 text-sm">{{ $transaction->type }}</td>
-                                    <td class="px-4 py-3 text-sm">{{ $transaction->currency ?? $transaction->currency_code ?? 'MYR' }}</td>
+                                    <td class="px-4 py-3 text-sm">{{ $transaction->type?->value ?? $transaction->type }}</td>
+                                    <td class="px-4 py-3 text-sm">{{ $transaction->currency_code ?? 'MYR' }}</td>
                                     <td class="px-4 py-3 text-sm">RM {{ number_format($transaction->amount_local ?? 0, 2) }}</td>
                                     <td class="px-4 py-3">
                                         <x-badge variant="success">Completed</x-badge>
@@ -219,7 +219,7 @@
         </div>
 
         @if (auth()->user()?->isComplianceOfficer() && ! $customer->is_frozen)
-            <div x-show="showFreeze" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div x-show="showFreeze" x-cloak @keydown.escape.window="showFreeze = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50" @click="showFreeze = false"></div>
                 <div x-show="showFreeze"
                      x-transition
@@ -239,7 +239,7 @@
                 </div>
             </div>
 
-            <div x-show="showUnfreeze" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div x-show="showUnfreeze" x-cloak @keydown.escape.window="showUnfreeze = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50" @click="showUnfreeze = false"></div>
                 <div x-show="showUnfreeze"
                      x-transition
@@ -260,7 +260,7 @@
         @endif
 
         @if ((auth()->user()?->isManager() || auth()->user()?->isAdmin()) && ! $customer->closed_at)
-            <div x-show="showClose" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div x-show="showClose" x-cloak @keydown.escape.window="showClose = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50" @click="showClose = false"></div>
                 <div x-show="showClose"
                      x-transition

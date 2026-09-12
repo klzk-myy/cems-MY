@@ -53,9 +53,10 @@
                 const f = parseFloat(this.formData.amount_foreign);
                 return isNaN(f) ? '—' : (this.formData.currency_code + ' ' + f.toFixed(2));
             },
-            get requireProofOfAddress() { return this.wizard.cdd_level === 'standard' || this.wizard.cdd_level === 'enhanced'; },
-            get requirePassport() { return this.wizard.cdd_level === 'enhanced'; },
-            get requireEnhanced() { return this.wizard.cdd_level === 'enhanced'; },
+            get cddLevel() { return (this.wizard.cdd_level || '').toLowerCase(); },
+            get requireProofOfAddress() { return this.cddLevel === 'standard' || this.cddLevel === 'enhanced'; },
+            get requirePassport() { return this.cddLevel === 'enhanced'; },
+            get requireEnhanced() { return this.cddLevel === 'enhanced'; },
             payload() {
                 return {
                     customer_id: parseInt(this.formData.customer_id) || null,
@@ -82,6 +83,11 @@
                 return true;
             },
             validStep3() { return true; },
+            submitStep() {
+                if (this.step === 1 && this.validStep1()) return this.callStep1();
+                if (this.step === 2 && this.validStep2()) return this.callStep2();
+                if (this.step === 3) return this.callStep3();
+            },
             async fetch(url, opts = {}) {
                 return fetch(url, { credentials: 'same-origin', ...opts, headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json', ...(opts.headers ?? {}) } });
             },
@@ -166,6 +172,8 @@
             },
         }" class="max-w-4xl mx-auto">
 
+        <form @submit.prevent="submitStep()">
+
             <!-- Step Indicator -->
             <div class="flex items-center justify-between mb-8">
                 <template x-for="i in totalSteps" :key="i">
@@ -195,7 +203,7 @@
                         <label class="block text-sm font-medium mb-1">Transaction Type</label>
                         <select x-model="formData.type" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                             <option value="">Select type</option>
-                            <template x-for="(label, val) in { buy: 'Buy', sell: 'Sell' }" :key="val">
+                            <template x-for="(label, val) in { Buy: 'Buy', Sell: 'Sell' }" :key="val">
                                 <option :value="val" x-text="label"></option>
                             </template>
                         </select>
@@ -369,33 +377,34 @@
                 </p>
                 <div class="flex justify-center gap-3">
                     <a :href="'/transactions/' + result.id" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626]">View Transaction</a>
-                    <button @click="reset()" class="px-4 py-2 text-sm font-medium rounded-lg border border-border">New Transaction</button>
+                    <button type="button" @click="reset()" class="px-4 py-2 text-sm font-medium rounded-lg border border-border">New Transaction</button>
                 </div>
             </div>
 
             <!-- Navigation -->
             <div class="flex justify-between mt-6">
-                <button x-show="step > 1 && step < 4" @click="step--" :disabled="loading"
+                <button type="button" x-show="step > 1 && step < 4" @click="step--" :disabled="loading"
                         class="px-4 py-2 text-sm font-medium rounded-lg border border-border disabled:opacity-50">
                     Previous
                 </button>
                 <div x-show="step === 1"></div>
-                <button x-show="step === 1" @click="callStep1()" :disabled="loading || !validStep1()"
+                <button type="submit" x-show="step === 1" :disabled="loading || !validStep1()"
                         class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626] disabled:opacity-50">
                     <span x-show="!loading">Continue</span>
                     <span x-show="loading">Checking...</span>
                 </button>
-                <button x-show="step === 2" @click="callStep2()" :disabled="loading || !validStep2()"
+                <button type="submit" x-show="step === 2" :disabled="loading || !validStep2()"
                         class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626] disabled:opacity-50">
                     <span x-show="!loading">Review</span>
                     <span x-show="loading">Saving...</span>
                 </button>
-                <button x-show="step === 3" @click="callStep3()" :disabled="loading"
+                <button type="submit" x-show="step === 3" :disabled="loading"
                         class="px-4 py-2 text-sm font-medium rounded-lg bg-[#0a0a0a] text-white hover:bg-[#262626] disabled:opacity-50">
                     <span x-show="!loading">Confirm &amp; Submit</span>
                     <span x-show="loading">Submitting...</span>
                 </button>
             </div>
+        </form>
         </div>
     </div>
 </x-app-layout>

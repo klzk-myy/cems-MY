@@ -184,7 +184,7 @@
         </x-card>
 
         @if (auth()->user()?->isAdmin())
-            <div x-show="showRescreen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div x-show="showRescreen" x-cloak @keydown.escape.window="showRescreen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50" @click="showRescreen = false"></div>
                 <div x-show="showRescreen"
                      x-transition

@@ -143,7 +143,7 @@ Route::middleware(['auth', 'session.timeout'])->group(function () {
         Route::get('/', [TransactionController::class, 'index'])->name('index');
 
         Route::get('/wizard', [TransactionWizardController::class, 'index'])->name('wizard')
-            ->middleware('role:teller,manager,admin');
+            ->middleware('role:teller');
         Route::get('/create', [TransactionController::class, 'create'])->name('create')
             ->middleware('mfa.verified');
         Route::post('/', [TransactionController::class, 'store'])->name('store')

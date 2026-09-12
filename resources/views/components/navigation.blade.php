@@ -56,7 +56,9 @@ foreach ($navItems as $key => $item) {
         </a>
         @if($collapsible)
             <button
+                type="button"
                 @click="sidebarCollapsed = !sidebarCollapsed"
+                :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
                 class="rounded-md p-1.5 text-sidebar-text-muted hover:bg-sidebar-hover hover:text-sidebar-text"
             >
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,10 +82,10 @@ foreach ($navItems as $key => $item) {
                         href="{{ route($item['route']) }}"
                         class="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors {{ $isActive ? 'bg-sidebar-hover text-sidebar-text' : 'text-sidebar-text hover:bg-sidebar-hover' }}"
                     >
-                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}" />
                         </svg>
-                        <span x-show="!sidebarCollapsed">{{ $item['label'] }}</span>
+                        <span :class="{ 'sr-only': sidebarCollapsed }">{{ $item['label'] }}</span>
                     </a>
                 </li>
             @endforeach
@@ -97,7 +99,7 @@ foreach ($navItems as $key => $item) {
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                <span x-show="!sidebarCollapsed">Logout</span>
+                <span :class="{ 'sr-only': sidebarCollapsed }">Logout</span>
             </button>
         </form>
     </div>

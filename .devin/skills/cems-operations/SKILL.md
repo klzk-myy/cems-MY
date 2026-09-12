@@ -82,6 +82,20 @@ SELECT * FROM setup_state;                                 -- completion marker
 - **Phone validation is strict**: `+60123456789` only — dashes/spaces rejected (`regex:/^(\+?6?01)[0-9]{8,9}$/`).
 - **New customers get risk_score 60 / High by default** — risk assessed at creation; a High-risk customer's transaction goes to `PendingApproval` (compliance hold), not `Completed`.
 
+## 4b. Keyboard-only operation (TAB/ENTER, verified 2026-09-12)
+
+The app is operable without a mouse: skip-link is the first TAB stop → nav links → logout → header bell → content. ENTER submits native forms, opens file choosers on `type=file`, and advances the transaction wizard (steps wrapped in `<form @submit.prevent="submitStep()">`). ESC closes every modal/dropdown (`@keydown.escape.window`). Collapsed-sidebar links keep accessible names via `sr-only` labels.
+
+**Wizard is teller-only**: `/transactions/wizard` page AND `api/v1/wizard/transactions/*` require `role:teller` (deliberate — `TellerRoleCheckTest` asserts manager/admin get 403). Admins use `/transactions/create` instead.
+
+Bugs found by the keyboard walkthrough (all fixed):
+- Wizard ENTER didn't advance (inputs not in a form) → form wrapper + `submitStep()` dispatcher.
+- `type` select sent `buy`/`sell`; `TransactionType` enum is `Buy`/`Sell` → step1 422 on every submit.
+- `cdd_level` returned `Standard`/`Enhanced` but compared `=== 'standard'` → required docs + enhanced fields never rendered → step2 always failed for Standard/Enhanced. Normalized via `cddLevel` getter.
+- `customer_details` stored `UploadedFile` objects in the wizard session → "Serialization not allowed" crash on every upload → `Arr::except` file keys (paths stored via `processDocuments`).
+- `customers/{id}` 500'd: `$transaction->currency` lazy-load under `preventLazyLoading` + enum `type` unechoable → `currency_code` / `type?->value`.
+- `APP_URL` mismatch (`staging.local.host:8080` vs actual `local.host`) → `local.host` not in Sanctum stateful domains → every same-origin `/api/v1/*` call (wizard steps, notification polling, till dropdown) returned 401. Fixed `.env`; `.env.example` now documents `SESSION_DOMAIN`/`SANCTUM_STATEFUL_DOMAINS`.
+
 ## 5. Counter opening (`/counters/{code}/open`)
 
 Route-model binding is by **counter code** (`C01`), not id. The form shows one float input per active currency; submitting creates:

@@ -27,6 +27,7 @@ use App\Services\Transaction\TransactionApprovalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
 
@@ -153,9 +154,14 @@ class TransactionWizardController extends Controller
             return $sessionData;
         }
 
-        // Update session with customer details
+        // Update session with customer details (UploadedFile objects in
+        // customer.* are stored as paths via processDocuments — the raw file
+        // objects are not serializable into the wizard session store).
         $sessionData['step'] = 2;
-        $sessionData['customer_details'] = $validated['customer'] ?? [];
+        $sessionData['customer_details'] = Arr::except(
+            $validated['customer'] ?? [],
+            ['proof_of_address', 'passport']
+        );
         $sessionData['transaction_meta'] = $validated['transaction'] ?? [];
         $sessionData['documents'] = $this->processDocuments($request);
 

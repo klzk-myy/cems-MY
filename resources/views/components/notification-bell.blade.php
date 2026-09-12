@@ -29,7 +29,8 @@
              setInterval(() => this.poll(), 60000);
          }
      }"
-     @click.outside="open = false">
+     @click.outside="open = false"
+    @keydown.escape.window="open = false">
 
     {{-- DLQ chip - admin only (data is nulled for non-admins upstream) --}}
     <template x-if="dlq > 0">

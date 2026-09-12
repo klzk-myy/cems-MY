@@ -153,7 +153,7 @@
         @endisset
 
         {{-- Dismiss modal --}}
-        <div x-show="showDismiss" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div x-show="showDismiss" x-cloak @keydown.escape.window="showDismiss = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-black/50" @click="showDismiss = false"></div>
             <div x-show="showDismiss"
                  x-transition
@@ -184,7 +184,7 @@
         </div>
 
         {{-- Create Case modal --}}
-        <div x-show="showCreateCase" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div x-show="showCreateCase" x-cloak @keydown.escape.window="showCreateCase = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-black/50" @click="showCreateCase = false"></div>
             <div x-show="showCreateCase"
                  x-transition
