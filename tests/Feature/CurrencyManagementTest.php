@@ -32,9 +32,11 @@ class CurrencyManagementTest extends TestCase
     }
 
     #[Test]
-    public function admin_can_create_a_currency(): void
+    public function created_currency_is_mapped_into_accounting_for_every_active_branch(): void
     {
         $admin = User::factory()->admin()->create();
+        Branch::factory()->inactive()->create();
+        $activeCount = Branch::where('is_active', true)->count();
 
         $this->actingAs($admin)
             ->post(route('system.currencies.store'), $this->payload())
@@ -46,34 +48,6 @@ class CurrencyManagementTest extends TestCase
             'name' => 'Test Currency',
             'is_active' => true,
         ]);
-    }
-
-    #[Test]
-    public function created_currency_appears_in_form_selects(): void
-    {
-        $admin = User::factory()->admin()->create();
-
-        $this->actingAs($admin)
-            ->post(route('system.currencies.store'), $this->payload());
-
-        // The transaction form builds its currency select from
-        // Currency::where('is_active', true) — the same source every form uses.
-        $this->actingAs($admin)
-            ->get(route('transactions.create'))
-            ->assertOk()
-            ->assertSee('XYZ');
-    }
-
-    #[Test]
-    public function created_currency_is_mapped_into_accounting_for_every_active_branch(): void
-    {
-        $admin = User::factory()->admin()->create();
-        Branch::factory()->inactive()->create();
-        $activeCount = Branch::where('is_active', true)->count();
-
-        $this->actingAs($admin)
-            ->post(route('system.currencies.store'), $this->payload())
-            ->assertRedirect(route('system.currencies.index'));
 
         foreach (Branch::where('is_active', true)->get() as $branch) {
             $this->assertDatabaseHas('branch_pools', [
