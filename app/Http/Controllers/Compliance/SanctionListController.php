@@ -10,6 +10,7 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use App\Services\Compliance\SanctionsOrchestrationService;
+use App\Support\LikeEscaper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -63,12 +64,12 @@ class SanctionListController extends Controller
             ->when($request->list_id, fn ($q, $id) => $q->where('list_id', $id))
             ->when($request->search, function ($q, $search) {
                 // Escape LIKE wildcards so literal % and _ in the query match
-                // literally. MySQL treats backslash as the default LIKE escape
-                // character; an explicit ESCAPE '\' clause broke there because
-                // the backslash escapes the closing quote (SQL syntax error 1064).
-                $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+                // literally. The escape char is bound as a parameter — a literal
+                // ESCAPE '\' broke MySQL because the backslash escaped the
+                // closing quote (SQL syntax error 1064).
+                $pattern = '%'.LikeEscaper::escape($search).'%';
 
-                return $q->where('entity_name', 'like', "%{$escaped}%");
+                return $q->whereRaw('entity_name LIKE ? ESCAPE ?', [$pattern, '\\']);
             })
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->orderBy('entity_name');

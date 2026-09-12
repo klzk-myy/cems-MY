@@ -128,6 +128,50 @@ class CustomerScreeningServiceTest extends TestCase
     }
 
     #[Test]
+    public function screen_name_matches_hyphenated_entry_against_spaced_query(): void
+    {
+        $sanctionList = SanctionList::factory()->create([
+            'slug' => 'test-list-hyphen',
+        ]);
+
+        SanctionEntry::factory()->create([
+            'list_id' => $sanctionList->id,
+            'entity_name' => 'John-Doe Smith',
+            'normalized_name' => 'john doe smith',
+            'soundex_code' => soundex('john doe smith'),
+            'metaphone_code' => metaphone('john doe smith'),
+            'aliases' => [],
+        ]);
+
+        $response = $this->service->screenName('John Doe Smith');
+
+        $this->assertFalse($response->isClear());
+        $this->assertFalse($response->matches->isEmpty());
+    }
+
+    #[Test]
+    public function screen_name_matches_spaced_entry_against_hyphenated_query(): void
+    {
+        $sanctionList = SanctionList::factory()->create([
+            'slug' => 'test-list-spaced',
+        ]);
+
+        SanctionEntry::factory()->create([
+            'list_id' => $sanctionList->id,
+            'entity_name' => 'John Doe Smith',
+            'normalized_name' => 'john doe smith',
+            'soundex_code' => soundex('john doe smith'),
+            'metaphone_code' => metaphone('john doe smith'),
+            'aliases' => [],
+        ]);
+
+        $response = $this->service->screenName('John-Doe Smith');
+
+        $this->assertFalse($response->isClear());
+        $this->assertFalse($response->matches->isEmpty());
+    }
+
+    #[Test]
     public function threshold_is_75_percent(): void
     {
         $sanctionList = SanctionList::factory()->create([

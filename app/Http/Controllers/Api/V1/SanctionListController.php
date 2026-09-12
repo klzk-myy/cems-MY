@@ -12,6 +12,7 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use App\Services\Compliance\SanctionsImportService;
+use App\Support\LikeEscaper;
 use Illuminate\Http\JsonResponse;
 
 class SanctionListController extends Controller
@@ -50,7 +51,11 @@ class SanctionListController extends Controller
 
         $query = SanctionEntry::with('sanctionList')
             ->when($validated['list_id'] ?? null, fn ($q, $id) => $q->where('list_id', $id))
-            ->when($validated['search'] ?? null, fn ($q, $search) => $q->where('entity_name', 'like', "%{$search}%"))
+            ->when($validated['search'] ?? null, function ($q, $search) {
+                $pattern = '%'.LikeEscaper::escape($search).'%';
+
+                return $q->whereRaw('entity_name LIKE ? ESCAPE ?', [$pattern, '\\']);
+            })
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->orderBy('entity_name');
 

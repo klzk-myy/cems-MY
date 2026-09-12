@@ -225,8 +225,8 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertEquals('john doe', $this->service->normalizeName('John Doe'));
         $this->assertEquals('john doe', $this->service->normalizeName('  John   Doe  '));
         $this->assertEquals('john doe', $this->service->normalizeName('JOHN DOE'));
-        $this->assertEquals("john o'malley", $this->service->normalizeName("John O'Malley"));
-        $this->assertEquals('john doe-smith', $this->service->normalizeName('John Doe-Smith'));
+        $this->assertEquals('john omalley', $this->service->normalizeName("John O'Malley"));
+        $this->assertEquals('john doe smith', $this->service->normalizeName('John Doe-Smith'));
     }
 
     #[Test]

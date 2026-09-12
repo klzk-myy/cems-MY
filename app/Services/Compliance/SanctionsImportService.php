@@ -10,6 +10,7 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use App\Services\System\MathService;
+use App\Support\NameNormalizer;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -881,13 +882,7 @@ class SanctionsImportService
 
     public function normalizeName(string $name): string
     {
-        $name = trim($name);
-        $name = mb_strtolower($name, 'UTF-8');
-        $name = preg_replace('/\s+/', ' ', $name);
-        $name = preg_replace('/[^\p{L}\p{N}\s\-\'\.]/u', '', $name);
-        $name = trim($name);
-
-        return $name;
+        return NameNormalizer::normalize($name);
     }
 
     public function mapEntityType(?string $type): EntityType

@@ -15,10 +15,9 @@ use App\Http\Middleware\StrictRateLimit;
 use App\Http\Middleware\TestDashboard;
 use App\Http\Middleware\ValidateSignature;
 use App\Jobs\Accounting\ReconcileDeferredAccountingJob;
-use App\Jobs\Compliance\DownloadEuSanctionsJob;
-use App\Jobs\Compliance\DownloadOfacSanctionsJob;
 use App\Jobs\Compliance\LowStockAlertJob;
 use App\Jobs\Compliance\RunComplianceMonitorJob;
+use App\Jobs\ImportSanctionsJob;
 use App\Services\Compliance\CaseManagementService;
 use App\Services\Compliance\EddService;
 use App\Services\Compliance\KycDocumentExpiryService;
@@ -140,12 +139,11 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/report-lmca.log'));
 
-        // Sanctions Rescreening (BNM monthly requirement) - 1st of month at 03:00
-        $schedule->command('compliance:rescreen --days=30')
-            ->cron('0 3 1 * *')
-            ->withoutOverlapping()
-            ->onOneServer()
-            ->appendOutputTo(storage_path('logs/compliance-rescreen.log'));
+        // Sanctions Rescreening (BNM monthly requirement) is covered by the
+        // weekly SanctionsRescreeningMonitor job below — it is staleness-aware
+        // via customers.sanctions_screened_at, so the separate monthly
+        // compliance:rescreen schedule was dropped. The command remains for
+        // manual ad-hoc rescreening (compliance:rescreen --days=N).
 
         // Cleanup old temp reports - 1st of month at 02:00
         $schedule->command('reports:cleanup --days=90')
@@ -237,14 +235,14 @@ $app = Application::configure(basePath: dirname(__DIR__))
         }
 
         // EU Consolidated Sanctions - Weekly on Sunday at 02:00
-        $schedule->job(new DownloadEuSanctionsJob)
+        $schedule->job(new ImportSanctionsJob(listSlug: 'eu_consolidated'))
             ->weeklyOn(0, '02:00')
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/sanctions-import-eu.log'));
 
         // US OFAC SDN List - Weekly on Sunday at 02:00
-        $schedule->job(new DownloadOfacSanctionsJob)
+        $schedule->job(new ImportSanctionsJob(listSlug: 'ofac_sdn'))
             ->weeklyOn(0, '02:00')
             ->withoutOverlapping()
             ->onOneServer()

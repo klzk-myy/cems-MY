@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Customer;
 use App\Services\Customer\CustomerService;
 use App\Services\ThresholdService;
+use App\Support\LikeEscaper;
 use Illuminate\Database\Eloquent\Collection;
 
 class CustomerRepository
@@ -39,7 +40,7 @@ class CustomerRepository
      */
     public static function escapeLike(string $value): string
     {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+        return LikeEscaper::escape($value);
     }
 
     public function search(string $query): Collection

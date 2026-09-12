@@ -17,6 +17,8 @@ use App\Notifications\SanctionsMatchNotification;
 use App\Services\Compliance\AlertTriageService;
 use App\Services\Contracts\CustomerScreeningServiceInterface;
 use App\Services\System\MathService;
+use App\Support\LikeEscaper;
+use App\Support\NameNormalizer;
 use App\ValueObjects\ScreeningMatch;
 use App\ValueObjects\ScreeningResponse;
 use Carbon\Carbon;
@@ -374,7 +376,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
                 // literally on every driver (SQLite has no default LIKE
                 // escape character).
                 foreach ($inputTokens as $token) {
-                    $escapedToken = $this->escapeLike($token);
+                    $escapedToken = LikeEscaper::escape($token);
 
                     $query->orWhereRaw('normalized_name LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\'])
                         ->orWhereRaw('aliases LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\']);
@@ -450,7 +452,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
             ->where('is_active', true)
             ->where(function ($query) use ($inputTokens) {
                 foreach ($inputTokens as $token) {
-                    $escapedToken = $this->escapeLike($token);
+                    $escapedToken = LikeEscaper::escape($token);
 
                     $query->orWhereRaw('normalized_name LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\'])
                         ->orWhereRaw('alias LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\']);
@@ -613,7 +615,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
 
         if ($entry->aliases && is_array($entry->aliases)) {
             foreach ($entry->aliases as $alias) {
-                $aliasNormalized = mb_strtolower(trim($alias));
+                $aliasNormalized = NameNormalizer::normalize((string) $alias);
                 $aliasScore = $this->levenshteinSimilarity($normalizedName, $aliasNormalized);
                 $scores[] = $aliasScore * 20;
 
@@ -715,9 +717,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
 
     protected function tokenize(string $text): array
     {
-        $text = mb_strtolower($text);
-        $text = (string) preg_replace('/[^\p{L}\p{N}\s]/u', '', $text);
-        $tokens = preg_split('/\s+/', trim($text), -1, PREG_SPLIT_NO_EMPTY);
+        $tokens = preg_split('/\s+/', NameNormalizer::normalize($text), -1, PREG_SPLIT_NO_EMPTY);
 
         if ($tokens === false) {
             return [];
@@ -785,16 +785,7 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
 
     protected function normalizeName(string $name): string
     {
-        $name = mb_strtolower(trim($name));
-        $name = preg_replace('/[^\p{L}\p{N}\s]/u', '', $name);
-        $name = preg_replace('/\s+/', ' ', $name);
-
-        return trim($name);
-    }
-
-    protected function escapeLike(string $value): string
-    {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+        return NameNormalizer::normalize($name);
     }
 
     /**
