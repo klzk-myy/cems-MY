@@ -28,6 +28,7 @@ class RelatedPartyOwnershipConcernListener
                     'customer_name' => $event->customer->full_name,
                 ],
                 'status' => 'New',
+                'generated_at' => now(),
             ]);
 
             Alert::create([

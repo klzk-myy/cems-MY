@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use App\Enums\RecalculationTrigger;
 use App\Events\TransactionCreated;
 use App\Services\Compliance\RiskScoringEngine;
 use App\Services\Transaction\TransactionMonitoringService;
@@ -27,6 +28,13 @@ class TransactionCreatedListener implements ShouldQueue
     public function handle(TransactionCreated $event)
     {
         $this->monitoringService->monitorTransaction($event->transaction);
-        $this->riskScoringService->calculateScore($event->transaction->customer_id);
+        // recalculate() (not calculateScore(), which discards the result):
+        // persists the CustomerRiskProfile, writes risk_score/risk_rating back
+        // to the customer, records CustomerRiskHistory, and opens a
+        // ComplianceFinding on score deltas >= 10.
+        $this->riskScoringService->recalculate(
+            $event->transaction->customer_id,
+            RecalculationTrigger::EventDriven
+        );
     }
 }

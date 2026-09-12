@@ -29,6 +29,14 @@ class PreValidationResult
         $this->riskFlags = $flags;
     }
 
+    /**
+     * @param  array<string, mixed>  $flag
+     */
+    public function addRiskFlag(array $flag): void
+    {
+        $this->riskFlags[] = $flag;
+    }
+
     public function setHoldRequired(bool $required): void
     {
         $this->holdRequired = $required;

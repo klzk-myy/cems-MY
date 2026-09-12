@@ -166,6 +166,7 @@ class RiskScoringEngine
                             'trigger' => $trigger->value,
                         ],
                         'status' => 'New',
+                        'generated_at' => now(),
                     ]);
                 }
 

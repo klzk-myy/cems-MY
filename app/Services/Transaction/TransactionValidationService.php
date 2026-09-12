@@ -159,6 +159,19 @@ class TransactionValidationService implements TransactionValidationInterface
             $result->setRiskFlags($riskResult->getFlags());
         }
 
+        // Non-blocking sanctions flag (fuzzy/adverse-media match): carry it as
+        // a critical risk flag so the hold decision escalates the transaction
+        // for review instead of the match disappearing silently.
+        if ($sanctionResult->getMessage() !== null) {
+            $result->addRiskFlag([
+                'type' => 'sanctions_flag',
+                'severity' => 'critical',
+                'description' => $sanctionResult->getMessage(),
+                'metric' => $sanctionResult->confidenceScore,
+                'matched_entity' => $sanctionResult->matchedEntity,
+            ]);
+        }
+
         // 4. Determine hold status
         $holdRequired = $this->holdService->requiresHold(
             $cddLevel,

@@ -182,6 +182,47 @@ class TransactionValidationServiceTest extends TestCase
     }
 
     #[Test]
+    public function pre_validate_marks_sanctions_flag_as_critical_risk_flag(): void
+    {
+        $customer = Customer::factory()->create();
+
+        $complianceMock = $this->createMock(ComplianceService::class);
+        $complianceMock->method('determineCDDLevel')
+            ->willReturn(CddLevel::Simplified);
+
+        $holdMock = $this->createMock(TransactionHoldServiceInterface::class);
+        $holdMock->expects($this->once())
+            ->method('requiresHold')
+            ->with(
+                CddLevel::Simplified,
+                $this->callback(fn (array $flags) => collect($flags)->contains(
+                    fn ($flag) => ($flag['type'] ?? null) === 'sanctions_flag'
+                        && ($flag['severity'] ?? null) === 'critical'
+                ))
+            )
+            ->willReturn(true);
+
+        $service = new TransactionValidationService(
+            $complianceMock,
+            new ThresholdService,
+            $this->createMock(TellerAllocationService::class),
+            $this->createMock(PepApprovalService::class),
+            $this->createScreeningMock('flag'),
+            $this->createMock(HistoricalRiskAnalysisService::class),
+            $this->createMock(AuditService::class),
+            $holdMock,
+            app(TillBalanceManager::class),
+            app(IpValidationService::class),
+        );
+
+        $result = $service->preValidate($customer, '1000.00', 'MYR');
+
+        $this->assertFalse($result->isBlocked());
+        $this->assertTrue($result->isHoldRequired());
+        $this->assertNotEmpty($result->getRiskFlags());
+    }
+
+    #[Test]
     public function pre_validate_audit_logged(): void
     {
         $customer = Customer::factory()->create();

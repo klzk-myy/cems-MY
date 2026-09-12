@@ -13185,7 +13185,7 @@ parameters:
 		-
 			message: '#^Parameter \#5 \$screeningService of class App\\Services\\Transaction\\TransactionValidationService constructor expects App\\Services\\CustomerScreeningService, PHPUnit\\Framework\\MockObject\\MockObject given\.$#'
 			identifier: argument.type
-			count: 5
+			count: 6
 			path: tests/Unit/Transaction/TransactionValidationServiceTest.php
 
 		-
