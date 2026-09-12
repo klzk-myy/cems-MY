@@ -71,30 +71,18 @@ class CustomerRepository
         })
             ->where('is_active', true);
 
-        if ($branchId !== null) {
-            // Branch scope: customers with at least one transaction at the
-            // caller's branch (matches CustomerPolicy::view semantics).
-            $q->whereHas('transactions', function ($q2) use ($branchId) {
-                $q2->where('branch_id', $branchId);
-            });
-        }
+        // Customers are company-wide — $branchId is accepted for signature
+        // compatibility but no longer narrows the result set.
 
         return $q->limit($limit)->get();
     }
 
     public function findActiveByIdNumberHash(string $idHash, ?int $branchId = null): ?Customer
     {
-        // Identity (hash match + active) is mandatory; the optional branch scope
-        // is grouped so its orWhere() alternative cannot escape the hash check
-        // and return unrelated branch-local customers.
+        // Identity (hash match + active) is mandatory. Customers are
+        // company-wide — $branchId no longer narrows the lookup.
         $q = Customer::where('id_number_hash', $idHash)
             ->where('is_active', true);
-
-        if ($branchId !== null) {
-            $q->whereHas('transactions', function ($q2) use ($branchId) {
-                $q2->where('branch_id', $branchId);
-            });
-        }
 
         return $q->first();
     }

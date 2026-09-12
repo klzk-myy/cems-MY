@@ -272,7 +272,7 @@ class TransactionCancellationServiceTest extends TestCase
     public function approve_cancellation_flushes_dashboard_ledger_and_report_caches(): void
     {
         $requester = User::factory()->create(['role' => UserRole::Manager]);
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
         $transaction = Transaction::factory()->create([
             'user_id' => $requester->id,
@@ -282,6 +282,13 @@ class TransactionCancellationServiceTest extends TestCase
             'rate' => '4.50',
             'status' => TransactionStatus::Completed,
             'created_at' => now(),
+        ]);
+
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $transaction->branch_id,
+            'quantity' => '5000.00',
+            'average_cost' => '4.50',
         ]);
 
         Cache::tags(['dashboard'])->put('probe_dash', 'stale', 600);
@@ -294,6 +301,68 @@ class TransactionCancellationServiceTest extends TestCase
         $this->assertNull(Cache::tags(['dashboard'])->get('probe_dash'));
         $this->assertNull(Cache::tags(['ledger'])->get('probe_ledger'));
         $this->assertNull(Cache::tags(['reports'])->get('probe_reports'));
+    }
+
+    #[Test]
+    public function manager_cannot_approve_cancellation_of_completed_transaction(): void
+    {
+        $requester = User::factory()->create(['role' => UserRole::Manager]);
+        $manager = User::factory()->create(['role' => UserRole::Manager]);
+
+        $transaction = Transaction::factory()->create([
+            'user_id' => $requester->id,
+            'type' => TransactionType::Sell,
+            'currency_code' => 'USD',
+            'amount_foreign' => '100.00',
+            'rate' => '4.50',
+            'status' => TransactionStatus::Completed,
+            'created_at' => now(),
+        ]);
+
+        $this->cancellationService->requestCancellation($transaction, $requester, 'customer changed mind');
+        $result = $this->cancellationService->approveCancellation($transaction, $manager);
+
+        $this->assertFalse($result, 'Reversal of a completed transaction is compliance-only');
+        $this->assertEquals(TransactionStatus::PendingCancellation, $transaction->fresh()->status);
+    }
+
+    #[Test]
+    public function approving_cancellation_of_completed_transaction_reverses_positions(): void
+    {
+        $branch = $this->createTestBranch();
+        $tillId = 'TEST-TILL-'.uniqid();
+
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'quantity' => '5000.00',
+            'average_cost' => '4.50',
+        ]);
+
+        $requester = User::factory()->create(['role' => UserRole::Manager, 'branch_id' => $branch->id]);
+        $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer, 'branch_id' => $branch->id]);
+
+        $transaction = Transaction::factory()->create([
+            'user_id' => $requester->id,
+            'branch_id' => $branch->id,
+            'till_id' => $tillId,
+            'type' => TransactionType::Sell,
+            'currency_code' => 'USD',
+            'amount_foreign' => '100.00',
+            'rate' => '4.50',
+            'status' => TransactionStatus::Completed,
+            'created_at' => now(),
+        ]);
+
+        $this->cancellationService->requestCancellation($transaction, $requester, 'customer changed mind');
+        $result = $this->cancellationService->approveCancellation($transaction, $compliance);
+
+        $this->assertTrue($result);
+        $this->assertEquals(TransactionStatus::Cancelled, $transaction->fresh()->status);
+
+        // A Sell of 100 USD must restore the position drained at completion.
+        $position = CurrencyPosition::where('branch_id', $branch->id)->where('currency_code', 'USD')->first();
+        $this->assertEquals('5100.0000', $position->quantity);
     }
 
     #[Test]

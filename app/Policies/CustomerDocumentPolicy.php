@@ -47,14 +47,8 @@ class CustomerDocumentPolicy
             return true;
         }
 
-        // HQ-level compliance officers (no branch assignment) may review
-        // any customer's documents; otherwise enforce branch isolation.
-        if ($user->branch_id === null) {
-            return true;
-        }
-
-        return $document->customer->transactions()
-            ->where('branch_id', $user->branch_id)
-            ->exists();
+        // Customers are company-wide: a compliance officer may review any
+        // customer's documents.
+        return true;
     }
 }

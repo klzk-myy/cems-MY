@@ -87,10 +87,14 @@ class CurrencyController extends Controller
             ]);
 
             // Map the new currency into the accounting system: every active
-            // branch gets a zero branch pool and a zero currency position so the
-            // currency appears in stock/position views immediately instead of
-            // waiting for lazy provisioning at first transaction/counter open.
-            $branches = Branch::where('is_active', true)->get();
+            // trading branch gets a zero branch pool and a zero currency
+            // position so the currency appears in stock/position views
+            // immediately instead of waiting for lazy provisioning at first
+            // transaction/counter open. Head offices are non-trading and hold
+            // no foreign-currency stock.
+            $branches = Branch::where('is_active', true)
+                ->where('type', '!=', Branch::TYPE_HEAD_OFFICE)
+                ->get();
             foreach ($branches as $branch) {
                 $this->branchPoolService->getOrCreateForBranch($branch, $currency->code);
                 $this->positionLockService->lock((string) $branch->id, $currency->code);

@@ -50,6 +50,12 @@
                     placeholder="Enter the reason for cancellation"
                 >{{ old('reason') }}</x-textarea>
 
+                <x-checkbox
+                    name="confirm_understanding"
+                    label="I understand this cancellation requires approval and will reverse all stock, till, and accounting entries."
+                    :required="true"
+                />
+
                 <div class="flex items-center gap-4">
                     <x-button type="submit" variant="primary">Submit Cancellation Request</x-button>
                     <x-button variant="secondary" href="{{ route('transactions.show', $transaction->id) }}">Back to Transaction</x-button>

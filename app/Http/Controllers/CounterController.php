@@ -45,10 +45,8 @@ class CounterController extends Controller
      */
     public function index(): View
     {
-        $today = now()->toDateString();
-        $counters = Counter::with(['sessions' => function ($query) use ($today) {
-            $query->whereDate('session_date', $today)
-                ->where('status', CounterSessionStatus::Open->value);
+        $counters = Counter::with(['sessions' => function ($query) {
+            $query->where('status', CounterSessionStatus::Open->value);
         }])->get();
 
         $stats = [
@@ -510,8 +508,10 @@ class CounterController extends Controller
 
     private function findOpenSession(Counter $counter, string $today, ?User $user = null): ?CounterSession
     {
+        // An open session blocks the counter regardless of its session_date —
+        // CounterService::openSession() enforces this, so lookup must match it
+        // or a session left open overnight could never be closed or handed over.
         $query = CounterSession::where('counter_id', $counter->id)
-            ->whereDate('session_date', $today)
             ->where('status', CounterSessionStatus::Open->value);
 
         if ($user) {

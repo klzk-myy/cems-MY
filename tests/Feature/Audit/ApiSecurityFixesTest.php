@@ -88,7 +88,7 @@ class ApiSecurityFixesTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_teller_cannot_view_other_branch_customer_history(): void
+    public function test_teller_sees_no_rows_for_customer_with_only_other_branch_history(): void
     {
         $branchA = Branch::factory()->create();
         $branchB = Branch::factory()->create();
@@ -99,9 +99,12 @@ class ApiSecurityFixesTest extends TestCase
             'user_id' => $tellerA->id,
         ]);
 
+        // Customers are company-wide, so the endpoint is reachable — but the
+        // transaction rows stay branch-scoped, so none are returned.
         $this->actingAs($tellerA, 'sanctum')
             ->getJson(route('api.v1.customers.history', $customerB))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
     }
 
     public function test_teller_sees_only_own_branch_transactions_in_customer_history(): void
@@ -175,6 +178,9 @@ class ApiSecurityFixesTest extends TestCase
     {
         $request = new class extends AuthorizedFormRequest
         {
+            /**
+             * @return array<string, mixed>
+             */
             public function rules(): array
             {
                 return [];

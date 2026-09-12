@@ -140,7 +140,7 @@
                         <x-button href="{{ route('transactions.reject-cancellation', $transaction->id) }}" variant="danger">Reject Cancellation</x-button>
                     @endcan
                 @endif
-                @if(! $transaction->status?->isFinal() && ! $transaction->status?->isPendingCancellation())
+                @if(! in_array($transaction->status, [\App\Enums\TransactionStatus::Cancelled, \App\Enums\TransactionStatus::Reversed, \App\Enums\TransactionStatus::Rejected, \App\Enums\TransactionStatus::Finalized, \App\Enums\TransactionStatus::PendingCancellation], true))
                     @can('requestCancellation', $transaction)
                         <x-button href="{{ route('transactions.cancel', $transaction->id) }}" variant="danger">Request Cancellation</x-button>
                     @endcan

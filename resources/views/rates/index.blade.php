@@ -92,10 +92,13 @@
                                         type="button"
                                         variant="secondary"
                                         size="sm"
+                                        :data-currency="$rate['currency_code']"
+                                        :data-buy="$rate['rate_buy']"
+                                        :data-sell="$rate['rate_sell']"
                                         @click="$dispatch('override-rate', {
-                                            currency: @js($rate['currency_code']),
-                                            buy: @js($rate['rate_buy']),
-                                            sell: @js($rate['rate_sell'])
+                                            currency: $el.dataset.currency,
+                                            buy: $el.dataset.buy,
+                                            sell: $el.dataset.sell
                                         })"
                                     >Override</x-button>
                                 </td>

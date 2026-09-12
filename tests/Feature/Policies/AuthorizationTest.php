@@ -185,17 +185,18 @@ class AuthorizationTest extends TestCase
     }
 
     #[Test]
-    public function customer_policy_denies_branch_user_to_view_customer_without_transaction_in_their_branch(): void
+    public function customer_policy_allows_branch_user_to_view_customer_from_any_branch(): void
     {
         $policy = new CustomerPolicy;
         $branch1 = Branch::factory()->create();
         $branch2 = Branch::factory()->create();
         $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branch1->id]);
         $customer = Customer::factory()->create();
-        // Create transaction in branch2 only
+        // Create transaction in branch2 only — customers are company-wide,
+        // so a teller may still serve them at branch1.
         Transaction::factory()->create(['customer_id' => $customer->id, 'branch_id' => $branch2->id]);
 
-        $this->assertFalse($policy->view($teller, $customer));
+        $this->assertTrue($policy->view($teller, $customer));
     }
 
     #[Test]

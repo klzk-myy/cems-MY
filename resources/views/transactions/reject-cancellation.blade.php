@@ -52,12 +52,12 @@
             <form method="POST" action="{{ route('transactions.reject-cancellation.store', $transaction->id) }}">
                 @csrf
                 <x-textarea
-                    name="rejection_reason"
+                    name="reason"
                     label="Rejection Reason"
                     :required="true"
                     rows="4"
                     placeholder="Enter the reason for rejecting this cancellation request"
-                >{{ old('rejection_reason') }}</x-textarea>
+                >{{ old('reason') }}</x-textarea>
 
                 <div class="flex items-center gap-4">
                     <x-button type="submit" variant="danger">Reject Cancellation</x-button>

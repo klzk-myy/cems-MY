@@ -231,7 +231,7 @@ class TransactionReversalService
         ]);
     }
 
-    protected function reverseTillBalance(Transaction $transaction): void
+    public function reverseTillBalance(Transaction $transaction): void
     {
         $counter = Counter::findByCodeOrId($transaction->till_id);
 

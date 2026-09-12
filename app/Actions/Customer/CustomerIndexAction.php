@@ -28,14 +28,10 @@ final class CustomerIndexAction
         $query = Customer::query();
 
         if (! $isAdmin) {
-            $branchScope = $user?->branch_id;
-
-            if ($branchScope) {
-                // Branch scope: customers with at least one transaction at the
-                // caller's branch (matches CustomerPolicy::view semantics).
-                $query->whereHas('transactions', fn ($t) => $t->where('branch_id', $branchScope));
-            } else {
-                // User has no branch assignment - return empty result.
+            // Customers are company-wide, but the caller must still belong to
+            // a branch (matches CustomerPolicy::viewAny). Users without one
+            // get an empty result.
+            if (! $user?->branch_id) {
                 $query->whereRaw('1 = 0');
             }
         } elseif ($branchScope = $filters['branch_scope'] ?? null) {

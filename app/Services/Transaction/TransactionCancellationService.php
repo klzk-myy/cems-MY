@@ -158,7 +158,22 @@ class TransactionCancellationService
                 ->firstOrFail();
             $stateMachine = new TransactionStateMachine($lockedTransaction);
 
-            $previousStatus = $lockedTransaction->status;
+            // The status at approval time is always PendingCancellation — resolve
+            // the status the transaction held before cancellation was requested.
+            $previousStatus = $this->determinePreviousStatus($lockedTransaction)
+                ?? $lockedTransaction->status;
+
+            // Reversal of a completed transaction is compliance-only. Cancelling
+            // a still-open transaction (PendingApproval etc.) remains approver-level.
+            if ($previousStatus->isCompleted() && ! $approver->role->isComplianceOfficer()) {
+                Log::warning('Non-compliance approver attempted reversal of completed transaction', [
+                    'transaction_id' => $lockedTransaction->id,
+                    'approver_id' => $approver->id,
+                    'approver_role' => $approver->role->value,
+                ]);
+
+                return false;
+            }
 
             $hasReservation = StockReservation::where('transaction_id', $lockedTransaction->id)
                 ->where('status', StockReservationStatus::Pending)

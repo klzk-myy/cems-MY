@@ -359,14 +359,11 @@ class TransactionWizardController extends Controller
     // Helper methods
 
     /**
-     * Enforce customer branch isolation for transaction creation.
+     * Gate transaction creation on branch assignment.
      *
-     * Applies the same rule as CustomerPolicy::view: admins may serve any
-     * customer; everybody else may only serve customers whose transaction
-     * history includes their own branch. Customers without any history
-     * (walk-ins) are not bound to a branch yet, so their first transaction
-     * is allowed anywhere — otherwise no teller could ever serve a new
-     * customer. Users without a branch assignment fail closed.
+     * Customers are company-wide, so the only requirement is that the user
+     * belongs to a branch (or is admin). Users without a branch assignment
+     * fail closed.
      */
     private function denyCrossBranchCustomer(Customer $customer): ?JsonResponse
     {
@@ -384,17 +381,6 @@ class TransactionWizardController extends Controller
         }
 
         if ($user->branch_id === null) {
-            return response()->json([
-                'status' => 'forbidden',
-                'message' => 'You are not authorized to create transactions for this customer.',
-            ], 403);
-        }
-
-        $knownBranchIds = $customer->transactions()->distinct()->pluck('branch_id');
-
-        if ($knownBranchIds->isNotEmpty()
-            && ! $knownBranchIds->contains(fn ($branchId) => (int) $branchId === (int) $user->branch_id)
-        ) {
             return response()->json([
                 'status' => 'forbidden',
                 'message' => 'You are not authorized to create transactions for this customer.',

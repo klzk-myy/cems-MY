@@ -51,7 +51,16 @@ class RateManagementService implements RateManagementServiceInterface
         $query = ExchangeRate::query()->active();
 
         if ($branchId !== null) {
-            $query->forBranch($branchId);
+            // Branch rate card = company-wide rows (branch_id NULL) overlaid by
+            // branch-specific overrides. Branch rows win per currency.
+            $rates = $query
+                ->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'))
+                ->get();
+
+            return $rates
+                ->sortBy(fn (ExchangeRate $rate) => $rate->branch_id === $branchId ? 0 : 1)
+                ->unique('currency_code')
+                ->values();
         }
 
         return $query->get();
@@ -64,7 +73,11 @@ class RateManagementService implements RateManagementServiceInterface
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($currencyCode, $branchId) {
             $query = ExchangeRate::where('currency_code', $currencyCode)->active();
             if ($branchId !== null) {
-                $query->forBranch($branchId);
+                // Branch override wins; fall back to the company-wide rate.
+                return $query
+                    ->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'))
+                    ->orderByRaw('branch_id IS NULL')
+                    ->first();
             }
 
             return $query->first();
@@ -255,7 +268,7 @@ class RateManagementService implements RateManagementServiceInterface
         $query = ExchangeRate::where('currency_code', $currencyCode)->active();
 
         if ($branchId !== null) {
-            $query->forBranch($branchId);
+            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'));
         }
 
         return $query->exists();
@@ -267,7 +280,7 @@ class RateManagementService implements RateManagementServiceInterface
         $query = ExchangeRate::whereIn('currency_code', $currencyCodes)->active();
 
         if ($branchId !== null) {
-            $query->forBranch($branchId);
+            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'));
         }
 
         $existing = $query->pluck('currency_code')->flip();

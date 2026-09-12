@@ -30,7 +30,17 @@
                                 @if($counter->sessions->count() === 0)
                                     <x-button variant="ghost" size="sm" href="{{ route('counters.open', $counter) }}">Open</x-button>
                                 @else
-                                    <x-button variant="ghost" size="sm" href="{{ route('counters.history', $counter) }}">History</x-button>
+                                    <div class="flex items-center gap-2">
+                                        @php $openSession = $counter->sessions->first(); @endphp
+                                        @if($openSession->session_date?->toDateString() !== now()->toDateString())
+                                            <x-badge variant="warning">Since {{ $openSession->session_date->format('Y-m-d') }}</x-badge>
+                                        @endif
+                                        @if(auth()->user()->isManager())
+                                            <x-button variant="ghost" size="sm" href="{{ route('counters.close.show', $counter) }}">Close</x-button>
+                                        @endif
+                                        <x-button variant="ghost" size="sm" href="{{ route('counters.handover.show', $counter) }}">Handover</x-button>
+                                        <x-button variant="ghost" size="sm" href="{{ route('counters.history', $counter) }}">History</x-button>
+                                    </div>
                                 @endif
                             </td>
                         </tr>

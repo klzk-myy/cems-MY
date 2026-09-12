@@ -99,10 +99,18 @@ class TransactionPolicy
     /**
      * Determine whether the user can approve cancellation of the transaction.
      * Managers, compliance officers, and admins can approve cancellation for transactions in their branch.
+     * Approving the cancellation of a previously Completed transaction is a
+     * reversal, which is compliance-only (admin inherits).
      */
     public function approveCancellation(User $user, Transaction $transaction): bool
     {
         if (! in_array($user->role, [UserRole::Manager, UserRole::ComplianceOfficer, UserRole::Admin])) {
+            return false;
+        }
+
+        if ($transaction->status === TransactionStatus::PendingCancellation
+            && $this->preCancellationStatus($transaction) === TransactionStatus::Completed
+            && ! $user->role->isComplianceOfficer()) {
             return false;
         }
 
@@ -111,6 +119,25 @@ class TransactionPolicy
         }
 
         return $transaction->branch_id === $user->branch_id;
+    }
+
+    /**
+     * Resolve the status the transaction held before PendingCancellation,
+     * recorded in transition history by the cancellation request.
+     */
+    protected function preCancellationStatus(Transaction $transaction): ?TransactionStatus
+    {
+        foreach (array_reverse($transaction->transition_history ?? []) as $entry) {
+            if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
+                try {
+                    return TransactionStatus::from($entry['previous_status'] ?? $entry['from']);
+                } catch (\ValueError) {
+                    return null;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

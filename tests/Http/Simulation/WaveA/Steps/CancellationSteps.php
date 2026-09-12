@@ -52,15 +52,17 @@ trait CancellationSteps
     }
 
     /**
-     * A6c — manager approves the cancellation on the web surface.
+     * A6c — compliance approves the cancellation on the web surface.
+     *
+     * Approving the cancellation of a completed transaction is a reversal,
+     * which is compliance-only. The manager who requested it is also blocked
+     * by segregation of duties.
      */
     protected function itApprovesCancellation(int $txId): void
     {
-        // The manager requested the cancellation in A6, so segregation of
-        // duties requires a different manager to approve.
-        $this->asWebUser('sim_manager2', function () use ($txId): void {
+        $this->asWebUser('sim_compliance', function () use ($txId): void {
             $resp = $this->webClient->post('/transactions/'.$txId.'/approve-cancellation', [
-                'reason' => 'Cancellation approved by manager.',
+                'reason' => 'Cancellation approved by compliance.',
             ]);
 
             $this->assertSurfaceStatus($resp, 302, 'A6c web approve-cancellation');
@@ -73,13 +75,13 @@ trait CancellationSteps
     }
 
     /**
-     * A6d — manager approves the cancellation on the API surface.
+     * A6d — compliance approves the cancellation on the API surface.
      */
     protected function itApprovesCancellationViaApi(int $txId): void
     {
-        $api = $this->newApiClient($this->tokenFor('manager'));
+        $api = $this->newApiClient($this->tokenFor('compliance'));
         $resp = $api->post('/transactions/'.$txId.'/approve-cancellation', [
-            'reason' => 'Cancellation approved by manager.',
+            'reason' => 'Cancellation approved by compliance.',
         ]);
 
         $this->assertSurfaceStatus($resp, 200, 'A6d API approve-cancellation');

@@ -230,15 +230,14 @@ class TransactionController extends Controller
     /**
      * Ensure the transaction can be shown for cancellation.
      *
-     * Only managers and admins may access the cancellation form. The transaction
-     * must be eligible for cancellation, within the window, not already
-     * cancelled, and not reversed.
+     * Tellers may request cancellation of their own transactions; managers,
+     * compliance officers, and admins per the requestCancellation policy.
+     * The transaction must be eligible for cancellation, within the window,
+     * not already cancelled, and not reversed.
      */
     private function ensureCanShowCancel(Transaction $transaction, User $user): ?RedirectResponse
     {
-        if (! $user->isManager()) {
-            abort(403, 'Only managers and admins can cancel transactions.');
-        }
+        $this->authorize('requestCancellation', $transaction);
 
         if (! $this->cancellationService->canCancel($transaction)) {
             return back()->with('error', 'This transaction cannot be cancelled.');

@@ -386,31 +386,23 @@ class TransactionCreationService implements TransactionCreationServiceInterface
     }
 
     /**
-     * Enforce customer branch isolation for transaction creation.
+     * Gate transaction creation on branch assignment.
      *
-     * Applies the same rule as CustomerPolicy::view: admins may serve any
-     * customer; everybody else may only serve customers whose transaction
-     * history includes their own branch. Customers without any history
-     * (walk-ins) are not bound to a branch yet, so their first transaction
-     * is allowed anywhere. Users without a branch assignment fail closed.
+     * Customers are company-wide, so the only requirement is that the user
+     * belongs to a branch (or is admin). Users without a branch assignment
+     * fail closed.
      *
-     * @throws PermissionDeniedException When the customer is out of scope for the user's branch.
+     * @throws PermissionDeniedException When the user has no branch assignment.
      */
     private function ensureCustomerIsWithinUserBranch(Customer $customer, User $user): void
     {
+        // Customers are company-wide: any branch-assigned staff member may
+        // serve any customer. Users without a branch assignment fail closed.
         if ($user->role === UserRole::Admin) {
             return;
         }
 
         if ($user->branch_id === null) {
-            throw new PermissionDeniedException('create transactions for this customer');
-        }
-
-        $knownBranchIds = $customer->transactions()->distinct()->pluck('branch_id');
-
-        if ($knownBranchIds->isNotEmpty()
-            && ! $knownBranchIds->contains(fn ($branchId) => (int) $branchId === (int) $user->branch_id)
-        ) {
             throw new PermissionDeniedException('create transactions for this customer');
         }
     }

@@ -46,15 +46,15 @@
             </div>
         </x-card>
 
-        <x-card title="Manager Approval">
+        <x-card title="Approval">
             <form method="POST" action="{{ route('transactions.approve-cancellation.store', $transaction->id) }}">
                 @csrf
                 <x-textarea
-                    name="approval_notes"
+                    name="reason"
                     label="Approval Notes"
                     rows="4"
                     placeholder="Enter approval notes (optional)"
-                >{{ old('approval_notes') }}</x-textarea>
+                >{{ old('reason') }}</x-textarea>
                 <div class="flex items-center gap-4">
                     <x-button type="submit" variant="primary">Approve Cancellation</x-button>
                     <x-button variant="secondary" href="{{ route('transactions.index') }}">Cancel</x-button>

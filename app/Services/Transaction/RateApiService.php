@@ -186,7 +186,10 @@ class RateApiService
     {
         $query = ExchangeRate::where('currency_code', $currencyCode);
         if ($branchId !== null) {
-            $query->forBranch($branchId);
+            // Branch override wins; fall back to the company-wide rate so the
+            // deviation guard still applies at branches without their own card.
+            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'))
+                ->orderByRaw('branch_id IS NULL');
         }
         $exchangeRate = $query->first();
 
