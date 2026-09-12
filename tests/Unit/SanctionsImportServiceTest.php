@@ -6,6 +6,7 @@ use App\Enums\EntityType;
 use App\Enums\SanctionStatus;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
+use App\Services\Compliance\SanctionsDownloadService;
 use App\Services\Compliance\SanctionsImportService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,7 +23,7 @@ class SanctionsImportServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new SanctionsImportService(new MathService(2));
+        $this->service = new SanctionsImportService(new MathService(2), new SanctionsDownloadService);
     }
 
     #[Test]
@@ -255,6 +256,8 @@ class SanctionsImportServiceTest extends TestCase
     #[Test]
     public function fetch_source_retries_on_failure(): void
     {
+        config(['sanctions.download.retry_delay' => 0]);
+
         Http::fake([
             'https://api.opensanctions.org/*' => Http::sequence()
                 ->push('Server Error', 500)

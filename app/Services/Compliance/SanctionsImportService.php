@@ -10,10 +10,9 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use App\Services\System\MathService;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\LazyCollection;
 use SimpleXMLElement;
 
 class SanctionsImportService
@@ -28,13 +27,12 @@ class SanctionsImportService
 
     public function __construct(
         protected MathService $mathService,
+        protected SanctionsDownloadService $downloadService,
     ) {}
 
     public function import(SanctionList $list, bool $manual = false): array
     {
-        $data = $this->fetchSource($list->source_url);
-
-        return $this->importWithData($list, $data, $manual);
+        return $this->importWithData($list, $this->fetchSource($list), $manual);
     }
 
     /**
@@ -61,7 +59,10 @@ class SanctionsImportService
         ];
     }
 
-    public function importWithData(SanctionList $list, array $data, bool $manual = false): array
+    /**
+     * @param  iterable<array-key, mixed>|array<string, mixed>  $data  Decoded source payload (`['results' => [...]]` doc) or a lazy stream of flat/nested items.
+     */
+    public function importWithData(SanctionList $list, iterable $data, bool $manual = false): array
     {
         $this->resetCounters();
 
@@ -123,17 +124,15 @@ class SanctionsImportService
      */
     public function importFromJson(string $filepath, int $listId): array
     {
-        $content = file_get_contents($filepath);
-        if ($content === false) {
+        if (! is_readable($filepath)) {
             throw new SanctionsImportException("Failed to read import file: {$filepath}", $filepath);
         }
 
-        $data = json_decode($content, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new SanctionsImportException('Import file is not valid JSON: '.json_last_error_msg());
-        }
-
-        return $this->importWithData(SanctionList::findOrFail($listId), $data, false);
+        return $this->importWithData(
+            SanctionList::findOrFail($listId),
+            $this->streamSourceFile($filepath),
+            false
+        );
     }
 
     /**
@@ -206,77 +205,156 @@ class SanctionsImportService
         return $this->importWithData(SanctionList::findOrFail($listId), ['results' => $records], false);
     }
 
-    public function fetchSource(string $url): array
+    /**
+     * Fetch a list's source through the download service so every entry point
+     * (scheduled jobs, API trigger, webhook) gets the same URL allowlist,
+     * per-hop redirect validation, format check, and archive behavior as the
+     * manual web import. Returns a lazy stream of flat items — large lists
+     * (OFAC SDN ~80MB JSONL) are never fully materialized in memory.
+     *
+     * @return iterable<array-key, array<string, mixed>>
+     */
+    public function fetchSource(SanctionList $list): iterable
     {
-        $maxRetries = 3;
-        $retryDelay = 5;
-        $timeout = 60;
+        $result = $this->downloadService->download(
+            $list->source_url,
+            $list->slug.'_'.time().'.'.strtolower($list->source_format ?? 'json'),
+            $list->source_format ?? 'JSON',
+            (int) config('sanctions.download.retry_attempts', 3),
+        );
 
-        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-            try {
-                $response = Http::timeout($timeout)->get($url);
-
-                if ($response->successful()) {
-                    $data = $response->json();
-
-                    if (! is_array($data)) {
-                        Log::warning('OpenSanctions import: unexpected data structure', [
-                            'url' => $url,
-                            'type' => get_debug_type($data),
-                        ]);
-
-                        return [];
-                    }
-
-                    if (! isset($data['results'])) {
-                        Log::warning('OpenSanctions import: unexpected data structure', [
-                            'url' => $url,
-                            'keys' => array_keys($data),
-                        ]);
-                    }
-
-                    return $data;
-                }
-
-                Log::warning("OpenSanctions fetch attempt {$attempt} failed", [
-                    'url' => $url,
-                    'status' => $response->status(),
-                ]);
-
-            } catch (\Exception $e) {
-                Log::warning("OpenSanctions fetch attempt {$attempt} exception", [
-                    'url' => $url,
-                    'error' => $e->getMessage(),
-                ]);
-
-                if ($attempt === $maxRetries) {
-                    throw new SanctionsImportException(
-                        "Failed to fetch sanctions data after {$maxRetries} attempts: {$e->getMessage()}"
-                    );
-                }
-            }
-
-            if ($attempt < $maxRetries) {
-                sleep($retryDelay);
-            }
+        if (! $result['success']) {
+            throw new SanctionsImportException(
+                "Failed to fetch sanctions data: {$result['error']}"
+            );
         }
 
-        throw new SanctionsImportException("Failed to fetch sanctions data after {$maxRetries} attempts");
+        if ($result['filepath'] && file_exists($result['filepath'])) {
+            $this->downloadService->archiveFile($result['filepath'], $list->list_type->value ?? 'unknown');
+        }
+
+        return $this->streamSourceFile($result['filepath']);
     }
 
-    public function parseEntries(array $data, SanctionList $list): Collection
+    /**
+     * Stream flat entry items from a downloaded source file. Detects
+     * single-document JSON vs JSONL (one entity per line — the OpenSanctions
+     * targets.nested.json exports); nested FollowTheMoney entities are
+     * flattened so parseOpenSanctionsEntry() can consume both shapes.
+     *
+     * @return iterable<array-key, array<string, mixed>>
+     */
+    public function streamSourceFile(string $filepath): iterable
     {
-        $results = $data['results'] ?? [];
-        $entries = collect();
+        $size = filesize($filepath);
+        if ($size !== false && $size > 0 && $size <= 16 * 1024 * 1024) {
+            $content = file_get_contents($filepath);
+            if ($content !== false) {
+                $decoded = json_decode($content, true);
+                if (is_array($decoded)) {
+                    yield from $decoded['results'] ?? $decoded;
 
-        foreach ($results as $item) {
-            $parsed = $this->parseOpenSanctionsEntry($item, $list);
-            if ($parsed !== null) {
-                $entries->push($parsed);
+                    return;
+                }
             }
         }
 
-        return $entries;
+        $handle = fopen($filepath, 'r');
+        if (! $handle) {
+            return;
+        }
+
+        try {
+            while (($line = fgets($handle)) !== false) {
+                $line = trim($line);
+                if ($line === '') {
+                    continue;
+                }
+                $item = json_decode($line, true);
+                if (! is_array($item)) {
+                    return;
+                }
+                yield $this->flattenNestedEntity($item);
+            }
+        } finally {
+            fclose($handle);
+        }
+    }
+
+    /**
+     * Flatten an OpenSanctions nested FollowTheMoney entity
+     * ({id, caption, schema, properties:{name, alias, birthDate, ...}})
+     * into the flat entry shape parseOpenSanctionsEntry() consumes.
+     * Flat records are returned unchanged.
+     *
+     * @param  array<string, mixed>  $item
+     * @return array<string, mixed>
+     */
+    protected function flattenNestedEntity(array $item): array
+    {
+        $props = $item['properties'] ?? null;
+        if (! is_array($props)) {
+            return $item;
+        }
+
+        $names = $props['name'] ?? [];
+        if ($names === [] && isset($item['caption'])) {
+            $names = [$item['caption']];
+        }
+
+        $aliases = array_merge(
+            array_slice($names, 1),
+            $props['alias'] ?? [],
+            $props['weakAlias'] ?? [],
+            $props['previousName'] ?? [],
+        );
+
+        $listingDate = $props['listingDate'][0] ?? null;
+        if ($listingDate === null) {
+            foreach (($props['sanctions'] ?? []) as $sanction) {
+                $listingDate = $sanction['properties']['listingDate'][0] ?? null;
+                if ($listingDate !== null) {
+                    break;
+                }
+            }
+        }
+
+        return [
+            'id' => $item['id'] ?? null,
+            'name' => $names,
+            'entity_type' => $item['schema'] ?? null,
+            'birth_date' => $props['birthDate'][0] ?? null,
+            'nationality' => $props['nationality'][0]
+                ?? $props['citizenship'][0]
+                ?? $props['country'][0]
+                ?? null,
+            'aliases' => $aliases,
+            'listing_date' => $listingDate,
+            '_source' => $item,
+        ];
+    }
+
+    /**
+     * Lazily parse source items into entry rows. Accepts a decoded
+     * `['results' => [...]]` doc or a lazy stream of items — never
+     * materializes the full entry set, so large JSONL lists stay
+     * memory-bounded.
+     *
+     * @param  iterable<array-key, mixed>|array<string, mixed>  $data
+     * @return LazyCollection<int, array<string, mixed>>
+     */
+    public function parseEntries(iterable $data, SanctionList $list): LazyCollection
+    {
+        $results = is_array($data) ? ($data['results'] ?? []) : $data;
+
+        return LazyCollection::make(function () use ($results, $list) {
+            foreach ($results as $item) {
+                $parsed = $this->parseOpenSanctionsEntry($item, $list);
+                if ($parsed !== null) {
+                    yield $parsed;
+                }
+            }
+        });
     }
 
     public function parseOpenSanctionsEntry(array $item, SanctionList $list): ?array
@@ -324,30 +402,23 @@ class SanctionsImportService
             'reference_number' => $item['id'] ?? null,
             'entity_name' => $primaryName,
             'normalized_name' => $normalizedName,
+            'soundex_code' => soundex($normalizedName),
+            'metaphone_code' => metaphone($normalizedName),
             'entity_type' => $entityType,
             'aliases' => ! empty($aliases) ? json_encode($aliases) : null,
             'nationality' => is_array($nationality) ? ($nationality[0] ?? null) : $nationality,
             'date_of_birth' => $birthDate,
-            'details' => json_encode($item),
+            'listing_date' => $this->parseDate($item['listing_date'] ?? null),
+            'details' => json_encode($item['_source'] ?? $item),
             'status' => SanctionStatus::Active,
         ];
     }
 
-    public function syncEntries(Collection $entries, SanctionList $list): array
+    /**
+     * @param  iterable<array-key, array<string, mixed>>  $entries
+     */
+    public function syncEntries(iterable $entries, SanctionList $list): array
     {
-        // Safety guard: if the source produced zero parseable entries but the
-        // list currently holds active entries, refuse to run the deactivation
-        // sweep. Otherwise a temporarily broken upstream (or a format the
-        // parser does not understand) would silently deactivate the entire
-        // sanctions list - a catastrophic data-loss scenario for screening.
-        if ($entries->isEmpty()
-            && $list->entries()->where('status', SanctionStatus::Active->value)->exists()) {
-            throw new SanctionsImportException(
-                'Import produced no valid entries while the list has active entries; '.
-                'refusing to deactivate the existing list. Existing entries preserved.'
-            );
-        }
-
         DB::transaction(function () use ($entries, $list) {
             $existingByRef = SanctionEntry::where('list_id', $list->id)
                 ->whereNotNull('reference_number')
@@ -355,8 +426,10 @@ class SanctionsImportService
                 ->keyBy('reference_number');
 
             $importedRefs = [];
+            $seen = 0;
 
             foreach ($entries as $entryData) {
+                $seen++;
                 $ref = $entryData['reference_number'] ?? null;
 
                 try {
@@ -365,10 +438,13 @@ class SanctionsImportService
                         $existing->update([
                             'entity_name' => $entryData['entity_name'],
                             'normalized_name' => $entryData['normalized_name'],
+                            'soundex_code' => $entryData['soundex_code'] ?? null,
+                            'metaphone_code' => $entryData['metaphone_code'] ?? null,
                             'entity_type' => $entryData['entity_type'],
                             'aliases' => $entryData['aliases'],
                             'nationality' => $entryData['nationality'],
                             'date_of_birth' => $entryData['date_of_birth'],
+                            'listing_date' => $entryData['listing_date'] ?? null,
                             'details' => $entryData['details'],
                             'status' => SanctionStatus::Active,
                         ]);
@@ -386,6 +462,19 @@ class SanctionsImportService
                     ]);
                     $this->errors++;
                 }
+            }
+
+            // Safety guard: if the source produced zero parseable entries but
+            // the list currently holds active entries, abort the transaction
+            // (rolls back any creates) rather than deactivate the whole list —
+            // a broken upstream must never wipe the screening dataset. With
+            // lazy entry streams, emptiness is only known after iteration.
+            if ($seen === 0
+                && $list->entries()->where('status', SanctionStatus::Active->value)->exists()) {
+                throw new SanctionsImportException(
+                    'Import produced no valid entries while the list has active entries; '.
+                    'refusing to deactivate the existing list. Existing entries preserved.'
+                );
             }
 
             $refsToDeactivate = $existingByRef->keys()->filter(fn ($ref) => ! isset($importedRefs[$ref]));

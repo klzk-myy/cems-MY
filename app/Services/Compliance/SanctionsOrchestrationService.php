@@ -3,10 +3,13 @@
 namespace App\Services\Compliance;
 
 use App\Models\SanctionList;
+use App\Services\Concerns\ValidatesSanctionsUrl;
 use Illuminate\Support\Facades\Log;
 
 class SanctionsOrchestrationService
 {
+    use ValidatesSanctionsUrl;
+
     public function __construct(
         protected SanctionsDownloadService $downloadService,
         protected SanctionsImportService $importService,
@@ -38,9 +41,7 @@ class SanctionsOrchestrationService
             ];
         }
 
-        $content = file_get_contents($downloadResult['filepath']);
-
-        if ($content === false) {
+        if (! is_readable($downloadResult['filepath'])) {
             Log::error('Sanctions orchestration: failed to read downloaded file', [
                 'list_id' => $list->id,
                 'filepath' => $downloadResult['filepath'],
@@ -55,70 +56,17 @@ class SanctionsOrchestrationService
             ];
         }
 
-        $data = json_decode($content, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error('Sanctions orchestration: invalid JSON in downloaded file', [
-                'list_id' => $list->id,
-                'json_error' => json_last_error_msg(),
-            ]);
-
-            return [
-                'success' => false,
-                'error' => 'Invalid JSON in downloaded file',
-                'created' => 0,
-                'updated' => 0,
-                'deactivated' => 0,
-            ];
-        }
-
-        $result = $this->importService->importWithData($list, $data, $manual);
+        // Stream entries so large lists (OFAC SDN ~80MB JSONL) stay memory-bounded.
+        $result = $this->importService->importWithData(
+            $list,
+            $this->importService->streamSourceFile($downloadResult['filepath']),
+            $manual
+        );
 
         if ($downloadResult['filepath'] && file_exists($downloadResult['filepath'])) {
             $this->downloadService->archiveFile($downloadResult['filepath'], $list->list_type->value ?? 'unknown');
         }
 
         return array_merge($result, ['success' => true]);
-    }
-
-    protected function validateUrl(string $url): void
-    {
-        $parsed = parse_url($url);
-        if ($parsed === false || empty($parsed['scheme']) || empty($parsed['host'])) {
-            throw new \InvalidArgumentException("Invalid URL: {$url}");
-        }
-
-        if ($parsed['scheme'] !== 'https') {
-            throw new \InvalidArgumentException("Only HTTPS URLs are allowed: {$url}");
-        }
-
-        $host = strtolower($parsed['host']);
-        $allowedHosts = [
-            'sanctions.gov.my',
-            'ofac.treasury.gov',
-            'europa.eu',
-            'sdnlists.ofac.treasury.gov',
-            'un.org',
-            'unescritor.org',
-        ];
-
-        $isAllowed = false;
-        foreach ($allowedHosts as $allowed) {
-            if ($host === $allowed || str_ends_with($host, '.'.$allowed)) {
-                $isAllowed = true;
-                break;
-            }
-        }
-
-        if (! $isAllowed) {
-            throw new \InvalidArgumentException("Host not in sanctions URL allowlist: {$host}");
-        }
-
-        $ip = gethostbyname($host);
-        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-            // Resolved to a valid public IP
-        } elseif ($ip !== $host) {
-            throw new \InvalidArgumentException("URL resolves to private/internal IP: {$ip}");
-        }
     }
 }

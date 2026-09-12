@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string $slug
- * @property SanctionListType $list_type 'UNSCR', 'MOHA', 'Internal'
+ * @property SanctionListType $list_type 'UNSCR', 'MOHA', 'Domestic', 'Internal'
  * @property string|null $source_url
  * @property string|null $source_format 'XML', 'CSV', 'JSON'
  * @property string|null $source_file

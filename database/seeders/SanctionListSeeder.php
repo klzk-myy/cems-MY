@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\SanctionListType;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Models\User;
@@ -22,7 +23,12 @@ class SanctionListSeeder extends Seeder
                     'name' => $source['name'],
                     'source_url' => $source['url'],
                     'source_format' => $source['format'],
-                    'list_type' => $source['list_type'] === 'international' ? 'UNSCR' : 'MOHA',
+                    'list_type' => match ($source['list_type'] ?? 'national') {
+                        'international' => SanctionListType::UNSCR,
+                        'domestic_alert' => SanctionListType::Domestic,
+                        'internal' => SanctionListType::Internal,
+                        default => SanctionListType::MOHA,
+                    },
                     'is_active' => $source['default_list'] ?? false,
                     'uploaded_by' => $uploadedBy,
                 ]

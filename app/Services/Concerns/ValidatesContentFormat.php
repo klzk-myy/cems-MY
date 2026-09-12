@@ -16,13 +16,33 @@ trait ValidatesContentFormat
     }
 
     /**
-     * Validate that the given content is well-formed JSON.
+     * Validate that the given content is well-formed JSON. Accepts a single
+     * JSON document or JSONL (one JSON object per line — the OpenSanctions
+     * targets.nested.json exports are JSONL).
      */
     protected function validateJson(string $content): bool
     {
         json_decode($content);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return true;
+        }
 
-        return json_last_error() === JSON_ERROR_NONE;
+        $lines = preg_split('/\r?\n/', $content);
+        if ($lines === false) {
+            return false;
+        }
+
+        foreach ($lines as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            json_decode($line);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

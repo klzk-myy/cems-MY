@@ -26,7 +26,7 @@ class SanctionsOrchestrationServiceTest extends TestCase
         parent::setUp();
         $this->service = new SanctionsOrchestrationService(
             new SanctionsDownloadService,
-            new SanctionsImportService(new MathService(2))
+            new SanctionsImportService(new MathService(2), new SanctionsDownloadService)
         );
     }
 

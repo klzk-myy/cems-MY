@@ -3,12 +3,15 @@
 namespace App\Services\Compliance;
 
 use App\Services\Concerns\ValidatesContentFormat;
+use App\Services\Concerns\ValidatesSanctionsUrl;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SanctionsDownloadService
 {
     use ValidatesContentFormat;
+    use ValidatesSanctionsUrl;
 
     protected string $tempDirectory;
 
@@ -43,12 +46,7 @@ class SanctionsDownloadService
 
         for ($attempt = 1; $attempt <= $retryAttempts; $attempt++) {
             try {
-                $response = Http::timeout($this->timeout)
-                    ->withUserAgent(config('sanctions.download.user_agent', 'CEMS-MY/1.0'))
-                    // Never follow redirects: a 302 to an internal address would
-                    // bypass the allowlist and private-IP checks in validateUrl().
-                    ->withoutRedirecting()
-                    ->get($url);
+                $response = $this->getFollowingSafeRedirects($url);
 
                 if (! $response->successful()) {
                     $lastError = "HTTP {$response->status()}: Failed to download from {$url}";
@@ -58,7 +56,7 @@ class SanctionsDownloadService
                     ]);
 
                     if ($attempt < $retryAttempts) {
-                        sleep(config('sanctions.sources.un.retry_delay', 60));
+                        sleep(config('sanctions.download.retry_delay', 60));
                     }
 
                     continue;
@@ -124,7 +122,7 @@ class SanctionsDownloadService
                 ]);
 
                 if ($attempt < $retryAttempts) {
-                    sleep(config('sanctions.sources.un.retry_delay', 60));
+                    sleep(config('sanctions.download.retry_delay', 60));
                 }
             }
         }
@@ -220,38 +218,60 @@ class SanctionsDownloadService
         }
     }
 
-    protected function validateUrl(string $url): void
+    /**
+     * GET a URL, following redirects manually. Each hop is re-validated
+     * against the sanctions allowlist and private-IP check, so a 3xx can
+     * never bounce the request to an internal or non-allowlisted address.
+     * (data.opensanctions.org legitimately redirects to versioned artifact
+     * URLs on the same host.)
+     */
+    protected function getFollowingSafeRedirects(string $url): Response
     {
-        $parsed = parse_url($url);
-        if ($parsed === false || empty($parsed['scheme']) || empty($parsed['host'])) {
-            throw new \InvalidArgumentException("Invalid URL: {$url}");
-        }
+        $currentUrl = $url;
+        $maxHops = 5;
 
-        if ($parsed['scheme'] !== 'https') {
-            throw new \InvalidArgumentException("Only HTTPS URLs are allowed: {$url}");
-        }
+        for ($hop = 0; $hop <= $maxHops; $hop++) {
+            $this->validateUrl($currentUrl);
 
-        $host = strtolower($parsed['host']);
-        $allowedHosts = [
-            'sanctions.gov.my', 'ofac.treasury.gov', 'europa.eu',
-            'sdnlists.ofac.treasury.gov', 'un.org', 'unescritor.org',
-        ];
+            $response = Http::timeout($this->timeout)
+                ->withUserAgent(config('sanctions.download.user_agent', 'CEMS-MY/1.0'))
+                ->withoutRedirecting()
+                ->get($currentUrl);
 
-        $isAllowed = false;
-        foreach ($allowedHosts as $allowed) {
-            if ($host === $allowed || str_ends_with($host, '.'.$allowed)) {
-                $isAllowed = true;
-                break;
+            if (! $response->redirect()) {
+                return $response;
             }
+
+            $location = $response->header('Location');
+            if (empty($location)) {
+                return $response;
+            }
+
+            $currentUrl = $this->resolveRedirectUrl($currentUrl, $location);
         }
 
-        if (! $isAllowed) {
-            throw new \InvalidArgumentException("Host not in sanctions URL allowlist: {$host}");
+        throw new \RuntimeException("Too many redirects ({$maxHops}) fetching {$url}");
+    }
+
+    /**
+     * Resolve a possibly-relative Location header against the request URL.
+     */
+    protected function resolveRedirectUrl(string $baseUrl, string $location): string
+    {
+        if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
+            return $location;
         }
 
-        $ip = gethostbyname($host);
-        if ($ip !== $host && ! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-            throw new \InvalidArgumentException("URL resolves to private/internal IP: {$ip}");
+        $base = parse_url($baseUrl);
+        $origin = ($base['scheme'] ?? 'https').'://'.($base['host'] ?? '')
+            .(isset($base['port']) ? ':'.$base['port'] : '');
+
+        if (str_starts_with($location, '/')) {
+            return $origin.$location;
         }
+
+        $path = isset($base['path']) ? preg_replace('#/[^/]*$#', '/', $base['path']) : '/';
+
+        return $origin.$path.$location;
     }
 }

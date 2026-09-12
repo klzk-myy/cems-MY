@@ -78,7 +78,7 @@ class SanctionListController extends Controller
 
             return $this->successResponse([
                 'status' => 'success',
-                'records_added' => $result['added'],
+                'records_added' => $result['created'],
                 'records_updated' => $result['updated'],
                 'records_deactivated' => $result['deactivated'],
             ]);
