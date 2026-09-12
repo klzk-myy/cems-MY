@@ -197,6 +197,7 @@ class RevaluationServiceTest extends TestCase
         $this->createTestAccountingPeriod($testDate);
 
         // Create a currency position with balance
+        /** @var CurrencyPosition $position */
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'branch_id' => 'TEST-BRANCH',
@@ -234,6 +235,11 @@ class RevaluationServiceTest extends TestCase
         // Assert: Verify that no errors are returned (exception would have been thrown)
         $this->assertArrayNotHasKey('errors', $result);
         $this->assertEquals(1, $result['positions_updated']);
+
+        // current_value must track the new rate (quantity × 4.60) — the
+        // previous code updated current_rate but left current_value stale.
+        $position->refresh();
+        $this->assertEquals('4600.0000', $position->current_value);
     }
 
     #[Test]

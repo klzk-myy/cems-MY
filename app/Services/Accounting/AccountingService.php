@@ -86,6 +86,19 @@ class AccountingService implements AccountingServiceInterface
         $entryDate = $entryDate ?? now()->toDateString();
 
         return DB::transaction(function () use ($lines, $referenceType, $referenceId, $description, $entryDate, $createdBy, $branchId) {
+            if (count($lines) < 2) {
+                throw new AccountingPeriodException('Journal entry requires at least two lines');
+            }
+
+            foreach ($lines as $line) {
+                $debit = (string) ($line['debit'] ?? '0');
+                $credit = (string) ($line['credit'] ?? '0');
+                if ($this->mathService->compare($debit, '0') < 0
+                    || $this->mathService->compare($credit, '0') < 0) {
+                    throw new AccountingPeriodException('Journal line amounts must not be negative');
+                }
+            }
+
             if (! $this->validateBalanced($lines)) {
                 throw new AccountingPeriodException('Journal entry is not balanced: debits do not equal credits');
             }
@@ -125,6 +138,7 @@ class AccountingService implements AccountingServiceInterface
                     'debit' => $line['debit'] ?? '0',
                     'credit' => $line['credit'] ?? '0',
                     'description' => $line['description'] ?? null,
+                    'branch_id' => $branchId,
                 ]);
             }
 
@@ -297,6 +311,8 @@ class AccountingService implements AccountingServiceInterface
      */
     protected function updateLedger(JournalEntry $entry): void
     {
+        $touchedAccounts = [];
+
         foreach ($entry->lines as $line) {
             // Serialize writers per account: lock the chart-of-accounts anchor
             // row so a concurrent posting to the same account cannot read the
@@ -310,7 +326,7 @@ class AccountingService implements AccountingServiceInterface
 
             // Scope the running balance to the entry's branch so multi-branch
             // ledger activity can never contaminate another branch's balance.
-            $currentBalance = $this->getAccountBalance($line->account_code, null, $entry->branch_id);
+            $currentBalance = $this->latestChainBalance($line->account_code, $entry->branch_id);
 
             if ($this->isDebitAccount($line->account_code)) {
                 $newBalance = $this->mathService->add(
@@ -333,6 +349,28 @@ class AccountingService implements AccountingServiceInterface
                 'credit' => $line->credit,
                 'running_balance' => $newBalance,
             ]);
+
+            $touchedAccounts[$line->account_code] = true;
+        }
+
+        // Backdated posting repair: a new row dated before existing ledger rows
+        // breaks the running-balance chain (the new row's balance was computed
+        // against the latest balance, yet it sorts earlier by entry_date).
+        // Rebuild the chain for every touched account so stored running
+        // balances stay contiguous in date order.
+        foreach (array_keys($touchedAccounts) as $accountCode) {
+            $hasLaterRows = AccountLedger::where('account_code', $accountCode)
+                ->whereDate('entry_date', '>', $entry->entry_date)
+                ->when(
+                    $entry->branch_id === null,
+                    fn ($q) => $q->whereNull('branch_id'),
+                    fn ($q) => $q->where('branch_id', $entry->branch_id)
+                )
+                ->exists();
+
+            if ($hasLaterRows) {
+                $this->rebuildRunningBalances($accountCode, $entry->branch_id);
+            }
         }
 
         // Ledger financial reports are cached under the 'ledger' tag; flush it
@@ -343,6 +381,55 @@ class AccountingService implements AccountingServiceInterface
         // are cached under the 'reports' tag; flush it too or cash-flow views
         // stay stale up to their TTL after every posting.
         $this->cacheInvalidationService->invalidate('reports');
+    }
+
+    /**
+     * Recompute running balances for every ledger row of an account+branch,
+     * in the same order getAccountBalance uses to find the latest row.
+     * Called when a backdated journal entry inserts a row that is not the
+     * chain tail, which would otherwise leave every later row's stored
+     * running_balance stale.
+     */
+    protected function rebuildRunningBalances(string $accountCode, ?int $branchId): void
+    {
+        $isDebitNormal = $this->isDebitAccount($accountCode);
+
+        $rows = AccountLedger::where('account_code', $accountCode)
+            ->when(
+                $branchId === null,
+                fn ($q) => $q->whereNull('branch_id'),
+                fn ($q) => $q->where('branch_id', $branchId)
+            )
+            ->orderBy('entry_date')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $balance = '0';
+        foreach ($rows as $row) {
+            $delta = $isDebitNormal
+                ? $this->mathService->subtract((string) $row->debit, (string) $row->credit)
+                : $this->mathService->subtract((string) $row->credit, (string) $row->debit);
+            $balance = $this->mathService->add($balance, $delta);
+
+            if ($this->mathService->compare((string) $row->running_balance, $balance) !== 0) {
+                $row->update(['running_balance' => $balance]);
+            }
+        }
+    }
+
+    /**
+     * Post an already-constructed journal entry's lines to the account ledger.
+     *
+     * Public wrapper around updateLedger() for services that build journal
+     * entries directly (e.g. fiscal-year closing) instead of going through
+     * createJournalEntry(), so ledger posting keeps a single implementation:
+     * same account-direction rules, locks, and cache invalidation.
+     */
+    public function postToLedger(JournalEntry $entry): void
+    {
+        $entry->loadMissing('lines');
+        $this->updateLedger($entry);
     }
 
     /**
@@ -381,16 +468,57 @@ class AccountingService implements AccountingServiceInterface
      */
     public function getAccountBalance(string $accountCode, ?string $asOfDate = null, ?int $branchId = null): string
     {
-        $query = AccountLedger::where('account_code', $accountCode);
+        // All-branches reads: running_balance chains are per-branch, so picking
+        // the latest row across branches would return a single branch's
+        // balance mislabeled as consolidated. Aggregate instead — the sum is
+        // branch-agnostic and also immune to backdated-posting chain repairs.
+        if ($branchId === null) {
+            /** @var object{row_count:int, td:?string, tc:?string} $totals */
+            $totals = AccountLedger::where('account_code', $accountCode)
+                ->when($asOfDate, fn ($q) => $q->whereRaw('DATE(entry_date) <= ?', [$asOfDate]))
+                ->selectRaw('COUNT(*) as row_count, COALESCE(SUM(debit),0) as td, COALESCE(SUM(credit),0) as tc')
+                ->first();
+
+            // No ledger rows at all: plain '0' (matches the previous
+            // no-entry behavior and needs no account lookup).
+            if ((int) $totals->row_count === 0) {
+                return '0';
+            }
+
+            $net = $this->mathService->subtract((string) $totals->td, (string) $totals->tc);
+
+            // A zero net needs no sign flip — skip the account lookup so
+            // unknown account codes still resolve to a zero balance.
+            if ($this->mathService->compare($net, '0') === 0) {
+                return $net;
+            }
+
+            return $this->isDebitAccount($accountCode)
+                ? $net
+                : $this->mathService->multiply($net, '-1');
+        }
+
+        return $this->latestChainBalance($accountCode, $branchId, $asOfDate);
+    }
+
+    /**
+     * Latest running balance on the exact chain for one branch scope.
+     * A null branchId means the unbranched chain only (not consolidated) —
+     * writers must never borrow another branch's chain end.
+     */
+    protected function latestChainBalance(string $accountCode, ?int $branchId, ?string $asOfDate = null): string
+    {
+        $query = AccountLedger::where('account_code', $accountCode)
+            ->when(
+                $branchId === null,
+                fn ($q) => $q->whereNull('branch_id'),
+                fn ($q) => $q->where('branch_id', $branchId)
+            );
 
         if ($asOfDate) {
             // Use date function for cross-database compatibility
             // This ensures proper comparison regardless of datetime vs date storage
             $query->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);
-        }
-
-        if ($branchId !== null) {
-            $query->where('branch_id', $branchId);
         }
 
         $lastEntry = $query->orderBy('entry_date', 'desc')
@@ -415,7 +543,8 @@ class AccountingService implements AccountingServiceInterface
     public function getAccountActivity(string $accountCode, string $startDate, string $endDate): string
     {
         $totals = AccountLedger::where('account_code', $accountCode)
-            ->whereBetween('entry_date', [$startDate, $endDate])
+            ->whereDate('entry_date', '>=', $startDate)
+            ->whereDate('entry_date', '<=', $endDate)
             ->selectRaw('COALESCE(SUM(debit), 0) as total_debit, COALESCE(SUM(credit), 0) as total_credit')
             ->first();
 
@@ -442,7 +571,8 @@ class AccountingService implements AccountingServiceInterface
             ->select('account_code')
             ->selectRaw('SUM(debit - credit) as activity')
             ->whereIn('account_code', $accountCodes)
-            ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->whereDate('entry_date', '>=', $fromDate)
+            ->whereDate('entry_date', '<=', $toDate)
             ->groupBy('account_code')
             ->pluck('activity', 'account_code')
             ->toArray();

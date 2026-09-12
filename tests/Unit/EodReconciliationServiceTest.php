@@ -76,9 +76,9 @@ class EodReconciliationServiceTest extends TestCase
             'opened_by' => $this->user->id,
         ]);
 
-        // Create some buy transactions (cash received) using direct insert
+        // Create a sell transaction (MYR received) using direct insert
         DB::table('transactions')->insert([
-            'type' => TransactionType::Buy->value,
+            'type' => TransactionType::Sell->value,
             'status' => TransactionStatus::Completed->value,
             'currency_code' => 'USD',
             'amount_local' => '5000.00',
@@ -97,7 +97,7 @@ class EodReconciliationServiceTest extends TestCase
         // Calculate variance
         $variance = $this->service->calculateVariance($this->counter->id, $date);
 
-        // Expected closing = opening + buyTotal - sellTotal = 10000 + 5000 - 0 = 15000
+        // Expected closing = opening + cashReceived(sells) - cashPaidOut(buys) = 10000 + 5000 - 0 = 15000
         // Since session is unclosed, variance should return expected closing (not 0)
         $this->assertEquals('15000.0000', $variance);
     }
@@ -131,9 +131,9 @@ class EodReconciliationServiceTest extends TestCase
             'closed_by' => $this->user->id,
         ]);
 
-        // Create some transactions using direct insert
+        // Create a sell transaction (MYR received) using direct insert
         DB::table('transactions')->insert([
-            'type' => TransactionType::Buy->value,
+            'type' => TransactionType::Sell->value,
             'status' => TransactionStatus::Completed->value,
             'currency_code' => 'USD',
             'amount_local' => '5000.00',
@@ -221,9 +221,9 @@ class EodReconciliationServiceTest extends TestCase
             'closed_by' => $this->user->id,
         ]);
 
-        // Create a completed Buy transaction (should be included in variance)
+        // Create a completed Sell transaction (should be included in variance)
         DB::table('transactions')->insert([
-            'type' => TransactionType::Buy->value,
+            'type' => TransactionType::Sell->value,
             'status' => TransactionStatus::Completed->value,
             'currency_code' => 'USD',
             'amount_local' => '5000.00',

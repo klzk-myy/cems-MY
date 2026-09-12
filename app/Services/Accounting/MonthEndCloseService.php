@@ -2,11 +2,13 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\JournalEntryStatus;
 use App\Enums\ReportType;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Models\AccountingPeriod;
+use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\ReportGenerated;
 use App\Models\RevaluationEntry;
@@ -75,11 +77,14 @@ class MonthEndCloseService
             $failures[] = 'Period '.$period->period_code.' is already closed';
         }
 
+        // Only entries that can still transition to Posted block the close;
+        // terminal statuses (Reversed, Rejected) must not — they previously
+        // made every later month-end unclosable once any entry was reversed.
         $pendingEntries = JournalEntry::whereHas('period', function ($q) use ($date) {
             $q->where('start_date', '<=', $date)
                 ->where('end_date', '>=', $date);
         })
-            ->where('status', '!=', 'Posted')
+            ->whereIn('status', [JournalEntryStatus::Draft->value, JournalEntryStatus::Pending->value])
             ->count();
 
         if ($pendingEntries > 0) {
@@ -171,13 +176,20 @@ class MonthEndCloseService
             $existingNext = AccountingPeriod::forDate($nextMonth->toDateString())->first();
 
             if (! $existingNext) {
+                // Resolve the fiscal year containing next month rather than
+                // copying this period's — a December close would otherwise
+                // attach January's period to the prior fiscal year.
+                $nextFiscalYear = FiscalYear::where('start_date', '<=', $nextMonth->toDateString())
+                    ->where('end_date', '>=', $nextMonth->toDateString())
+                    ->first();
+
                 AccountingPeriod::create([
                     'period_code' => $nextMonth->format('Y-m'),
                     'start_date' => $nextMonth->startOfMonth()->toDateString(),
                     'end_date' => $nextMonth->endOfMonth()->toDateString(),
                     'period_type' => 'month',
                     'status' => 'Open',
-                    'fiscal_year_id' => $period->fiscal_year_id ?? null,
+                    'fiscal_year_id' => $nextFiscalYear?->id,
                 ]);
             }
 

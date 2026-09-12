@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Testing\PendingCommand;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -59,7 +60,13 @@ class SanctionsPruneCommandTest extends TestCase
         $oldTemp = $this->makeFile($this->tempDir, 'old_temp.json', now()->subHours(25)->getTimestamp());
         $newTemp = $this->makeFile($this->tempDir, 'new_temp.json', now()->subHours(1)->getTimestamp());
 
-        $this->artisan('sanctions:prune')->assertSuccessful();
+        /** @var PendingCommand $command */
+        $command = $this->artisan('sanctions:prune');
+        $command->assertSuccessful();
+        // assertSuccessful() only registers the expected exit code — the
+        // command executes at PendingCommand::__destruct. Run it explicitly
+        // so the files are pruned before the assertions below.
+        $command->run();
 
         $this->assertFileDoesNotExist($oldArchive);
         $this->assertFileExists($newArchive);
@@ -73,9 +80,12 @@ class SanctionsPruneCommandTest extends TestCase
         $oldArchive = $this->makeFile($this->archiveDir, 'old_archive.json', now()->subDays(90)->getTimestamp());
         $oldTemp = $this->makeFile($this->tempDir, 'old_temp.json', now()->subHours(100)->getTimestamp());
 
-        $this->artisan('sanctions:prune', ['--dry-run' => true])
+        /** @var PendingCommand $command */
+        $command = $this->artisan('sanctions:prune', ['--dry-run' => true]);
+        $command
             ->expectsOutputToContain('Would delete')
             ->assertSuccessful();
+        $command->run();
 
         $this->assertFileExists($oldArchive);
         $this->assertFileExists($oldTemp);
@@ -89,6 +99,9 @@ class SanctionsPruneCommandTest extends TestCase
             'sanctions.download.temp_directory' => $this->tempDir.'/missing-t',
         ]);
 
-        $this->artisan('sanctions:prune')->assertSuccessful();
+        /** @var PendingCommand $command */
+        $command = $this->artisan('sanctions:prune');
+        $command->assertSuccessful();
+        $command->run();
     }
 }

@@ -294,4 +294,70 @@ class BankReconciliationServiceTest extends TestCase
         $this->assertEquals(BankReconciliationStatus::Unmatched, $reconciliation->status);
         $this->assertNull($reconciliation->matched_to_journal_entry_id);
     }
+
+    #[Test]
+    public function auto_match_does_not_match_same_journal_entry_twice(): void
+    {
+        $accountCode = '1006';
+        $statementDate = now()->toDateString();
+        $amount = '1000.00';
+
+        ChartOfAccount::updateOrCreate(
+            ['account_code' => $accountCode],
+            [
+                'account_name' => 'Cash',
+                'account_type' => 'Asset',
+                'is_active' => true,
+            ]
+        );
+
+        $journalEntry = JournalEntry::create([
+            'entry_date' => $statementDate,
+            'description' => 'Test entry',
+            'status' => 'Posted',
+            'posted_by' => $this->user->id,
+            'reference_type' => 'Manual',
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $journalEntry->id,
+            'account_code' => $accountCode,
+            'debit' => $amount,
+            'credit' => '0.00',
+            'description' => 'Test line',
+        ]);
+
+        // Two identical statement lines but only one journal entry — the
+        // second must stay unmatched rather than double-matching.
+        $first = BankReconciliation::create([
+            'account_code' => $accountCode,
+            'statement_date' => $statementDate,
+            'description' => 'Statement line 1',
+            'debit' => $amount,
+            'credit' => '0.00',
+            'status' => 'unmatched',
+            'created_by' => $this->user->id,
+        ]);
+
+        $second = BankReconciliation::create([
+            'account_code' => $accountCode,
+            'statement_date' => $statementDate,
+            'description' => 'Statement line 2',
+            'debit' => $amount,
+            'credit' => '0.00',
+            'status' => 'unmatched',
+            'created_by' => $this->user->id,
+        ]);
+
+        $this->bankReconciliationService->autoMatch($accountCode);
+
+        $first->refresh();
+        $second->refresh();
+
+        $this->assertEquals(BankReconciliationStatus::Matched, $first->status);
+        $this->assertEquals($journalEntry->id, $first->matched_to_journal_entry_id);
+
+        $this->assertEquals(BankReconciliationStatus::Unmatched, $second->status);
+        $this->assertNull($second->matched_to_journal_entry_id);
+    }
 }

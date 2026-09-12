@@ -182,7 +182,10 @@ class EodReconciliationService
             ->where('date', $date->toDateString())
             ->get();
 
-        $openingFloat = $this->sumDecimalColumn($tillBalances, 'opening_balance');
+        // The MYR float is tracked on the MYR till row only — summing every
+        // currency row would mix USD/EUR/etc. units into an MYR figure.
+        $myrTillBalances = $tillBalances->where('currency_code', 'MYR');
+        $openingFloat = $this->sumDecimalColumn($myrTillBalances, 'opening_balance');
 
         // Get transactions for this counter on this date
         $transactions = $this->reconcilableTransactionsQuery($counterId, $date)
@@ -191,13 +194,13 @@ class EodReconciliationService
 
         $sumQuery = $this->reconcilableTransactionsQuery($counterId, $date);
 
-        // Buy transactions = cash received (customer sells foreign currency, we buy)
+        // Sell transactions = MYR received (customer buys foreign currency, pays MYR)
         $buyTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Buy->value);
-        $totalCashReceived = (string) ((clone $sumQuery)->buy()->sum('amount_local'));
+        $totalCashReceived = (string) ((clone $sumQuery)->sell()->sum('amount_local'));
 
-        // Sell transactions = cash paid out (customer buys foreign currency, we sell)
+        // Buy transactions = MYR paid out (we buy foreign currency, pay MYR)
         $sellTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Sell->value);
-        $totalCashPaidOut = (string) ((clone $sumQuery)->sell()->sum('amount_local'));
+        $totalCashPaidOut = (string) ((clone $sumQuery)->buy()->sum('amount_local'));
 
         // Expected closing = opening + received - paid out
         $closingFloatExpected = BcmathHelper::subtract(
@@ -205,9 +208,9 @@ class EodReconciliationService
             $totalCashPaidOut
         );
 
-        // Actual closing from session close
+        // Actual MYR closing from session close
         $closingFloatActual = $this->sumDecimalColumn(
-            $tillBalances->whereNotNull('closing_balance'),
+            $myrTillBalances->whereNotNull('closing_balance'),
             'closing_balance'
         );
         $variance = $this->calculateVariance($counterId, $date);
@@ -313,24 +316,28 @@ class EodReconciliationService
             ->where('date', $date->toDateString())
             ->get();
 
-        $openingFloat = $this->sumDecimalColumn($tillBalances, 'opening_balance');
+        // MYR float only — see generateCounterReconciliation for why the
+        // per-currency rows must not be summed into an MYR figure.
+        $myrTillBalances = $tillBalances->where('currency_code', 'MYR');
+        $openingFloat = $this->sumDecimalColumn($myrTillBalances, 'opening_balance');
 
         // Get transactions
         $baseQuery = $this->reconcilableTransactionsQuery($counterId, $date);
 
-        $buyTotal = (string) ((clone $baseQuery)->buy()->sum('amount_local'));
-        $sellTotal = (string) ((clone $baseQuery)->sell()->sum('amount_local'));
+        // MYR in on Sell, MYR out on Buy (same convention as the reconciliation).
+        $cashReceived = (string) ((clone $baseQuery)->sell()->sum('amount_local'));
+        $cashPaidOut = (string) ((clone $baseQuery)->buy()->sum('amount_local'));
 
         $expectedClosing = BcmathHelper::subtract(
-            BcmathHelper::add($openingFloat, $buyTotal),
-            $sellTotal
+            BcmathHelper::add($openingFloat, $cashReceived),
+            $cashPaidOut
         );
 
         $actualClosing = $this->sumDecimalColumn(
-            $tillBalances->whereNotNull('closing_balance'),
+            $myrTillBalances->whereNotNull('closing_balance'),
             'closing_balance'
         );
-        $hasClosingBalance = $tillBalances->whereNotNull('closing_balance')->isNotEmpty();
+        $hasClosingBalance = $myrTillBalances->whereNotNull('closing_balance')->isNotEmpty();
 
         if (! $hasClosingBalance) {
             // Session not yet closed, return expected closing to show pending variance

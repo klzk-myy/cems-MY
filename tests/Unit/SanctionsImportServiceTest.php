@@ -317,7 +317,7 @@ class SanctionsImportServiceTest extends TestCase
         $this->assertCount(0, glob($tempDir.'/*') ?: []);
         $this->assertCount(1, glob($archiveDir.'/*') ?: []);
 
-        foreach (glob($archiveDir.'/*') as $file) {
+        foreach (glob($archiveDir.'/*') ?: [] as $file) {
             unlink($file);
         }
         rmdir($tempDir);

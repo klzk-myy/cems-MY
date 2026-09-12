@@ -100,13 +100,13 @@ class LedgerService
                 $balance = $balances[$account->account_code] ?? '0';
                 $accountType = $account->account_type instanceof AccountType ? $account->account_type->value : (string) $account->account_type;
 
-                if (in_array($accountType, ['Liability', 'Equity', 'Revenue'])) {
-                    $debit = $this->mathService->compare($balance, '0') < 0 ? $this->mathService->multiply($balance, '-1') : '0';
-                    $credit = $this->mathService->compare($balance, '0') >= 0 ? $balance : '0';
-                } else {
-                    $debit = $this->mathService->compare($balance, '0') >= 0 ? $balance : '0';
-                    $credit = $this->mathService->compare($balance, '0') < 0 ? $this->mathService->multiply($balance, '-1') : '0';
-                }
+                // Net balance is always debit-minus-credit: a positive net shows
+                // in the debit column, a negative net in the credit column,
+                // regardless of the account's normal side. The previous
+                // type-branched logic displayed credit-normal balances in the
+                // debit column and reported balanced books as unbalanced.
+                $debit = $this->mathService->compare($balance, '0') >= 0 ? $balance : '0';
+                $credit = $this->mathService->compare($balance, '0') < 0 ? $this->mathService->multiply($balance, '-1') : '0';
 
                 $trialBalance[] = [
                     'account_code' => $account->account_code,
@@ -223,7 +223,8 @@ class LedgerService
 
         $query = AccountLedger::with('journalEntry')
             ->where('account_code', $accountCode)
-            ->whereBetween('entry_date', [$fromDate, $toDate]);
+            ->whereDate('entry_date', '>=', $fromDate)
+            ->whereDate('entry_date', '<=', $toDate);
 
         // Apply branch filter if specified
         if ($branchId !== null) {
@@ -485,10 +486,11 @@ class LedgerService
      */
     protected function getOpeningBalance(string $accountCode, string $fromDate, ?int $branchId = null): string
     {
-        // Use <= to include entries ON the fromDate in opening balance.
-        // This is intentional: entries recorded on the as-of date contribute to the opening balance.
+        // Opening balance must be the balance BEFORE the from date: the entry
+        // list already includes rows dated on the from date, so including them
+        // here double-counts them in opening + movement != closing.
         $query = AccountLedger::where('account_code', $accountCode)
-            ->where('entry_date', '<=', $fromDate);
+            ->whereDate('entry_date', '<', $fromDate);
 
         if ($branchId !== null) {
             $query->where('branch_id', $branchId);

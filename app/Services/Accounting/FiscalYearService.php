@@ -41,6 +41,7 @@ class FiscalYearService
         protected MathService $mathService,
         protected LedgerService $ledgerService,
         protected CacheInvalidationService $cacheInvalidationService,
+        protected AccountingService $accountingService,
     ) {}
 
     /**
@@ -197,46 +198,15 @@ class FiscalYearService
             throw new InvalidFiscalYearStateException('Only closed fiscal years can be opened');
         }
 
-        // Create opening entries to transfer retained earnings
+        // No opening journal entry is created: the account ledger is
+        // continuous across fiscal-year boundaries, so every account's closing
+        // balance (including retained earnings, already rolled up by the
+        // closing entries) carries forward automatically. The previous
+        // implementation posted a single-sided Retained Earnings line dated at
+        // the CLOSED year's start — an unbalanced entry that double-counted
+        // equity in the books.
         return DB::transaction(function () use ($year, $userId) {
             $userId = $userId ?? auth()->user()?->id;
-            $openingDate = $year->start_date->toDateString();
-
-            // Get retained earnings from closing
-            $retainedEarnings = $this->getAccountBalance(AccountCode::RETAINED_EARNINGS->value, $year->end_date->toDateString());
-
-            // Create opening entry
-            $entryNumber = 'OE-'.$year->year_code.'-0001';
-
-            $entry = JournalEntry::create([
-                'entry_number' => $entryNumber,
-                'entry_date' => $openingDate,
-                'period_id' => $this->getPeriodId($openingDate),
-                'reference_type' => 'FiscalYearOpening',
-                'description' => 'Opening balances for '.$year->year_code,
-                'status' => 'Posted',
-                'created_by' => $userId,
-                'posted_by' => $userId,
-                'posted_at' => now(),
-            ]);
-
-            // Retained earnings should equal the current year P&L from prior year
-            if ($this->mathService->compare($retainedEarnings, '0') !== 0) {
-                JournalLine::create([
-                    'journal_entry_id' => $entry->id,
-                    'account_code' => AccountCode::RETAINED_EARNINGS->value,
-                    'debit' => $this->mathService->compare($retainedEarnings, '0') < 0
-                        ? $this->mathService->subtract('0', $retainedEarnings)
-                        : '0',
-                    'credit' => $this->mathService->compare($retainedEarnings, '0') >= 0 ? $retainedEarnings : 0,
-                    'description' => 'Opening retained earnings',
-                ]);
-
-                // Post the opening balance to the ledger - previously the entry
-                // was created but never posted, so the new year's opening equity
-                // never reached the account ledger.
-                $this->createClosingLedgerEntries($entry);
-            }
 
             $this->auditService->log(
                 'fiscal_year_opened',
@@ -322,7 +292,7 @@ class FiscalYearService
                 ? $this->mathService->subtract((string) $row->total_credit, (string) $row->total_debit)
                 : '0';
 
-            if ($this->mathService->compare($balance, '0') !== 0) {
+            if ($this->mathService->compare($balance, '0') > 0) {
                 JournalLine::create([
                     'journal_entry_id' => $entry->id,
                     'account_code' => $account->account_code,
@@ -330,20 +300,30 @@ class FiscalYearService
                     'credit' => 0,
                     'description' => 'Close '.$account->account_name,
                 ]);
+            } elseif ($this->mathService->compare($balance, '0') < 0) {
+                // Contra-revenue (net debit balance): close it with a credit
+                // rather than posting a negative debit line.
+                JournalLine::create([
+                    'journal_entry_id' => $entry->id,
+                    'account_code' => $account->account_code,
+                    'debit' => 0,
+                    'credit' => $this->mathService->multiply($balance, '-1'),
+                    'description' => 'Close '.$account->account_name,
+                ]);
             }
         }
 
-        // Credit Income Summary
+        // Credit Income Summary (debit instead when total revenue is negative)
         JournalLine::create([
             'journal_entry_id' => $entry->id,
             'account_code' => AccountCode::INCOME_SUMMARY->value,
-            'debit' => 0,
-            'credit' => $total,
+            'debit' => $this->mathService->compare($total, '0') < 0 ? $this->mathService->multiply($total, '-1') : 0,
+            'credit' => $this->mathService->compare($total, '0') >= 0 ? $total : 0,
             'description' => 'Income Summary',
         ]);
 
         // Create ledger entries
-        $this->createClosingLedgerEntries($entry);
+        $this->postClosingToLedger($entry);
 
         return $entry;
     }
@@ -377,7 +357,7 @@ class FiscalYearService
                 ? $this->mathService->subtract((string) $row->total_debit, (string) $row->total_credit)
                 : '0';
 
-            if ($this->mathService->compare($balance, '0') !== 0) {
+            if ($this->mathService->compare($balance, '0') > 0) {
                 JournalLine::create([
                     'journal_entry_id' => $entry->id,
                     'account_code' => $account->account_code,
@@ -385,20 +365,30 @@ class FiscalYearService
                     'credit' => $balance,
                     'description' => 'Close '.$account->account_name,
                 ]);
+            } elseif ($this->mathService->compare($balance, '0') < 0) {
+                // Contra-expense (net credit balance): close it with a debit
+                // rather than posting a negative credit line.
+                JournalLine::create([
+                    'journal_entry_id' => $entry->id,
+                    'account_code' => $account->account_code,
+                    'debit' => $this->mathService->multiply($balance, '-1'),
+                    'credit' => 0,
+                    'description' => 'Close '.$account->account_name,
+                ]);
             }
         }
 
-        // Debit Income Summary
+        // Debit Income Summary (credit instead when total expense is negative)
         JournalLine::create([
             'journal_entry_id' => $entry->id,
             'account_code' => AccountCode::INCOME_SUMMARY->value,
-            'debit' => $total,
-            'credit' => 0,
+            'debit' => $this->mathService->compare($total, '0') >= 0 ? $total : 0,
+            'credit' => $this->mathService->compare($total, '0') < 0 ? $this->mathService->multiply($total, '-1') : 0,
             'description' => 'Income Summary',
         ]);
 
         // Create ledger entries
-        $this->createClosingLedgerEntries($entry);
+        $this->postClosingToLedger($entry);
 
         return $entry;
     }
@@ -457,54 +447,24 @@ class FiscalYearService
         }
 
         // Create ledger entries
-        $this->createClosingLedgerEntries($entry);
+        $this->postClosingToLedger($entry);
 
         return $entry;
     }
 
     /**
-     * Create ledger entries for closing entries.
+     * Post a closing journal entry's lines to the account ledger.
+     *
+     * Delegates to AccountingService::postToLedger so ledger writes use the
+     * single canonical implementation (account-direction rules, chart-row
+     * locking, backdate chain repair, ledger+reports cache invalidation).
+     * The previous local copy special-cased Income Summary (4201) as
+     * debit-normal, which gave the same account two different running-balance
+     * conventions depending on which service wrote the row.
      */
-    protected function createClosingLedgerEntries(JournalEntry $entry): void
+    protected function postClosingToLedger(JournalEntry $entry): void
     {
-        foreach ($entry->lines as $line) {
-            $currentBalance = $this->getAccountBalance($line->account_code, $entry->entry_date);
-
-            // Income Summary (4201) is treated as a special debit-normal equity account
-            // for closing entry calculations, despite being classified as Equity.
-            // When closing revenue: credit to 4201 increases balance
-            // When closing expenses: debit to 4201 decreases balance
-            if ($line->account_code === AccountCode::INCOME_SUMMARY->value) {
-                $newBalance = $this->mathService->add(
-                    $this->mathService->add($currentBalance, (string) $line->debit),
-                    $this->mathService->multiply((string) $line->credit, '-1')
-                );
-            } elseif ($this->isDebitAccount($line->account_code)) {
-                $newBalance = $this->mathService->add(
-                    $this->mathService->add($currentBalance, (string) $line->debit),
-                    $this->mathService->multiply((string) $line->credit, '-1')
-                );
-            } else {
-                $newBalance = $this->mathService->add(
-                    $this->mathService->add($currentBalance, (string) $line->credit),
-                    $this->mathService->multiply((string) $line->debit, '-1')
-                );
-            }
-
-            AccountLedger::create([
-                'account_code' => $line->account_code,
-                'branch_id' => $entry->branch_id,
-                'entry_date' => $entry->entry_date,
-                'journal_entry_id' => $entry->id,
-                'debit' => $line->debit,
-                'credit' => $line->credit,
-                'running_balance' => $newBalance,
-            ]);
-        }
-
-        // Ledger financial reports are cached under the 'ledger' tag; flush it
-        // so trial balances/balance sheets are not stale after a posting.
-        $this->cacheInvalidationService->invalidate('ledger');
+        $this->accountingService->postToLedger($entry);
     }
 
     /**
@@ -522,7 +482,8 @@ class FiscalYearService
 
         /** @var Collection<int, object{account_code:string, total_debit:?string, total_credit:?string}> $totals */
         $totals = AccountLedger::whereIn('account_code', $accountCodes)
-            ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->whereDate('entry_date', '>=', $fromDate)
+            ->whereDate('entry_date', '<=', $toDate)
             ->selectRaw('account_code, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->groupBy('account_code')
             ->get()
@@ -642,11 +603,18 @@ class FiscalYearService
     public function createQuarterPeriods(FiscalYear $year): array
     {
         return DB::transaction(function () use ($year) {
+            // Each quarter ends the day before the next begins; without the
+            // -1 day the boundary date belonged to both quarters and
+            // AccountingPeriod::forDate() resolved it ambiguously.
+            $q2Start = (new \DateTime($year->start_date))->modify('+3 months');
+            $q3Start = (new \DateTime($year->start_date))->modify('+6 months');
+            $q4Start = (new \DateTime($year->start_date))->modify('+9 months');
+
             $quarters = [
-                ['Q1', $year->start_date, (new \DateTime($year->start_date))->modify('+3 months')->format('Y-m-d')],
-                ['Q2', (new \DateTime($year->start_date))->modify('+3 months')->format('Y-m-d'), (new \DateTime($year->start_date))->modify('+6 months')->format('Y-m-d')],
-                ['Q3', (new \DateTime($year->start_date))->modify('+6 months')->format('Y-m-d'), (new \DateTime($year->start_date))->modify('+9 months')->format('Y-m-d')],
-                ['Q4', (new \DateTime($year->start_date))->modify('+9 months')->format('Y-m-d'), $year->end_date],
+                ['Q1', $year->start_date, (clone $q2Start)->modify('-1 day')->format('Y-m-d')],
+                ['Q2', $q2Start->format('Y-m-d'), (clone $q3Start)->modify('-1 day')->format('Y-m-d')],
+                ['Q3', $q3Start->format('Y-m-d'), (clone $q4Start)->modify('-1 day')->format('Y-m-d')],
+                ['Q4', $q4Start->format('Y-m-d'), $year->end_date],
             ];
 
             $periods = [];

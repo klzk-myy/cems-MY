@@ -155,9 +155,13 @@ class RevaluationService
                 'posted_by' => $postedBy,
             ]);
 
-            // Update position
+            // Update position — keep current_value consistent with the new
+            // rate, as CurrencyPositionService::updatePosition maintains it.
             $lockedPosition->update([
                 'current_rate' => $newRate,
+                'current_value' => $this->mathService->round(
+                    $this->mathService->multiply((string) $lockedPosition->quantity, (string) $newRate)
+                ),
                 'unrealized_gain_loss' => $unrealizedGainLoss,
                 'last_revalued_at' => now(),
             ]);
@@ -364,6 +368,9 @@ class RevaluationService
                     $lockedPosition->update([
                         'unrealized_gain_loss' => $unrealizedGainLoss,
                         'current_rate' => $newRate,
+                        'current_value' => $this->mathService->round(
+                            $this->mathService->multiply((string) $lockedPosition->quantity, (string) $newRate)
+                        ),
                         'last_revalued_at' => now(),
                     ]);
 

@@ -243,8 +243,19 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             $roundedAvgCost = $this->mathService->round($restoredAvgCost, $this->positionPrecision);
             $roundedRate = $this->mathService->round($position->current_rate ?? $restoredAvgCost, $this->positionPrecision);
 
+            // Maintain the same derived columns updatePosition() maintains —
+            // leaving them stale made total_cost/current_value describe the
+            // pre-reversal quantity.
             $position->update([
                 'average_cost' => $roundedAvgCost,
+                'total_cost' => $this->mathService->round(
+                    $this->mathService->multiply((string) $newBalance, (string) $roundedAvgCost),
+                    $this->positionPrecision
+                ),
+                'current_value' => $this->mathService->round(
+                    $this->mathService->multiply((string) $newBalance, (string) $roundedRate),
+                    $this->positionPrecision
+                ),
                 'unrealized_gain_loss' => $this->mathService->round(
                     $this->mathService->calculateRevaluationPnl($newBalance, $roundedAvgCost, $roundedRate),
                     $this->positionPrecision
@@ -404,11 +415,11 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             ->first();
 
         if ($activeSession) {
-            // Till identifiers are counter codes (see convert_numeric_till_ids migration);
-            // counter_sessions has no till_id column, resolve it through the counter.
+            // Positions are keyed by branch_id, not by counter code — looking
+            // up with the counter code (e.g. 'C01') always returned empty.
             $activeSession->loadMissing('counter');
 
-            return $this->getAllPositions((string) $activeSession->counter?->code);
+            return $this->getAllPositions((string) $activeSession->counter?->branch_id);
         }
 
         return new Collection;

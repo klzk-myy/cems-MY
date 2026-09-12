@@ -178,6 +178,11 @@ class BankReconciliationService
                     $query->where('account_code', $accountCode)
                         ->where($column, $amount);
                 })
+                // A journal entry already matched to another statement line
+                // must not be claimed again — without this, two identical-
+                // amount lines both matched the same entry.
+                ->whereNotIn('id', BankReconciliation::whereNotNull('matched_to_journal_entry_id')
+                    ->select('matched_to_journal_entry_id'))
                 ->whereDate('entry_date', $record->statement_date)
                 ->first();
 
@@ -375,6 +380,8 @@ class BankReconciliationService
                 $days30->push($check);
             } elseif ($daysOutstanding <= 90) {
                 $days60->push($check);
+            } elseif ($daysOutstanding <= 180) {
+                $days90->push($check);
             } else {
                 $over90->push($check);
             }

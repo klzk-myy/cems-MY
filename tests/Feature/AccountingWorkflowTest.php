@@ -462,7 +462,7 @@ class AccountingWorkflowTest extends TestCase
         $fiscalYearService = app(FiscalYearService::class);
 
         // Use reflection to call the protected method
-        $reflection = new \ReflectionMethod($fiscalYearService, 'createClosingLedgerEntries');
+        $reflection = new \ReflectionMethod($fiscalYearService, 'postClosingToLedger');
         $reflection->setAccessible(true);
         $reflection->invoke($fiscalYearService, $closingEntry);
 
@@ -603,7 +603,7 @@ class AccountingWorkflowTest extends TestCase
         // Call the service method to create closing ledger entries
         $fiscalYearService = app(FiscalYearService::class);
 
-        $reflection = new \ReflectionMethod($fiscalYearService, 'createClosingLedgerEntries');
+        $reflection = new \ReflectionMethod($fiscalYearService, 'postClosingToLedger');
         $reflection->setAccessible(true);
         $reflection->invoke($fiscalYearService, $closingEntry);
 

@@ -11437,18 +11437,6 @@ parameters:
 			path: tests/Unit/KycDocumentExpiryServiceTest.php
 
 		-
-			message: '#^Access to an undefined property Tests\\Unit\\LedgerServiceBalanceTest\:\:\$branch1\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Unit/LedgerServiceBalanceTest.php
-
-		-
-			message: '#^Access to an undefined property Tests\\Unit\\LedgerServiceBalanceTest\:\:\$branch2\.$#'
-			identifier: property.notFound
-			count: 3
-			path: tests/Unit/LedgerServiceBalanceTest.php
-
-		-
 			message: '#^Method Tests\\Unit\\LedgerServiceBalanceTest\:\:get_trial_balance_uses_efficient_queries\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1

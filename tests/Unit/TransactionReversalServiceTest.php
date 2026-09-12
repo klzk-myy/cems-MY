@@ -98,6 +98,14 @@ class TransactionReversalServiceTest extends TestCase
 
         $this->assertEquals('1000.0000', $position->balance);
         $this->assertEquals('4.4000', bcadd($position->average_cost, '0', 4));
+
+        // Derived columns must track the restored quantity/cost — stale
+        // total_cost/current_value described the pre-reversal position.
+        // current_rate stays at the last market rate (4.60), so the restored
+        // 1000 units carry 200 unrealized gain over the 4.40 cost basis.
+        $this->assertEquals('4400.0000', $position->total_cost);
+        $this->assertEquals('4600.0000', $position->current_value);
+        $this->assertEquals('200.0000', $position->unrealized_gain_loss);
     }
 
     #[Test]
