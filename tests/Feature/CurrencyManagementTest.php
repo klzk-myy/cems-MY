@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Enums\TransactionStatus;
+use App\Models\Branch;
+use App\Models\BranchPool;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
@@ -60,6 +62,35 @@ class CurrencyManagementTest extends TestCase
             ->get(route('transactions.create'))
             ->assertOk()
             ->assertSee('XYZ');
+    }
+
+    #[Test]
+    public function created_currency_is_mapped_into_accounting_for_every_active_branch(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Branch::factory()->inactive()->create();
+        $activeCount = Branch::where('is_active', true)->count();
+
+        $this->actingAs($admin)
+            ->post(route('system.currencies.store'), $this->payload())
+            ->assertRedirect(route('system.currencies.index'));
+
+        foreach (Branch::where('is_active', true)->get() as $branch) {
+            $this->assertDatabaseHas('branch_pools', [
+                'branch_id' => $branch->id,
+                'currency_code' => 'XYZ',
+                'available_balance' => '0.0000',
+            ]);
+            $this->assertDatabaseHas('currency_positions', [
+                'branch_id' => $branch->id,
+                'currency_code' => 'XYZ',
+                'quantity' => '0',
+            ]);
+        }
+
+        // Inactive branches are not provisioned.
+        $this->assertSame($activeCount, CurrencyPosition::where('currency_code', 'XYZ')->count());
+        $this->assertSame($activeCount, BranchPool::where('currency_code', 'XYZ')->count());
     }
 
     #[Test]

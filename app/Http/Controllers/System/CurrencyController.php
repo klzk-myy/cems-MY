@@ -6,11 +6,15 @@ use App\Enums\TransactionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCurrencyRequest;
 use App\Http\Requests\UpdateCurrencyRequest;
+use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
+use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
+use App\Services\Branch\BranchPoolService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -32,6 +36,8 @@ class CurrencyController extends Controller
 {
     public function __construct(
         protected AuditService $auditService,
+        protected BranchPoolService $branchPoolService,
+        protected CurrencyPositionLockService $positionLockService,
     ) {}
 
     /**
@@ -74,10 +80,24 @@ class CurrencyController extends Controller
                 ->withInput();
         }
 
-        $currency = Currency::create([
-            ...$validated,
-            'is_active' => true,
-        ]);
+        [$currency, $branches] = DB::transaction(function () use ($validated) {
+            $currency = Currency::create([
+                ...$validated,
+                'is_active' => true,
+            ]);
+
+            // Map the new currency into the accounting system: every active
+            // branch gets a zero branch pool and a zero currency position so the
+            // currency appears in stock/position views immediately instead of
+            // waiting for lazy provisioning at first transaction/counter open.
+            $branches = Branch::where('is_active', true)->get();
+            foreach ($branches as $branch) {
+                $this->branchPoolService->getOrCreateForBranch($branch, $currency->code);
+                $this->positionLockService->lock((string) $branch->id, $currency->code);
+            }
+
+            return [$currency, $branches];
+        });
 
         $this->auditService->log(
             'currency_created',
@@ -89,6 +109,7 @@ class CurrencyController extends Controller
                 'code' => $currency->code,
                 'name' => $currency->name,
                 'decimal_places' => $currency->decimal_places,
+                'provisioned_branches' => $branches->count(),
             ]
         );
 

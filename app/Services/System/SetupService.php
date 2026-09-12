@@ -297,10 +297,9 @@ class SetupService
             ->pluck('rate_buy', 'currency_code');
 
         foreach ($stockData['initial_stock'] as $currencyCode => $amount) {
-            if ($amount <= 0) {
-                continue;
-            }
-
+            // Zero-amount entries still create pool/position rows so every
+            // currency selected in step 3 is mapped into the accounting
+            // system, not only the ones with opening stock.
             BranchPool::create([
                 'branch_id' => $branch->id,
                 'currency_code' => $currencyCode,

@@ -139,5 +139,6 @@ Approval requires a **different user** (segregation of duties — creator cannot
 
 - `user_created` audit + user create 500'd before `UserService::createUser` fix (password_hash was set after `User::create`, tripping the `creating` hook).
 - Setup seeded `branch_pools` but never `currency_positions` → every Sell failed with InsufficientStock until `SetupService::createInitialStock` was fixed to seed positions too (cost basis = seeded buy rate, MYR = 1).
+- `/system/currencies/create` used to insert only a `currencies` row → the new code had no accounting footprint until lazily provisioned. `CurrencyController::store` now creates zero `branch_pools` + `currency_positions` for every **active** branch (audit `provisioned_branches`). Verified: `KRW` via UI → pool 0.0000 + position 0 on branch 4. Note: no `exchange_rates` row is created — the currency is sellable-at-zero/buyable but has no market rate until one is set in `/rates`.
 
 ## 8. Remaining verification
