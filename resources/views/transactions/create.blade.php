@@ -21,7 +21,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <x-select name="type" label="Transaction Type" :options="['Buy' => 'Buy', 'Sell' => 'Sell']" :selected="old('type')" required />
 
-            <x-select name="customer_id" label="Customer" :options="$customers ?? []" :selected="old('customer_id')" required />
+            <x-customer-typeahead name="customer_id" label="Customer" :customers="$customers ?? []" required />
 
             <x-select name="currency_code" label="Currency" :options="$currencies ?? []" :selected="old('currency_code')" required />
 

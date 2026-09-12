@@ -51,6 +51,7 @@ class CustomerSearchController extends Controller
             'query' => $validated['query'],
             'results' => $results,
             'count' => count($results),
+            'query_screening' => $this->customerService->screenSearchQuery($validated['query']),
         ]);
     }
 

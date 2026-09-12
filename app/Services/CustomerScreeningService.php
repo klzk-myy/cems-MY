@@ -97,7 +97,8 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
         string $name,
         ?string $dob = null,
         ?string $nationality = null,
-        ?int $customerId = null
+        ?int $customerId = null,
+        bool $persist = true
     ): ScreeningResponse {
         $normalizedName = $this->normalizeName($name);
         $candidates = $this->findCandidates($normalizedName);
@@ -181,34 +182,37 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
             ->first()
             ?->entryId;
 
-        $result = $this->createResult(
-            customerId: $customerId,
-            screenedName: $name,
-            entryId: $bestSanctionEntryId,
-            score: max($highestScore, $highestAdverseScore),
-            action: $action,
-            matchedFields: $matches
-                ->concat($adverseMatches)
-                ->map(fn (ScreeningMatch $m) => $m->matchedFields)
-                ->flatten()
-                ->toArray(),
-            source: $adverseMatches->isNotEmpty() && ! $hasSanctionHits
-                ? self::SOURCE_ADVERSE_MEDIA
-                : self::SOURCE_SANCTIONS,
-            adverseMediaEntryId: $bestAdverseEntryId
-        );
+        $result = null;
+        if ($persist) {
+            $result = $this->createResult(
+                customerId: $customerId,
+                screenedName: $name,
+                entryId: $bestSanctionEntryId,
+                score: max($highestScore, $highestAdverseScore),
+                action: $action,
+                matchedFields: $matches
+                    ->concat($adverseMatches)
+                    ->map(fn (ScreeningMatch $m) => $m->matchedFields)
+                    ->flatten()
+                    ->toArray(),
+                source: $adverseMatches->isNotEmpty() && ! $hasSanctionHits
+                    ? self::SOURCE_ADVERSE_MEDIA
+                    : self::SOURCE_SANCTIONS,
+                adverseMediaEntryId: $bestAdverseEntryId
+            );
 
-        // Record the successful screening so rescreening schedulers
-        // (compliance:rescreen, SanctionsRescreeningMonitor) only pick up
-        // customers whose screening has gone stale.
-        $this->stampScreenedAt($customerId);
+            // Record the successful screening so rescreening schedulers
+            // (compliance:rescreen, SanctionsRescreeningMonitor) only pick up
+            // customers whose screening has gone stale.
+            $this->stampScreenedAt($customerId);
+        }
 
         return new ScreeningResponse(
             action: $action,
             confidenceScore: max($highestScore, $highestAdverseScore),
             matches: $matches->concat($adverseMatches),
             screenedAt: Carbon::now(),
-            resultId: $result->id,
+            resultId: $result?->id,
         );
     }
 

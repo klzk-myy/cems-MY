@@ -11,7 +11,7 @@ interface CustomerScreeningServiceInterface
 {
     public function screenCustomer(Customer $customer): ScreeningResponse;
 
-    public function screenName(string $name, ?string $dob = null, ?string $nationality = null, ?int $customerId = null): ScreeningResponse;
+    public function screenName(string $name, ?string $dob = null, ?string $nationality = null, ?int $customerId = null, bool $persist = true): ScreeningResponse;
 
     public function screenTransaction(Transaction $transaction): ScreeningResponse;
 

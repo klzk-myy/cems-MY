@@ -319,28 +319,56 @@ class CustomerService implements CustomerServiceInterface
             }
         }
 
-        return $customers->map(function ($customer) {
-            $sanctionCheck = $this->screeningService->screenName($customer->full_name);
+        return $customers->map(fn ($customer) => [
+            'id' => $customer->id,
+            'full_name' => $customer->full_name,
+            'ic_number' => $customer->ic_number,
+            'ic_number_masked' => $customer->ic_number ? substr($customer->ic_number, 0, 4).'****'.substr($customer->ic_number, -4) : null,
+            'nationality' => $customer->nationality,
+            'risk_rating' => $customer->risk_rating,
+            'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
+            'is_pep' => $customer->pep_status,
+            'is_sanctioned' => $customer->sanction_hit,
+            'sanction_warning' => (bool) $customer->sanction_hit,
+            'sanction_matches' => [],
+            'sanction_action' => null,
+        ])->toArray();
+    }
 
-            return [
-                'id' => $customer->id,
-                'full_name' => $customer->full_name,
-                'ic_number' => $customer->ic_number,
-                'ic_number_masked' => $customer->ic_number ? substr($customer->ic_number, 0, 4).'****'.substr($customer->ic_number, -4) : null,
-                'nationality' => $customer->nationality,
-                'risk_rating' => $customer->risk_rating,
-                'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
-                'is_pep' => $customer->pep_status,
-                'is_sanctioned' => $customer->sanction_hit,
-                'sanction_warning' => $sanctionCheck->matches->isNotEmpty(),
-                'sanction_matches' => $sanctionCheck->matches->map(fn ($m) => [
-                    'entity_name' => $m->entityName,
-                    'score' => round($m->score, 1),
-                    'list' => $m->listName,
-                ])->toArray(),
-                'sanction_action' => $sanctionCheck->action,
-            ];
-        })->toArray();
+    /**
+     * Dry-run screen of a typed name for the transaction-form typeahead.
+     * Result is cached (per normalized name) and never persisted — the
+     * authoritative screen happens in transaction pre-validation.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function screenSearchQuery(string $query): ?array
+    {
+        $query = trim($query);
+        if (mb_strlen($query) < 3) {
+            return null;
+        }
+
+        return Cache::remember(
+            'screen:typeahead:'.md5(mb_strtolower($query)),
+            600,
+            function () use ($query) {
+                $response = $this->screeningService->screenName($query, persist: false);
+
+                if ($response->isClear()) {
+                    return ['action' => 'clear', 'score' => 0.0, 'matches' => []];
+                }
+
+                return [
+                    'action' => $response->action,
+                    'score' => round($response->confidenceScore, 1),
+                    'matches' => $response->matches->take(3)->map(fn ($m) => [
+                        'entity_name' => $m->entityName,
+                        'list' => $m->listName,
+                    ])->values()->toArray(),
+                ];
+            }
+        );
     }
 
     /**
