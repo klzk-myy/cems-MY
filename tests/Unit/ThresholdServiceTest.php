@@ -25,7 +25,7 @@ class ThresholdServiceTest extends TestCase
     #[Test]
     public function get_auto_approve_threshold(): void
     {
-        $this->assertEquals('10000', $this->service->getAutoApproveThreshold());
+        $this->assertEquals('3000', $this->service->getAutoApproveThreshold());
     }
 
     #[Test]
@@ -197,7 +197,7 @@ class ThresholdServiceTest extends TestCase
             ->first();
 
         $this->assertNotNull($audit);
-        $this->assertEquals('10000', $audit->old_value);
+        $this->assertEquals('3000', $audit->old_value);
         $this->assertEquals('15000', $audit->new_value);
         $this->assertEquals('Testing audit', $audit->change_reason);
         $this->assertEquals($admin->id, $audit->changed_by);
@@ -209,7 +209,7 @@ class ThresholdServiceTest extends TestCase
         $this->actingAs($this->adminUser());
 
         // Set same value as current config
-        $result = $this->service->set('approval', 'auto_approve', '10000', 'Should not audit');
+        $result = $this->service->set('approval', 'auto_approve', '3000', 'Should not audit');
 
         $this->assertFalse($result);
 

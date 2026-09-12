@@ -783,7 +783,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function prepare_and_create_builds_context_and_delegates_to_create(): void
     {
-        $customer = Customer::factory()->create();
+        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
         $counter = Counter::factory()->create(['status' => 'active']);
         Currency::factory()->create(['code' => 'USD']);
         $tillBalance = TillBalance::factory()->create([

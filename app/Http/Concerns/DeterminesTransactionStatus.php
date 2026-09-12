@@ -2,6 +2,7 @@
 
 namespace App\Http\Concerns;
 
+use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\AllocationValidationException;
@@ -53,13 +54,18 @@ trait DeterminesTransactionStatus
 
     /**
      * Decide whether a transaction should start as Completed or PendingApproval.
+     * Only a small transaction by a Low-risk customer auto-completes; anything
+     * at/above the auto-approve threshold or any elevated risk needs approval.
      *
      * @param  string  $amountLocal  Local currency amount as a numeric string.
      * @param  bool  $holdRequired  Whether a compliance hold is required.
+     * @param  RiskRating|null  $riskRating  Customer risk rating; null fails closed to approval.
      */
-    private function determineInitialStatus(string $amountLocal, bool $holdRequired): TransactionStatus
+    private function determineInitialStatus(string $amountLocal, bool $holdRequired, ?RiskRating $riskRating): TransactionStatus
     {
-        if ($holdRequired || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
+        if ($holdRequired
+            || $riskRating !== RiskRating::Low
+            || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
             return TransactionStatus::PendingApproval;
         }
 

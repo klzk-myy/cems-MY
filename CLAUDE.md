@@ -101,7 +101,7 @@ All monetary calculations use `App\Services\MathService` (BCMath), not floats. N
 
 **5. Compliance Workflow**
 
-- Transactions ≥ RM 10,000 (auto_approve threshold) require manager approval via `PendingApproval` status
+- Only transactions < RM 3,000 (auto_approve threshold) by **Low-risk** customers auto-complete; anything ≥ RM 3,000 or Medium/High risk requires approval via `PendingApproval` status
 - Transactions ≥ RM 50,000 OR high-risk customers go to `Pending` status (compliance hold)
 - `ComplianceService` runs CDD determination
 - `TransactionMonitoringService` runs automated compliance monitors via background jobs:
@@ -184,7 +184,7 @@ $threshold = 10000;
 ```php
 // config/thresholds.php structure
 return [
-    'approval' => ['auto_approve' => '10000', 'manager' => '50000'],
+    'approval' => ['auto_approve' => '3000', 'manager' => '50000'],
     'cdd' => ['specific' => '3000', 'standard' => '10000', 'large_transaction' => '50000'],
     'risk_scoring' => ['high' => '50000', 'medium' => '30000', 'low' => '10000'],
     'alert_triage' => ['critical' => '50000', 'high' => '30000', 'medium' => '10000'],

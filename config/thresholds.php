@@ -6,12 +6,13 @@ return [
     | Approval Thresholds (higher tier need approval)
     |--------------------------------------------------------------------------
     |
-    | Auto-approve: < auto_approve_threshold (no approval needed)
+    | Auto-approve: < auto_approve_threshold AND customer risk Low
+    | (no approval needed). Anything larger or riskier needs approval.
     | Manager approval required: >= manager_threshold
     |
     */
     'approval' => [
-        'auto_approve' => env('THRESHOLD_AUTO_APPROVE', '10000'),
+        'auto_approve' => env('THRESHOLD_AUTO_APPROVE', '3000'),
         'manager' => env('THRESHOLD_MANAGER', '50000'),
     ],
 

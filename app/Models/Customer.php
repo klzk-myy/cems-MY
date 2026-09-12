@@ -36,7 +36,7 @@ use Illuminate\Support\Collection;
  * @property bool $pep_status Politically Exposed Person
  * @property bool $sanction_hit Sanctions list match
  * @property int $risk_score 0-100
- * @property string $risk_rating 'Low', 'Medium', 'High'
+ * @property RiskRating $risk_rating
  * @property CddLevel $cdd_level 'Simplified', 'Standard', 'Enhanced'
  * @property bool $is_active
  * @property string|null $occupation

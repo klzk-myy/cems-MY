@@ -211,7 +211,7 @@ class SharedComponentFormsTest extends TestCase
 
         // Check x-checkbox components are present
         $this->assertStringContainsString('<x-checkbox', $content);
-        $this->assertStringContainsString('name="currency_codes[]"', $content);
+        $this->assertStringContainsString('name="active_currencies[]"', $content);
         $this->assertStringContainsString('name="use_default_rates"', $content);
     }
 

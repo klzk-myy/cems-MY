@@ -225,7 +225,7 @@ class TransactionWizardController extends Controller
             );
 
             $holdRequired = (bool) $sessionData['hold_required'];
-            $status = $this->determineInitialStatus($amountLocal, $holdRequired);
+            $status = $this->determineInitialStatus($amountLocal, $holdRequired, $customer->risk_rating);
 
             $context = new TransactionCreationContext(
                 data: $transactionData,

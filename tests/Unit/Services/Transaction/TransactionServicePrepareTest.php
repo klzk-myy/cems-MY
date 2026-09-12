@@ -130,6 +130,30 @@ class TransactionServicePrepareTest extends TestCase
     }
 
     #[Test]
+    public function prepare_and_create_holds_small_transaction_for_medium_risk_customer(): void
+    {
+        $this->customer->forceFill(['risk_rating' => 'Medium'])->save();
+
+        // 100 USD * 4.50 = 450 MYR — below the auto-approve threshold, but
+        // only Low-risk customers may auto-complete.
+        $transaction = $this->service->prepareAndCreate($this->baseData(), $this->teller->id, '127.0.0.1');
+
+        $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
+    }
+
+    #[Test]
+    public function prepare_and_create_holds_low_risk_transaction_at_auto_approve_boundary(): void
+    {
+        $data = $this->baseData();
+        $data['amount_foreign'] = '666.67';
+        $data['rate'] = '4.500000'; // 3000.015 MYR >= 3000
+
+        $transaction = $this->service->prepareAndCreate($data, $this->teller->id, '127.0.0.1');
+
+        $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
+    }
+
+    #[Test]
     public function prepare_and_create_throws_when_validation_blocks(): void
     {
         $this->customer->forceFill(['sanction_hit' => true])->save();

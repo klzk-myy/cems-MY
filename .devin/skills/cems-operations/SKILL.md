@@ -103,7 +103,7 @@ Required: `full_name`, `id_type` (`MyKad|Passport|Others`), `id_number` (MyKad =
 
 Fields: `type` (Buy/Sell), `customer_id`, `currency_code`, `amount_foreign`, `rate`, `counter_id`, `purpose`, `source_of_funds` (+ hidden `branch_id`, `idempotency_key`). `counter_id` is mapped to `till_id` (counter **code**) in `prepareForValidation`. The rate must be within `RATE_MAX_DEVIATION` (5%) of the seeded rate — use the seeded sell rate (e.g. USD 4.81) for a Sell.
 
-Status logic (`determineInitialStatus`): `Completed` only when MYR total < RM10k auto-approve AND no compliance hold. **High-risk customer → `PendingApproval` + `hold_reason=Compliance hold` + `cdd_level=Enhanced`** even below RM10k. Verified: Sell USD 500 @4.81 = RM2,405 → PendingApproval.
+Status logic (`determineInitialStatus`, also in the `DeterminesTransactionStatus` trait used by the wizard controller, and mirrored in `TransactionImportService`): `Completed` only when MYR total < RM3,000 (`approval.auto_approve` threshold) AND customer `risk_rating` is `Low` AND no compliance hold. Any Medium/High/unknown risk → `PendingApproval` even below RM3,000. **High-risk customer → `PendingApproval` + `hold_reason=Compliance hold` + `cdd_level=Enhanced`.** Verified: Sell USD 500 @4.81 = RM2,405 → PendingApproval (customer was High risk).
 
 Approval requires a **different user** (segregation of duties — creator cannot approve). No manager exists after setup; create one via `/users/create` (role `manager`, same branch), then log in as them and hit Approve on the transaction page.
 

@@ -364,7 +364,9 @@ class CustomerService implements CustomerServiceInterface
             return '';
         }
 
-        return $this->encryptionService->decrypt($customer->address);
+        // Legacy/plaintext rows decrypt to null — fall back to the raw value
+        // rather than a TypeError or blank display.
+        return $this->encryptionService->decrypt($customer->address) ?? $customer->address;
     }
 
     /**
@@ -376,7 +378,7 @@ class CustomerService implements CustomerServiceInterface
             return '';
         }
 
-        return $this->encryptionService->decrypt($customer->phone);
+        return $this->encryptionService->decrypt($customer->phone) ?? $customer->phone;
     }
 
     /**

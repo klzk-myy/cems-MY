@@ -3,6 +3,7 @@
 namespace App\Services\Transaction;
 
 use App\Enums\CddLevel;
+use App\Enums\RiskRating;
 use App\Enums\StockReservationStatus;
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
@@ -146,7 +147,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             ],
             $amountLocal
         );
-        $status = $this->determineInitialStatus($amountLocal, $validationResult->isHoldRequired());
+        $status = $this->determineInitialStatus($amountLocal, $validationResult->isHoldRequired(), $customer->risk_rating);
 
         $context = new TransactionCreationContext(
             data: $data,
@@ -620,13 +621,18 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
     /**
      * Decide whether a transaction should start as Completed or PendingApproval.
+     * Only a small transaction by a Low-risk customer auto-completes; anything
+     * at/above the auto-approve threshold or any elevated risk needs approval.
      *
      * @param  string  $amountLocal  Local currency amount as a numeric string.
      * @param  bool  $holdRequired  Whether a compliance hold is required.
+     * @param  RiskRating|null  $riskRating  Customer risk rating; null fails closed to approval.
      */
-    private function determineInitialStatus(string $amountLocal, bool $holdRequired): TransactionStatus
+    private function determineInitialStatus(string $amountLocal, bool $holdRequired, ?RiskRating $riskRating): TransactionStatus
     {
-        if ($holdRequired || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
+        if ($holdRequired
+            || $riskRating !== RiskRating::Low
+            || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
             return TransactionStatus::PendingApproval;
         }
 

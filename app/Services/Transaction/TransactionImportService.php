@@ -325,10 +325,13 @@ class TransactionImportService
                     $holdReason = implode(', ', $holdCheck->reasons);
                 }
 
-                // Check if customer is high-risk or PEP - requires compliance hold per BNM
-                if ($customer->risk_rating === RiskRating::High || $customer->is_pep_associate) {
+                // Only Low-risk customers auto-complete; Medium/High risk or
+                // PEP requires approval per the auto-approve policy.
+                if ($customer->risk_rating !== RiskRating::Low || $customer->is_pep_associate) {
                     $status = TransactionStatus::PendingApproval->value;
-                    $pepReason = $customer->is_pep_associate ? 'Customer is a PEP' : 'High-risk customer';
+                    $pepReason = $customer->is_pep_associate
+                        ? 'Customer is a PEP'
+                        : 'Customer risk rating is '.$customer->risk_rating->value;
                     $holdReason = $holdReason ? "{$holdReason}; {$pepReason}" : $pepReason;
                 }
 

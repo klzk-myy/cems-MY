@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Concerns;
 
+use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\AllocationValidationException;
@@ -126,7 +127,27 @@ class DeterminesTransactionStatusTest extends TestCase
         $this->mathService->shouldReceive('compare')->never();
         $this->thresholdService->shouldReceive('getAutoApproveThreshold')->never();
 
-        $status = $this->determineInitialStatus('100.00', true);
+        $status = $this->determineInitialStatus('100.00', true, RiskRating::Low);
+
+        $this->assertSame(TransactionStatus::PendingApproval, $status);
+    }
+
+    public function test_determine_initial_status_returns_pending_approval_for_medium_risk(): void
+    {
+        $this->mathService->shouldReceive('compare')->never();
+        $this->thresholdService->shouldReceive('getAutoApproveThreshold')->never();
+
+        $status = $this->determineInitialStatus('100.00', false, RiskRating::Medium);
+
+        $this->assertSame(TransactionStatus::PendingApproval, $status);
+    }
+
+    public function test_determine_initial_status_returns_pending_approval_for_null_risk(): void
+    {
+        $this->mathService->shouldReceive('compare')->never();
+        $this->thresholdService->shouldReceive('getAutoApproveThreshold')->never();
+
+        $status = $this->determineInitialStatus('100.00', false, null);
 
         $this->assertSame(TransactionStatus::PendingApproval, $status);
     }
@@ -135,14 +156,14 @@ class DeterminesTransactionStatusTest extends TestCase
     {
         $this->thresholdService->shouldReceive('getAutoApproveThreshold')
             ->once()
-            ->andReturn('10000.00');
+            ->andReturn('3000.00');
 
         $this->mathService->shouldReceive('compare')
             ->once()
-            ->with('10000.00', '10000.00')
+            ->with('3000.00', '3000.00')
             ->andReturn(0);
 
-        $status = $this->determineInitialStatus('10000.00', false);
+        $status = $this->determineInitialStatus('3000.00', false, RiskRating::Low);
 
         $this->assertSame(TransactionStatus::PendingApproval, $status);
     }
@@ -151,14 +172,14 @@ class DeterminesTransactionStatusTest extends TestCase
     {
         $this->thresholdService->shouldReceive('getAutoApproveThreshold')
             ->once()
-            ->andReturn('10000.00');
+            ->andReturn('3000.00');
 
         $this->mathService->shouldReceive('compare')
             ->once()
-            ->with('9999.99', '10000.00')
+            ->with('2999.99', '3000.00')
             ->andReturn(-1);
 
-        $status = $this->determineInitialStatus('9999.99', false);
+        $status = $this->determineInitialStatus('2999.99', false, RiskRating::Low);
 
         $this->assertSame(TransactionStatus::Completed, $status);
     }
