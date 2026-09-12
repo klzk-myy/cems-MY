@@ -78,11 +78,23 @@
                 <li class="px-4 py-3 flex items-start gap-3 hover:bg-border/40 transition-colors">
                     <span class="mt-1.5 w-2 h-2 rounded-full bg-primary shrink-0"></span>
                     <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-ink truncate">{{ $notification['title'] }}</p>
-                        @if(! empty($notification['message']))
-                            <p class="text-xs text-ink-muted truncate mt-0.5" title="{{ $notification['message'] }}">{{ $notification['message'] }}</p>
-                        @endif
-                        <p class="text-xs text-ink-muted/60 mt-0.5">{{ $notification['time'] }}</p>
+                        {{-- Clicking the item marks it read and (when the
+                             notification carries a url) navigates to it. --}}
+                        <form method="POST" action="{{ route('notifications.read', $notification['id']) }}">
+                            @csrf
+                            @if(! empty($notification['url']))
+                                <input type="hidden" name="redirect" value="{{ $notification['url'] }}">
+                            @endif
+                            <button type="submit"
+                                    class="block w-full text-left cursor-pointer"
+                                    title="{{ ! empty($notification['url']) ? 'Open notification' : 'Mark as read' }}">
+                                <p class="text-sm font-medium text-ink truncate">{{ $notification['title'] }}</p>
+                                @if(! empty($notification['message']))
+                                    <p class="text-xs text-ink-muted truncate mt-0.5" title="{{ $notification['message'] }}">{{ $notification['message'] }}</p>
+                                @endif
+                                <p class="text-xs text-ink-muted/60 mt-0.5">{{ $notification['time'] }}</p>
+                            </button>
+                        </form>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         @if(! empty($notification['url']))

@@ -59,7 +59,7 @@ class TransactionFlaggedNotification extends Notification implements ShouldQueue
                 'flaggedBy' => $this->flaggedBy,
                 'flagType' => $this->flaggedTransaction->flag_type->value ?? 'Unknown',
                 'flagReason' => $this->flaggedTransaction->flag_reason,
-                'url' => route('compliance.flags.resolve', $this->flaggedTransaction->id),
+                'url' => route('compliance.flagged'),
             ]);
     }
 
@@ -81,7 +81,7 @@ class TransactionFlaggedNotification extends Notification implements ShouldQueue
             'status' => $this->flaggedTransaction->status->value ?? null,
             'flagged_by' => $this->flaggedBy?->id,
             'flagged_by_name' => $this->flaggedBy->username ?? 'System',
-            'url' => route('compliance.flags.resolve', $this->flaggedTransaction->id),
+            'url' => route('compliance.flagged'),
         ];
     }
 

@@ -115,6 +115,36 @@ class NotificationBellTest extends TestCase
     }
 
     #[Test]
+    public function mark_read_with_redirect_navigates_to_relative_url(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $target = $this->createNotification($admin);
+
+        $this->actingAs($admin)
+            ->post(route('notifications.read', $target), ['redirect' => '/transactions'])
+            ->assertRedirect('/transactions');
+
+        $this->assertNotNull($target->fresh()->read_at);
+    }
+
+    #[Test]
+    public function mark_read_rejects_external_redirect(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $target = $this->createNotification($admin);
+
+        // Protocol-relative and absolute URLs must fall back to back()
+        // rather than bouncing the user off-site.
+        $this->actingAs($admin)
+            ->post(route('notifications.read', $target), ['redirect' => '//evil.example.com/x'])
+            ->assertRedirect();
+
+        $this->actingAs($admin)
+            ->post(route('notifications.read', $target), ['redirect' => 'https://evil.example.com'])
+            ->assertRedirect();
+    }
+
+    #[Test]
     public function user_cannot_manage_another_users_notification(): void
     {
         $owner = User::factory()->admin()->create();

@@ -10509,7 +10509,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Notifications\\DatabaseNotification\:\:\$read_at\.$#'
 			identifier: property.notFound
-			count: 5
+			count: 6
 			path: tests/Feature/NotificationBellTest.php
 
 		-

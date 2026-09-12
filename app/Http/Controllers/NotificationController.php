@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\System\NotificationBadgeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 
 /**
@@ -33,12 +34,21 @@ class NotificationController extends Controller
 
     /**
      * Mark a single notification as read (own notifications only).
+     *
+     * An optional `redirect` form field navigates to the notification's
+     * target after marking it read — relative URLs only, so a tampered
+     * value can never bounce the user off-site.
      */
-    public function markRead(DatabaseNotification $notification): RedirectResponse
+    public function markRead(Request $request, DatabaseNotification $notification): RedirectResponse
     {
         $this->assertOwnedByCurrentUser($notification);
 
         $notification->markAsRead();
+
+        $redirect = $request->input('redirect');
+        if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+            return redirect($redirect);
+        }
 
         return back();
     }

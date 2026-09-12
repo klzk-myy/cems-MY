@@ -91,11 +91,7 @@ class NotificationBadgeService
             $message = ($data['count'] ?? 0).' transaction(s) awaiting manual review';
         }
 
-        // Only accept relative URLs. Notification data is written by app code
-        // today, but a defensive check keeps an href like javascript: from ever
-        // reaching the dropdown markup.
-        $url = $data['url'] ?? null;
-        $url = is_string($url) && str_starts_with($url, '/') ? $url : null;
+        $url = $this->normalizeUrl($data['url'] ?? null);
 
         return [
             'id' => $notification->id,
@@ -104,5 +100,33 @@ class NotificationBadgeService
             'url' => $url,
             'time' => $notification->created_at?->diffForHumans() ?? '',
         ];
+    }
+
+    /**
+     * Reduce a stored notification URL to a safe same-site path.
+     *
+     * Notifications store route()-generated absolute URLs, which bake the
+     * APP_URL at send time into the row — a stale value (or tampered data)
+     * must never become an off-site href. Relative URLs pass through;
+     * absolute http(s) URLs keep only path + query; anything else is dropped.
+     */
+    protected function normalizeUrl(mixed $url): ?string
+    {
+        if (! is_string($url) || $url === '') {
+            return null;
+        }
+
+        if (str_starts_with($url, '/')) {
+            return str_starts_with($url, '//') ? null : $url;
+        }
+
+        if (preg_match('#^https?://#i', $url) === 1) {
+            $path = parse_url($url, PHP_URL_PATH) ?: '/';
+            $query = parse_url($url, PHP_URL_QUERY);
+
+            return $query === null ? $path : $path.'?'.$query;
+        }
+
+        return null;
     }
 }
