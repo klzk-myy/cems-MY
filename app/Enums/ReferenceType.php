@@ -15,6 +15,9 @@ enum ReferenceType: string
     case Test = 'Test';
     case PeriodClose = 'Period_Close';
     case BranchSettlement = 'BranchSettlement';
+    case Expense = 'Expense';
+    case PettyCashFunding = 'PettyCashFunding';
+    case Revaluation = 'Revaluation';
 
     public function label(): string
     {
@@ -30,6 +33,9 @@ enum ReferenceType: string
             self::Test => 'Test',
             self::PeriodClose => 'Period Close',
             self::BranchSettlement => 'Branch Settlement',
+            self::Expense => 'Expense',
+            self::PettyCashFunding => 'Petty Cash Funding',
+            self::Revaluation => 'Revaluation',
         };
     }
 }

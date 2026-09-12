@@ -35,7 +35,6 @@
         </x-card>
 
         {{-- Report Content --}}
-        @if($reportGenerated)
             <x-stat-grid cols="4">
                 <x-stat-card label="Total Transactions" :value="number_format($stats['total_transactions'] ?? 0)" />
                 <x-stat-card label="Total Buy Volume" :value="'MYR ' . number_format($stats['total_buy_volume'] ?? 0, 2)" />
@@ -79,7 +78,11 @@
             <x-stat-grid cols="3">
                 <x-stat-card label="Average Transaction Value" :value="'MYR ' . number_format($stats['avg_transaction_value'] ?? 0, 2)" />
                 <x-stat-card label="Pending Approval" :value="number_format($stats['pending_approval'] ?? 0)" />
-                <x-stat-card label="Report Status" value="Complete" color="green" />
+                <x-stat-card
+                    label="Report Status"
+                    :value="$reportGenerated ? 'Generated' : 'Preview'"
+                    :color="$reportGenerated ? 'green' : 'yellow'"
+                />
             </x-stat-grid>
 
             <div class="flex justify-end gap-3">
@@ -89,15 +92,5 @@
                     <x-button type="submit" variant="primary">Export Report</x-button>
                 </form>
             </div>
-        @else
-            <x-card title="Select a Date">
-                <x-table>
-                    <x-slot:thead></x-slot:thead>
-                    <x-slot:tbody>
-                        <x-empty-state message="Choose a date above to view the MSB2 daily transaction summary." :colspan="1" />
-                    </x-slot:tbody>
-                </x-table>
-            </x-card>
-        @endif
     </div>
 </x-app-layout>

@@ -53,8 +53,9 @@ class ReportScheduleController extends Controller
     public function create(): View
     {
         $reportTypes = ReportType::cases();
+        $schedule = null;
 
-        return view('reports.schedules.create', compact('reportTypes'));
+        return view('reports.schedules.create', compact('reportTypes', 'schedule'));
     }
 
     /**

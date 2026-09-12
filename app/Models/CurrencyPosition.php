@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Enums\StockReservationStatus;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +31,10 @@ use Illuminate\Support\Carbon;
  * @property-read string $market_value
  * @property-read string $unrealized_pl
  * @property-read string $previous_rate
+ * @property-read string $held Quantity locked by pending stock reservations
+ * @property-read string $available quantity minus held
+ * @property-read string $total Alias of quantity
+ * @property-read string $pnl Alias of unrealized_gain_loss
  */
 class CurrencyPosition extends BaseModel
 {
@@ -164,6 +169,54 @@ class CurrencyPosition extends BaseModel
     public function getPreviousRateAttribute(): string
     {
         return $this->average_cost ?? '0';
+    }
+
+    /**
+     * Stock held by pending reservations at this branch. Reservations key on
+     * the till (counter code), so the lookup resolves through the branch's
+     * counters.
+     */
+    public function getHeldAttribute(): string
+    {
+        $counterCodes = Counter::query()
+            ->where('branch_id', $this->branch_id)
+            ->pluck('code');
+
+        if ($counterCodes->isEmpty()) {
+            return '0';
+        }
+
+        return (string) StockReservation::query()
+            ->where('currency_code', $this->currency_code)
+            ->where('status', StockReservationStatus::Pending->value)
+            ->whereIn('till_id', $counterCodes)
+            ->sum('amount_foreign');
+    }
+
+    /**
+     * Quantity not locked by pending reservations.
+     */
+    public function getAvailableAttribute(): string
+    {
+        $available = $this->mathService->subtract((string) $this->quantity, $this->held);
+
+        return $this->mathService->compare($available, '0') < 0 ? '0' : $available;
+    }
+
+    /**
+     * Total on-hand quantity — alias of quantity for views.
+     */
+    public function getTotalAttribute(): string
+    {
+        return (string) $this->quantity;
+    }
+
+    /**
+     * Unrealized P&L alias for views.
+     */
+    public function getPnlAttribute(): string
+    {
+        return (string) ($this->unrealized_gain_loss ?? '0');
     }
 
     // Legacy mutators

@@ -5,6 +5,7 @@ namespace App\Services\Compliance;
 use App\Enums\EntityType;
 use App\Enums\SanctionStatus;
 use App\Enums\UpdateStatus;
+use App\Events\SanctionsListUpdated;
 use App\Exceptions\Domain\SanctionsImportException;
 use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
@@ -102,6 +103,8 @@ class SanctionsImportService
     {
         $this->resetCounters();
 
+        $previousVersion = $list->last_dataset_version;
+
         $list->update(['last_attempted_at' => now(), 'update_status' => UpdateStatus::Pending]);
 
         try {
@@ -126,6 +129,8 @@ class SanctionsImportService
                 ...$this->attributionFor($manual),
                 'status' => UpdateStatus::Success->value,
             ]);
+
+            $this->dispatchListUpdated($list, $previousVersion);
 
             return $this->enrichResult($result);
 
@@ -403,12 +408,41 @@ class SanctionsImportService
             'status' => UpdateStatus::Success->value,
         ]);
 
+        $this->dispatchListUpdated($list, $current);
+
         return $this->enrichResult([
             'created' => $this->created,
             'updated' => $this->updated,
             'deactivated' => $this->deactivated,
             'errors' => $this->errors,
         ]);
+    }
+
+    /**
+     * Notify listeners that the list contents changed so affected customers
+     * can be re-screened. Fan-out failures must not fail an import whose
+     * results were already committed.
+     */
+    protected function dispatchListUpdated(SanctionList $list, ?string $previousVersion): void
+    {
+        if ($this->created + $this->updated + $this->deactivated === 0) {
+            return;
+        }
+
+        try {
+            SanctionsListUpdated::dispatch(
+                $list->slug,
+                $previousVersion,
+                $this->pendingDatasetVersion ?? $list->last_dataset_version,
+                $this->created,
+                $this->deactivated
+            );
+        } catch (\Throwable $e) {
+            Log::warning('SanctionsListUpdated dispatch failed', [
+                'list_id' => $list->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

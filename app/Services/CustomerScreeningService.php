@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\RelationType;
+use App\Enums\RiskRating;
 use App\Enums\SystemAlertLevel;
 use App\Events\RelatedPartyOwnershipConcern;
 use App\Models\AdverseMediaEntry;
@@ -255,6 +256,12 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
         DB::transaction(function () use ($customer, $listType) {
             // Freeze customer's funds and properties per pd-00.md 27.6.1(a)
             $customer->freeze("confirmed_{$listType}_match");
+
+            // Mark the standing sanction-hit flag so risk scoring and future
+            // screenings treat the customer as a confirmed match.
+            $customer->sanction_hit = true;
+            $customer->risk_rating = RiskRating::High;
+            $customer->save();
 
             // Block transactions to prevent dissipation per pd-00.md 27.6.1(b)
             $this->blockCustomerTransactions($customer);

@@ -214,8 +214,11 @@ class StockCashController extends Controller
 
         $position->load('currency');
 
-        // Load recent transactions for this currency position
-        $transactions = Transaction::where('currency_code', $position->currency_code)
+        // Load recent transactions for this currency position — scoped to the
+        // position's branch so a branch user does not see other branches' trades.
+        $transactions = Transaction::with(['customer', 'currency'])
+            ->where('currency_code', $position->currency_code)
+            ->where('branch_id', $position->branch_id)
             ->where('type', TransactionType::Buy)
             ->orderBy('created_at', 'desc')
             ->limit(50)
@@ -235,7 +238,7 @@ class StockCashController extends Controller
         $date = $validated['date'] ?? today()->toDateString();
 
         $balances = $this->scopeByBranch(
-            TillBalance::with(['currency', 'opener', 'closer'])
+            TillBalance::with(['currency', 'opener', 'closer', 'counter'])
                 ->where('till_id', $validated['till_id'])
                 ->whereDate('date', $date)
         )->get();

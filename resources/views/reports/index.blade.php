@@ -21,7 +21,14 @@
                 </ul>
             </x-card>
 
-            <x-card title="Report History" />
+            <x-card title="Automation">
+                <ul class="space-y-2 mt-4">
+                    @if(auth()->user()->isAdmin())
+                        <li><x-button variant="ghost" size="sm" href="{{ route('reports.schedules.index') }}">Report Schedules</x-button></li>
+                    @endif
+                    <li><x-button variant="ghost" size="sm" href="{{ route('transactions.export.form') }}">Transaction Export</x-button></li>
+                </ul>
+            </x-card>
         </div>
 
         @if(isset($recentReports) && $recentReports->count() > 0)
@@ -36,7 +43,7 @@
                         @foreach($recentReports as $report)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm">{{ $report->report_type->label() }}</td>
-                                <td class="px-4 py-3 text-sm">{{ $report->generatedBy->name ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-sm">{{ $report->generatedBy->username ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 text-sm">{{ $report->generated_at?->format('M d, Y H:i') }}</td>
                             </tr>
                         @endforeach

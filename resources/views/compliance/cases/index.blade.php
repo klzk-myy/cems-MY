@@ -6,7 +6,7 @@
             class="mb-8"
         >
             <x-slot:actions>
-                <x-button variant="primary">Create Case</x-button>
+                <x-button variant="primary" href="{{ route('compliance.alerts.index') }}">Create from Alerts</x-button>
             </x-slot:actions>
         </x-page-header>
 
@@ -49,7 +49,7 @@
                         <tr>
                             <td class="px-4 py-3 text-sm text-ink">{{ $case->case_number }}</td>
                             <td class="px-4 py-3 text-sm text-ink">{{ $case->case_type?->label() }}</td>
-                            <td class="px-4 py-3 text-sm text-ink">{{ $case->customer?->name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm text-ink">{{ $case->customer?->full_name ?? 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm">
                                 <x-badge
                                     :variant="match ($case->priority?->value) {
@@ -77,7 +77,7 @@
                                     {{ $case->status?->label() }}
                                 </x-badge>
                             </td>
-                            <td class="px-4 py-3 text-sm text-ink">{{ $case->assignee?->name ?? 'Unassigned' }}</td>
+                            <td class="px-4 py-3 text-sm text-ink">{{ $case->assignee?->username ?? 'Unassigned' }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $case->created_at?->format('Y-m-d') }}</td>
                             <td class="px-4 py-3 text-sm">
                                 <x-button

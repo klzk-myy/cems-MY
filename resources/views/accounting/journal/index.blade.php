@@ -8,7 +8,7 @@
 
         <x-filter-bar method="GET">
             <x-input name="search" placeholder="Search entries..." inline />
-            <x-select name="status" :options="['' => 'All Status', 'draft' => 'Draft', 'pending' => 'Pending', 'posted' => 'Posted']" inline />
+            <x-select name="status" :options="['' => 'All Status', 'Draft' => 'Draft', 'Pending' => 'Pending', 'Posted' => 'Posted', 'Reversed' => 'Reversed', 'Rejected' => 'Rejected']" inline />
             <x-input type="date" name="date" inline />
             <x-button type="submit" variant="secondary">Filter</x-button>
         </x-filter-bar>
@@ -30,17 +30,30 @@
                 <x-slot:tbody>
                     @forelse($entries ?? [] as $entry)
                         <tr class="border-t border-border hover:bg-canvas-subtle">
-                            <td class="px-4 py-3 text-sm">{{ $entry['date'] ?? '2026-05-01' }}</td>
-                            <td class="px-4 py-3 text-sm font-mono">{{ $entry['entry_no'] ?? 'JE-0001' }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $entry['description'] ?? 'Currency revaluation gain' }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $entry['account'] ?? '7100-001' }}</td>
-                            <td class="px-4 py-3 text-sm text-right">{{ $entry['debit'] ?? '0.00' }}</td>
-                            <td class="px-4 py-3 text-sm text-right">{{ $entry['credit'] ?? '0.00' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $entry->entry_date?->format('Y-m-d') ?? $entry->entry_date }}</td>
+                            <td class="px-4 py-3 text-sm font-mono">{{ $entry->entry_number }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $entry->description }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                {{ $entry->lines->first()?->account_code ?? '—' }}{{ $entry->lines->count() > 1 ? ' +'.($entry->lines->count() - 1) : '' }}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-right">{{ number_format((float) $entry->lines->sum('debit'), 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right">{{ number_format((float) $entry->lines->sum('credit'), 2) }}</td>
                             <td class="px-4 py-3 text-center">
-                                <x-badge variant="success">Posted</x-badge>
+                                <x-badge
+                                    :variant="match ($entry->status?->value) {
+                                        'Posted' => 'success',
+                                        'Pending' => 'warning',
+                                        'Draft' => 'secondary',
+                                        'Rejected' => 'danger',
+                                        'Reversed' => 'info',
+                                        default => 'secondary',
+                                    }"
+                                >
+                                    {{ $entry->status?->label() ?? 'N/A' }}
+                                </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                <x-button href="{{ route('accounting.journal.show', $entry['id'] ?? 1) }}" variant="ghost" size="sm">View</x-button>
+                                <x-button href="{{ route('accounting.journal.show', $entry) }}" variant="ghost" size="sm">View</x-button>
                             </td>
                         </tr>
                     @empty
@@ -51,11 +64,10 @@
         </x-card>
 
         <div class="flex items-center justify-between">
-            <p class="text-sm text-ink-muted">Showing 1-10 of 0 entries</p>
-            <div class="flex gap-2">
-                <x-button variant="secondary" disabled>Previous</x-button>
-                <x-button variant="secondary" disabled>Next</x-button>
-            </div>
+            <p class="text-sm text-ink-muted">
+                Showing {{ $entries->firstItem() ?? 0 }}-{{ $entries->lastItem() ?? 0 }} of {{ $entries->total() }} entries
+            </p>
+            {{ $entries->links() }}
         </div>
     </div>
 </x-app-layout>

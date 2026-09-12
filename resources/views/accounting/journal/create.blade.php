@@ -8,6 +8,7 @@
 
         <form action="{{ route('accounting.journal.store') }}" method="POST" class="space-y-6"
               x-data="{
+                  accounts: @js($accounts->map(fn ($a) => ['code' => $a->account_code, 'label' => $a->account_code.' - '.$a->account_name])->values()),
                   lines: [
                       { account: '', description: '', debit: '', credit: '' },
                       { account: '', description: '', debit: '', credit: '' },
@@ -26,23 +27,37 @@
                   },
                   get difference() {
                       return (parseFloat(this.totalDebit) - parseFloat(this.totalCredit)).toFixed(2);
+                  },
+                  get balanced() {
+                      return parseFloat(this.difference) === 0 && parseFloat(this.totalDebit) > 0;
                   }
               }">
             @csrf
 
+            @if ($errors->any())
+                <x-alert variant="danger">
+                    <ul class="list-disc list-inside">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </x-alert>
+            @endif
+
             <x-card class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <x-input type="date" name="date" label="Entry Date" value="{{ date('Y-m-d') }}" required />
-                    <x-input name="reference" label="Reference" placeholder="JE-0001" />
-                    <x-select
-                        name="status"
-                        label="Status"
-                        :options="['draft' => 'Draft', 'pending' => 'Pending', 'posted' => 'Posted']"
-                        selected="draft"
-                    />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <x-input type="date" name="entry_date" label="Entry Date" value="{{ old('entry_date', date('Y-m-d')) }}" required />
+                    @if (auth()->user()->isAdmin())
+                        <x-select
+                            name="branch_id"
+                            label="Branch"
+                            :options="$branches ?? []"
+                            placeholder="Company-wide"
+                        />
+                    @endif
                 </div>
 
-                <x-input name="description" label="Description" placeholder="Enter journal entry description" required />
+                <x-input name="description" label="Description" placeholder="Enter journal entry description" value="{{ old('description') }}" required />
             </x-card>
 
             <x-card title="Journal Lines">
@@ -58,30 +73,32 @@
                         <template x-for="(line, index) in lines" :key="index">
                             <tr>
                                 <td class="px-4 py-3">
-                                    <x-select
-                                        :name="'lines[' + index + '][account]'"
-                                        :options="[
-                                            '1100-001' => '1100-001 - Cash MYR',
-                                            '1100-002' => '1100-002 - Cash USD',
-                                            '2100-001' => '2100-001 - Accounts Payable',
-                                            '5100-001' => '5100-001 - Revenue',
-                                        ]"
-                                        placeholder="Select Account"
+                                    <select
+                                        :name="'lines[' + index + '][account_code]'"
                                         x-model="line.account"
-                                        inline
-                                    />
+                                        required
+                                        class="w-full rounded-md border-border bg-surface text-ink text-sm focus:border-primary focus:ring-primary"
+                                    >
+                                        <option value="">Select Account</option>
+                                        <template x-for="acc in accounts" :key="acc.code">
+                                            <option :value="acc.code" x-text="acc.label"></option>
+                                        </template>
+                                    </select>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <x-input :name="'lines[' + index + '][description]'" placeholder="Line description" x-model="line.description" inline />
+                                    <input type="text" :name="'lines[' + index + '][description]'" placeholder="Line description" x-model="line.description"
+                                           class="w-full rounded-md border-border bg-surface text-ink text-sm focus:border-primary focus:ring-primary" />
                                 </td>
                                 <td class="px-4 py-3">
-                                    <x-input type="number" :name="'lines[' + index + '][debit]'" step="0.01" min="0" placeholder="0.00" class="text-right" x-model="line.debit" inline />
+                                    <input type="number" :name="'lines[' + index + '][debit]'" step="0.01" min="0" placeholder="0.00" x-model="line.debit" required
+                                           class="w-full rounded-md border-border bg-surface text-ink text-sm text-right focus:border-primary focus:ring-primary" />
                                 </td>
                                 <td class="px-4 py-3">
-                                    <x-input type="number" :name="'lines[' + index + '][credit]'" step="0.01" min="0" placeholder="0.00" class="text-right" x-model="line.credit" inline />
+                                    <input type="number" :name="'lines[' + index + '][credit]'" step="0.01" min="0" placeholder="0.00" x-model="line.credit" required
+                                           class="w-full rounded-md border-border bg-surface text-ink text-sm text-right focus:border-primary focus:ring-primary" />
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <x-button type="button" variant="danger" size="sm" @click="removeLine(index)" :disabled="lines.length <= 2">Remove</x-button>
+                                    <x-button type="button" variant="danger" size="sm" @click="removeLine(index)" x-bind:disabled="lines.length <= 2">Remove</x-button>
                                 </td>
                             </tr>
                         </template>
@@ -104,14 +121,14 @@
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-ink-muted">Difference</p>
-                        <p class="text-lg font-semibold" x-text="difference">0.00</p>
+                        <p class="text-lg font-semibold" :class="balanced ? 'text-success-text' : 'text-danger-text'" x-text="difference">0.00</p>
                     </div>
                 </div>
             </x-card>
 
             <div class="flex items-center justify-end gap-3">
-                <x-button type="button" variant="secondary">Cancel</x-button>
-                <x-button type="submit" variant="primary">Create Entry</x-button>
+                <x-button href="{{ route('accounting.journal') }}" variant="secondary">Cancel</x-button>
+                <x-button type="submit" variant="primary" x-bind:disabled="!balanced">Create Entry</x-button>
             </div>
         </form>
     </div>

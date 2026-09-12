@@ -9,6 +9,7 @@ namespace App\Services\Customer;
 use App\Enums\CddLevel;
 use App\Enums\RiskRating;
 use App\Enums\StrReportStatus;
+use App\Events\CustomerRecordUpdated;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
@@ -205,6 +206,7 @@ class CustomerService implements CustomerServiceInterface
 
             // Update customer
             $customer->update($encryptedData);
+            $changedFields = array_keys($customer->getChanges());
 
             // Re-screen against sanctions if name changed
             if (isset($data['full_name']) && $data['full_name'] !== $originalName) {
@@ -227,8 +229,16 @@ class CustomerService implements CustomerServiceInterface
                 ],
             ], $user, 'INFO', request()?->ip());
 
-            return $customer->fresh();
+            return [$customer->fresh(), $changedFields];
         });
+
+        [$customer, $changedFields] = $customer;
+
+        // Queued enforcement re-screen (TriggerSanctionsRescreening): covers
+        // non-name field changes the inline screenCustomer() path misses and
+        // places pending transactions under compliance review on a block.
+        CustomerRecordUpdated::dispatch($customer, $changedFields, $userId);
+
         $this->cacheInvalidationService->invalidate('dashboard');
         // Invalidate individual customer cache
         $this->cacheInvalidationService->forgetCustomer($customer->id);

@@ -117,6 +117,14 @@ class JournalEntry extends AccountingModel
     }
 
     /**
+     * Get the branch this entry is scoped to (null = company-wide).
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
      * Get the cost center associated with this journal entry.
      */
     public function costCenter(): BelongsTo

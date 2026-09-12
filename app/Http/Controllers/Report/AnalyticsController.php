@@ -109,9 +109,12 @@ class AnalyticsController extends Controller
         $startDate = $request->input('start_date', now()->subMonth()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->subMonth()->endOfMonth()->toDateString());
 
+        // MYR is the settlement currency — it is not an FX position and has no
+        // exchange rate, so including it would report a meaningless P&L of
+        // (0 - 1.0) * balance.
         $positionModels = $this->cacheOptimizationService->remember(
             'analytics.positions.all', 300, ['analytics', 'positions'],
-            fn () => CurrencyPosition::with('currency')->get()
+            fn () => CurrencyPosition::with('currency')->where('currency_code', '!=', 'MYR')->get()
         );
         $currencyCodes = $positionModels->pluck('currency_code')->unique()->values()->toArray();
         $rates = $this->getCurrentRates($currencyCodes);

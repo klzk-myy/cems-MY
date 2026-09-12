@@ -37,12 +37,12 @@ class JournalEntryPolicy
 
     /**
      * Determine whether the user can create journal entries.
-     * Branch managers post branch journals; admins post company-wide.
-     * Entries post directly — no approval step.
+     * Branch managers post branch journals; admins and accountants post
+     * company-wide. Entries post directly — no approval step.
      */
     public function create(User $user): bool
     {
-        return $user->role->isManager();
+        return $user->role->canAccessAccounting();
     }
 
     /**

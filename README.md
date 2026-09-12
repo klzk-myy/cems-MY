@@ -200,7 +200,7 @@ Type=simple
 User=www
 Group=www
 WorkingDirectory=/var/www/cems-my
-ExecStart=/usr/bin/php artisan queue:work --queue=default,audit --sleep=3 --tries=3 --timeout=120 --backoff=5
+ExecStart=/usr/bin/php artisan queue:work --queue=high,default,low,compliance,audit --sleep=3 --tries=3 --timeout=120 --backoff=5
 Restart=always
 RestartSec=5
 
@@ -593,7 +593,7 @@ php artisan db:seed                        # Seed with test data
 
 ```bash
 php artisan horizon                 # Start Horizon (recommended)
-php artisan queue:work redis --sleep=3 --tries=3  # Traditional worker
+php artisan queue:work redis --queue=high,default,low,compliance,audit --sleep=3 --tries=3  # Traditional worker
 php artisan queue:health            # Monitor queue health
 ```
 

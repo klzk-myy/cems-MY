@@ -2,7 +2,9 @@
     <div class="space-y-6">
         <x-page-header title="Petty Cash Expenses" description="Branch petty-cash expense postings">
             <x-slot:actions>
-                <x-button href="{{ route('accounting.expenses.create') }}" variant="primary">+ New Expense</x-button>
+                @if (auth()->user()->role->isManager())
+                    <x-button href="{{ route('accounting.expenses.create') }}" variant="primary">+ New Expense</x-button>
+                @endif
             </x-slot:actions>
         </x-page-header>
 

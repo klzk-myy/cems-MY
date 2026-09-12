@@ -4,14 +4,19 @@ namespace App\Services\Branch;
 
 use App\Exceptions\Domain\BranchDeactivationException;
 use App\Models\Branch;
+use App\Models\Currency;
+use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class BranchService
 {
     public function __construct(
         protected AuditService $auditService,
+        protected BranchPoolService $branchPoolService,
+        protected CurrencyPositionLockService $positionLockService,
     ) {}
 
     public function getBranchTypes(): array
@@ -57,6 +62,18 @@ class BranchService
             'is_main' => $data['is_main'] ?? false,
             'parent_id' => $data['parent_id'] ?? null,
         ]);
+
+        // Trading branches get a zero pool and zero position per active
+        // currency so the branch can hold stock immediately — mirrors the
+        // per-branch provisioning done when a new currency is created.
+        if ($branch->canTrade()) {
+            DB::transaction(function () use ($branch): void {
+                foreach (Currency::where('is_active', true)->get() as $currency) {
+                    $this->branchPoolService->getOrCreateForBranch($branch, $currency->code);
+                    $this->positionLockService->lock((string) $branch->id, $currency->code);
+                }
+            });
+        }
 
         $this->auditService->log(
             'branch_created',

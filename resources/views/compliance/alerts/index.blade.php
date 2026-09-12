@@ -29,10 +29,15 @@
         @if ($alerts->isEmpty())
             <x-empty-state title="No alerts found" description="There are no alerts awaiting triage." />
         @else
-            <div class="overflow-x-auto">
+            <form method="POST" action="{{ route('compliance.cases.store') }}">
+                @csrf
+                <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-border text-sm">
                     <thead class="bg-canvas-subtle">
                         <tr>
+                            <th class="px-4 py-3 text-left font-medium text-ink-muted">
+                                <input type="checkbox" onchange="document.querySelectorAll('[data-alert-check]').forEach(c => c.checked = this.checked)" aria-label="Select all alerts">
+                            </th>
                             <th class="px-4 py-3 text-left font-medium text-ink-muted">Priority</th>
                             <th class="px-4 py-3 text-left font-medium text-ink-muted">Type</th>
                             <th class="px-4 py-3 text-left font-medium text-ink-muted">Customer</th>
@@ -46,6 +51,11 @@
                     <tbody class="divide-y divide-border">
                         @foreach ($alerts as $alert)
                             <tr class="hover:bg-canvas-subtle">
+                                <td class="px-4 py-3">
+                                    @if ($alert->case_id === null && $alert->status->value !== 'Resolved')
+                                        <input type="checkbox" name="alert_ids[]" value="{{ $alert->id }}" data-alert-check aria-label="Select alert {{ $alert->id }}">
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3">
                                     <x-badge :variant="$priorityVariants[strtolower($alert->priority->value)] ?? 'gray'">
                                         {{ $alert->priority->value }}
@@ -74,7 +84,11 @@
                         @endforeach
                     </tbody>
                 </table>
-            </div>
+                </div>
+                <div class="flex justify-end border-t border-border px-4 py-3">
+                    <x-button variant="primary" type="submit">Create Case from Selected</x-button>
+                </div>
+            </form>
 
             <div class="border-t border-border px-4 py-3">
                 {{ $alerts->links() }}

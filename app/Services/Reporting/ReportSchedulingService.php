@@ -344,7 +344,7 @@ class ReportSchedulingService
             'parameters' => $data['parameters'] ?? [],
             'is_active' => $data['is_active'] ?? true,
             'notification_recipients' => $data['notification_recipients'] ?? [],
-            'created_by' => $data['created_by'],
+            'created_by' => $data['created_by'] ?? auth()->id(),
             'next_run_at' => null,
         ]);
 

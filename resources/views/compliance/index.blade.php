@@ -30,10 +30,22 @@
                             </td>
                             <td class="px-4 py-3 text-sm">{{ $flag->created_at?->format('M d, Y') }}</td>
                             <td class="px-4 py-3 text-sm">
-                                <form method="POST" action="{{ route('compliance.flags.assign', $flag) }}" class="inline">
-                                    @csrf
-                                    <x-button variant="ghost" size="sm" type="submit">Assign to Me</x-button>
-                                </form>
+                                <div class="flex gap-2">
+                                    @if($flag->status->canBeAssigned())
+                                        <form method="POST" action="{{ route('compliance.flags.assign', $flag) }}" class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <x-button variant="ghost" size="sm" type="submit">Assign to Me</x-button>
+                                        </form>
+                                    @endif
+                                    @if($flag->status->canBeResolved())
+                                        <form method="POST" action="{{ route('compliance.flags.resolve', $flag) }}" class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <x-button variant="ghost" size="sm" type="submit">Resolve</x-button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

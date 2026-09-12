@@ -13,6 +13,7 @@ use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\CustomerScreeningService;
 use App\Services\ThresholdService;
+use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\Log;
 
 class ComplianceScreeningJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 

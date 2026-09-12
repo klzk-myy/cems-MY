@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Report;
 
 use App\Enums\ReportType;
+use App\Enums\TransactionStatus;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LmcaGenerateRequest;
@@ -21,7 +22,9 @@ use App\ValueObjects\Quarter;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RegulatoryReportController extends Controller
 {
@@ -90,6 +93,10 @@ class RegulatoryReportController extends Controller
             'avg_transaction_value' => $this->mathService->compare((string) $totalTransactions, '0') > 0
                 ? $this->mathService->divide($totalVolume, (string) $totalTransactions)
                 : '0',
+            'pending_approval' => Transaction::query()
+                ->where('status', TransactionStatus::PendingApproval)
+                ->forDateRange($date, $date)
+                ->count(),
         ];
 
         // Calculate next business day
@@ -99,12 +106,12 @@ class RegulatoryReportController extends Controller
         return view('reports.msb2.index', compact('date', 'summary', 'stats', 'reportGenerated', 'nextBusinessDay', 'isToday'));
     }
 
-    public function msb2Generate(Request $request): JsonResponse
+    public function msb2Generate(Request $request): JsonResponse|StreamedResponse
     {
         $this->requireManagerOrAdmin();
 
         $date = $request->input('date', now()->subDay()->toDateString());
-        $report = $this->reportingService->generateMSB2Data($date);
+        $filepath = $this->reportingService->generateMSB2($date);
 
         $this->reportingService->recordGeneratedReport(
             ReportType::Msb2,
@@ -112,7 +119,14 @@ class RegulatoryReportController extends Controller
             Carbon::parse($date)->endOfDay()
         );
 
-        return $this->successResponse($report, 'MSB(2) report generated successfully.');
+        if ($request->expectsJson()) {
+            return $this->successResponse([
+                'filename' => basename($filepath),
+                'download_url' => route('api.v1.reports.download', ['filename' => basename($filepath)]),
+            ], 'MSB(2) report generated successfully.');
+        }
+
+        return Storage::download($filepath);
     }
 
     public function generateMSB2(StoreMsb2ReportRequest $request): JsonResponse
@@ -153,7 +167,7 @@ class RegulatoryReportController extends Controller
     /**
      * Generate BNM Form LMCA CSV
      */
-    public function lmcaGenerate(LmcaGenerateRequest $request): JsonResponse
+    public function lmcaGenerate(LmcaGenerateRequest $request): JsonResponse|StreamedResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -166,10 +180,14 @@ class RegulatoryReportController extends Controller
             Carbon::parse($month)->endOfMonth()
         );
 
-        return $this->successResponse([
-            'filename' => basename($filepath),
-            'download_url' => route('api.v1.reports.download', ['filename' => basename($filepath)]),
-        ], 'Form LMCA generated successfully.');
+        if ($request->expectsJson()) {
+            return $this->successResponse([
+                'filename' => basename($filepath),
+                'download_url' => route('api.v1.reports.download', ['filename' => basename($filepath)]),
+            ], 'Form LMCA generated successfully.');
+        }
+
+        return Storage::download($filepath);
     }
 
     /**
@@ -233,7 +251,7 @@ class RegulatoryReportController extends Controller
     /**
      * Generate Quarterly Large Value Report CSV
      */
-    public function quarterlyLvrGenerate(QuarterlyLvrGenerateRequest $request): JsonResponse
+    public function quarterlyLvrGenerate(QuarterlyLvrGenerateRequest $request): JsonResponse|StreamedResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -247,10 +265,14 @@ class RegulatoryReportController extends Controller
             $quarterVo->endDate()
         );
 
-        return $this->successResponse([
-            'filename' => basename($filepath),
-            'download_url' => route('api.v1.reports.download', ['filename' => basename($filepath)]),
-        ], 'Quarterly Large Value Report generated successfully.');
+        if ($request->expectsJson()) {
+            return $this->successResponse([
+                'filename' => basename($filepath),
+                'download_url' => route('api.v1.reports.download', ['filename' => basename($filepath)]),
+            ], 'Quarterly Large Value Report generated successfully.');
+        }
+
+        return Storage::download($filepath);
     }
 
     /**
@@ -272,7 +294,7 @@ class RegulatoryReportController extends Controller
     /**
      * Generate Position Limit Report CSV
      */
-    public function positionLimitGenerate(Request $request): JsonResponse
+    public function positionLimitGenerate(Request $request): JsonResponse|StreamedResponse
     {
         $this->requireManagerOrAdmin();
 
@@ -284,9 +306,13 @@ class RegulatoryReportController extends Controller
             now()->endOfDay()
         );
 
-        return $this->successResponse([
-            'filename' => basename($filepath),
-            'download_url' => route('api.v1.reports.download', ['filename' => basename($filepath)]),
-        ], 'Position Limit Report generated successfully.');
+        if ($request->expectsJson()) {
+            return $this->successResponse([
+                'filename' => basename($filepath),
+                'download_url' => route('api.v1.reports.download', ['filename' => basename($filepath)]),
+            ], 'Position Limit Report generated successfully.');
+        }
+
+        return Storage::download($filepath);
     }
 }

@@ -123,6 +123,32 @@ class ScreeningMatchController extends Controller
 
         $result->markDispositioned('dismissed', $validated['reason'], (int) auth()->id());
 
+        // If this dismissal removes the last real match and the customer was
+        // flagged/deactivated by screening alone, restore their standing.
+        $customer = $result->customer;
+
+        if ($customer !== null
+            && $customer->sanction_hit
+            && ! $customer->is_frozen
+            && ! $customer->transactions_blocked
+            && ! ScreeningResult::where('customer_id', $customer->id)
+                ->where('id', '!=', $result->id)
+                ->withHits()
+                ->where(function ($query) {
+                    $query->whereNull('disposition')
+                        ->orWhere('disposition', 'confirmed');
+                })
+                ->exists()
+        ) {
+            $customer->sanction_hit = false;
+
+            if (! $customer->is_active && $customer->rejection_reason === null) {
+                $customer->is_active = true;
+            }
+
+            $customer->save();
+        }
+
         $this->auditService->logSanctionEvent('screening_match_dismissed', $result->id, [
             'entity_type' => 'ScreeningResult',
             'customer_id' => $result->customer_id,

@@ -7,10 +7,12 @@ use App\Exceptions\Domain\AccountingPeriodException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\ReverseJournalEntryRequest;
 use App\Http\Requests\Accounting\StoreJournalEntryRequest;
+use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Services\Accounting\AccountingService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -20,7 +22,7 @@ class JournalController extends Controller
         protected AccountingService $accountingService,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('viewAny', JournalEntry::class);
 
@@ -31,9 +33,24 @@ class JournalController extends Controller
                 ! $user->isAdmin() && $user->role !== UserRole::Accountant,
                 fn ($q) => $q->where(fn ($q2) => $q2->where('branch_id', $user->branch_id)->orWhereNull('branch_id'))
             )
+            ->when(
+                $request->filled('search'),
+                fn ($q) => $q->where(fn ($q2) => $q2
+                    ->where('description', 'like', '%'.$request->string('search')->value().'%')
+                    ->orWhere('entry_number', 'like', '%'.$request->string('search')->value().'%'))
+            )
+            ->when(
+                $request->filled('status'),
+                fn ($q) => $q->where('status', $request->string('status')->value())
+            )
+            ->when(
+                $request->filled('date'),
+                fn ($q) => $q->whereDate('entry_date', $request->string('date')->value())
+            )
             ->orderBy('entry_date', 'desc')
             ->orderBy('id', 'desc')
-            ->paginate(25);
+            ->paginate(25)
+            ->withQueryString();
 
         return view('accounting.journal.index', compact('entries'));
     }
@@ -43,10 +60,15 @@ class JournalController extends Controller
         $this->authorize('create', JournalEntry::class);
 
         $accounts = ChartOfAccount::where('is_active', true)
+            ->where('allow_journal', true)
             ->orderBy('account_code')
             ->get();
 
-        return view('accounting.journal.create', compact('accounts'));
+        $branches = auth()->user()->isAdmin()
+            ? Branch::where('is_active', true)->orderBy('code')->pluck('name', 'id')
+            : collect();
+
+        return view('accounting.journal.create', compact('accounts', 'branches'));
     }
 
     public function store(StoreJournalEntryRequest $request): RedirectResponse
@@ -87,7 +109,7 @@ class JournalController extends Controller
     {
         $this->authorize('view', $entry);
 
-        $entry->load('lines.account', 'postedBy', 'reversedBy');
+        $entry->load('lines.account', 'postedBy', 'reversedBy', 'creator', 'approver', 'branch');
 
         return view('accounting.journal.show', compact('entry'));
     }

@@ -14,27 +14,45 @@
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-ink-muted">Opening Balance</dt>
+                    <dt class="text-sm font-medium text-ink-muted">Quantity on Hand</dt>
                     <dd class="mt-1 text-sm text-ink">
-                        {{ number_format((float) $position->opening_balance, 2) }}
+                        {{ number_format((float) $position->quantity, 2) }}
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-ink-muted">Current Balance</dt>
+                    <dt class="text-sm font-medium text-ink-muted">Available</dt>
                     <dd class="mt-1 text-sm text-ink">
-                        {{ number_format((float) $position->current_balance, 2) }}
+                        {{ number_format((float) $position->available, 2) }}
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-ink-muted">Available Balance</dt>
+                    <dt class="text-sm font-medium text-ink-muted">Held (Pending Reservations)</dt>
                     <dd class="mt-1 text-sm text-ink">
-                        {{ number_format((float) $position->getAvailableBalance(), 2) }}
+                        {{ number_format((float) $position->held, 2) }}
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-ink-muted">Reserved Amount</dt>
+                    <dt class="text-sm font-medium text-ink-muted">Average Cost</dt>
                     <dd class="mt-1 text-sm text-ink">
-                        {{ number_format((float) $position->reserved_amount, 2) }}
+                        {{ number_format((float) $position->average_cost, 6) }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-ink-muted">Current Rate</dt>
+                    <dd class="mt-1 text-sm text-ink">
+                        {{ number_format((float) $position->current_rate, 6) }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-ink-muted">Market Value (MYR)</dt>
+                    <dd class="mt-1 text-sm text-ink">
+                        {{ number_format((float) $position->market_value, 2) }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-ink-muted">Unrealized P&amp;L (MYR)</dt>
+                    <dd class="mt-1 text-sm {{ (float) $position->unrealized_gain_loss >= 0 ? 'text-success-text' : 'text-danger-text' }}">
+                        {{ number_format((float) $position->unrealized_gain_loss, 2) }}
                     </dd>
                 </div>
                 <div>
@@ -70,19 +88,19 @@
                             <td class="px-4 py-3 text-sm text-ink">{{ $transaction->id }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $transaction->created_at->format('d M Y H:i') }}</td>
                             <td class="px-4 py-3 text-sm text-ink">
-                                {{ $transaction->customer->name ?? 'N/A' }}
+                                {{ $transaction->customer->full_name ?? 'N/A' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink">
                                 {{ $transaction->currency?->code ?? 'N/A' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
-                                {{ number_format((float) $transaction->foreign_amount, 2) }}
+                                {{ number_format((float) $transaction->amount_foreign, 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
-                                {{ number_format((float) $transaction->exchange_rate, 4) }}
+                                {{ number_format((float) $transaction->rate, 4) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
-                                {{ number_format((float) $transaction->myr_amount, 2) }}
+                                {{ number_format((float) $transaction->amount_local, 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <x-badge

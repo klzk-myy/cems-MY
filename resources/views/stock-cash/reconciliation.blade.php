@@ -173,7 +173,7 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-sm text-ink">
-                                {{ $transaction->customer->name ?? 'N/A' }}
+                                {{ $transaction->customer->full_name ?? 'N/A' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
                                 {{ number_format((float) $transaction->amount_foreign, 2) }}

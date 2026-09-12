@@ -50,7 +50,7 @@
             rows="3"
             placeholder="compliance@example.com"
             help="Email addresses to notify after each run — one per line or comma-separated."
-        >{{ old('notification_recipients', $schedule ? implode("\n", $schedule->notification_recipients ?? []) : '') }}</x-textarea>
+        >{{ old('notification_recipients', isset($schedule) ? implode("\n", $schedule->notification_recipients ?? []) : '') }}</x-textarea>
 
         <div class="flex gap-2 pt-2">
             <x-button type="submit" variant="primary">{{ $isEdit ? 'Update Schedule' : 'Create Schedule' }}</x-button>
