@@ -8,6 +8,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 - [Tech Stack](#tech-stack)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Deployment (Production)](#deployment-production)
 - [Configuration](#configuration)
 - [Commands](#commands)
 - [Architecture](#architecture)
@@ -86,7 +87,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 |-----------|------------|
 | Framework | Laravel 12.x |
 | Language | PHP 8.3 |
-| Database | MySQL 8.0 |
+| Database | MariaDB 10.11 LTS |
 | Cache/Queue | Redis |
 | Queue UI | Laravel Horizon |
 | Auth | Laravel Sanctum (token) / Session (web) |
@@ -97,7 +98,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
 ## Requirements
 
 - PHP 8.3+
-- MySQL 8.0+
+- MariaDB 10.6+ (10.11 LTS recommended)
 - Redis 6+
 - Composer 2.x
 - Node.js 18+
@@ -117,9 +118,115 @@ php artisan db:seed --class=SchemaSeeder  # migration-free schema setup
 php artisan serve
 ```
 
-**Note:** Ensure MySQL and Redis services are running before seeding.
+**Note:** Ensure MariaDB and Redis services are running before seeding.
 
 The project is migration-free: `database/seeders/SchemaSeeder.php` is the single source of truth for schema creation. It drops and recreates every table, so run it only on an empty database or through the guarded setup/reset flows.
+
+## Deployment (Production)
+
+Step-by-step for a bare server. Supported targets: **Ubuntu** (20.04+), **AlmaLinux** and **Oracle Linux** (8/9), on **x86_64 or aarch64/ARM** — detected automatically.
+
+### 1. Install system dependencies
+
+```bash
+sudo bash scripts/install-deps.sh
+```
+
+Installs nginx, MariaDB 10.11 LTS, Redis, PHP 8.3 (with all required extensions), Composer and Node.js 22, then enables the services.
+
+### 2. Deploy the application
+
+```bash
+git clone https://github.com/klzk-myy/cems-my.git /var/www/cems-my
+cd /var/www/cems-my
+
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+
+cp .env.example .env
+php artisan key:generate
+```
+
+Create the database and user:
+
+```sql
+CREATE DATABASE cems_my CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'cems'@'localhost' IDENTIFIED BY 'STRONG_PASSWORD';
+GRANT ALL ON cems_my.* TO 'cems'@'localhost';
+```
+
+Edit `.env` (`APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`, `DB_*`, `REDIS_*`, `SESSION_DOMAIN`, `SANCTUM_STATEFUL_DOMAINS`), then seed the schema:
+
+```bash
+php artisan db:seed --class=SchemaSeeder
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+```
+
+### 3. nginx
+
+Point the vhost docroot at `public/` and add the Laravel rewrite:
+
+```nginx
+root /var/www/cems-my/public;
+location / { try_files $uri $uri/ /index.php?$query_string; }
+```
+
+PHP requests should go to PHP-FPM (`php8.3-fpm` socket on Ubuntu, `php-fpm` on RHEL-family). Reload nginx.
+
+### 4. Scheduler cron (required)
+
+The scheduler drives all automation — EOD reconciliation, deferred accounting, revaluation, month-end close, reports, rescreening. Install as the PHP-FPM user (usually `www`, `www-data` or `nginx`):
+
+```bash
+sudo crontab -u www -e
+```
+
+```cron
+* * * * * cd /var/www/cems-my && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Verify with `php artisan schedule:list`.
+
+### 5. Queue worker (required)
+
+`$schedule->job(...)` entries, audit sealing, sanctions screening and risk rescoring all run through Redis queues. Create a systemd unit `/etc/systemd/system/cems-queue.service`:
+
+```ini
+[Unit]
+Description=CEMS-MY Laravel queue worker
+After=network.target
+
+[Service]
+Type=simple
+User=www
+Group=www
+WorkingDirectory=/var/www/cems-my
+ExecStart=/usr/bin/php artisan queue:work --queue=default,audit --sleep=3 --tries=3 --timeout=120 --backoff=5
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now cems-queue
+```
+
+### 6. Permissions
+
+```bash
+sudo chown -R www:www storage bootstrap/cache
+```
+
+(Use the PHP-FPM user for your distro: `www-data` on Ubuntu, `nginx` on RHEL-family.)
+
+### 7. Verify
+
+- `GET /` redirects to `/setup` — complete the 6-step business setup wizard
+- `systemctl status cems-queue` — active
+- `storage/logs/queue-worker.log` shows jobs being processed
 
 ## Configuration
 
