@@ -96,3 +96,6 @@ cems_my
 
 # Devin agent configuration and skills (local only)
 .devin/
+
+# Recycled files (unused assets moved out of the project root, kept on disk)
+recycle/
