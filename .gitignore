@@ -61,10 +61,11 @@ opencode.json
 .codex
 /storage/framework/views
 
-# Root markdown files: only README.md is tracked
+# Root markdown files: only README.md and WORKFLOWS.md are tracked
 # (AGENTS.md/CLAUDE.md are local agent notes — intentionally ignored)
 /*.md
 !README.md
+!WORKFLOWS.md
 
 # Local tooling config
 /reasonix.toml
