@@ -51,10 +51,7 @@ class EnsureMfaVerified
         // grace period measured from account creation. After it lapses,
         // force enrollment instead of silently skipping MFA forever.
         if ($mfaRequired && ! $user->mfa_enabled) {
-            $graceDays = (int) config('cems.mfa.grace_days', 30);
-            $graceEndsAt = $user->created_at?->copy()->addDays($graceDays);
-
-            if ($graceEndsAt !== null && now()->lt($graceEndsAt)) {
+            if (! $this->mfaService->isEnrollmentOverdue($user)) {
                 return $next($request);
             }
 

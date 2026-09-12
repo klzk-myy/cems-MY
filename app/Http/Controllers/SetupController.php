@@ -201,6 +201,22 @@ class SetupController extends Controller
     {
         $setupData = session('setup', []);
 
+        // A bare POST (expired or never-started session) must not complete:
+        // executeSetup would still seed reference data and set the immutable
+        // setup_state marker, after which EnsureSetupAccessible locks every
+        // /setup route — while setup.reset requires an admin login that was
+        // never created. That combination bricks the install. 'business' and
+        // 'admin' are the load-bearing steps; 'currencies' may be absent and
+        // the seeders still produce a usable install.
+        foreach (['business', 'admin'] as $requiredKey) {
+            if (empty($setupData[$requiredKey])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Setup session is incomplete. Please restart the wizard.',
+                ], 422);
+            }
+        }
+
         try {
             DB::beginTransaction();
 

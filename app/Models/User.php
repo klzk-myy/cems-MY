@@ -252,28 +252,13 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user needs to set up MFA (based on role and grace period).
+     * Check if user needs to set up MFA (role requires it and the enrollment
+     * grace period from account creation has lapsed). Delegates to the
+     * canonical check shared with EnsureMfaVerified / EnsureMfaEnabled.
      */
     public function needsMfaSetup(): bool
     {
-        if ($this->mfa_enabled) {
-            return false;
-        }
-
-        // Check if role requires MFA
-        $mfaService = app(MfaService::class);
-        if (! $mfaService->isMfaRequiredForRole($this)) {
-            return false;
-        }
-
-        // Check grace period (if first login is within grace period)
-        $graceDays = config('cems.mfa.grace_days', 30);
-        if ($this->last_login_at && $this->last_login_at->diffInDays(now()) > $graceDays) {
-            return true;
-        }
-
-        // First login - within grace period doesn't need setup yet
-        return false;
+        return app(MfaService::class)->isEnrollmentOverdue($this);
     }
 
     /**

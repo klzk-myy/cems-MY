@@ -41,6 +41,9 @@ class LoginController extends Controller
                     Auth::login($user, (bool) $request->boolean('remember'));
                     $request->session()->regenerate();
                     $request->session()->put('last_activity', time());
+                    // Absolute session lifetime anchor read by
+                    // EnsureMfaVerified — without it that check is dead code.
+                    $request->session()->put('_session_created_at', time());
                     $user->update(['last_login_at' => now()]);
                     $this->rateLimitService->clearFailedAttempts($request->ip());
                 });

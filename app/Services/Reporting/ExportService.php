@@ -2,7 +2,9 @@
 
 namespace App\Services\Reporting;
 
+use App\Enums\ReportGeneratedStatus;
 use App\Exceptions\Domain\ReportValidationException;
+use App\Models\ReportGenerated;
 use App\Models\User;
 use App\Notifications\ReportEmailNotification;
 use App\Services\System\NotificationDispatcher;
@@ -180,10 +182,26 @@ class ExportService
         return $this->basePath.'/'.$this->sanitizeFilename($filename);
     }
 
+    /**
+     * Delete export files older than $days — but never a file whose
+     * ReportGenerated record is not yet Archived. Cleanup runs at 90 days
+     * while archival copies at 12 months, so without this guard the files
+     * aged 90d–12mo would be destroyed before they could ever be archived
+     * (BNM 7-year retention).
+     */
     public function cleanupOldReports(int $days = 90): int
     {
         $cutoff = now()->subDays($days);
         $deleted = 0;
+
+        // file_path may be absolute or storage-relative; basename matching
+        // covers both forms.
+        $unarchivedBasenames = ReportGenerated::where('status', '!=', ReportGeneratedStatus::Archived->value)
+            ->whereNotNull('file_path')
+            ->pluck('file_path')
+            ->map(fn ($p) => basename((string) $p))
+            ->flip()
+            ->all();
 
         $files = glob($this->basePath.'/*');
         if ($files === false) {
@@ -191,7 +209,15 @@ class ExportService
         }
 
         foreach ($files as $file) {
-            if (is_file($file) && filemtime($file) < $cutoff->timestamp && unlink($file)) {
+            if (! is_file($file) || filemtime($file) >= $cutoff->timestamp) {
+                continue;
+            }
+
+            if (isset($unarchivedBasenames[basename($file)])) {
+                continue;
+            }
+
+            if (unlink($file)) {
                 $deleted++;
             }
         }

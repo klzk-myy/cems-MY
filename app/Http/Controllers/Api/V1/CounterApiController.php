@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\SessionClosedException;
 use App\Exceptions\Domain\VarianceThresholdException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
+use App\Http\Controllers\Concerns\ResolvesCloseSupervisor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\CloseCounterRequest;
 use App\Models\Counter;
@@ -15,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 class CounterApiController extends Controller
 {
     use ApiResponse;
+    use ResolvesCloseSupervisor;
 
     public function __construct(
         protected CounterService $counterService
@@ -41,12 +44,33 @@ class CounterApiController extends Controller
             return $this->notFoundResponse('No open session found for this counter');
         }
 
+        // The API takes closing_floats as a currency => amount map; the
+        // service expects [{currency_id, amount}] items. A raw map would be
+        // indexed as $float['currency_id'] on a scalar and 500.
+        $closingFloats = [];
+        foreach ($validated['closing_floats'] as $currencyCode => $amount) {
+            $closingFloats[] = [
+                'currency_id' => $currencyCode,
+                'amount' => $amount,
+            ];
+        }
+
+        try {
+            $supervisor = $this->resolveCloseSupervisor(
+                $request->user(),
+                isset($validated['supervisor_id']) ? (int) $validated['supervisor_id'] : null
+            );
+        } catch (InvalidStateException $e) {
+            return $this->errorResponse($e->getMessage(), [], 422);
+        }
+
         try {
             $result = $this->counterService->closeSession(
                 $session,
                 $request->user(),
-                $validated['closing_floats'],
-                $validated['notes'] ?? null
+                $closingFloats,
+                $validated['notes'] ?? null,
+                $supervisor
             );
 
             return $this->successResponse(null, 'Counter closed successfully', 200, [

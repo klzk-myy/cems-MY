@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Models\User;
+use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -117,8 +118,17 @@ class RatesPageTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
+        // History stores the mid rate; the copy must re-apply the configured
+        // spread (default 2%): buy = mid * 0.98, sell = mid * 1.02.
         $rate = ExchangeRate::where('currency_code', 'USD')->first();
-        $this->assertEquals('4.550000', (string) $rate->rate_buy);
+        $buy = (string) $rate->getAttribute('rate_buy');
+        $sell = (string) $rate->getAttribute('rate_sell');
+        $this->assertEquals('4.459000', $buy);
+        $this->assertEquals('4.641000', $sell);
+        $this->assertTrue(
+            app(MathService::class)->compare($sell, $buy) > 0,
+            'Copied rates must keep a positive spread (sell > buy)'
+        );
     }
 
     #[Test]

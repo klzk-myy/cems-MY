@@ -257,4 +257,37 @@ class MfaRequirementTest extends TestCase
 
         $this->assertEquals(200, $response->status());
     }
+
+    #[Test]
+    public function unenrolled_user_past_grace_is_forced_to_mfa_setup_on_any_page(): void
+    {
+        // Manager is in require_for_roles (see setUp). created_at beyond the
+        // 30-day grace means enrollment is overdue.
+        $overdue = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $this->branch->id,
+            'mfa_enabled' => false,
+            'created_at' => now()->subDays(31),
+        ]);
+
+        $response = $this->actingAs($overdue)->get('/dashboard');
+
+        $response->assertRedirect(route('mfa.setup'));
+
+        // The MFA flow itself stays reachable — otherwise the redirect loops.
+        $this->actingAs($overdue)->get(route('mfa.setup'))->assertOk();
+    }
+
+    #[Test]
+    public function unenrolled_user_within_grace_can_still_browse(): void
+    {
+        $recent = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $this->branch->id,
+            'mfa_enabled' => false,
+            'created_at' => now(),
+        ]);
+
+        $this->actingAs($recent)->get('/dashboard')->assertOk();
+    }
 }

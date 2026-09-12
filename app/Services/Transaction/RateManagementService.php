@@ -167,6 +167,26 @@ class RateManagementService implements RateManagementServiceInterface
                 // Invalidate cache
                 $this->forgetRateCache($currencyCode, $branchId);
 
+                // Rate creation is an override too — audit it like the update
+                // path so every rate change is traceable.
+                $this->auditService->log(
+                    'rate_overridden',
+                    $approvedBy->id,
+                    'ExchangeRate',
+                    $exchangeRate->id,
+                    [
+                        'old_buy_rate' => null,
+                        'old_sell_rate' => null,
+                        'new_buy_rate' => $newBuyRate,
+                        'new_sell_rate' => $newSellRate,
+                        'reason' => $reason,
+                    ],
+                    [
+                        'currency_code' => $currencyCode,
+                        'branch_id' => $branchId,
+                    ]
+                );
+
                 return new RateOverrideResult(
                     success: true,
                     message: "Rate for {$currencyCode} created successfully",
@@ -382,9 +402,15 @@ class RateManagementService implements RateManagementServiceInterface
                 $oldBuy = $exchangeRate->rate_buy;
                 $oldSell = $exchangeRate->rate_sell;
 
+                // History stores the MID rate only — writing it to both
+                // rate_buy and rate_sell would flatten the spread to zero
+                // (violating the sell > buy invariant and giving away the
+                // margin). Re-derive the sides with the configured spread.
+                $derived = $this->rateApiService->applySpread((string) $histRate->rate);
+
                 $exchangeRate->update([
-                    'rate_buy' => $histRate->rate,
-                    'rate_sell' => $histRate->rate,
+                    'rate_buy' => $derived['buy'],
+                    'rate_sell' => $derived['sell'],
                     'source' => "copied_from_{$targetDate}",
                     'fetched_at' => now(),
                 ]);
@@ -396,7 +422,9 @@ class RateManagementService implements RateManagementServiceInterface
                     'currency' => $histRate->currency_code,
                     'old_buy' => $oldBuy,
                     'old_sell' => $oldSell,
-                    'new_rate' => $histRate->rate,
+                    'new_buy' => $derived['buy'],
+                    'new_sell' => $derived['sell'],
+                    'mid' => $histRate->rate,
                 ];
             }
         }

@@ -16,6 +16,7 @@ class CloseCounterRequest extends AuthorizedFormRequest
             'closing_floats.*.currency_id' => 'required|exists:currencies,code',
             'closing_floats.*.amount' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:500',
+            'supervisor_id' => 'nullable|integer|exists:users,id',
         ];
     }
 }

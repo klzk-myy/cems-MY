@@ -305,7 +305,10 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Transfer is already cancelled');
         }
 
-        $transfer->cancel($reason);
+        DB::transaction(function () use ($transfer, $reason) {
+            $this->returnInFlightStockToSource($transfer);
+            $transfer->cancel($reason);
+        });
     }
 
     public function reject(StockTransfer $transfer, string $reason = ''): void
@@ -324,6 +327,7 @@ class StockTransferService
         }
 
         DB::transaction(function () use ($transfer, $reason) {
+            $this->returnInFlightStockToSource($transfer);
             $transfer->update(['status' => StockTransferStatus::Rejected]);
             $this->auditService->logStockTransferEvent(
                 'stock_transfer_rejected',
@@ -351,6 +355,38 @@ class StockTransferService
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * Return dispatched-but-unreceived stock to the SOURCE branch on
+     * cancel/reject. dispatch() removed the full quantity from the source;
+     * receiveItems() lands only what arrived at the destination — without
+     * this, the in-flight remainder would vanish from every position.
+     */
+    private function returnInFlightStockToSource(StockTransfer $transfer): void
+    {
+        if (! in_array($transfer->status, [StockTransferStatus::InTransit, StockTransferStatus::PartiallyReceived], true)) {
+            return;
+        }
+
+        $transfer->loadMissing('items');
+        $sourceBranchKey = $this->positionBranchKey($transfer->source_branch_name);
+
+        foreach ($transfer->items as $item) {
+            $unreceived = $this->mathService->subtract(
+                (string) $item->quantity,
+                (string) ($item->quantity_received ?? '0')
+            );
+
+            if ($this->mathService->compare($unreceived, '0') <= 0) {
+                continue;
+            }
+
+            $position = $this->positionLocks()->lock($sourceBranchKey, (string) $item->currency_code);
+            $position->update([
+                'quantity' => $this->mathService->add((string) $position->quantity, $unreceived),
+            ]);
+        }
     }
 
     /**

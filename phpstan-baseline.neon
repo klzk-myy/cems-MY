@@ -8269,19 +8269,19 @@ parameters:
 			path: app/Services/Reporting/ExportService.php
 
 		-
-			message: '#^Method Maatwebsite\\Excel\\Concerns\\FromArray@anonymous/app/Services/Reporting/ExportService\.php\:135\:\:__construct\(\) has parameter \$data with no type specified\.$#'
+			message: '#^Method Maatwebsite\\Excel\\Concerns\\FromArray@anonymous/app/Services/Reporting/ExportService\.php\:137\:\:__construct\(\) has parameter \$data with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
 			path: app/Services/Reporting/ExportService.php
 
 		-
-			message: '#^Method Maatwebsite\\Excel\\Concerns\\FromArray@anonymous/app/Services/Reporting/ExportService\.php\:135\:\:array\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Maatwebsite\\Excel\\Concerns\\FromArray@anonymous/app/Services/Reporting/ExportService\.php\:137\:\:array\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Reporting/ExportService.php
 
 		-
-			message: '#^Property Maatwebsite\\Excel\\Concerns\\FromArray@anonymous/app/Services/Reporting/ExportService\.php\:135\:\:\$data has no type specified\.$#'
+			message: '#^Property Maatwebsite\\Excel\\Concerns\\FromArray@anonymous/app/Services/Reporting/ExportService\.php\:137\:\:\$data has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
 			path: app/Services/Reporting/ExportService.php
@@ -9345,13 +9345,13 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\StockTransferItem\:\:\$currency_code\.$#'
 			identifier: property.notFound
-			count: 4
+			count: 5
 			path: app/Services/Transaction/StockTransferService.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\StockTransferItem\:\:\$quantity\.$#'
 			identifier: property.notFound
-			count: 7
+			count: 8
 			path: app/Services/Transaction/StockTransferService.php
 
 		-

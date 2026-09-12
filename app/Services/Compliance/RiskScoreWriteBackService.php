@@ -33,6 +33,14 @@ class RiskScoreWriteBackService
         $previousRating = $this->normalizeRating($customer->risk_rating);
         $newRating = $this->ratingForScore($newScore);
 
+        // A sanction hit pins the rating at High regardless of the numeric
+        // score — without this, a sanctioned Malaysian customer scoring 50
+        // would be written back as Medium, silently downgrading the rating
+        // set by screening.
+        if ($customer->sanction_hit) {
+            $newRating = RiskRating::High;
+        }
+
         if ($previousScore === $newScore && $previousRating === $newRating) {
             return false;
         }

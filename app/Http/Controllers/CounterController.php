@@ -6,6 +6,7 @@ use App\Enums\CounterSessionStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
+use App\Exceptions\Domain\InvalidStateException;
 use App\Http\Requests\AcknowledgeHandoverWebRequest;
 use App\Http\Requests\CloseCounterRequest;
 use App\Http\Requests\EmergencyCloseRequest;
@@ -30,6 +31,8 @@ use Illuminate\View\View;
 
 class CounterController extends Controller
 {
+    use Concerns\ResolvesCloseSupervisor;
+
     public function __construct(
         protected CounterService $counterService,
         protected AuditService $auditService,
@@ -140,9 +143,18 @@ class CounterController extends Controller
             return back()->with('error', 'No open session found for this counter today.');
         }
 
+        // Red-variance closes need a supervisor; an acting manager satisfies
+        // it. Previously no caller could ever supply one — the session could
+        // never be closed once variance exceeded the red threshold.
+        try {
+            $supervisor = $this->resolveCloseSupervisor($user, $request->input('supervisor_id'));
+        } catch (InvalidStateException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
         return $this->handleCounterAction(
             action: 'counter_closed',
-            operation: fn () => $this->counterService->closeSession($session, $user, $closingFloats, $notes),
+            operation: fn () => $this->counterService->closeSession($session, $user, $closingFloats, $notes, $supervisor),
             successMessage: "Counter {$counter->code} closed successfully",
             redirectRoute: 'counters.index',
             auditContext: [

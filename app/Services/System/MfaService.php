@@ -394,6 +394,26 @@ class MfaService
     }
 
     /**
+     * Whether a user in an MFA-required role has passed the enrollment grace
+     * period without enabling MFA.
+     *
+     * Grace is measured from account creation: a dormant account must not get
+     * a fresh window just because it logs in late. A null created_at counts
+     * as overdue (fail-closed), matching EnsureMfaVerified.
+     */
+    public function isEnrollmentOverdue(User $user): bool
+    {
+        if (! $this->isMfaRequiredForRole($user) || $user->mfa_enabled) {
+            return false;
+        }
+
+        $graceDays = (int) config('cems.mfa.grace_days', 30);
+        $graceEndsAt = $user->created_at?->copy()->addDays($graceDays);
+
+        return $graceEndsAt === null || now()->gte($graceEndsAt);
+    }
+
+    /**
      * Whether the user is locked out after too many failed TOTP or recovery
      * code attempts within the configured window.
      */

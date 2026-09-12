@@ -23,6 +23,7 @@ class CloseCounterRequest extends ApiFormRequest
             'closing_floats' => 'required|array',
             'closing_floats.*' => 'numeric|min:0',
             'notes' => 'nullable|string|max:500',
+            'supervisor_id' => 'nullable|integer|exists:users,id',
         ];
     }
 }

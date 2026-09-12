@@ -94,7 +94,7 @@ Route::prefix('setup')->name('setup.')->middleware(['setup.accessible'])->group(
 
 });
 
-Route::middleware(['auth', 'session.timeout'])->group(function () {
+Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

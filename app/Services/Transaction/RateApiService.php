@@ -95,25 +95,30 @@ class RateApiService
 
         foreach ($currencies as $currency) {
             if (isset($rates[$currency])) {
-                $rate = $rates[$currency];
-                $rateStr = (string) $rate;
-
-                // Apply full spread on each side of mid rate
-                // buy = mid * (1 - spread), sell = mid * (1 + spread)
-                // e.g., 2% spread: buy is 2% below mid, sell is 2% above mid
-                $buyRate = $this->mathService->multiply($rateStr, $this->mathService->subtract('1', $this->spread));
-                $sellRate = $this->mathService->multiply($rateStr, $this->mathService->add('1', $this->spread));
-
                 $processed[$currency] = [
-                    'buy' => $this->roundRate($buyRate),
-                    'sell' => $this->roundRate($sellRate),
-                    'mid' => $this->roundRate($rateStr),
+                    ...$this->applySpread((string) $rates[$currency]),
                     'timestamp' => $timestamp,
                 ];
             }
         }
 
         return $processed;
+    }
+
+    /**
+     * Derive buy/sell rates from a mid rate using the configured spread:
+     * buy = mid * (1 - spread), sell = mid * (1 + spread).
+     * e.g., 2% spread: buy is 2% below mid, sell is 2% above mid.
+     *
+     * @return array{buy: string, sell: string, mid: string}
+     */
+    public function applySpread(string $midRate): array
+    {
+        return [
+            'buy' => $this->roundRate($this->mathService->multiply($midRate, $this->mathService->subtract('1', $this->spread))),
+            'sell' => $this->roundRate($this->mathService->multiply($midRate, $this->mathService->add('1', $this->spread))),
+            'mid' => $this->roundRate($midRate),
+        ];
     }
 
     protected function roundRate(string $rate): string

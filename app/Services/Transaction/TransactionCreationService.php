@@ -86,12 +86,12 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         /** @var Customer $customer */
         $customer = Customer::findOrFail($data['customer_id']);
 
-        // Frozen/blocked customers cannot book new transactions (BNM
-        // freeze-order enforcement).
-        if ($customer->transactions_blocked || $customer->is_frozen) {
+        // Frozen, blocked, or deactivated (closed / sanction-hit) customers
+        // cannot book new transactions (BNM freeze-order enforcement).
+        if ($customer->transactions_blocked || $customer->is_frozen || ! $customer->is_active) {
             throw new CustomerBlockedException(
                 (int) $customer->id,
-                (string) ($customer->freeze_reason ?? 'account blocked from transactions')
+                (string) ($customer->freeze_reason ?? $customer->closure_reason ?? 'account blocked from transactions')
             );
         }
 

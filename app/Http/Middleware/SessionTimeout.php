@@ -67,6 +67,13 @@ class SessionTimeout
         // Update last activity timestamp (only for authenticated users)
         if (auth()->check()) {
             $request->session()->put('last_activity', now()->timestamp);
+
+            // Anchor the absolute session lifetime for sessions that never
+            // got stamped at login (remember-me restores, sessions predating
+            // the login-side put). EnsureMfaVerified reads this value.
+            if (! $request->session()->has('_session_created_at')) {
+                $request->session()->put('_session_created_at', now()->timestamp);
+            }
         }
 
         return $next($request);
