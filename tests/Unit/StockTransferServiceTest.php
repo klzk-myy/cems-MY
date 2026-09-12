@@ -129,8 +129,7 @@ class StockTransferServiceTest extends TestCase
      * Assert createRequest() rejects the payload with the given rule detail.
      *
      * TransactionValidationException carries the human-readable rule detail in
-     * ->field (the message stays the generic "Transaction validation failed"),
-     * so the rule text is asserted on the field rather than the message.
+     * getMessage(); ->field holds the failing field name when set.
      *
      * @param  array<string, mixed>  $payload
      */
@@ -140,7 +139,7 @@ class StockTransferServiceTest extends TestCase
             $this->stockTransferService->createRequest($payload);
             $this->fail('Expected TransactionValidationException');
         } catch (TransactionValidationException $e) {
-            $this->assertStringContainsString($expectedDetail, (string) $e->field);
+            $this->assertStringContainsString($expectedDetail, $e->getMessage());
         }
     }
 

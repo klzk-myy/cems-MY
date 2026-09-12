@@ -1,38 +1,99 @@
-<x-app-layout title="Compliance Cases">
-    <x-page-header title="Compliance Cases" description="Manage investigation cases">
-        <x-slot:actions>
-            <x-button variant="primary">New Case</x-button>
-        </x-slot:actions>
-    </x-page-header>
+<x-app-layout title="Cases">
+    <div class="space-y-6">
+        <x-page-header
+            title="Compliance Cases"
+            description="Manage ongoing compliance investigations"
+            class="mb-8"
+        >
+            <x-slot:actions>
+                <x-button variant="primary">Create Case</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-    <x-table>
-        <x-slot:thead>
-            <tr>
-                <th class="px-4 py-3">Case ID</th>
-                <th class="px-4 py-3">Type</th>
-                <th class="px-4 py-3">Subject</th>
-                <th class="px-4 py-3">Assignee</th>
-                <th class="px-4 py-3">Status</th>
-                <th class="px-4 py-3">Date</th>
-            </tr>
-        </x-slot:thead>
-        <x-slot:tbody>
-            @forelse($cases ?? [] as $case)
-                <tr>
-                    <td class="px-4 py-3 text-sm font-medium text-ink">{{ $case->id }}</td>
-                    <td class="px-4 py-3 text-sm text-ink">{{ $case->case_type?->value ?? $case->type }}</td>
-                    <td class="px-4 py-3 text-sm text-ink">{{ $case->subject }}</td>
-                    <td class="px-4 py-3 text-sm text-ink-muted">{{ $case->assignee?->name ?? 'Unassigned' }}</td>
-                    <td class="px-4 py-3"><x-badge variant="warning">{{ $case->status }}</x-badge></td>
-                    <td class="px-4 py-3 text-sm text-ink-muted">{{ $case->created_at?->format('d M Y') }}</td>
-                </tr>
-            @empty
-                <tr>
-                    <td class="px-4 py-3 text-sm text-ink-muted" colspan="6">
-                        <x-empty-state title="No cases found" description="Create a new case to get started." />
-                    </td>
-                </tr>
-            @endforelse
-        </x-slot:tbody>
-    </x-table>
+        <x-filter-bar method="GET">
+            <x-select
+                name="priority"
+                :options="['Critical' => 'Critical', 'High' => 'High', 'Medium' => 'Medium', 'Low' => 'Low']"
+                placeholder="All Priority"
+                inline
+            />
+            <x-select
+                name="status"
+                :options="['Open' => 'Open', 'UnderReview' => 'Under Review', 'PendingApproval' => 'Pending Approval', 'Closed' => 'Closed']"
+                placeholder="All Status"
+                inline
+            />
+            <x-input
+                name="search"
+                type="text"
+                placeholder="Search case ID or customer..."
+                inline
+            />
+            <x-button variant="primary" type="submit">Search</x-button>
+        </x-filter-bar>
+
+        <x-card>
+            <x-table>
+                <x-slot:thead>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Case ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Title</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Priority</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Assigned To</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Created</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                </x-slot:thead>
+                <x-slot:tbody>
+                    @forelse ($cases as $case)
+                        <tr>
+                            <td class="px-4 py-3 text-sm text-ink">{{ $case->case_number }}</td>
+                            <td class="px-4 py-3 text-sm text-ink">{{ $case->case_type?->label() }}</td>
+                            <td class="px-4 py-3 text-sm text-ink">{{ $case->customer?->name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <x-badge
+                                    :variant="match ($case->priority?->value) {
+                                        'Critical' => 'danger',
+                                        'High' => 'warning',
+                                        'Medium' => 'warning',
+                                        'Low' => 'success',
+                                        default => 'gray',
+                                    }"
+                                >
+                                    {{ $case->priority?->label() }}
+                                </x-badge>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                <x-badge
+                                    :variant="match ($case->status?->value) {
+                                        'Open' => 'info',
+                                        'UnderReview' => 'warning',
+                                        'PendingApproval' => 'purple',
+                                        'Closed' => 'success',
+                                        'Escalated' => 'danger',
+                                        default => 'gray',
+                                    }"
+                                >
+                                    {{ $case->status?->label() }}
+                                </x-badge>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-ink">{{ $case->assignee?->name ?? 'Unassigned' }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $case->created_at?->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <x-button
+                                    variant="ghost"
+                                    size="sm"
+                                    href="{{ route('compliance.cases.show', $case) }}"
+                                >
+                                    View
+                                </x-button>
+                            </td>
+                        </tr>
+                    @empty
+                        <x-empty-state message="No cases found." :colspan="8" />
+                    @endforelse
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
+    </div>
 </x-app-layout>

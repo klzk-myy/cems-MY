@@ -141,7 +141,7 @@ class BranchPoolService
 
     public function getAllPoolsForBranch(Branch $branch): Collection
     {
-        return BranchPool::where('branch_id', $branch->id)->get();
+        return BranchPool::where('branch_id', $branch->id)->with('branch')->get();
     }
 
     public function getAvailablePoolsForBranch(Branch $branch): Collection

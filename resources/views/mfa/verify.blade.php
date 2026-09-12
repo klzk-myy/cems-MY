@@ -1,13 +1,19 @@
-<x-auth-layout title="Verify MFA" {{ $attributes ?? '' }}>
-    <x-page-header title="Verify MFA" description="Multi-factor authentication" />
-    <x-card>
-        <form method="POST" action="{{ route('mfa.verify.store') }}" class="space-y-4">
+@php
+    $attributes = $attributes ?? new \Illuminate\View\ComponentAttributeBag([]);
+@endphp
+
+<x-app-layout title="Verify MFA" {{ $attributes }}>
+    <x-page-header title="Two-Factor Verification" description="Enter the 6-digit code from your authenticator app." />
+
+    <x-card class="max-w-lg">
+        <form method="POST" action="{{ route('mfa.verify.store') }}">
             @csrf
-            <x-input name="code" label="Verification Code" placeholder="Enter 6-digit code" :required="true" />
+            <x-input type="text" name="code" label="Verification Code" placeholder="Enter 6-digit code" maxlength="6" required autofocus />
             <x-button type="submit" variant="primary" class="w-full">Verify</x-button>
         </form>
-        <p class="mt-4 text-center text-sm text-ink-muted">
-            Lost your device? <a href="{{ route('mfa.recovery') }}" class="text-info hover:underline">Use recovery code</a>
-        </p>
+
+        <div class="mt-4 text-center">
+            <a href="{{ route('mfa.recovery') }}" class="text-info hover:text-info-hover hover:underline">Use Recovery Code</a>
+        </div>
     </x-card>
-</x-auth-layout>
+</x-app-layout>

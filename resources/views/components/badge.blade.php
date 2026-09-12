@@ -5,6 +5,9 @@
 @php
 $variants = [
     'success' => 'bg-success-subtle text-success-text',
+    // 'danger' is a long-standing alias for 'error' styling, matching the
+    // same alias in the alert component.
+    'danger' => 'bg-danger-subtle text-danger-text',
     'error' => 'bg-danger-subtle text-danger-text',
     'warning' => 'bg-warning-subtle text-warning-text',
     'info' => 'bg-info-subtle text-info-text',

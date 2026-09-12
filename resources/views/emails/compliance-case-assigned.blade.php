@@ -1,4 +1,33 @@
-<x-email-layout title="Compliance Case Assigned Notification">
-    <p>This is an automated notification from CEMS regarding {{ str_replace('-', ' ', 'compliance-case-assigned') }}.</p>
-    <p><a href="{{ url('/') }}" style="display: inline-block; padding: 12px 24px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View in CEMS</a></p>
-</x-email-layout>
+@component('mail::message')
+# Compliance Case Assigned
+
+A new compliance case has been assigned to you for review.
+
+## Case Details
+
+**Case ID:** {{ $complianceCase->id }}
+**Case Number:** {{ $complianceCase->case_number }}
+**Case Type:** {{ $caseType }}
+**Priority:** {{ $priority }}
+**Severity:** {{ $severity }}
+**Customer:** {{ $customer?->full_name ?? 'N/A' }}
+
+@if($assignedBy)
+**Assigned By:** {{ $assignedBy->username ?? $assignedBy->full_name }}
+@endif
+
+@if($slaDeadline)
+**SLA Deadline:** {{ $slaDeadline->format('Y-m-d H:i:s') }}
+@endif
+
+@if($daysUntilDeadline !== null)
+**Days Remaining:** {{ $daysUntilDeadline }} day{{ $daysUntilDeadline !== 1 ? 's' : '' }}
+@endif
+
+@component('mail::button', ['url' => route('compliance.cases.show', $complianceCase->id)])
+View Compliance Case
+@endcomponent
+
+Thank you,<br>
+{{ config('app.name') }}
+@endcomponent

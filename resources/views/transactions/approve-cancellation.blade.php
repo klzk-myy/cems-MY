@@ -1,13 +1,65 @@
-<x-app-layout title="Counter Transaction">
-    <x-page-header title="Counter Transaction" description="Transaction management" />
-    <x-card>
-        <form method="POST" class="space-y-4">
-            @csrf
-            <x-textarea name="reason" label="Reason" :required="true" />
-            <x-textarea name="notes" label="Additional Notes" />
-            <div class="flex justify-end gap-3">
-                <x-button type="submit" variant="primary">Submit</x-button>
+<x-app-layout title="Approve Cancellation">
+    <div class="space-y-6">
+        <x-page-header
+            title="Approve Cancellation"
+            description="Review and approve transaction cancellation request"
+        />
+
+        <x-card title="Transaction Details">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Transaction ID</label>
+                    <p class="text-sm text-ink">{{ $transaction->id }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Transaction Type</label>
+                    <p class="text-sm text-ink">{{ $transaction->type?->value ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Amount</label>
+                    <p class="text-sm text-ink">{{ number_format($transaction->amount_foreign ?? 0, 2) }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Currency</label>
+                    <p class="text-sm text-ink">{{ $transaction->currency_code ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Customer</label>
+                    <p class="text-sm text-ink">{{ $transaction->customer?->full_name ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Original Date</label>
+                    <p class="text-sm text-ink">{{ $transaction->created_at?->toDateTimeString() ?? 'N/A' }}</p>
+                </div>
             </div>
-        </form>
-    </x-card>
+        </x-card>
+
+        <x-card title="Cancellation Reason">
+            <p class="text-sm text-ink-muted">{{ $cancellation['reason'] ?? 'No reason provided' }}</p>
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-ink-muted mb-1">Requested By</label>
+                <p class="text-sm text-ink">{{ $cancellation['requested_by'] ?? 'N/A' }}</p>
+            </div>
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-ink-muted mb-1">Requested At</label>
+                <p class="text-sm text-ink">{{ $cancellation['requested_at'] ?? 'N/A' }}</p>
+            </div>
+        </x-card>
+
+        <x-card title="Manager Approval">
+            <form method="POST" action="{{ route('transactions.approve-cancellation.store', $transaction->id) }}">
+                @csrf
+                <x-textarea
+                    name="approval_notes"
+                    label="Approval Notes"
+                    rows="4"
+                    placeholder="Enter approval notes (optional)"
+                >{{ old('approval_notes') }}</x-textarea>
+                <div class="flex items-center gap-4">
+                    <x-button type="submit" variant="primary">Approve Cancellation</x-button>
+                    <x-button variant="secondary" href="{{ route('transactions.index') }}">Cancel</x-button>
+                </div>
+            </form>
+        </x-card>
+    </div>
 </x-app-layout>

@@ -49,7 +49,8 @@ class DlqController extends Controller
      * Re-queue a DLQ transaction for recovery.
      *
      * Delegates to TransactionRecoveryService::retryFromDLQ, which resets the
-     * error state and dispatches a retry job.
+     * error state and returns the transaction to PendingApproval for the
+     * manual approval flow (no retry job is dispatched).
      */
     public function retry(Request $request, Transaction $transaction): RedirectResponse
     {

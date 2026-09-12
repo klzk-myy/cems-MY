@@ -41,12 +41,16 @@ class BankReconciliationServiceTest extends TestCase
         $statementDate = now()->toDateString();
         $amount = '1000.00';
 
-        $chartOfAccount = ChartOfAccount::create([
-            'account_code' => $accountCode,
-            'account_name' => 'Cash',
-            'account_type' => 'Asset',
-            'is_active' => true,
-        ]);
+        // updateOrCreate: 1001 (CASH_USD) is seeded from the AccountCode
+        // enum by SchemaSeeder.
+        $chartOfAccount = ChartOfAccount::updateOrCreate(
+            ['account_code' => $accountCode],
+            [
+                'account_name' => 'Cash',
+                'account_type' => 'Asset',
+                'is_active' => true,
+            ]
+        );
 
         $journalEntry = JournalEntry::create([
             'entry_date' => $statementDate,
@@ -90,12 +94,16 @@ class BankReconciliationServiceTest extends TestCase
         $statementDate = now()->toDateString();
         $amount = '1000.00';
 
-        $chartOfAccount = ChartOfAccount::create([
-            'account_code' => $accountCode,
-            'account_name' => 'Cash',
-            'account_type' => 'Asset',
-            'is_active' => true,
-        ]);
+        // updateOrCreate: 1001 (CASH_USD) is seeded from the AccountCode
+        // enum by SchemaSeeder.
+        $chartOfAccount = ChartOfAccount::updateOrCreate(
+            ['account_code' => $accountCode],
+            [
+                'account_name' => 'Cash',
+                'account_type' => 'Asset',
+                'is_active' => true,
+            ]
+        );
 
         $journalEntry = JournalEntry::create([
             'entry_date' => $statementDate,
@@ -139,12 +147,16 @@ class BankReconciliationServiceTest extends TestCase
         $statementDate = now()->toDateString();
         $amount = '1000.00';
 
-        $chartOfAccount = ChartOfAccount::create([
-            'account_code' => $accountCode,
-            'account_name' => 'Cash',
-            'account_type' => 'Asset',
-            'is_active' => true,
-        ]);
+        // updateOrCreate: 1001 (CASH_USD) is seeded from the AccountCode
+        // enum by SchemaSeeder.
+        $chartOfAccount = ChartOfAccount::updateOrCreate(
+            ['account_code' => $accountCode],
+            [
+                'account_name' => 'Cash',
+                'account_type' => 'Asset',
+                'is_active' => true,
+            ]
+        );
 
         $journalEntry = JournalEntry::create([
             'entry_date' => $statementDate,
@@ -187,12 +199,16 @@ class BankReconciliationServiceTest extends TestCase
         $accountCode = '1004';
         $statementDate = now()->toDateString();
 
-        $chartOfAccount = ChartOfAccount::create([
-            'account_code' => $accountCode,
-            'account_name' => 'Cash',
-            'account_type' => 'Asset',
-            'is_active' => true,
-        ]);
+        // updateOrCreate: 1001 (CASH_USD) is seeded from the AccountCode
+        // enum by SchemaSeeder.
+        $chartOfAccount = ChartOfAccount::updateOrCreate(
+            ['account_code' => $accountCode],
+            [
+                'account_name' => 'Cash',
+                'account_type' => 'Asset',
+                'is_active' => true,
+            ]
+        );
 
         $journalEntry = JournalEntry::create([
             'entry_date' => $statementDate,
@@ -234,12 +250,16 @@ class BankReconciliationServiceTest extends TestCase
         $accountCode = '1005';
         $amount = '1000.00';
 
-        $chartOfAccount = ChartOfAccount::create([
-            'account_code' => $accountCode,
-            'account_name' => 'Cash',
-            'account_type' => 'Asset',
-            'is_active' => true,
-        ]);
+        // updateOrCreate: 1001 (CASH_USD) is seeded from the AccountCode
+        // enum by SchemaSeeder.
+        $chartOfAccount = ChartOfAccount::updateOrCreate(
+            ['account_code' => $accountCode],
+            [
+                'account_name' => 'Cash',
+                'account_type' => 'Asset',
+                'is_active' => true,
+            ]
+        );
 
         $journalEntry = JournalEntry::create([
             'entry_date' => now()->subDay()->toDateString(),

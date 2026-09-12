@@ -19,6 +19,7 @@ $colors = [
 $values = $values instanceof \Illuminate\Support\Collection ? $values->toArray() : ($values ?? []);
 $labels = $labels instanceof \Illuminate\Support\Collection ? $labels->toArray() : ($labels ?? []);
 $max = !empty($values) ? max($values) : 1;
+$max = $max > 0 ? $max : 1;
 $colorSet = $colors[$color] ?? $colors['danger'];
 @endphp
 

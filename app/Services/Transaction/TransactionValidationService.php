@@ -103,10 +103,10 @@ class TransactionValidationService implements TransactionValidationInterface
 
         if ($customer->pep_status) {
             if (empty($data['source_of_funds'])) {
-                throw new TransactionValidationException('Source of funds is required for PEP customers.');
+                throw new TransactionValidationException(message: 'Source of funds is required for PEP customers.');
             }
             if (empty($data['source_of_wealth'])) {
-                throw new TransactionValidationException('Source of wealth is required for PEP customers per pd-00.md 14C.13.1(c).');
+                throw new TransactionValidationException(message: 'Source of wealth is required for PEP customers per pd-00.md 14C.13.1(c).');
             }
         }
     }

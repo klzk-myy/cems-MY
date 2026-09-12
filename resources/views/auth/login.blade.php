@@ -5,9 +5,23 @@
                 <h1 class="text-center text-2xl font-bold text-ink">Sign in</h1>
                 <p class="mt-1 text-center text-sm text-ink-muted">Welcome back to CEMS</p>
 
+                @if(session('info'))
+                    <x-alert type="info" title="Action required" class="mt-4">{{ session('info') }}</x-alert>
+                @endif
+
+                @if($errors->any())
+                    <x-alert type="error" class="mt-4">
+                        <ul class="list-disc list-inside">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </x-alert>
+                @endif
+
                 <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-4">
                     @csrf
-                    <x-input name="email" label="Email" type="email" placeholder="you@example.com" :required="true" />
+                    <x-input name="username" label="Username" type="text" placeholder="Your username" :required="true" value="{{ old('username') }}" />
                     <x-input name="password" label="Password" type="password" placeholder="Enter your password" :required="true" />
 
                     <div class="flex items-center justify-between">

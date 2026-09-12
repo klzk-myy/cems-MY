@@ -1,4 +1,21 @@
-<x-email-layout title="Transaction Approved Notification">
-    <p>This is an automated notification from CEMS regarding {{ str_replace('-', ' ', 'transaction-approved') }}.</p>
-    <p><a href="{{ url('/') }}" style="display: inline-block; padding: 12px 24px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View in CEMS</a></p>
-</x-email-layout>
+@component('mail::message')
+# Transaction Approved
+
+The transaction has been approved successfully.
+
+## Transaction Details
+
+**Transaction ID:** {{ $transaction->id }}
+**Customer:** {{ $customer->full_name ?? 'N/A' }}
+**Amount:** {{ $transaction->amount_local }} {{ $transaction->currency_code }}
+**Type:** {{ $transaction->type?->label() ?? 'N/A' }}
+**Status:** {{ $transaction->status?->label() ?? 'N/A' }}
+**Approved By:** {{ $transaction->approver?->full_name ?? 'N/A' }}
+
+@component('mail::button', ['url' => $url])
+View Transaction
+@endcomponent
+
+Thank you,<br>
+{{ config('app.name') }}
+@endcomponent

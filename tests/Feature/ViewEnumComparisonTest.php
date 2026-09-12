@@ -91,8 +91,16 @@ class ViewEnumComparisonTest extends TestCase
     {
         $user = User::factory()->manager()->create();
 
-        StockTransfer::factory()->create(['status' => StockTransferStatus::Completed->value]);
-        StockTransfer::factory()->create(['status' => StockTransferStatus::Requested->value]);
+        // The index is branch-scoped; transfers must name the user's branch.
+        $branchName = $user->branch->name;
+        StockTransfer::factory()->create([
+            'status' => StockTransferStatus::Completed->value,
+            'source_branch_name' => $branchName,
+        ]);
+        StockTransfer::factory()->create([
+            'status' => StockTransferStatus::Requested->value,
+            'source_branch_name' => $branchName,
+        ]);
 
         $this->actingAs($user)
             ->get(route('stock-transfers.index'))
@@ -106,9 +114,12 @@ class ViewEnumComparisonTest extends TestCase
     {
         $user = User::factory()->manager()->create();
 
+        // StockTransferPolicy scopes view() to the user's branch; the transfer
+        // must name the manager's branch as source or destination.
         $transfer = StockTransfer::factory()->create([
             'status' => StockTransferStatus::InTransit->value,
             'requested_by' => $user->id,
+            'source_branch_name' => $user->branch->name,
         ]);
 
         StockTransferItem::factory()->create([

@@ -36,12 +36,16 @@ class FinancialRatioServiceTest extends TestCase
             ['account_code' => '1500', 'account_type' => 'Asset', 'account_name' => 'Receivable', 'account_class' => 'Receivable'],
         ]);
 
-        // Create Liability accounts (2100, 2200, 2300)
-        ChartOfAccount::factory()->createMany([
-            ['account_code' => '2100', 'account_type' => 'Liability', 'account_name' => 'Payable', 'account_class' => 'Payable'],
-            ['account_code' => '2200', 'account_type' => 'Liability', 'account_name' => 'Accrued', 'account_class' => 'Accrued'],
-            ['account_code' => '2300', 'account_type' => 'Liability', 'account_name' => 'Deferred', 'account_class' => 'Liability'],
-        ]);
+        // Create Liability accounts (2100, 2200, 2300). updateOrCreate: 2100
+        // (RECEIVABLES) and 2200 (OTHER_CURRENT_ASSETS) are seeded from the
+        // AccountCode enum by SchemaSeeder.
+        foreach ([
+            ['account_code' => '2100', 'account_type' => 'Liability', 'account_name' => 'Payable', 'account_class' => 'Payable', 'is_active' => true],
+            ['account_code' => '2200', 'account_type' => 'Liability', 'account_name' => 'Accrued', 'account_class' => 'Accrued', 'is_active' => true],
+            ['account_code' => '2300', 'account_type' => 'Liability', 'account_name' => 'Deferred', 'account_class' => 'Liability', 'is_active' => true],
+        ] as $liability) {
+            ChartOfAccount::updateOrCreate(['account_code' => $liability['account_code']], $liability);
+        }
 
         // Create ledger entries for balance sheet accounts (as of $asOfDate)
         $assets = ['1300', '1400', '1500'];

@@ -1,54 +1,85 @@
 <x-app-layout title="Currency Profitability Analysis">
-    <x-page-header title="Currency Profitability Analysis" description="Unrealized and realized P&L by currency" />
+    <div class="space-y-6">
+        <x-page-header
+            title="Currency Profitability Analysis"
+            description="P&L analysis by currency position"
+        >
+            <x-slot:actions>
+                <span class="text-sm text-ink-muted">
+                    {{ \Carbon\Carbon::parse($startDate)->format('M d, Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('M d, Y') }}
+                </span>
+            </x-slot:actions>
+        </x-page-header>
 
-    @if (isset($totals))
-        <div class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <x-stat-card label="Total Unrealized P&L" :value="'RM '.number_format((float) ($totals['unrealized_pnl'] ?? 0), 2)" :color="(float) ($totals['unrealized_pnl'] ?? 0) >= 0 ? 'green' : 'red'" />
-            <x-stat-card label="Total Realized P&L" :value="'RM '.number_format((float) ($totals['realized_pnl'] ?? 0), 2)" :color="(float) ($totals['realized_pnl'] ?? 0) >= 0 ? 'green' : 'red'" />
-            <x-stat-card label="Total P&L" :value="'RM '.number_format((float) ($totals['total_pnl'] ?? 0), 2)" :color="(float) ($totals['total_pnl'] ?? 0) >= 0 ? 'green' : 'red'" />
-            <x-stat-card label="Currencies" :value="count($positions ?? [])" color="blue" />
-        </div>
-    @endif
+        <x-stat-grid cols="3">
+            <x-stat-card
+                label="Total Realized P&L"
+                :value="($totals['realized_pnl'] >= 0 ? '+' : '') . number_format($totals['realized_pnl'], 2) . ' MYR'"
+                :color="$totals['realized_pnl'] >= 0 ? 'green' : 'red'"
+            />
+            <x-stat-card
+                label="Total Unrealized P&L"
+                :value="($totals['unrealized_pnl'] >= 0 ? '+' : '') . number_format($totals['unrealized_pnl'], 2) . ' MYR'"
+                :color="$totals['unrealized_pnl'] >= 0 ? 'green' : 'red'"
+            />
+            <x-stat-card
+                label="Total P&L"
+                :value="($totals['total_pnl'] >= 0 ? '+' : '') . number_format($totals['total_pnl'], 2) . ' MYR'"
+                :color="$totals['total_pnl'] >= 0 ? 'green' : 'red'"
+            />
+        </x-stat-grid>
 
-    <x-card class="mt-4 !p-0">
-        @if (!empty($positions))
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-border text-sm">
-                    <thead class="bg-canvas-subtle">
-                        <tr>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Currency</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Position</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Avg Buy Rate</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Avg Sell Rate</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Unrealized P&L</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Realized P&L</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Total P&L</th>
+        <x-filter-bar method="GET">
+            <x-input
+                name="start_date"
+                type="date"
+                label="Start Date"
+                :value="$startDate"
+                inline
+            />
+            <x-input
+                name="end_date"
+                type="date"
+                label="End Date"
+                :value="$endDate"
+                inline
+            />
+            <x-button variant="primary" type="submit">Update Report</x-button>
+        </x-filter-bar>
+
+        <x-card title="Position P&L Breakdown">
+            <x-table>
+                <x-slot:thead>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Buy Rate</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Sell Rate</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Realized P&L</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Unrealized P&L</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total P&L</th>
+                </x-slot:thead>
+                <x-slot:tbody>
+                    @forelse($positions as $position)
+                        <tr class="hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 text-sm font-medium text-ink">{{ $position['currency'] }}</td>
+                            <td class="px-4 py-3 text-sm text-ink text-right">{{ number_format($position['position'], 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-ink text-right">{{ number_format($position['avg_buy_rate'], 4) }}</td>
+                            <td class="px-4 py-3 text-sm text-ink text-right">{{ number_format($position['avg_sell_rate'], 4) }}</td>
+                            <td class="px-4 py-3 text-sm text-right {{ $position['realized_pnl'] >= 0 ? 'text-success-text' : 'text-danger-text' }}">
+                                {{ $position['realized_pnl'] >= 0 ? '+' : '' }}{{ number_format($position['realized_pnl'], 2) }}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-right {{ $position['unrealized_pnl'] >= 0 ? 'text-success-text' : 'text-danger-text' }}">
+                                {{ $position['unrealized_pnl'] >= 0 ? '+' : '' }}{{ number_format($position['unrealized_pnl'], 2) }}
+                            </td>
+                            <td class="px-4 py-3 text-sm font-medium text-right {{ $position['total_pnl'] >= 0 ? 'text-success-text' : 'text-danger-text' }}">
+                                {{ $position['total_pnl'] >= 0 ? '+' : '' }}{{ number_format($position['total_pnl'], 2) }}
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        @foreach ($positions as $position)
-                            <tr class="hover:bg-canvas-subtle">
-                                <td class="px-4 py-3 font-medium">{{ $position['currency'] ?? '—' }}</td>
-                                <td class="px-4 py-3 text-right">{{ number_format((float) ($position['position'] ?? 0), 2) }}</td>
-                                <td class="px-4 py-3 text-right">{{ number_format((float) ($position['avg_buy_rate'] ?? 0), 4) }}</td>
-                                <td class="px-4 py-3 text-right">{{ number_format((float) ($position['avg_sell_rate'] ?? 0), 4) }}</td>
-                                <td class="px-4 py-3 text-right {{ (float) ($position['unrealized_pnl'] ?? 0) >= 0 ? 'text-success-text' : 'text-danger' }}">
-                                    {{ (float) ($position['unrealized_pnl'] ?? 0) >= 0 ? '+' : '' }}{{ number_format((float) ($position['unrealized_pnl'] ?? 0), 2) }}
-                                </td>
-                                <td class="px-4 py-3 text-right {{ (float) ($position['realized_pnl'] ?? 0) >= 0 ? 'text-success-text' : 'text-danger' }}">
-                                    {{ (float) ($position['realized_pnl'] ?? 0) >= 0 ? '+' : '' }}{{ number_format((float) ($position['realized_pnl'] ?? 0), 2) }}
-                                </td>
-                                <td class="px-4 py-3 text-right {{ (float) ($position['total_pnl'] ?? 0) >= 0 ? 'text-success-text' : 'text-danger' }}">
-                                    {{ (float) ($position['total_pnl'] ?? 0) >= 0 ? '+' : '' }}{{ number_format((float) ($position['total_pnl'] ?? 0), 2) }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @else
-            <x-empty-state title="No data available" description="No position data found for the selected period." />
-        @endif
-    </x-card>
+                    @empty
+                        <x-empty-state message="No position data available" :colspan="7" />
+                    @endforelse
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
+    </div>
 </x-app-layout>
-

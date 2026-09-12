@@ -1,4 +1,32 @@
-<x-email-layout title="System Alert Notification">
-    <p>This is an automated notification from CEMS regarding {{ str_replace('-', ' ', 'system-alert') }}.</p>
-    <p><a href="{{ url('/') }}" style="display: inline-block; padding: 12px 24px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View in CEMS</a></p>
-</x-email-layout>
+@component('mail::message')
+# {{ $prefix }} {{ $appName }} System Alert
+
+{{ $alert->message }}
+
+## Alert Details
+
+@if($alert->level)
+**Level:** {{ $alert->level }}
+@endif
+
+@if($alert->source)
+**Source:** {{ $alert->source }}
+@endif
+
+**Time:** {{ $alert->created_at->format('Y-m-d H:i:s') }}
+
+@if($alert->metadata && is_array($alert->metadata) && count($alert->metadata) > 0)
+**Metadata:**
+
+@foreach($alert->metadata as $key => $value)
+- **{{ ucfirst(str_replace('_', ' ', (string) $key)) }}:** {{ is_scalar($value) ? $value : json_encode($value) }}
+@endforeach
+@endif
+
+@component('mail::button', ['url' => url('/system/alerts')])
+View Alerts
+@endcomponent
+
+Thank you,<br>
+{{ config('app.name') }}
+@endcomponent

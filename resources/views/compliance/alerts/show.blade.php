@@ -1,62 +1,112 @@
-<x-app-layout title="Compliance Alerts Show">
-    <x-page-header title="Alert Detail" description="Compliance alert triage detail" />
+<x-app-layout title="Alert Details - {{ $alert->id }}">
+    <div class="space-y-6">
+        <x-page-header
+            title="Alert Details"
+            description="{{ $alert->id }}"
+        >
+            <x-slot:actions>
+                <x-button variant="secondary" href="{{ route('compliance.alerts.index') }}">
+                    Back to List
+                </x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-    @php
-        $priorityVariants = [
-            'critical' => 'error',
-            'high' => 'warning',
-            'medium' => 'info',
-            'low' => 'gray',
-        ];
-        $statusVariants = [
-            'Open' => 'warning',
-            'Under_Review' => 'info',
-            'Escalated' => 'error',
-            'Resolved' => 'success',
-            'Rejected' => 'gray',
-        ];
-    @endphp
-
-    <div class="mt-4 grid gap-4 lg:grid-cols-3">
-        <x-card class="lg:col-span-2">
-            <div class="flex items-center gap-3">
-                <x-badge :variant="$priorityVariants[strtolower($alert->priority->value)] ?? 'gray'">
-                    {{ $alert->priority->value }}
-                </x-badge>
-                <x-badge :variant="$statusVariants[$alert->status->value] ?? 'gray'">
-                    {{ str_replace('_', ' ', $alert->status->value) }}
-                </x-badge>
-                <span class="text-sm text-ink-muted">Type: {{ $alert->type->value }}</span>
-            </div>
-
-            <h2 class="mt-4 text-lg font-semibold text-ink">Reason</h2>
-            <p class="mt-1 text-sm text-ink">{{ $alert->reason }}</p>
-
-            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <x-detail-row label="Risk Score">{{ $alert->risk_score }}</x-detail-row>
-                <x-detail-row label="Assigned To">{{ $alert->assignedTo?->username ?? 'Unassigned' }}</x-detail-row>
-                <x-detail-row label="Customer">{{ $alert->customer?->full_name ?? '—' }}</x-detail-row>
-                <x-detail-row label="Source">{{ $alert->source ?? '—' }}</x-detail-row>
-                @if ($alert->flaggedTransaction)
-                    <x-detail-row label="Flagged Transaction">{{ $alert->flaggedTransaction->transaction?->reference ?? ('Flagged #'.$alert->flaggedTransaction->id) }}</x-detail-row>
-                @endif
-                @if ($alert->case)
-                    <x-detail-row label="Linked Case">CASE-{{ $alert->case->id }}</x-detail-row>
-                @endif
+        <x-card title="Alert Details">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Alert Type</label>
+                    <p class="text-sm text-ink">{{ $alert->type ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Severity</label>
+                    <x-badge
+                        :variant="match (strtolower($alert->priority?->value ?? 'medium')) {
+                            'critical', 'high' => 'danger',
+                            'medium' => 'warning',
+                            'low' => 'info',
+                            default => 'gray',
+                        }"
+                    >
+                        {{ $alert->priority?->label() ?? 'Medium' }}
+                    </x-badge>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Status</label>
+                    <x-badge
+                        :variant="match (strtolower($alert->status?->value ?? 'open')) {
+                            'resolved' => 'success',
+                            'dismissed' => 'gray',
+                            'open' => 'warning',
+                            default => 'info',
+                        }"
+                    >
+                        {{ $alert->status?->label() ?? 'Open' }}
+                    </x-badge>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Customer</label>
+                    <p class="text-sm text-ink">{{ $alert->customer?->full_name ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Created At</label>
+                    <p class="text-sm text-ink">{{ $alert->created_at?->format('Y-m-d H:i:s') ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Assigned To</label>
+                    <p class="text-sm text-ink">
+                        @if($alert->assignedTo)
+                            {{ $alert->assignedTo->username }}
+                        @else
+                            <span class="text-ink-muted">Unassigned</span>
+                        @endif
+                    </p>
+                </div>
             </div>
         </x-card>
 
-        <div class="flex flex-col gap-4">
-            <x-card>
-                <h3 class="text-sm font-semibold text-ink">Timeline</h3>
-                <div class="mt-3 flex flex-col gap-3 text-sm">
-                    <x-detail-row label="Created">{{ $alert->created_at?->format('Y-m-d H:i') }}</x-detail-row>
-                    <x-detail-row label="Reviewed By">{{ $alert->reviewed_by ?? '—' }}</x-detail-row>
-                    <x-detail-row label="Escalated At">{{ $alert->escalated_at?->format('Y-m-d H:i') ?? '—' }}</x-detail-row>
-                    <x-detail-row label="Resolved At">{{ $alert->resolved_at?->format('Y-m-d H:i') ?? '—' }}</x-detail-row>
-                </div>
+        <x-card title="Description">
+            <p class="text-sm text-ink-muted">{{ $alert->reason ?? $alert->description ?? 'No description available.' }}</p>
+        </x-card>
+
+        @if($alert->flaggedTransaction || $alert->transaction)
+            <x-card title="Related Transactions">
+                <x-table>
+                    <x-slot:thead>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Transaction ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Amount</th>
+                    </x-slot:thead>
+                    <x-slot:tbody>
+                        @php
+                            $transaction = $alert->flaggedTransaction?->transaction ?? $alert->transaction;
+                        @endphp
+                        @if($transaction)
+                            <tr class="hover:bg-canvas-subtle">
+                                <td class="px-4 py-3 text-sm text-ink">{{ $transaction->id ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-sm text-ink-muted">{{ $transaction->created_at?->format('Y-m-d') ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-sm text-ink">{{ $transaction->type?->label() ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-sm text-ink">RM {{ number_format($transaction->amount_local ?? 0, 2) }}</td>
+                            </tr>
+                        @endif
+                    </x-slot:tbody>
+                </x-table>
             </x-card>
-        </div>
+        @endif
+
+        <x-card title="Actions">
+            <div class="flex flex-wrap gap-3">
+                <form method="POST" action="{{ route('compliance.alerts.resolve', $alert) }}" class="inline">
+                    @csrf
+                    <input type="hidden" name="resolution" value="Resolved via alert detail page">
+                    <input type="hidden" name="resolution_type" value="legitimate">
+                    <x-button variant="primary" type="submit">Resolve Alert</x-button>
+                </form>
+                <form method="POST" action="{{ route('compliance.alerts.dismiss', $alert) }}" class="inline">
+                    @csrf
+                    <x-button variant="secondary" type="submit">Dismiss</x-button>
+                </form>
+            </div>
+        </x-card>
     </div>
 </x-app-layout>
-

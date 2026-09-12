@@ -15,8 +15,18 @@
     <div class="flex h-full" x-data="{ sidebarCollapsed: false }">
         <x-navigation :collapsible="true" :collapsed="false" />
 
-        <main class="flex-1 overflow-y-auto">
-            <div class="mx-auto max-w-7xl p-6">
+        <main class="flex-1 overflow-y-auto flex flex-col">
+            @auth
+                <header class="h-14 bg-surface border-b border-border px-6 flex items-center justify-end gap-3 shrink-0">
+                    <x-notification-bell
+                        :unread-notifications="$unreadNotifications ?? []"
+                        :unread-count="$unreadNotificationCount ?? 0"
+                        :dlq-count="$headerDlqCount ?? 0"
+                    />
+                </header>
+            @endauth
+
+            <div class="mx-auto max-w-7xl p-6 w-full flex-1">
                 @if(session('success'))
                     <x-alert type="success" :dismissible="true" class="mb-4">{{ session('success') }}</x-alert>
                 @endif

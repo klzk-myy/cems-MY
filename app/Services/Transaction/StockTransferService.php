@@ -37,34 +37,34 @@ class StockTransferService
     {
         // Validate business rules
         if (empty($data['source_branch_name']) || empty($data['destination_branch_name'])) {
-            throw new TransactionValidationException('Source and destination branches are required');
+            throw new TransactionValidationException(message: 'Source and destination branches are required');
         }
 
         if ($data['source_branch_name'] === $data['destination_branch_name']) {
-            throw new TransactionValidationException('Source and destination branches cannot be the same');
+            throw new TransactionValidationException(message: 'Source and destination branches cannot be the same');
         }
 
         if (empty($data['items']) || ! is_array($data['items'])) {
-            throw new TransactionValidationException('At least one item is required');
+            throw new TransactionValidationException(message: 'At least one item is required');
         }
 
         // Validate each item
         foreach ($data['items'] as $item) {
             if (empty($item['currency_code'])) {
-                throw new TransactionValidationException('Currency code is required for each item');
+                throw new TransactionValidationException(message: 'Currency code is required for each item');
             }
 
             if (! isset($item['quantity']) || $item['quantity'] <= 0) {
-                throw new TransactionValidationException('Quantity must be a positive number');
+                throw new TransactionValidationException(message: 'Quantity must be a positive number');
             }
 
             if (! isset($item['rate']) || $item['rate'] <= 0) {
-                throw new TransactionValidationException('Rate must be a positive number');
+                throw new TransactionValidationException(message: 'Rate must be a positive number');
             }
 
             // Verify currency exists
             if (! Currency::where('code', $item['currency_code'])->exists()) {
-                throw new TransactionValidationException("Currency {$item['currency_code']} does not exist");
+                throw new TransactionValidationException(message: "Currency {$item['currency_code']} does not exist");
             }
         }
 
@@ -76,7 +76,7 @@ class StockTransferService
         }
 
         if (isset($data['total_value_myr']) && $this->mathService->compare($data['total_value_myr'], $calculatedTotal) !== 0) {
-            throw new TransactionValidationException('Total value does not match sum of item values');
+            throw new TransactionValidationException(message: 'Total value does not match sum of item values');
         }
 
         return DB::transaction(function () use ($data, $calculatedTotal) {
@@ -185,11 +185,11 @@ class StockTransferService
 
             foreach ($items as $itemData) {
                 if (! isset($itemData['id']) || ! is_numeric($itemData['id'])) {
-                    throw new TransactionValidationException('Each item must have a valid numeric id');
+                    throw new TransactionValidationException(message: 'Each item must have a valid numeric id');
                 }
 
                 if (! isset($itemData['quantity_received']) || ! is_numeric($itemData['quantity_received'])) {
-                    throw new TransactionValidationException('Each item must have a numeric quantity_received');
+                    throw new TransactionValidationException(message: 'Each item must have a numeric quantity_received');
                 }
 
                 $item = $existingItems->get($itemData['id']);
@@ -197,7 +197,7 @@ class StockTransferService
                     // Negative receipts would inflate in-transit stock.
                     if ($this->mathService->compare((string) $itemData['quantity_received'], '0') < 0) {
                         throw new TransactionValidationException(
-                            "Quantity received for item {$item->id} cannot be negative"
+                            message: "Quantity received for item {$item->id} cannot be negative"
                         );
                     }
 
@@ -205,7 +205,7 @@ class StockTransferService
                     // transferred quantity would drive in-transit negative.
                     if ($this->mathService->compare((string) $itemData['quantity_received'], (string) $item->quantity) > 0) {
                         throw new TransactionValidationException(
-                            "Quantity received for item {$item->id} exceeds the transferred quantity ({$item->quantity})"
+                            message: "Quantity received for item {$item->id} exceeds the transferred quantity ({$item->quantity})"
                         );
                     }
 

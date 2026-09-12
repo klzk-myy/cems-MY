@@ -53,7 +53,7 @@ class TransactionController extends Controller
 
         $validated = $request->validated();
 
-        $query = Transaction::with(['journalEntry', 'deferredJournalEntry'])
+        $query = Transaction::with(['journalEntry', 'deferredJournalEntry', 'customer'])
             ->when($validated['search'] ?? null, function ($q, string $search) {
                 // `reference` is a computed accessor (TX-00000123), so it cannot
                 // be searched in SQL. Search by the numeric part of the reference

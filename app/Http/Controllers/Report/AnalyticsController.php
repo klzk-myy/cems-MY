@@ -50,7 +50,7 @@ class AnalyticsController extends Controller
         $monthlyData = app(TransactionReportQuery::class)
             ->buySellSummary(
                 $query->select(DB::raw("{$monthColumn} as month")),
-                $monthColumn,
+                DB::raw($monthColumn),
                 'amount_local'
             )
             ->map(function ($row) {

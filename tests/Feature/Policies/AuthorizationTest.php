@@ -278,14 +278,19 @@ class AuthorizationTest extends TestCase
     // ─── Branch Policy ────────────────────────────────────────────────
 
     #[Test]
-    public function branch_policy_allows_any_user_to_view(): void
+    public function branch_policy_scopes_view_to_own_branch(): void
     {
         $policy = new BranchPolicy;
-        $teller = User::factory()->create(['role' => UserRole::Teller]);
         $branch = Branch::factory()->create();
+        $otherBranch = Branch::factory()->create();
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
 
         $this->assertTrue($policy->viewAny($teller));
         $this->assertTrue($policy->view($teller, $branch));
+        $this->assertFalse($policy->view($teller, $otherBranch));
     }
 
     #[Test]
@@ -356,14 +361,20 @@ class AuthorizationTest extends TestCase
     // ─── Counter Policy ───────────────────────────────────────────────
 
     #[Test]
-    public function counter_policy_allows_any_user_to_view(): void
+    public function counter_policy_scopes_view_to_own_branch(): void
     {
         $policy = new CounterPolicy;
-        $teller = User::factory()->create(['role' => UserRole::Teller]);
-        $counter = Counter::factory()->create();
+        $branch = Branch::factory()->create();
+        $counter = Counter::factory()->create(['branch_id' => $branch->id]);
+        $otherCounter = Counter::factory()->create();
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
 
         $this->assertTrue($policy->viewAny($teller));
         $this->assertTrue($policy->view($teller, $counter));
+        $this->assertFalse($policy->view($teller, $otherCounter));
     }
 
     #[Test]

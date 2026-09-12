@@ -51,11 +51,17 @@ class MonthEndCloseTest extends TestCase
         ]);
 
         foreach (['4201', '4202', '4300'] as $code) {
-            ChartOfAccount::factory()->create([
-                'account_code' => $code,
-                'account_type' => 'Equity',
-                'account_class' => 'Equity',
-            ]);
+            // updateOrCreate: some of these codes (e.g. 4201 INCOME_SUMMARY)
+            // are already seeded from the AccountCode enum by SchemaSeeder.
+            ChartOfAccount::updateOrCreate(
+                ['account_code' => $code],
+                [
+                    'account_name' => "Fixture Account {$code}",
+                    'account_type' => 'Equity',
+                    'account_class' => 'Equity',
+                    'is_active' => true,
+                ]
+            );
         }
 
         $this->service = app(MonthEndCloseService::class);

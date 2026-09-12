@@ -167,6 +167,13 @@ class SchemaSeeder extends Seeder
         DB::table('aml_rules')
             ->whereNotIn('rule_type', AmlRuleType::values())
             ->delete();
+
+        // Mirror DatabaseSeeder's post-schema step so seedNow() callers (the
+        // whole test suite) see the same enum-backed chart of accounts as a
+        // real `db:seed`. The baseAccounts() subset above stays first because
+        // the retired migrations inserted it; the enum seeder then upserts
+        // the full AccountCode set keyed by code.
+        (new EnhancedChartOfAccountsSeeder)->run();
     }
 
     /**

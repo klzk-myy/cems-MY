@@ -151,18 +151,19 @@ class CurrencyManagementTest extends TestCase
 
         $this->assertFalse($currency->refresh()->is_active);
 
-        // Hidden from form selects...
-        $this->actingAs($admin)
-            ->get(route('transactions.create'))
-            ->assertOk()
-            ->assertDontSee('USD');
-
-        // ...but still listed on the management index with a Disabled badge.
+        // Visit the index first — this consumes the "Currency USD disabled."
+        // flash so it does not leak into the create-page assertions below.
         $this->actingAs($admin)
             ->get(route('system.currencies.index'))
             ->assertOk()
             ->assertSee('USD')
             ->assertSee('Disabled');
+
+        // Hidden from form selects...
+        $this->actingAs($admin)
+            ->get(route('transactions.create'))
+            ->assertOk()
+            ->assertDontSee('USD');
     }
 
     #[Test]

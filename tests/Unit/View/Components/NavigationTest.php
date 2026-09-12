@@ -52,6 +52,6 @@ class NavigationTest extends TestCase
         $this->assertInstanceOf(View::class, $view);
 
         $html = $view->render();
-        $this->assertStringContainsString('navigation', $html);
+        $this->assertStringContainsString('<nav', $html);
     }
 }

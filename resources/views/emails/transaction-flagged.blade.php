@@ -1,4 +1,32 @@
-<x-email-layout title="Transaction Flagged Notification">
-    <p>This is an automated notification from CEMS regarding {{ str_replace('-', ' ', 'transaction-flagged') }}.</p>
-    <p><a href="{{ url('/') }}" style="display: inline-block; padding: 12px 24px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View in CEMS</a></p>
-</x-email-layout>
+@component('mail::message')
+# Transaction Flagged for Review
+
+A transaction has been flagged and requires compliance review.
+
+## Flagged Transaction Details
+
+**Flag ID:** {{ $flaggedTransaction->id }}
+**Flag Type:** {{ $flagType }}
+**Flag Reason:** {{ $flagReason }}
+**Status:** {{ $flaggedTransaction->status?->label() ?? 'N/A' }}
+
+@if($customer)
+**Customer:** {{ $customer->full_name ?? 'N/A' }}
+@endif
+
+@if($transaction)
+**Transaction ID:** {{ $transaction->id }}
+**Amount:** {{ $transaction->amount_local ?? 'N/A' }} {{ $transaction->currency_code ?? '' }}
+@endif
+
+@if($flaggedBy)
+**Flagged By:** {{ $flaggedBy->username ?? $flaggedBy->full_name }}
+@endif
+
+@component('mail::button', ['url' => $url])
+Review Flagged Transaction
+@endcomponent
+
+Thank you,<br>
+{{ config('app.name') }}
+@endcomponent

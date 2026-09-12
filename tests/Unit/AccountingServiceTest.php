@@ -641,13 +641,17 @@ class AccountingServiceTest extends TestCase
     #[Test]
     public function journal_reversal_produces_correct_economic_effect(): void
     {
-        $cashAccount = ChartOfAccount::factory()->create([
-            'account_code' => '1001',
-            'account_name' => 'Cash MYR',
-            'account_type' => 'Asset',
-            'is_active' => true,
-            'allow_journal' => true,
-        ]);
+        // updateOrCreate: 1001 (CASH_USD) is seeded from the AccountCode
+        // enum by SchemaSeeder.
+        $cashAccount = ChartOfAccount::updateOrCreate(
+            ['account_code' => '1001'],
+            [
+                'account_name' => 'Cash MYR',
+                'account_type' => 'Asset',
+                'is_active' => true,
+                'allow_journal' => true,
+            ]
+        );
 
         $inventoryAccount = ChartOfAccount::factory()->create([
             'account_code' => '1501',

@@ -1,13 +1,73 @@
-<x-app-layout title="Counter Transaction">
-    <x-page-header title="Counter Transaction" description="Transaction management" />
-    <x-card>
-        <form method="POST" class="space-y-4">
-            @csrf
-            <x-textarea name="reason" label="Reason" :required="true" />
-            <x-textarea name="notes" label="Additional Notes" />
-            <div class="flex justify-end gap-3">
-                <x-button type="submit" variant="primary">Submit</x-button>
+<x-app-layout title="Reject Cancellation">
+    <div class="space-y-6">
+        <x-page-header title="Reject Cancellation" description="Reject transaction cancellation request" />
+
+        <x-card title="Transaction Details">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Transaction ID</label>
+                    <p class="text-sm text-ink">{{ $transaction->id }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Transaction Type</label>
+                    <p class="text-sm text-ink">{{ $transaction->type?->value ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Amount</label>
+                    <p class="text-sm text-ink">{{ $transaction->amount_foreign ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Currency</label>
+                    <p class="text-sm text-ink">{{ $transaction->currency_code ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Customer</label>
+                    <p class="text-sm text-ink">{{ $transaction->customer?->full_name ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Original Date</label>
+                    <p class="text-sm text-ink">{{ $transaction->created_at?->toDateTimeString() ?? 'N/A' }}</p>
+                </div>
             </div>
-        </form>
-    </x-card>
+        </x-card>
+
+        <x-card title="Cancellation Request">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-ink-muted mb-1">Reason Provided</label>
+                <p class="text-sm text-ink-muted">{{ $cancellation['reason'] ?? 'No reason provided' }}</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Requested By</label>
+                    <p class="text-sm text-ink">{{ $cancellation['requested_by'] ?? 'N/A' }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-ink-muted mb-1">Requested At</label>
+                    <p class="text-sm text-ink">{{ $cancellation['requested_at'] ?? 'N/A' }}</p>
+                </div>
+            </div>
+        </x-card>
+
+        <x-card title="Rejection Details">
+            <form method="POST" action="{{ route('transactions.reject-cancellation.store', $transaction->id) }}">
+                @csrf
+                <x-textarea
+                    name="rejection_reason"
+                    label="Rejection Reason"
+                    :required="true"
+                    rows="4"
+                    placeholder="Enter the reason for rejecting this cancellation request"
+                >{{ old('rejection_reason') }}</x-textarea>
+
+                <div class="flex items-center gap-4">
+                    <x-button type="submit" variant="danger">Reject Cancellation</x-button>
+                    <x-button variant="secondary" href="{{ route('transactions.index') }}">Cancel</x-button>
+                </div>
+            </form>
+        </x-card>
+
+        <x-alert type="warning">
+            Rejecting this cancellation request will keep the transaction in its current state.
+        </x-alert>
+    </div>
 </x-app-layout>

@@ -1,54 +1,75 @@
 <x-app-layout title="Quarterly Large Value Report">
-    <x-page-header title="Quarterly Large Value Report" description="BNM quarterly large value transaction report for {{ $quarter }}" />
+    <div class="space-y-6">
+        <x-page-header
+            title="Quarterly Large Value Report"
+            description="QLVR - Quarterly Large Value Transaction Report"
+            :actions="$reportGenerated"
+        >
+            <x-slot:actions>
+                <x-button variant="secondary" @click="window.print()">Print</x-button>
+                <form method="POST" action="{{ route('reports.quarterly-lvr.export', ['quarter' => $quarter]) }}">
+                    @csrf
+                    <x-button variant="primary" type="submit">Export</x-button>
+                </form>
+            </x-slot:actions>
+        </x-page-header>
 
-    @if (isset($reportData['summary']))
-        <div class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
-            <x-stat-card label="Total Large Transactions" :value="$reportData['summary']['total_transactions'] ?? 0" color="blue" />
-            <x-stat-card label="Total Value (MYR)" :value="'RM '.number_format((float) ($reportData['summary']['total_value'] ?? 0), 2)" color="green" />
-            <x-stat-card label="Unique Customers" :value="$reportData['summary']['unique_customers'] ?? 0" color="purple" />
-        </div>
-    @endif
+        @php
+            $quarterOptions = [];
+            for ($y = date('Y'); $y >= date('Y') - 2; $y--) {
+                $quarterOptions[$y . '-Q1'] = $y . ' Q1 (Jan - Mar)';
+                $quarterOptions[$y . '-Q2'] = $y . ' Q2 (Apr - Jun)';
+                $quarterOptions[$y . '-Q3'] = $y . ' Q3 (Jul - Sep)';
+                $quarterOptions[$y . '-Q4'] = $y . ' Q4 (Oct - Dec)';
+            }
+        @endphp
 
-    <x-card class="mt-4 !p-0">
-        @if (!empty($reportData['transactions']))
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-border text-sm">
-                    <thead class="bg-canvas-subtle">
-                        <tr>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Date</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Customer</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Type</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Currency</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Amount (Foreign)</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Amount (MYR)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        @foreach ($reportData['transactions'] as $txn)
-                            <tr class="hover:bg-canvas-subtle">
-                                <td class="px-4 py-3">{{ $txn['date'] ?? '—' }}</td>
-                                <td class="px-4 py-3">{{ $txn['customer'] ?? '—' }}</td>
-                                <td class="px-4 py-3">{{ $txn['type'] ?? '—' }}</td>
-                                <td class="px-4 py-3">{{ $txn['currency'] ?? '—' }}</td>
-                                <td class="px-4 py-3 text-right">{{ number_format((float) ($txn['amount_foreign'] ?? 0), 2) }}</td>
-                                <td class="px-4 py-3 text-right">{{ number_format((float) ($txn['amount_myr'] ?? 0), 2) }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+        <x-filter-bar method="GET" action="{{ route('reports.quarterly-lvr') }}">
+            <x-select
+                id="quarter"
+                name="quarter"
+                label="Select Quarter"
+                :options="$quarterOptions"
+                :selected="$quarter"
+                inline
+            />
+            <x-button variant="primary" type="submit">Generate Report</x-button>
+        </x-filter-bar>
+
+        @if($reportGenerated && !empty($reportData))
+            <x-stat-grid cols="4">
+                <x-stat-card label="Total Transactions" :value="number_format($reportData['total_transactions'] ?? 0)" />
+                <x-stat-card label="Total Volume (MYR)" :value="number_format($reportData['total_volume'] ?? 0, 2)" />
+                <x-stat-card label="Average Value" :value="number_format($reportData['average_value'] ?? 0, 2)" />
+                <x-stat-card label="Report Status" value="Complete" color="green" />
+            </x-stat-grid>
+
+            @if(!empty($reportData['monthly_breakdown']))
+                <x-card title="Monthly Breakdown">
+                    <x-table>
+                        <x-slot:thead>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Transactions</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Volume (MYR)</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Average (MYR)</th>
+                        </x-slot:thead>
+                        <x-slot:tbody>
+                            @foreach($reportData['monthly_breakdown'] as $month)
+                                <tr class="hover:bg-canvas-subtle">
+                                    <td class="px-4 py-3 text-sm text-ink font-medium">{{ $month['label'] }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($month['transaction_count']) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($month['volume'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($month['average'], 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </x-slot:tbody>
+                    </x-table>
+                </x-card>
+            @endif
+        @elseif($reportGenerated && empty($reportData))
+            <x-empty-state title="No Report Data" message="No high-value transactions found for the selected quarter." />
         @else
-            <x-empty-state title="No data available" description="No large value transactions found for this quarter." />
+            <x-empty-state title="Select a Quarter" message="Choose a quarter above to generate the LVR report." />
         @endif
-    </x-card>
-
-    @if ($reportGenerated)
-        <x-card class="mt-4">
-            <div class="flex items-center gap-2 text-sm text-ink-muted">
-                <span class="inline-flex items-center rounded-full bg-success-subtle px-2.5 py-0.5 text-xs font-medium text-success-text">Generated</span>
-                <span>Report generated on {{ $reportGenerated->created_at->format('Y-m-d H:i') }}</span>
-            </div>
-        </x-card>
-    @endif
+    </div>
 </x-app-layout>
-

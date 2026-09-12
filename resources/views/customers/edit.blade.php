@@ -1,26 +1,63 @@
 <x-app-layout title="Edit Customer">
-    <x-page-header title="Edit Customer" description="Update customer information" />
+    <div class="space-y-6">
+        <x-page-header title="Edit Customer" description="Update customer information" />
 
-    <x-card>
-        <form method="POST" action="{{ route('customers.update', $customer) }}" class="space-y-4">
-            @csrf
-            @method('PUT')
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <x-input name="name" label="Full Name" value="{{ $customer->full_name }}" :required="true" />
-                <x-input name="email" label="Email" type="email" value="{{ $customer->email }}" :required="true" />
-                <x-input name="phone" label="Phone" value="{{ $customer->phone }}" />
-                <x-select name="id_type" label="ID Type" :options="$idTypes" value="{{ $customer->id_type }}" :required="true" />
-                <x-input name="id_number" label="ID Number" value="{{ $decryptedIdNumber }}" :required="true" />
-                <x-select name="nationality" label="Nationality" :options="$nationalities" value="{{ $customer->nationality }}" />
-                <x-select name="risk_rating" label="Risk Rating" :options="$riskRatings" value="{{ $customer->risk_rating }}" />
-                <x-input name="birth_date" label="Date of Birth" type="date" value="{{ $customer->birth_date ? $customer->birth_date->toDateString() : '' }}" />
-            </div>
-            <x-textarea name="address" label="Address" value="{{ $customer->address }}" />
-            <x-textarea name="notes" label="Notes" value="{{ $customer->notes }}" />
-            <div class="flex justify-end gap-3">
-                <a href="{{ route('customers.index') }}"><x-button variant="secondary">Cancel</x-button></a>
-                <x-button type="submit" variant="primary">Update Customer</x-button>
-            </div>
-        </form>
-    </x-card>
+        <x-card class="max-w-2xl">
+            <form method="POST" action="{{ route('customers.update', $customer ?? 1) }}" >
+                @csrf
+                @method('PUT')
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <x-input name="full_name" label="Full Name" value="{{ old('full_name', $customer->full_name ?? '') }}" required />
+                    <x-input type="email" name="email" label="Email" value="{{ old('email', $customer->email ?? '') }}" />
+
+                    <x-select
+                        name="id_type"
+                        label="ID Type"
+                        :options="['MyKad' => 'MyKad (Malaysian IC)', 'Passport' => 'Passport', 'Others' => 'Other ID']"
+                        placeholder="-- Select --"
+                        selected="{{ old('id_type', $customer->id_type?->value ?? $customer->id_type ?? '') }}"
+                        required
+                    />
+                    <div>
+                        <label class="block text-sm font-medium text-ink">ID Number (masked)</label>
+                        <div class="mt-1 px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg">
+                            {{ $decryptedIdNumber ? substr($decryptedIdNumber, 0, 4).'****'.substr($decryptedIdNumber, -4) : '****-****-****' }}
+                        </div>
+                    </div>
+
+                    <x-select
+                        name="nationality"
+                        label="Nationality"
+                        :options="['MY' => 'Malaysian', 'SG' => 'Singaporean', 'US' => 'American', 'GB' => 'British', 'OTHER' => 'Other']"
+                        placeholder="-- Select --"
+                        selected="{{ old('nationality', $customer->nationality ?? '') }}"
+                        required
+                    />
+                    <x-input name="phone" label="Phone Number" value="{{ old('phone', $customer->phone ?? '') }}" />
+                </div>
+
+                <x-textarea
+                    name="address"
+                    label="Address"
+                    rows="2"
+                >{{ old('address', $customer->address ?? '') }}</x-textarea>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth', $customer->date_of_birth ?? '') }}" />
+                    <x-select
+                        name="risk_rating"
+                        label="Risk Rating"
+                        :options="['Low' => 'Low', 'Medium' => 'Medium', 'High' => 'High']"
+                        selected="{{ old('risk_rating', $customer->risk_rating?->value ?? $customer->risk_rating ?? '') }}"
+                    />
+                </div>
+
+                <div class="mt-6 flex gap-2">
+                    <x-button type="submit" variant="primary">Update Customer</x-button>
+                    <x-button href="{{ route('customers.show', $customer ?? 1) }}" variant="secondary">Cancel</x-button>
+                </div>
+            </form>
+        </x-card>
+    </div>
 </x-app-layout>

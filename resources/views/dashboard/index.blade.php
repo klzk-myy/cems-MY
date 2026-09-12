@@ -1,15 +1,11 @@
 <x-app-layout title="Dashboard">
-    <x-page-header title="Dashboard" description="Overview of your exchange operations">
-        <x-slot:actions>
-            <x-button variant="secondary">Export</x-button>
-        </x-slot:actions>
-    </x-page-header>
+    <x-page-header title="Dashboard" description="Overview of your exchange operations" />
 
     <x-stat-grid>
-        <x-stat-card label="Total Transactions" value="{{ $stats['total_transactions'] ?? 0 }}" color="blue" :trend="12" />
-        <x-stat-card label="Active Customers" value="{{ $stats['active_customers'] ?? 0 }}" color="green" :trend="8" />
-        <x-stat-card label="Revenue" color="purple" :trend="23"><x-money :amount="$stats['buy_volume'] ?? 0" currency="MYR" :decimals="0" /></x-stat-card>
-        <x-stat-card label="Alerts" value="{{ $stats['flagged'] ?? 0 }}" color="red" :trend="-5" />
+        <x-stat-card label="Total Transactions" :value="$stats['total_transactions'] ?? 0" color="blue" />
+        <x-stat-card label="Active Customers" :value="$stats['active_customers'] ?? 0" color="green" />
+        <x-stat-card label="Buy Volume" color="purple"><x-money :amount="$stats['buy_volume'] ?? 0" currency="MYR" :decimals="0" /></x-stat-card>
+        <x-stat-card label="Sell Volume" color="yellow"><x-money :amount="$stats['sell_volume'] ?? 0" currency="MYR" :decimals="0" /></x-stat-card>
     </x-stat-grid>
 
     <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -19,33 +15,84 @@
                     <tr>
                         <th class="px-4 py-3">Reference</th>
                         <th class="px-4 py-3">Customer</th>
+                        <th class="px-4 py-3">Type</th>
                         <th class="px-4 py-3">Amount</th>
                         <th class="px-4 py-3">Status</th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>
-                    <tr>
-                        <td class="px-4 py-3 text-sm text-ink-muted" colspan="4">No transactions yet</td>
-                    </tr>
+                    @forelse ($recent_transactions as $transaction)
+                        <tr>
+                            <td class="px-4 py-3 font-mono text-sm">
+                                <a href="{{ route('transactions.show', $transaction) }}" class="text-primary hover:underline">{{ $transaction->reference }}</a>
+                            </td>
+                            <td class="px-4 py-3">{{ $transaction->customer->full_name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3">
+                                <x-badge :variant="$transaction->type?->value === 'Buy' ? 'success' : 'purple'">
+                                    {{ $transaction->type?->label() ?? 'N/A' }}
+                                </x-badge>
+                            </td>
+                            <td class="px-4 py-3 text-right font-medium">{{ number_format((float) $transaction->amount_local, 2) }} MYR</td>
+                            <td class="px-4 py-3">
+                                <x-badge :variant="match ($transaction->status?->value ?? '') {
+                                    'Completed' => 'success',
+                                    'Pending', 'PendingApproval' => 'warning',
+                                    'Cancelled', 'Failed' => 'danger',
+                                    default => 'gray',
+                                }">
+                                    {{ $transaction->status?->label() ?? 'N/A' }}
+                                </x-badge>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td class="px-4 py-3 text-sm text-ink-muted" colspan="5">No transactions today</td>
+                        </tr>
+                    @endforelse
                 </x-slot:tbody>
             </x-table>
         </x-card>
 
-        <x-card title="Exchange Rates">
-            <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-ink">USD/MYR</span>
-                    <span class="text-sm font-medium text-ink">4.20</span>
+        @if ($monitoring)
+            <x-card title="System Monitoring">
+                <div class="space-y-6">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-ink">Dead Letter Queue</h3>
+                            <a href="{{ route('transactions.dlq') }}" class="text-xs text-primary hover:underline">Review queue</a>
+                        </div>
+                        <p class="mt-1 text-2xl font-semibold tabular-nums {{ $monitoring['dlq_count'] > 0 ? 'text-danger' : 'text-ink' }}">{{ $monitoring['dlq_count'] }}</p>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-ink">System Alerts</h3>
+                            <a href="{{ route('system.alerts.index') }}" class="text-xs text-primary hover:underline">View all alerts</a>
+                        </div>
+                        <div class="mt-2 flex items-center gap-2">
+                            <x-badge variant="danger">Critical: {{ $monitoring['alert_counts']['critical'] ?? 0 }}</x-badge>
+                            <x-badge variant="warning">Warning: {{ $monitoring['alert_counts']['warning'] ?? 0 }}</x-badge>
+                            <x-badge variant="info">Info: {{ $monitoring['alert_counts']['info'] ?? 0 }}</x-badge>
+                        </div>
+                        <ul class="mt-3 space-y-2">
+                            @forelse ($monitoring['recent_alerts'] as $alert)
+                                <li class="flex items-start gap-2 text-sm">
+                                    <x-badge :variant="$alert['level'] instanceof \App\Enums\SystemAlertLevel
+                                        ? ($alert['level']->value === 'critical' ? 'danger' : ($alert['level']->value === 'warning' ? 'warning' : 'info'))
+                                        : ($alert['level'] === 'critical' ? 'danger' : ($alert['level'] === 'warning' ? 'warning' : 'info'))">
+                                        {{ $alert['level'] instanceof \App\Enums\SystemAlertLevel ? ucfirst($alert['level']->value) : ucfirst((string) $alert['level']) }}
+                                    </x-badge>
+                                    <span class="min-w-0 flex-1 text-ink">{{ $alert['message'] }}</span>
+                                    <a href="{{ route('system.alerts.acknowledge.show', $alert['id']) }}" class="text-xs text-primary hover:underline whitespace-nowrap">Acknowledge</a>
+                                    <span class="text-xs text-ink-muted whitespace-nowrap">{{ $alert['created_at'] }}</span>
+                                </li>
+                            @empty
+                                <li class="text-sm text-ink-muted">No unacknowledged alerts.</li>
+                            @endforelse
+                        </ul>
+                    </div>
                 </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-ink">EUR/MYR</span>
-                    <span class="text-sm font-medium text-ink">4.65</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-ink">SGD/MYR</span>
-                    <span class="text-sm font-medium text-ink">3.10</span>
-                </div>
-            </div>
-        </x-card>
+            </x-card>
+        @endif
     </div>
 </x-app-layout>

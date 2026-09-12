@@ -1,79 +1,130 @@
-<x-app-layout title="Run #{{ $testResult->id }}">
-    <x-page-header title="Run #{{ $testResult->id }}" description="Test run details for {{ $testResult->test_suite }} suite" />
+<x-app-layout title="Test Results">
+    <div class="space-y-6">
+        <x-page-header title="Test Run #{{ $testResult->id }}">
+            {{ $testResult->test_suite ?? 'No suite' }} &bull; {{ $testResult->created_at->format('M d, Y H:i:s') }}
 
-    <div class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <x-stat-card label="Total Tests" :value="$testResult->total_tests" color="blue" />
-        <x-stat-card label="Passed" :value="$testResult->passed" color="green" />
-        <x-stat-card label="Failed" :value="$testResult->failed" color="red" />
-        <x-stat-card label="Duration" :value="round($testResult->duration, 2).'s'" color="yellow" />
+            <x-slot:actions>
+                @if($previousRun)
+                    <x-button variant="secondary" href="{{ route('test-results.compare', [$testResult->id, $previousRun->id]) }}">
+                        Compare with Previous
+                    </x-button>
+                @endif
+                <x-button variant="secondary" href="{{ route('test-results.index') }}">
+                    Back to List
+                </x-button>
+            </x-slot:actions>
+        </x-page-header>
+
+        <x-stat-grid cols="5">
+            <x-stat-card label="Status">
+                <x-badge :variant="match ($testResult->status->value) {
+                    'passed' => 'success',
+                    'failed' => 'danger',
+                    'error' => 'warning',
+                    default => 'gray',
+                }">
+                    {{ $testResult->status?->label() ?? ucfirst($testResult->status) }}
+                </x-badge>
+            </x-stat-card>
+
+            <x-stat-card label="Total Tests" :value="number_format($testResult->total_tests ?? 0)" />
+            <x-stat-card label="Passed" :value="number_format($testResult->passed ?? 0)" color="green" />
+            <x-stat-card label="Failed" :value="number_format($testResult->failed ?? 0)" color="red" />
+            <x-stat-card label="Duration" :value="$testResult->duration ? number_format($testResult->duration, 2) . 's' : 'N/A'" />
+        </x-stat-grid>
+
+        @if(($testResult->failed ?? 0) > 0 && !empty($testResult->failures))
+            <x-card title="Failed Tests ({{ count($testResult->failures) }})">
+                @foreach($testResult->failures as $index => $failure)
+                    <x-card>
+                        <h3 class="text-sm font-medium text-ink">{{ $failure['test_name'] ?? 'Test ' . ($index + 1) }}</h3>
+
+                        @if(!empty($failure['message']))
+                            <p class="mt-2 text-sm text-danger-text">{{ $failure['message'] }}</p>
+                        @endif
+
+                        @if(!empty($failure['stack_trace']))
+                            <pre class="mt-3 p-3 bg-surface-inverted text-canvas rounded-lg text-xs overflow-x-auto">{{ $failure['stack_trace'] }}</pre>
+                        @endif
+                    </x-card>
+                @endforeach
+            </x-card>
+        @endif
+
+        @if(count($testResult->errors ?? []) > 0 && !empty($testResult->errors))
+            <x-card title="Errors ({{ count($testResult->errors) }})">
+                @foreach($testResult->errors as $index => $error)
+                    <x-card>
+                        <h3 class="text-sm font-medium text-ink">{{ $error['test_name'] ?? 'Error ' . ($index + 1) }}</h3>
+
+                        @if(!empty($error['message']))
+                            <p class="mt-2 text-sm text-warning-text">{{ $error['message'] }}</p>
+                        @endif
+
+                        @if(!empty($error['stack_trace']))
+                            <pre class="mt-3 p-3 bg-surface-inverted text-canvas rounded-lg text-xs overflow-x-auto">{{ $error['stack_trace'] }}</pre>
+                        @endif
+                    </x-card>
+                @endforeach
+            </x-card>
+        @endif
+
+        @if(!empty($testResult->output))
+            <x-card title="Test Output">
+                <x-card>
+                    <pre class="p-4 bg-surface-inverted text-canvas rounded-lg text-xs overflow-x-auto">{{ $testResult->output }}</pre>
+                </x-card>
+            </x-card>
+        @endif
+
+        <x-card title="Run Information">
+            <x-card>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                    <div>
+                        <dt class="text-sm font-medium text-ink-muted">Run ID</dt>
+                        <dd class="mt-1 text-sm text-ink">{{ $testResult->id }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-ink-muted">Test Suite</dt>
+                        <dd class="mt-1 text-sm text-ink">{{ $testResult->test_suite ?? 'N/A' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-ink-muted">Created At</dt>
+                        <dd class="mt-1 text-sm text-ink">{{ $testResult->created_at->format('M d, Y H:i:s') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-ink-muted">Branch</dt>
+                        <dd class="mt-1 text-sm text-ink">{{ $testResult->git_branch ?? 'N/A' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-ink-muted">Commit</dt>
+                        <dd class="mt-1 text-sm text-ink font-mono">{{ $testResult->git_commit ?? 'N/A' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-ink-muted">Runner</dt>
+                        <dd class="mt-1 text-sm text-ink">{{ $testResult->executed_by ?? 'N/A' }}</dd>
+                    </div>
+                </dl>
+            </x-card>
+        </x-card>
+
+        @if($previousRun)
+            <x-card>
+                <x-card>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-ink">Previous Run</h3>
+                            <p class="mt-1 text-sm text-ink-muted">
+                                Run #{{ $previousRun->id }} &bull; {{ $previousRun->created_at->format('M d, Y H:i') }}
+                                &bull; {{ $previousRun->passed ?? 0 }}/{{ $previousRun->total_tests ?? 0 }} passed
+                            </p>
+                        </div>
+                        <x-button variant="secondary" href="{{ route('test-results.show', $previousRun->id) }}">
+                            View Previous Run
+                        </x-button>
+                    </div>
+                </x-card>
+            </x-card>
+        @endif
     </div>
-
-    <x-card class="mt-4">
-        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-                <dt class="text-sm font-medium text-ink-muted">Suite</dt>
-                <dd class="mt-1 text-sm">{{ $testResult->test_suite }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-ink-muted">Status</dt>
-                <dd class="mt-1 text-sm">
-                    <x-badge :variant="$testResult->status->value === 'completed' || $testResult->status->value === 'passed' ? 'success' : ($testResult->status->value === 'failed' ? 'error' : 'warning')">{{ ucfirst($testResult->status->value) }}</x-badge>
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-ink-muted">Git Branch</dt>
-                <dd class="mt-1 text-sm">{{ $testResult->git_branch ?? '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-ink-muted">Git Commit</dt>
-                <dd class="mt-1 text-sm font-mono">{{ $testResult->git_commit ?? '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-ink-muted">Executed By</dt>
-                <dd class="mt-1 text-sm">{{ $testResult->executed_by ?? '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-ink-muted">Run ID</dt>
-                <dd class="mt-1 text-sm font-mono">{{ $testResult->run_id }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-ink-muted">Started At</dt>
-                <dd class="mt-1 text-sm">{{ $testResult->started_at ? $testResult->started_at->format('Y-m-d H:i:s') : '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-ink-muted">Completed At</dt>
-                <dd class="mt-1 text-sm">{{ $testResult->completed_at ? $testResult->completed_at->format('Y-m-d H:i:s') : '—' }}</dd>
-            </div>
-        </dl>
-    </x-card>
-
-    @if ($testResult->output)
-        <x-card class="mt-4" title="Output">
-            <pre class="overflow-x-auto rounded-lg bg-canvas-subtle p-4 text-xs">{{ $testResult->output }}</pre>
-        </x-card>
-    @endif
-
-    @if (!empty($testResult->failures))
-        <x-card class="mt-4" title="Failures">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-border text-sm">
-                    <thead class="bg-canvas-subtle">
-                        <tr>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Test</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Message</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        @foreach ($testResult->failures as $failure)
-                            <tr>
-                                <td class="px-4 py-3 font-mono text-xs">{{ $failure['test'] ?? '—' }}</td>
-                                <td class="px-4 py-3 text-danger">{{ $failure['message'] ?? '—' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </x-card>
-    @endif
 </x-app-layout>
-

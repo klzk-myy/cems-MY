@@ -505,6 +505,12 @@ This project is indexed by GitNexus as **cems-my** (15,046 symbols, 42,964 relat
 4. Analyse: `vendor/bin/phpstan analyse app/<edited-path>`
 5. Update CHANGELOG.md (see §10)
 
+### Task Completion
+When a task is implemented, always finish with these steps in order:
+1. **Code review** — re-read every file you changed; check for correctness, edge cases, consistency with existing conventions, and leftover debug/scratch artifacts.
+2. **Partial tests** — run the tests that cover the code you edited (e.g. `php artisan test --filter="<related>"` or the specific test files), not the whole suite.
+3. **Commit and push** — stage the changed files, commit with a message explaining *why* (matching existing commit style), then `git push` to the remote.
+
 ### Critical Commands
 ```bash
 # Development

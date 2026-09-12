@@ -83,7 +83,10 @@ class DlqAdminPageTest extends TestCase
         $this->assertFalse($transaction->is_dlq);
         $this->assertSame(TransactionStatus::PendingApproval, $transaction->status);
 
-        Queue::assertPushed(ProcessTransactionRetry::class);
+        // DLQ retry routes through the manual approval flow: the transaction
+        // is moved to PendingApproval and no retry job is dispatched (the job
+        // skips anything not in Failed status).
+        Queue::assertNotPushed(ProcessTransactionRetry::class);
     }
 
     #[Test]

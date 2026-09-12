@@ -1,22 +1,46 @@
 <x-app-layout title="Create Sanctions Entry">
-    <x-page-header title="Create Sanctions Entry" description="Add a new sanctions list entry" />
+    <div class="space-y-6">
+        <x-page-header
+            title="Create Sanctions Entry"
+            description="Add a new sanctions list entry"
+        >
+            <x-slot:actions>
+                <x-button href="{{ route('compliance.sanctions.entries.index') }}" variant="secondary">Cancel</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-    <x-card>
-        <form method="POST" action="{{ route('compliance.sanctions.entries.store') }}" class="space-y-4">
-            @csrf
-            <x-input name="entity_name" label="Entity Name" :required="true" />
-            <x-select name="entity_type" label="Entity Type" :options="['Individual' => 'Individual', 'Organization' => 'Organization']" :required="true" />
-            <x-input name="list_source" label="List Source" />
-            <x-textarea name="aliases" label="Aliases (one per line)" />
-            <x-textarea name="details" label="Details" />
-            <x-input name="address" label="Address" />
-            <x-input name="city" label="City" />
-            <x-input name="country" label="Country" />
-            <x-input name="postal_code" label="Postal Code" />
-            <div class="flex justify-end gap-3">
-                <a href="{{ route('compliance.sanctions.entries.index') }}"><x-button variant="secondary">Cancel</x-button></a>
-                <x-button type="submit" variant="primary">Save Entry</x-button>
-            </div>
-        </form>
-    </x-card>
+        <x-card>
+            <form method="POST" action="{{ route('compliance.sanctions.entries.store') }}">
+                @csrf
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <x-select name="list_id" label="Sanctions List *" :options="$lists->pluck('name', 'id')->toArray()" required />
+                    <x-input name="entity_name" label="Entity Name *" value="{{ old('entity_name') }}" required />
+                    <x-select name="entity_type" label="Entity Type *" :options="['Individual' => 'Individual', 'Organization' => 'Organization', 'Vessel' => 'Vessel', 'Aircraft' => 'Aircraft']" required />
+                    <x-input name="reference_number" label="Reference Number" value="{{ old('reference_number') }}" />
+                    <x-input name="nationality" label="Nationality" value="{{ old('nationality') }}" />
+                    <x-input type="date" name="date_of_birth" label="Date of Birth" value="{{ old('date_of_birth') }}" />
+                    <x-input type="date" name="listing_date" label="Listing Date" value="{{ old('listing_date') }}" />
+                </div>
+
+                <x-textarea
+                    name="aliases"
+                    label="Aliases"
+                    rows="3"
+                    placeholder="Enter aliases, one per line"
+                >{{ old('aliases') }}</x-textarea>
+
+                <x-textarea
+                    name="details"
+                    label="Additional Information"
+                    rows="3"
+                >{{ old('details') }}</x-textarea>
+
+                <div class="flex justify-end gap-3">
+                    <x-button href="{{ route('compliance.sanctions.entries.index') }}" variant="secondary">Cancel</x-button>
+                    <x-button type="submit" variant="primary">Save Entry</x-button>
+                </div>
+            </form>
+        </x-card>
+    </div>
 </x-app-layout>

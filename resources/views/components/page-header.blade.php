@@ -9,6 +9,9 @@
         @if($description)
             <p class="mt-1 text-sm text-ink-muted">{{ $description }}</p>
         @endif
+        @if(trim((string) $slot) !== '')
+            <div class="mt-1 text-sm text-ink-muted">{{ $slot }}</div>
+        @endif
     </div>
     @isset($actions)
         <div class="flex items-center gap-3">

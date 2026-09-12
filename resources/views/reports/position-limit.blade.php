@@ -1,58 +1,101 @@
 <x-app-layout title="Position Limit Report">
-    <x-page-header title="Position Limit Report" description="Currency position limit monitoring report" />
+    <div class="space-y-6">
+        <x-page-header title="Position Limit Report">
+            Currency Position vs Authorized Limits
 
-    @if (isset($reportData['summary']))
-        <div class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
-            <x-stat-card label="Total Currencies" :value="$reportData['summary']['total_currencies'] ?? 0" color="blue" />
-            <x-stat-card label="Within Limit" :value="$reportData['summary']['within_limit'] ?? 0" color="green" />
-            <x-stat-card label="Exceeding Limit" :value="$reportData['summary']['exceeding_limit'] ?? 0" color="red" />
-        </div>
-    @endif
+            <x-slot:actions>
+                <p class="text-sm text-ink-muted">Current position as of {{ now()->format('d M Y H:i') }}</p>
+            </x-slot:actions>
+        </x-page-header>
 
-    <x-card class="mt-4 !p-0">
-        @if (!empty($reportData['positions']))
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-border text-sm">
-                    <thead class="bg-canvas-subtle">
-                        <tr>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Currency</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Position</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Limit</th>
-                            <th class="px-4 py-3 text-right font-medium text-ink-muted">Utilization</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        @foreach ($reportData['positions'] as $position)
-                            <tr class="hover:bg-canvas-subtle">
-                                <td class="px-4 py-3 font-medium">{{ $position['currency'] ?? '—' }}</td>
-                                <td class="px-4 py-3 text-right">{{ number_format((float) ($position['position'] ?? 0), 2) }}</td>
-                                <td class="px-4 py-3 text-right">{{ number_format((float) ($position['limit'] ?? 0), 2) }}</td>
-                                <td class="px-4 py-3 text-right">{{ number_format((float) ($position['utilization'] ?? 0), 2) }}%</td>
-                                <td class="px-4 py-3">
-                                    @if (($position['exceeding'] ?? false))
-                                        <x-badge variant="error">Exceeding</x-badge>
-                                    @else
-                                        <x-badge variant="success">Within Limit</x-badge>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @else
-            <x-empty-state title="No data available" description="No position data found." />
-        @endif
-    </x-card>
-
-    @if ($reportGenerated)
-        <x-card class="mt-4">
-            <div class="flex items-center gap-2 text-sm text-ink-muted">
-                <span class="inline-flex items-center rounded-full bg-success-subtle px-2.5 py-0.5 text-xs font-medium text-success-text">Generated</span>
-                <span>Report generated on {{ $reportGenerated->created_at->format('Y-m-d H:i') }}</span>
+        {{-- Actions Bar --}}
+        <x-card>
+            <div class="flex flex-wrap gap-4 items-center justify-between">
+                @if($reportGenerated)
+                    <div class="flex gap-3">
+                        <x-button variant="secondary" @click="window.print()">Print</x-button>
+                        <form method="POST" action="{{ route('reports.position-limit.export') }}">
+                            @csrf
+                            <x-button variant="primary" type="submit">Export</x-button>
+                        </form>
+                    </div>
+                @endif
+                <form method="GET" action="{{ route('reports.position-limit') }}">
+                    <x-button variant="secondary" type="submit">Refresh</x-button>
+                </form>
             </div>
         </x-card>
-    @endif
-</x-app-layout>
 
+        {{-- Report Content --}}
+        @if($reportGenerated && !empty($reportData))
+            <x-stat-grid cols="4">
+                <x-stat-card label="Total Currencies" :value="number_format($reportData['total_currencies'] ?? count($reportData['positions'] ?? []))" />
+                <x-stat-card label="Within Limits" :value="number_format($reportData['within_limits'] ?? 0)" color="green" />
+                <x-stat-card label="Near Limits (80%+)" :value="number_format($reportData['near_limits'] ?? 0)" color="yellow" />
+                <x-stat-card label="Exceeds Limits" :value="number_format($reportData['exceeds_limits'] ?? 0)" color="red" />
+            </x-stat-grid>
+
+            <x-card title="Currency Positions">
+                <x-table>
+                    <x-slot:thead>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Net Position</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Limit</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Utilization</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Available</th>
+                    </x-slot:thead>
+                    <x-slot:tbody>
+                        @forelse($reportData['positions'] ?? [] as $position)
+                            <tr class="hover:bg-canvas-subtle">
+                                <td class="px-4 py-3 text-sm text-ink font-medium">{{ $position['currency'] }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($position['net_position'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($position['limit'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <x-progress-bar :value="$position['utilization_percent']" />
+                                        <span class="text-xs text-ink-muted">{{ number_format($position['utilization_percent'], 1) }}%</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-sm text-center">
+                                    @if($position['utilization_percent'] >= 100)
+                                        <x-badge variant="danger">Exceeded</x-badge>
+                                    @elseif($position['utilization_percent'] >= 80)
+                                        <x-badge variant="warning">Near Limit</x-badge>
+                                    @else
+                                        <x-badge variant="success">OK</x-badge>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted {{ $position['available'] < 0 ? 'text-danger-text font-medium' : '' }}">
+                                    {{ number_format($position['available'], 2) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <x-empty-state message="No position data available" :colspan="6" />
+                        @endforelse
+                    </x-slot:tbody>
+                </x-table>
+            </x-card>
+
+            @if(!empty($reportData['alerts']))
+                <x-card title="Limit Alerts">
+                    <div class="space-y-3">
+                        @foreach($reportData['alerts'] as $alert)
+                            <x-alert
+                                :type="$alert['severity'] === 'critical' ? 'error' : 'warning'"
+                                :title="$alert['message']"
+                                class="!mb-0"
+                            >
+                                <p class="text-xs text-ink-muted">{{ $alert['currency'] }}</p>
+                            </x-alert>
+                        @endforeach
+                    </div>
+                </x-card>
+            @endif
+        @elseif($reportGenerated && empty($reportData))
+            <x-empty-state title="No Position Data Available" message="Unable to generate position limit report at this time." />
+        @else
+            <x-empty-state title="Position Limit Report" message="Click Refresh to load the current position limit report." />
+        @endif
+    </div>
+</x-app-layout>
