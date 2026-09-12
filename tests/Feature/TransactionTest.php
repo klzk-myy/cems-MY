@@ -96,13 +96,12 @@ class TransactionTest extends TestCase
         $customer = $this->createTestCustomer();
         $counter = $this->setupOpenTill($teller, 'USD', '1000.00');
 
-        // Setup initial position
-        CurrencyPosition::create([
+        // Setup initial position (positions are keyed by currency + branch)
+        CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => (string) $counter->id,
-            'balance' => '500.00',
-            'avg_cost_rate' => '4.40',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '500.00',
+            'average_cost' => '4.40',
         ]);
 
         $this->actingAs($teller);
@@ -124,9 +123,8 @@ class TransactionTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('currency_positions', [
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => (string) $counter->id,
-            'balance' => '400.00',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '400.00',
         ]);
     }
 
@@ -137,13 +135,12 @@ class TransactionTest extends TestCase
         $customer = $this->createTestCustomer();
         $counter = $this->setupOpenTill($teller, 'USD', '1000.00');
 
-        // Setup initial position
+        // Setup initial position (positions are keyed by currency + branch)
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => (string) $counter->id,
-            'balance' => '500.00',
-            'avg_cost_rate' => '4.40',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '500.00',
+            'average_cost' => '4.40',
         ]);
 
         $this->actingAs($teller);
@@ -165,9 +162,8 @@ class TransactionTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('currency_positions', [
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => (string) $counter->id,
-            'balance' => '600.00',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '600.00',
         ]);
     }
 
@@ -181,10 +177,9 @@ class TransactionTest extends TestCase
         // Setup low initial position - 50 USD available, selling 100
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => (string) $counter->id,
-            'balance' => '50.00',
-            'avg_cost_rate' => '4.40',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '50.00',
+            'average_cost' => '4.40',
         ]);
 
         $this->actingAs($teller);
@@ -317,20 +312,21 @@ class TransactionTest extends TestCase
         $manager->branch_id = $counter->branch_id;
         $manager->save();
 
-        // Create a pending transaction
+        // Create a pending transaction below the RM50k large-transaction
+        // threshold — manager tier (>= RM50k requires compliance officer).
         $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
-            'amount_foreign' => '12000.00',
+            'amount_foreign' => '5000.00',
             'rate' => '4.50',
-            'amount_local' => '54000.00',
+            'amount_local' => '22500.00',
             'customer_id' => $customer->id,
             'user_id' => $teller->id,
             'branch_id' => $counter->branch_id,
             'counter_id' => $counter->id,
             'till_id' => (string) $counter->id,
             'status' => TransactionStatus::PendingApproval,
-            'cdd_level' => 'Enhanced',
+            'cdd_level' => 'Standard',
             'purpose' => 'Business',
             'source_of_funds' => 'Revenue',
             'idempotency_key' => uniqid('test_', true),
@@ -343,11 +339,10 @@ class TransactionTest extends TestCase
         // Create currency position with sufficient balance
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => (string) $counter->id,
-            'balance' => '15000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '15000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         $response = $this->actingAs($manager)->post("/transactions/{$transaction->id}/approve");
@@ -379,16 +374,16 @@ class TransactionTest extends TestCase
         $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
-            'amount_foreign' => '12000.00',
+            'amount_foreign' => '5000.00',
             'rate' => '4.50',
-            'amount_local' => '54000.00',
+            'amount_local' => '22500.00',
             'customer_id' => $customer->id,
             'user_id' => $teller->id,
             'branch_id' => $counter->branch_id,
             'counter_id' => $counter->id,
             'till_id' => (string) $counter->id,
             'status' => TransactionStatus::PendingApproval,
-            'cdd_level' => 'Enhanced',
+            'cdd_level' => 'Standard',
             'purpose' => 'Business',
             'source_of_funds' => 'Revenue',
             'idempotency_key' => uniqid('test_', true),

@@ -1,11 +1,8 @@
-<x-app-layout title="Allocations">
+<x-app-layout title="My Stock Allocations">
     <div class="space-y-6">
-        <x-page-header title="Allocations" description="Teller currency allocation management">
+        <x-page-header title="My Stock Allocations" description="Your currency allocations and stock requests">
             <x-slot:actions>
-                <x-button href="{{ route('allocations.index', ['status' => 'active']) }}" variant="secondary">Active</x-button>
-                <x-button href="{{ route('allocations.index', ['status' => 'approved']) }}" variant="secondary">Approved</x-button>
-                <x-button href="{{ route('allocations.index', ['status' => 'pending']) }}" variant="secondary">Pending</x-button>
-                <x-button href="{{ route('allocations.index', ['status' => 'completed']) }}" variant="secondary">Completed</x-button>
+                <x-button href="{{ route('my-allocations.request') }}">Request Stock</x-button>
             </x-slot:actions>
         </x-page-header>
 
@@ -13,9 +10,9 @@
             <x-table>
                 <x-slot:thead>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">User</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Counter</th>
                     <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
                     <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                 </x-slot:thead>
@@ -23,16 +20,29 @@
                     @forelse($allocations as $allocation)
                         <tr class="border-t border-border hover:bg-canvas-subtle">
                             <td class="px-4 py-3">{{ $allocation->id }}</td>
-                            <td class="px-4 py-3">{{ $allocation->user?->username }}</td>
-                            <td class="px-4 py-3">{{ $allocation->currency?->code }}</td>
+                            <td class="px-4 py-3">{{ $allocation->currency?->code ?? $allocation->currency_code }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->allocated_amount, 4) }}</td>
+                            <td class="px-4 py-3">{{ $allocation->counter?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-center">
                                 <x-badge variant="{{ $allocation->status->isActive() ? 'success' : ($allocation->status->isPending() || $allocation->status->isApproved() ? 'warning' : 'info') }}">
                                     {{ $allocation->status->label() }}
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                <x-button href="{{ route('allocations.show', $allocation->id) }}" variant="ghost" size="sm">View</x-button>
+                                <div class="flex gap-2 justify-center">
+                                    @if($allocation->isApproved())
+                                        <form method="POST" action="{{ route('my-allocations.accept', $allocation->id) }}">
+                                            @csrf
+                                            <x-button type="submit" variant="success" size="sm">Accept</x-button>
+                                        </form>
+                                    @endif
+                                    @if($allocation->isActive())
+                                        <form method="POST" action="{{ route('my-allocations.return', $allocation->id) }}">
+                                            @csrf
+                                            <x-button type="submit" variant="secondary" size="sm">Return to Pool</x-button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

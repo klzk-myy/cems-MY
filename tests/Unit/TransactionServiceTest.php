@@ -10,6 +10,7 @@ use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\InvalidIpAddressException;
 use App\Exceptions\Domain\TillBalanceMissingException;
+use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Currency;
@@ -209,6 +210,7 @@ class TransactionServiceTest extends TestCase
     {
         // Mark customer as PEP so pre-validation returns Enhanced CDD and requires a hold.
         $this->customer->update(['pep_status' => true]);
+        $this->approvePepFor($this->customer);
 
         $data = [
             'customer_id' => $this->customer->id,
@@ -480,6 +482,7 @@ class TransactionServiceTest extends TestCase
     {
         // Mark customer as PEP
         $this->customer->update(['pep_status' => true]);
+        $this->approvePepFor($this->customer);
 
         $data = [
             'customer_id' => $this->customer->id,
@@ -503,14 +506,13 @@ class TransactionServiceTest extends TestCase
     #[Test]
     public function get_available_balance_excludes_pending_reservations(): void
     {
-        // Create a position with 1000 USD
+        // Create a position with 1000 USD (positions key on currency + branch)
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'branch_id' => 'TEST-TILL',
-            'till_id' => 'TEST-TILL',
-            'balance' => '1000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'quantity' => '1000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         // Create a pending reservation for 300 USD
@@ -535,6 +537,7 @@ class TransactionServiceTest extends TestCase
         // Use a PEP customer so the transaction is held for approval, which is required
         // to test reservation consumption during approval.
         $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true]);
+        $this->approvePepFor($customer);
         $counter = Counter::factory()->create();
 
         // Create till balances
@@ -557,14 +560,13 @@ class TransactionServiceTest extends TestCase
         ]);
 
         // Create position for sell - must be large enough that available balance
-        // (balance - pending reservations) >= sell amount at approval time
+        // (quantity - pending reservations) >= sell amount at approval time
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => (string) $counter->code,
-            'balance' => '5000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '5000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         // Create transaction that will go to PendingApproval
@@ -606,6 +608,7 @@ class TransactionServiceTest extends TestCase
     {
         // Use a PEP customer so the transaction is held for approval.
         $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true]);
+        $this->approvePepFor($customer);
         $branch = Branch::factory()->create();
         $counter = Counter::factory()->create([
             'code' => (string) $branch->id,
@@ -615,11 +618,10 @@ class TransactionServiceTest extends TestCase
         // Position has 2000 USD
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => $branch->id,
-            'till_id' => $counter->code,
-            'balance' => '2000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => (string) $branch->id,
+            'quantity' => '2000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         // Create till balance
@@ -658,7 +660,7 @@ class TransactionServiceTest extends TestCase
         $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
 
         // Manually reduce position to 100 (simulating another transaction consuming stock)
-        $position->update(['balance' => '100.00']);
+        $position->update(['quantity' => '100.00']);
 
         // Approval should now fail
         $manager = User::factory()->create(['role' => UserRole::Manager]);
@@ -698,10 +700,10 @@ class TransactionServiceTest extends TestCase
         // Create USD position
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => $tillId,
-            'balance' => '1000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => (string) $this->branch->id,
+            'quantity' => '1000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         $data = [
@@ -741,10 +743,10 @@ class TransactionServiceTest extends TestCase
         // Create USD position and MYR till balance
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => $tillId,
-            'balance' => '1000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => (string) $this->branch->id,
+            'quantity' => '1000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         TillBalance::factory()->create([
@@ -790,6 +792,7 @@ class TransactionServiceTest extends TestCase
     {
         // Mark customer as PEP
         $this->customer->update(['pep_status' => true]);
+        $this->approvePepFor($this->customer);
 
         // Attempt without source_of_wealth - should fail
         $dataWithoutWealth = [
@@ -805,7 +808,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_pep_', true),
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(TransactionValidationException::class);
         $this->expectExceptionMessage('Source of wealth is required for PEP customers');
 
         $this->transactionService->createTransaction($dataWithoutWealth, $this->teller->id);
@@ -816,6 +819,7 @@ class TransactionServiceTest extends TestCase
     {
         // Mark customer as PEP
         $this->customer->update(['pep_status' => true]);
+        $this->approvePepFor($this->customer);
 
         $data = [
             'customer_id' => $this->customer->id,

@@ -14,6 +14,7 @@ use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Group;
@@ -169,6 +170,7 @@ class TransactionWorkflowTest extends TestCase
             'risk_rating' => 'Low',
             'pep_status' => true,
         ]);
+        $this->approvePepFor($customer);
 
         $counter = Counter::factory()->create([
             'branch_id' => $this->branch->id,
@@ -180,11 +182,10 @@ class TransactionWorkflowTest extends TestCase
         // Create USD position with exactly 1500 USD
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => $tillId,
-            'balance' => '1500.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '1500.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         TillBalance::factory()->create([
@@ -249,6 +250,7 @@ class TransactionWorkflowTest extends TestCase
             'risk_rating' => 'Low',
             'pep_status' => true,
         ]);
+        $this->approvePepFor($customer);
 
         $counter = Counter::factory()->create([
             'branch_id' => $this->branch->id,
@@ -260,11 +262,10 @@ class TransactionWorkflowTest extends TestCase
         // Create USD position with sufficient balance for Sell
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => $tillId,
-            'balance' => '2000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '2000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         TillBalance::factory()->create([
@@ -304,9 +305,18 @@ class TransactionWorkflowTest extends TestCase
         // Verify initial status is PendingApproval
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
 
+        // Enhanced CDD places a compliance hold — a compliance officer must
+        // clear it before the manager-tier approval can proceed.
+        $compliance = User::factory()->create([
+            'role' => 'compliance_officer',
+            'branch_id' => $this->branch->id,
+        ]);
+        app(TransactionApprovalService::class)
+            ->clearHold($transaction->fresh(), $compliance->id);
+
         // Approve the transaction
         $approvedTransaction = $this->transactionService->approveTransaction(
-            $transaction,
+            $transaction->fresh(),
             $this->manager->id
         )['transaction'];
 
@@ -350,6 +360,7 @@ class TransactionWorkflowTest extends TestCase
             'risk_rating' => 'Low',
             'pep_status' => true,
         ]);
+        $this->approvePepFor($customer);
 
         $counter = Counter::factory()->create([
             'branch_id' => $this->branch->id,
@@ -361,11 +372,10 @@ class TransactionWorkflowTest extends TestCase
         // Create USD position with sufficient balance for Sell
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => $counter->branch_id,
-            'till_id' => $tillId,
-            'balance' => '2000.00',
-            'avg_cost_rate' => '4.50',
-            'last_valuation_rate' => '4.50',
+            'branch_id' => (string) $counter->branch_id,
+            'quantity' => '2000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
         ]);
 
         TillBalance::factory()->create([

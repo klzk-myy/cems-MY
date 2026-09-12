@@ -2,12 +2,14 @@
 
 namespace Tests;
 
+use App\Enums\ApprovalStatus;
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\Customer;
+use App\Models\PepApprovalRequest;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\User;
@@ -188,6 +190,12 @@ abstract class TestCase extends BaseTestCase
         $branch = $this->createTestBranch();
         $counter = $this->createTestCounter(['branch_id' => $branch->id]);
 
+        // ValidTill scopes counters to the acting user's branch — the user
+        // operating this till must belong to the same branch.
+        if ($user->branch_id !== $branch->id) {
+            $user->forceFill(['branch_id' => $branch->id])->save();
+        }
+
         CounterSession::create([
             'counter_id' => $counter->id,
             'user_id' => $user->id,
@@ -240,5 +248,19 @@ abstract class TestCase extends BaseTestCase
     protected function setMfaVerification(User $user): void
     {
         session(['mfa_verified' => true, 'mfa_verified_at' => now()->timestamp]);
+    }
+
+    /**
+     * Record an approved PEP sign-off for a customer so transaction
+     * creation passes the head-office approval gate.
+     */
+    protected function approvePepFor(Customer $customer): void
+    {
+        PepApprovalRequest::factory()->create([
+            'customer_id' => $customer->id,
+            'status' => ApprovalStatus::Approved->value,
+            'approved_by' => User::factory(),
+            'approved_at' => now(),
+        ]);
     }
 }

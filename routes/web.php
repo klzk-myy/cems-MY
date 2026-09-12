@@ -263,6 +263,18 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     Route::middleware('role:manager,admin')->prefix('allocations')->name('allocations.')->group(function () {
         Route::get('/', [AllocationController::class, 'index'])->name('index');
         Route::get('/{allocation}', [AllocationController::class, 'show'])->name('show');
+        Route::post('/{allocation}/approve', [AllocationController::class, 'approve'])->name('approve');
+        Route::post('/{allocation}/reject', [AllocationController::class, 'reject'])->name('reject');
+        Route::post('/{allocation}/return-to-pool', [AllocationController::class, 'returnToPool'])->name('return-to-pool');
+    });
+
+    // Teller self-service stock requests
+    Route::middleware(['role:teller', 'mfa.verified'])->prefix('my-allocations')->name('my-allocations.')->group(function () {
+        Route::get('/', [AllocationController::class, 'myIndex'])->name('index');
+        Route::get('/request', [AllocationController::class, 'requestForm'])->name('request');
+        Route::post('/request', [AllocationController::class, 'submitRequest'])->name('request.store');
+        Route::post('/{allocation}/accept', [AllocationController::class, 'accept'])->name('accept');
+        Route::post('/{allocation}/return', [AllocationController::class, 'requestReturn'])->name('return');
     });
 
     // Branch Pools (manager/admin)
