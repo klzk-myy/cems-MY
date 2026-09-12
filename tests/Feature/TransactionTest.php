@@ -202,7 +202,7 @@ class TransactionTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ]);
 
-        $response->assertSessionHas('error'); // TransactionService throws exception which is caught and put in flash error
+        $response->assertSessionHasErrors('amount_foreign'); // InsufficientStockException maps to the amount field
         $this->assertDatabaseMissing('transactions', [
             'type' => TransactionType::Sell,
             'amount_foreign' => '100.00',

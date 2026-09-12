@@ -36,7 +36,7 @@ class NarrativeGenerator
             $narrative .= 'ID Type: '.($customer->id_type ?? 'N/A')."\n";
             $narrative .= 'ID Number: '.($customer->id_number_decrypted ?? 'N/A')."\n";
             $narrative .= 'Nationality: '.($customer->nationality ?? 'N/A')."\n";
-            $narrative .= 'Risk Rating: '.($customer->risk_rating ?? 'N/A')."\n";
+            $narrative .= 'Risk Rating: '.($customer->risk_rating->value ?? 'N/A')."\n";
             $narrative .= 'CDD Level: '.($customer->cdd_level->value ?? 'N/A')."\n";
         } else {
             $narrative .= "Customer information not available.\n";

@@ -120,7 +120,7 @@ class KycDocumentExpiryEnforcementTest extends TestCase
 
         $response = $this->postTransaction($teller, $counter, TransactionType::Buy->value, (int) $customer->id);
 
-        $response->assertSessionHas('error');
+        $response->assertSessionHasErrors('customer_id');
         $this->assertDatabaseMissing('transactions', [
             'customer_id' => $customer->id,
             'amount_foreign' => '100.00',
@@ -144,7 +144,7 @@ class KycDocumentExpiryEnforcementTest extends TestCase
 
         $response = $this->postTransaction($teller, $counter, TransactionType::Sell->value, (int) $customer->id);
 
-        $response->assertSessionHas('error');
+        $response->assertSessionHasErrors('customer_id');
         $this->assertDatabaseMissing('transactions', [
             'customer_id' => $customer->id,
             'amount_foreign' => '100.00',

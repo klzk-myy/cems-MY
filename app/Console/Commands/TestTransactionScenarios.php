@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Branch;
@@ -350,7 +351,7 @@ class TestTransactionScenarios extends Command
                 'created_by' => $this->tellers[$scenario['branch']]->id,
             ]);
 
-            $customer->risk_rating = $scenario['is_pep'] ? 'high' : ($scenario['is_high_risk_country'] ? 'high' : 'medium');
+            $customer->risk_rating = $scenario['is_pep'] || $scenario['is_high_risk_country'] ? RiskRating::High : RiskRating::Medium;
             $customer->sanction_hit = false;
             $customer->save();
         }

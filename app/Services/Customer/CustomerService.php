@@ -430,7 +430,7 @@ class CustomerService implements CustomerServiceInterface
 
         // Update sanction status, risk rating, AND deactivate if hit found
         if ($hasSanctionHit) {
-            $customer->risk_rating = 'High';
+            $customer->risk_rating = RiskRating::High;
             $customer->sanction_hit = true;
             $customer->is_active = false; // Require Manager/Compliance approval to activate
             $customer->save();

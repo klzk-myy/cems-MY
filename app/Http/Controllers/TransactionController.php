@@ -8,6 +8,7 @@ use App\Enums\TransactionType;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\TransactionBlockedException;
 use App\Http\Concerns\BranchScopedQuery;
+use App\Http\Concerns\MapsTransactionExceptionsToFields;
 use App\Http\Requests\ExportTransactionRequest;
 use App\Http\Requests\IndexTransactionRequest;
 use App\Http\Requests\StoreTransactionRequest;
@@ -32,7 +33,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TransactionController extends Controller
 {
-    use BranchScopedQuery;
+    use BranchScopedQuery, MapsTransactionExceptionsToFields;
 
     public function __construct(
         protected TransactionCreationServiceInterface $creationService,
@@ -144,9 +145,17 @@ class TransactionController extends Controller
             return redirect()->route('transactions.show', $transaction)
                 ->with('success', 'Transaction completed successfully. Receipt #'.$transaction->id);
         } catch (TransactionBlockedException $e) {
-            return back()->with('error', 'Transaction blocked due to compliance restrictions. Please contact support.')->withInput();
+            // Pin to the customer field but keep the message generic — the
+            // specific compliance reason must not leak to the teller.
+            return back()->withErrors([
+                'customer_id' => 'Transaction blocked due to compliance restrictions. Please contact support.',
+            ])->withInput();
         } catch (DomainException $e) {
-            return back()->with('error', 'Transaction failed validation. Please check your input and try again.')->withInput();
+            $field = $this->transactionExceptionField($e);
+
+            return $field !== null
+                ? back()->withErrors([$field => $e->getMessage()])->withInput()
+                : back()->with('error', $e->getMessage())->withInput();
         } catch (\Exception $e) {
             Log::error('Transaction creation failed', [
                 'error' => $e->getMessage(),

@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Enums\CddLevel;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
+use App\Exceptions\Domain\DomainException;
+use App\Exceptions\Domain\TransactionBlockedException;
 use App\Http\Concerns\DeterminesTransactionStatus;
+use App\Http\Concerns\MapsTransactionExceptionsToFields;
 use App\Http\Requests\TransactionWizardStep1Request;
 use App\Http\Requests\TransactionWizardStep2Request;
 use App\Http\Requests\TransactionWizardStep3Request;
@@ -29,7 +32,7 @@ use Psr\Log\LoggerInterface;
 
 class TransactionWizardController extends Controller
 {
-    use DeterminesTransactionStatus;
+    use DeterminesTransactionStatus, MapsTransactionExceptionsToFields;
 
     public function __construct(
         protected TransactionValidationInterface $validationService,
@@ -255,6 +258,18 @@ class TransactionWizardController extends Controller
                     : 'Transaction completed successfully',
             ]);
 
+        } catch (TransactionBlockedException $e) {
+            return response()->json([
+                'status' => 'error',
+                'field' => 'customer_id',
+                'message' => 'Transaction blocked due to compliance restrictions. Please contact support.',
+            ], 422);
+        } catch (DomainException $e) {
+            return response()->json([
+                'status' => 'error',
+                'field' => $this->transactionExceptionField($e),
+                'message' => $e->getMessage(),
+            ], $e->getStatusCode());
         } catch (\Exception $e) {
             $this->logger->error('Transaction creation failed in wizard', [
                 'session_id' => $sessionId,

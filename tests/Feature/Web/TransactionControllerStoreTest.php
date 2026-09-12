@@ -164,7 +164,7 @@ class TransactionControllerStoreTest extends TestCase
 
         $response = $this->post('/transactions', $this->basePayload($customer, $counter, $currency));
 
-        $response->assertSessionHas('error');
+        $response->assertSessionHasErrors('source_of_wealth');
         $response->assertRedirect();
         $this->assertDatabaseCount('transactions', 0);
     }
@@ -241,7 +241,7 @@ class TransactionControllerStoreTest extends TestCase
 
         $response = $this->post('/transactions', $this->basePayload($customer, $counter, $currency));
 
-        $response->assertSessionHas('error');
+        $response->assertSessionHasErrors('customer_id');
         $response->assertRedirect();
         $this->assertDatabaseCount('transactions', 0);
     }

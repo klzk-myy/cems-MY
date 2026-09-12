@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\CddLevel;
+use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Counter;
@@ -99,7 +100,7 @@ class TestTransactionWizardSeeder extends Seeder
             '+60123456789',
             false,
             false,
-            'Low'
+            RiskRating::Low
         );
 
         $this->seedCustomer(
@@ -112,7 +113,7 @@ class TestTransactionWizardSeeder extends Seeder
             '+60123456790',
             false,
             false,
-            'Medium'
+            RiskRating::Medium
         );
 
         $this->seedCustomer(
@@ -125,7 +126,7 @@ class TestTransactionWizardSeeder extends Seeder
             '+60123456791',
             true,
             false,
-            'High'
+            RiskRating::High
         );
 
         $this->seedCustomer(
@@ -138,7 +139,7 @@ class TestTransactionWizardSeeder extends Seeder
             '+60123456792',
             false,
             true,
-            'High'
+            RiskRating::High
         );
 
         $this->seedCustomer(
@@ -151,7 +152,7 @@ class TestTransactionWizardSeeder extends Seeder
             '+60123456793',
             false,
             false,
-            'Low'
+            RiskRating::Low
         );
 
         $this->command->info('Test customers seeded');
@@ -167,7 +168,7 @@ class TestTransactionWizardSeeder extends Seeder
         string $phone,
         bool $pepStatus,
         bool $sanctionHit,
-        string $riskRating
+        RiskRating $riskRating
     ): void {
         $customer = Customer::firstOrNew(['email' => $email]);
 

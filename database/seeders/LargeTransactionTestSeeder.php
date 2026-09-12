@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\CddLevel;
+use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
@@ -130,7 +131,7 @@ class LargeTransactionTestSeeder extends Seeder
             ]);
 
             $customer->sanction_hit = false;
-            $customer->risk_rating = 'Low';
+            $customer->risk_rating = RiskRating::Low;
             $customer->save();
         }
 
