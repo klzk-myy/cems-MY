@@ -1613,6 +1613,7 @@ class SchemaSeeder extends Seeder
             $table->text('last_error_message')->nullable();
             $table->integer('entry_count')->default(0);
             $table->string('last_checksum')->nullable();
+            $table->string('last_dataset_version')->nullable();
             $table->unsignedBigInteger('auto_updated_by')->nullable();
             $table->string('slug');
             $table->timestamp('deleted_at')->nullable();

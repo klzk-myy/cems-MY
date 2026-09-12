@@ -126,6 +126,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Incremental (delta) sync via OpenSanctions entities.delta.json exports
+    |--------------------------------------------------------------------------
+    | Each source's index.json exposes a `delta_url` manifest mapping dataset
+    | versions to per-version delta files ({"op":"ADD"|"DEL","entity":{...}}
+    | JSONL). When the list's last_dataset_version is still covered by the
+    | manifest, only the missing version deltas are applied; otherwise the
+    | importer falls back to a full sync. More than `max_versions` pending
+    | deltas costs more requests than a full download, so it falls back too.
+    */
+    'delta' => [
+        'enabled' => (bool) env('SANCTIONS_DELTA_ENABLED', true),
+        'max_versions' => (int) env('SANCTIONS_DELTA_MAX_VERSIONS', 50),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | External update webhook (SanctionsWebhookController)
     |--------------------------------------------------------------------------
     | The webhook stays disabled (always 401) until a token is configured.

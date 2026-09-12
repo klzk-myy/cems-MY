@@ -72,6 +72,8 @@ class SanctionsOrchestrationServiceTest extends TestCase
     #[Test]
     public function sync_sanctions_list_returns_error_on_download_failure(): void
     {
+        config(['sanctions.download.retry_delay' => 0]);
+
         Http::fake([
             '*' => Http::response('Server Error', 500),
         ]);
@@ -106,7 +108,7 @@ class SanctionsOrchestrationServiceTest extends TestCase
         $result = $this->service->syncSanctionsList($list, true);
 
         $this->assertFalse($result['success']);
-        $this->assertEquals('Downloaded content is not valid JSON', $result['error']);
+        $this->assertStringContainsString('Downloaded content is not valid JSON', $result['error']);
     }
 
     #[Test]
@@ -130,7 +132,7 @@ class SanctionsOrchestrationServiceTest extends TestCase
         $mockImportService = $this->createMock(SanctionsImportService::class);
 
         $mockImportService->expects($this->once())
-            ->method('importWithData')
+            ->method('import')
             ->willReturn([
                 'success' => true,
                 'created' => 1,

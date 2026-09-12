@@ -326,6 +326,134 @@ class SanctionsImportServiceTest extends TestCase
     }
 
     #[Test]
+    public function import_applies_delta_ops_and_stores_dataset_version(): void
+    {
+        config(['sanctions.download.retry_delay' => 0]);
+
+        Http::fake([
+            'https://api.opensanctions.org/test/index.json' => Http::response([
+                'version' => '20260912000000-b',
+                'delta_url' => 'https://api.opensanctions.org/test/delta.json',
+            ], 200),
+            'https://api.opensanctions.org/test/delta.json' => Http::response([
+                'versions' => [
+                    '20260911000000-a' => 'https://api.opensanctions.org/test/delta_a.json',
+                    '20260912000000-b' => 'https://api.opensanctions.org/test/delta_b.json',
+                ],
+            ], 200),
+            'https://api.opensanctions.org/test/delta_b.json' => Http::response(
+                '{"op":"ADD","entity":{"id":"d-1","caption":"Delta Person","schema":"Person","properties":{"name":["Delta Person"],"birthDate":["1990-01-01"]}}}'."\n".
+                '{"op":"DEL","entity":{"id":"old-1"}}',
+                200
+            ),
+        ]);
+
+        $list = SanctionList::factory()->create([
+            'source_url' => 'https://api.opensanctions.org/test/targets.nested.json',
+            'slug' => 'test-delta-list',
+            'last_dataset_version' => '20260911000000-a',
+            'is_active' => true,
+        ]);
+
+        SanctionEntry::factory()->create([
+            'list_id' => $list->id,
+            'reference_number' => 'old-1',
+            'entity_name' => 'Old Entry',
+            'status' => 'active',
+        ]);
+
+        $result = $this->service->import($list, true);
+
+        $this->assertEquals(1, $result['created']);
+        $this->assertEquals(1, $result['deactivated']);
+
+        $this->assertEquals('Delta Person', SanctionEntry::where('reference_number', 'd-1')->value('entity_name'));
+        $this->assertEquals(SanctionStatus::Inactive, SanctionEntry::where('reference_number', 'old-1')->value('status'));
+
+        $list->refresh();
+        $this->assertEquals('20260912000000-b', $list->last_dataset_version);
+        $this->assertEquals('success', $list->update_status->value);
+    }
+
+    #[Test]
+    public function import_skips_sync_when_dataset_version_unchanged(): void
+    {
+        Http::fake([
+            'https://api.opensanctions.org/test/index.json' => Http::response([
+                'version' => '20260912000000-b',
+                'delta_url' => 'https://api.opensanctions.org/test/delta.json',
+            ], 200),
+        ]);
+
+        $list = SanctionList::factory()->create([
+            'source_url' => 'https://api.opensanctions.org/test/targets.nested.json',
+            'slug' => 'test-unchanged-list',
+            'last_dataset_version' => '20260912000000-b',
+            'is_active' => true,
+        ]);
+
+        $result = $this->service->import($list, true);
+
+        $this->assertEquals(0, $result['created']);
+        $this->assertEquals(0, $result['updated']);
+        $this->assertEquals(0, $result['deactivated']);
+
+        // No download of the full export and no delta manifest fetch happened.
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'targets.nested.json'));
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'delta.json'));
+
+        $list->refresh();
+        $this->assertEquals('success', $list->update_status->value);
+        $this->assertDatabaseHas('sanction_import_logs', [
+            'list_id' => $list->id,
+            'status' => 'success',
+        ]);
+    }
+
+    #[Test]
+    public function import_falls_back_to_full_sync_when_version_missing_from_manifest(): void
+    {
+        config(['sanctions.download.retry_delay' => 0]);
+
+        Http::fake([
+            'https://api.opensanctions.org/test/index.json' => Http::response([
+                'version' => '20260912000000-b',
+                'delta_url' => 'https://api.opensanctions.org/test/delta.json',
+            ], 200),
+            'https://api.opensanctions.org/test/delta.json' => Http::response([
+                'versions' => [
+                    '20260911000000-a' => 'https://api.opensanctions.org/test/delta_a.json',
+                    '20260912000000-b' => 'https://api.opensanctions.org/test/delta_b.json',
+                ],
+            ], 200),
+            'https://api.opensanctions.org/test/targets.nested.json' => Http::response([
+                'results' => [
+                    ['id' => 'full-1', 'name' => 'Full Sync Entry'],
+                ],
+            ], 200),
+        ]);
+
+        // Stored baseline aged out of the manifest window → full sync.
+        $list = SanctionList::factory()->create([
+            'source_url' => 'https://api.opensanctions.org/test/targets.nested.json',
+            'slug' => 'test-stale-list',
+            'last_dataset_version' => '20260901000000-zzz',
+            'is_active' => true,
+        ]);
+
+        $result = $this->service->import($list, true);
+
+        $this->assertEquals(1, $result['created']);
+        $this->assertDatabaseHas('sanction_entries', [
+            'list_id' => $list->id,
+            'reference_number' => 'full-1',
+        ]);
+
+        $list->refresh();
+        $this->assertEquals('20260912000000-b', $list->last_dataset_version);
+    }
+
+    #[Test]
     public function import_handles_empty_results(): void
     {
         Http::fake([

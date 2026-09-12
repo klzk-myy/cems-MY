@@ -28,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $last_error_message
  * @property int $entry_count
  * @property string|null $last_checksum
+ * @property string|null $last_dataset_version
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property int|null $auto_updated_by
@@ -55,6 +56,7 @@ class SanctionList extends BaseModel
         'last_error_message',
         'entry_count',
         'last_checksum',
+        'last_dataset_version',
     ];
 
     protected $casts = [

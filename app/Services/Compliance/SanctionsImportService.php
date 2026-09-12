@@ -10,6 +10,7 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionImportLog;
 use App\Models\SanctionList;
 use App\Services\System\MathService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
@@ -31,6 +32,12 @@ class SanctionsImportService
      */
     protected ?string $pendingTempFile = null;
 
+    /**
+     * Dataset version reported by the source's index.json for the in-flight
+     * import. Stored on the list after a successful sync (full or delta).
+     */
+    protected ?string $pendingDatasetVersion = null;
+
     public function __construct(
         protected MathService $mathService,
         protected SanctionsDownloadService $downloadService,
@@ -39,14 +46,27 @@ class SanctionsImportService
     public function import(SanctionList $list, bool $manual = false): array
     {
         $this->pendingTempFile = null;
+        $this->pendingDatasetVersion = null;
+
+        $index = $this->fetchDatasetIndex($list);
+        $this->pendingDatasetVersion = is_array($index) ? ($index['version'] ?? null) : null;
 
         try {
-            return $this->importWithData($list, $this->fetchSource($list), $manual);
+            $deltaResult = $this->importFromDelta($list, $index, $manual);
+            if ($deltaResult !== null) {
+                return $deltaResult;
+            }
+
+            $result = $this->importWithData($list, $this->fetchSource($list), $manual);
+            $this->commitDatasetVersion($list);
+
+            return $result;
         } finally {
             if ($this->pendingTempFile !== null && file_exists($this->pendingTempFile)) {
                 unlink($this->pendingTempFile);
             }
             $this->pendingTempFile = null;
+            $this->pendingDatasetVersion = null;
         }
     }
 
@@ -255,6 +275,299 @@ class SanctionsImportService
     }
 
     /**
+     * Fetch the dataset's index.json (same directory as the source export).
+     * Returns null when the source URL has no file basename or the artifact
+     * is unreachable — callers fall back to a full sync.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function fetchDatasetIndex(SanctionList $list): ?array
+    {
+        if (! config('sanctions.delta.enabled', true)) {
+            return null;
+        }
+
+        $url = preg_replace('#/[^/]+$#', '/index.json', (string) $list->source_url);
+
+        if ($url === null || $url === $list->source_url) {
+            return null;
+        }
+
+        return $this->fetchJsonArtifact($url);
+    }
+
+    /**
+     * Download a small JSON artifact through the shared validated download
+     * path (allowlist + redirect checks) and decode it. Metadata files are
+     * deleted after reading — only list exports are archived.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function fetchJsonArtifact(string $url): ?array
+    {
+        try {
+            $result = $this->downloadService->download(
+                $url,
+                'meta_'.uniqid().'.json',
+                'JSON',
+                1
+            );
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (! ($result['success'] ?? false) || empty($result['filepath'])) {
+            return null;
+        }
+
+        $decoded = json_decode((string) file_get_contents($result['filepath']), true);
+        unlink($result['filepath']);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * Apply OpenSanctions per-version delta files between the list's stored
+     * dataset version and the current one. Returns null to signal a full-sync
+     * fallback (no manifest coverage, too many versions, or apply failure).
+     *
+     * @param  array<string, mixed>|null  $index
+     * @return array<string, mixed>|null
+     */
+    protected function importFromDelta(SanctionList $list, ?array $index, bool $manual): ?array
+    {
+        $version = $index['version'] ?? null;
+        $deltaUrl = $index['delta_url'] ?? null;
+
+        if (! is_string($version) || ! is_string($deltaUrl)) {
+            return null;
+        }
+
+        $current = $list->last_dataset_version;
+
+        if ($current === $version) {
+            return $this->markChecked($list, $manual);
+        }
+
+        $manifest = $this->fetchJsonArtifact($deltaUrl);
+        $versions = is_array($manifest) ? ($manifest['versions'] ?? null) : null;
+
+        if (! is_array($versions) || $current === null || ! isset($versions[$current])) {
+            return null;
+        }
+
+        $pending = array_filter(
+            array_keys($versions),
+            fn (string $v) => strcmp($v, $current) > 0 && strcmp($v, $version) <= 0
+        );
+        sort($pending);
+
+        if ($pending === [] || count($pending) > (int) config('sanctions.delta.max_versions', 50)) {
+            return null;
+        }
+
+        $this->resetCounters();
+        $list->update(['last_attempted_at' => now(), 'update_status' => UpdateStatus::Pending]);
+
+        try {
+            foreach ($pending as $pendingVersion) {
+                $this->applyDeltaVersion($list, $versions[$pendingVersion]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Sanctions delta apply failed; falling back to full sync', [
+                'list_id' => $list->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $list->update([
+            'last_dataset_version' => $version,
+            'last_updated_at' => now(),
+            'update_status' => UpdateStatus::Success,
+            'last_error_message' => null,
+            'entry_count' => $list->entries()->where('status', SanctionStatus::Active->value)->count(),
+        ]);
+
+        SanctionImportLog::create([
+            'list_id' => $list->id,
+            'imported_at' => now(),
+            'source_url' => $list->source_url,
+            'records_added' => $this->created,
+            'records_updated' => $this->updated,
+            'records_deactivated' => $this->deactivated,
+            'is_manual' => $manual,
+            ...$this->attributionFor($manual),
+            'status' => UpdateStatus::Success->value,
+        ]);
+
+        return $this->enrichResult([
+            'created' => $this->created,
+            'updated' => $this->updated,
+            'deactivated' => $this->deactivated,
+            'errors' => $this->errors,
+        ]);
+    }
+
+    /**
+     * Record an unchanged check: the source version equals the stored version,
+     * so no download or sync was needed.
+     *
+     * @return array<string, mixed>
+     */
+    protected function markChecked(SanctionList $list, bool $manual): array
+    {
+        $this->resetCounters();
+
+        $list->update([
+            'last_attempted_at' => now(),
+            'update_status' => UpdateStatus::Success,
+            'last_error_message' => null,
+        ]);
+
+        SanctionImportLog::create([
+            'list_id' => $list->id,
+            'imported_at' => now(),
+            'source_url' => $list->source_url,
+            'records_added' => 0,
+            'records_updated' => 0,
+            'records_deactivated' => 0,
+            'is_manual' => $manual,
+            ...$this->attributionFor($manual),
+            'status' => UpdateStatus::Success->value,
+        ]);
+
+        return $this->enrichResult([
+            'created' => 0,
+            'updated' => 0,
+            'deactivated' => 0,
+            'errors' => 0,
+        ]);
+    }
+
+    /**
+     * Download one version's entities.delta.json and apply its ops.
+     */
+    protected function applyDeltaVersion(SanctionList $list, string $url): void
+    {
+        $result = $this->downloadService->download(
+            $url,
+            'delta_'.uniqid().'.json',
+            'JSON',
+            1
+        );
+
+        if (! ($result['success'] ?? false) || empty($result['filepath'])) {
+            throw new SanctionsImportException("Failed to fetch delta file: {$url}");
+        }
+
+        try {
+            $this->applyDeltaOps($list, $this->streamDeltaOps($result['filepath']));
+        } finally {
+            if (file_exists($result['filepath'])) {
+                unlink($result['filepath']);
+            }
+        }
+    }
+
+    /**
+     * Stream delta ops ({"op":"ADD"|"DEL","entity":{...}}) from a JSONL file.
+     *
+     * @return iterable<array-key, array<string, mixed>>
+     */
+    protected function streamDeltaOps(string $filepath): iterable
+    {
+        $handle = fopen($filepath, 'r');
+        if (! $handle) {
+            return;
+        }
+
+        try {
+            while (($line = fgets($handle)) !== false) {
+                $line = trim($line);
+                if ($line === '') {
+                    continue;
+                }
+
+                $decoded = json_decode($line, true);
+                if (is_array($decoded) && isset($decoded['op'])) {
+                    yield $decoded;
+                }
+            }
+        } finally {
+            fclose($handle);
+        }
+    }
+
+    /**
+     * Apply a delta file's ops inside one transaction: ADD upserts through the
+     * shared entry path; DEL deactivates by reference_number.
+     *
+     * @param  iterable<array-key, array<string, mixed>>  $ops
+     */
+    protected function applyDeltaOps(SanctionList $list, iterable $ops): void
+    {
+        DB::transaction(function () use ($ops, $list) {
+            $existingByRef = SanctionEntry::where('list_id', $list->id)
+                ->whereNotNull('reference_number')
+                ->get()
+                ->keyBy('reference_number');
+
+            foreach ($ops as $op) {
+                $entity = $op['entity'] ?? [];
+
+                try {
+                    if (($op['op'] ?? null) === 'DEL') {
+                        $ref = $entity['id'] ?? null;
+                        if ($ref !== null && $existingByRef->has((string) $ref)) {
+                            $existing = $existingByRef->get((string) $ref);
+                            if ($existing->status === SanctionStatus::Active) {
+                                $existing->update(['status' => SanctionStatus::Inactive]);
+                                $this->deactivated++;
+                            }
+                        }
+
+                        continue;
+                    }
+
+                    if (($op['op'] ?? null) !== 'ADD') {
+                        continue;
+                    }
+
+                    $entryData = $this->parseOpenSanctionsEntry(
+                        $this->flattenNestedEntity($entity),
+                        $list
+                    );
+
+                    if ($entryData === null) {
+                        continue;
+                    }
+
+                    $this->upsertEntry($entryData, $existingByRef);
+                } catch (\Exception $e) {
+                    Log::error('Failed to apply delta op', [
+                        'op' => $op['op'] ?? null,
+                        'entity_id' => $entity['id'] ?? null,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $this->errors++;
+                }
+            }
+        });
+    }
+
+    /**
+     * Store the dataset version fetched during import() on a successful sync.
+     */
+    protected function commitDatasetVersion(SanctionList $list): void
+    {
+        if ($this->pendingDatasetVersion !== null) {
+            $list->update(['last_dataset_version' => $this->pendingDatasetVersion]);
+        }
+    }
+
+    /**
      * Stream flat entry items from a downloaded source file. Detects
      * single-document JSON vs JSONL (one entity per line — the OpenSanctions
      * targets.nested.json exports); nested FollowTheMoney entities are
@@ -451,27 +764,7 @@ class SanctionsImportService
                 $ref = $entryData['reference_number'] ?? null;
 
                 try {
-                    if ($ref && $existingByRef->has($ref)) {
-                        $existing = $existingByRef->get($ref);
-                        $existing->update([
-                            'entity_name' => $entryData['entity_name'],
-                            'normalized_name' => $entryData['normalized_name'],
-                            'soundex_code' => $entryData['soundex_code'] ?? null,
-                            'metaphone_code' => $entryData['metaphone_code'] ?? null,
-                            'entity_type' => $entryData['entity_type'],
-                            'aliases' => $entryData['aliases'],
-                            'nationality' => $entryData['nationality'],
-                            'date_of_birth' => $entryData['date_of_birth'],
-                            'listing_date' => $entryData['listing_date'] ?? null,
-                            'details' => $entryData['details'],
-                            'status' => SanctionStatus::Active,
-                        ]);
-                        $this->updated++;
-                    } else {
-                        SanctionEntry::create($entryData);
-                        $this->created++;
-                    }
-
+                    $this->upsertEntry($entryData, $existingByRef);
                     $importedRefs[(string) $ref] = true;
                 } catch (\Exception $e) {
                     Log::error('Failed to sync sanction entry', [
@@ -511,6 +804,44 @@ class SanctionsImportService
             'deactivated' => $this->deactivated,
             'errors' => $this->errors,
         ];
+    }
+
+    /**
+     * Create or update one entry by reference_number, keeping the ref map
+     * current so later ops in the same run see just-created rows. Shared by
+     * full sync (syncEntries) and delta apply (applyDeltaOps).
+     *
+     * @param  array<string, mixed>  $entryData
+     * @param  Collection<string, SanctionEntry>  $existingByRef
+     */
+    protected function upsertEntry(array $entryData, $existingByRef): void
+    {
+        $ref = $entryData['reference_number'] ?? null;
+
+        if ($ref && $existingByRef->has($ref)) {
+            $existingByRef->get($ref)->update([
+                'entity_name' => $entryData['entity_name'],
+                'normalized_name' => $entryData['normalized_name'],
+                'soundex_code' => $entryData['soundex_code'] ?? null,
+                'metaphone_code' => $entryData['metaphone_code'] ?? null,
+                'entity_type' => $entryData['entity_type'],
+                'aliases' => $entryData['aliases'],
+                'nationality' => $entryData['nationality'],
+                'date_of_birth' => $entryData['date_of_birth'],
+                'listing_date' => $entryData['listing_date'] ?? null,
+                'details' => $entryData['details'],
+                'status' => SanctionStatus::Active,
+            ]);
+            $this->updated++;
+
+            return;
+        }
+
+        $entry = SanctionEntry::create($entryData);
+        if ($ref) {
+            $existingByRef->put((string) $ref, $entry);
+        }
+        $this->created++;
     }
 
     public function parseDate(?string $date): ?string
