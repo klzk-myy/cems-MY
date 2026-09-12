@@ -1632,7 +1632,7 @@ class SchemaSeeder extends Seeder
             $table->text('aliases')->nullable();
             $table->string('nationality')->nullable();
             $table->date('date_of_birth')->nullable();
-            $table->text('details')->nullable();
+            $table->mediumText('details')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->string('normalized_name')->nullable();

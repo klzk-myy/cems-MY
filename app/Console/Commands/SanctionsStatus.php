@@ -40,7 +40,7 @@ class SanctionsStatus extends Command
         $rows = $lists->map(function ($list) {
             return [
                 $list->name,
-                $list->list_type,
+                $list->list_type?->label(),
                 $list->entry_count,
                 $list->last_updated_at ? $list->last_updated_at->format('Y-m-d H:i') : 'Never',
                 $this->formatStatus($list->update_status?->value),
@@ -91,7 +91,7 @@ class SanctionsStatus extends Command
 
         $details = [
             ['ID', $list->id],
-            ['Type', $list->list_type],
+            ['Type', $list->list_type?->label()],
             ['Source URL', $list->source_url ?? 'N/A'],
             ['Source Format', $list->source_format ?? 'N/A'],
             ['Active', $list->is_active ? 'Yes' : 'No'],
