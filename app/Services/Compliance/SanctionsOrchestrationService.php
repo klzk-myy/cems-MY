@@ -57,14 +57,19 @@ class SanctionsOrchestrationService
         }
 
         // Stream entries so large lists (OFAC SDN ~80MB JSONL) stay memory-bounded.
-        $result = $this->importService->importWithData(
-            $list,
-            $this->importService->streamSourceFile($downloadResult['filepath']),
-            $manual
-        );
-
-        if ($downloadResult['filepath'] && file_exists($downloadResult['filepath'])) {
-            $this->downloadService->archiveFile($downloadResult['filepath'], $list->list_type->value ?? 'unknown');
+        // Archive runs in finally so a failed import still preserves the source
+        // artifact for audit; the temp file is removed once consumed.
+        try {
+            $result = $this->importService->importWithData(
+                $list,
+                $this->importService->streamSourceFile($downloadResult['filepath']),
+                $manual
+            );
+        } finally {
+            if ($downloadResult['filepath'] && file_exists($downloadResult['filepath'])) {
+                $this->downloadService->archiveFile($downloadResult['filepath'], $list->list_type->value ?? 'unknown');
+                unlink($downloadResult['filepath']);
+            }
         }
 
         return array_merge($result, ['success' => true]);

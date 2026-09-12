@@ -119,6 +119,9 @@ return [
         'retry_attempts' => (int) env('SANCTIONS_DOWNLOAD_RETRIES', 3),
         'retry_delay' => (int) env('SANCTIONS_DOWNLOAD_RETRY_DELAY', 60),
         'archive_retention_days' => (int) env('SANCTIONS_ARCHIVE_RETENTION_DAYS', 30),
+        // Orphaned temp files (crashed/interrupted imports) are pruned after
+        // this many hours; successfully imported temp files are deleted inline.
+        'temp_retention_hours' => (int) env('SANCTIONS_TEMP_RETENTION_HOURS', 24),
     ],
 
     /*

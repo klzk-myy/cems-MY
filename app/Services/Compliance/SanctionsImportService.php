@@ -25,6 +25,12 @@ class SanctionsImportService
 
     protected int $errors = 0;
 
+    /**
+     * Temp file downloaded by fetchSource() for the in-flight import. Deleted
+     * once the lazy stream has been consumed — the archive copy persists.
+     */
+    protected ?string $pendingTempFile = null;
+
     public function __construct(
         protected MathService $mathService,
         protected SanctionsDownloadService $downloadService,
@@ -32,7 +38,16 @@ class SanctionsImportService
 
     public function import(SanctionList $list, bool $manual = false): array
     {
-        return $this->importWithData($list, $this->fetchSource($list), $manual);
+        $this->pendingTempFile = null;
+
+        try {
+            return $this->importWithData($list, $this->fetchSource($list), $manual);
+        } finally {
+            if ($this->pendingTempFile !== null && file_exists($this->pendingTempFile)) {
+                unlink($this->pendingTempFile);
+            }
+            $this->pendingTempFile = null;
+        }
     }
 
     /**
@@ -213,6 +228,8 @@ class SanctionsImportService
      * (OFAC SDN ~80MB JSONL) are never fully materialized in memory.
      *
      * @return iterable<array-key, array<string, mixed>>
+     *
+     * @phpstan-impure
      */
     public function fetchSource(SanctionList $list): iterable
     {
@@ -231,6 +248,7 @@ class SanctionsImportService
 
         if ($result['filepath'] && file_exists($result['filepath'])) {
             $this->downloadService->archiveFile($result['filepath'], $list->list_type->value ?? 'unknown');
+            $this->pendingTempFile = $result['filepath'];
         }
 
         return $this->streamSourceFile($result['filepath']);

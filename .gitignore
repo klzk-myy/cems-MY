@@ -61,11 +61,13 @@ opencode.json
 .codex
 /storage/framework/views
 
-# Root markdown files: only README.md and spec.md are tracked
+# Root markdown files: only README.md is tracked
 # (AGENTS.md/CLAUDE.md are local agent notes — intentionally ignored)
 /*.md
 !README.md
-!spec.md
+
+# Local tooling config
+/reasonix.toml
 
 # All docs are local-only (specs, plans, operational notes)
 /docs/

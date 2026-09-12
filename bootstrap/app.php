@@ -250,6 +250,14 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/sanctions-import-ofac.log'));
 
+        // Sanctions storage hygiene - prune archives past retention and
+        // orphaned temp files (daily 04:30)
+        $schedule->command('sanctions:prune')
+            ->dailyAt('04:30')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/sanctions-prune.log'));
+
         // Transaction Confirmation Expiry - Every 15 minutes
         $schedule->call(fn () => app(TransactionConfirmationService::class)->expireStale())
             ->name('confirmation-expire-stale')

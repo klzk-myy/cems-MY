@@ -280,6 +280,52 @@ class SanctionsImportServiceTest extends TestCase
     }
 
     #[Test]
+    public function import_deletes_temp_file_after_consuming_stream(): void
+    {
+        $base = sys_get_temp_dir().'/cems-import-temp-'.uniqid();
+        $tempDir = $base.'/temp';
+        $archiveDir = $base.'/archive';
+        mkdir($tempDir, 0755, true);
+        mkdir($archiveDir, 0755, true);
+        config([
+            'sanctions.download.temp_directory' => $tempDir,
+            'sanctions.download.archive_directory' => $archiveDir,
+        ]);
+
+        // SanctionsDownloadService resolves temp_directory at construction —
+        // build a fresh service so it picks up the overridden config.
+        $service = new SanctionsImportService(new MathService(2), new SanctionsDownloadService);
+
+        Http::fake([
+            'https://api.opensanctions.org/*' => Http::response([
+                'results' => [
+                    ['id' => 'us-001', 'name' => 'John Doe'],
+                ],
+            ], 200),
+        ]);
+
+        $list = SanctionList::factory()->create([
+            'source_url' => 'https://api.opensanctions.org/test',
+            'slug' => 'test-temp-cleanup',
+            'is_active' => true,
+        ]);
+
+        $service->import($list, true);
+
+        // The downloaded temp file is removed once the stream is consumed;
+        // the archive copy remains.
+        $this->assertCount(0, glob($tempDir.'/*') ?: []);
+        $this->assertCount(1, glob($archiveDir.'/*') ?: []);
+
+        foreach (glob($archiveDir.'/*') as $file) {
+            unlink($file);
+        }
+        rmdir($tempDir);
+        rmdir($archiveDir);
+        rmdir($base);
+    }
+
+    #[Test]
     public function import_handles_empty_results(): void
     {
         Http::fake([
