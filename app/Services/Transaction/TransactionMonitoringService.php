@@ -4,7 +4,6 @@ namespace App\Services\Transaction;
 
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
-use App\Enums\TransactionStatus;
 use App\Models\Alert;
 use App\Models\FlaggedTransaction;
 use App\Models\HighRiskCountry;
@@ -115,7 +114,12 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
                 );
             }
 
-            // Hold decision
+            // Hold decision. A Completed transaction has already booked its
+            // journal, position and till movements — reverting status to
+            // PendingApproval without unwinding them corrupts the books and a
+            // later approval would double-apply every effect. Keep the record
+            // Completed and flag it for compliance review instead; voiding is a
+            // separate reversal workflow.
             $holdCheck = $this->complianceService->requiresHold(
                 $lockedTransaction->amount_local,
                 $lockedTransaction->customer
@@ -123,8 +127,6 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
             if ($holdCheck->requiresHold
                 && $lockedTransaction->status->isCompleted()
                 && $lockedTransaction->approved_by === null) {
-                $lockedTransaction->status = TransactionStatus::PendingApproval;
-                $lockedTransaction->save();
                 foreach ($holdCheck->reasons as $reason) {
                     $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::EddRequired, $reason);
                 }

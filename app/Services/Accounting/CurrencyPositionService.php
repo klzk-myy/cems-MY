@@ -139,6 +139,14 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             $position->update([
                 'average_cost' => $roundedAvgCost,
                 'current_rate' => $roundedRate,
+                'total_cost' => $this->mathService->round(
+                    $this->mathService->multiply((string) $newBalance, (string) $roundedAvgCost),
+                    $this->positionPrecision
+                ),
+                'current_value' => $this->mathService->round(
+                    $this->mathService->multiply((string) $newBalance, (string) $roundedRate),
+                    $this->positionPrecision
+                ),
                 'unrealized_gain_loss' => $this->mathService->round(
                     $this->mathService->calculateRevaluationPnl($newBalance, $roundedAvgCost, $roundedRate),
                     $this->positionPrecision

@@ -250,14 +250,18 @@ class SetupService
             }
 
             if ($this->mathService->compare($totalForeignBalance, '0') > 0) {
-                $cashForeignAccount = ChartOfAccount::where('account_code', '1011')->first();
+                // Foreign opening stock must land on the same account buys and
+                // sells flow through (2000 Foreign Currency Inventory) — posting
+                // it to 1011 leaves that account permanently unrelieved while
+                // every sale drives 2000 negative.
+                $cashForeignAccount = ChartOfAccount::where('account_code', AccountCode::FOREIGN_CURRENCY_INVENTORY->value)->first();
                 if ($cashForeignAccount) {
                     JournalLine::create([
                         'journal_entry_id' => $journalEntry->id,
                         'account_code' => $cashForeignAccount->account_code,
                         'debit' => (string) $totalForeignBalance,
                         'credit' => '0.00',
-                        'description' => 'Opening balance - Foreign Cash',
+                        'description' => 'Opening balance - Foreign Currency Inventory',
                     ]);
                 }
             }

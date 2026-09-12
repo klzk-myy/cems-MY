@@ -329,32 +329,38 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         string $auditAction = 'transaction_approved',
         string $auditOldStatus = TransactionStatus::PendingApproval->value
     ): void {
-        $this->consumeSellStockIfNeeded($transaction);
-
-        $this->positionService->updatePosition(
-            $transaction->currency_code,
-            (string) $transaction->amount_foreign,
-            (string) $transaction->rate,
-            $transaction->type->value,
-            $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ',
-            $transaction
-        );
-
-        $this->tillBalanceManager->applyTransaction(
-            $tillBalance,
-            $transaction->type,
-            (string) $transaction->amount_local,
-            (string) $transaction->amount_foreign
-        );
-
-        $this->updateTellerAllocation($transaction);
-
+        // Side effects are skipped when the transaction was already booked —
+        // either because it completed at creation (journals post immediately
+        // for non-Enhanced CDD) or because a previous approval attempt got this
+        // far. Re-applying would double-count stock, till and journal entries.
         $approver = User::find($approverId);
 
-        if ($transaction->cdd_level === CddLevel::Enhanced) {
-            $this->transactionAccountingService->createDeferredAccountingEntries($transaction->id);
-        } else {
-            $this->createAccountingEntries($transaction, $ipAddress, $approver);
+        if ($transaction->journal_entry_id === null) {
+            $this->consumeSellStockIfNeeded($transaction);
+
+            $this->positionService->updatePosition(
+                $transaction->currency_code,
+                (string) $transaction->amount_foreign,
+                (string) $transaction->rate,
+                $transaction->type->value,
+                $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ',
+                $transaction
+            );
+
+            $this->tillBalanceManager->applyTransaction(
+                $tillBalance,
+                $transaction->type,
+                (string) $transaction->amount_local,
+                (string) $transaction->amount_foreign
+            );
+
+            $this->updateTellerAllocation($transaction);
+
+            if ($transaction->cdd_level === CddLevel::Enhanced) {
+                $this->transactionAccountingService->createDeferredAccountingEntries($transaction->id);
+            } else {
+                $this->createAccountingEntries($transaction, $ipAddress, $approver);
+            }
         }
 
         $this->recordApprovalAudit($transaction, $approverId, $amlResult, $approver, $ipAddress, $auditAction, $auditOldStatus);
