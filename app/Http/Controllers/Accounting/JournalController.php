@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Enums\UserRole;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\ReverseJournalEntryRequest;
@@ -23,7 +24,13 @@ class JournalController extends Controller
     {
         $this->authorize('viewAny', JournalEntry::class);
 
+        $user = auth()->user();
+
         $entries = JournalEntry::with(['lines', 'postedBy', 'creator', 'approver'])
+            ->when(
+                ! $user->isAdmin() && $user->role !== UserRole::Accountant,
+                fn ($q) => $q->where(fn ($q2) => $q2->where('branch_id', $user->branch_id)->orWhereNull('branch_id'))
+            )
             ->orderBy('entry_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(25);
@@ -48,13 +55,22 @@ class JournalController extends Controller
 
         $validated = $request->validated();
 
+        // Branch journals are stamped with the poster's own branch; admins may
+        // post a company-wide (null) or branch-scoped entry.
+        $user = $request->user();
+        $branchId = $user->isAdmin()
+            ? ($validated['branch_id'] ?? null)
+            : $user->branch_id;
+
         try {
             $entry = $this->accountingService->createJournalEntry(
                 $validated['lines'],
                 'Manual',
                 null,
                 $validated['description'],
-                $validated['entry_date']
+                $validated['entry_date'],
+                null,
+                $branchId
             );
 
             return redirect()->route('accounting.journal.show', $entry)

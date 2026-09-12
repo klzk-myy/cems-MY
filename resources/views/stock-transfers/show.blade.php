@@ -103,34 +103,34 @@
         <x-card title="Actions">
             <div class="flex flex-wrap items-center gap-3">
                 @if($stockTransfer->canApproveBranchManager())
-                    <form action="{{ route('stock-transfers.approve-bm', $stockTransfer->id) }}" method="POST">
-                        @csrf
-                        <x-button type="submit" variant="primary">Approve (Branch Manager)</x-button>
-                    </form>
-                @endif
-
-                @if($stockTransfer->canApproveHq())
-                    <form action="{{ route('stock-transfers.approve-hq', $stockTransfer->id) }}" method="POST">
-                        @csrf
-                        <x-button type="submit" variant="primary">Approve (HQ)</x-button>
-                    </form>
+                    @can('approveBranchManager', $stockTransfer)
+                        <form action="{{ route('stock-transfers.approve-bm', $stockTransfer->id) }}" method="POST">
+                            @csrf
+                            <x-button type="submit" variant="primary">Approve (Destination Branch)</x-button>
+                        </form>
+                    @endcan
                 @endif
 
                 @if($stockTransfer->canDispatch())
-                    <form action="{{ route('stock-transfers.dispatch', $stockTransfer->id) }}" method="POST">
-                        @csrf
-                        <x-button type="submit" variant="primary">Dispatch</x-button>
-                    </form>
+                    @can('dispatch', $stockTransfer)
+                        <form action="{{ route('stock-transfers.dispatch', $stockTransfer->id) }}" method="POST">
+                            @csrf
+                            <x-button type="submit" variant="primary">Dispatch</x-button>
+                        </form>
+                    @endcan
                 @endif
 
                 @if($stockTransfer->canComplete())
-                    <form action="{{ route('stock-transfers.complete', $stockTransfer->id) }}" method="POST">
-                        @csrf
-                        <x-button type="submit" variant="primary">Complete Transfer</x-button>
-                    </form>
+                    @can('complete', $stockTransfer)
+                        <form action="{{ route('stock-transfers.complete', $stockTransfer->id) }}" method="POST">
+                            @csrf
+                            <x-button type="submit" variant="primary">Complete Transfer</x-button>
+                        </form>
+                    @endcan
                 @endif
 
                 @if($stockTransfer->canCancel())
+                    @can('cancel', $stockTransfer)
                     <div x-data="{ showCancelModal: false }" class="inline">
                         <x-button @click="showCancelModal = true" variant="danger">Cancel</x-button>
 
@@ -180,9 +180,11 @@
                             </div>
                         </div>
                     </div>
+                    @endcan
                 @endif
 
                 @if(in_array($stockTransfer->status->value, ['Requested', 'BranchManagerApproved', 'HqApproved', 'InTransit']))
+                    @can('reject', $stockTransfer)
                     <div x-data="{ showRejectModal: false }" class="inline">
                         <x-button @click="showRejectModal = true" variant="danger">Reject</x-button>
 
@@ -232,6 +234,7 @@
                             </div>
                         </div>
                     </div>
+                    @endcan
                 @endif
 
                 @if(! $stockTransfer->canApproveBranchManager()
@@ -245,6 +248,7 @@
             </div>
 
             @if($stockTransfer->canReceive())
+                @can('receive', $stockTransfer)
                 <form action="{{ route('stock-transfers.receive', $stockTransfer->id) }}" method="POST" class="mt-6 pt-6 border-t border-border space-y-4">
                     @csrf
                     <div>
@@ -285,6 +289,7 @@
                         <x-button type="submit" variant="primary">Submit Received Quantities</x-button>
                     </div>
                 </form>
+                @endcan
             @endif
         </x-card>
 
@@ -303,23 +308,25 @@
                 <li class="flex gap-3">
                     <span class="mt-1 w-2 h-2 rounded-full shrink-0 {{ $stockTransfer->branch_manager_approved_at ? 'bg-success' : 'bg-canvas-subtle' }}"></span>
                     <div class="text-sm">
-                        <p class="font-medium text-ink">Branch Manager Approved</p>
+                        <p class="font-medium text-ink">Destination Branch Approved</p>
                         <p class="text-ink-muted">
                             {{ $stockTransfer->branch_manager_approved_by ? 'by '.($stockTransfer->branchManagerApprovedBy?->username ?? 'user #'.$stockTransfer->branch_manager_approved_by) : '' }}
                             {{ $stockTransfer->branch_manager_approved_at?->format('Y-m-d H:i') }}
                         </p>
                     </div>
                 </li>
+                @if($stockTransfer->hq_approved_at)
                 <li class="flex gap-3">
-                    <span class="mt-1 w-2 h-2 rounded-full shrink-0 {{ $stockTransfer->hq_approved_at ? 'bg-success' : 'bg-canvas-subtle' }}"></span>
+                    <span class="mt-1 w-2 h-2 rounded-full shrink-0 bg-success"></span>
                     <div class="text-sm">
-                        <p class="font-medium text-ink">HQ Approved</p>
+                        <p class="font-medium text-ink">HQ Approved (legacy)</p>
                         <p class="text-ink-muted">
                             {{ $stockTransfer->hq_approved_by ? 'by '.($stockTransfer->hqApprovedBy?->username ?? 'user #'.$stockTransfer->hq_approved_by) : '' }}
                             {{ $stockTransfer->hq_approved_at?->format('Y-m-d H:i') }}
                         </p>
                     </div>
                 </li>
+                @endif
                 <li class="flex gap-3">
                     <span class="mt-1 w-2 h-2 rounded-full shrink-0 {{ $stockTransfer->dispatched_at ? 'bg-success' : 'bg-canvas-subtle' }}"></span>
                     <div class="text-sm">

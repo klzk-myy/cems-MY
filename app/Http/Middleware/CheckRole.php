@@ -35,6 +35,7 @@ class CheckRole
                 'admin' => $user->isAdmin(),
                 'manager' => $user->isManager(),
                 'compliance', 'compliance_officer' => $user->isComplianceOfficer(),
+                'accountant' => $user->role->isAccountant(),
                 'teller' => $user->isTeller(),
                 default => false,
             };

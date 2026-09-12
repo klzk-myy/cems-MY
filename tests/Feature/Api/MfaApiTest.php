@@ -38,7 +38,9 @@ class MfaApiTest extends TestCase
             'username' => 'api-mfa-'.substr(uniqid(), -6),
             'email' => 'api-mfa-'.uniqid().'@test.com',
             'password_hash' => Hash::make('pass'),
-            'role' => 'admin',
+            // Teller: the protected endpoint below creates transactions,
+            // which is teller-only under the role model.
+            'role' => 'teller',
             'branch_id' => $this->branch->id,
             'is_active' => true,
             'mfa_enabled' => false,
@@ -47,7 +49,7 @@ class MfaApiTest extends TestCase
         $this->actingAs($this->user);
 
         config(['cems.mfa.enabled' => true]);
-        config(['cems.mfa.require_for_roles' => ['admin']]);
+        config(['cems.mfa.require_for_roles' => ['teller']]);
 
         // The routes sit behind throttle:sensitive (3/min by default); these
         // tests exercise full lifecycle flows with many requests.

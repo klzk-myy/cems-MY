@@ -9,7 +9,7 @@
             <form action="{{ route('stock-transfers.store') }}" method="POST">
                 @csrf
 
-                <x-select name="source_branch_name" label="Source Branch" :options="$branches ?? []" required placeholder="Select Source Branch" />
+                <x-select name="source_branch_name" label="Source Branch" :options="$sourceBranches ?? $branches ?? []" required placeholder="Select Source Branch" />
                 <x-select name="destination_branch_name" label="Destination Branch" :options="$branches ?? []" required placeholder="Select Destination Branch" />
                 <x-select
                     name="type"

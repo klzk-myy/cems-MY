@@ -9,7 +9,9 @@ use App\Http\Requests\Api\V1\TellerAllocation\ApproveAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\ModifyAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\MyActiveAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\RejectAllocationRequest;
+use App\Http\Requests\Api\V1\TellerAllocation\RequestAllocationRequest;
 use App\Models\Branch;
+use App\Models\Counter;
 use App\Models\TellerAllocation;
 use App\Services\Branch\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
@@ -214,5 +216,88 @@ class TellerAllocationController extends Controller
         $data = array_key_exists('data', $result) ? $result['data'] : $result;
 
         return $this->successResponse($data, $result['message'] ?? 'Active allocation retrieved');
+    }
+
+    /**
+     * Teller-initiated stock request. Creates a PENDING allocation that the
+     * branch manager approves via POST /allocations/{id}/approve.
+     */
+    public function requestStock(RequestAllocationRequest $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (! $user->isTeller()) {
+            return $this->errorResponse('Only tellers can request stock allocations', [], 403);
+        }
+
+        $validated = $request->validated();
+        $counter = isset($validated['counter_id']) ? Counter::query()->find((int) $validated['counter_id']) : null;
+
+        try {
+            $allocation = $this->allocationService->requestAllocation(
+                $user,
+                $user,
+                $validated['currency_code'],
+                $validated['requested_amount'],
+                null,
+                $counter
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to request allocation', ['error' => $e->getMessage(), 'user_id' => $user->id]);
+
+            return $this->errorResponse($e->getMessage(), [], 400);
+        }
+
+        return $this->successResponse($allocation, 'Allocation request created', 201);
+    }
+
+    /**
+     * Teller accepts an approved assignment, activating the allocation.
+     * Owner only.
+     */
+    public function accept(int $allocationId): JsonResponse
+    {
+        $allocation = TellerAllocation::find($allocationId);
+
+        if (! $allocation) {
+            return $this->notFoundResponse('Allocation not found');
+        }
+
+        if ($allocation->user_id !== Auth::id()) {
+            return $this->errorResponse('Only the assigned teller can accept this allocation', [], 403);
+        }
+
+        if (! $allocation->isApproved()) {
+            return $this->errorResponse('Allocation is not in approved status', [], 400);
+        }
+
+        $this->allocationService->activateAllocation($allocation);
+
+        return $this->successResponse($allocation->refresh(), 'Allocation activated');
+    }
+
+    /**
+     * Teller returns an active allocation to the branch pool. Owner only —
+     * managers use POST /allocations/{id}/return-to-pool.
+     */
+    public function requestReturn(int $allocationId): JsonResponse
+    {
+        $allocation = TellerAllocation::find($allocationId);
+
+        if (! $allocation) {
+            return $this->notFoundResponse('Allocation not found');
+        }
+
+        if ($allocation->user_id !== Auth::id()) {
+            return $this->errorResponse('Only the assigned teller can return this allocation', [], 403);
+        }
+
+        if (! $allocation->isActive()) {
+            return $this->errorResponse('Allocation is not active', [], 400);
+        }
+
+        $this->allocationService->returnToPool($allocation);
+
+        return $this->successResponse($allocation->refresh(), 'Allocation returned to pool');
     }
 }

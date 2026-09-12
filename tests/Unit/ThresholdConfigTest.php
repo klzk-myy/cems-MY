@@ -17,7 +17,7 @@ class ThresholdConfigTest extends TestCase
     #[Test]
     public function approval_thresholds_exist(): void
     {
-        $this->assertEquals('3000', config('thresholds.approval.auto_approve'));
+        $this->assertEquals('10000', config('thresholds.approval.auto_approve'));
         $this->assertEquals('50000', config('thresholds.approval.manager'));
     }
 

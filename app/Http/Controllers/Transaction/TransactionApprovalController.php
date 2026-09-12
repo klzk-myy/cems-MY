@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Transaction;
 
 use App\Actions\Transaction\ApproveTransactionAction;
 use App\Exceptions\Domain\SelfApprovalException;
+use App\Exceptions\Domain\TransactionValidationException;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmTransactionApprovalRequest;
@@ -96,6 +97,34 @@ class TransactionApprovalController extends Controller
     }
 
     /**
+     * Clear a compliance hold on a pending transaction.
+     *
+     * Compliance officers clear holds after review. Clearing records who and
+     * when; the transaction then follows the normal tiered approval path.
+     */
+    public function clearHold(Request $request, Transaction $transaction): RedirectResponse
+    {
+        $this->authorize('clearHold', $transaction);
+
+        try {
+            $this->approvalService->clearHold($transaction, (int) auth()->id());
+
+            return redirect()->route('transactions.show', $transaction)
+                ->with('success', 'Compliance hold cleared. Transaction may now proceed through approval.');
+        } catch (\InvalidArgumentException|TransactionValidationException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('Compliance hold clearance failed', [
+                'transaction_id' => $transaction->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Hold clearance failed. Please try again.');
+        }
+    }
+
+    /**
      * Show the confirmation page for large transactions.
      *
      * Transactions with an amount greater than or equal to the configured
@@ -123,7 +152,7 @@ class TransactionApprovalController extends Controller
      */
     public function confirm(ConfirmTransactionApprovalRequest $request, Transaction $transaction): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requireManagerComplianceOrAdmin();
 
         if (! $this->requiresConfirmation($transaction)) {
             return redirect()->route('transactions.show', $transaction)

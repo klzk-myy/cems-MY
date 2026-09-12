@@ -10,29 +10,39 @@ class JournalEntryPolicy
 {
     /**
      * Determine whether the user can view any journal entries.
-     * Managers and admins can view journal entries.
+     * Managers (own branch), accountants and admins (company-wide).
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, [UserRole::Manager, UserRole::Admin]);
+        return $user->role->canAccessAccounting();
     }
 
     /**
      * Determine whether the user can view the journal entry.
-     * Managers and admins can view journal entries.
+     * Non-admins are restricted to entries scoped to their own branch.
      */
     public function view(User $user, JournalEntry $journalEntry): bool
     {
-        return in_array($user->role, [UserRole::Manager, UserRole::Admin]);
+        if (! $user->role->canAccessAccounting()) {
+            return false;
+        }
+
+        if ($user->role->isAdmin() || $user->role === UserRole::Accountant) {
+            return true;
+        }
+
+        return $journalEntry->branch_id === null
+            || $journalEntry->branch_id === $user->branch_id;
     }
 
     /**
      * Determine whether the user can create journal entries.
-     * Managers and admins can create journal entries.
+     * Branch managers post branch journals; admins post company-wide.
+     * Entries post directly — no approval step.
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, [UserRole::Manager, UserRole::Admin]);
+        return $user->role->isManager();
     }
 
     /**

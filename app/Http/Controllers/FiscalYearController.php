@@ -6,6 +6,7 @@ use App\Http\Requests\FiscalYearCloseRequest;
 use App\Http\Requests\StoreFiscalYearRequest;
 use App\Models\FiscalYear;
 use App\Services\Accounting\FiscalYearService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -33,10 +34,24 @@ class FiscalYearController extends Controller
         $this->requireManagerOrAdmin();
 
         try {
+            // When no explicit dates are given, derive the fiscal year from the
+            // configured year-end (FISCAL_YEAR_END_MONTH/DAY, default 31 Dec).
+            $startDate = $request->start_date;
+            $endDate = $request->end_date;
+
+            if (! $startDate || ! $endDate) {
+                $year = (int) ($request->input('year') ?: now()->year);
+                $endMonth = (int) config('accounting.fiscal_year_end_month', 12);
+                $endDay = (int) config('accounting.fiscal_year_end_day', 31);
+
+                $endDate = $endDate ?: Carbon::create($year, $endMonth, $endDay)->toDateString();
+                $startDate = $startDate ?: Carbon::parse($endDate)->subYear()->addDay()->toDateString();
+            }
+
             $year = $this->fiscalYearService->createFiscalYear(
                 $request->year_code,
-                $request->start_date,
-                $request->end_date
+                $startDate,
+                $endDate
             );
 
             return redirect()->back()->with('success', "Fiscal year {$year->year_code} created successfully.");

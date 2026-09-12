@@ -70,6 +70,24 @@ class TransactionApprovalController extends Controller
     }
 
     /**
+     * Clear a compliance hold on a pending transaction.
+     */
+    public function clearHold(Request $request, int $transactionId): JsonResponse
+    {
+        $transaction = Transaction::findOrFail($transactionId);
+
+        $this->authorize('clearHold', $transaction);
+
+        try {
+            $this->approvalService->clearHold($transaction, (int) auth()->id());
+
+            return $this->successResponse($transaction->fresh(), 'Compliance hold cleared.');
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), [], 422);
+        }
+    }
+
+    /**
      * Confirm a large transaction (parity with the web confirmation flow).
      *
      * Managers confirm or reject transactions exceeding the configured

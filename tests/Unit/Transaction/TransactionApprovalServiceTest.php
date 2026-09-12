@@ -33,6 +33,7 @@ use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionMonitoringService;
@@ -71,7 +72,8 @@ class TransactionApprovalServiceTest extends TestCase
             $auditService,
             $tellerAllocation,
             new MathService,
-            $mocks['confirmation'] ?? app(TransactionConfirmationService::class)
+            $mocks['confirmation'] ?? app(TransactionConfirmationService::class),
+            app(ThresholdService::class)
         );
     }
 
@@ -259,7 +261,8 @@ class TransactionApprovalServiceTest extends TestCase
     public function approve_throws_when_confirmation_required_but_not_confirmed(): void
     {
         config(['thresholds.reporting.str' => '50000']);
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        // 75k is above the large-transaction threshold — only compliance may approve.
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter, ['amount_local' => '75000.00']);
 
@@ -277,7 +280,7 @@ class TransactionApprovalServiceTest extends TestCase
     public function approve_succeeds_when_confirmation_confirmed(): void
     {
         config(['thresholds.reporting.str' => '50000']);
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter, ['amount_local' => '75000.00']);
 
@@ -302,7 +305,7 @@ class TransactionApprovalServiceTest extends TestCase
             'audit' => $audit,
         ])->approve($transaction, $approver->id);
 
-        $this->assertTrue($result->success);
+        $this->assertTrue($result->success, $result->message);
         $this->assertSame(TransactionStatus::Completed, $result->transaction->status);
     }
 

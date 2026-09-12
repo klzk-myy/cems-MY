@@ -282,7 +282,7 @@ class AccountingServiceTest extends TestCase
     public function debit_account_balance_increases_with_debit_and_decreases_with_credit(): void
     {
         $assetAccount = ChartOfAccount::factory()->create([
-            'account_code' => '1050',
+            'account_code' => '1099',
             'account_name' => 'Cash',
             'account_type' => 'Asset',
             'is_active' => true,
@@ -310,7 +310,7 @@ class AccountingServiceTest extends TestCase
 
         $service->createJournalEntry(
             [
-                ['account_code' => '1050', 'debit' => '1000.00', 'credit' => '0'],
+                ['account_code' => '1099', 'debit' => '1000.00', 'credit' => '0'],
                 ['account_code' => '2010', 'debit' => '0', 'credit' => '1000.00'],
             ],
             'Manual',
@@ -322,7 +322,7 @@ class AccountingServiceTest extends TestCase
 
         $service->createJournalEntry(
             [
-                ['account_code' => '1050', 'debit' => '500.00', 'credit' => '0'],
+                ['account_code' => '1099', 'debit' => '500.00', 'credit' => '0'],
                 ['account_code' => '2010', 'debit' => '0', 'credit' => '500.00'],
             ],
             'Manual',
@@ -335,7 +335,7 @@ class AccountingServiceTest extends TestCase
         $service->createJournalEntry(
             [
                 ['account_code' => '2010', 'debit' => '200.00', 'credit' => '0'],
-                ['account_code' => '1050', 'debit' => '0', 'credit' => '200.00'],
+                ['account_code' => '1099', 'debit' => '0', 'credit' => '200.00'],
             ],
             'Manual',
             null,
@@ -344,7 +344,7 @@ class AccountingServiceTest extends TestCase
             $user->id
         );
 
-        $balance = $service->getAccountBalance('1050', '2026-01-20');
+        $balance = $service->getAccountBalance('1099', '2026-01-20');
         $this->assertEquals('1300.0000', $balance);
     }
 

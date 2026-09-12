@@ -151,7 +151,10 @@ class StockTransfer extends BaseModel
 
     public function canDispatch(): bool
     {
-        return $this->status === StockTransferStatus::HqApproved;
+        // Maker/taker: taker approval (BranchManagerApproved) is sufficient.
+        // HqApproved is accepted for transfers created before the HQ step
+        // was removed.
+        return in_array($this->status, [StockTransferStatus::BranchManagerApproved, StockTransferStatus::HqApproved], true);
     }
 
     public function canReceive(): bool

@@ -110,11 +110,8 @@ class TransactionReversalService
 
     public function canUserReverse(User $user, Transaction $transaction): bool
     {
-        if ($user->role->isManager()) {
-            return true;
-        }
-
-        return $transaction->user_id === $user->id;
+        // Reversals of completed transactions are compliance-only.
+        return $user->role->isComplianceOfficer();
     }
 
     public function isWithinCancellationWindow(Transaction $transaction): bool

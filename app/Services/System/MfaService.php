@@ -379,6 +379,7 @@ class MfaService
             UserRole::Admin => 'admin',
             UserRole::Manager => 'manager',
             UserRole::ComplianceOfficer => 'compliance',
+            UserRole::Accountant => 'accountant',
             UserRole::Teller => 'teller',
         };
 

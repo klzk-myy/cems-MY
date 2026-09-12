@@ -6,9 +6,16 @@ use App\Enums\TransactionStatus;
 use App\Enums\UserRole;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\System\MathService;
+use App\Services\ThresholdService;
 
 class TransactionPolicy
 {
+    public function __construct(
+        protected ThresholdService $thresholdService,
+        protected MathService $mathService,
+    ) {}
+
     /**
      * Determine whether the user can view any transactions.
      * Users can view transactions if they are assigned to a branch (or are admin).
@@ -33,11 +40,11 @@ class TransactionPolicy
 
     /**
      * Determine whether the user can create transactions.
-     * Tellers, managers, and admins can create transactions.
+     * Only tellers create transactions.
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, [UserRole::Teller, UserRole::Manager, UserRole::Admin]);
+        return $user->role === UserRole::Teller;
     }
 
     /**
@@ -69,19 +76,24 @@ class TransactionPolicy
 
     /**
      * Determine whether the user can request cancellation of the transaction.
-     * Managers and admins can request cancellation for transactions in their branch.
+     * Tellers can request cancellation of their own transactions; managers and
+     * admins can request cancellation for transactions in their branch.
      */
     public function requestCancellation(User $user, Transaction $transaction): bool
     {
-        if (! in_array($user->role, [UserRole::Manager, UserRole::Admin])) {
-            return false;
-        }
-
         if ($user->role === UserRole::Admin) {
             return true;
         }
 
-        return $transaction->branch_id === $user->branch_id;
+        if ($user->role === UserRole::Teller) {
+            return $transaction->user_id === $user->id;
+        }
+
+        if ($user->role === UserRole::Manager) {
+            return $transaction->branch_id === $user->branch_id;
+        }
+
+        return false;
     }
 
     /**
@@ -120,12 +132,15 @@ class TransactionPolicy
 
     /**
      * Determine whether the user can approve the transaction.
-     * Managers and admins can approve transactions in their branch.
+     * Tiered approval: >= the manager threshold (default RM 50,000) requires a
+     * compliance officer; below that a manager approves. Admins can approve
+     * either tier. Branch-scoped for non-admins.
      * Per BNM segregation of duties, the approver must be different from the creator.
      */
     public function approve(User $user, Transaction $transaction): bool
     {
-        if (! in_array($user->role, [UserRole::Manager, UserRole::Admin])) {
+        // Prevent self-approval (BNM segregation of duties)
+        if ($transaction->user_id === $user->id) {
             return false;
         }
 
@@ -133,12 +148,32 @@ class TransactionPolicy
             return true;
         }
 
-        // Prevent self-approval (BNM segregation of duties)
-        if ($transaction->user_id === $user->id) {
+        if ($transaction->branch_id !== $user->branch_id) {
             return false;
         }
 
-        return $transaction->branch_id === $user->branch_id;
+        $isLarge = $this->mathService->compare(
+            (string) $transaction->amount_local,
+            $this->thresholdService->getManagerApprovalThreshold()
+        ) >= 0;
+
+        return $isLarge
+            ? $user->role === UserRole::ComplianceOfficer
+            : $user->role === UserRole::Manager;
+    }
+
+    /**
+     * Determine whether the user can clear a compliance hold on the transaction.
+     * Compliance officers and admins, branch-scoped for compliance.
+     */
+    public function clearHold(User $user, Transaction $transaction): bool
+    {
+        if ($user->role === UserRole::Admin) {
+            return true;
+        }
+
+        return $user->role === UserRole::ComplianceOfficer
+            && $transaction->branch_id === $user->branch_id;
     }
 
     /**

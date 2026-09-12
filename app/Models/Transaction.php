@@ -64,6 +64,8 @@ use Illuminate\Support\Carbon;
  * @property bool $approval_sync_failed
  * @property Carbon|null $approval_sync_failed_at
  * @property string|null $approval_sync_error
+ * @property int|null $compliance_cleared_by
+ * @property Carbon|null $compliance_cleared_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -139,6 +141,8 @@ class Transaction extends TransactionModel
         'branch_id' => 'integer',
         'approved_by' => 'integer',
         'approved_at' => 'datetime',
+        'compliance_cleared_by' => 'integer',
+        'compliance_cleared_at' => 'datetime',
         'approval_sync_failed' => 'boolean',
         'approval_sync_failed_at' => 'datetime',
         'version' => 'integer',

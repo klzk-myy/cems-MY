@@ -50,6 +50,24 @@ class StockTransferService
         return $this->requester;
     }
 
+    /**
+     * Whether the acting user's branch matches the transfer's stored branch
+     * identifier (name or code). Fails closed when unresolvable.
+     */
+    private function requesterBranchMatches(?string $identifier): bool
+    {
+        if ($identifier === null || trim($identifier) === '') {
+            return false;
+        }
+
+        $branchId = Branch::query()
+            ->where('name', $identifier)
+            ->orWhere('code', $identifier)
+            ->value('id');
+
+        return $branchId !== null && (int) $branchId === (int) $this->requester()->branch_id;
+    }
+
     public function createRequest(array $data): StockTransfer
     {
         // Validate business rules
@@ -59,6 +77,28 @@ class StockTransferService
 
         if ($data['source_branch_name'] === $data['destination_branch_name']) {
             throw new TransactionValidationException(message: 'Source and destination branches cannot be the same');
+        }
+
+        // Head-office branches hold no foreign stock — they cannot be a
+        // transfer source or destination.
+        $hqInvolved = Branch::query()
+            ->where('type', Branch::TYPE_HEAD_OFFICE)
+            ->where(fn ($q) => $q
+                ->where('name', $data['source_branch_name'])
+                ->orWhere('code', $data['source_branch_name'])
+                ->orWhere('name', $data['destination_branch_name'])
+                ->orWhere('code', $data['destination_branch_name']))
+            ->exists();
+
+        if ($hqInvolved) {
+            throw new TransactionValidationException(message: 'Head office does not hold foreign stock and cannot participate in transfers');
+        }
+
+        // Maker check: a non-admin may only create transfers sourcing stock
+        // from their own branch.
+        $requester = $this->requester();
+        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($data['source_branch_name'])) {
+            throw new TransactionValidationException(message: 'You can only create transfers sourcing stock from your own branch');
         }
 
         if (empty($data['items']) || ! is_array($data['items'])) {
@@ -124,7 +164,9 @@ class StockTransferService
 
     public function approveByBranchManager(StockTransfer $transfer): void
     {
-        if (! $this->requester()->isManager() && ! $this->requester()->isAdmin()) {
+        $requester = $this->requester();
+
+        if (! $requester->isManager() && ! $requester->isAdmin()) {
             throw new TransactionApprovalException((int) $transfer->id, 'Only managers can approve transfers');
         }
 
@@ -132,7 +174,17 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Transfer is not in requested status');
         }
 
-        $transfer->approveByBranchManager($this->requester());
+        if ($transfer->requested_by === $requester->id) {
+            throw new TransactionApprovalException((int) $transfer->id, 'The requesting branch cannot approve its own transfer');
+        }
+
+        // Maker/taker: the DESTINATION branch manager (taker) approves the
+        // request created by the source branch (maker). HQ is not involved.
+        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only the destination branch manager can approve this transfer');
+        }
+
+        $transfer->approveByBranchManager($requester);
     }
 
     public function approveByHQ(StockTransfer $transfer): void
@@ -150,12 +202,21 @@ class StockTransferService
 
     public function dispatch(StockTransfer $transfer): void
     {
-        if (! $this->requester()->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only admin can dispatch transfers');
+        $requester = $this->requester();
+
+        if (! $requester->isManager() && ! $requester->isAdmin()) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can dispatch transfers');
         }
 
-        if ($transfer->status !== StockTransferStatus::HqApproved) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be HQ-approved before dispatch');
+        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->source_branch_name)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only the source branch can dispatch this transfer');
+        }
+
+        // Taker approval (BranchManagerApproved) is sufficient to dispatch.
+        // HqApproved remains accepted for transfers created before the
+        // maker/taker model removed the HQ step.
+        if (! in_array($transfer->status, [StockTransferStatus::BranchManagerApproved, StockTransferStatus::HqApproved], true)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be approved by the destination branch before dispatch');
         }
 
         // Outbound stock movement: the SOURCE branch gives up the full
@@ -180,8 +241,14 @@ class StockTransferService
 
     public function receiveItems(StockTransfer $transfer, array $items): void
     {
-        if (! $this->requester()->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only admin can receive items');
+        $requester = $this->requester();
+
+        if (! $requester->isManager() && ! $requester->isAdmin()) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can receive items');
+        }
+
+        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only the destination branch can receive this transfer');
         }
 
         if ($transfer->status !== StockTransferStatus::InTransit) {
@@ -277,8 +344,14 @@ class StockTransferService
 
     public function complete(StockTransfer $transfer): void
     {
-        if (! $this->requester()->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only admin can complete transfers');
+        $requester = $this->requester();
+
+        if (! $requester->isManager() && ! $requester->isAdmin()) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can complete transfers');
+        }
+
+        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only the destination branch can complete this transfer');
         }
 
         // Received is included: fully-received transfers would otherwise be
@@ -333,8 +406,16 @@ class StockTransferService
 
     public function reject(StockTransfer $transfer, string $reason = ''): void
     {
-        if (! $this->requester()->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only admin can reject transfers');
+        $requester = $this->requester();
+
+        // The taker (destination branch) rejects the maker's request; admin can
+        // reject any transfer.
+        if (! $requester->isAdmin() && ! $requester->isManager()) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can reject transfers');
+        }
+
+        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only the destination branch manager can reject this transfer');
         }
 
         if (! in_array($transfer->status, [

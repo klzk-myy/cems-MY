@@ -20,8 +20,9 @@ class StockTransferBranchIsolationTest extends TestCase
     public function admin_is_allowed_every_action_via_policy(): void
     {
         [$branchA, $branchB, $admin] = $this->makeBranchesAndAdmin();
+        $otherAdmin = User::factory()->create(['role' => UserRole::Admin]);
 
-        $transfer = $this->makeTransfer($branchA->name, $branchB->name, $admin->id);
+        $transfer = $this->makeTransfer($branchA->name, $branchB->name, $otherAdmin->id);
 
         $this->assertTrue(Gate::forUser($admin)->allows('view', $transfer));
         $this->assertTrue(Gate::forUser($admin)->allows('approveBranchManager', $transfer));
@@ -42,16 +43,19 @@ class StockTransferBranchIsolationTest extends TestCase
         $transfer = $this->makeTransfer($branchA->name, $branchB->name, $managerA->id);
 
         $this->assertTrue(Gate::forUser($managerA)->allows('view', $transfer));
-        $this->assertTrue(Gate::forUser($managerA)->allows('approveBranchManager', $transfer));
         $this->assertTrue(Gate::forUser($managerA)->allows('dispatch', $transfer));
         $this->assertTrue(Gate::forUser($managerA)->allows('cancel', $transfer));
+
+        // Maker/taker: the SOURCE manager (maker) cannot approve — approval
+        // belongs to the destination branch, and self-approval is denied anyway.
+        $this->assertFalse(Gate::forUser($managerA)->allows('approveBranchManager', $transfer));
 
         // Source manager is not a member of the destination branch.
         $this->assertFalse(Gate::forUser($managerA)->allows('receive', $transfer));
         $this->assertFalse(Gate::forUser($managerA)->allows('complete', $transfer));
-        // HQ-only actions remain admin-only.
-        $this->assertFalse(Gate::forUser($managerA)->allows('approveHq', $transfer));
         $this->assertFalse(Gate::forUser($managerA)->allows('reject', $transfer));
+        // HQ-only action remains admin-only.
+        $this->assertFalse(Gate::forUser($managerA)->allows('approveHq', $transfer));
     }
 
     #[Test]
@@ -60,16 +64,32 @@ class StockTransferBranchIsolationTest extends TestCase
         [$branchA, $branchB, $admin] = $this->makeBranchesAndAdmin();
         $managerB = User::factory()->create(['role' => UserRole::Manager, 'branch_id' => $branchB->id]);
 
-        $transfer = $this->makeTransfer($branchA->name, $branchB->name, $managerB->id);
+        // The transfer is requested by the source branch, so the destination
+        // manager is the taker who approves it.
+        $transfer = $this->makeTransfer($branchA->name, $branchB->name, $admin->id);
 
         $this->assertTrue(Gate::forUser($managerB)->allows('view', $transfer));
+        $this->assertTrue(Gate::forUser($managerB)->allows('approveBranchManager', $transfer));
         $this->assertTrue(Gate::forUser($managerB)->allows('receive', $transfer));
         $this->assertTrue(Gate::forUser($managerB)->allows('complete', $transfer));
+        $this->assertTrue(Gate::forUser($managerB)->allows('reject', $transfer));
 
         // Destination manager is not the source branch manager.
-        $this->assertFalse(Gate::forUser($managerB)->allows('approveBranchManager', $transfer));
         $this->assertFalse(Gate::forUser($managerB)->allows('dispatch', $transfer));
         $this->assertFalse(Gate::forUser($managerB)->allows('cancel', $transfer));
+        $this->assertFalse(Gate::forUser($managerB)->allows('approveHq', $transfer));
+    }
+
+    #[Test]
+    public function taker_cannot_approve_transfer_they_requested(): void
+    {
+        [$branchA, $branchB, $admin] = $this->makeBranchesAndAdmin();
+        $managerB = User::factory()->create(['role' => UserRole::Manager, 'branch_id' => $branchB->id]);
+
+        // Self-approval: the taker cannot approve a transfer they requested.
+        $transfer = $this->makeTransfer($branchA->name, $branchB->name, $managerB->id);
+
+        $this->assertFalse(Gate::forUser($managerB)->allows('approveBranchManager', $transfer));
     }
 
     #[Test]
@@ -96,6 +116,7 @@ class StockTransferBranchIsolationTest extends TestCase
         $branchC = Branch::factory()->create();
         $managerC = User::factory()->create(['role' => UserRole::Manager, 'branch_id' => $branchC->id]);
         $managerA = User::factory()->create(['role' => UserRole::Manager, 'branch_id' => $branchA->id]);
+        $managerB = User::factory()->create(['role' => UserRole::Manager, 'branch_id' => $branchB->id]);
 
         $transfer = $this->makeTransfer($branchA->name, $branchB->name, $managerA->id);
 
@@ -112,8 +133,13 @@ class StockTransferBranchIsolationTest extends TestCase
             ->post(route('stock-transfers.cancel', $transfer), ['reason' => 'x'])
             ->assertForbidden();
 
-        // Source manager is allowed (POST actions redirect, never 403).
-        $allowed = $this->actingAs($managerA)
+        // Source manager (maker) cannot approve their own transfer.
+        $this->actingAs($managerA)
+            ->post(route('stock-transfers.approve-bm', $transfer))
+            ->assertForbidden();
+
+        // Destination manager (taker) approves — POST redirects, never 403.
+        $allowed = $this->actingAs($managerB)
             ->post(route('stock-transfers.approve-bm', $transfer));
         $this->assertNotEquals(403, $allowed->getStatusCode());
 
@@ -134,6 +160,7 @@ class StockTransferBranchIsolationTest extends TestCase
             ->post(route('stock-transfers.approve-hq', $transfer))
             ->assertForbidden();
 
+        // The maker cannot reject — rejection belongs to the taker.
         $this->actingAs($managerA)
             ->post(route('stock-transfers.reject', $transfer), ['reason' => 'x'])
             ->assertForbidden();

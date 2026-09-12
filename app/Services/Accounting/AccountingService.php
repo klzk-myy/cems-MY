@@ -55,9 +55,9 @@ class AccountingService implements AccountingServiceInterface
     /**
      * Create a new journal entry with validation.
      *
-     * Validates that the entry is balanced (debits equal credits) and creates
-     * in Draft status. Entries must be submitted for approval and then approved
-     * before being posted to the ledger.
+     * Validates that the entry is balanced (debits equal credits) and posts it
+     * to the ledger immediately. Journal entries carry no approval step:
+     * branch managers post branch journals, admins post company-wide.
      *
      * @param  array  $lines  Array of journal line items with keys:
      *                        - account_code: string Account code

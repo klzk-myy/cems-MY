@@ -136,8 +136,10 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create(['role' => UserRole::Manager]);
 
-        $this->assertTrue($user->role->canCreateTransaction());
-        $this->assertTrue($user->role->canApproveLargeTransactions());
+        // Only tellers create transactions; managers approve the 10k–50k tier.
+        $this->assertFalse($user->role->canCreateTransaction());
+        $this->assertTrue($user->role->canApproveTransactions());
+        $this->assertFalse($user->role->canApproveLargeTransactions());
         $this->assertTrue($user->role->canAccessAccounting());
     }
 
@@ -147,7 +149,20 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
         $this->assertTrue($user->role->canAccessCompliance());
+        $this->assertTrue($user->role->canApproveLargeTransactions());
+        $this->assertTrue($user->role->canReverseTransaction());
         $this->assertFalse($user->role->canAccessAccounting());
+    }
+
+    #[Test]
+    public function accountant_has_correct_role_permissions(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::Accountant]);
+
+        $this->assertTrue($user->role->canAccessAccounting());
+        $this->assertTrue($user->role->canViewReports());
+        $this->assertFalse($user->role->canCreateTransaction());
+        $this->assertFalse($user->role->canApproveTransactions());
     }
 
     #[Test]

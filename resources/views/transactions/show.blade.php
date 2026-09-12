@@ -101,8 +101,27 @@
             </x-alert>
         @endif
 
+        @if($transaction->hold_reason !== null)
+            <x-alert type="{{ $transaction->compliance_cleared_at ? 'success' : 'warning' }}"
+                     title="{{ $transaction->compliance_cleared_at ? 'Compliance Hold Cleared' : 'Compliance Hold' }}"
+                     role="alert">
+                {{ $transaction->hold_reason }}
+                @if($transaction->compliance_cleared_at)
+                    <div class="mt-1 text-xs">Cleared at {{ $transaction->compliance_cleared_at->format('Y-m-d H:i') }}</div>
+                @endif
+            </x-alert>
+        @endif
+
         <x-card title="Actions">
             <div class="flex items-center gap-4 flex-wrap">
+                @if($transaction->hold_reason !== null && $transaction->compliance_cleared_at === null)
+                    @can('clearHold', $transaction)
+                        <form method="POST" action="{{ route('transactions.clear-hold', $transaction->id) }}" class="contents">
+                            @csrf
+                            <x-button type="submit" variant="primary">Clear Compliance Hold</x-button>
+                        </form>
+                    @endcan
+                @endif
                 @if(in_array($transaction->status?->value, ['Pending', 'PendingApproval'], true))
                     @can('approve', $transaction)
                         <form method="POST" action="{{ route('transactions.approve', $transaction->id) }}" class="contents">
@@ -121,7 +140,7 @@
                         <x-button href="{{ route('transactions.reject-cancellation', $transaction->id) }}" variant="danger">Reject Cancellation</x-button>
                     @endcan
                 @endif
-                @if($transaction->status?->isCompleted())
+                @if(! $transaction->status?->isFinal() && ! $transaction->status?->isPendingCancellation())
                     @can('requestCancellation', $transaction)
                         <x-button href="{{ route('transactions.cancel', $transaction->id) }}" variant="danger">Request Cancellation</x-button>
                     @endcan

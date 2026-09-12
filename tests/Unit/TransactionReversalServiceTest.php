@@ -238,21 +238,31 @@ class TransactionReversalServiceTest extends TestCase
     }
 
     #[Test]
-    public function manager_can_reverse_any_transaction(): void
+    public function compliance_officer_can_reverse_any_transaction(): void
     {
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
+        $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $transaction = Transaction::factory()->create();
 
-        $this->assertTrue($this->service->canUserReverse($manager, $transaction));
+        $this->assertTrue($this->service->canUserReverse($compliance, $transaction));
     }
 
     #[Test]
-    public function teller_can_reverse_own_transaction(): void
+    public function manager_cannot_reverse_transactions(): void
+    {
+        // Reversal of completed transactions is compliance-only.
+        $manager = User::factory()->create(['role' => UserRole::Manager]);
+        $transaction = Transaction::factory()->create();
+
+        $this->assertFalse($this->service->canUserReverse($manager, $transaction));
+    }
+
+    #[Test]
+    public function teller_cannot_reverse_own_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         $transaction = Transaction::factory()->create(['user_id' => $teller->id]);
 
-        $this->assertTrue($this->service->canUserReverse($teller, $transaction));
+        $this->assertFalse($this->service->canUserReverse($teller, $transaction));
     }
 
     #[Test]

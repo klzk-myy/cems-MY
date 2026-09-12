@@ -151,12 +151,13 @@ class TransactionCancellationServiceTest extends TestCase
     #[Test]
     public function refund_requires_different_approver_than_requester(): void
     {
-        // Create a teller who will request the reversal
-        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        // Reversal is compliance-only; a compliance officer still cannot
+        // reverse a transaction they created themselves (segregation of duties).
+        $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
-        // Create a completed transaction by the same teller
+        // Create a completed transaction recorded under the same user
         $transaction = Transaction::factory()->create([
-            'user_id' => $teller->id,
+            'user_id' => $compliance->id,
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',
@@ -179,17 +180,17 @@ class TransactionCancellationServiceTest extends TestCase
         $this->expectException(SegregationOfDutiesException::class);
         $this->expectExceptionMessage('Segregation of duties violation');
 
-        $this->cancellationService->requestReversal($transaction, $teller, 'Test reversal reason');
+        $this->cancellationService->requestReversal($transaction, $compliance, 'Test reversal reason');
     }
 
     #[Test]
-    public function manager_can_reverse_other_user_transaction(): void
+    public function compliance_officer_can_reverse_other_user_transaction(): void
     {
         // Create a teller who created the transaction
         $teller = User::factory()->create(['role' => UserRole::Teller]);
 
-        // Create a manager who will reverse it (different user - allowed)
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
+        // Only compliance officers may reverse completed transactions
+        $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
         // Create a completed transaction by the teller
         $transaction = Transaction::factory()->create([
@@ -212,8 +213,8 @@ class TransactionCancellationServiceTest extends TestCase
             'last_valuation_rate' => '4.50',
         ]);
 
-        // Manager reversing teller's transaction should succeed
-        $result = $this->cancellationService->requestReversal($transaction, $manager, 'Manager reversing teller error');
+        // Compliance reversing the teller's transaction should succeed
+        $result = $this->cancellationService->requestReversal($transaction, $compliance, 'Compliance reversing teller error');
 
         $this->assertTrue($result);
         $this->assertEquals(TransactionStatus::Reversed, $transaction->status);

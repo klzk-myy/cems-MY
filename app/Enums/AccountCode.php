@@ -13,6 +13,8 @@ enum AccountCode: string
     case CASH_THB = '1006';
     case CASH_AUD = '1007';
 
+    case PETTY_CASH = '1050';
+
     case BANK_MAYBANK = '1100';
     case BANK_CIMB = '1101';
     case BANK_PUBLIC = '1102';
@@ -95,7 +97,7 @@ enum AccountCode: string
     public function category(): string
     {
         return match ($this) {
-            self::CASH_MYR, self::CASH_USD, self::CASH_EUR, self::CASH_GBP, self::CASH_SGD, self::CASH_JPY, self::CASH_THB, self::CASH_AUD,
+            self::CASH_MYR, self::CASH_USD, self::CASH_EUR, self::CASH_GBP, self::CASH_SGD, self::CASH_JPY, self::CASH_THB, self::CASH_AUD, self::PETTY_CASH,
             self::BANK_MAYBANK, self::BANK_CIMB, self::BANK_PUBLIC, self::BANK_RHB,
             self::NOSTRO_USD, self::NOSTRO_EUR, self::NOSTRO_GBP,
             self::FOREIGN_CURRENCY_INVENTORY, self::FOREX_INVENTORY_USD, self::FOREX_INVENTORY_EUR, self::FOREX_INVENTORY_GBP,
@@ -132,6 +134,7 @@ enum AccountCode: string
             self::CASH_JPY => 'Cash (JPY)',
             self::CASH_THB => 'Cash (THB)',
             self::CASH_AUD => 'Cash (AUD)',
+            self::PETTY_CASH => 'Petty Cash',
             self::BANK_MAYBANK => 'Bank (Maybank)',
             self::BANK_CIMB => 'Bank (CIMB)',
             self::BANK_PUBLIC => 'Bank (Public)',

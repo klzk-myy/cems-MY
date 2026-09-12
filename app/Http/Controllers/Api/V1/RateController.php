@@ -66,7 +66,9 @@ class RateController extends Controller
             return $response;
         }
 
-        $result = $this->rateService->fetchAndStoreRates($user);
+        // Branch rate cards: a non-admin manager fetches/sets rates for their
+        // own branch only; admins may target any branch.
+        $result = $this->rateService->fetchAndStoreRates($user, $user->isAdmin() ? null : $user->branch_id);
 
         if (! $result['success']) {
             return $this->errorResponse($result['message'], [], 500);
@@ -96,15 +98,20 @@ class RateController extends Controller
     public function apiOverride(OverrideRateRequest $request, string $currencyCode): JsonResponse
     {
         $validated = $request->validated();
+        $user = Auth::user();
+
+        // Non-admin managers may only write their own branch's rate card —
+        // a client-supplied branch_id is ignored unless the caller is admin.
+        $branchId = $user->isAdmin() ? ($validated['branch_id'] ?? null) : $user->branch_id;
 
         try {
             $result = $this->rateService->overrideRate(
                 $currencyCode,
                 $validated['rate_buy'],
                 $validated['rate_sell'],
-                Auth::user(),
+                $user,
                 $validated['reason'] ?? null,
-                $validated['branch_id'] ?? null,
+                $branchId,
                 $validated['effective_date'] ?? null
             );
         } catch (InvalidRateException $e) {
@@ -132,7 +139,7 @@ class RateController extends Controller
 
         $targetDate = $validated['date'] ?? now()->subDay()->toDateString();
 
-        $result = $this->rateService->copyPreviousRates($targetDate);
+        $result = $this->rateService->copyPreviousRates($targetDate, $user->isAdmin() ? null : $user->branch_id);
 
         if (! $result['success']) {
             return $this->errorResponse($result['message'], [], 404);

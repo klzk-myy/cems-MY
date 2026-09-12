@@ -224,6 +224,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user has accountant or admin role.
+     *
+     * @return bool True if user has accountant or admin role
+     */
+    public function isAccountant(): bool
+    {
+        return $this->role->isAccountant();
+    }
+
+    /**
      * Check if MFA is verified for this session.
      */
     public function isMfaVerified(): bool

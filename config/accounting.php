@@ -32,4 +32,16 @@ return [
     |
     */
     'validate_accounts' => env('ACCOUNTING_VALIDATE_ACCOUNTS', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fiscal Year End
+    |--------------------------------------------------------------------------
+    |
+    | Default fiscal year closing date (month/day). Fiscal years close on
+    | 31 December by default; override via .env for non-calendar year-ends.
+    |
+    */
+    'fiscal_year_end_month' => env('FISCAL_YEAR_END_MONTH', 12),
+    'fiscal_year_end_day' => env('FISCAL_YEAR_END_DAY', 31),
 ];

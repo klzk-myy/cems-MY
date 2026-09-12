@@ -31,10 +31,11 @@ class TransactionApiTest extends TestCase
             'currency_code' => $currency->code,
             'branch_id' => $branch->id,
         ]);
-        // ValidTill scopes counters to the acting user's branch, so the admin
-        // must belong to the same branch as the counter used below.
-        $admin = User::factory()->create([
-            'role' => 'admin',
+        // ValidTill scopes counters to the acting user's branch, and only
+        // tellers may create transactions — the teller must belong to the
+        // same branch as the counter used below.
+        $teller = User::factory()->create([
+            'role' => 'teller',
             'mfa_enabled' => false,
             'branch_id' => $branch->id,
         ]);
@@ -51,7 +52,7 @@ class TransactionApiTest extends TestCase
             ->once()
             ->andReturn($transaction);
 
-        $response = $this->actingAs($admin)
+        $response = $this->actingAs($teller)
             ->postJson('/api/v1/transactions', [
                 'customer_id' => $customer->id,
                 'type' => 'Buy',

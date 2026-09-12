@@ -54,8 +54,9 @@ trait DeterminesTransactionStatus
 
     /**
      * Decide whether a transaction should start as Completed or PendingApproval.
-     * Only a small transaction by a Low-risk customer auto-completes; anything
-     * at/above the auto-approve threshold or any elevated risk needs approval.
+     * A small transaction auto-completes unless the customer is High risk or a
+     * compliance hold is required; anything at/above the auto-approve
+     * threshold needs approval. Null risk fails closed to approval.
      *
      * @param  string  $amountLocal  Local currency amount as a numeric string.
      * @param  bool  $holdRequired  Whether a compliance hold is required.
@@ -64,7 +65,8 @@ trait DeterminesTransactionStatus
     private function determineInitialStatus(string $amountLocal, bool $holdRequired, ?RiskRating $riskRating): TransactionStatus
     {
         if ($holdRequired
-            || $riskRating !== RiskRating::Low
+            || $riskRating === null
+            || $riskRating === RiskRating::High
             || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
             return TransactionStatus::PendingApproval;
         }

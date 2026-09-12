@@ -34,4 +34,17 @@ class Controller extends BaseController
             abort(403, 'Unauthorized. Admin access required.');
         }
     }
+
+    /**
+     * Abort with 403 unless the authenticated user is a manager, compliance
+     * officer, or admin.
+     */
+    protected function requireManagerComplianceOrAdmin(): void
+    {
+        $user = auth()->user();
+
+        if (! $user || (! $user->isManager() && ! $user->isComplianceOfficer())) {
+            abort(403, 'Unauthorized. Manager, Compliance, or Admin access required.');
+        }
+    }
 }

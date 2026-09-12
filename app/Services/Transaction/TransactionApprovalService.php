@@ -34,6 +34,7 @@ use App\Services\Contracts\TransactionApprovalServiceInterface;
 use App\Services\DTOs\ApprovalResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use App\Services\Traits\AccountingEntriesTrait;
 use App\Services\Traits\TillBalanceTrait;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +56,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         protected TellerAllocationService $tellerAllocationService,
         protected MathService $mathService,
         protected TransactionConfirmationService $confirmationService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     public function validateApprovalEligibility(Transaction $transaction, int $approverId): void
@@ -68,6 +70,76 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         if ($transaction->user_id === $approverId) {
             throw new SelfApprovalException;
         }
+
+        if ($transaction->hold_reason !== null && $transaction->compliance_cleared_at === null) {
+            throw new TransactionValidationException(
+                message: 'Transaction is under compliance hold and must be cleared by a compliance officer before approval.'
+            );
+        }
+    }
+
+    /**
+     * Enforce the approval tier: transactions at/above the manager threshold
+     * require a compliance officer; below it a manager. Admins satisfy both.
+     */
+    private function validateApproverTier(Transaction $transaction, int $approverId): void
+    {
+        $approver = User::findOrFail($approverId);
+        $isLarge = $this->mathService->compare(
+            (string) $transaction->amount_local,
+            $this->thresholdService->getManagerApprovalThreshold()
+        ) >= 0;
+
+        if ($isLarge && ! $approver->isComplianceOfficer()) {
+            throw new TransactionValidationException(
+                message: 'Transactions at or above the large-transaction threshold require compliance officer approval.'
+            );
+        }
+
+        if (! $isLarge && ! $approver->isManager()) {
+            throw new TransactionValidationException(
+                message: 'Transactions below the large-transaction threshold require manager approval.'
+            );
+        }
+    }
+
+    /**
+     * Record compliance clearance of a held transaction.
+     *
+     * A transaction carrying a hold_reason cannot be approved until a
+     * compliance officer clears it. Clearing does not approve — the normal
+     * tiered approval path still applies afterwards.
+     */
+    public function clearHold(Transaction $transaction, int $clearerId): void
+    {
+        if ($transaction->hold_reason === null) {
+            throw new TransactionValidationException(
+                message: 'Transaction is not under compliance hold.'
+            );
+        }
+
+        if ($transaction->compliance_cleared_at !== null) {
+            throw new TransactionValidationException(
+                message: 'Compliance hold has already been cleared.'
+            );
+        }
+
+        if (! $transaction->status->isPending()) {
+            throw new TransactionValidationException(
+                message: 'Transaction is not pending approval. Current status: '.$transaction->status->label()
+            );
+        }
+
+        $transaction->compliance_cleared_by = $clearerId;
+        $transaction->compliance_cleared_at = now();
+        $transaction->save();
+
+        $this->auditService->logComplianceDecision('compliance_hold_cleared', $transaction->id, [
+            'cleared_by' => $clearerId,
+            'hold_reason' => $transaction->hold_reason,
+            'amount_local' => (string) $transaction->amount_local,
+            'customer_id' => $transaction->customer_id,
+        ]);
     }
 
     /**
@@ -112,6 +184,8 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
     public function approve(Transaction $transaction, int $approverId, ?string $ipAddress = null): ApprovalResult
     {
         $ipAddress ??= optional(request())->ip();
+
+        $this->validateApproverTier($transaction, $approverId);
 
         // Segregation-of-duties gate: large transactions that enter the manager
         // confirmation flow may only be approved once a TransactionConfirmation

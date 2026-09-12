@@ -164,8 +164,10 @@ class CurrencyManagementTest extends TestCase
             ->assertSee('USD')
             ->assertSee('Disabled');
 
-        // Hidden from form selects...
-        $this->actingAs($admin)
+        // Hidden from form selects — the create form is teller-only.
+        $teller = User::factory()->create(['role' => 'teller']);
+
+        $this->actingAs($teller)
             ->get(route('transactions.create'))
             ->assertOk()
             ->assertDontSee('USD');

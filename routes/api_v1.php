@@ -66,7 +66,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->middleware('throttle:60,1') // 60 requests per minute per user
             ->name('api.v1.transactions.index');
         Route::post('/transactions', [TransactionController::class, 'store'])
-            ->middleware(['mfa.verified', 'throttle:10,1']) // 10 requests per minute per user
+            ->middleware(['role:teller', 'mfa.verified', 'throttle:10,1']) // 10 requests per minute per user
             ->name('api.v1.transactions.store');
         Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])
             ->middleware('throttle:60,1')
@@ -75,16 +75,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->middleware('throttle:export') // PDF export shares the export limiter
             ->name('api.v1.transactions.receipt');
         Route::post('/transactions/{transaction}/approve', [TransactionApprovalController::class, 'approve'])
-            ->middleware(['role:manager', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:manager,compliance', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.approve');
         Route::post('/transactions/{transaction}/reject', [TransactionApprovalController::class, 'reject'])
-            ->middleware(['role:manager', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:manager,compliance', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.reject');
+        Route::post('/transactions/{transaction}/clear-hold', [TransactionApprovalController::class, 'clearHold'])
+            ->middleware(['role:compliance', 'mfa.verified', 'throttle:20,1'])
+            ->name('api.v1.transactions.clear-hold');
         Route::post('/transactions/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])
-            ->middleware(['role:manager', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:manager,compliance', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.confirm');
         Route::post('/transactions/{transaction}/request-cancellation', [TransactionCancellationController::class, 'requestCancellation'])
-            ->middleware(['role:manager', 'mfa.verified', 'throttle:10,1'])
+            ->middleware(['role:teller,manager', 'mfa.verified', 'throttle:10,1'])
             ->name('api.v1.transactions.request-cancellation');
         Route::post('/transactions/{transaction}/approve-cancellation', [TransactionCancellationController::class, 'approveCancellation'])
             ->middleware(['role:manager,compliance', 'mfa.verified', 'throttle:5,1'])
@@ -365,6 +368,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
             // Teller: Get own active allocation
             Route::get('/my-active', [TellerAllocationController::class, 'myActiveAllocation'])
                 ->name('api.v1.allocations.my-active');
+            // Teller: Request stock from the branch pool (manager approves)
+            Route::post('/request', [TellerAllocationController::class, 'requestStock'])
+                ->middleware('role:teller')
+                ->name('api.v1.allocations.request');
+            // Teller: Accept an approved assignment (activates the allocation)
+            Route::post('/{allocationId}/accept', [TellerAllocationController::class, 'accept'])
+                ->middleware('role:teller')
+                ->name('api.v1.allocations.accept');
+            // Teller: Return own active allocation to the branch pool
+            Route::post('/{allocationId}/return', [TellerAllocationController::class, 'requestReturn'])
+                ->middleware('role:teller')
+                ->name('api.v1.allocations.return');
             // Manager: Get pending allocations for their branch
             Route::get('/pending', [TellerAllocationController::class, 'pendingForBranch'])
                 ->middleware('role:manager,admin')

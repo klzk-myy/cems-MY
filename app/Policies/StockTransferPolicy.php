@@ -34,34 +34,44 @@ class StockTransferPolicy
     }
 
     /**
-     * Determine whether the user can approve the transfer as the branch manager.
-     * Only admins, or managers assigned to the transfer's SOURCE branch.
+     * Determine whether the user can approve the transfer (taker approval).
+     * Maker/taker model: the DESTINATION branch manager approves the request
+     * created by the source branch. Self-approval is prohibited.
      */
     public function approveBranchManager(User $user, StockTransfer $stockTransfer): bool
+    {
+        if ($stockTransfer->requested_by === $user->id) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $this->branchMatches($user, $stockTransfer->destination_branch_name);
+    }
+
+    /**
+     * Determine whether the user can dispatch the transfer.
+     * The maker (source branch manager) dispatches; admins can dispatch any.
+     */
+    public function dispatch(User $user, StockTransfer $stockTransfer): bool
     {
         if ($user->isAdmin()) {
             return true;
         }
 
-        return $this->branchMatches($user, $stockTransfer->source_branch_name);
-    }
-
-    /**
-     * Determine whether the user can dispatch the transfer.
-     * Same branch constraint as branch-manager approval (source branch).
-     */
-    public function dispatch(User $user, StockTransfer $stockTransfer): bool
-    {
-        return $this->approveBranchManager($user, $stockTransfer);
+        return $user->isManager()
+            && $this->branchMatches($user, $stockTransfer->source_branch_name);
     }
 
     /**
      * Determine whether the user can cancel the transfer.
-     * Same branch constraint as branch-manager approval (source branch).
+     * The maker (source branch manager) cancels; admins can cancel any.
      */
     public function cancel(User $user, StockTransfer $stockTransfer): bool
     {
-        return $this->approveBranchManager($user, $stockTransfer);
+        return $this->dispatch($user, $stockTransfer);
     }
 
     /**
@@ -75,11 +85,17 @@ class StockTransferPolicy
 
     /**
      * Determine whether the user can reject the transfer.
-     * Admins only.
+     * The taker (destination branch manager) rejects the maker's request;
+     * admins can reject any transfer.
      */
     public function reject(User $user, StockTransfer $stockTransfer): bool
     {
-        return $user->isAdmin();
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->isManager()
+            && $this->branchMatches($user, $stockTransfer->destination_branch_name);
     }
 
     /**

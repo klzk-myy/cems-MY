@@ -83,6 +83,12 @@ class CounterController extends Controller
     {
         $this->ensureCounterBranchAccess($counter);
 
+        // Head-office branches are non-trading and may not open counters.
+        $counterBranch = $counter->branch;
+        if ($counterBranch && ! $counterBranch->canTrade()) {
+            return back()->with('error', 'Head office branches cannot open trading counters.');
+        }
+
         /** @var User $user */
         $user = auth()->user();
         $openingFloats = $request->input('opening_floats');

@@ -19,6 +19,7 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\DTOs\ApprovalResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionErrorHandler;
@@ -57,7 +58,8 @@ class ProcessTransactionRetryTest extends TestCase
             $auditService,
             $tellerAllocation,
             new MathService,
-            app(TransactionConfirmationService::class)
+            app(TransactionConfirmationService::class),
+            app(ThresholdService::class)
         );
     }
 

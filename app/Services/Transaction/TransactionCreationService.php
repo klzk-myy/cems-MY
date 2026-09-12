@@ -19,6 +19,7 @@ use App\Exceptions\Domain\PermissionDeniedException;
 use App\Exceptions\Domain\PositionLimitExceededException;
 use App\Exceptions\Domain\TransactionBlockedException;
 use App\Exceptions\Domain\TransactionValidationException;
+use App\Models\Branch;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\StockReservation;
@@ -81,6 +82,16 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
         $this->validationService->validateCurrency($data['currency_code']);
         $this->validationService->validateIpAddress($ipAddress);
+
+        // Head-office branches are non-trading: they manage an MYR expense
+        // float only and must never book exchange transactions.
+        $branch = $user->branch;
+        if ($branch instanceof Branch && ! $branch->canTrade()) {
+            throw new TransactionValidationException(
+                field: 'branch_id',
+                message: 'Head office branches cannot process transactions'
+            );
+        }
 
         $tillBalance = $this->validationService->validateTillBalance($data['till_id'], $data['currency_code']);
         /** @var Customer $customer */
@@ -621,8 +632,9 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
     /**
      * Decide whether a transaction should start as Completed or PendingApproval.
-     * Only a small transaction by a Low-risk customer auto-completes; anything
-     * at/above the auto-approve threshold or any elevated risk needs approval.
+     * A small transaction auto-completes unless the customer is High risk or a
+     * compliance hold is required; anything at/above the auto-approve
+     * threshold needs approval. Null risk fails closed to approval.
      *
      * @param  string  $amountLocal  Local currency amount as a numeric string.
      * @param  bool  $holdRequired  Whether a compliance hold is required.
@@ -631,7 +643,8 @@ class TransactionCreationService implements TransactionCreationServiceInterface
     private function determineInitialStatus(string $amountLocal, bool $holdRequired, ?RiskRating $riskRating): TransactionStatus
     {
         if ($holdRequired
-            || $riskRating !== RiskRating::Low
+            || $riskRating === null
+            || $riskRating === RiskRating::High
             || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
             return TransactionStatus::PendingApproval;
         }

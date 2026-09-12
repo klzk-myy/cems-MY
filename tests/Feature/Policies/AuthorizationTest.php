@@ -29,7 +29,7 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_allows_branch_user_to_view(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branch->id]);
         $transaction = Transaction::factory()->create(['branch_id' => $branch->id]);
@@ -41,7 +41,7 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_denies_user_without_branch_to_view_any(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => null]);
 
         $this->assertFalse($policy->viewAny($teller));
@@ -50,7 +50,7 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_denies_branch_user_to_view_other_branch_transaction(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $branch1 = Branch::factory()->create();
         $branch2 = Branch::factory()->create();
         $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branch1->id]);
@@ -62,34 +62,36 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_allows_teller_to_create(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $teller = User::factory()->create(['role' => UserRole::Teller]);
 
         $this->assertTrue($policy->create($teller));
     }
 
     #[Test]
-    public function transaction_policy_allows_manager_to_create(): void
+    public function transaction_policy_denies_manager_to_create(): void
     {
-        $policy = new TransactionPolicy;
+        // Only tellers create transactions; managers approve.
+        $policy = app(TransactionPolicy::class);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
 
-        $this->assertTrue($policy->create($manager));
+        $this->assertFalse($policy->create($manager));
     }
 
     #[Test]
-    public function transaction_policy_allows_admin_to_create(): void
+    public function transaction_policy_denies_admin_to_create(): void
     {
-        $policy = new TransactionPolicy;
+        // Admin can do everything except create transactions.
+        $policy = app(TransactionPolicy::class);
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
-        $this->assertTrue($policy->create($admin));
+        $this->assertFalse($policy->create($admin));
     }
 
     #[Test]
     public function transaction_policy_denies_compliance_officer_to_create(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $co = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
         $this->assertFalse($policy->create($co));
@@ -98,7 +100,7 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_allows_owner_to_update_own(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $user = User::factory()->create(['role' => UserRole::Teller]);
         // Update is only permitted while the transaction is still editable.
         $transaction = Transaction::factory()->create([
@@ -112,7 +114,7 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_denies_non_owner_to_update_other(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $user = User::factory()->create(['role' => UserRole::Teller]);
         $other = User::factory()->create(['role' => UserRole::Teller]);
         $transaction = Transaction::factory()->create(['user_id' => $other->id]);
@@ -123,7 +125,7 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_allows_admin_to_update_any(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $admin = User::factory()->create(['role' => UserRole::Admin]);
         $transaction = Transaction::factory()->create();
 
@@ -133,7 +135,7 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_allows_admin_to_delete(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
         $this->assertTrue($policy->delete($admin));
@@ -142,7 +144,7 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_denies_teller_to_delete(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $teller = User::factory()->create(['role' => UserRole::Teller]);
 
         $this->assertFalse($policy->delete($teller));
@@ -151,7 +153,7 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function transaction_policy_denies_manager_to_delete(): void
     {
-        $policy = new TransactionPolicy;
+        $policy = app(TransactionPolicy::class);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
 
         $this->assertFalse($policy->delete($manager));

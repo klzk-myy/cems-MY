@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Accounting\BudgetController;
 use App\Http\Controllers\Accounting\ChartOfAccountsController;
+use App\Http\Controllers\Accounting\ExpenseController;
 use App\Http\Controllers\Accounting\JournalController;
 use App\Http\Controllers\Accounting\PeriodController;
 use App\Http\Controllers\Accounting\ReconciliationController;
@@ -145,9 +146,9 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::get('/wizard', [TransactionWizardController::class, 'index'])->name('wizard')
             ->middleware('role:teller');
         Route::get('/create', [TransactionController::class, 'create'])->name('create')
-            ->middleware('mfa.verified');
+            ->middleware(['role:teller', 'mfa.verified']);
         Route::post('/', [TransactionController::class, 'store'])->name('store')
-            ->middleware('mfa.verified');
+            ->middleware(['role:teller', 'mfa.verified']);
 
         Route::middleware('role:manager')->group(function () {
             Route::get('/batch-upload', [TransactionBatchController::class, 'showBatchUpload'])->name('batch-upload');
@@ -173,18 +174,20 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::get('/{transaction}/print', [TransactionController::class, 'receipt'])->name('print');
 
         Route::post('/{transaction}/approve', [TransactionApprovalController::class, 'approve'])->name('approve')
-            ->middleware(['role:manager', 'mfa.verified']);
+            ->middleware(['role:manager,compliance', 'mfa.verified']);
         Route::post('/{transaction}/reject', [TransactionApprovalController::class, 'reject'])->name('reject')
-            ->middleware(['role:manager', 'mfa.verified']);
+            ->middleware(['role:manager,compliance', 'mfa.verified']);
+        Route::post('/{transaction}/clear-hold', [TransactionApprovalController::class, 'clearHold'])->name('clear-hold')
+            ->middleware(['role:compliance', 'mfa.verified']);
         Route::get('/{transaction}/cancel', [TransactionController::class, 'showCancel'])->name('cancel')
-            ->middleware(['role:manager', 'mfa.verified']);
+            ->middleware(['role:teller,manager,compliance', 'mfa.verified']);
         Route::post('/{transaction}/cancel', [TransactionCancellationController::class, 'cancel'])->name('cancel.store')
-            ->middleware(['role:manager', 'mfa.verified']);
+            ->middleware(['role:teller,manager,compliance', 'mfa.verified']);
 
         Route::get('/{transaction}/confirm', [TransactionApprovalController::class, 'showConfirm'])->name('confirm.show')
-            ->middleware('role:manager');
+            ->middleware('role:manager,compliance');
         Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm.store')
-            ->middleware('role:manager');
+            ->middleware('role:manager,compliance');
 
         Route::middleware(['role:manager,compliance', 'mfa.verified'])->group(function () {
             Route::get('/{transaction}/approve-cancellation', [TransactionCancellationController::class, 'showApproveCancel'])
@@ -283,9 +286,9 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::get('/{stockTransfer}', [StockTransferController::class, 'show'])->name('show');
 
         Route::get('/{stockTransfer}/dispatch', [StockTransferController::class, 'showStep'])->defaults('step', 'dispatch')->name('dispatch.show')
-            ->middleware('role:admin');
+            ->middleware('role:manager');
         Route::get('/{stockTransfer}/receive', [StockTransferController::class, 'showStep'])->defaults('step', 'receive')->name('receive.show')
-            ->middleware('role:admin');
+            ->middleware('role:manager');
         Route::get('/{stockTransfer}/approve-bm', [StockTransferController::class, 'showStep'])->defaults('step', 'approve-bm')->name('approve-bm.show')
             ->middleware('role:manager');
         Route::get('/{stockTransfer}/approve-hq', [StockTransferController::class, 'showStep'])->defaults('step', 'approve-hq')->name('approve-hq.show')
@@ -293,22 +296,22 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::get('/{stockTransfer}/cancel', [StockTransferController::class, 'showStep'])->defaults('step', 'cancel')->name('cancel.show')
             ->middleware('role:manager');
         Route::get('/{stockTransfer}/complete', [StockTransferController::class, 'showStep'])->defaults('step', 'complete')->name('complete.show')
-            ->middleware('role:admin');
+            ->middleware('role:manager');
 
         Route::post('/{stockTransfer}/approve-bm', [StockTransferController::class, 'approveBm'])->name('approve-bm')
             ->middleware('role:manager');
         Route::post('/{stockTransfer}/approve-hq', [StockTransferController::class, 'approveHq'])->name('approve-hq')
             ->middleware('role:admin');
         Route::post('/{stockTransfer}/dispatch', [StockTransferController::class, 'dispatch'])->name('dispatch')
-            ->middleware('role:admin');
+            ->middleware('role:manager');
         Route::post('/{stockTransfer}/receive', [StockTransferController::class, 'receive'])->name('receive')
-            ->middleware('role:admin');
+            ->middleware('role:manager');
         Route::post('/{stockTransfer}/complete', [StockTransferController::class, 'complete'])->name('complete')
-            ->middleware('role:admin');
+            ->middleware('role:manager');
         Route::post('/{stockTransfer}/cancel', [StockTransferController::class, 'cancel'])->name('cancel')
             ->middleware('role:manager');
         Route::post('/{stockTransfer}/reject', [StockTransferController::class, 'reject'])->name('reject')
-            ->middleware('role:admin');
+            ->middleware('role:manager');
     });
 
     Route::middleware('role:compliance')->group(function () {
@@ -381,7 +384,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         });
 
         // STR filings (pd-00 s22): list/detail/draft/submit/acknowledge/export
-        Route::middleware('role:compliance,admin')->prefix('str')->name('compliance.str.')->group(function () {
+        Route::middleware('role:compliance')->prefix('str')->name('compliance.str.')->group(function () {
             Route::get('/', [StrReportController::class, 'index'])->name('index');
             Route::get('/export', [StrReportController::class, 'exportCsv'])->name('export');
             Route::get('/{strReport}', [StrReportController::class, 'show'])->name('show');
@@ -420,17 +423,16 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
             ->middleware('role:admin');
     });
 
-    // PEP head-office approvals (pd-00.md 14C.13.1(d)) - Senior Management
-    // (manager/admin) decisions on pending PepApprovalRequests raised by
-    // TransactionValidationService. POST-only so state changes stay
-    // CSRF-protected.
-    Route::middleware('role:manager,admin')->prefix('compliance/pep-approvals')->name('compliance.pep-approvals.')->group(function () {
+    // PEP sign-off (pd-00.md 14C.13.1(d)) — compliance officer decisions on
+    // pending PepApprovalRequests raised by TransactionValidationService.
+    // POST-only so state changes stay CSRF-protected.
+    Route::middleware('role:compliance')->prefix('compliance/pep-approvals')->name('compliance.pep-approvals.')->group(function () {
         Route::get('/', [PepApprovalController::class, 'index'])->name('index');
         Route::post('/{pepApproval}/approve', [PepApprovalController::class, 'approve'])->name('approve');
         Route::post('/{pepApproval}/reject', [PepApprovalController::class, 'reject'])->name('reject');
     });
 
-    Route::middleware('role:manager')->prefix('accounting')->name('accounting.')->group(function () {
+    Route::middleware('role:manager,accountant')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', [JournalController::class, 'index'])->name('index');
 
         // Journal Entry Management
@@ -439,6 +441,12 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::post('/journal', [JournalController::class, 'store'])->name('journal.store');
         Route::get('/journal/{entry}', [JournalController::class, 'show'])->name('journal.show');
         Route::post('/journal/{entry}/reverse', [JournalController::class, 'reverse'])->name('journal.reverse');
+
+        // Petty cash / branch expenses — posting is direct, no approval.
+        Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+        Route::get('/expenses/create', [ExpenseController::class, 'create'])->name('expenses.create');
+        Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+        Route::post('/expenses/fund', [ExpenseController::class, 'fund'])->name('expenses.fund');
 
         // Ledger & Reports
         Route::get('/ledger', [ReportController::class, 'ledger'])->name('ledger');

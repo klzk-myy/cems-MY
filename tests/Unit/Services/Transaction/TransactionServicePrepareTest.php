@@ -130,23 +130,47 @@ class TransactionServicePrepareTest extends TestCase
     }
 
     #[Test]
-    public function prepare_and_create_holds_small_transaction_for_medium_risk_customer(): void
+    public function prepare_and_create_holds_small_transaction_for_high_risk_customer(): void
     {
-        $this->customer->forceFill(['risk_rating' => 'Medium'])->save();
+        $this->customer->forceFill(['risk_rating' => 'High'])->save();
 
         // 100 USD * 4.50 = 450 MYR — below the auto-approve threshold, but
-        // only Low-risk customers may auto-complete.
+        // High-risk customers never auto-complete.
         $transaction = $this->service->prepareAndCreate($this->baseData(), $this->teller->id, '127.0.0.1');
 
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
     }
 
     #[Test]
+    public function prepare_and_create_completes_small_transaction_for_medium_risk_customer(): void
+    {
+        $this->customer->forceFill(['risk_rating' => 'Medium'])->save();
+
+        // 100 USD * 4.50 = 450 MYR — Medium risk without a hold flag
+        // auto-completes below the RM10,000 threshold.
+        $transaction = $this->service->prepareAndCreate($this->baseData(), $this->teller->id, '127.0.0.1');
+
+        $this->assertEquals(TransactionStatus::Completed, $transaction->status);
+    }
+
+    #[Test]
     public function prepare_and_create_holds_low_risk_transaction_at_auto_approve_boundary(): void
     {
         $data = $this->baseData();
-        $data['amount_foreign'] = '666.67';
-        $data['rate'] = '4.500000'; // 3000.015 MYR >= 3000
+        $data['amount_foreign'] = '2222.22';
+        $data['rate'] = '4.500000'; // 9999.99 MYR — just under 10,000
+
+        $transaction = $this->service->prepareAndCreate($data, $this->teller->id, '127.0.0.1');
+
+        $this->assertEquals(TransactionStatus::Completed, $transaction->status);
+    }
+
+    #[Test]
+    public function prepare_and_create_holds_low_risk_transaction_at_ten_thousand(): void
+    {
+        $data = $this->baseData();
+        $data['amount_foreign'] = '2222.23';
+        $data['rate'] = '4.500000'; // 10000.035 MYR >= 10000
 
         $transaction = $this->service->prepareAndCreate($data, $this->teller->id, '127.0.0.1');
 

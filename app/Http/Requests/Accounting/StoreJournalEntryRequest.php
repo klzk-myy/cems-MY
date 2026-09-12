@@ -15,6 +15,7 @@ class StoreJournalEntryRequest extends AuthorizedFormRequest
     {
         return [
             'entry_date' => 'required|date',
+            'branch_id' => 'nullable|integer|exists:branches,id',
             'description' => 'required|string|max:500',
             'lines' => 'required|array|min:2',
             'lines.*.account_code' => 'required|string|exists:chart_of_accounts,account_code',

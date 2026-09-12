@@ -16,6 +16,7 @@ enum UserRole: string
     case Teller = 'teller';
     case Manager = 'manager';
     case ComplianceOfficer = 'compliance_officer';
+    case Accountant = 'accountant';
     case Admin = 'admin';
 
     /**
@@ -24,6 +25,15 @@ enum UserRole: string
     public function isAdmin(): bool
     {
         return $this === self::Admin;
+    }
+
+    /**
+     * Check if the user is an accountant or admin.
+     * Accountants handle company-wide accounting; admins inherit.
+     */
+    public function isAccountant(): bool
+    {
+        return in_array($this, [self::Accountant, self::Admin], true);
     }
 
     /**
@@ -51,12 +61,21 @@ enum UserRole: string
     }
 
     /**
+     * Check if the user can approve mid-tier transactions (RM10k–50k).
+     * Manager or admin.
+     */
+    public function canApproveTransactions(): bool
+    {
+        return $this->isManager();
+    }
+
+    /**
      * Check if the user can approve large transactions.
-     * Transactions >= RM 50,000 require manager or admin approval.
+     * Transactions >= RM 50,000 require compliance officer or admin approval.
      */
     public function canApproveLargeTransactions(): bool
     {
-        return $this->isManager();
+        return $this->isComplianceOfficer();
     }
 
     /**
@@ -69,19 +88,20 @@ enum UserRole: string
 
     /**
      * Check if the user can access accounting features.
+     * Managers see their own branch; accountants and admin see company-wide.
      */
     public function canAccessAccounting(): bool
     {
-        return $this->isManager();
+        return $this->isManager() || $this === self::Accountant;
     }
 
     /**
      * Check if the user can create transactions.
-     * Tellers, managers, and admin can create transactions.
+     * Only tellers create transactions.
      */
     public function canCreateTransaction(): bool
     {
-        return $this->isTeller() || $this->isManager() || $this === self::Admin;
+        return $this === self::Teller;
     }
 
     /**
@@ -119,11 +139,11 @@ enum UserRole: string
 
     /**
      * Check if the user can cancel any transaction.
-     * Admins and managers can cancel any transaction.
+     * Managers and compliance officers can approve cancellations.
      */
     public function canCancelAnyTransaction(): bool
     {
-        return $this->isManager();
+        return $this->isManager() || $this->isComplianceOfficer();
     }
 
     /**
@@ -131,7 +151,7 @@ enum UserRole: string
      */
     public function canViewReports(): bool
     {
-        return in_array($this, [self::Manager, self::ComplianceOfficer, self::Admin], true);
+        return in_array($this, [self::Manager, self::ComplianceOfficer, self::Accountant, self::Admin], true);
     }
 
     /**
@@ -139,7 +159,16 @@ enum UserRole: string
      */
     public function canPerformRevaluation(): bool
     {
-        return $this->isManager();
+        return $this->isManager() || $this === self::Accountant;
+    }
+
+    /**
+     * Check if the user can reverse a completed transaction.
+     * Reversals are compliance-only.
+     */
+    public function canReverseTransaction(): bool
+    {
+        return $this->isComplianceOfficer();
     }
 
     /**
@@ -151,6 +180,7 @@ enum UserRole: string
             self::Teller => 'Teller',
             self::Manager => 'Manager',
             self::ComplianceOfficer => 'Compliance Officer',
+            self::Accountant => 'Accountant',
             self::Admin => 'Administrator',
         };
     }
@@ -164,6 +194,7 @@ enum UserRole: string
             self::Teller => 'Can create transactions',
             self::Manager => 'Can approve transactions and manage counters',
             self::ComplianceOfficer => 'Can review flagged transactions and compliance reports',
+            self::Accountant => 'Company-wide accounting, journals, and financial reports',
             self::Admin => 'Full system access',
         };
     }
@@ -174,7 +205,7 @@ enum UserRole: string
     public function assignableRoles(): array
     {
         return match ($this) {
-            self::Admin => [self::Teller, self::Manager, self::ComplianceOfficer, self::Admin],
+            self::Admin => [self::Teller, self::Manager, self::ComplianceOfficer, self::Accountant, self::Admin],
             self::Manager => [self::Teller],
             default => [],
         };
@@ -196,6 +227,7 @@ enum UserRole: string
             self::Teller => 0.5,
             self::Manager => 2.0,
             self::ComplianceOfficer => null,
+            self::Accountant => null,
             self::Admin => null, // Unlimited
         };
     }

@@ -99,7 +99,7 @@ class SellDoesNotCreateEmptyPositionTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Transaction validation failed.');
+            ->assertJsonPath('message', 'Insufficient stock for USD. Requested: 100.00, Available: 0.000000');
 
         $this->assertNull(
             CurrencyPosition::where('currency_code', 'USD')

@@ -32,6 +32,7 @@ use Illuminate\Support\Str;
  * @property bool $is_active
  * @property bool $is_main
  * @property int|null $parent_id
+ * @property string $petty_cash_float MYR petty-cash float for branch expenses
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -204,6 +205,23 @@ class Branch extends BaseModel
     public function scopeHeadOffices(Builder $query): Builder
     {
         return $query->where('type', self::TYPE_HEAD_OFFICE);
+    }
+
+    /**
+     * Head-office branches are non-trading: no transactions, no counters,
+     * no foreign-currency stock. They hold an MYR expense float only.
+     */
+    public function isHeadOffice(): bool
+    {
+        return $this->type === self::TYPE_HEAD_OFFICE;
+    }
+
+    /**
+     * Whether this branch may process exchange transactions and hold stock.
+     */
+    public function canTrade(): bool
+    {
+        return ! $this->isHeadOffice();
     }
 
     /**

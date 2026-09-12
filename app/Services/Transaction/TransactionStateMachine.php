@@ -392,19 +392,23 @@ class TransactionStateMachine
      * PendingApproval -> Completed
      * This is the proper method for manager approval that completes the transaction directly.
      * NOT allowed for refund transactions - they must go through the two-step approval flow.
-     * Requires explicit manager/admin authorization.
+     * Requires explicit approver authorization (manager, compliance officer,
+     * or admin — the amount-tier check happens in the approval service).
      *
      * @param  string  $reason  The reason for the direct completion
-     * @param  User  $manager  The manager/admin user authorizing this action
+     * @param  User  $manager  The approving user authorizing this action
      * @return bool True if transition was successful
      *
-     * @throws \RuntimeException If called on a refund transaction or user is not manager/admin
+     * @throws \RuntimeException If called on a refund transaction or user is not an approver
      */
     public function approveAndComplete(string $reason, User $manager): bool
     {
-        if (! $manager->role->isManager() && ! $manager->role->isAdmin()) {
+        // Approval authority is tiered upstream (manager below the large
+        // threshold, compliance officer at/above it); this gate only verifies
+        // the caller is a recognized approver role.
+        if (! $manager->role->canApproveTransactions() && ! $manager->role->canApproveLargeTransactions()) {
             throw new TransactionBlockedException(
-                'approveAndComplete requires manager or admin authorization.'
+                'approveAndComplete requires manager, compliance officer, or admin authorization.'
             );
         }
 

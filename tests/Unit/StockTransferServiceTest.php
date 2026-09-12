@@ -3,7 +3,9 @@
 namespace Tests\Unit;
 
 use App\Enums\UserRole;
+use App\Exceptions\Domain\TransactionApprovalException;
 use App\Exceptions\Domain\TransactionValidationException;
+use App\Models\Branch;
 use App\Models\CurrencyPosition;
 use App\Models\StockTransfer;
 use App\Models\User;
@@ -22,14 +24,21 @@ class StockTransferServiceTest extends TestCase
 
     protected User $user;
 
+    protected Branch $branchA;
+
+    protected Branch $branchB;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->branchA = Branch::factory()->create(['name' => 'Branch A', 'code' => 'BRA']);
+        $this->branchB = Branch::factory()->create(['name' => 'Branch B', 'code' => 'BRB']);
         $this->user = User::factory()->create([
             'username' => 'test_user',
             'email' => 'test@example.com',
             'password' => 'password',
             'role' => UserRole::Manager,
+            'branch_id' => $this->branchA->id,
         ]);
         $this->stockTransferService = new StockTransferService(new MathService, new AuditService, $this->user);
     }
@@ -49,6 +58,18 @@ class StockTransferServiceTest extends TestCase
     {
         $this->assertValidationError('Source and destination branches cannot be the same', [
             'source_branch_name' => 'Branch A',
+            'destination_branch_name' => 'Branch A',
+            'items' => [],
+        ]);
+    }
+
+    #[Test]
+    public function create_request_validates_maker_sources_from_own_branch(): void
+    {
+        // Maker rule: a non-admin manager can only create transfers sourcing
+        // stock from their own branch.
+        $this->assertValidationError('your own branch', [
+            'source_branch_name' => 'Branch B',
             'destination_branch_name' => 'Branch A',
             'items' => [],
         ]);
@@ -176,25 +197,33 @@ class StockTransferServiceTest extends TestCase
         $this->assertEquals('6900.00', $transfer->total_value_myr); // 4500 + 2400
     }
 
-    #[Test]
-    public function full_workflow_approve_dispatch_complete_succeeds(): void
+    /**
+     * Build the maker (source) and taker (destination) service instances plus
+     * the source position fixture, and return a fresh Requested transfer.
+     *
+     * @return array{0: StockTransferService, 1: StockTransferService, 2: StockTransfer}
+     */
+    private function makeMakerTakerContext(): array
     {
-        $admin = User::factory()->create([
-            'role' => UserRole::Admin,
+        $managerA = $this->user;
+        $managerB = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $this->branchB->id,
         ]);
-        $service = new StockTransferService(new MathService, new AuditService, $admin);
 
         // Dispatch decrements the SOURCE branch position, so the source must
         // actually hold the transferred quantity. positionBranchKey() maps the
-        // free-text name to a position key (no Branch row is seeded here, so
-        // the raw identifier is used).
+        // free-text name to branches.id.
         CurrencyPosition::create([
-            'branch_id' => 'Branch A',
+            'branch_id' => (string) $this->branchA->id,
             'currency_code' => 'USD',
             'quantity' => '1000',
         ]);
 
-        $transfer = $service->createRequest([
+        $maker = new StockTransferService(new MathService, new AuditService, $managerA);
+        $taker = new StockTransferService(new MathService, new AuditService, $managerB);
+
+        $transfer = $maker->createRequest([
             'source_branch_name' => 'Branch A',
             'destination_branch_name' => 'Branch B',
             'items' => [
@@ -202,59 +231,79 @@ class StockTransferServiceTest extends TestCase
             ],
         ]);
 
-        // Regression: these steps compared the enum status against ->value
-        // strings, so they always threw and the workflow could never progress.
-        $service->approveByBranchManager($transfer);
-        $this->assertTrue($transfer->fresh()->canApproveHq());
+        return [$maker, $taker, $transfer];
+    }
 
-        $service->approveByHQ($transfer);
+    #[Test]
+    public function maker_cannot_approve_own_transfer(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        try {
+            $maker->approveByBranchManager($transfer);
+            $this->fail('Expected TransactionApprovalException');
+        } catch (TransactionApprovalException $e) {
+            $this->assertStringContainsString('own transfer', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function maker_cannot_approve_transfer_for_other_destination(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        // A different source-branch manager (not the requester) still cannot
+        // approve — approval belongs to the destination branch.
+        $managerA2 = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $this->branchA->id,
+        ]);
+        $otherMaker = new StockTransferService(new MathService, new AuditService, $managerA2);
+
+        try {
+            $otherMaker->approveByBranchManager($transfer);
+            $this->fail('Expected TransactionApprovalException');
+        } catch (TransactionApprovalException $e) {
+            $this->assertStringContainsString('destination branch', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function full_workflow_approve_dispatch_complete_succeeds(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        // Maker/taker: the destination branch manager approves, then the
+        // source branch dispatches — no HQ step.
+        $taker->approveByBranchManager($transfer);
         $this->assertTrue($transfer->fresh()->canDispatch());
 
-        $service->dispatch($transfer);
+        $maker->dispatch($transfer->fresh());
         $this->assertTrue($transfer->fresh()->canReceive());
 
         // Complete directly from in-transit (the enum fix makes this reachable).
-        $service->complete($transfer->fresh());
+        $taker->complete($transfer->fresh());
         $this->assertTrue($transfer->fresh()->isCompleted());
     }
 
     #[Test]
     public function partial_receipt_then_complete_succeeds(): void
     {
-        $admin = User::factory()->create([
-            'role' => UserRole::Admin,
-        ]);
-        $service = new StockTransferService(new MathService, new AuditService, $admin);
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
 
-        // Same source-position fixture as full_workflow_approve_dispatch_complete_succeeds.
-        CurrencyPosition::create([
-            'branch_id' => 'Branch A',
-            'currency_code' => 'USD',
-            'quantity' => '1000',
-        ]);
-
-        $transfer = $service->createRequest([
-            'source_branch_name' => 'Branch A',
-            'destination_branch_name' => 'Branch B',
-            'items' => [
-                ['currency_code' => 'USD', 'quantity' => '1000', 'rate' => '4.5000'],
-            ],
-        ]);
-
-        $service->approveByBranchManager($transfer);
-        $service->approveByHQ($transfer->fresh());
-        $service->dispatch($transfer->fresh());
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
 
         // Partial receipt leaves the transfer in PartiallyReceived, which is
         // a valid state from which complete() may finalise it.
-        $service->receiveItems($transfer->fresh(), [
+        $taker->receiveItems($transfer->fresh(), [
             ['id' => $transfer->items->first()->id, 'quantity_received' => '600'],
         ]);
 
         $partiallyReceived = $transfer->fresh();
         $this->assertTrue($partiallyReceived->canComplete());
 
-        $service->complete($partiallyReceived);
+        $taker->complete($partiallyReceived);
         $this->assertTrue($transfer->fresh()->isCompleted());
     }
 }

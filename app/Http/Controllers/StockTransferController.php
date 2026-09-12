@@ -69,12 +69,17 @@ class StockTransferController extends Controller
         $this->requireManagerOrAdmin();
 
         // Transfers store branch names (schema contract), so options are
-        // keyed by name.
+        // keyed by name. Maker rule: a non-admin manager may only source
+        // stock from their own branch.
+        $user = auth()->user();
         $branches = Branch::orderBy('name')->pluck('name', 'name');
+        $sourceBranches = $user->isAdmin()
+            ? $branches
+            : $branches->only([$user->branch?->name, $user->branch?->code])->filter();
         // Currency's primary key is its ISO code, so options are keyed by code.
         $currencies = Currency::where('is_active', true)->orderBy('name')->pluck('name', 'code');
 
-        return view('stock-transfers.create', compact('branches', 'currencies'));
+        return view('stock-transfers.create', compact('branches', 'sourceBranches', 'currencies'));
     }
 
     public function store(StoreStockTransferRequest $request): RedirectResponse

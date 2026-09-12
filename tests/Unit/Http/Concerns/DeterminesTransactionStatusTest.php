@@ -132,12 +132,30 @@ class DeterminesTransactionStatusTest extends TestCase
         $this->assertSame(TransactionStatus::PendingApproval, $status);
     }
 
-    public function test_determine_initial_status_returns_pending_approval_for_medium_risk(): void
+    public function test_determine_initial_status_completes_medium_risk_below_threshold(): void
+    {
+        // Only High risk (or a hold) blocks auto-completion — Medium risk
+        // below the auto-approve threshold completes.
+        $this->thresholdService->shouldReceive('getAutoApproveThreshold')
+            ->once()
+            ->andReturn('10000.00');
+
+        $this->mathService->shouldReceive('compare')
+            ->once()
+            ->with('100.00', '10000.00')
+            ->andReturn(-1);
+
+        $status = $this->determineInitialStatus('100.00', false, RiskRating::Medium);
+
+        $this->assertSame(TransactionStatus::Completed, $status);
+    }
+
+    public function test_determine_initial_status_returns_pending_approval_for_high_risk(): void
     {
         $this->mathService->shouldReceive('compare')->never();
         $this->thresholdService->shouldReceive('getAutoApproveThreshold')->never();
 
-        $status = $this->determineInitialStatus('100.00', false, RiskRating::Medium);
+        $status = $this->determineInitialStatus('100.00', false, RiskRating::High);
 
         $this->assertSame(TransactionStatus::PendingApproval, $status);
     }

@@ -79,6 +79,7 @@ class SchemaSeeder extends Seeder
             'edd_document_requests',
             'edd_templates',
             'emergency_closures',
+            'expenses',
             'exchange_rate_histories',
             'exchange_rates',
             'failed_jobs',
@@ -240,6 +241,7 @@ class SchemaSeeder extends Seeder
             $table->string('email')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_main')->default(false);
+            $table->decimal('petty_cash_float', 18, 4)->default(0);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
@@ -530,6 +532,8 @@ class SchemaSeeder extends Seeder
             $table->string('source_of_funds')->nullable();
             $table->string('status')->default('Draft');
             $table->text('hold_reason')->nullable();
+            $table->unsignedBigInteger('compliance_cleared_by')->nullable();
+            $table->timestamp('compliance_cleared_at')->nullable();
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->string('cdd_level');
@@ -571,6 +575,7 @@ class SchemaSeeder extends Seeder
             $table->index('amount_local', 'transactions_amount_local_index');
             $table->index('approval_sync_failed', 'transactions_approval_sync_failed_index');
             $table->index('approved_by', 'transactions_approved_by_index');
+            $table->index('compliance_cleared_by', 'transactions_compliance_cleared_by_index');
             $table->index(['branch_id', 'created_at'], 'transactions_branch_created_idx');
             $table->index('branch_id', 'transactions_branch_id_fk_index');
             $table->index('branch_id', 'transactions_branch_id_index');
@@ -1308,6 +1313,29 @@ class SchemaSeeder extends Seeder
             $table->foreign('teller_id')->references('id')->on('users')->restrictOnDelete();
             $table->foreign('session_id')->references('id')->on('counter_sessions')->restrictOnDelete();
             $table->foreign('counter_id')->references('id')->on('counters')->restrictOnDelete();
+        });
+
+        // Branch petty-cash expenses. Each row posts a balanced journal
+        // (Dr expense account, Cr petty cash 1050) scoped to the branch.
+        Schema::create('expenses', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->string('account_code');
+            $table->string('category');
+            $table->string('description');
+            $table->decimal('amount', 18, 4);
+            $table->date('expense_date');
+            $table->unsignedBigInteger('journal_entry_id')->nullable();
+            $table->unsignedBigInteger('created_by');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index('branch_id', 'expenses_branch_id_index');
+            $table->index('expense_date', 'expenses_expense_date_index');
+            $table->index(['branch_id', 'expense_date'], 'expenses_branch_date_index');
+            $table->foreign('branch_id')->references('id')->on('branches')->nullOnDelete();
+            $table->foreign('account_code')->references('account_code')->on('chart_of_accounts')->restrictOnDelete();
+            $table->foreign('journal_entry_id')->references('id')->on('journal_entries')->nullOnDelete();
+            $table->foreign('created_by')->references('id')->on('users')->restrictOnDelete();
         });
 
         Schema::create('exchange_rate_histories', function (Blueprint $table) {

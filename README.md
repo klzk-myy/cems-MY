@@ -25,8 +25,8 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
   - Buy/sell transactions with real-time position tracking
   - Multi-currency support with instant rate calculation
   - Stock reservation system for concurrency control (24h expiry)
-  - PendingApproval workflow for transactions ≥ RM 3,000
-  - **Rate Management**: Daily rate workflow with configurable spread, deviation validation, copy previous rates, and manual override capability
+  - PendingApproval workflow for transactions ≥ RM 10,000
+  - **Rate Management**: Per-branch rate cards set by the branch manager; configurable spread, teller override limits, copy previous rates
 
 - **Till/Counter Management**
   - Full lifecycle: open, close, handover
@@ -38,7 +38,7 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
   - Complete ledger system with trial balance, P&L, balance sheet
   - Monthly currency revaluation (RevaluationService)
   - Fiscal year management with period closing
-  - Journal entry workflow (Draft → Pending → Posted)
+  - Journal entries post directly (no approval step); branch-scoped for managers, company-wide for admin/accountant
   - Cash flow statements and financial ratio analysis
 
 - **Customer Management**
@@ -413,16 +413,36 @@ See `.gitnexus/` for index data. GitNexus enables:
 - Execution flow debugging
 - Automated rename refactoring
 
-## User Roles
+## Organizational Model & User Roles
 
-| Role | Permissions |
-|------|-------------|
-| **Teller** | Create transactions, view customers, operate assigned counter |
-| **Manager** | Approve large transactions, manage counters, view reports, handle cancellations |
-| **Compliance Officer** | CDD review, STR submission, sanctions management, risk monitoring, alerts triage |
-| **Admin** | System configuration, user management, branch settings |
+```
+                    Company
+              (Admin, Accountant — consolidated)
+              HQ: non-trading, MYR expense float only
+              ┌─────────────┴─────────────┐
+           Branch A                    Branch B
+     Manager, Compliance Officer   Manager, Compliance Officer
+        ┌─────┴─────┐                 ┌─────┴─────┐
+     Counter A1  Counter A2        Counter B1  Counter B2
+      Teller 1    Teller 2          Teller 3    Teller 4
+```
 
-**Permission Hierarchy:** Admin > ComplianceOfficer > Manager > Teller
+| Role | Scope | Can | Cannot |
+|------|-------|-----|--------|
+| **Teller** | Own counter | Create transactions, view own balancing/stock, request stock, request cancellation | Profit, reports, approvals |
+| **Manager** | Own branch | Approve transactions RM10k–50k, approve cancellations, set branch rates, post branch expenses/petty cash, approve/assign/return teller stock, create/accept stock transfers, manage in-transit stock, EOD sign-off | Other branches, create transactions, approve ≥RM50k, reversals |
+| **Compliance Officer** | Own branch | Clear high-risk holds, approve cancellations, approve ≥RM50k transactions, reverse completed transactions, PEP sign-off, STR filing, KYC verify/reject | Create transactions |
+| **Accountant** | Company-wide | GL, journals, period/fiscal close, consolidation, bank reconciliation, budgets, all financial reports | Create transactions |
+| **Admin** | Company-wide | Everything except creating transactions: users, branches, company-wide journals, configuration, audit | Create transactions |
+
+**Key rules:**
+
+- **Customers** are company-wide — any teller at any branch can serve any customer
+- **Stock sourcing**: branches hold their own foreign stock, sourced from customer buys, setup seed, and branch↔branch transfers. HQ holds no stock
+- **Stock transfers** are maker/taker: source branch manager creates, destination branch manager approves — no HQ approval step
+- **Petty cash**: per-branch MYR float for branch expenses, posted by the branch manager
+- **Rates**: each branch has its own rate card, set by its manager with no approval requirement
+- **Fiscal year-end**: 31 December (configurable via `FISCAL_YEAR_END_MONTH`/`FISCAL_YEAR_END_DAY`)
 
 ## Security
 
@@ -502,19 +522,22 @@ All rate changes are logged to audit trail. Spread and deviation thresholds conf
 ### Transaction Status Workflow
 
 ```
-PendingApproval ──(manager approve)──> Completed
-     │
-     └──(request cancel)──> PendingCancellation ──(approve)──> Cancelled
+Created ──> Completed                                    (auto: < RM10k, no flag, not High risk)
+Created ──> PendingApproval ──(Manager approves)──> Completed      (RM10k–50k)
+Created ──> PendingApproval ──(Compliance approves)──> Completed   (≥ RM50k)
+Created ──> PendingApproval [hold] ──(Compliance clears)──> tiered approval   (PEP/sanction/High/flag)
+PendingApproval ──(request cancel)──> PendingCancellation ──(Manager|Compliance)──> Cancelled
+Completed ──(Compliance reverses)──> Reversed
 ```
 
-| Condition | Status |
-|-----------|--------|
-| Amount < RM 10,000, no compliance flag | Auto-approve |
-| Amount ≥ RM 10,000, no compliance flag | `PendingApproval` (Manager approval) |
-| Amount ≥ RM 50,000 | `PendingApproval` (Manager) |
-| High-risk customer or compliance flag | `Pending` (Compliance hold) |
-| CDD required | `PendingCdd` |
-| Cancellation requested | `PendingCancellation` (segregation of duties) |
+| Condition | Status | Approver |
+|-----------|--------|----------|
+| Amount < RM 10,000, no compliance flag | Auto-approve | — |
+| Amount RM 10,000–49,999, no flag | `PendingApproval` | Manager |
+| Amount ≥ RM 50,000, no flag | `PendingApproval` | Compliance Officer |
+| High-risk customer or compliance flag | `PendingApproval` + hold | Compliance must clear first, then tiered approval |
+| Cancellation requested | `PendingCancellation` | Manager or Compliance (≠ requester) |
+| Completed transaction | `Reversed` | Compliance only |
 
 ### Structuring Detection
 
