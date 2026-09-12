@@ -164,7 +164,7 @@ class SanctionEntry extends BaseModel
 
     public function getAliasesAttribute($value)
     {
-        return json_decode($value, true) ?? [];
+        return $value === null ? [] : (json_decode($value, true) ?? []);
     }
 
     public function setAliasesAttribute($value)

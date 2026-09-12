@@ -46,11 +46,25 @@ class SanctionListSeeder extends Seeder
         $entries = $this->getDemoEntries($listKey);
 
         foreach ($entries as $entry) {
+            $normalizedName = $this->normalizeName($entry['entity_name']);
+            $entry['normalized_name'] = $normalizedName;
+            $entry['soundex_code'] = soundex($normalizedName);
+            $entry['metaphone_code'] = metaphone($normalizedName);
+
             SanctionEntry::updateOrCreate(
                 ['list_id' => $list->id, 'entity_name' => $entry['entity_name']],
                 $entry
             );
         }
+    }
+
+    protected function normalizeName(string $name): string
+    {
+        $name = mb_strtolower(trim($name), 'UTF-8');
+        $name = preg_replace('/\s+/', ' ', $name);
+        $name = preg_replace('/[^\p{L}\p{N}\s\-\'\.]/u', '', $name);
+
+        return trim($name);
     }
 
     protected function getDemoEntries(string $listKey): array
