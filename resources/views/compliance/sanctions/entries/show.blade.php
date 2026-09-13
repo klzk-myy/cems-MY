@@ -104,7 +104,18 @@
 
         <x-card>
             <x-card title="Additional Information">
-                <p class="text-sm text-ink-muted">{{ $sanctionEntry->details ?: 'No additional information.' }}</p>
+                @if (is_array($sanctionEntry->details) && count($sanctionEntry->details) > 0)
+                    <dl class="text-sm">
+                        @foreach ($sanctionEntry->details as $key => $value)
+                            <div class="flex gap-2">
+                                <dt class="font-medium text-ink">{{ $key }}:</dt>
+                                <dd class="text-ink-muted">{{ is_scalar($value) ? $value : json_encode($value) }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                @else
+                    <p class="text-sm text-ink-muted">{{ $sanctionEntry->details ?: 'No additional information.' }}</p>
+                @endif
             </x-card>
         </x-card>
 

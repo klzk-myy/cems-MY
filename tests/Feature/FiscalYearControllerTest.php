@@ -66,7 +66,7 @@ class FiscalYearControllerTest extends TestCase
     }
 
     #[Test]
-    public function list_requires_manager_or_admin(): void
+    public function list_requires_accounting_access(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
 
@@ -78,9 +78,47 @@ class FiscalYearControllerTest extends TestCase
             ->get('/accounting/fiscal-years')
             ->assertStatus(200);
 
-        // Non-managers are blocked by the route-group middleware (403).
+        // Non-accounting roles are blocked by the route-group middleware (403).
         $this->actingAs(User::factory()->create(['role' => UserRole::Teller]))
             ->get('/accounting/fiscal-years')
             ->assertStatus(403);
+    }
+
+    #[Test]
+    public function accountant_can_access_fiscal_and_reporting_pages(): void
+    {
+        $accountant = User::factory()->create(['role' => UserRole::Accountant]);
+
+        // Previously narrowed to manager/admin by requireManagerOrAdmin();
+        // the accountant role owns fiscal close and company-wide reports.
+        foreach ([
+            '/accounting/fiscal-years',
+            '/accounting/cash-flow',
+            '/accounting/ratios',
+            '/accounting/revaluation',
+            '/accounting/revaluation/history',
+        ] as $url) {
+            $response = $this->actingAs($accountant)->get($url);
+
+            $this->assertSame(200, $response->status(), "Accountant should access {$url}");
+        }
+    }
+
+    #[Test]
+    public function accountant_can_create_fiscal_year(): void
+    {
+        $accountant = User::factory()->create(['role' => UserRole::Accountant]);
+        $before = FiscalYear::count();
+
+        $this->actingAs($accountant)
+            ->post('/accounting/fiscal-years', [
+                'year_code' => '2027',
+                'start_date' => '2027-01-01',
+                'end_date' => '2027-12-31',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame($before + 1, FiscalYear::count());
     }
 }

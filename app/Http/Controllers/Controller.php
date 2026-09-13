@@ -24,6 +24,20 @@ class Controller extends BaseController
     }
 
     /**
+     * Abort with 403 unless the authenticated user has accounting access.
+     * Covers managers, accountants, and admins — mirrors the role:accounting
+     * route middleware for controller-level narrowing.
+     */
+    protected function requireAccountingAccess(): void
+    {
+        $user = auth()->user();
+
+        if (! $user || ! $user->role->canAccessAccounting()) {
+            abort(403, 'Unauthorized. Accounting access required.');
+        }
+    }
+
+    /**
      * Abort with 403 unless the authenticated user is an admin.
      */
     protected function requireAdmin(): void

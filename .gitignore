@@ -52,6 +52,7 @@ boost.json
 .env.testing
 .phpunit.xml
 playwright.config.js
+/test-results/
 tailwind.config.js
 vite.config.js
 *.log

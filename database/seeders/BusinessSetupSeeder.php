@@ -52,7 +52,7 @@ class BusinessSetupSeeder extends Seeder
         $this->command->info('========================================');
         $this->command->info('');
         $this->command->info('Next Steps:');
-        $this->command->info('1. Login with: admin@cems.my / Admin@123456');
+        $this->command->info('1. Login with: admin@cems.my / Password123!');
         $this->command->info('2. Verify exchange rates at /exchange-rates');
         $this->command->info('3. Open counter at /counters with opening float');
         $this->command->info('4. Start processing transactions');

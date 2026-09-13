@@ -213,6 +213,70 @@ class TellerAllocationServiceTest extends TestCase
     }
 
     #[Test]
+    public function active_allocation_prefers_funded_over_depleted(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+
+        // Depleted allocation created first — an unordered first() would
+        // pick it up and wrongly report no balance while a funded
+        // allocation for the same day/currency exists.
+        TellerAllocation::factory()->create([
+            'user_id' => $teller->id,
+            'branch_id' => $branch->id,
+            'currency_code' => 'USD',
+            'status' => TellerAllocationStatus::ACTIVE,
+            'current_balance' => '0.0000',
+            'daily_limit_myr' => '10000.0000',
+            'daily_used_myr' => '0.0000',
+            'session_date' => now()->toDateString(),
+        ]);
+        $funded = TellerAllocation::factory()->create([
+            'user_id' => $teller->id,
+            'branch_id' => $branch->id,
+            'currency_code' => 'USD',
+            'status' => TellerAllocationStatus::ACTIVE,
+            'current_balance' => '3000.0000',
+            'daily_limit_myr' => '10000.0000',
+            'daily_used_myr' => '0.0000',
+            'session_date' => now()->toDateString(),
+        ]);
+
+        $active = $this->service->getActiveAllocation($teller, 'USD');
+
+        $this->assertSame($funded->id, $active->id);
+
+        $result = $this->service->validateTransaction($teller, 'USD', '200.0000', false, '200.0000');
+        $this->assertTrue($result->valid);
+    }
+
+    #[Test]
+    public function active_allocation_still_returns_depleted_when_it_is_the_only_one(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+
+        TellerAllocation::factory()->create([
+            'user_id' => $teller->id,
+            'branch_id' => $branch->id,
+            'currency_code' => 'USD',
+            'status' => TellerAllocationStatus::ACTIVE,
+            'current_balance' => '0.0000',
+            'daily_limit_myr' => '10000.0000',
+            'daily_used_myr' => '0.0000',
+            'session_date' => now()->toDateString(),
+        ]);
+
+        // The depleted allocation is returned so the sell validation reports
+        // a balance error rather than "no active allocation".
+        $this->assertNotNull($this->service->getActiveAllocation($teller, 'USD'));
+
+        $result = $this->service->validateTransaction($teller, 'USD', '200.0000', false, '200.0000');
+        $this->assertFalse($result->valid);
+        $this->assertEquals('No USD balance available to sell', $result->reason);
+    }
+
+    #[Test]
     public function reject_allocation_releases_pool_balance(): void
     {
         $branch = Branch::factory()->create();

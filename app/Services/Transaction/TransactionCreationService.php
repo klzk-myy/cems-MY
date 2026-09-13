@@ -556,6 +556,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
         $transaction->cdd_level = $context->cddLevel;
         $transaction->idempotency_key = $data['idempotency_key'] ?? null;
+        $transaction->teller_allocation_id = $context->allocation?->id;
         $transaction->status = $context->status;
         $transaction->hold_reason = $context->holdReason;
         $transaction->approved_by = null;

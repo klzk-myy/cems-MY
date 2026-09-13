@@ -59,7 +59,9 @@ class RouteMiddlewareAliasTest extends TestCase
     #[Test]
     public function role_middleware_uses_only_canonical_role_names(): void
     {
-        $canonical = ['admin', 'manager', 'compliance', 'accountant', 'teller'];
+        // Mirrors the match arms in CheckRole::handle(): identity roles plus
+        // the effective-permission module aliases (accounting, users).
+        $canonical = ['admin', 'manager', 'compliance', 'accountant', 'accounting', 'users', 'teller'];
         $violations = [];
 
         foreach (Route::getRoutes()->getRoutes() as $route) {
@@ -80,7 +82,7 @@ class RouteMiddlewareAliasTest extends TestCase
 
         $this->assertEmpty(
             $violations,
-            'Routes must use canonical role names (admin, manager, compliance, accountant, teller). Violations: '.implode(', ', $violations)
+            'Routes must use canonical role names (admin, manager, compliance, accountant, accounting, users, teller). Violations: '.implode(', ', $violations)
         );
     }
 

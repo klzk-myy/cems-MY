@@ -15,25 +15,25 @@ class UserSeeder extends Seeder
             [
                 'username' => 'admin',
                 'email' => 'admin@cems.my',
-                'password' => 'Admin@123456',
+                'password' => 'Password123!',
                 'role' => 'admin',
             ],
             [
                 'username' => 'teller1',
                 'email' => 'teller1@cems.my',
-                'password' => 'Teller@1234',
+                'password' => 'Password123!',
                 'role' => 'teller',
             ],
             [
                 'username' => 'manager1',
                 'email' => 'manager1@cems.my',
-                'password' => 'Manager@1234',
+                'password' => 'Password123!',
                 'role' => 'manager',
             ],
             [
                 'username' => 'compliance1',
                 'email' => 'compliance1@cems.my',
-                'password' => 'Compliance@1234',
+                'password' => 'Password123!',
                 'role' => 'compliance_officer',
             ],
         ];
@@ -54,9 +54,9 @@ class UserSeeder extends Seeder
         }
 
         $this->command->info('Created users:');
-        $this->command->info('  - admin@cems.my (Admin) - Password: Admin@123456');
-        $this->command->info('  - teller1@cems.my (Teller) - Password: Teller@1234');
-        $this->command->info('  - manager1@cems.my (Manager) - Password: Manager@1234');
-        $this->command->info('  - compliance1@cems.my (Compliance Officer) - Password: Compliance@1234');
+        $this->command->info('  - admin@cems.my (Admin) - Password: Password123!');
+        $this->command->info('  - teller1@cems.my (Teller) - Password: Password123!');
+        $this->command->info('  - manager1@cems.my (Manager) - Password: Password123!');
+        $this->command->info('  - compliance1@cems.my (Compliance Officer) - Password: Password123!');
     }
 }

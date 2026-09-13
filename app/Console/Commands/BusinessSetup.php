@@ -161,10 +161,10 @@ class BusinessSetup extends Command
         $this->info('');
 
         $this->info('Login Credentials:');
-        $this->info('  Admin:     admin@cems.my / Admin@123456');
-        $this->info('  Teller:    teller1@cems.my / Teller@1234');
-        $this->info('  Manager:   manager1@cems.my / Manager@1234');
-        $this->info('  Compliance: compliance1@cems.my / Compliance@1234');
+        $this->info('  Admin:     admin@cems.my / Password123!');
+        $this->info('  Teller:    teller1@cems.my / Password123!');
+        $this->info('  Manager:   manager1@cems.my / Password123!');
+        $this->info('  Compliance: compliance1@cems.my / Password123!');
         $this->info('');
 
         $this->info('Next Steps:');

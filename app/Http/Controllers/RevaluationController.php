@@ -21,7 +21,7 @@ class RevaluationController extends Controller
 
     public function index(): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requireAccountingAccess();
 
         $positions = CurrencyPosition::with('currency')->get();
         $status = $this->revaluationService->getRevaluationStatus(now()->format('Y-m'));
@@ -31,6 +31,8 @@ class RevaluationController extends Controller
 
     public function run(RunRevaluationRequest $request): RedirectResponse
     {
+        $this->requireAccountingAccess();
+
         try {
             $results = $this->revaluationService->runRevaluationWithJournal();
 
@@ -44,7 +46,7 @@ class RevaluationController extends Controller
 
     public function history(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requireAccountingAccess();
 
         $month = $request->input('month', now()->format('Y-m'));
         $history = RevaluationEntry::whereMonth('revaluation_date', now()->parse($month)->month)

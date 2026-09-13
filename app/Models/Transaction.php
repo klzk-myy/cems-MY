@@ -52,6 +52,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $reversal_reason Reason for reversed status
  * @property int|null $branch_id
  * @property int|null $counter_id
+ * @property int|null $teller_allocation_id Allocation pinned at creation for balance apply/reverse
  * @property string $till_id
  * @property string|null $base_rate
  * @property bool $rate_override
@@ -139,6 +140,7 @@ class Transaction extends TransactionModel
         'customer_id' => 'integer',
         'user_id' => 'integer',
         'branch_id' => 'integer',
+        'teller_allocation_id' => 'integer',
         'approved_by' => 'integer',
         'approved_at' => 'datetime',
         'compliance_cleared_by' => 'integer',

@@ -42,7 +42,7 @@ class ReportController extends Controller
 
     public function ledgerAccount(Request $request, string $accountCode): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requireAccountingAccess();
 
         if (! preg_match('/^\d{4,6}$/', $accountCode)) {
             abort(422, 'Invalid account code format.');
@@ -95,7 +95,7 @@ class ReportController extends Controller
 
     public function cashFlow(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requireAccountingAccess();
 
         $from = $request->input('from', now()->startOfMonth()->toDateString());
         $to = $request->input('to', now()->toDateString());
@@ -107,7 +107,7 @@ class ReportController extends Controller
 
     public function ratios(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requireAccountingAccess();
 
         $asOfDate = $request->input('as_of_date', now()->toDateString());
         $trialBalance = $this->ledgerService->getTrialBalance($asOfDate);

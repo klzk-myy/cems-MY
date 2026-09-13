@@ -204,7 +204,7 @@ class TransactionValidationService implements TransactionValidationInterface
 
         if ($response->action === 'block') {
             $matchScore = $response->confidenceScore;
-            $matchedEntity = $response->matches->first()?->entryName;
+            $matchedEntity = $response->matches->first()?->entityName;
             $message = $matchedEntity
                 ? "Sanctions match found: {$matchedEntity} (confidence: {$matchScore}%)"
                 : "Sanctions match found (confidence: {$matchScore}%)";
@@ -214,7 +214,7 @@ class TransactionValidationService implements TransactionValidationInterface
 
         if ($response->action === 'flag') {
             $matchScore = $response->confidenceScore;
-            $matchedEntity = $response->matches->first()?->entryName;
+            $matchedEntity = $response->matches->first()?->entityName;
             $message = $matchedEntity
                 ? "Sanctions flag: {$matchedEntity} (confidence: {$matchScore}%)"
                 : "Sanctions flag (confidence: {$matchScore}%)";

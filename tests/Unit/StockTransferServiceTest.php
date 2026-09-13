@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\TransactionApprovalException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
+use App\Models\BranchPool;
 use App\Models\CurrencyPosition;
 use App\Models\StockTransfer;
 use App\Models\User;
@@ -318,6 +319,157 @@ class StockTransferServiceTest extends TestCase
 
         $taker->complete($partiallyReceived);
         $this->assertTrue($transfer->fresh()->isCompleted());
+    }
+
+    #[Test]
+    public function completed_transfer_moves_stock_between_branch_pools(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        // The branch pool is the teller-allocatable float ledger — separate
+        // from currency_positions. Dispatching stock must drain the source
+        // pool; completing must fund the destination pool.
+        $sourcePool = BranchPool::factory()->create([
+            'branch_id' => $this->branchA->id,
+            'currency_code' => 'USD',
+            'available_balance' => '1000.0000',
+            'allocated_balance' => '0.0000',
+        ]);
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        $sourcePool->refresh();
+        $this->assertEquals('0.0000', $sourcePool->available_balance);
+
+        $taker->complete($transfer->fresh());
+        $this->assertTrue($transfer->fresh()->isCompleted());
+
+        $destinationPool = BranchPool::where('branch_id', $this->branchB->id)
+            ->where('currency_code', 'USD')
+            ->first();
+        $this->assertNotNull($destinationPool);
+        $this->assertEquals('1000.0000', $destinationPool->available_balance);
+    }
+
+    #[Test]
+    public function partial_receipt_then_complete_credits_pool_exactly_once(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        BranchPool::factory()->create([
+            'branch_id' => $this->branchA->id,
+            'currency_code' => 'USD',
+            'available_balance' => '1000.0000',
+            'allocated_balance' => '0.0000',
+        ]);
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        // Partial receipt of 600 credits 600; completion credits only the
+        // outstanding 400 — never the full quantity again.
+        $taker->receiveItems($transfer->fresh(), [
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '600'],
+        ]);
+
+        $poolAfterReceipt = BranchPool::where('branch_id', $this->branchB->id)
+            ->where('currency_code', 'USD')
+            ->first();
+        $this->assertEquals('600.0000', $poolAfterReceipt->available_balance);
+
+        $taker->complete($transfer->fresh());
+
+        $destinationPool = BranchPool::where('branch_id', $this->branchB->id)
+            ->where('currency_code', 'USD')
+            ->first();
+        $this->assertEquals('1000.0000', $destinationPool->available_balance);
+    }
+
+    #[Test]
+    public function cancelling_in_transit_transfer_returns_stock_to_source_pool(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        $sourcePool = BranchPool::factory()->create([
+            'branch_id' => $this->branchA->id,
+            'currency_code' => 'USD',
+            'available_balance' => '1000.0000',
+            'allocated_balance' => '0.0000',
+        ]);
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        // Partial receipt of 600, then cancel — the unreceived 400 returns
+        // to the source pool; the received 600 stays at the destination.
+        $taker->receiveItems($transfer->fresh(), [
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '600'],
+        ]);
+        $taker->cancel($transfer->fresh(), 'Shipment recalled');
+
+        $sourcePool->refresh();
+        $this->assertEquals('400.0000', $sourcePool->available_balance);
+
+        $destinationPool = BranchPool::where('branch_id', $this->branchB->id)
+            ->where('currency_code', 'USD')
+            ->first();
+        $this->assertEquals('600.0000', $destinationPool->available_balance);
+    }
+
+    #[Test]
+    public function pool_return_is_capped_at_what_dispatch_actually_debited(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        // Pool only covers 400 of the 1000 dispatched — the debit clamps and
+        // records pool_debited=400 so the return can never credit back more.
+        $sourcePool = BranchPool::factory()->create([
+            'branch_id' => $this->branchA->id,
+            'currency_code' => 'USD',
+            'available_balance' => '400.0000',
+            'allocated_balance' => '0.0000',
+        ]);
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        $sourcePool->refresh();
+        $this->assertEquals('0.0000', $sourcePool->available_balance);
+        $this->assertEquals('400.0000', (string) $transfer->items()->first()->pool_debited);
+
+        // Cancelling in-transit returns the full 1000 to the position ledger
+        // but only the 400 the pool actually gave.
+        $maker->cancel($transfer->fresh(), 'Shipment recalled');
+
+        $sourcePool->refresh();
+        $this->assertEquals('400.0000', $sourcePool->available_balance);
+
+        $position = CurrencyPosition::where('branch_id', (string) $this->branchA->id)
+            ->where('currency_code', 'USD')
+            ->first();
+        $this->assertEquals('1000.0000', (string) $position->quantity);
+    }
+
+    #[Test]
+    public function repeat_receive_submission_does_not_double_credit(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        // The same item appearing twice in one payload (retried/duplicated
+        // form rows) must credit the delta only — 600 total, not 1200.
+        $taker->receiveItems($transfer->fresh(), [
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '600'],
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '600'],
+        ]);
+
+        $position = CurrencyPosition::where('branch_id', (string) $this->branchB->id)
+            ->where('currency_code', 'USD')
+            ->first();
+        $this->assertEquals('600.0000', (string) $position->quantity);
     }
 
     #[Test]

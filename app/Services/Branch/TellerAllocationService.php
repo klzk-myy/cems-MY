@@ -235,12 +235,21 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         return $openAllocations->count();
     }
 
+    /**
+     * A teller may hold several active same-currency allocations for the day
+     * (e.g. an earlier allocation depleted but not yet returned to the pool
+     * plus a newer replenishment). Order by remaining balance so a funded
+     * allocation is preferred; a depleted one is still returned when it is
+     * the only active row so validation reports an accurate balance error.
+     */
     public function getActiveAllocation(User $teller, string $currencyCode): ?TellerAllocation
     {
         return TellerAllocation::where('user_id', $teller->id)
             ->where('currency_code', $currencyCode)
             ->where('status', TellerAllocationStatus::ACTIVE->value)
             ->whereDate('session_date', now()->toDateString())
+            ->orderByDesc('current_balance')
+            ->orderByDesc('id')
             ->first();
     }
 
@@ -344,13 +353,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     public function applyTransactionAllocation(Transaction $transaction, ?TellerAllocation $allocation = null): void
     {
         if ($allocation === null) {
-            $user = User::find($transaction->user_id);
-
-            if (! $user || ! $user->isTeller()) {
-                return;
-            }
-
-            $allocation = $this->getActiveAllocation($user, $transaction->currency_code);
+            $allocation = $this->resolveTransactionAllocation($transaction);
         }
 
         if (! $allocation) {
@@ -374,13 +377,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
     public function reverseTransactionAllocation(Transaction $transaction): void
     {
-        $user = User::find($transaction->user_id);
-
-        if (! $user || ! $user->isTeller()) {
-            return;
-        }
-
-        $allocation = $this->getActiveAllocation($user, $transaction->currency_code);
+        $allocation = $this->resolveTransactionAllocation($transaction);
 
         if (! $allocation) {
             return;
@@ -399,6 +396,34 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
             $lockedAllocation->subtractDailyUsed((string) $transaction->amount_local);
         });
+    }
+
+    /**
+     * Resolve which allocation a transaction's balance effect belongs to:
+     * the allocation pinned at creation when it is still usable, otherwise
+     * the teller's funded active allocation for the currency. Transactions
+     * created before the pinning column existed fall back to the lookup.
+     */
+    private function resolveTransactionAllocation(Transaction $transaction): ?TellerAllocation
+    {
+        if ($transaction->teller_allocation_id) {
+            $pinned = TellerAllocation::where('id', $transaction->teller_allocation_id)
+                ->where('status', TellerAllocationStatus::ACTIVE->value)
+                ->whereDate('session_date', now()->toDateString())
+                ->first();
+
+            if ($pinned) {
+                return $pinned;
+            }
+        }
+
+        $user = User::find($transaction->user_id);
+
+        if (! $user || ! $user->isTeller()) {
+            return null;
+        }
+
+        return $this->getActiveAllocation($user, $transaction->currency_code);
     }
 
     /**

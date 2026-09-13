@@ -9,7 +9,7 @@
                     <x-input type="date" name="date_from" label="Date From" />
                     <x-input type="date" name="date_to" label="Date To" />
                     <x-select name="branch_id" label="Branch" :options="['' => 'All Branches'] + $branches->pluck('name', 'id')->toArray()" />
-                    <x-select name="type" label="Transaction Type" :options="['' => 'All Types'] + $types->mapWithKeys(fn ($t) => [$t->value => $t->label()])->toArray()" />
+                    <x-select name="type" label="Transaction Type" :options="['' => 'All Types'] + collect($types)->mapWithKeys(fn ($t) => [$t->value => $t->label()])->toArray()" />
                     <div class="md:col-span-2">
                         <x-select name="status" label="Status" :options="['' => 'All Statuses', 'completed' => 'Completed', 'pending' => 'Pending', 'cancelled' => 'Cancelled']" />
                     </div>

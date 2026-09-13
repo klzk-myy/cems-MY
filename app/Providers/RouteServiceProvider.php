@@ -55,13 +55,13 @@ class RouteServiceProvider extends ServiceProvider
             });
         });
 
-        // Login rate limit: 5 per minute keyed by IP AND submitted email so
+        // Login rate limit: 5 per minute keyed by IP AND submitted username so
         // both shared-NAT clients and credential-stuffing via rotating proxies
         // are constrained.
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(
                 config('security.rate_limits.login.attempts', 5)
-            )->by($request->ip().'|'.strtolower((string) $request->input('email')))->response(function () use ($request) {
+            )->by($request->ip().'|'.strtolower((string) $request->input('username')))->response(function () use ($request) {
                 app(RateLimitService::class)->recordFailedAttempt($request->ip());
                 app(RateLimitService::class)->logRateLimitHit($request, 'login');
 

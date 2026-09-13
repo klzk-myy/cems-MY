@@ -74,6 +74,34 @@ class AuthenticationTest extends TestCase
     }
 
     #[Test]
+    public function login_throttle_is_keyed_per_username(): void
+    {
+        $attempts = (int) config('security.rate_limits.login.attempts', 5);
+
+        // Exhaust the throttle bucket for one username from this IP.
+        for ($i = 0; $i < $attempts; $i++) {
+            $this->post('/login', [
+                'username' => 'throttled_user',
+                'password' => 'wrongpassword',
+            ]);
+        }
+
+        // A different username from the same IP must get its own bucket —
+        // the limiter keys on the submitted username, not a shared field.
+        $this->post('/login', [
+            'username' => 'other_user',
+            'password' => 'wrongpassword',
+        ])->assertSessionHasErrors('username')
+            ->assertStatus(302);
+
+        // The exhausted username hits the cap on the next attempt.
+        $this->post('/login', [
+            'username' => 'throttled_user',
+            'password' => 'wrongpassword',
+        ])->assertStatus(429);
+    }
+
+    #[Test]
     public function inactive_user_cannot_login(): void
     {
         $user = User::factory()->create([

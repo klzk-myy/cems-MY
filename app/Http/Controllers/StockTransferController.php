@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\Domain\TransactionApprovalException;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Requests\ApproveStockTransferRequest;
 use App\Http\Requests\CancelStockTransferRequest;
 use App\Http\Requests\ReceiveStockTransferRequest;
@@ -128,7 +128,11 @@ class StockTransferController extends Controller
         $this->requireManagerOrAdmin();
         $this->authorize('approveBranchManager', $stockTransfer);
 
-        $this->stockTransferService->approveByBranchManager($stockTransfer);
+        try {
+            $this->stockTransferService->approveByBranchManager($stockTransfer);
+        } catch (DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         $this->auditService->logStockTransferEvent('stock_transfer_approved_bm', $stockTransfer->id, [
             'new' => ['approved_by' => auth()->user()->username],
@@ -142,7 +146,11 @@ class StockTransferController extends Controller
         $this->requireManagerOrAdmin();
         $this->authorize('dispatch', $stockTransfer);
 
-        $this->stockTransferService->dispatch($stockTransfer);
+        try {
+            $this->stockTransferService->dispatch($stockTransfer);
+        } catch (DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         $this->auditService->logStockTransferEvent('stock_transfer_dispatched', $stockTransfer->id);
 
@@ -154,7 +162,11 @@ class StockTransferController extends Controller
         $this->requireManagerOrAdmin();
         $this->authorize('receive', $stockTransfer);
 
-        $this->stockTransferService->receiveItems($stockTransfer, $request->items);
+        try {
+            $this->stockTransferService->receiveItems($stockTransfer, $request->items);
+        } catch (DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         $this->auditService->logStockTransferEvent('stock_transfer_partially_received', $stockTransfer->id, [
             'new' => ['received_items' => $request->items],
@@ -168,7 +180,11 @@ class StockTransferController extends Controller
         $this->requireManagerOrAdmin();
         $this->authorize('complete', $stockTransfer);
 
-        $this->stockTransferService->complete($stockTransfer);
+        try {
+            $this->stockTransferService->complete($stockTransfer);
+        } catch (DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         $this->auditService->logStockTransferEvent('stock_transfer_completed', $stockTransfer->id);
 
@@ -180,7 +196,11 @@ class StockTransferController extends Controller
         $this->requireManagerOrAdmin();
         $this->authorize('cancel', $stockTransfer);
 
-        $this->stockTransferService->cancel($stockTransfer, $request->reason);
+        try {
+            $this->stockTransferService->cancel($stockTransfer, $request->reason);
+        } catch (DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         $this->auditService->logStockTransferEvent('stock_transfer_cancelled', $stockTransfer->id, [
             'new' => ['reason' => $request->reason, 'cancelled_by' => auth()->user()->username],
@@ -195,7 +215,7 @@ class StockTransferController extends Controller
 
         try {
             $this->stockTransferService->reject($stockTransfer, $request->reason);
-        } catch (TransactionApprovalException $e) {
+        } catch (DomainException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
 

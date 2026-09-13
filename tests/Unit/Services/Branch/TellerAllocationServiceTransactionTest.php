@@ -150,6 +150,54 @@ class TellerAllocationServiceTransactionTest extends TestCase
     }
 
     #[Test]
+    public function apply_uses_pinned_allocation_over_a_richer_active_one(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+
+        // The allocation validated at creation time is pinned on the
+        // transaction; a second, richer allocation for the same day/currency
+        // must not divert the balance effect.
+        $pinned = $this->activeAllocation($teller, $branch, 'USD', '500.0000');
+        $richer = $this->activeAllocation($teller, $branch, 'USD', '9000.0000');
+
+        $transaction = $this->transaction($teller, $branch, TransactionType::Sell, 'USD', '100.0000', '450.0000');
+        $transaction->teller_allocation_id = $pinned->id;
+        $transaction->save();
+
+        $this->service->applyTransactionAllocation($transaction);
+
+        $pinned->refresh();
+        $richer->refresh();
+        $this->assertEquals('400.0000', (string) $pinned->current_balance);
+        $this->assertEquals('9000.0000', (string) $richer->current_balance);
+    }
+
+    #[Test]
+    public function reverse_falls_back_to_active_allocation_when_pinned_is_inactive(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+
+        $returned = $this->activeAllocation($teller, $branch, 'USD', '500.0000');
+        $returned->update(['status' => TellerAllocationStatus::RETURNED]);
+        $active = $this->activeAllocation($teller, $branch, 'USD', '9000.0000');
+
+        $transaction = $this->transaction($teller, $branch, TransactionType::Sell, 'USD', '100.0000', '450.0000');
+        $transaction->teller_allocation_id = $returned->id;
+        $transaction->save();
+
+        // The pinned allocation was returned to the pool — reversal credits
+        // the teller's current active allocation instead.
+        $this->service->reverseTransactionAllocation($transaction);
+
+        $active->refresh();
+        $returned->refresh();
+        $this->assertEquals('9100.0000', (string) $active->current_balance);
+        $this->assertEquals('500.0000', (string) $returned->current_balance);
+    }
+
+    #[Test]
     public function reverse_allocation_short_circuits_for_non_teller_user(): void
     {
         $branch = Branch::factory()->create();

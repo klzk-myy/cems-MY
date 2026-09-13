@@ -45,7 +45,7 @@ test.describe('Login and Crawl - Remove Overlay First', () => {
     await page.waitForTimeout(2000);
     
     await page.fill('input#username', 'admin');
-    await page.fill('input#password', 'Admin@123456');
+    await page.fill('input#password', 'Password123!');
     await page.click('button[type="submit"]');
     
     await page.waitForTimeout(3000);
@@ -85,7 +85,7 @@ test.describe('Login and Crawl - Remove Overlay First', () => {
     // Login
     await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
     await page.fill('input#username', 'admin');
-    await page.fill('input#password', 'Admin@123456');
+    await page.fill('input#password', 'Password123!');
     await page.click('button[type="submit"]');
     await page.waitForTimeout(3000);
     
@@ -136,7 +136,7 @@ test.describe('Login and Crawl - Remove Overlay First', () => {
     // Login
     await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
     await page.fill('input#username', 'admin');
-    await page.fill('input#password', 'Admin@123456');
+    await page.fill('input#password', 'Password123!');
     await page.click('button[type="submit"]');
     await page.waitForTimeout(3000);
     

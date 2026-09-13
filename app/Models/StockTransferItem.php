@@ -6,6 +6,19 @@ use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $stock_transfer_id
+ * @property string $currency_code
+ * @property string $quantity
+ * @property string|null $rate
+ * @property string|null $value_myr
+ * @property string|null $quantity_received
+ * @property string|null $quantity_in_transit
+ * @property string $pool_debited
+ * @property string|null $variance_notes
+ * @property-read string $variance
+ */
 class StockTransferItem extends BaseModel
 {
     use HasFactory;
@@ -20,6 +33,7 @@ class StockTransferItem extends BaseModel
         'value_myr',
         'quantity_received',
         'quantity_in_transit',
+        'pool_debited',
         'variance_notes',
     ];
 
@@ -29,6 +43,7 @@ class StockTransferItem extends BaseModel
         'value_myr' => MoneyCast::class,
         'quantity_received' => MoneyCast::class,
         'quantity_in_transit' => MoneyCast::class,
+        'pool_debited' => MoneyCast::class,
     ];
 
     public function stockTransfer(): BelongsTo

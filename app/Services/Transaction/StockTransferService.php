@@ -14,6 +14,7 @@ use App\Models\StockTransferItem;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
+use App\Services\Branch\BranchPoolService;
 use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -24,14 +25,18 @@ class StockTransferService
 
     protected ?CurrencyPositionLockService $positionLockService;
 
+    protected ?BranchPoolService $branchPoolService;
+
     public function __construct(
         protected MathService $mathService,
         protected AuditService $auditService,
         ?User $requester = null,
         ?CurrencyPositionLockService $positionLockService = null,
+        ?BranchPoolService $branchPoolService = null,
     ) {
         $this->requester = $requester ?? auth()->user();
         $this->positionLockService = $positionLockService;
+        $this->branchPoolService = $branchPoolService;
     }
 
     /**
@@ -227,6 +232,7 @@ class StockTransferService
         DB::transaction(function () use ($transfer) {
             $transfer->loadMissing('items');
             $sourceBranchKey = $this->positionBranchKey($transfer->source_branch_name);
+            $sourceBranch = $this->branchFromIdentifier($transfer->source_branch_name);
 
             foreach ($transfer->items as $item) {
                 $this->decrementSourcePosition(
@@ -234,6 +240,20 @@ class StockTransferService
                     (string) $item->currency_code,
                     (string) $item->quantity
                 );
+
+                // The same stock leaves the branch's teller-allocatable pool.
+                // pool_debited records what the pool actually covered so a
+                // cancel/reject return credits back no more than it gave.
+                if ($sourceBranch) {
+                    $debited = $this->poolService()->debit(
+                        $sourceBranch,
+                        (string) $item->currency_code,
+                        (string) $item->quantity,
+                        $this->requester()->id
+                    );
+
+                    $item->update(['pool_debited' => $debited]);
+                }
             }
 
             $transfer->dispatch();
@@ -256,17 +276,19 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be in transit to receive items');
         }
 
-        DB::transaction(function () use ($transfer, $items) {
+        DB::transaction(function () use ($transfer, $items, $requester) {
             $itemIds = collect($items)->pluck('id');
             /** @var Collection<(int|string), StockTransferItem> $existingItems */
             $existingItems = $transfer->items()
                 ->whereIn('id', $itemIds)
+                ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
 
             // Inbound stock movement key: received quantities land on the
             // DESTINATION branch position (Buy-side sign).
             $destinationBranchKey = $this->positionBranchKey($transfer->destination_branch_name);
+            $destinationBranch = $this->branchFromIdentifier($transfer->destination_branch_name);
 
             foreach ($items as $itemData) {
                 if (! isset($itemData['id']) || ! is_numeric($itemData['id'])) {
@@ -294,17 +316,42 @@ class StockTransferService
                         );
                     }
 
+                    // Receipts are cumulative: the submitted quantity_received is
+                    // the item's new total, so only the delta since the last
+                    // receipt is credited. Re-submitting an earlier receipt can
+                    // therefore never double-credit the position or the pool.
+                    $previousReceived = (string) ($item->quantity_received ?? '0');
+                    $newReceived = (string) $itemData['quantity_received'];
+
+                    if ($this->mathService->compare($newReceived, $previousReceived) < 0) {
+                        throw new TransactionValidationException(
+                            message: "Quantity received for item {$item->id} cannot be less than the previously received {$previousReceived}"
+                        );
+                    }
+
+                    $receivedDelta = $this->mathService->subtract($newReceived, $previousReceived);
+
                     $item->update([
-                        'quantity_received' => $itemData['quantity_received'],
-                        'quantity_in_transit' => $this->mathService->subtract((string) $item->quantity, (string) $itemData['quantity_received']),
+                        'quantity_received' => $newReceived,
+                        'quantity_in_transit' => $this->mathService->subtract((string) $item->quantity, $newReceived),
                     ]);
 
                     // Destination branch position grows by what actually arrived.
                     $this->incrementDestinationPosition(
                         $destinationBranchKey,
                         (string) $item->currency_code,
-                        (string) $itemData['quantity_received']
+                        $receivedDelta
                     );
+
+                    // The arrived stock joins the branch's teller-allocatable pool.
+                    if ($destinationBranch && $this->mathService->compare($receivedDelta, '0') > 0) {
+                        $this->poolService()->replenish(
+                            $destinationBranch,
+                            (string) $item->currency_code,
+                            $receivedDelta,
+                            $requester->id
+                        );
+                    }
 
                     if ($item->hasVariance()) {
                         $item->update(['variance_notes' => "Variance: {$item->variance}"]);
@@ -366,9 +413,10 @@ class StockTransferService
         // received (dispatched quantity minus receipts) lands on the DESTINATION
         // branch at completion, so receiveItems() + complete() together deliver
         // exactly what dispatch() removed from the source.
-        DB::transaction(function () use ($transfer) {
+        DB::transaction(function () use ($transfer, $requester) {
             $transfer->loadMissing('items');
             $destinationBranchKey = $this->positionBranchKey($transfer->destination_branch_name);
+            $destinationBranch = $this->branchFromIdentifier($transfer->destination_branch_name);
 
             foreach ($transfer->items as $item) {
                 $received = (string) ($item->quantity_received ?? '0');
@@ -379,6 +427,15 @@ class StockTransferService
                     (string) $item->currency_code,
                     $outstanding
                 );
+
+                if ($destinationBranch && $this->mathService->compare($outstanding, '0') > 0) {
+                    $this->poolService()->replenish(
+                        $destinationBranch,
+                        (string) $item->currency_code,
+                        $outstanding,
+                        $requester->id
+                    );
+                }
             }
 
             $transfer->complete();
@@ -473,6 +530,7 @@ class StockTransferService
 
         $transfer->loadMissing('items');
         $sourceBranchKey = $this->positionBranchKey($transfer->source_branch_name);
+        $sourceBranch = $this->branchFromIdentifier($transfer->source_branch_name);
 
         foreach ($transfer->items as $item) {
             $unreceived = $this->mathService->subtract(
@@ -488,6 +546,25 @@ class StockTransferService
             $position->update([
                 'quantity' => $this->mathService->add((string) $position->quantity, $unreceived),
             ]);
+
+            // Returned stock re-enters the source branch's allocatable pool,
+            // capped at what dispatch actually took from it — pool debits are
+            // clamped at the available balance, so crediting the full
+            // unreceived amount could inflate the pool past its real share.
+            if ($sourceBranch) {
+                $poolReturn = $this->mathService->compare($unreceived, (string) $item->pool_debited) <= 0
+                    ? $unreceived
+                    : (string) $item->pool_debited;
+
+                if ($this->mathService->compare($poolReturn, '0') > 0) {
+                    $this->poolService()->replenish(
+                        $sourceBranch,
+                        (string) $item->currency_code,
+                        $poolReturn,
+                        $this->requester()->id
+                    );
+                }
+            }
         }
     }
 
@@ -560,5 +637,28 @@ class StockTransferService
     private function positionLocks(): CurrencyPositionLockService
     {
         return $this->positionLockService ??= app(CurrencyPositionLockService::class);
+    }
+
+    private function poolService(): BranchPoolService
+    {
+        return $this->branchPoolService ??= app(BranchPoolService::class);
+    }
+
+    /**
+     * Resolve a stock-transfer branch identifier (branch name or code, as
+     * stored on transfers) to a Branch model for pool updates. Returns null
+     * for unresolvable legacy free-text identifiers — the position ledger
+     * still updates via its raw-key fallback, and the pool is skipped.
+     */
+    private function branchFromIdentifier(string $identifier): ?Branch
+    {
+        if (trim($identifier) === '') {
+            return null;
+        }
+
+        return Branch::query()
+            ->where('name', $identifier)
+            ->orWhere('code', $identifier)
+            ->first();
     }
 }

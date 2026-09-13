@@ -20,7 +20,7 @@ test.describe('Test Every Page', () => {
     // Login once
     await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
     await page.fill('input#username', 'admin');
-    await page.fill('input#password', 'Admin@123456');
+    await page.fill('input#password', 'Password123!');
     await page.click('button[type="submit"]');
     await page.waitForTimeout(2000);
     await removeOverlay(page);

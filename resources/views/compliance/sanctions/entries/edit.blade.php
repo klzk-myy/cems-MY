@@ -35,7 +35,7 @@
                     name="details"
                     label="Additional Information"
                     rows="3"
-                >{{ old('details', $sanctionEntry->details) }}</x-textarea>
+                >{{ old('details', is_array($sanctionEntry->details) ? json_encode($sanctionEntry->details, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $sanctionEntry->details) }}</x-textarea>
 
                 <div class="flex justify-end gap-3">
                     <x-button href="{{ route('compliance.sanctions.entries.index') }}" variant="secondary">Cancel</x-button>

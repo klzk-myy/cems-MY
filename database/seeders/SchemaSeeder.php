@@ -574,6 +574,9 @@ class SchemaSeeder extends Seeder
             // so reversals can restore the exact prior cost basis (plan §1.3).
             $table->decimal('prev_quantity', 18, 4)->nullable();
             $table->decimal('prev_average_cost', 18, 6)->nullable();
+            // The teller allocation validated at creation time — pinned so
+            // apply/reverse act on the same allocation that passed validation.
+            $table->unsignedBigInteger('teller_allocation_id')->nullable();
             $table->index(['user_id', 'created_at', 'amount_local'], 'idx_duplicate_check');
             $table->index('amount_local', 'transactions_amount_local_index');
             $table->index('approval_sync_failed', 'transactions_approval_sync_failed_index');
@@ -999,6 +1002,12 @@ class SchemaSeeder extends Seeder
             $table->foreign('counter_id')->references('id')->on('counters')->nullOnDelete();
             $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+        });
+
+        // Deferred FK: teller_allocations is created after transactions.
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->index('teller_allocation_id', 'transactions_teller_allocation_id_index');
+            $table->foreign('teller_allocation_id')->references('id')->on('teller_allocations')->nullOnDelete();
         });
 
         Schema::create('counter_sessions', function (Blueprint $table) {
@@ -1814,6 +1823,10 @@ class SchemaSeeder extends Seeder
             $table->decimal('value_myr', 18, 4);
             $table->decimal('quantity_received', 18, 4)->default(0);
             $table->decimal('quantity_in_transit', 18, 4)->default(0);
+            // How much of the dispatched quantity was actually taken from the
+            // source branch pool (debits are clamped at the pool's available
+            // balance). Cancel/reject returns cap the pool credit at this.
+            $table->decimal('pool_debited', 18, 4)->default(0);
             $table->text('variance_notes')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

@@ -90,6 +90,81 @@ class BranchPoolService
         });
     }
 
+    /**
+     * Debit the branch's available pool balance (e.g. stock dispatched to
+     * another branch). Pools predate transfer-driven tracking and may not
+     * cover the dispatched amount, so the debit is clamped at zero and any
+     * uncovered shortfall is logged for reconciliation rather than blocking
+     * the transfer — currency_positions remains the authoritative stock gate.
+     *
+     * @return string The amount actually debited (clamped at the pool's
+     *                available balance), as a numeric string.
+     */
+    public function debit(Branch $branch, string $currencyCode, float|string $amount, ?int $userId = null): string
+    {
+        $amount = (string) $amount;
+
+        return DB::transaction(function () use ($branch, $currencyCode, $amount, $userId) {
+            $pool = BranchPool::where('branch_id', $branch->id)
+                ->where('currency_code', $currencyCode)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $pool) {
+                Log::warning('Branch pool debit skipped — no pool row', [
+                    'branch_id' => $branch->id,
+                    'currency_code' => $currencyCode,
+                    'amount' => $amount,
+                ]);
+
+                return '0';
+            }
+
+            $covered = $this->mathService->compare($pool->available_balance, $amount) >= 0
+                ? $amount
+                : $pool->available_balance;
+
+            if ($this->mathService->compare($covered, '0') <= 0) {
+                Log::warning('Branch pool debit uncovered — pool is empty', [
+                    'branch_id' => $branch->id,
+                    'currency_code' => $currencyCode,
+                    'amount' => $amount,
+                    'pool_id' => $pool->id,
+                ]);
+
+                return '0';
+            }
+
+            $pool->available_balance = $this->mathService->subtract($pool->available_balance, $covered);
+            $pool->save();
+
+            $shortfall = $this->mathService->subtract($amount, $covered);
+            if ($this->mathService->compare($shortfall, '0') > 0) {
+                Log::warning('Branch pool debit partially uncovered', [
+                    'branch_id' => $branch->id,
+                    'currency_code' => $currencyCode,
+                    'amount' => $amount,
+                    'shortfall' => $shortfall,
+                    'pool_id' => $pool->id,
+                ]);
+            }
+
+            $this->auditService->logBranchEvent(
+                'branch_pool_debited',
+                $branch->id,
+                [
+                    'currency_code' => $currencyCode,
+                    'amount' => $amount,
+                    'debited' => $covered,
+                    'pool_id' => $pool->id,
+                    'user_id' => $userId,
+                ]
+            );
+
+            return $covered;
+        });
+    }
+
     public function replenish(Branch $branch, string $currencyCode, float|string $amount, int $approvedBy): BranchPool
     {
         $amount = (string) $amount;

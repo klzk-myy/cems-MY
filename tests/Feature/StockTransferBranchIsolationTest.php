@@ -145,6 +145,29 @@ class StockTransferBranchIsolationTest extends TestCase
     }
 
     #[Test]
+    public function repeated_approval_returns_error_flash_not_500(): void
+    {
+        [$branchA, $branchB, $admin] = $this->makeBranchesAndAdmin();
+        $managerA = User::factory()->create(['role' => UserRole::Manager, 'branch_id' => $branchA->id]);
+        $managerB = User::factory()->create(['role' => UserRole::Manager, 'branch_id' => $branchB->id]);
+
+        $transfer = $this->makeTransfer($branchA->name, $branchB->name, $managerA->id);
+
+        // Taker approves once — succeeds.
+        $this->actingAs($managerB)
+            ->post(route('stock-transfers.approve-bm', $transfer))
+            ->assertRedirect();
+
+        // A second approval hits the domain's not-in-requested-status guard;
+        // it must surface as a redirect with an error flash, never a 500.
+        $response = $this->actingAs($managerB)
+            ->post(route('stock-transfers.approve-bm', $transfer));
+
+        $this->assertNotEquals(500, $response->getStatusCode());
+        $response->assertRedirect()->assertSessionHas('error');
+    }
+
+    #[Test]
     public function maker_cannot_reject_transfer_at_route(): void
     {
         [$branchA, $branchB, $admin] = $this->makeBranchesAndAdmin();

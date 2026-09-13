@@ -19,7 +19,7 @@ class FiscalYearController extends Controller
 
     public function list(): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requireAccountingAccess();
 
         $fiscalYears = FiscalYear::with('periods')->orderBy('year_code', 'desc')->get();
 
@@ -31,7 +31,7 @@ class FiscalYearController extends Controller
      */
     public function store(StoreFiscalYearRequest $request): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requireAccountingAccess();
 
         try {
             // When no explicit dates are given, derive the fiscal year from the
@@ -67,7 +67,7 @@ class FiscalYearController extends Controller
      */
     public function close(FiscalYear $year, FiscalYearCloseRequest $request): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requireAccountingAccess();
 
         $validated = $request->validated();
 

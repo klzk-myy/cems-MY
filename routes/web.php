@@ -160,6 +160,11 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
                 ->name('batch-upload.template');
             Route::get('/download-errors/{import}', [TransactionBatchController::class, 'downloadErrors'])
                 ->name('batch-upload.download-errors');
+
+            // Registered before /{transaction} so 'export' is not captured
+            // as a transaction ID.
+            Route::get('/export', [TransactionController::class, 'exportForm'])->name('export.form');
+            Route::post('/export', [TransactionController::class, 'export'])->name('export.export');
         });
 
         // Dead letter queue - admin only. Registered before /{transaction} so
@@ -635,12 +640,6 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::get('/{schedule}/edit', [ReportScheduleController::class, 'edit'])->name('edit');
         Route::put('/{schedule}', [ReportScheduleController::class, 'update'])->name('update');
         Route::delete('/{schedule}', [ReportScheduleController::class, 'destroy'])->name('destroy');
-    });
-
-    // Transaction Export (manager/admin)
-    Route::middleware('role:manager')->prefix('transactions/export')->name('transactions.export.')->group(function () {
-        Route::get('/', [TransactionController::class, 'exportForm'])->name('form');
-        Route::post('/', [TransactionController::class, 'export'])->name('export');
     });
 
     // KYC Documents (compliance/admin)
