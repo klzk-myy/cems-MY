@@ -10905,7 +10905,7 @@ parameters:
 		-
 			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\) expects string, string\|false given\.$#'
 			identifier: argument.type
-			count: 31
+			count: 32
 			path: tests/Feature/Views/SharedComponentFormsTest.php
 
 		-
