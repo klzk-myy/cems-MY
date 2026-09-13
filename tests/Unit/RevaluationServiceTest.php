@@ -58,13 +58,15 @@ class RevaluationServiceTest extends TestCase
     {
         $parsedDate = Carbon::parse($date);
 
-        return AccountingPeriod::factory()->create([
-            'period_code' => $parsedDate->format('Y-m'),
-            'start_date' => $parsedDate->startOfMonth()->toDateString(),
-            'end_date' => $parsedDate->endOfMonth()->toDateString(),
-            'period_type' => 'month',
-            'status' => 'Open',
-        ]);
+        return AccountingPeriod::firstOrCreate(
+            ['period_code' => $parsedDate->format('Y-m')],
+            [
+                'start_date' => $parsedDate->startOfMonth()->toDateString(),
+                'end_date' => $parsedDate->endOfMonth()->toDateString(),
+                'period_type' => 'month',
+                'status' => 'Open',
+            ]
+        );
     }
 
     #[Test]

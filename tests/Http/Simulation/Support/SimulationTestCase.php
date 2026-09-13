@@ -62,6 +62,8 @@ abstract class SimulationTestCase extends TestCase
     protected function migrateDatabases()
     {
         $this->artisan('db:seed', ['--class' => 'Database\Seeders\SchemaSeeder']);
+        $this->artisan('db:seed', ['--class' => 'Database\Seeders\FiscalYearSeeder']);
+        $this->artisan('db:seed', ['--class' => 'Database\Seeders\AccountingPeriodSeeder']);
     }
 
     /**

@@ -104,11 +104,18 @@ class AccountingService implements AccountingServiceInterface
                 throw new AccountingPeriodException('Journal entry is not balanced: debits do not equal credits');
             }
 
-            // Find the accounting period for this entry date
+            // Find the accounting period for this entry date. A journal entry
+            // must be linked to an open AccountingPeriod (spec.md §4.1) — a
+            // missing period is an error, not a silent null linkage.
             $period = AccountingPeriod::forDate($entryDate)->first();
 
-            // Validate that the period is open (if period exists)
-            if ($period && ! $period->isOpen()) {
+            if ($period === null) {
+                throw new AccountingPeriodException(
+                    "No accounting period exists for {$entryDate}. Create an open period for this date before posting journal entries."
+                );
+            }
+
+            if (! $period->isOpen()) {
                 throw new AccountingPeriodException(
                     "Cannot create entry in closed period {$period->period_code}. Please use an open period or contact administrator."
                 );
@@ -117,7 +124,7 @@ class AccountingService implements AccountingServiceInterface
             // Create entry as Posted and post to ledger directly
             $entry = JournalEntry::create([
                 'entry_date' => $entryDate,
-                'period_id' => $period?->id,
+                'period_id' => $period->id,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'description' => $description,

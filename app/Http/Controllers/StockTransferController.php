@@ -137,19 +137,6 @@ class StockTransferController extends Controller
         return redirect()->back()->with('success', 'Transfer approved by branch manager');
     }
 
-    public function approveHq(ApproveStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
-    {
-        $this->authorize('approveHq', $stockTransfer);
-
-        $this->stockTransferService->approveByHQ($stockTransfer);
-
-        $this->auditService->logStockTransferEvent('stock_transfer_approved_hq', $stockTransfer->id, [
-            'new' => ['approved_by' => auth()->user()->username],
-        ]);
-
-        return redirect()->back()->with('success', 'Transfer approved by HQ');
-    }
-
     public function dispatch(StockTransfer $stockTransfer): RedirectResponse
     {
         $this->requireManagerOrAdmin();

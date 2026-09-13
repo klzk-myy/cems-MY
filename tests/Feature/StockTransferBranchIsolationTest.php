@@ -30,7 +30,6 @@ class StockTransferBranchIsolationTest extends TestCase
         $this->assertTrue(Gate::forUser($admin)->allows('cancel', $transfer));
         $this->assertTrue(Gate::forUser($admin)->allows('receive', $transfer));
         $this->assertTrue(Gate::forUser($admin)->allows('complete', $transfer));
-        $this->assertTrue(Gate::forUser($admin)->allows('approveHq', $transfer));
         $this->assertTrue(Gate::forUser($admin)->allows('reject', $transfer));
     }
 
@@ -54,8 +53,6 @@ class StockTransferBranchIsolationTest extends TestCase
         $this->assertFalse(Gate::forUser($managerA)->allows('receive', $transfer));
         $this->assertFalse(Gate::forUser($managerA)->allows('complete', $transfer));
         $this->assertFalse(Gate::forUser($managerA)->allows('reject', $transfer));
-        // HQ-only action remains admin-only.
-        $this->assertFalse(Gate::forUser($managerA)->allows('approveHq', $transfer));
     }
 
     #[Test]
@@ -77,7 +74,6 @@ class StockTransferBranchIsolationTest extends TestCase
         // Destination manager is not the source branch manager.
         $this->assertFalse(Gate::forUser($managerB)->allows('dispatch', $transfer));
         $this->assertFalse(Gate::forUser($managerB)->allows('cancel', $transfer));
-        $this->assertFalse(Gate::forUser($managerB)->allows('approveHq', $transfer));
     }
 
     #[Test]
@@ -149,16 +145,12 @@ class StockTransferBranchIsolationTest extends TestCase
     }
 
     #[Test]
-    public function non_admin_cannot_perform_hq_only_actions_at_route(): void
+    public function maker_cannot_reject_transfer_at_route(): void
     {
         [$branchA, $branchB, $admin] = $this->makeBranchesAndAdmin();
         $managerA = User::factory()->create(['role' => UserRole::Manager, 'branch_id' => $branchA->id]);
 
         $transfer = $this->makeTransfer($branchA->name, $branchB->name, $managerA->id);
-
-        $this->actingAs($managerA)
-            ->post(route('stock-transfers.approve-hq', $transfer))
-            ->assertForbidden();
 
         // The maker cannot reject — rejection belongs to the taker.
         $this->actingAs($managerA)

@@ -3,8 +3,11 @@
 namespace Database\Seeders;
 
 use App\Enums\AccountCode;
+use App\Enums\AccountingPeriodStatus;
+use App\Enums\AccountingPeriodType;
 use App\Enums\FiscalYearStatus;
 use App\Enums\UserRole;
+use App\Models\AccountingPeriod;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\User;
@@ -52,6 +55,21 @@ class OpeningBalanceSeeder extends Seeder
 
             return;
         }
+
+        // Ensure an open accounting period exists for the fiscal year start
+        // date — AccountingService::createJournalEntry() requires every entry
+        // to be linked to an open AccountingPeriod (spec.md §4.1).
+        $periodDate = $fiscalYear->start_date;
+        AccountingPeriod::firstOrCreate(
+            ['period_code' => $periodDate->format('Y-m')],
+            [
+                'fiscal_year_id' => $fiscalYear->id,
+                'start_date' => $periodDate->copy()->startOfMonth()->toDateString(),
+                'end_date' => $periodDate->copy()->endOfMonth()->toDateString(),
+                'period_type' => AccountingPeriodType::Month->value,
+                'status' => AccountingPeriodStatus::Open->value,
+            ]
+        );
 
         $entry = $this->accountingService->createJournalEntry(
             lines: [

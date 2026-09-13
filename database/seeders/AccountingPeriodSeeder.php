@@ -69,6 +69,6 @@ class AccountingPeriodSeeder extends Seeder
             ]
         );
 
-        $this->command->info('Created accounting periods: '.$currentPeriodCode.', '.$prevPeriodCode.', '.$nextPeriodCode);
+        $this->command?->info('Created accounting periods: '.$currentPeriodCode.', '.$prevPeriodCode.', '.$nextPeriodCode);
     }
 }

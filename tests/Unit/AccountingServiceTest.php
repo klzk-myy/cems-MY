@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
@@ -723,5 +724,97 @@ class AccountingServiceTest extends TestCase
         $sellEntry->refresh();
         $this->assertEquals('Reversed', $sellEntry->status->value);
         $this->assertNotNull($sellEntry->reversed_at);
+    }
+
+    #[Test]
+    public function journal_entry_requires_an_open_accounting_period(): void
+    {
+        ChartOfAccount::factory()->create([
+            'account_code' => '9801',
+            'account_name' => 'Cash',
+            'account_type' => 'Asset',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+
+        ChartOfAccount::factory()->create([
+            'account_code' => '9802',
+            'account_name' => 'Revenue',
+            'account_type' => 'Revenue',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+
+        $user = User::factory()->create();
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
+
+        // 2030-06-15 has no accounting period — the entry must be rejected
+        // rather than silently linked to a null period_id.
+        $this->expectException(AccountingPeriodException::class);
+        $this->expectExceptionMessage('No accounting period exists for 2030-06-15');
+
+        $service->createJournalEntry(
+            [
+                ['account_code' => '9801', 'debit' => '100.00', 'credit' => '0'],
+                ['account_code' => '9802', 'debit' => '0', 'credit' => '100.00'],
+            ],
+            'Manual',
+            null,
+            'Entry with no period',
+            '2030-06-15',
+            $user->id
+        );
+    }
+
+    #[Test]
+    public function journal_entry_links_to_the_matching_accounting_period(): void
+    {
+        ChartOfAccount::factory()->create([
+            'account_code' => '9803',
+            'account_name' => 'Cash',
+            'account_type' => 'Asset',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+
+        ChartOfAccount::factory()->create([
+            'account_code' => '9804',
+            'account_name' => 'Revenue',
+            'account_type' => 'Revenue',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+
+        FiscalYear::factory()->create([
+            'year_code' => '2026',
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'status' => 'Open',
+        ]);
+
+        $period = AccountingPeriod::factory()->create([
+            'period_code' => '2026-03',
+            'start_date' => '2026-03-01',
+            'end_date' => '2026-03-31',
+            'status' => 'Open',
+        ]);
+
+        $user = User::factory()->create();
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
+
+        $entry = $service->createJournalEntry(
+            [
+                ['account_code' => '9803', 'debit' => '200.00', 'credit' => '0'],
+                ['account_code' => '9804', 'debit' => '0', 'credit' => '200.00'],
+            ],
+            'Manual',
+            null,
+            'Period linkage test',
+            '2026-03-10',
+            $user->id
+        );
+
+        $this->assertNotNull($entry->period_id);
+        $this->assertEquals($period->id, $entry->period_id);
     }
 }

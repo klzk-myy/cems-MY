@@ -238,7 +238,6 @@
                 @endif
 
                 @if(! $stockTransfer->canApproveBranchManager()
-                    && ! $stockTransfer->canApproveHq()
                     && ! $stockTransfer->canDispatch()
                     && ! $stockTransfer->canReceive()
                     && ! $stockTransfer->canComplete()

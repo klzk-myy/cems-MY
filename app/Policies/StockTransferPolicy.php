@@ -83,15 +83,6 @@ class StockTransferPolicy
     }
 
     /**
-     * Determine whether the user can approve the transfer at HQ.
-     * Admins only.
-     */
-    public function approveHq(User $user, StockTransfer $stockTransfer): bool
-    {
-        return $user->isAdmin();
-    }
-
-    /**
      * Determine whether the user can reject the transfer.
      * The taker (destination branch manager) rejects the maker's request;
      * admins can reject any transfer.

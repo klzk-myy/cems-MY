@@ -55,6 +55,12 @@ class SimulationSeeder extends Seeder
             ['SGD', 'Singapore Dollar', 'S$', 2, true],
             ['JPY', 'Japanese Yen', '¥', 0, true],
             ['MYR', 'Malaysian Ringgit', 'RM', 2, true],
+            // The rate API returns rates for these currencies too; they must
+            // exist so the exchange_rates.currency_code FK is satisfied when
+            // the revaluation fetches and stores them.
+            ['AUD', 'Australian Dollar', 'A$', 2, true],
+            ['CAD', 'Canadian Dollar', 'C$', 2, true],
+            ['CHF', 'Swiss Franc', 'Fr', 2, true],
         ];
         foreach ($currencies as [$code, $name, $symbol, $places, $active]) {
             Currency::updateOrCreate(

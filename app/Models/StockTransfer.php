@@ -144,11 +144,6 @@ class StockTransfer extends BaseModel
         return $this->status === StockTransferStatus::Requested;
     }
 
-    public function canApproveHq(): bool
-    {
-        return $this->status === StockTransferStatus::BranchManagerApproved;
-    }
-
     public function canDispatch(): bool
     {
         // Maker/taker: taker approval (BranchManagerApproved) is sufficient.

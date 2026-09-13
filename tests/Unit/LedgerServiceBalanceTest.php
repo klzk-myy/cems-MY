@@ -85,12 +85,14 @@ class LedgerServiceBalanceTest extends TestCase
         $today = now()->toDateString();
 
         // Create an accounting period first (required for journal_entries FK)
-        $period = AccountingPeriod::factory()->create([
-            'period_code' => now()->format('Y-m'),
-            'start_date' => now()->startOfMonth()->toDateString(),
-            'end_date' => now()->endOfMonth()->toDateString(),
-            'status' => 'Open',
-        ]);
+        $period = AccountingPeriod::firstOrCreate(
+            ['period_code' => now()->format('Y-m')],
+            [
+                'start_date' => now()->startOfMonth()->toDateString(),
+                'end_date' => now()->endOfMonth()->toDateString(),
+                'status' => 'Open',
+            ]
+        );
 
         // Create a journal entry using factory (required for foreign key)
         $journalEntry = JournalEntry::factory()->create([
@@ -160,12 +162,14 @@ class LedgerServiceBalanceTest extends TestCase
         $ledgerService = $this->app->make(LedgerService::class);
         $today = now()->toDateString();
 
-        $period = AccountingPeriod::factory()->create([
-            'period_code' => now()->format('Y-m'),
-            'start_date' => now()->startOfMonth()->toDateString(),
-            'end_date' => now()->endOfMonth()->toDateString(),
-            'status' => 'Open',
-        ]);
+        $period = AccountingPeriod::firstOrCreate(
+            ['period_code' => now()->format('Y-m')],
+            [
+                'start_date' => now()->startOfMonth()->toDateString(),
+                'end_date' => now()->endOfMonth()->toDateString(),
+                'status' => 'Open',
+            ]
+        );
 
         $journalEntry = JournalEntry::factory()->create([
             'entry_date' => $today,

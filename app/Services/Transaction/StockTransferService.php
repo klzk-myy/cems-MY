@@ -201,19 +201,6 @@ class StockTransferService
         $transfer->approveByBranchManager($requester);
     }
 
-    public function approveByHQ(StockTransfer $transfer): void
-    {
-        if (! $this->requester()->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only HQ (Admin) can approve transfers');
-        }
-
-        if ($transfer->status !== StockTransferStatus::BranchManagerApproved) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be BM-approved before HQ approval');
-        }
-
-        $transfer->approveByHQ($this->requester());
-    }
-
     public function dispatch(StockTransfer $transfer): void
     {
         $requester = $this->requester();

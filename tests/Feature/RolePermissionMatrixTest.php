@@ -65,6 +65,31 @@ class RolePermissionMatrixTest extends TestCase
     }
 
     #[Test]
+    public function accountant_is_granted_cross_branch_access_by_default(): void
+    {
+        // No role_permissions rows — the built-in defaults apply unchanged.
+        $this->assertSame(0, RolePermission::count());
+
+        // Accountants have company-wide cross-branch access by default
+        // (CLAUDE.md: "Accountants have company-wide accounting and reports
+        // with cross-branch access"). The default matrix must seed
+        // ManageAllBranches so canManageAllBranches() returns true.
+        $this->assertTrue(UserRole::Accountant->canManageAllBranches());
+        $this->assertTrue($this->permissionService->can(UserRole::Accountant, Permission::ManageAllBranches));
+
+        // Revoking the matrix grant narrows the accountant to branch-scoped.
+        $admin = $this->makeUser(UserRole::Admin);
+        $this->permissionService->updatePermission(
+            UserRole::Accountant,
+            Permission::ManageAllBranches,
+            false,
+            $admin->id
+        );
+
+        $this->assertFalse(UserRole::Accountant->canManageAllBranches());
+    }
+
+    #[Test]
     public function revoking_approve_transactions_blocks_compliance_officer_approval(): void
     {
         $officer = $this->makeUser(UserRole::ComplianceOfficer);

@@ -95,12 +95,14 @@ class TransactionAccountingVerificationTest extends TestCase
             'end_date' => now()->endOfYear()->toDateString(),
         ]);
 
-        AccountingPeriod::factory()->create([
-            'period_code' => now()->format('Y-m'),
-            'fiscal_year_id' => $fy->id,
-            'start_date' => now()->startOfMonth()->toDateString(),
-            'end_date' => now()->endOfMonth()->toDateString(),
-        ]);
+        AccountingPeriod::firstOrCreate(
+            ['period_code' => now()->format('Y-m')],
+            [
+                'fiscal_year_id' => $fy->id,
+                'start_date' => now()->startOfMonth()->toDateString(),
+                'end_date' => now()->endOfMonth()->toDateString(),
+            ]
+        );
     }
 
     #[Test]

@@ -13,6 +13,7 @@ use App\Models\PepApprovalRequest;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\User;
+use Database\Seeders\AccountingPeriodSeeder;
 use Database\Seeders\SchemaSeeder;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -92,6 +93,13 @@ abstract class TestCase extends BaseTestCase
                 // truth) rather than migrate:fresh, because the migrations
                 // directory has been retired.
                 SchemaSeeder::seedNow($this->app);
+
+                // Seed the current/previous/next month accounting periods so
+                // journal entries posted at now()->toDateString() always have
+                // an open period to link to (spec.md §4.1 requires every
+                // journal entry to be linked to an AccountingPeriod).
+                $this->app->make(AccountingPeriodSeeder::class)->run();
+
                 $this->app[Kernel::class]->setArtisan(null);
                 RefreshDatabaseState::$inMemoryConnections[$connectionName] = $connection->getPdo();
 

@@ -133,6 +133,7 @@ enum Permission: string
             UserRole::Accountant->value => [
                 self::AccessAccounting->value,
                 self::ViewReports->value,
+                self::ManageAllBranches->value,
             ],
             UserRole::Admin->value => array_column(self::cases(), 'value'),
         ];

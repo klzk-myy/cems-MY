@@ -309,8 +309,6 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
             ->middleware('role:manager');
         Route::get('/{stockTransfer}/approve-bm', [StockTransferController::class, 'showStep'])->defaults('step', 'approve-bm')->name('approve-bm.show')
             ->middleware('role:manager');
-        Route::get('/{stockTransfer}/approve-hq', [StockTransferController::class, 'showStep'])->defaults('step', 'approve-hq')->name('approve-hq.show')
-            ->middleware('role:admin');
         Route::get('/{stockTransfer}/cancel', [StockTransferController::class, 'showStep'])->defaults('step', 'cancel')->name('cancel.show')
             ->middleware('role:manager');
         Route::get('/{stockTransfer}/complete', [StockTransferController::class, 'showStep'])->defaults('step', 'complete')->name('complete.show')
@@ -318,8 +316,6 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
 
         Route::post('/{stockTransfer}/approve-bm', [StockTransferController::class, 'approveBm'])->name('approve-bm')
             ->middleware('role:manager');
-        Route::post('/{stockTransfer}/approve-hq', [StockTransferController::class, 'approveHq'])->name('approve-hq')
-            ->middleware('role:admin');
         Route::post('/{stockTransfer}/dispatch', [StockTransferController::class, 'dispatch'])->name('dispatch')
             ->middleware('role:manager');
         Route::post('/{stockTransfer}/receive', [StockTransferController::class, 'receive'])->name('receive')
