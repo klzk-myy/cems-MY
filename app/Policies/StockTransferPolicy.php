@@ -37,15 +37,23 @@ class StockTransferPolicy
      * Determine whether the user can approve the transfer (taker approval).
      * Maker/taker model: the DESTINATION branch manager approves the request
      * created by the source branch. Self-approval is prohibited.
+     * Within-branch transfers (source === destination) allow the same
+     * branch manager to approve.
      */
     public function approveBranchManager(User $user, StockTransfer $stockTransfer): bool
     {
-        if ($stockTransfer->requested_by === $user->id) {
+        $isWithinBranch = $stockTransfer->source_branch_name === $stockTransfer->destination_branch_name;
+
+        if (! $isWithinBranch && $stockTransfer->requested_by === $user->id) {
             return false;
         }
 
         if ($user->isAdmin()) {
             return true;
+        }
+
+        if ($isWithinBranch) {
+            return $this->branchMatches($user, $stockTransfer->source_branch_name);
         }
 
         return $this->branchMatches($user, $stockTransfer->destination_branch_name);

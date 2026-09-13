@@ -75,8 +75,13 @@ class StockTransferService
             throw new TransactionValidationException(message: 'Source and destination branches are required');
         }
 
-        if ($data['source_branch_name'] === $data['destination_branch_name']) {
-            throw new TransactionValidationException(message: 'Source and destination branches cannot be the same');
+        $isWithinBranch = $data['source_branch_name'] === $data['destination_branch_name'];
+
+        // Within-branch transfers (teller-to-teller stock/cash reallocation)
+        // are allowed for managers and admins. Inter-branch transfers
+        // require distinct source and destination.
+        if ($isWithinBranch && ! $this->requester()->role->canTransferTellerStock()) {
+            throw new TransactionValidationException(message: 'You do not have permission to perform within-branch stock transfers');
         }
 
         // Head-office branches hold no foreign stock — they cannot be a
@@ -174,14 +179,23 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Transfer is not in requested status');
         }
 
-        if ($transfer->requested_by === $requester->id) {
+        $isWithinBranch = $transfer->source_branch_name === $transfer->destination_branch_name;
+
+        if (! $isWithinBranch && $transfer->requested_by === $requester->id) {
             throw new TransactionApprovalException((int) $transfer->id, 'The requesting branch cannot approve its own transfer');
         }
 
         // Maker/taker: the DESTINATION branch manager (taker) approves the
         // request created by the source branch (maker). HQ is not involved.
-        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
+        // Within-branch transfers skip this check — the same branch manager
+        // who created the transfer may also approve it.
+        if (! $isWithinBranch && ! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
             throw new TransactionApprovalException((int) $transfer->id, 'Only the destination branch manager can approve this transfer');
+        }
+
+        // For within-branch transfers, verify the requester belongs to that branch
+        if ($isWithinBranch && ! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->source_branch_name)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'You can only approve transfers within your own branch');
         }
 
         $transfer->approveByBranchManager($requester);

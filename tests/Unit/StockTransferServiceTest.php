@@ -54,13 +54,25 @@ class StockTransferServiceTest extends TestCase
     }
 
     #[Test]
-    public function create_request_validates_source_and_destination_not_same(): void
+    public function create_request_validates_non_manager_cannot_within_branch_transfer(): void
     {
-        $this->assertValidationError('Source and destination branches cannot be the same', [
-            'source_branch_name' => 'Branch A',
-            'destination_branch_name' => 'Branch A',
-            'items' => [],
+        // Within-branch transfers are allowed for managers/admins only.
+        // A teller attempting a same-branch transfer should be rejected.
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $this->branchA->id,
         ]);
+        $service = new StockTransferService(new MathService, new AuditService, $teller);
+
+        $this->assertValidationError(
+            'within-branch stock transfers',
+            [
+                'source_branch_name' => 'Branch A',
+                'destination_branch_name' => 'Branch A',
+                'items' => [],
+            ],
+            $service
+        );
     }
 
     #[Test]
@@ -154,10 +166,11 @@ class StockTransferServiceTest extends TestCase
      *
      * @param  array<string, mixed>  $payload
      */
-    private function assertValidationError(string $expectedDetail, array $payload): void
+    private function assertValidationError(string $expectedDetail, array $payload, ?StockTransferService $service = null): void
     {
+        $service = $service ?? $this->stockTransferService;
         try {
-            $this->stockTransferService->createRequest($payload);
+            $service->createRequest($payload);
             $this->fail('Expected TransactionValidationException');
         } catch (TransactionValidationException $e) {
             $this->assertStringContainsString($expectedDetail, $e->getMessage());
@@ -305,5 +318,41 @@ class StockTransferServiceTest extends TestCase
 
         $taker->complete($partiallyReceived);
         $this->assertTrue($transfer->fresh()->isCompleted());
+    }
+
+    #[Test]
+    public function within_branch_transfer_succeeds_for_manager(): void
+    {
+        // Managers can create within-branch transfers (source === destination)
+        // for teller stock/cash reallocation.
+        $transfer = $this->stockTransferService->createRequest([
+            'source_branch_name' => 'Branch A',
+            'destination_branch_name' => 'Branch A',
+            'items' => [
+                ['currency_code' => 'USD', 'quantity' => '1000', 'rate' => '4.5000'],
+            ],
+        ]);
+
+        $this->assertNotNull($transfer->id);
+        $this->assertEquals('Branch A', $transfer->source_branch_name);
+        $this->assertEquals('Branch A', $transfer->destination_branch_name);
+    }
+
+    #[Test]
+    public function within_branch_transfer_allows_self_approval(): void
+    {
+        // Within-branch transfers skip the maker/taker segregation check
+        // since the same branch manager creates and approves.
+        $transfer = $this->stockTransferService->createRequest([
+            'source_branch_name' => 'Branch A',
+            'destination_branch_name' => 'Branch A',
+            'items' => [
+                ['currency_code' => 'USD', 'quantity' => '1000', 'rate' => '4.5000'],
+            ],
+        ]);
+
+        // The same manager who created the transfer can approve it
+        $this->stockTransferService->approveByBranchManager($transfer);
+        $this->assertTrue($transfer->fresh()->canDispatch());
     }
 }
