@@ -301,19 +301,18 @@ class TransactionTest extends TestCase
     }
 
     #[Test]
-    public function manager_can_approve_transaction(): void
+    public function compliance_officer_can_approve_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
+        $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $customer = $this->createTestCustomer();
         $counter = $this->setupOpenTill($teller, 'USD');
 
-        // Assign manager to same branch as transaction for approval authorization
-        $manager->branch_id = $counter->branch_id;
-        $manager->save();
+        // Assign compliance officer to same branch as transaction for approval authorization
+        $compliance->branch_id = $counter->branch_id;
+        $compliance->save();
 
-        // Create a pending transaction below the RM50k large-transaction
-        // threshold — manager tier (>= RM50k requires compliance officer).
+        // Create a pending transaction — all approvals require compliance officer.
         $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
@@ -345,7 +344,7 @@ class TransactionTest extends TestCase
             'current_rate' => '4.50',
         ]);
 
-        $response = $this->actingAs($manager)->post("/transactions/{$transaction->id}/approve");
+        $response = $this->actingAs($compliance)->post("/transactions/{$transaction->id}/approve");
 
         // If redirect back with error, capture it
         if ($response->isRedirect() && session('error')) {
@@ -356,20 +355,20 @@ class TransactionTest extends TestCase
         $this->assertDatabaseHas('transactions', [
             'id' => $transaction->id,
             'status' => TransactionStatus::Completed,
-            'approved_by' => $manager->id,
+            'approved_by' => $compliance->id,
         ]);
     }
 
     #[Test]
-    public function manager_can_reject_transaction(): void
+    public function compliance_officer_can_reject_transaction(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
+        $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $customer = $this->createTestCustomer();
         $counter = $this->setupOpenTill($teller, 'USD');
 
-        $manager->branch_id = $counter->branch_id;
-        $manager->save();
+        $compliance->branch_id = $counter->branch_id;
+        $compliance->save();
 
         $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
@@ -390,7 +389,7 @@ class TransactionTest extends TestCase
             'version' => 0,
         ]);
 
-        $response = $this->actingAs($manager)->post("/transactions/{$transaction->id}/reject");
+        $response = $this->actingAs($compliance)->post("/transactions/{$transaction->id}/reject");
 
         if ($response->isRedirect() && session('error')) {
             $this->fail('Rejection failed with error: '.session('error'));

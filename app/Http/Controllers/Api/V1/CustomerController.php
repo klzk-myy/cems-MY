@@ -48,9 +48,6 @@ class CustomerController extends Controller
                 // User has no branch assignment - return empty result (prevents full data exposure)
                 $query->whereRaw('1 = 0');
             }
-        } elseif ($branchScope = $request->get('_branch_scope')) {
-            // Admin with explicit branch scope filter
-            $query->whereHas('transactions', fn ($t) => $t->where('branch_id', $branchScope));
         }
 
         if ($request->has('search') && ! empty($request->search)) {

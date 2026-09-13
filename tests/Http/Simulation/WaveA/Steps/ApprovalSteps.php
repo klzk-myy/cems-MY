@@ -11,17 +11,17 @@ namespace Tests\Http\Simulation\WaveA\Steps;
 trait ApprovalSteps
 {
     /**
-     * A5 — manager approves the pending transaction on the web surface.
+     * A5 — compliance officer approves the pending transaction on the web surface.
      */
     protected function itApprovesTransaction(int $txId): void
     {
         // A6 (request cancellation) also runs as the branch manager, so we
         // restore the manager identity rather than the default teller.
-        $this->asWebUser('sim_manager', function () use ($txId): void {
+        $this->asWebUser('sim_compliance', function () use ($txId): void {
             $resp = $this->webRequester('POST', '/transactions/'.$txId.'/approve', []);
 
             $this->assertSurfaceStatus($resp, 302, 'A5 web approve');
-        }, 'sim_manager');
+        }, 'sim_compliance');
 
         $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
 
@@ -29,11 +29,11 @@ trait ApprovalSteps
     }
 
     /**
-     * A5b — manager approves the pending transaction on the API surface.
+     * A5b — compliance officer approves the pending transaction on the API surface.
      */
     protected function itApprovesTransactionViaApi(int $txId): void
     {
-        $api = $this->newApiClient($this->tokenFor('manager'));
+        $api = $this->newApiClient($this->tokenFor('compliance'));
         $resp = $api->post('/transactions/'.$txId.'/approve', []);
 
         $this->assertSurfaceStatus($resp, 200, 'A5b API approve');

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Concerns;
 
 use App\Enums\UserRole;
+use App\Models\User;
 use Illuminate\Validation\Rule;
 
 /**
@@ -24,15 +25,36 @@ trait HasUserValidationRules
         return [
             'username' => ['required', 'string', 'max:50', $unique('username')],
             'email' => ['required', 'email', 'max:255', $unique('email')],
-            'role' => ['required', Rule::in([
-                UserRole::Teller->value,
-                UserRole::Manager->value,
-                UserRole::ComplianceOfficer->value,
-                UserRole::Admin->value,
-            ])],
+            'role' => ['required', 'string', Rule::in($this->assignableRoleValues())],
             // Branch scope for the user. NULL keeps the account unrestricted;
             // only admins may operate without a branch assignment.
             'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')],
         ];
+    }
+
+    /**
+     * Role values the acting user may submit, per UserRole::assignableRoles().
+     *
+     * The whitelist is scoped to the requester: managers can only submit
+     * 'teller', so a forged POST cannot escalate a user past the acting
+     * role's assignable set. When editing one's own account the current role
+     * is the only acceptable value — role self-changes are rejected again in
+     * UserService as a second layer.
+     *
+     * @return list<string>
+     */
+    private function assignableRoleValues(): array
+    {
+        $actor = $this->user();
+        $target = $this->route('user');
+
+        if ($target instanceof User && $actor !== null && $target->id === $actor->id) {
+            return [$target->role->value];
+        }
+
+        return array_map(
+            fn (UserRole $role) => $role->value,
+            $actor?->role->assignableRoles() ?? []
+        );
     }
 }

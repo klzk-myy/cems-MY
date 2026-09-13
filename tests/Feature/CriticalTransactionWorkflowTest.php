@@ -41,6 +41,8 @@ class CriticalTransactionWorkflowTest extends TestCase
 
     protected User $manager;
 
+    protected User $compliance;
+
     protected User $admin;
 
     protected Customer $customer;
@@ -56,6 +58,7 @@ class CriticalTransactionWorkflowTest extends TestCase
         // Create test users
         $this->teller = User::factory()->create(['role' => UserRole::Teller]);
         $this->manager = User::factory()->create(['role' => UserRole::Manager]);
+        $this->compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $this->admin = User::factory()->create(['role' => UserRole::Admin]);
 
         // Create test data - ensure customer is low risk to avoid Enhanced CDD from risk_rating
@@ -67,9 +70,11 @@ class CriticalTransactionWorkflowTest extends TestCase
         $this->counter = Counter::factory()->create();
         $this->currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
 
-        // Assign manager and teller to same branch as counter
+        // Assign manager, compliance, and teller to same branch as counter
         $this->manager->branch_id = $this->counter->branch_id;
         $this->manager->save();
+        $this->compliance->branch_id = $this->counter->branch_id;
+        $this->compliance->save();
         $this->teller->branch_id = $this->counter->branch_id;
         $this->teller->save();
 
@@ -110,10 +115,10 @@ class CriticalTransactionWorkflowTest extends TestCase
     }
 
     /**
-     * Test: Segregation of Duties - Manager can approve teller's transaction
+     * Test: Segregation of Duties - Compliance officer can approve teller's transaction
      */
     #[Test]
-    public function manager_can_approve_teller_transaction(): void
+    public function compliance_officer_can_approve_teller_transaction(): void
     {
         // Create position for sell transaction
         $this->createPosition('10000.00');
@@ -121,8 +126,8 @@ class CriticalTransactionWorkflowTest extends TestCase
         // Create a transaction as teller
         $transaction = $this->createPendingTransaction($this->teller, '5000.00');
 
-        // Approve as manager (different user)
-        $response = $this->actingAs($this->manager)
+        // Approve as compliance officer (different user)
+        $response = $this->actingAs($this->compliance)
             ->postJson("/api/v1/transactions/{$transaction->id}/approve");
 
         $response->assertStatus(200)
@@ -131,7 +136,7 @@ class CriticalTransactionWorkflowTest extends TestCase
         // Verify transaction is completed
         $transaction->refresh();
         $this->assertEquals(TransactionStatus::Completed, $transaction->status);
-        $this->assertEquals($this->manager->id, $transaction->approved_by);
+        $this->assertEquals($this->compliance->id, $transaction->approved_by);
     }
 
     /**
@@ -284,7 +289,7 @@ class CriticalTransactionWorkflowTest extends TestCase
 
         // Approval should succeed
         // available = 10000 - 3000 (reservation) = 7000, and 3000 <= 7000 ✓
-        $response1 = $this->actingAs($this->manager)
+        $response1 = $this->actingAs($this->compliance)
             ->postJson("/api/v1/transactions/{$transaction1->id}/approve");
 
         $response1->assertStatus(200);
@@ -386,7 +391,7 @@ class CriticalTransactionWorkflowTest extends TestCase
         $this->assertEquals('10000.0000', $initialPosition->quantity);
 
         // Approve transaction
-        $this->actingAs($this->manager)
+        $this->actingAs($this->compliance)
             ->postJson("/api/v1/transactions/{$transaction->id}/approve");
 
         // Verify position was updated

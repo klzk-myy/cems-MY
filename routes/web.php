@@ -8,6 +8,7 @@ use App\Http\Controllers\Accounting\PeriodController;
 use App\Http\Controllers\Accounting\ReconciliationController;
 use App\Http\Controllers\Accounting\ReportController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BranchClosingController;
@@ -134,7 +135,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::delete('/trusted-devices/{deviceId}', [MfaController::class, 'removeDevice'])->name('trusted-devices.remove');
     });
 
-    Route::middleware(['role:manager,admin'])->prefix('rates')->name('rates.')->group(function () {
+    Route::middleware(['role:manager'])->prefix('rates')->name('rates.')->group(function () {
         Route::get('/', [RateController::class, 'index'])->name('index');
         Route::post('/override', [RateController::class, 'override'])->name('override');
         Route::post('/copy-previous', [RateController::class, 'copyPrevious'])->name('copy-previous');
@@ -174,9 +175,9 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::get('/{transaction}/print', [TransactionController::class, 'receipt'])->name('print');
 
         Route::post('/{transaction}/approve', [TransactionApprovalController::class, 'approve'])->name('approve')
-            ->middleware(['role:manager,compliance', 'mfa.verified']);
+            ->middleware(['role:compliance', 'mfa.verified']);
         Route::post('/{transaction}/reject', [TransactionApprovalController::class, 'reject'])->name('reject')
-            ->middleware(['role:manager,compliance', 'mfa.verified']);
+            ->middleware(['role:compliance', 'mfa.verified']);
         Route::post('/{transaction}/clear-hold', [TransactionApprovalController::class, 'clearHold'])->name('clear-hold')
             ->middleware(['role:compliance', 'mfa.verified']);
         Route::get('/{transaction}/cancel', [TransactionController::class, 'showCancel'])->name('cancel')
@@ -185,9 +186,9 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
             ->middleware(['role:teller,manager,compliance', 'mfa.verified']);
 
         Route::get('/{transaction}/confirm', [TransactionApprovalController::class, 'showConfirm'])->name('confirm.show')
-            ->middleware('role:manager,compliance');
+            ->middleware('role:compliance');
         Route::post('/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])->name('confirm.store')
-            ->middleware('role:manager,compliance');
+            ->middleware('role:compliance');
 
         Route::middleware(['role:manager,compliance', 'mfa.verified'])->group(function () {
             Route::get('/{transaction}/approve-cancellation', [TransactionCancellationController::class, 'showApproveCancel'])
@@ -216,7 +217,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
             Route::post('/{customer}/freeze', [CustomerController::class, 'freeze'])->name('freeze');
             Route::post('/{customer}/unfreeze', [CustomerController::class, 'unfreeze'])->name('unfreeze');
         });
-        Route::middleware('role:manager,admin')->group(function () {
+        Route::middleware('role:manager')->group(function () {
             Route::post('/{customer}/close', [CustomerController::class, 'close'])->name('close');
         });
     });
@@ -224,12 +225,12 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     Route::prefix('counters')->name('counters.')->group(function () {
         Route::get('/', [CounterController::class, 'index'])->name('index');
 
-        Route::middleware('role:manager,admin')->group(function () {
+        Route::middleware('role:manager')->group(function () {
             Route::get('/create', [CounterController::class, 'create'])->name('create');
             Route::post('/', [CounterController::class, 'store'])->name('store');
         });
 
-        Route::middleware('role:teller,manager,admin')->group(function () {
+        Route::middleware('role:teller,manager')->group(function () {
             Route::get('/{counter}/open', [CounterController::class, 'showOpen'])->name('open');
             Route::post('/{counter}/open', [CounterController::class, 'open'])->name('open.store');
             Route::get('/{counter}/status', [CounterController::class, 'status'])->name('status');
@@ -240,7 +241,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
             Route::post('/{counter}/handover/acknowledge', [CounterController::class, 'acknowledgeHandover'])->name('handover.acknowledge');
         });
 
-        Route::middleware('role:manager,admin')->group(function () {
+        Route::middleware('role:manager')->group(function () {
             Route::get('/{counter}/close', [CounterController::class, 'showClose'])->name('close.show');
             Route::post('/{counter}/close', [CounterController::class, 'close'])->name('close');
             Route::get('/{counter}/emergency', [CounterController::class, 'showEmergency'])->name('emergency');
@@ -265,7 +266,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     });
 
     // Allocations (manager/admin)
-    Route::middleware('role:manager,admin')->prefix('allocations')->name('allocations.')->group(function () {
+    Route::middleware('role:manager')->prefix('allocations')->name('allocations.')->group(function () {
         Route::get('/', [AllocationController::class, 'index'])->name('index');
         Route::get('/{allocation}', [AllocationController::class, 'show'])->name('show');
         Route::post('/{allocation}/approve', [AllocationController::class, 'approve'])->name('approve');
@@ -283,7 +284,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     });
 
     // Branch Pools (manager/admin)
-    Route::middleware('role:manager,admin')->prefix('branch-pools')->name('branch-pools.')->group(function () {
+    Route::middleware('role:manager')->prefix('branch-pools')->name('branch-pools.')->group(function () {
         Route::get('/', [BranchPoolController::class, 'index'])->name('index');
         Route::get('/{branchPool}', [BranchPoolController::class, 'show'])->name('show');
         Route::post('/{branchPool}/fund', [BranchPoolController::class, 'fund'])->name('fund');
@@ -291,7 +292,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     });
 
     // EOD Dashboard (manager/admin)
-    Route::middleware('role:manager,admin')->prefix('eod')->name('eod.')->group(function () {
+    Route::middleware('role:manager')->prefix('eod')->name('eod.')->group(function () {
         Route::get('/', [DashboardController::class, 'eod'])->name('dashboard');
     });
 
@@ -432,7 +433,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     // plus an explicit route gate below. If Compliance Officers should get
     // access later, relax RiskDashboardController::requireManagerOrAdmin
     // first, then add 'compliance' to this group's middleware.
-    Route::middleware('role:manager,admin')->prefix('compliance/risk-dashboard')->name('compliance.risk-dashboard.')->group(function () {
+    Route::middleware('role:manager')->prefix('compliance/risk-dashboard')->name('compliance.risk-dashboard.')->group(function () {
         Route::get('/', [RiskDashboardController::class, 'index'])->name('index');
         Route::get('/customer/{customer}', [RiskDashboardController::class, 'customer'])->name('customer');
         Route::get('/trends', [RiskDashboardController::class, 'trends'])->name('trends');
@@ -449,7 +450,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::post('/{pepApproval}/reject', [PepApprovalController::class, 'reject'])->name('reject');
     });
 
-    Route::middleware('role:manager,accountant')->prefix('accounting')->name('accounting.')->group(function () {
+    Route::middleware('role:accounting')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', [JournalController::class, 'index'])->name('index');
 
         // Journal Entry Management
@@ -500,7 +501,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::patch('/budget/{budget}', [BudgetController::class, 'update'])->name('budget.update');
     });
 
-    Route::middleware('role:manager,admin')->prefix('reports')->name('reports.')->group(function () {
+    Route::middleware('role:manager')->prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [DashboardController::class, 'reports'])->name('index');
 
         Route::get('/msb2', [RegulatoryReportController::class, 'msb2'])->name('msb2');
@@ -520,7 +521,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::get('/compliance-summary', [AnalyticsController::class, 'complianceSummary'])->name('compliance-summary');
     });
 
-    Route::middleware(['role:admin', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
+    Route::middleware(['role:users', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::get('/create', [UserController::class, 'create'])->name('create');
         Route::post('/', [UserController::class, 'store'])->name('store');
@@ -530,14 +531,25 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
     });
 
-    Route::middleware(['role:admin'])->prefix('branches')->name('branches.')->group(function () {
+    // Role Permission Management — admin-only UI for the dynamic
+    // role-permission matrix (tick/untick privileges per role).
+    Route::middleware(['role:admin', 'mfa.verified'])->prefix('admin/role-permissions')->name('admin.role-permissions.')->group(function () {
+        Route::get('/', [RolePermissionController::class, 'index'])->name('index');
+        Route::post('/', [RolePermissionController::class, 'update'])->name('update');
+    });
+
+    Route::middleware(['role:manager'])->prefix('branches')->name('branches.')->group(function () {
         // Branch management CRUD (plan WS-C2) - wraps the same BranchService
         // used by Api/V1/BranchController so both paths share one business rule set.
+        // Managers can view and edit their own branch; admins have full access.
         Route::get('/', [BranchController::class, 'index'])->name('index');
-        Route::get('/create', [BranchController::class, 'create'])->name('create');
-        Route::post('/', [BranchController::class, 'store'])->name('store');
         Route::get('/{branch}/edit', [BranchController::class, 'edit'])->name('edit');
         Route::put('/{branch}', [BranchController::class, 'update'])->name('update');
+    });
+
+    Route::middleware(['role:admin'])->prefix('branches')->name('branches.')->group(function () {
+        Route::get('/create', [BranchController::class, 'create'])->name('create');
+        Route::post('/', [BranchController::class, 'store'])->name('store');
         Route::post('/{branch}/deactivate', [BranchController::class, 'deactivate'])->name('deactivate');
 
         // Branch Closing Workflow
@@ -630,7 +642,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     });
 
     // Transaction Export (manager/admin)
-    Route::middleware('role:manager,admin')->prefix('transactions/export')->name('transactions.export.')->group(function () {
+    Route::middleware('role:manager')->prefix('transactions/export')->name('transactions.export.')->group(function () {
         Route::get('/', [TransactionController::class, 'exportForm'])->name('form');
         Route::post('/', [TransactionController::class, 'export'])->name('export');
     });

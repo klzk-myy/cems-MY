@@ -306,7 +306,7 @@ class TransactionWorkflowTest extends TestCase
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
 
         // Enhanced CDD places a compliance hold — a compliance officer must
-        // clear it before the manager-tier approval can proceed.
+        // clear it before the compliance approval can proceed.
         $compliance = User::factory()->create([
             'role' => 'compliance_officer',
             'branch_id' => $this->branch->id,
@@ -314,10 +314,10 @@ class TransactionWorkflowTest extends TestCase
         app(TransactionApprovalService::class)
             ->clearHold($transaction->fresh(), $compliance->id);
 
-        // Approve the transaction
+        // Approve the transaction (compliance-only approval)
         $approvedTransaction = $this->transactionService->approveTransaction(
             $transaction->fresh(),
-            $this->manager->id
+            $compliance->id
         )['transaction'];
 
         // Verify final status is Completed

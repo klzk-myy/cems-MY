@@ -13,6 +13,7 @@ use App\Models\CounterSession;
 use App\Models\EmergencyClosure;
 use App\Models\TellerAllocation;
 use App\Models\User;
+use App\Services\System\MfaService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -256,6 +257,26 @@ class MfaRequirementTest extends TestCase
             ]);
 
         $this->assertEquals(200, $response->status());
+    }
+
+    #[Test]
+    public function shipped_config_requires_mfa_for_every_staff_role(): void
+    {
+        // setUp overrides require_for_roles, so read the shipped file default
+        // directly — a regression that drops a role (as happened to
+        // 'accountant') fails here.
+        $shipped = require config_path('cems.php');
+        config(['cems.mfa.require_for_roles' => $shipped['mfa']['require_for_roles']]);
+
+        $mfa = app(MfaService::class);
+
+        foreach (UserRole::cases() as $role) {
+            $user = User::factory()->make(['role' => $role]);
+            $this->assertTrue(
+                $mfa->isMfaRequiredForRole($user),
+                "MFA must be required for {$role->value}"
+            );
+        }
     }
 
     #[Test]

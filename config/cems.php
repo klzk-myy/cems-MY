@@ -74,7 +74,7 @@ return [
         'digits' => 6,       // Number of digits in TOTP
 
         // Roles that are required to set up MFA
-        'require_for_roles' => ['admin', 'manager', 'compliance', 'teller'],
+        'require_for_roles' => ['admin', 'manager', 'compliance', 'accountant', 'teller'],
 
         // Grace period (days) after first login to set up MFA
         'grace_days' => 30,

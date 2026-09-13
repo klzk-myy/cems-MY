@@ -61,10 +61,10 @@ trait ParitySteps
         );
         $this->assertGreaterThan(0, $txId, 'Wave C web booking was not recorded');
 
-        $this->asWebUser('sim_manager', function () use ($txId): void {
+        $this->asWebUser('sim_compliance', function () use ($txId): void {
             $resp = $this->webRequester('POST', '/transactions/'.$txId.'/approve', []);
             $this->assertSurfaceStatus($resp, 302, 'Wave C web approve');
-        }, 'sim_manager');
+        }, 'sim_compliance');
 
         return $this->deriveState($txId, $before, $this->positionSnapshot());
     }
@@ -148,8 +148,8 @@ trait ParitySteps
         );
         $this->assertGreaterThan(0, $txId, 'Wave C API booking was not recorded');
 
-        $manager = $this->newApiClient($this->tokenFor('manager'));
-        $resp = $manager->post('/transactions/'.$txId.'/approve', []);
+        $compliance = $this->newApiClient($this->tokenFor('compliance'));
+        $resp = $compliance->post('/transactions/'.$txId.'/approve', []);
         $this->assertSurfaceStatus($resp, 200, 'Wave C API approve');
 
         return $this->deriveState($txId, $before, $this->positionSnapshot());

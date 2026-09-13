@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
@@ -136,11 +137,14 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create(['role' => UserRole::Manager]);
 
-        // Only tellers create transactions; managers approve the 10k–50k tier.
+        // Only tellers create transactions; managers manage own branch users/settings.
         $this->assertFalse($user->role->canCreateTransaction());
-        $this->assertTrue($user->role->canApproveTransactions());
+        $this->assertFalse($user->role->canApproveTransactions());
         $this->assertFalse($user->role->canApproveLargeTransactions());
         $this->assertTrue($user->role->canAccessAccounting());
+        $this->assertTrue($user->role->canManageUsers());
+        $this->assertTrue($user->role->canManageSettings());
+        $this->assertTrue($user->role->canTransferTellerStock());
     }
 
     #[Test]
@@ -185,13 +189,17 @@ class AuthenticationTest extends TestCase
     }
 
     #[Test]
-    public function manager_cannot_access_user_management(): void
+    public function manager_can_access_user_management(): void
     {
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
+        $branch = Branch::factory()->create();
+        $manager = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $branch->id,
+        ]);
 
         $response = $this->actingAs($manager)->get('/users');
 
-        $response->assertStatus(403);
+        $response->assertStatus(200);
     }
 
     #[Test]

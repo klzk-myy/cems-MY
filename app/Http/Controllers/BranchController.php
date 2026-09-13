@@ -27,16 +27,21 @@ class BranchController extends Controller
 
     /**
      * List all branches with status badges and attached resource counts.
+     * Admins see all branches; managers see their own branch.
      */
     public function index(): View
     {
-        $this->requireAdmin();
+        $this->requireManagerOrAdmin();
 
-        $branches = Branch::query()
+        $query = Branch::query()
             ->withCount(['users', 'counters', 'tillBalances'])
-            ->orderBy('code')
-            ->paginate(20)
-            ->withQueryString();
+            ->orderBy('code');
+
+        if (! auth()->user()->isAdmin()) {
+            $query->where('id', auth()->user()->branch_id);
+        }
+
+        $branches = $query->paginate(20)->withQueryString();
 
         return view('system.branches.index', compact('branches'));
     }
@@ -73,10 +78,11 @@ class BranchController extends Controller
 
     /**
      * Show the edit form for a branch.
+     * Admins can edit any branch; managers can edit their own branch.
      */
     public function edit(Branch $branch): View
     {
-        $this->requireAdmin();
+        $this->requireManagerOrAdmin();
 
         return view('system.branches.edit', [
             'branch' => $branch,
@@ -87,10 +93,11 @@ class BranchController extends Controller
 
     /**
      * Update a branch via BranchService (same path as API V1 update).
+     * Admins can update any branch; managers can update their own branch.
      */
     public function update(UpdateBranchRequest $request, Branch $branch): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requireManagerOrAdmin();
 
         $branch = $this->branchService->updateBranch(
             $branch,

@@ -33,10 +33,10 @@ class EnsureBranchScope
                 abort(403, 'You do not have permission to access resources for this branch.');
             }
 
-            // Always publish the caller's scope downstream - even when no
-            // branch identifier was present in the request. Consumers such as
-            // Api/V1/CustomerController::index read _branch_scope.
-            $request->merge(['_branch_scope' => $user->branch_id]);
+            // Branch isolation on collection endpoints is enforced downstream
+            // by the BranchScopedQuery concern / policies / services, which
+            // read the caller's own branch — not a request value that could
+            // be confused with a client-supplied filter.
         }
 
         return $next($request);

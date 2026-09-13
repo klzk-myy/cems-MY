@@ -4,12 +4,20 @@ namespace App\Enums;
 
 use App\Models\Branch;
 use App\Models\User;
+use App\Services\System\PermissionService;
 
 /**
  * User Role Enum
  *
  * Represents the different roles a user can have in the system
  * with their associated permissions.
+ *
+ * Capability checks (can*() methods) have two layers: the static ceiling
+ * declared here, and the admin-managed role_permissions matrix as a
+ * restrictive overlay — it can revoke a built-in capability but can never
+ * grant one the role does not statically hold. Admin is exempt from the
+ * matrix: it operates it, and BNM requires an always-capable principal
+ * officer.
  */
 enum UserRole: string
 {
@@ -62,20 +70,20 @@ enum UserRole: string
 
     /**
      * Check if the user can approve mid-tier transactions (RM10k–50k).
-     * Manager or admin.
+     * All approvals require compliance officer or admin.
      */
     public function canApproveTransactions(): bool
     {
-        return $this->isManager();
+        return $this->canPerform(Permission::ApproveTransactions);
     }
 
     /**
      * Check if the user can approve large transactions.
-     * Transactions >= RM 50,000 require compliance officer or admin approval.
+     * All approvals require compliance officer or admin.
      */
     public function canApproveLargeTransactions(): bool
     {
-        return $this->isComplianceOfficer();
+        return $this->canPerform(Permission::ApproveTransactions);
     }
 
     /**
@@ -83,7 +91,7 @@ enum UserRole: string
      */
     public function canAccessCompliance(): bool
     {
-        return $this->isComplianceOfficer();
+        return $this->canPerform(Permission::AccessCompliance);
     }
 
     /**
@@ -92,7 +100,7 @@ enum UserRole: string
      */
     public function canAccessAccounting(): bool
     {
-        return $this->isManager() || $this === self::Accountant;
+        return $this->canPerform(Permission::AccessAccounting);
     }
 
     /**
@@ -101,7 +109,7 @@ enum UserRole: string
      */
     public function canCreateTransaction(): bool
     {
-        return $this === self::Teller;
+        return $this->canPerform(Permission::CreateTransactions);
     }
 
     /**
@@ -115,18 +123,20 @@ enum UserRole: string
 
     /**
      * Check if the user can manage users.
+     * Admins manage all users; managers manage own branch users.
      */
     public function canManageUsers(): bool
     {
-        return $this->isAdmin();
+        return $this->canPerform(Permission::ManageUsers);
     }
 
     /**
      * Check if the user can manage system settings.
+     * Admins manage all settings; managers manage own branch settings.
      */
     public function canManageSettings(): bool
     {
-        return $this->isAdmin();
+        return $this->canPerform(Permission::ManageSettings);
     }
 
     /**
@@ -138,12 +148,21 @@ enum UserRole: string
     }
 
     /**
+     * Check if the user can transfer teller stock/cash within their own branch.
+     * Managers and admins can perform within-branch transfers.
+     */
+    public function canTransferTellerStock(): bool
+    {
+        return $this->canPerform(Permission::TransferTellerStock);
+    }
+
+    /**
      * Check if the user can cancel any transaction.
      * Managers and compliance officers can approve cancellations.
      */
     public function canCancelAnyTransaction(): bool
     {
-        return $this->isManager() || $this->isComplianceOfficer();
+        return $this->canPerform(Permission::ApproveCancellations);
     }
 
     /**
@@ -151,7 +170,7 @@ enum UserRole: string
      */
     public function canViewReports(): bool
     {
-        return in_array($this, [self::Manager, self::ComplianceOfficer, self::Accountant, self::Admin], true);
+        return $this->canPerform(Permission::ViewReports);
     }
 
     /**
@@ -168,7 +187,7 @@ enum UserRole: string
      */
     public function canReverseTransaction(): bool
     {
-        return $this->isComplianceOfficer();
+        return $this->canPerform(Permission::ReverseTransactions);
     }
 
     /**
@@ -201,9 +220,17 @@ enum UserRole: string
 
     /**
      * Get all roles that can be assigned by this role.
+     * Revoking the assign_roles matrix permission empties the set — the
+     * role can then neither assign nor manage accounts.
+     *
+     * @return list<self>
      */
     public function assignableRoles(): array
     {
+        if (! $this->matrixAllows(Permission::AssignRoles)) {
+            return [];
+        }
+
         return match ($this) {
             self::Admin => [self::Teller, self::Manager, self::ComplianceOfficer, self::Accountant, self::Admin],
             self::Manager => [self::Teller],
@@ -261,11 +288,58 @@ enum UserRole: string
 
     /**
      * Check if the user can manage all branches.
-     * Only Admin role has cross-branch management privileges.
+     * Admin and Accountant roles have cross-branch access — accountants
+     * handle company-wide accounting and financial reporting.
      */
     public function canManageAllBranches(): bool
     {
-        return $this === self::Admin;
+        return $this->canPerform(Permission::ManageAllBranches);
+    }
+
+    /**
+     * The role's built-in capability ceiling for a dynamic permission.
+     * The role_permissions matrix can only narrow this set — it can never
+     * grant a permission the role does not statically hold.
+     */
+    public function staticallyGrants(Permission $permission): bool
+    {
+        return match ($permission) {
+            Permission::CreateTransactions => $this === self::Teller,
+            Permission::ApproveTransactions => $this->isComplianceOfficer(),
+            Permission::ApproveCancellations => $this->isManager() || $this->isComplianceOfficer(),
+            Permission::ReverseTransactions => $this->isComplianceOfficer(),
+            Permission::AccessCompliance => $this->isComplianceOfficer(),
+            Permission::AccessAccounting => $this->isManager() || $this === self::Accountant,
+            Permission::ManageUsers => $this->isManager(),
+            Permission::ManageSettings => $this->isManager(),
+            Permission::ViewReports => in_array($this, [self::Manager, self::ComplianceOfficer, self::Accountant, self::Admin], true),
+            Permission::ManageAllBranches => in_array($this, [self::Admin, self::Accountant], true),
+            Permission::TransferTellerStock => $this->isManager(),
+            Permission::AssignRoles => in_array($this, [self::Manager, self::Admin], true),
+        };
+    }
+
+    /**
+     * Whether the admin-managed role_permissions matrix grants this
+     * permission to the role. Admin is exempt — it operates the matrix and
+     * BNM requires an always-capable principal officer.
+     */
+    private function matrixAllows(Permission $permission): bool
+    {
+        if ($this === self::Admin) {
+            return true;
+        }
+
+        return app(PermissionService::class)->can($this, $permission);
+    }
+
+    /**
+     * Effective permission check: the static ceiling AND the dynamic
+     * role_permissions matrix must both grant the permission.
+     */
+    public function canPerform(Permission $permission): bool
+    {
+        return $this->staticallyGrants($permission) && $this->matrixAllows($permission);
     }
 
     /**

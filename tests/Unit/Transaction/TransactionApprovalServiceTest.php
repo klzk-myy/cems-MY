@@ -139,7 +139,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_successful_simple_cdd_creates_immediate_accounting(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
@@ -172,7 +172,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_successful_enhanced_cdd_creates_deferred_accounting(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter, [
             'cdd_level' => CddLevel::Enhanced->value,
@@ -205,7 +205,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_blocked_by_high_priority_aml_flags(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
@@ -242,7 +242,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_returns_failure_when_version_mismatch(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
@@ -339,7 +339,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_returns_failure_when_customer_deleted(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
@@ -356,7 +356,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_returns_failure_when_till_closed(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
@@ -375,7 +375,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_returns_failure_when_sell_position_deleted(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter, [
             'type' => TransactionType::Sell->value,
@@ -399,7 +399,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_returns_failure_when_insufficient_stock(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter, [
             'type' => TransactionType::Sell->value,
@@ -425,7 +425,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_returns_failure_when_stock_reservation_expired(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter, [
             'type' => TransactionType::Sell->value,
@@ -452,7 +452,7 @@ class TransactionApprovalServiceTest extends TestCase
     public function approve_updates_teller_allocation_for_buy(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
 
         $allocation = TellerAllocation::factory()->create([
@@ -501,7 +501,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_logs_transaction_approved_audit_with_context(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
@@ -548,7 +548,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_invalidates_dashboard_cache_after_commit(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
@@ -580,7 +580,7 @@ class TransactionApprovalServiceTest extends TestCase
     {
         Event::fake([TransactionApproved::class]);
 
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
@@ -609,7 +609,7 @@ class TransactionApprovalServiceTest extends TestCase
     #[Test]
     public function approve_records_status_transition_history(): void
     {
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 
@@ -779,7 +779,7 @@ class TransactionApprovalServiceTest extends TestCase
         // reserved for rejections so the teller never receives two notifications.
         Notification::fake();
 
-        $approver = User::factory()->create(['role' => UserRole::Manager]);
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter);
 

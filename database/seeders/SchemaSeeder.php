@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Enums\AmlRuleType;
+use App\Enums\Permission;
+use App\Enums\UserRole;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Seeder;
@@ -98,6 +100,7 @@ class SchemaSeeder extends Seeder
             'reports_generated',
             'revaluation_entries',
             'risk_score_snapshots',
+            'role_permissions',
             'sanction_lists',
             'sanction_entries',
             'sanction_import_logs',
@@ -259,7 +262,7 @@ class SchemaSeeder extends Seeder
             $table->string('username');
             $table->string('email');
             $table->string('password_hash');
-            $table->string('role')->default('teller');
+            $table->enum('role', array_column(UserRole::cases(), 'value'))->default('teller');
             $table->boolean('mfa_enabled')->default(false);
             $table->text('mfa_secret')->nullable();
             $table->boolean('is_active')->default(true);
@@ -2060,6 +2063,18 @@ class SchemaSeeder extends Seeder
             $table->unique(['user_id', 'notification_type'], 'unique_user_notification_type');
             $table->index('notification_type', 'idx_notification_type');
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+        });
+
+        Schema::create('role_permissions', function (Blueprint $table) {
+            $table->id();
+            $table->enum('role', array_column(UserRole::cases(), 'value'));
+            $table->enum('permission', array_column(Permission::cases(), 'value'));
+            $table->boolean('granted')->default(false);
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->timestamps();
+            $table->unique(['role', 'permission'], 'unique_role_permission');
+            $table->index('role', 'idx_role_permissions_role');
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
         });
 
     }

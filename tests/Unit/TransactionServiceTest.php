@@ -23,6 +23,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\System\MathService;
+use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
@@ -592,9 +593,11 @@ class TransactionServiceTest extends TestCase
         $this->assertNotNull($reservation);
         $this->assertEquals(StockReservationStatus::Pending, $reservation->status);
 
-        // Approve the transaction
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
-        $result = $this->transactionService->approveTransaction($transaction, $manager->id);
+        // Approve the transaction (compliance-only approval; clear hold first)
+        $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        app(TransactionApprovalService::class)
+            ->clearHold($transaction->fresh(), $compliance->id);
+        $result = $this->transactionService->approveTransaction($transaction->fresh(), $compliance->id);
 
         $this->assertTrue($result['success']);
 
@@ -662,9 +665,11 @@ class TransactionServiceTest extends TestCase
         // Manually reduce position to 100 (simulating another transaction consuming stock)
         $position->update(['quantity' => '100.00']);
 
-        // Approval should now fail
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
-        $result = $this->transactionService->approveTransaction($transaction, $manager->id);
+        // Approval should now fail (compliance-only approval; clear hold first)
+        $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        app(TransactionApprovalService::class)
+            ->clearHold($transaction->fresh(), $compliance->id);
+        $result = $this->transactionService->approveTransaction($transaction->fresh(), $compliance->id);
 
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('Insufficient stock', $result['message']);

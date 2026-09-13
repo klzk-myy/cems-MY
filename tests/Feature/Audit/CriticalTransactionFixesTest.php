@@ -163,7 +163,7 @@ class CriticalTransactionFixesTest extends TestCase
     public function test_confirmation_page_loads_without_enum_error(): void
     {
         $branch = Branch::factory()->create();
-        $manager = User::factory()->for($branch)->create(['role' => UserRole::Manager]);
+        $compliance = User::factory()->for($branch)->create(['role' => UserRole::ComplianceOfficer]);
         $transaction = Transaction::factory()->for($branch)->state([
             'status' => TransactionStatus::PendingApproval,
             'amount_local' => '75000.00',
@@ -172,7 +172,7 @@ class CriticalTransactionFixesTest extends TestCase
             'status' => TransactionConfirmationStatus::Pending,
         ]);
 
-        $this->actingAs($manager)
+        $this->actingAs($compliance)
             ->get(route('transactions.confirm.show', $transaction))
             ->assertOk();
     }

@@ -33,13 +33,21 @@ class CheckRole
         // a developer error — throw loudly instead of silently failing
         // closed. All names are evaluated (no early break) so a typo throws
         // even when another listed role would match.
+        //
+        // Module aliases (compliance, accountant, accounting, users) are
+        // effective-permission checks — the role's static ceiling AND the
+        // role_permissions matrix — so an admin revocation closes the whole
+        // module rather than only the policy-level checks. The plain role
+        // aliases (admin, manager, teller) are identity checks.
         $hasRole = false;
         foreach ($roles as $role) {
             $matched = match ($role) {
                 'admin' => $user->isAdmin(),
                 'manager' => $user->isManager(),
-                'compliance' => $user->isComplianceOfficer(),
-                'accountant' => $user->isAccountant(),
+                'compliance' => $user->role->canAccessCompliance(),
+                'accountant' => $user->isAccountant() && $user->role->canAccessAccounting(),
+                'accounting' => $user->role->canAccessAccounting(),
+                'users' => $user->role->canManageUsers(),
                 'teller' => $user->isTeller(),
                 default => throw new \InvalidArgumentException(
                     "Unknown role [{$role}] in role middleware for {$request->path()}"

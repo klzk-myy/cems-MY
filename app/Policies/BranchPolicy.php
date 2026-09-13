@@ -35,11 +35,12 @@ class BranchPolicy
 
     /**
      * Determine whether the user can update the branch.
-     * Only admins can update branches.
+     * Admins can update any branch; managers can update their own branch.
      */
     public function update(User $user, Branch $branch): bool
     {
-        return $user->role === UserRole::Admin;
+        return $user->role === UserRole::Admin
+            || ($user->role === UserRole::Manager && $user->branch_id === $branch->id);
     }
 
     /**

@@ -486,13 +486,38 @@ class AuthorizationTest extends TestCase
     }
 
     #[Test]
-    public function user_policy_allows_manager_to_view_any_user(): void
+    public function user_policy_allows_manager_to_view_own_branch_user(): void
     {
         $policy = new UserPolicy;
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
-        $other = User::factory()->create(['role' => UserRole::Teller]);
+        $branch = Branch::factory()->create();
+        $manager = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $branch->id,
+        ]);
+        $other = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
 
         $this->assertTrue($policy->view($manager, $other));
+    }
+
+    #[Test]
+    public function user_policy_denies_manager_to_view_other_branch_user(): void
+    {
+        $policy = new UserPolicy;
+        $branchA = Branch::factory()->create();
+        $branchB = Branch::factory()->create();
+        $manager = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $branchA->id,
+        ]);
+        $other = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branchB->id,
+        ]);
+
+        $this->assertFalse($policy->view($manager, $other));
     }
 
     #[Test]
@@ -505,10 +530,26 @@ class AuthorizationTest extends TestCase
     }
 
     #[Test]
-    public function user_policy_denies_manager_to_create(): void
+    public function user_policy_allows_manager_with_branch_to_create(): void
     {
         $policy = new UserPolicy;
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
+        $branch = Branch::factory()->create();
+        $manager = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $branch->id,
+        ]);
+
+        $this->assertTrue($policy->create($manager));
+    }
+
+    #[Test]
+    public function user_policy_denies_manager_without_branch_to_create(): void
+    {
+        $policy = new UserPolicy;
+        $manager = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => null,
+        ]);
 
         $this->assertFalse($policy->create($manager));
     }
@@ -547,17 +588,44 @@ class AuthorizationTest extends TestCase
     {
         $policy = new UserPolicy;
         $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $other = User::factory()->create(['role' => UserRole::Teller]);
 
-        $this->assertTrue($policy->delete($admin));
+        $this->assertTrue($policy->delete($admin, $other));
     }
 
     #[Test]
-    public function user_policy_denies_manager_to_delete(): void
+    public function user_policy_allows_manager_to_delete_own_branch_user(): void
     {
         $policy = new UserPolicy;
-        $manager = User::factory()->create(['role' => UserRole::Manager]);
+        $branch = Branch::factory()->create();
+        $manager = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $branch->id,
+        ]);
+        $other = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
 
-        $this->assertFalse($policy->delete($manager));
+        $this->assertTrue($policy->delete($manager, $other));
+    }
+
+    #[Test]
+    public function user_policy_denies_manager_to_delete_other_branch_user(): void
+    {
+        $policy = new UserPolicy;
+        $branchA = Branch::factory()->create();
+        $branchB = Branch::factory()->create();
+        $manager = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $branchA->id,
+        ]);
+        $other = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branchB->id,
+        ]);
+
+        $this->assertFalse($policy->delete($manager, $other));
     }
 
     // ─── JournalEntry Policy ──────────────────────────────────────────

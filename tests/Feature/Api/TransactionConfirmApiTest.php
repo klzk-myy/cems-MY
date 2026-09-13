@@ -29,6 +29,8 @@ class TransactionConfirmApiTest extends TestCase
 
     protected User $manager;
 
+    protected User $compliance;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -49,6 +51,11 @@ class TransactionConfirmApiTest extends TestCase
             'branch_id' => $this->branch->id,
             'mfa_enabled' => false,
         ]);
+        $this->compliance = User::factory()->create([
+            'role' => UserRole::ComplianceOfficer,
+            'branch_id' => $this->branch->id,
+            'mfa_enabled' => false,
+        ]);
     }
 
     protected function largeTransaction(): Transaction
@@ -64,7 +71,7 @@ class TransactionConfirmApiTest extends TestCase
     }
 
     #[Test]
-    public function manager_can_confirm_large_transaction_via_api(): void
+    public function compliance_officer_can_confirm_large_transaction_via_api(): void
     {
         $transaction = $this->largeTransaction();
 
@@ -74,7 +81,7 @@ class TransactionConfirmApiTest extends TestCase
             'expires_at' => now()->addHour(),
         ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->compliance, 'sanctum')
             ->postJson("/api/v1/transactions/{$transaction->id}/confirm", [
                 'confirmation_action' => 'confirm',
                 'notes' => 'verified with customer',
@@ -112,7 +119,7 @@ class TransactionConfirmApiTest extends TestCase
     {
         $transaction = $this->largeTransaction();
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->compliance, 'sanctum')
             ->postJson("/api/v1/transactions/{$transaction->id}/confirm", [
                 'confirmation_action' => 'confirm',
             ]);
@@ -159,7 +166,7 @@ class TransactionConfirmApiTest extends TestCase
             'expires_at' => now()->subHour(),
         ]);
 
-        $response = $this->actingAs($this->manager, 'sanctum')
+        $response = $this->actingAs($this->compliance, 'sanctum')
             ->postJson("/api/v1/transactions/{$transaction->id}/confirm", [
                 'confirmation_action' => 'confirm',
             ]);

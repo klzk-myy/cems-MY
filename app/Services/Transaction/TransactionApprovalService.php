@@ -79,26 +79,17 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
     }
 
     /**
-     * Enforce the approval tier: transactions at/above the manager threshold
-     * require a compliance officer; below it a manager. Admins satisfy both.
+     * Enforce the approval tier: all transaction approvals require a
+     * compliance officer (or admin) holding the approve_transactions
+     * permission — an admin matrix revocation closes this path too.
      */
     private function validateApproverTier(Transaction $transaction, int $approverId): void
     {
         $approver = User::findOrFail($approverId);
-        $isLarge = $this->mathService->compare(
-            (string) $transaction->amount_local,
-            $this->thresholdService->getManagerApprovalThreshold()
-        ) >= 0;
 
-        if ($isLarge && ! $approver->isComplianceOfficer()) {
+        if (! $approver->role->canApproveTransactions()) {
             throw new TransactionValidationException(
-                message: 'Transactions at or above the large-transaction threshold require compliance officer approval.'
-            );
-        }
-
-        if (! $isLarge && ! $approver->isManager()) {
-            throw new TransactionValidationException(
-                message: 'Transactions below the large-transaction threshold require manager approval.'
+                message: 'All transaction approvals require compliance officer approval.'
             );
         }
     }

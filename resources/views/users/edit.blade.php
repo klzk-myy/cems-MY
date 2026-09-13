@@ -33,12 +33,7 @@
                         <x-select
                             name="role"
                             label="Role"
-                            :options="[
-                                'teller' => 'Teller - Can create transactions',
-                                'manager' => 'Manager - Can approve transactions and manage counters',
-                                'compliance_officer' => 'Compliance Officer - Can review flagged transactions and compliance reports',
-                                'admin' => 'Administrator - Full system access',
-                            ]"
+                            :options="$roles"
                             placeholder="Select a role"
                             selected="{{ old('role', $user->role->value) }}"
                             required

@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SchemaSeeder::class,
             UserSeeder::class,
+            RolePermissionSeeder::class,
             CurrencySeeder::class,
             EnhancedChartOfAccountsSeeder::class,
             AccountingPeriodSeeder::class,

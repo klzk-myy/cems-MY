@@ -7,7 +7,6 @@ use App\Exceptions\Domain\UserManagementException;
 use App\Models\PasswordHistory;
 use App\Models\User;
 use App\Services\AuditService;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * User Service
@@ -35,19 +34,24 @@ class UserService
      * @param  array  $data  User data
      * @param  int  $createdBy  User ID creating the user
      * @return User Created user
+     *
+     * @throws UserManagementException If the acting user cannot assign the role
      */
     public function createUser(array $data, int $createdBy): User
     {
+        $actor = User::findOrFail($createdBy);
+        $role = $this->resolveAssignableRole($actor, $data['role'] ?? null);
+
         $user = User::create([
             'username' => $data['username'],
             'email' => $data['email'],
-            'branch_id' => $data['branch_id'] ?? null,
+            'branch_id' => $actor->isAdmin() ? ($data['branch_id'] ?? null) : $actor->branch_id,
             'password' => $data['password'],
             'mfa_enabled' => false,
             'is_active' => true,
         ]);
 
-        $user->role = $data['role'];
+        $user->role = $role;
         $user->save();
 
         // Seed history with the initial hash so reuse prevention covers it.
@@ -78,9 +82,38 @@ class UserService
      * @param  array  $data  Updated user data
      * @param  int  $updatedBy  User ID updating the user
      * @return User Updated user
+     *
+     * @throws UserManagementException If the acting user cannot manage the
+     *                                 target, cannot assign the requested role, or the change would
+     *                                 remove the last active admin
      */
     public function updateUser(User $user, array $data, int $updatedBy): User
     {
+        $actor = User::findOrFail($updatedBy);
+        $newRole = $this->coerceRole($data['role'] ?? null);
+        $newActive = (bool) ($data['is_active'] ?? $user->is_active);
+
+        if ($actor->id === $user->id) {
+            // Self-service profile edits never change the actor's own role
+            // or deactivate the account.
+            if ($newRole !== $user->role) {
+                throw new UserManagementException('You cannot change your own role.');
+            }
+
+            if (! $newActive) {
+                throw new UserManagementException('You cannot deactivate your own account.');
+            }
+        } else {
+            $this->assertCanManageUser($actor, $user);
+            $this->resolveAssignableRole($actor, $newRole);
+        }
+
+        $this->assertKeepsLastActiveAdmin($user, $newRole, $newActive);
+
+        $branchId = $actor->isAdmin()
+            ? ($data['branch_id'] ?? null)
+            : $actor->branch_id;
+
         $oldValues = [
             'username' => $user->username,
             'email' => $user->email,
@@ -92,14 +125,12 @@ class UserService
         $user->update([
             'username' => $data['username'],
             'email' => $data['email'],
-            'branch_id' => $data['branch_id'] ?? null,
-            'is_active' => $data['is_active'],
+            'branch_id' => $branchId,
+            'is_active' => $newActive,
         ]);
 
-        $user->role = $data['role'];
+        $user->role = $newRole;
         $user->save();
-
-        Cache::forget("user:{$user->id}:permissions");
 
         // Log user update
         $this->auditService->log(
@@ -111,9 +142,9 @@ class UserService
             [
                 'username' => $data['username'],
                 'email' => $data['email'],
-                'role' => $data['role'],
-                'is_active' => $data['is_active'],
-                'branch_id' => $data['branch_id'] ?? null,
+                'role' => $newRole->value,
+                'is_active' => $newActive,
+                'branch_id' => $branchId,
             ]
         );
 
@@ -145,12 +176,12 @@ class UserService
             throw new UserManagementException('Cannot delete your own account.');
         }
 
+        $this->assertCanManageUser(User::findOrFail($deletedBy), $user);
+
         $username = $user->username;
         $userId = $user->id;
 
         $user->delete();
-
-        Cache::forget("user:{$userId}:permissions");
 
         // Log user deletion
         $this->auditService->log(
@@ -175,6 +206,10 @@ class UserService
      */
     public function resetPassword(User $user, string $newPassword, int $resetBy): User
     {
+        if ($user->id !== $resetBy) {
+            $this->assertCanManageUser(User::findOrFail($resetBy), $user);
+        }
+
         // Assign through the mutator so the superseded hash is archived,
         // password_changed_at is stamped, and the BNM forced-rotation clock
         // restarts for this user.
@@ -219,10 +254,10 @@ class UserService
             throw new UserManagementException('Cannot deactivate the last active admin.');
         }
 
+        $this->assertCanManageUser(User::findOrFail($toggledBy), $user);
+
         $oldStatus = $user->is_active;
         $user->update(['is_active' => ! $user->is_active]);
-
-        Cache::forget("user:{$user->id}:permissions");
 
         // Log status toggle
         $this->auditService->log(
@@ -256,7 +291,9 @@ class UserService
             return false;
         }
 
-        return true;
+        $requester = User::find($requesterId);
+
+        return $requester !== null && $this->actorCanManage($requester, $user);
     }
 
     /**
@@ -278,35 +315,91 @@ class UserService
             return false;
         }
 
-        return true;
+        $requester = User::find($requesterId);
+
+        return $requester !== null && $this->actorCanManage($requester, $user);
     }
 
     /**
-     * Get cached user permissions based on role.
+     * Normalize a role input (enum instance or string) to a UserRole.
+     *
+     * @throws UserManagementException If the value is not a valid role
      */
-    public function getUserPermissions(int $userId): array
+    private function coerceRole(mixed $role): UserRole
     {
-        return Cache::remember(
-            "user:{$userId}:permissions",
-            now()->addHour(),
-            fn () => $this->calculatePermissions($userId)
-        );
+        $resolved = $role instanceof UserRole ? $role : UserRole::tryFrom((string) $role);
+
+        if ($resolved === null) {
+            throw new UserManagementException('A valid role is required.');
+        }
+
+        return $resolved;
     }
 
     /**
-     * Calculate permissions for a user based on role.
+     * Resolve a role input to a UserRole the acting user is permitted to
+     * assign, per UserRole::assignableRoles(). This is the service-level
+     * enforcement behind the form-request whitelist — a forged request can
+     * never escalate a user past the actor's assignable set.
+     *
+     * @throws UserManagementException If the role is invalid or unassignable
      */
-    protected function calculatePermissions(int $userId): array
+    private function resolveAssignableRole(User $actor, mixed $role): UserRole
     {
-        $user = User::findOrFail($userId);
-        $role = $user->role;
+        $resolved = $this->coerceRole($role);
 
-        return match ($role->value) {
-            'admin' => ['*'],
-            'compliance_officer' => ['transactions.view', 'compliance.*', 'reports.*'],
-            'manager' => ['transactions.create', 'transactions.view', 'transactions.approve', 'reports.view'],
-            'teller' => ['transactions.create', 'transactions.view'],
-            default => [],
-        };
+        if (! in_array($resolved, $actor->role->assignableRoles(), true)) {
+            throw new UserManagementException(
+                "A {$actor->role->label()} cannot assign the {$resolved->label()} role."
+            );
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Whether the actor may administer the target account: admins manage
+     * everyone; other roles only manage users in their own branch whose
+     * current role is within their assignable set.
+     */
+    private function actorCanManage(User $actor, User $target): bool
+    {
+        if ($actor->isAdmin()) {
+            return true;
+        }
+
+        return $actor->branch_id !== null
+            && $actor->branch_id === $target->branch_id
+            && in_array($target->role, $actor->role->assignableRoles(), true);
+    }
+
+    /**
+     * @throws UserManagementException If the actor cannot manage the target
+     */
+    private function assertCanManageUser(User $actor, User $target): void
+    {
+        if (! $this->actorCanManage($actor, $target)) {
+            throw new UserManagementException(
+                "A {$actor->role->label()} cannot manage {$target->role->label()} accounts."
+            );
+        }
+    }
+
+    /**
+     * Guard against demoting or deactivating the last active admin, which
+     * would lock the system out of privileged operations entirely.
+     *
+     * @throws UserManagementException If the change removes the last active admin
+     */
+    private function assertKeepsLastActiveAdmin(User $user, UserRole $newRole, bool $newActive): void
+    {
+        $leavesAdminPool = $user->role === UserRole::Admin
+            && $user->is_active
+            && ($newRole !== UserRole::Admin || ! $newActive);
+
+        if ($leavesAdminPool
+            && User::where('role', UserRole::Admin)->where('is_active', true)->count() <= 1) {
+            throw new UserManagementException('Cannot demote or deactivate the last active admin.');
+        }
     }
 }

@@ -75,16 +75,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->middleware('throttle:export') // PDF export shares the export limiter
             ->name('api.v1.transactions.receipt');
         Route::post('/transactions/{transaction}/approve', [TransactionApprovalController::class, 'approve'])
-            ->middleware(['role:manager,compliance', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:compliance', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.approve');
         Route::post('/transactions/{transaction}/reject', [TransactionApprovalController::class, 'reject'])
-            ->middleware(['role:manager,compliance', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:compliance', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.reject');
         Route::post('/transactions/{transaction}/clear-hold', [TransactionApprovalController::class, 'clearHold'])
             ->middleware(['role:compliance', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.clear-hold');
         Route::post('/transactions/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])
-            ->middleware(['role:manager,compliance', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:compliance', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.confirm');
         Route::post('/transactions/{transaction}/request-cancellation', [TransactionCancellationController::class, 'requestCancellation'])
             ->middleware(['role:teller,manager', 'mfa.verified', 'throttle:10,1'])
@@ -146,7 +146,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->name('api.v1.sanctions.search');
 
         // Reports API
-        Route::prefix('reports')->middleware('role:manager,admin')->group(function () {
+        Route::prefix('reports')->middleware('role:manager')->group(function () {
             Route::post('/msb2', [RegulatoryReportController::class, 'generateMSB2'])
                 ->name('api.v1.reports.msb2');
             Route::post('/msb2/status', [RegulatoryReportController::class, 'updateMSB2Status'])
@@ -332,34 +332,34 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Exchange Rates API - Manager/Admin only for modifications
         Route::prefix('rates')->group(function () {
             Route::get('/', [RateController::class, 'index'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.rates.index');
             Route::get('/summary', [RateController::class, 'summary'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.rates.summary');
             Route::get('/dates', [RateController::class, 'availableDates'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.rates.dates');
             Route::get('/history/{currencyCode}', [RateController::class, 'history'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.rates.history');
             Route::get('/check', [RateController::class, 'checkSet'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.rates.check');
             Route::get('/{currencyCode}', [RateController::class, 'show'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.rates.show');
             Route::post('/fetch', [RateController::class, 'fetchFromApi'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.rates.fetch');
             Route::post('/copy-previous', [RateController::class, 'copyPrevious'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.rates.copy-previous');
             Route::put('/{currencyCode}', [RateController::class, 'apiOverride'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.rates.override');
             Route::post('/validate', [RateController::class, 'validateRate'])
-                ->middleware('role:teller,manager,admin')
+                ->middleware('role:teller,manager')
                 ->name('api.v1.rates.validate');
         });
 
@@ -382,74 +382,74 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ->name('api.v1.allocations.return');
             // Manager: Get pending allocations for their branch
             Route::get('/pending', [TellerAllocationController::class, 'pendingForBranch'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.allocations.pending');
             // Manager: Get active allocations for their branch
             Route::get('/active', [TellerAllocationController::class, 'activeForBranch'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.allocations.active');
             // Manager: Approve allocation
             Route::post('/{allocationId}/approve', [TellerAllocationController::class, 'approve'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.allocations.approve');
             // Manager: Reject allocation
             Route::post('/{allocationId}/reject', [TellerAllocationController::class, 'reject'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.allocations.reject');
             // Manager: Modify active allocation
             Route::post('/{allocationId}/modify', [TellerAllocationController::class, 'modify'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.allocations.modify');
             // Manager: Return allocation to pool (EOD)
             Route::post('/{allocationId}/return-to-pool', [TellerAllocationController::class, 'returnToPool'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.allocations.return-to-pool');
             // Get specific allocation details
             Route::get('/{allocationId}', [TellerAllocationController::class, 'show'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.allocations.show');
         });
 
         // Counter Opening Workflow API - Daily branch opening
         Route::prefix('counters')->group(function () {
             Route::post('/', [CounterApiController::class, 'store'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.counters.store');
             Route::get('/pending-requests', [CounterOpeningController::class, 'pendingRequests'])
-                ->middleware('role:manager,admin')
+                ->middleware('role:manager')
                 ->name('api.v1.counters.pending-requests');
             Route::post('/{counterId}/opening-request', [CounterOpeningController::class, 'initiateOpeningRequest'])
                 ->name('api.v1.counters.opening-request');
             Route::post('/{counterId}/approve-and-open', [CounterOpeningController::class, 'approveAndOpen'])
-                ->middleware(['role:manager,admin', 'mfa.verified'])
+                ->middleware(['role:manager', 'mfa.verified'])
                 ->name('api.v1.counters.approve-and-open');
 
             // Emergency Counter Close
             Route::post('/{counterId}/emergency-close', [EmergencyCounterController::class, 'initiateClose'])
-                ->middleware(['role:teller,manager,admin', 'mfa.verified'])
+                ->middleware(['role:teller,manager', 'mfa.verified'])
                 ->name('api.v1.counters.emergency-close');
             Route::get('/{counterId}/emergency/{closureId}/variance', [EmergencyCounterController::class, 'getVariance'])
-                ->middleware(['role:manager,admin', 'mfa.verified'])
+                ->middleware(['role:manager', 'mfa.verified'])
                 ->name('api.v1.counters.emergency.variance');
             Route::post('/{counterId}/emergency/{closureId}/acknowledge', [EmergencyCounterController::class, 'acknowledge'])
-                ->middleware(['role:manager,admin', 'mfa.verified'])
+                ->middleware(['role:manager', 'mfa.verified'])
                 ->name('api.v1.counters.emergency.acknowledge');
 
             // Handover Acknowledge
             // Recipient or supervisor may acknowledge — enforced inside
             // CounterHandoverService (to_user_id / supervisor_id check).
             Route::post('/{counterId}/handover/{handoverId}/acknowledge', [CounterHandoverController::class, 'acknowledge'])
-                ->middleware(['role:teller,manager,admin', 'mfa.verified'])
+                ->middleware(['role:teller,manager', 'mfa.verified'])
                 ->name('api.v1.counters.handover.acknowledge');
 
             // Counter Close
             Route::post('/{counterId}/close', [CounterApiController::class, 'close'])
-                ->middleware(['role:teller,manager,admin', 'mfa.verified'])
+                ->middleware(['role:teller,manager', 'mfa.verified'])
                 ->name('api.v1.counters.close');
         });
 
         // Branch Closing Workflow API
-        Route::prefix('branches/{branchId}/closing')->middleware('role:manager,admin')->group(function () {
+        Route::prefix('branches/{branchId}/closing')->middleware('role:manager')->group(function () {
             Route::post('/initiate', [BranchClosingController::class, 'initiate'])
                 ->name('api.v1.branches.closing.initiate');
             Route::get('/checklist', [BranchClosingController::class, 'checklist'])
@@ -461,7 +461,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
 
         // Month-End Close API - Manager/Admin only
-        Route::prefix('accounting/month-end')->middleware('role:manager,admin')->group(function () {
+        Route::prefix('accounting/month-end')->middleware('role:manager')->group(function () {
             Route::post('/close', [MonthEndCloseController::class, 'close'])
                 ->name('api.v1.accounting.month-end.close');
             Route::get('/status/{date}', [MonthEndCloseController::class, 'status'])

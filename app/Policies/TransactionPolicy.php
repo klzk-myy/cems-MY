@@ -104,13 +104,13 @@ class TransactionPolicy
      */
     public function approveCancellation(User $user, Transaction $transaction): bool
     {
-        if (! in_array($user->role, [UserRole::Manager, UserRole::ComplianceOfficer, UserRole::Admin])) {
+        if (! $user->role->canCancelAnyTransaction()) {
             return false;
         }
 
         if ($transaction->status === TransactionStatus::PendingCancellation
             && $this->preCancellationStatus($transaction) === TransactionStatus::Completed
-            && ! $user->role->isComplianceOfficer()) {
+            && ! $user->role->canReverseTransaction()) {
             return false;
         }
 
@@ -159,9 +159,8 @@ class TransactionPolicy
 
     /**
      * Determine whether the user can approve the transaction.
-     * Tiered approval: >= the manager threshold (default RM 50,000) requires a
-     * compliance officer; below that a manager approves. Admins can approve
-     * either tier. Branch-scoped for non-admins.
+     * All transaction approvals require a compliance officer (or admin).
+     * Branch-scoped for non-admins.
      * Per BNM segregation of duties, the approver must be different from the creator.
      */
     public function approve(User $user, Transaction $transaction): bool
@@ -179,14 +178,7 @@ class TransactionPolicy
             return false;
         }
 
-        $isLarge = $this->mathService->compare(
-            (string) $transaction->amount_local,
-            $this->thresholdService->getManagerApprovalThreshold()
-        ) >= 0;
-
-        return $isLarge
-            ? $user->role === UserRole::ComplianceOfficer
-            : $user->role === UserRole::Manager;
+        return $user->role->canApproveTransactions();
     }
 
     /**
@@ -199,7 +191,7 @@ class TransactionPolicy
             return true;
         }
 
-        return $user->role === UserRole::ComplianceOfficer
+        return $user->role->canAccessCompliance()
             && $transaction->branch_id === $user->branch_id;
     }
 

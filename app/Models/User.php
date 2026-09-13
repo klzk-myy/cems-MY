@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\UserManagementException;
 use App\Models\Compliance\ComplianceCase;
@@ -231,6 +232,18 @@ class User extends Authenticatable
     public function isAccountant(): bool
     {
         return $this->role->isAccountant();
+    }
+
+    /**
+     * Effective permission check for this user's role: the role's static
+     * ceiling AND the admin-managed role_permissions matrix must both
+     * grant the permission. Unknown permission names fail closed.
+     */
+    public function canPermission(Permission|string $permission): bool
+    {
+        $permission = is_string($permission) ? Permission::tryFrom($permission) : $permission;
+
+        return $permission instanceof Permission && $this->role->canPerform($permission);
     }
 
     /**
