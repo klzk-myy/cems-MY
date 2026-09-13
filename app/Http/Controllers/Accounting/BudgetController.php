@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\StoreBudgetRequest;
 use App\Http\Requests\Accounting\UpdateBudgetRequest;
+use App\Models\AccountingPeriod;
 use App\Models\Budget;
 use App\Services\Accounting\BudgetService;
 use Illuminate\Http\RedirectResponse;
@@ -22,8 +23,9 @@ class BudgetController extends Controller
         $periodCode = $request->get('period', now()->format('Y-m'));
         $report = $this->budgetService->getBudgetReport($periodCode);
         $unbudgeted = $this->budgetService->getAccountsWithoutBudget($periodCode);
+        $periods = AccountingPeriod::orderBy('period_code', 'desc')->pluck('period_code');
 
-        return view('accounting.budget', compact('report', 'unbudgeted', 'periodCode'));
+        return view('accounting.budget', compact('report', 'unbudgeted', 'periodCode', 'periods'));
     }
 
     public function store(StoreBudgetRequest $request): RedirectResponse

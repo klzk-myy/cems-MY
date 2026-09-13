@@ -1,110 +1,62 @@
 <x-app-layout title="Currency Revaluation">
     <div class="space-y-6">
-        <x-page-header
-            title="Currency Revaluation"
-            description="Revalue currency positions based on exchange rates"
-           
-        >
+        <x-page-header title="Currency Revaluation" description="Month-end revaluation of foreign currency positions">
             <x-slot:actions>
-                <x-button variant="primary">Run Revaluation</x-button>
+                <x-button variant="secondary" href="{{ route('accounting.revaluation.history') }}">History</x-button>
             </x-slot:actions>
         </x-page-header>
 
-        <x-alert type="info" title="Monthly Revaluation Required" :icon="true">
-            Run revaluation to update currency position values based on current exchange rates.
-        </x-alert>
-
-        <x-card title="Current Exchange Rates">
-            <x-stat-grid cols="4">
+        <x-card>
+            <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <x-stat-card label="USD/MYR" value="4.7200" />
-                    <p class="mt-1 text-xs text-success-text">+0.0200 from base</p>
+                    <h3 class="text-sm font-medium text-ink-muted">This Month ({{ $status['month'] }})</h3>
+                    <p class="mt-1 text-lg font-semibold text-ink">
+                        @if ($status['has_run'])
+                            Revaluation run — {{ $status['entries_count'] }} entries ({{ implode(', ', $status['currencies']) }})
+                        @else
+                            Not yet run for this month
+                        @endif
+                    </p>
                 </div>
-                <div>
-                    <x-stat-card label="SGD/MYR" value="3.5100" />
-                    <p class="mt-1 text-xs text-success-text">+0.0150 from base</p>
-                </div>
-                <div>
-                    <x-stat-card label="GBP/MYR" value="5.9500" />
-                    <p class="mt-1 text-xs text-danger-text">-0.0100 from base</p>
-                </div>
-                <div>
-                    <x-stat-card label="EUR/MYR" value="5.1800" />
-                    <p class="mt-1 text-xs text-success-text">+0.0250 from base</p>
-                </div>
-            </x-stat-grid>
+                <form method="POST" action="{{ route('accounting.revaluation.run') }}"
+                      onsubmit="return confirm('Run revaluation for {{ $status['month'] }}? This posts journal entries for unrealized gains/losses.');">
+                    @csrf
+                    <x-button variant="primary" type="submit">Run Revaluation</x-button>
+                </form>
+            </div>
         </x-card>
 
-        <x-card title="Revaluation Preview - May 2026">
+        <x-card title="Foreign Currency Positions">
             <x-table>
                 <x-slot:thead>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Base Rate</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Branch</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Quantity</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Cost</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Current Rate</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Base Value (MYR)</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Current Value (MYR)</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Gain/Loss</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Current Value</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Unrealized P&L</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Revalued</th>
                 </x-slot:thead>
                 <x-slot:tbody>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">USD</td>
-                        <td class="px-4 py-3 text-sm text-right">50,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">4.7000</td>
-                        <td class="px-4 py-3 text-sm text-right">4.7200</td>
-                        <td class="px-4 py-3 text-sm text-right">235,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">236,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+1,000.00</td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">SGD</td>
-                        <td class="px-4 py-3 text-sm text-right">25,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">3.4950</td>
-                        <td class="px-4 py-3 text-sm text-right">3.5100</td>
-                        <td class="px-4 py-3 text-sm text-right">87,375.00</td>
-                        <td class="px-4 py-3 text-sm text-right">87,750.00</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+375.00</td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">GBP</td>
-                        <td class="px-4 py-3 text-sm text-right">10,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">5.9600</td>
-                        <td class="px-4 py-3 text-sm text-right">5.9500</td>
-                        <td class="px-4 py-3 text-sm text-right">59,600.00</td>
-                        <td class="px-4 py-3 text-sm text-right">59,500.00</td>
-                        <td class="px-4 py-3 text-sm text-right text-danger-text">-100.00</td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">EUR</td>
-                        <td class="px-4 py-3 text-sm text-right">15,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">5.1550</td>
-                        <td class="px-4 py-3 text-sm text-right">5.1800</td>
-                        <td class="px-4 py-3 text-sm text-right">77,325.00</td>
-                        <td class="px-4 py-3 text-sm text-right">77,700.00</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+375.00</td>
-                    </tr>
-                    <tr class="bg-canvas-subtle border-t-2 border-border font-medium">
-                        <td colspan="5" class="px-4 py-3 text-sm text-ink">Total</td>
-                        <td class="px-4 py-3 text-sm text-right">460,950.00</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+1,650.00</td>
-                    </tr>
+                    @forelse ($positions as $position)
+                        <tr class="hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 text-sm font-medium text-ink">{{ $position->currency_code }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $position->branch_id }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->quantity, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->average_cost, 6) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->current_rate, 6) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->current_value, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $position->unrealized_gain_loss < 0 ? 'text-danger' : ((float) $position->unrealized_gain_loss > 0 ? 'text-success' : '') }}">
+                                {{ number_format((float) $position->unrealized_gain_loss, 2) }}
+                            </td>
+                            <td class="px-4 py-3 text-sm">{{ $position->last_revalued_at?->format('Y-m-d H:i') ?? '—' }}</td>
+                        </tr>
+                    @empty
+                        <x-empty-state message="No foreign currency positions." :colspan="8" />
+                    @endforelse
                 </x-slot:tbody>
             </x-table>
         </x-card>
-
-        <x-card
-            title="Last Revaluation"
-            description="April 30, 2026"
-           
-        >
-            <x-slot:actions>
-                <x-button variant="secondary" href="{{ route('accounting.revaluation.history') }}">View History</x-button>
-            </x-slot:actions>
-        </x-card>
-
-        <div class="flex items-center justify-end gap-3">
-            <x-button variant="secondary">Cancel</x-button>
-            <x-button variant="primary">Confirm Revaluation</x-button>
-        </div>
     </div>
 </x-app-layout>

@@ -7,6 +7,7 @@ use App\Models\AccountingPeriod;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\FiscalYear;
+use App\Models\JournalEntry;
 use App\Services\Accounting\AccountingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -236,6 +237,61 @@ class SetupQuickSetupParityTest extends TestCase
 
         $this->assertDatabaseHas('branch_pools', ['currency_code' => 'THB', 'available_balance' => '20000.0000']);
         $this->assertDatabaseHas('currency_positions', ['currency_code' => 'THB', 'quantity' => '20000.0000']);
+    }
+
+    #[Test]
+    public function wizard_opening_balance_writes_journal_lines_and_ledger_rows(): void
+    {
+        $this->withSession([
+            'setup' => [
+                'business' => ['business_name' => 'Wizard Co'],
+                'admin' => [
+                    'admin_name' => 'admin',
+                    'admin_email' => 'wizard-admin@example.com',
+                    'admin_password' => 'Sup3rSecure!Pass',
+                ],
+                'currencies' => [
+                    'base_currency' => 'MYR',
+                    'active_currencies' => ['MYR', 'USD', 'THB'],
+                    'custom_currency_code' => 'THB',
+                    'custom_currency_name' => 'Thai Baht',
+                    'custom_currency_symbol' => '฿',
+                ],
+                'rates' => [
+                    'use_default_rates' => '1',
+                    'custom_rates' => ['THB' => ['buy' => '0.1280', 'sell' => '0.1320']],
+                ],
+                'stock' => [
+                    'initial_myr_cash' => '1000',
+                    'initial_stock' => ['USD' => '500', 'THB' => '20000'],
+                ],
+                'opening_balance' => [
+                    'opening_balance_myr' => '1000',
+                    'opening_balance_foreign' => ['USD' => '500', 'THB' => '20000'],
+                ],
+            ],
+        ]);
+
+        $response = $this->postJson(route('setup.complete'));
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        $entry = JournalEntry::where('reference_type', 'Opening Balance')->first();
+        $this->assertNotNull($entry, 'Opening balance journal entry must exist');
+
+        // Every journal line must have a matching account_ledger row — reports
+        // read the ledger, so a line without one is invisible to trial balance.
+        foreach ($entry->lines as $line) {
+            $this->assertDatabaseHas('account_ledger', [
+                'journal_entry_id' => $entry->id,
+                'account_code' => $line->account_code,
+                'debit' => $line->debit,
+                'credit' => $line->credit,
+            ]);
+        }
+
+        $this->assertSame(3, $entry->lines->count());
+        $this->assertDatabaseHas('account_ledger', ['journal_entry_id' => $entry->id, 'account_code' => '4000', 'credit' => '21500.0000']);
     }
 
     #[Test]

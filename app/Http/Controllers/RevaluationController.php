@@ -36,7 +36,7 @@ class RevaluationController extends Controller
         try {
             $results = $this->revaluationService->runRevaluationWithJournal();
 
-            return redirect()->route('accounting.revaluation.index')
+            return redirect()->route('accounting.revaluation')
                 ->with('success', "Revaluation complete. {$results['positions_updated']} positions updated.");
 
         } catch (\Exception $e) {

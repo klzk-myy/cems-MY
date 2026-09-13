@@ -1,98 +1,95 @@
 <x-app-layout title="Budget Management">
     <div class="space-y-6">
-        <x-page-header title="Budget Management">
-            Manage annual budgets and variances
-
-            <x-slot:actions>
-                <x-button variant="primary" icon="M12 4v16m8-8H4">Create Budget</x-button>
-            </x-slot:actions>
-        </x-page-header>
-
-        <x-stat-grid cols="4">
-            <x-stat-card label="Total Budget" value="RM 1,250,000.00" />
-            <x-stat-card label="YTD Actual" value="RM 875,420.50" />
-            <x-stat-card label="YTD Variance" value="RM 374,579.50" color="green" />
-            <x-stat-card label="% Used" value="70.0%" />
-        </x-stat-grid>
+        <x-page-header title="Budget Management" description="Track budgets against actual spending per period" />
 
         <x-filter-bar>
-            <x-select name="fiscal_year" :options="['2026' => 'Fiscal Year 2026', '2025' => 'Fiscal Year 2025']" inline />
-            <x-select name="department" :options="['' => 'All Departments', 'operations' => 'Operations', 'compliance' => 'Compliance', 'finance' => 'Finance']" inline />
-            <x-input name="search" type="text" placeholder="Search accounts..." inline class="md:w-64" />
-            <x-button variant="secondary" type="submit">Filter</x-button>
+            <form method="GET" class="flex flex-wrap items-end gap-3">
+                <x-select name="period" :options="$periods->mapWithKeys(fn ($p) => [$p => $p])->all()" placeholder="Select period" :value="$periodCode" inline />
+                <x-button variant="secondary" type="submit">Apply</x-button>
+            </form>
         </x-filter-bar>
 
-        <x-card>
+        <x-stat-grid cols="4">
+            <x-stat-card label="Total Budget" :value="'RM '.number_format((float) $report['total_budget'], 2)" />
+            <x-stat-card label="Total Actual" :value="'RM '.number_format((float) $report['total_actual'], 2)" />
+            <x-stat-card label="Total Variance" :value="'RM '.number_format((float) $report['total_variance'], 2)" :color="(float) $report['total_variance'] < 0 ? 'red' : 'green'" />
+            <x-stat-card label="Over Budget" :value="$report['over_budget_count']" :color="$report['over_budget_count'] > 0 ? 'red' : 'green'" />
+        </x-stat-grid>
+
+        <x-card title="Set Budget — {{ $periodCode }}">
+            @if ($unbudgeted->isEmpty())
+                <p class="text-sm text-ink-muted">All active expense accounts already have budgets for this period.</p>
+            @else
+                <form method="POST" action="{{ route('accounting.budget.store') }}" class="space-y-4"
+                      x-data="{ rows: [{ account_code: '', amount: '' }] }">
+                    @csrf
+                    <input type="hidden" name="period_code" value="{{ $periodCode }}">
+
+                    <div class="space-y-2">
+                        <template x-for="(row, index) in rows" :key="index">
+                            <div class="flex items-end gap-2">
+                                <select :name="'budgets['+index+'][account_code]'" x-model="row.account_code" required
+                                        class="flex-1 px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg text-ink">
+                                    <option value="">Select account…</option>
+                                    @foreach ($unbudgeted as $account)
+                                        <option value="{{ $account->account_code }}">{{ $account->account_code }} — {{ $account->account_name }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="number" :name="'budgets['+index+'][amount]'" x-model="row.amount" step="0.01" min="0" required placeholder="Amount"
+                                       class="w-40 px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg text-ink">
+                                <x-button type="button" variant="ghost" size="sm" @click="rows.splice(index, 1)" x-show="rows.length > 1">✕</x-button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <x-button type="button" variant="secondary" @click="rows.push({ account_code: '', amount: '' })">+ Add Row</x-button>
+                        <x-button type="submit" variant="primary">Save Budgets</x-button>
+                    </div>
+                </form>
+            @endif
+        </x-card>
+
+        <x-card title="Budget vs Actual — {{ $periodCode }}">
             <x-table>
                 <x-slot:thead>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Annual Budget</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">YTD Actual</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">YTD Budget</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Budget</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Actual</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">% Used</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Var %</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Update</th>
                 </x-slot:thead>
                 <x-slot:tbody>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm font-mono">5100-001</td>
-                        <td class="px-4 py-3 text-sm">Currency Exchange Revenue</td>
-                        <td class="px-4 py-3 text-sm text-right">500,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">350,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">291,666.67</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+58,333.33</td>
-                        <td class="px-4 py-3 text-center"><x-badge variant="warning">70%</x-badge></td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">Edit</x-button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm font-mono">6100-001</td>
-                        <td class="px-4 py-3 text-sm">Staff Salaries</td>
-                        <td class="px-4 py-3 text-sm text-right">400,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">280,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">233,333.33</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+46,666.67</td>
-                        <td class="px-4 py-3 text-center"><x-badge variant="warning">70%</x-badge></td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">Edit</x-button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm font-mono">6200-001</td>
-                        <td class="px-4 py-3 text-sm">Office Rent</td>
-                        <td class="px-4 py-3 text-sm text-right">150,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">107,500.00</td>
-                        <td class="px-4 py-3 text-sm text-right">87,500.00</td>
-                        <td class="px-4 py-3 text-sm text-right text-danger-text">-20,000.00</td>
-                        <td class="px-4 py-3 text-center"><x-badge variant="danger">72%</x-badge></td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">Edit</x-button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm font-mono">6300-001</td>
-                        <td class="px-4 py-3 text-sm">Compliance Costs</td>
-                        <td class="px-4 py-3 text-sm text-right">200,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">137,920.50</td>
-                        <td class="px-4 py-3 text-sm text-right">116,666.67</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+21,253.83</td>
-                        <td class="px-4 py-3 text-center"><x-badge variant="warning">69%</x-badge></td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">Edit</x-button>
-                        </td>
-                    </tr>
+                    @forelse ($report['items'] as $item)
+                        <tr class="hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 text-sm">
+                                <span class="font-medium text-ink">{{ $item['account_code'] }}</span>
+                                <span class="text-ink-muted">— {{ $item['account_name'] }}</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['budget'], 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['actual'], 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $item['variance'] < 0 ? 'text-danger' : '' }}">{{ number_format((float) $item['variance'], 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ $item['variance_pct'] !== null ? number_format($item['variance_pct'], 1).'%' : '—' }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <x-badge :variant="$item['over_budget'] ? 'danger' : 'success'">{{ $item['over_budget'] ? 'Over' : 'Within' }}</x-badge>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <form method="POST" action="{{ route('accounting.budget.update', $item['id']) }}" class="flex items-center justify-center gap-1">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="number" name="amount" step="0.01" min="0" required placeholder="New amount"
+                                           class="w-28 px-2 py-1 text-xs bg-canvas-subtle border border-border rounded-lg text-ink">
+                                    <x-button variant="ghost" size="sm" type="submit">Save</x-button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <x-empty-state message="No budgets set for this period." :colspan="7" />
+                    @endforelse
                 </x-slot:tbody>
             </x-table>
         </x-card>
-
-        <div class="flex items-center justify-between">
-            <p class="text-sm text-ink-muted">Showing 1-4 of 4 accounts</p>
-            <div class="flex gap-2">
-                <x-button variant="secondary" size="sm" disabled>Previous</x-button>
-                <x-button variant="secondary" size="sm" disabled>Next</x-button>
-            </div>
-        </div>
     </div>
 </x-app-layout>

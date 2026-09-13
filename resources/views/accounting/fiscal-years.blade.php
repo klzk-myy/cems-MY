@@ -3,16 +3,7 @@
         <x-page-header
             title="Fiscal Years"
             description="Manage accounting fiscal years and periods"
-           
-        >
-            <x-slot:actions>
-                <x-button variant="primary">+ Create Fiscal Year</x-button>
-            </x-slot:actions>
-        </x-page-header>
-
-        @php
-            $activeYear = $fiscalYears->first();
-        @endphp
+        />
 
         <x-card>
             <div class="flex items-center justify-between">
@@ -39,10 +30,21 @@
                         >
                             {{ $activeYear->status?->label() }}
                         </x-badge>
-                        <x-button variant="secondary" size="sm">Close Year</x-button>
                     </div>
                 @endif
             </div>
+        </x-card>
+
+        <x-card title="Create Fiscal Year">
+            <form method="POST" action="{{ route('accounting.fiscal-years.store') }}" class="flex flex-wrap items-end gap-3">
+                @csrf
+                <x-input name="year_code" label="Year Code" placeholder="e.g. FY2028" required maxlength="10" inline />
+                <x-input name="year" label="Year (optional)" type="number" min="2000" max="2100" placeholder="Derives dates from config" inline />
+                <x-input name="start_date" label="Start Date (optional)" type="date" inline />
+                <x-input name="end_date" label="End Date (optional)" type="date" inline />
+                <x-button type="submit" variant="primary">Create Fiscal Year</x-button>
+            </form>
+            <p class="mt-2 text-xs text-ink-muted">When only a year is given, dates are derived from the configured fiscal year-end. Monthly periods are created automatically.</p>
         </x-card>
 
         <x-card>
@@ -75,7 +77,18 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                <x-button variant="ghost" size="sm">View</x-button>
+                                @if ($fiscalYear->status?->value === 'Open')
+                                    <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}"
+                                          class="flex items-center justify-center gap-2"
+                                          onsubmit="return confirm('Close {{ $fiscalYear->year_code }}? All periods must be closed and this cannot be undone.');">
+                                        @csrf
+                                        <input type="text" name="confirm_code" placeholder="Type {{ $fiscalYear->year_code }}" required
+                                               class="w-32 px-2 py-1 text-xs bg-canvas-subtle border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-ink">
+                                        <x-button variant="danger" size="sm" type="submit">Close Year</x-button>
+                                    </form>
+                                @else
+                                    <span class="text-xs text-ink-muted">—</span>
+                                @endif
                             </td>
                         </tr>
                     @empty
@@ -97,9 +110,6 @@
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse (($activeYear?->periods ?? collect())->sortBy('period_code') as $period)
-                        @php
-                            $isCurrent = now()->between($period->start_date, $period->end_date);
-                        @endphp
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm">{{ $period->period_code }}</td>
                             <td class="px-4 py-3 text-sm">{{ $period->start_date?->format('F') }}</td>
@@ -108,8 +118,8 @@
                             <td class="px-4 py-3 text-center">
                                 <x-badge
                                     :variant="match ($period->status?->value) {
-                                        'open' => 'success',
-                                        'closed' => 'gray',
+                                        'Open' => 'success',
+                                        'Closed' => 'gray',
                                         default => 'gray',
                                     }"
                                 >
@@ -117,9 +127,18 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                <x-button variant="ghost" size="sm">
-                                    {{ $isCurrent ? 'Close' : 'View' }}
-                                </x-button>
+                                @if ($period->status?->value === 'Open')
+                                    <form method="POST" action="{{ route('accounting.period.close', $period) }}"
+                                          onsubmit="return confirm('Close period {{ $period->period_code }}?');">
+                                        @csrf
+                                        <input type="hidden" name="period_id" value="{{ $period->id }}">
+                                        <input type="hidden" name="closure_date" value="{{ $period->end_date?->toDateString() }}">
+                                        <input type="hidden" name="reason" value="Monthly period close">
+                                        <x-button variant="ghost" size="sm" type="submit">Close</x-button>
+                                    </form>
+                                @else
+                                    <span class="text-xs text-ink-muted">Closed</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

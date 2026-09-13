@@ -23,8 +23,30 @@ class BankReconciliationService
     {
         return DB::transaction(function () use ($accountCode, $lines, $userId) {
             $imported = [];
+            $skipped = 0;
 
             foreach ($lines as $line) {
+                // Re-importing the same statement must not create duplicates —
+                // a line is identical when every supplied field matches an
+                // existing record for this account.
+                $exists = BankReconciliation::where('account_code', $accountCode)
+                    ->where('statement_date', $line['date'])
+                    ->where('description', $line['description'])
+                    ->where('debit', $line['debit'] ?? 0)
+                    ->where('credit', $line['credit'] ?? 0)
+                    ->when(
+                        ($line['reference'] ?? null) !== null,
+                        fn ($q) => $q->where('reference', $line['reference']),
+                        fn ($q) => $q->whereNull('reference')
+                    )
+                    ->exists();
+
+                if ($exists) {
+                    $skipped++;
+
+                    continue;
+                }
+
                 $record = BankReconciliation::create([
                     'account_code' => $accountCode,
                     'statement_date' => $line['date'],
@@ -47,6 +69,7 @@ class BankReconciliationService
 
             return [
                 'imported' => count($imported),
+                'skipped' => $skipped,
                 'unmatched' => BankReconciliation::where('account_code', $accountCode)
                     ->where('status', 'unmatched')
                     ->count(),
@@ -258,8 +281,10 @@ class BankReconciliationService
         $outstandingDeposits = collect();
         foreach ($rawReport['unmatched_items'] as $item) {
             $itemData = [
+                'id' => $item->id,
                 'date' => $item->statement_date?->toDateString(),
                 'reference' => $item->reference,
+                'description' => $item->description,
                 'amount' => $item->getAmount(),
             ];
             if ($this->mathService->compare((string) $item->debit, '0') > 0) {

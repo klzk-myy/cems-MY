@@ -10,7 +10,7 @@ class RunRevaluationRequest extends FormRequest
     {
         $user = auth()->user();
 
-        return $user && ($user->isManager() || $user->isAdmin());
+        return $user && $user->role->canAccessAccounting();
     }
 
     public function rules(): array

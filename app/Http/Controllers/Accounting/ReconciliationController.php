@@ -51,7 +51,7 @@ class ReconciliationController extends Controller
         );
 
         return redirect()->route('accounting.reconciliation')
-            ->with('success', "Imported {$result['imported']} lines. {$result['unmatched']} unmatched.");
+            ->with('success', "Imported {$result['imported']} lines, skipped {$result['skipped']} duplicates. {$result['unmatched']} unmatched.");
     }
 
     public function markAsException(MarkReconciliationExceptionRequest $request, BankReconciliation $reconciliation): RedirectResponse

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Accounting;
 
-use App\Enums\FiscalYearStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\ClosePeriodRequest;
 use App\Models\AccountingPeriod;
@@ -22,8 +21,17 @@ class PeriodController extends Controller
 
     public function periods(Request $request): View
     {
-        $periods = AccountingPeriod::orderBy('start_date', 'desc')->paginate(12);
-        $fiscalYears = FiscalYear::where('status', FiscalYearStatus::Open)->orderBy('start_date', 'desc')->pluck('year_code', 'year_code');
+        $periods = AccountingPeriod::with('fiscalYear')
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')->value()))
+            ->when($request->filled('search'), fn ($q) => $q->where('period_code', 'like', '%'.$request->string('search')->value().'%'))
+            ->when($request->filled('fiscal_year'), fn ($q) => $q->whereHas(
+                'fiscalYear', fn ($q2) => $q2->where('year_code', $request->string('fiscal_year')->value())
+            ))
+            ->orderBy('start_date', 'desc')
+            ->paginate(12)
+            ->withQueryString();
+
+        $fiscalYears = FiscalYear::orderBy('start_date', 'desc')->pluck('year_code', 'year_code');
         $currencies = Currency::where('is_active', true)->orderBy('name')->pluck('name', 'code');
 
         return view('accounting.periods', compact('periods', 'fiscalYears', 'currencies'));

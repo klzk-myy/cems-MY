@@ -7,6 +7,18 @@ use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property string $account_code
+ * @property string $period_code
+ * @property string $budget_amount
+ * @property string $actual_amount
+ * @property string|null $notes
+ * @property int $created_by
+ * @property-read ChartOfAccount $account
+ * @property-read User $creator
+ * @property-read AccountingPeriod|null $period
+ */
 class Budget extends BaseModel
 {
     use HasFactory;

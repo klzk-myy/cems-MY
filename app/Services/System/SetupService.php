@@ -3,19 +3,18 @@
 namespace App\Services\System;
 
 use App\Enums\AccountCode;
-use App\Enums\JournalEntryStatus;
+use App\Enums\AccountingPeriodStatus;
+use App\Enums\AccountingPeriodType;
 use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
 use App\Models\BranchPool;
-use App\Models\ChartOfAccount;
 use App\Models\CurrencyPosition;
 use App\Models\ExchangeRate;
 use App\Models\FiscalYear;
-use App\Models\JournalEntry;
-use App\Models\JournalLine;
 use App\Models\PasswordHistory;
 use App\Models\User;
+use App\Services\Accounting\AccountingService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +24,7 @@ class SetupService
 {
     public function __construct(
         protected MathService $mathService,
+        protected AccountingService $accountingService,
     ) {}
 
     /**
@@ -211,73 +211,75 @@ class SetupService
             return;
         }
 
-        DB::transaction(function () use ($fiscalYear, $period, $adminUser, $openingDate, $entryNumber, $totalBalance, $balanceData) {
-            $journalEntry = JournalEntry::create([
-                'entry_number' => $entryNumber,
+        $lines = [];
+
+        // Cash in MYR
+        if ($this->mathService->compare((string) $balanceData['opening_balance_myr'], '0') > 0) {
+            $lines[] = [
+                'account_code' => AccountCode::CASH_MYR->value,
+                'debit' => (string) $balanceData['opening_balance_myr'],
+                'credit' => '0.00',
+                'description' => 'Opening balance - MYR Cash',
+            ];
+        }
+
+        // Cash in Foreign Currencies (grouped). Foreign opening stock must land
+        // on the same account buys and sells flow through (2000 Foreign
+        // Currency Inventory) — posting it to 1011 leaves that account
+        // permanently unrelieved while every sale drives 2000 negative.
+        $totalForeignBalance = '0';
+        foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $amount) {
+            if ($this->mathService->compare((string) $amount, '0') > 0) {
+                $totalForeignBalance = $this->mathService->add($totalForeignBalance, (string) $amount);
+            }
+        }
+
+        if ($this->mathService->compare($totalForeignBalance, '0') > 0) {
+            $lines[] = [
+                'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                'debit' => $totalForeignBalance,
+                'credit' => '0.00',
+                'description' => 'Opening balance - Foreign Currency Inventory',
+            ];
+        }
+
+        // Credit side - Equity
+        $lines[] = [
+            'account_code' => AccountCode::CAPITAL->value,
+            'debit' => '0.00',
+            'credit' => $totalBalance,
+            'description' => 'Opening balance - Owner Equity',
+        ];
+
+        // The entry is dated at fiscal-year start, which may predate every
+        // seeded period — create the covering period when missing so the
+        // canonical posting path accepts it.
+        $periodDate = $fiscalYear->start_date;
+        AccountingPeriod::firstOrCreate(
+            ['period_code' => $periodDate->format('Y-m')],
+            [
                 'fiscal_year_id' => $fiscalYear->id,
-                'period_id' => $period->id,
-                'entry_date' => $openingDate,
-                'reference_type' => 'Opening Balance',
-                'reference_id' => null,
-                'description' => 'Initial opening balances - Business commencement',
-                'total_amount' => (string) $totalBalance,
-                'status' => JournalEntryStatus::Posted,
-                'created_by' => $adminUser->id,
-                'posted_by' => $adminUser->id,
-                'posted_at' => now(),
-            ]);
+                'start_date' => $periodDate->copy()->startOfMonth()->toDateString(),
+                'end_date' => $periodDate->copy()->endOfMonth()->toDateString(),
+                'period_type' => AccountingPeriodType::Month->value,
+                'status' => AccountingPeriodStatus::Open->value,
+            ]
+        );
 
-            // Cash in MYR
-            if ($balanceData['opening_balance_myr'] > 0) {
-                $cashMyrAccount = ChartOfAccount::where('account_code', AccountCode::CASH_MYR->value)->first();
-                if ($cashMyrAccount) {
-                    JournalLine::create([
-                        'journal_entry_id' => $journalEntry->id,
-                        'account_code' => $cashMyrAccount->account_code,
-                        'debit' => (string) $balanceData['opening_balance_myr'],
-                        'credit' => '0.00',
-                        'description' => 'Opening balance - MYR Cash',
-                    ]);
-                }
-            }
+        // Post through the canonical path so journal lines AND account_ledger
+        // rows are written atomically — hand-writing lines leaves opening
+        // balances invisible to every ledger-derived report.
+        $entry = $this->accountingService->createJournalEntry(
+            $lines,
+            'Opening Balance',
+            null,
+            'Initial opening balances - Business commencement',
+            $openingDate->toDateString(),
+            $adminUser->id
+        );
 
-            // Cash in Foreign Currencies (grouped)
-            $totalForeignBalance = '0';
-            foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $amount) {
-                if ($this->mathService->compare((string) $amount, '0') > 0) {
-                    $totalForeignBalance = $this->mathService->add($totalForeignBalance, (string) $amount);
-                }
-            }
-
-            if ($this->mathService->compare($totalForeignBalance, '0') > 0) {
-                // Foreign opening stock must land on the same account buys and
-                // sells flow through (2000 Foreign Currency Inventory) — posting
-                // it to 1011 leaves that account permanently unrelieved while
-                // every sale drives 2000 negative.
-                $cashForeignAccount = ChartOfAccount::where('account_code', AccountCode::FOREIGN_CURRENCY_INVENTORY->value)->first();
-                if ($cashForeignAccount) {
-                    JournalLine::create([
-                        'journal_entry_id' => $journalEntry->id,
-                        'account_code' => $cashForeignAccount->account_code,
-                        'debit' => (string) $totalForeignBalance,
-                        'credit' => '0.00',
-                        'description' => 'Opening balance - Foreign Currency Inventory',
-                    ]);
-                }
-            }
-
-            // Credit side - Equity
-            $equityAccount = ChartOfAccount::where('account_code', AccountCode::CAPITAL->value)->first();
-            if ($equityAccount) {
-                JournalLine::create([
-                    'journal_entry_id' => $journalEntry->id,
-                    'account_code' => $equityAccount->account_code,
-                    'debit' => '0.00',
-                    'credit' => (string) $totalBalance,
-                    'description' => 'Opening balance - Owner Equity',
-                ]);
-            }
-        });
+        $entry->entry_number = $entryNumber;
+        $entry->save();
     }
 
     /**

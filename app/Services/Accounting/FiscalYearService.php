@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -66,6 +67,25 @@ class FiscalYearService
             ->where('start_date', '>=', $startDate)
             ->where('end_date', '<=', $endDate)
             ->update(['fiscal_year_id' => $year->id]);
+
+        // A fiscal year without periods accepts no postings — generate one
+        // open monthly period per month covered by the year.
+        $month = Carbon::parse($startDate)->startOfMonth();
+        $last = Carbon::parse($endDate)->endOfMonth();
+
+        while ($month->lte($last)) {
+            AccountingPeriod::firstOrCreate(
+                ['period_code' => $month->format('Y-m')],
+                [
+                    'fiscal_year_id' => $year->id,
+                    'start_date' => $month->copy()->startOfMonth()->toDateString(),
+                    'end_date' => $month->copy()->endOfMonth()->toDateString(),
+                    'period_type' => AccountingPeriodType::Month->value,
+                    'status' => 'Open',
+                ]
+            );
+            $month->addMonth();
+        }
 
         return $year;
     }

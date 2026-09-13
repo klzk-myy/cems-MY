@@ -124,23 +124,42 @@ class BudgetService
             ->where('period_code', $periodCode)
             ->get();
 
+        // Compute actuals live from ledger activity — the stored actual_amount
+        // is only refreshed by updateActuals(), which nothing calls, so the
+        // report must not trust the column.
+        $period = AccountingPeriod::where('period_code', $periodCode)->first();
+        $liveActivity = $period && $budgets->isNotEmpty()
+            ? $this->accountingService->getAccountsActivity(
+                $budgets->pluck('account_code')->unique()->toArray(),
+                $period->start_date->toDateString(),
+                $period->end_date->toDateString()
+            )
+            : [];
+
         $totalBudget = '0';
         $totalActual = '0';
         $items = [];
 
+        $overBudgetCount = 0;
         foreach ($budgets as $budget) {
-            $variance = $budget->getVariance();
+            $actual = (string) ($liveActivity[$budget->account_code] ?? $budget->actual_amount);
+            $variance = $this->mathService->subtract((string) $budget->budget_amount, $actual);
+            $overBudget = $this->mathService->compare($variance, '0') < 0;
+            $overBudgetCount += $overBudget ? 1 : 0;
             $items[] = [
+                'id' => $budget->id,
                 'account_code' => $budget->account_code,
                 'account_name' => $budget->account->account_name,
                 'budget' => (string) $budget->budget_amount,
-                'actual' => (string) $budget->actual_amount,
-                'variance' => (string) $variance,
-                'variance_pct' => $budget->getVariancePercentage(),
-                'over_budget' => $budget->isOverBudget(),
+                'actual' => $actual,
+                'variance' => $variance,
+                'variance_pct' => $this->mathService->compare((string) $budget->budget_amount, '0') > 0
+                    ? (float) $this->mathService->multiply($this->mathService->divide($variance, (string) $budget->budget_amount), '100')
+                    : null,
+                'over_budget' => $overBudget,
             ];
             $totalBudget = $this->mathService->add($totalBudget, (string) $budget->budget_amount);
-            $totalActual = $this->mathService->add($totalActual, (string) $budget->actual_amount);
+            $totalActual = $this->mathService->add($totalActual, $actual);
         }
 
         return [
@@ -149,7 +168,7 @@ class BudgetService
             'total_budget' => $totalBudget,
             'total_actual' => $totalActual,
             'total_variance' => $this->mathService->subtract($totalBudget, $totalActual),
-            'over_budget_count' => $budgets->filter(fn ($b) => $b->isOverBudget())->count(),
+            'over_budget_count' => $overBudgetCount,
         ];
     }
 

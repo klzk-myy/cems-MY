@@ -23,7 +23,13 @@ class FiscalYearController extends Controller
 
         $fiscalYears = FiscalYear::with('periods')->orderBy('year_code', 'desc')->get();
 
-        return view('accounting.fiscal-years', compact('fiscalYears'));
+        // The "active" year is the one containing today; fall back to the
+        // latest year when today is outside every configured year.
+        $activeYear = $fiscalYears->first(
+            fn ($y) => now()->between($y->start_date, $y->end_date)
+        ) ?? $fiscalYears->first();
+
+        return view('accounting.fiscal-years', compact('fiscalYears', 'activeYear'));
     }
 
     /**

@@ -1,133 +1,52 @@
 <x-app-layout title="Revaluation History">
     <div class="space-y-6">
-        <x-page-header title="Revaluation History">
-            View historical currency revaluation records
-
+        <x-page-header title="Revaluation History" description="Historical currency revaluation entries">
             <x-slot:actions>
                 <x-button variant="secondary" href="{{ route('accounting.revaluation') }}">Back to Revaluation</x-button>
             </x-slot:actions>
         </x-page-header>
 
         <x-filter-bar>
-            <x-select name="fiscal_year" :options="$fiscalYears" placeholder="All Fiscal Years" inline />
-            <x-select name="currency" :options="$currencies" placeholder="All Currencies" inline />
-            <x-input name="search" type="text" placeholder="Search..." inline class="md:w-64" />
-            <x-button variant="secondary" type="submit">Filter</x-button>
+            <form method="GET" class="flex flex-wrap items-end gap-3">
+                <x-input name="month" label="Month" type="month" :value="$month" inline />
+                <x-button variant="secondary" type="submit">Filter</x-button>
+            </form>
         </x-filter-bar>
 
-        <x-stat-grid cols="3">
-            <x-stat-card label="Total Revaluations" value="12" />
-            <x-stat-card label="Total Gains YTD" value="RM 28,450.00" color="green" />
-            <x-stat-card label="Total Losses YTD" value="RM 12,350.00" color="red" />
-        </x-stat-grid>
-
-        <x-card>
+        <x-card title="Entries — {{ \Carbon\Carbon::parse($month)->format('F Y') }}">
             <x-table>
                 <x-slot:thead>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Period</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Base Rate</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">End Rate</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Gain/Loss</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Old Rate</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">New Rate</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Gain / Loss</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Posted By</th>
                 </x-slot:thead>
                 <x-slot:tbody>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">2026-04-30</td>
-                        <td class="px-4 py-3 text-sm">P04</td>
-                        <td class="px-4 py-3 text-sm">USD</td>
-                        <td class="px-4 py-3 text-sm text-right">50,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">4.6800</td>
-                        <td class="px-4 py-3 text-sm text-right">4.7000</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+1,000.00</td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">View</x-button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">2026-04-30</td>
-                        <td class="px-4 py-3 text-sm">P04</td>
-                        <td class="px-4 py-3 text-sm">SGD</td>
-                        <td class="px-4 py-3 text-sm text-right">25,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">3.4800</td>
-                        <td class="px-4 py-3 text-sm text-right">3.4950</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+375.00</td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">View</x-button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">2026-04-30</td>
-                        <td class="px-4 py-3 text-sm">P04</td>
-                        <td class="px-4 py-3 text-sm">GBP</td>
-                        <td class="px-4 py-3 text-sm text-right">10,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">5.9700</td>
-                        <td class="px-4 py-3 text-sm text-right">5.9600</td>
-                        <td class="px-4 py-3 text-sm text-right text-danger-text">-100.00</td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">View</x-button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">2026-03-31</td>
-                        <td class="px-4 py-3 text-sm">P03</td>
-                        <td class="px-4 py-3 text-sm">USD</td>
-                        <td class="px-4 py-3 text-sm text-right">45,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">4.6500</td>
-                        <td class="px-4 py-3 text-sm text-right">4.6800</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+1,350.00</td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">View</x-button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">2026-03-31</td>
-                        <td class="px-4 py-3 text-sm">P03</td>
-                        <td class="px-4 py-3 text-sm">EUR</td>
-                        <td class="px-4 py-3 text-sm text-right">20,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">5.1200</td>
-                        <td class="px-4 py-3 text-sm text-right">5.1550</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+700.00</td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">View</x-button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">2026-02-28</td>
-                        <td class="px-4 py-3 text-sm">P02</td>
-                        <td class="px-4 py-3 text-sm">SGD</td>
-                        <td class="px-4 py-3 text-sm text-right">30,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">3.5100</td>
-                        <td class="px-4 py-3 text-sm text-right">3.4800</td>
-                        <td class="px-4 py-3 text-sm text-right text-danger-text">-900.00</td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">View</x-button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-canvas-subtle">
-                        <td class="px-4 py-3 text-sm">2026-01-31</td>
-                        <td class="px-4 py-3 text-sm">P01</td>
-                        <td class="px-4 py-3 text-sm">USD</td>
-                        <td class="px-4 py-3 text-sm text-right">40,000.00</td>
-                        <td class="px-4 py-3 text-sm text-right">4.6200</td>
-                        <td class="px-4 py-3 text-sm text-right">4.6500</td>
-                        <td class="px-4 py-3 text-sm text-right text-success-text">+1,200.00</td>
-                        <td class="px-4 py-3 text-center">
-                            <x-button variant="ghost" size="sm">View</x-button>
-                        </td>
-                    </tr>
+                    @forelse ($history as $entry)
+                        <tr class="hover:bg-canvas-subtle">
+                            <td class="px-4 py-3 text-sm">{{ $entry->revaluation_date?->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-ink">{{ $entry->currency_code }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $entry->position_amount, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $entry->old_rate, 6) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $entry->new_rate, 6) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $entry->gain_loss_amount < 0 ? 'text-danger' : ((float) $entry->gain_loss_amount > 0 ? 'text-success' : '') }}">
+                                {{ number_format((float) $entry->gain_loss_amount, 2) }}
+                            </td>
+                            <td class="px-4 py-3 text-sm">{{ $entry->postedBy?->name ?? '—' }}</td>
+                        </tr>
+                    @empty
+                        <x-empty-state message="No revaluation entries for this month." :colspan="7" />
+                    @endforelse
                 </x-slot:tbody>
             </x-table>
         </x-card>
 
         <div class="flex items-center justify-between">
-            <p class="text-sm text-ink-muted">Showing 1-7 of 12 records</p>
-            <div class="flex gap-2">
-                <x-button variant="secondary" size="sm" disabled>Previous</x-button>
-                <x-button variant="secondary" size="sm">Next</x-button>
-            </div>
+            <p class="text-sm text-ink-muted">Showing {{ $history->firstItem() ?? 0 }}-{{ $history->lastItem() ?? 0 }} of {{ $history->total() }} entries</p>
+            {{ $history->links() }}
         </div>
     </div>
 </x-app-layout>

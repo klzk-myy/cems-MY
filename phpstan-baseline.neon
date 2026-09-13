@@ -3169,18 +3169,6 @@ parameters:
 			path: app/Models/BranchPool.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$actual_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Budget.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$budget_amount\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/Budget.php
-
-		-
 			message: '#^Class App\\Models\\Budget uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
@@ -5855,30 +5843,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Accounting/BankReconciliationService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$account_code\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Accounting/BudgetService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$actual_amount\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Accounting/BudgetService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Budget\:\:\$budget_amount\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Accounting/BudgetService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$account_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Accounting/BudgetService.php
 
 		-
 			message: '#^Method App\\Services\\Accounting\\BudgetService\:\:getAccountsWithoutBudget\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'

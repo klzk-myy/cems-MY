@@ -237,12 +237,13 @@ class SharedComponentFormsTest extends TestCase
     }
 
     #[Test]
-    public function bank_reconciliation_uses_checkbox_components(): void
+    public function bank_reconciliation_uses_shared_form_components(): void
     {
         $path = $this->getViewPath('accounting.reconciliation');
         $content = file_get_contents($path);
 
         $this->assertStringNotContainsString('<input type="checkbox"', $content);
-        $this->assertStringContainsString('<x-checkbox', $content);
+        $this->assertStringContainsString('<x-select', $content);
+        $this->assertStringContainsString('<x-button', $content);
     }
 }
