@@ -212,7 +212,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
         Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
         Route::post('/{customer}/notes', [CustomerController::class, 'storeNote'])->name('notes.store');
-        Route::middleware('role:compliance,admin')->group(function () {
+        Route::middleware('role:compliance')->group(function () {
             Route::post('/{customer}/freeze', [CustomerController::class, 'freeze'])->name('freeze');
             Route::post('/{customer}/unfreeze', [CustomerController::class, 'unfreeze'])->name('unfreeze');
         });
@@ -223,6 +223,11 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
 
     Route::prefix('counters')->name('counters.')->group(function () {
         Route::get('/', [CounterController::class, 'index'])->name('index');
+
+        Route::middleware('role:manager,admin')->group(function () {
+            Route::get('/create', [CounterController::class, 'create'])->name('create');
+            Route::post('/', [CounterController::class, 'store'])->name('store');
+        });
 
         Route::middleware('role:teller,manager,admin')->group(function () {
             Route::get('/{counter}/open', [CounterController::class, 'showOpen'])->name('open');
@@ -409,7 +414,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     // EDD staff review (mirrors the Api/V1 EddController approve/reject
     // logic; prefix avoids colliding with the signed customer portal at
     // compliance/edd/*). Accessible to both Compliance Officers and Admins.
-    Route::middleware('role:compliance,admin')->prefix('compliance/edd-review')->name('compliance.edd-reviews.')->group(function () {
+    Route::middleware('role:compliance')->prefix('compliance/edd-review')->name('compliance.edd-reviews.')->group(function () {
         Route::get('/', [EddReviewController::class, 'index'])->name('index');
         Route::get('/records/{eddRecord}', [EddReviewController::class, 'show'])->name('show');
         Route::post('/records/{eddRecord}/approve', [EddReviewController::class, 'approve'])->name('approve');
@@ -561,7 +566,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     // Read-only chart of accounts viewer (plan WS-C3). Registered outside the
     // manager-gated accounting group so Compliance Officers can inspect the
     // COA; balances come from LedgerService::getTrialBalance as of today.
-    Route::middleware('role:admin,compliance')->get('accounting/chart-of-accounts', [ChartOfAccountsController::class, 'index'])
+    Route::middleware('role:compliance')->get('accounting/chart-of-accounts', [ChartOfAccountsController::class, 'index'])
         ->name('accounting.chart-of-accounts.index');
 
     Route::middleware(['role:admin', 'test.dashboard'])->prefix('test-results')->name('test-results.')->group(function () {
@@ -587,7 +592,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
 
     // Audit log viewer. The route gate mirrors SystemLogPolicy, which grants
     // viewAny/view to Admin and Compliance Officer roles.
-    Route::middleware('role:admin,compliance')->prefix('admin/audit-logs')->name('admin.audit-logs.')->group(function () {
+    Route::middleware('role:compliance')->prefix('admin/audit-logs')->name('admin.audit-logs.')->group(function () {
         Route::get('/', [AuditLogController::class, 'index'])->name('index');
         Route::get('/{log}', [AuditLogController::class, 'show'])->name('show');
     });
@@ -631,7 +636,7 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     });
 
     // KYC Documents (compliance/admin)
-    Route::middleware('role:compliance,admin')->prefix('kyc-documents')->name('kyc-documents.')->group(function () {
+    Route::middleware('role:compliance')->prefix('kyc-documents')->name('kyc-documents.')->group(function () {
         Route::post('/{customerDocument}/verify', [KycDocumentController::class, 'verify'])->name('verify');
         Route::post('/{customerDocument}/reject', [KycDocumentController::class, 'reject'])->name('reject');
         Route::get('/{customerDocument}/download', [KycDocumentController::class, 'download'])->name('download');

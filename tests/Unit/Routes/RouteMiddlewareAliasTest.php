@@ -50,6 +50,40 @@ class RouteMiddlewareAliasTest extends TestCase
         );
     }
 
+    /**
+     * Every `role:` middleware parameter must be one of the canonical names
+     * CheckRole matches on. A typo fails loudly at request time (CheckRole
+     * throws InvalidArgumentException); this test catches it earlier, at
+     * route registration.
+     */
+    #[Test]
+    public function role_middleware_uses_only_canonical_role_names(): void
+    {
+        $canonical = ['admin', 'manager', 'compliance', 'accountant', 'teller'];
+        $violations = [];
+
+        foreach (Route::getRoutes()->getRoutes() as $route) {
+            $name = $route->getName() ?? $route->uri();
+
+            foreach ($route->middleware() as $middleware) {
+                if (! str_starts_with($middleware, 'role:')) {
+                    continue;
+                }
+
+                foreach (explode(',', substr($middleware, 5)) as $role) {
+                    if (! in_array($role, $canonical, true)) {
+                        $violations[] = "{$name}: role:{$role}";
+                    }
+                }
+            }
+        }
+
+        $this->assertEmpty(
+            $violations,
+            'Routes must use canonical role names (admin, manager, compliance, accountant, teller). Violations: '.implode(', ', $violations)
+        );
+    }
+
     private function isVendorRoute(string $name): bool
     {
         foreach ($this->vendorPrefixes as $prefix) {

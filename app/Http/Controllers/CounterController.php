@@ -12,6 +12,8 @@ use App\Http\Requests\CloseCounterRequest;
 use App\Http\Requests\EmergencyCloseRequest;
 use App\Http\Requests\HandoverCounterRequest;
 use App\Http\Requests\OpenCounterRequest;
+use App\Http\Requests\StoreCounterRequest;
+use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\Currency;
@@ -59,6 +61,40 @@ class CounterController extends Controller
         $currencies = $this->getActiveCurrencies();
 
         return view('counters.index', compact('counters', 'stats', 'availableCounters', 'currencies'));
+    }
+
+    /**
+     * Show the form for registering a counter.
+     * Managers only see their own branch; admins see every trading branch.
+     */
+    public function create(): View
+    {
+        $this->authorize('create', Counter::class);
+
+        /** @var User $user */
+        $user = auth()->user();
+
+        $branches = Branch::where('is_active', true)
+            ->whereIn('type', [Branch::TYPE_BRANCH, Branch::TYPE_SUB_BRANCH])
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('id', $user->branch_id))
+            ->orderBy('code')
+            ->pluck('name', 'id');
+
+        return view('counters.create', compact('branches'));
+    }
+
+    /**
+     * Register a counter via CounterService (same path as API V1 store).
+     */
+    public function store(StoreCounterRequest $request): RedirectResponse
+    {
+        $counter = $this->counterService->createCounter(
+            $request->validated(),
+            $request->user()
+        );
+
+        return redirect()->route('counters.index')
+            ->with('success', "Counter {$counter->code} created successfully.");
     }
 
     /**

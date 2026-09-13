@@ -3,13 +3,16 @@
 namespace App\Services\Branch;
 
 use App\Enums\CounterSessionStatus;
+use App\Enums\CounterStatus;
 use App\Enums\TellerAllocationStatus;
+use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\SessionClosedException;
 use App\Exceptions\Domain\SessionOwnershipException;
 use App\Exceptions\Domain\SupervisorRequiredException;
 use App\Exceptions\Domain\TillAlreadyOpenException;
 use App\Exceptions\Domain\UserAlreadyAtCounterException;
 use App\Exceptions\Domain\VarianceThresholdException;
+use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\Currency;
@@ -17,6 +20,7 @@ use App\Models\ExchangeRate;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\User;
+use App\Services\AuditService;
 use App\Services\ThresholdService;
 use App\Support\BcmathHelper;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +30,48 @@ class CounterService
     public function __construct(
         protected TellerAllocationService $tellerAllocationService,
         protected ThresholdService $thresholdService,
+        protected AuditService $auditService,
     ) {}
+
+    /**
+     * Register a counter at a trading branch.
+     *
+     * Shared by the web and API V1 controllers so both surfaces produce
+     * identical outcomes and audit trails.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createCounter(array $data, User $actor): Counter
+    {
+        $branch = Branch::findOrFail((int) $data['branch_id']);
+
+        if (! $branch->canTrade()) {
+            throw new InvalidStateException('Head office branches cannot have trading counters.');
+        }
+
+        $counter = Counter::create([
+            'code' => $data['code'],
+            'name' => $data['name'],
+            'status' => $data['status'] ?? CounterStatus::Active->value,
+            'branch_id' => $branch->id,
+        ]);
+
+        $this->auditService->log(
+            'counter_created',
+            $actor->id,
+            'Counter',
+            $counter->id,
+            [],
+            [
+                'code' => $counter->code,
+                'name' => $counter->name,
+                'branch_id' => $branch->id,
+                'branch_code' => $branch->code,
+            ]
+        );
+
+        return $counter;
+    }
 
     /**
      * Open a counter session

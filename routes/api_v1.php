@@ -159,7 +159,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Compliance Findings API
         Route::prefix('compliance')->group(function () {
-            Route::middleware('role:compliance,admin')->group(function () {
+            Route::middleware('role:compliance')->group(function () {
                 Route::get('/findings', [FindingController::class, 'index'])
                     ->name('api.v1.compliance.findings.index');
                 Route::get('/findings/stats', [FindingController::class, 'stats'])
@@ -255,7 +255,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
 
         // Risk API
-        Route::prefix('risk')->middleware('role:compliance,admin')->group(function () {
+        Route::prefix('risk')->middleware('role:compliance')->group(function () {
             Route::get('/portfolio', [RiskController::class, 'portfolio'])->name('api.v1.risk.portfolio');
             Route::get('/{customerId}', [RiskController::class, 'show'])->name('api.v1.risk.show');
             Route::get('/{customerId}/history', [RiskController::class, 'history'])->name('api.v1.risk.history');
@@ -412,6 +412,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Counter Opening Workflow API - Daily branch opening
         Route::prefix('counters')->group(function () {
+            Route::post('/', [CounterApiController::class, 'store'])
+                ->middleware('role:manager,admin')
+                ->name('api.v1.counters.store');
             Route::get('/pending-requests', [CounterOpeningController::class, 'pendingRequests'])
                 ->middleware('role:manager,admin')
                 ->name('api.v1.counters.pending-requests');

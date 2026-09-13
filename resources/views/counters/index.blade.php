@@ -1,6 +1,12 @@
 <x-app-layout title="Counters">
     <div class="space-y-6">
-        <x-page-header title="Counters" />
+        <x-page-header title="Counters">
+            <x-slot:actions>
+                @can('create', \App\Models\Counter::class)
+                    <x-button href="{{ route('counters.create') }}" variant="primary">New Counter</x-button>
+                @endcan
+            </x-slot:actions>
+        </x-page-header>
 
         <x-stat-grid cols="3">
             <x-stat-card label="Total Counters" :value="$stats['total'] ?? 0" />

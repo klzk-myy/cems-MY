@@ -101,7 +101,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class));
         $this->branchPoolService = $branchPoolService;
         $this->tellerAllocationService = $tellerAllocationService;
-        $counterService = new CounterService($tellerAllocationService, new ThresholdService);
+        $counterService = new CounterService($tellerAllocationService, new ThresholdService, app(AuditService::class));
         $this->counterService = $counterService;
         $auditService = resolve(AuditService::class);
         $this->workflowService = new CounterOpeningWorkflowService(

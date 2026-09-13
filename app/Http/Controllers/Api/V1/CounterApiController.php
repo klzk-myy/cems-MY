@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\ResolvesCloseSupervisor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\CloseCounterRequest;
+use App\Http\Requests\Api\V1\Counter\StoreCounterRequest;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Services\Branch\CounterService;
@@ -22,6 +23,20 @@ class CounterApiController extends Controller
     public function __construct(
         protected CounterService $counterService
     ) {}
+
+    /**
+     * Register a counter at a trading branch via CounterService — the same
+     * path as the web store, so both surfaces produce identical outcomes.
+     */
+    public function store(StoreCounterRequest $request): JsonResponse
+    {
+        $counter = $this->counterService->createCounter(
+            $request->validated(),
+            $request->user()
+        );
+
+        return $this->successResponse(['counter' => $counter], 'Counter created successfully', 201);
+    }
 
     public function close(CloseCounterRequest $request, string $counterId): JsonResponse
     {
