@@ -101,11 +101,15 @@ jobs:
             set -euo pipefail
             cd "$DEPLOY_PATH"
 
-            # First deploy only: seed schema. DatabaseSeeder refuses non-empty
-            # databases, so this is a safe no-op on subsequent deploys.
-            # --force is required: production mode prompts for confirmation
-            # and non-interactive SSH cancels it.
-            php artisan db:seed --class=DatabaseSeeder --force || true
+            # First deploy only: build the schema. SchemaSeeder drops every
+            # table, so it must ONLY run when the database is genuinely fresh
+            # (no users table). Demo data (UserSeeder etc.) is deliberately
+            # NOT seeded — the web setup wizard at /setup creates the real
+            # admin account and business data.
+            HAS_USERS_TABLE=$(php artisan tinker --execute="echo \\Illuminate\\Support\\Facades\\Schema::hasTable('users') ? 'yes' : 'no';" 2>/dev/null | tail -1)
+            if [[ "$HAS_USERS_TABLE" == "no" ]]; then
+              php artisan db:seed --class=SchemaSeeder --force
+            fi
 
             php artisan optimize:clear
             php artisan config:cache
