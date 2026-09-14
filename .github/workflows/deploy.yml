@@ -103,7 +103,9 @@ jobs:
 
             # First deploy only: seed schema. DatabaseSeeder refuses non-empty
             # databases, so this is a safe no-op on subsequent deploys.
-            php artisan db:seed --class=DatabaseSeeder || true
+            # --force is required: production mode prompts for confirmation
+            # and non-interactive SSH cancels it.
+            php artisan db:seed --class=DatabaseSeeder --force || true
 
             php artisan optimize:clear
             php artisan config:cache
