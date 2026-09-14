@@ -1,0 +1,133 @@
+name: Deploy
+
+# Deploys to the cPanel production host (cems.schnellnetz.com) after CI passes
+# on main, or on manual dispatch. The server has no composer/node/sudo, so the
+# build happens here and the finished tree is rsynced over SSH.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+  DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+  DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+  DEPLOY_APP_URL: ${{ vars.DEPLOY_APP_URL }}
+
+jobs:
+  deploy:
+    name: Deploy to production (cPanel)
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # For workflow_run, deploy exactly the commit CI verified
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, mbstring, xml, tokenizer, sqlite3, gd, zip, intl, redis
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install PHP dependencies (production)
+        run: composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build frontend assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Enter maintenance mode
+        run: |
+          ssh -i ~/.ssh/id_rsa "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd $DEPLOY_PATH 2>/dev/null && php artisan down --retry=60 || true" || true
+
+      - name: Sync application to server
+        run: |
+          rsync -az --delete --stats \
+            -e "ssh -i $HOME/.ssh/id_rsa" \
+            --exclude='/.git' \
+            --exclude='/.github' \
+            --exclude='/.gitnexus' \
+            --exclude='/.env' \
+            --exclude='/.env.*' \
+            --exclude='/.htaccess' \
+            --exclude='/node_modules' \
+            --exclude='/tests' \
+            --exclude='/test-results' \
+            --exclude='/storage' \
+            --exclude='/bootstrap/cache' \
+            --exclude='/public/storage' \
+            --exclude='/public/.user.ini' \
+            --exclude='/public/php.ini' \
+            --exclude='/.phpunit.result.cache' \
+            ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+
+      - name: Post-deploy (cache rebuild, storage link, restart workers)
+        run: |
+          ssh -i ~/.ssh/id_rsa "$DEPLOY_USER@$DEPLOY_HOST" DEPLOY_PATH="$DEPLOY_PATH" DEPLOY_SHA="${{ github.event.workflow_run.head_sha || github.sha }}" 'bash -s' <<'REMOTE'
+            set -euo pipefail
+            cd "$DEPLOY_PATH"
+
+            # First deploy only: seed schema. DatabaseSeeder refuses non-empty
+            # databases, so this is a safe no-op on subsequent deploys.
+            php artisan db:seed --class=DatabaseSeeder || true
+
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan storage:link || true
+
+            # Signal the keepalive queue:work daemon to restart with fresh code
+            php artisan queue:restart || true
+
+            echo "$DEPLOY_SHA" > .deployed-sha
+            php artisan up
+          REMOTE
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -fsS --connect-timeout 10 --max-time 30 "$DEPLOY_APP_URL/up"
+
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -fsS -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"CEMS-MY deploy to $DEPLOY_HOST FAILED ($DEPLOY_APP_URL)\"}" \
+            "$SLACK_WEBHOOK_URL" || true
