@@ -182,11 +182,21 @@ return [
         'require_symbols' => true,
         // Number of previous passwords that may not be reused.
         'history_depth' => env('SECURITY_PASSWORD_HISTORY_DEPTH', 5),
-        // Forced rotation interval in days (BNM policy). 0 disables expiry.
-        'password_expiry_days' => env('SECURITY_PASSWORD_EXPIRY_DAYS', 90),
         'max_attempts' => 5,
         'lockout_duration' => 15, // minutes
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password Expiry
+    |--------------------------------------------------------------------------
+    |
+    | Forced rotation interval in days (BNM policy), read by
+    | User::passwordExpired(). 0 disables forced rotation.
+    |
+    */
+
+    'password_expiry_days' => env('SECURITY_PASSWORD_EXPIRY_DAYS', 90),
 
     /*
     |--------------------------------------------------------------------------
