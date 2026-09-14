@@ -76,6 +76,39 @@ class SetupService
         }
     }
 
+    /**
+     * Normalize the step-3 custom currency rows into a clean list of
+     * ['code' => ..., 'name' => ..., 'symbol' => ...] entries.
+     *
+     * Accepts the step-3 validated payload or the stored session slice.
+     * Falls back to the legacy single-field keys (custom_currency_*) so a
+     * wizard session started before the multi-row form still completes.
+     *
+     * @param  array<string, mixed>  $currenciesStep
+     * @return array<int, array{code: string, name: string, symbol: string}>
+     */
+    public function customCurrencyRows(array $currenciesStep): array
+    {
+        $rows = collect((array) ($currenciesStep['custom_currencies'] ?? []))
+            ->map(fn ($row) => [
+                'code' => strtoupper(trim((string) ($row['code'] ?? ''))),
+                'name' => trim((string) ($row['name'] ?? '')),
+                'symbol' => trim((string) ($row['symbol'] ?? '')),
+            ])
+            ->filter(fn ($row) => $row['code'] !== '');
+
+        $legacy = strtoupper(trim((string) ($currenciesStep['custom_currency_code'] ?? '')));
+        if ($legacy !== '' && $rows->doesntContain('code', $legacy)) {
+            $rows->push([
+                'code' => $legacy,
+                'name' => trim((string) ($currenciesStep['custom_currency_name'] ?? '')),
+                'symbol' => trim((string) ($currenciesStep['custom_currency_symbol'] ?? '')),
+            ]);
+        }
+
+        return $rows->unique('code')->values()->all();
+    }
+
     public function seedCoreData(array $config): void
     {
         $this->validateAdminPassword($config['admin_password'] ?? '');

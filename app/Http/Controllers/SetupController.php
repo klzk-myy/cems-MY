@@ -54,16 +54,24 @@ class SetupController extends Controller
             ->unique()
             ->values();
 
+        $customByCode = collect($this->setupService->customCurrencyRows(
+            (array) session('setup.currencies', [])
+        ))->keyBy('code');
+
         $setupCurrencies = $selected->isEmpty()
             ? $currencies
             : $currencies->whereIn('code', $selected)->values()->toBase()
                 ->merge(
                     $selected->diff($currencies->pluck('code'))->map(fn ($code) => (object) [
                         'code' => $code,
-                        'name' => session('setup.currencies.custom_currency_name') ?: $code,
-                        'symbol' => session('setup.currencies.custom_currency_symbol') ?: $code,
+                        'name' => $customByCode->get($code)['name'] ?? $code,
+                        'symbol' => $customByCode->get($code)['symbol'] ?? $code,
                     ])
                 );
+
+        $unseededCustomCodes = $customByCode->keys()
+            ->diff($currencies->pluck('code'))
+            ->values();
 
         return view('setup.index', [
             'isSetupComplete' => false,
@@ -71,6 +79,7 @@ class SetupController extends Controller
             'progress' => $this->calculateProgress(),
             'currencies' => $currencies,
             'setupCurrencies' => $setupCurrencies,
+            'unseededCustomCodes' => $unseededCustomCodes,
         ]);
     }
 
@@ -144,15 +153,18 @@ class SetupController extends Controller
     {
         $validated = $request->validated();
 
-        // A custom currency is implicitly selected: fold its code into the
-        // active set so the review screen, stock/balance steps, and
-        // executeSetup all see it without special-casing.
-        $customCode = strtoupper(trim((string) ($validated['custom_currency_code'] ?? '')));
+        // Custom currency rows are implicitly selected: fold their codes into
+        // the active set so the review screen, stock/balance steps, and
+        // executeSetup all see them without special-casing.
+        $customRows = $this->setupService->customCurrencyRows($validated);
+        $validated['custom_currencies'] = $customRows;
 
-        if ($customCode !== '') {
-            $validated['custom_currency_code'] = $customCode;
+        if ($customRows !== []) {
             $validated['active_currencies'] = array_values(array_unique(
-                array_map('strtoupper', [...$validated['active_currencies'], $customCode])
+                array_map('strtoupper', [
+                    ...$validated['active_currencies'],
+                    ...array_column($customRows, 'code'),
+                ])
             ));
         }
 
@@ -427,15 +439,14 @@ class SetupController extends Controller
         Artisan::call('db:seed', ['--class' => 'CurrencySeeder', '--force' => true]);
         Artisan::call('db:seed', ['--class' => 'EnhancedChartOfAccountsSeeder', '--force' => true]);
 
-        // A custom "other" currency entered in step 3 may not exist in the
-        // seeded list — create it before applying the active set.
-        $customCode = strtoupper(trim((string) ($setupData['currencies']['custom_currency_code'] ?? '')));
-        if ($customCode !== '') {
+        // Custom "other" currencies entered in step 3 may not exist in the
+        // seeded list — create them before applying the active set.
+        foreach ($this->setupService->customCurrencyRows($setupData['currencies'] ?? []) as $row) {
             Currency::firstOrCreate(
-                ['code' => $customCode],
+                ['code' => $row['code']],
                 [
-                    'name' => $setupData['currencies']['custom_currency_name'] ?? $customCode,
-                    'symbol' => $setupData['currencies']['custom_currency_symbol'] ?? $customCode,
+                    'name' => $row['name'] !== '' ? $row['name'] : $row['code'],
+                    'symbol' => $row['symbol'] !== '' ? $row['symbol'] : $row['code'],
                     'decimal_places' => 2,
                     'is_active' => true,
                 ],

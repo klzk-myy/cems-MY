@@ -134,7 +134,37 @@ class SetupQuickSetupParityTest extends TestCase
     }
 
     #[Test]
-    public function step3_folds_a_custom_currency_into_the_active_selection(): void
+    public function step3_folds_custom_currencies_into_the_active_selection(): void
+    {
+        $response = $this->post(route('setup.step3'), [
+            'base_currency' => 'MYR',
+            'active_currencies' => ['MYR', 'USD'],
+            'custom_currencies' => [
+                ['code' => 'thb', 'name' => 'Thai Baht', 'symbol' => '฿'],
+                ['code' => ' vnd ', 'name' => 'Vietnamese Đồng', 'symbol' => '₫'],
+            ],
+        ]);
+
+        $response->assertRedirect(route('setup.wizard', ['step' => 4]));
+
+        $currencies = session('setup.currencies');
+        $this->assertSame(
+            [
+                ['code' => 'THB', 'name' => 'Thai Baht', 'symbol' => '฿'],
+                ['code' => 'VND', 'name' => 'Vietnamese Đồng', 'symbol' => '₫'],
+            ],
+            $currencies['custom_currencies'],
+            'Custom rows must be uppercased/trimmed and stored for completion'
+        );
+        $this->assertEqualsCanonicalizing(
+            ['MYR', 'USD', 'THB', 'VND'],
+            $currencies['active_currencies'],
+            'Custom codes must be merged into the active set'
+        );
+    }
+
+    #[Test]
+    public function step3_accepts_a_legacy_single_custom_currency_shape(): void
     {
         $response = $this->post(route('setup.step3'), [
             'base_currency' => 'MYR',
@@ -147,12 +177,8 @@ class SetupQuickSetupParityTest extends TestCase
         $response->assertRedirect(route('setup.wizard', ['step' => 4]));
 
         $currencies = session('setup.currencies');
-        $this->assertSame('THB', $currencies['custom_currency_code']);
-        $this->assertEqualsCanonicalizing(
-            ['MYR', 'USD', 'THB'],
-            $currencies['active_currencies'],
-            'Custom code must be uppercased and merged into the active set'
-        );
+        $this->assertSame('THB', $currencies['custom_currencies'][0]['code']);
+        $this->assertContains('THB', $currencies['active_currencies']);
     }
 
     #[Test]
@@ -161,14 +187,58 @@ class SetupQuickSetupParityTest extends TestCase
         $response = $this->post(route('setup.step3'), [
             'base_currency' => 'MYR',
             'active_currencies' => ['MYR'],
-            'custom_currency_code' => 'THB',
+            'custom_currencies' => [
+                ['code' => 'THB'],
+            ],
         ]);
 
-        $response->assertSessionHasErrors('custom_currency_name');
+        $response->assertSessionHasErrors('custom_currencies.0.name');
     }
 
     #[Test]
-    public function step4_requires_buy_and_sell_rates_for_a_custom_currency(): void
+    public function step3_ignores_empty_custom_currency_rows(): void
+    {
+        $response = $this->post(route('setup.step3'), [
+            'base_currency' => 'MYR',
+            'active_currencies' => ['MYR'],
+            'custom_currencies' => [
+                ['code' => '', 'name' => '', 'symbol' => ''],
+            ],
+        ]);
+
+        $response->assertRedirect(route('setup.wizard', ['step' => 4]));
+        $this->assertSame([], session('setup.currencies.custom_currencies'));
+        $this->assertSame(['MYR'], session('setup.currencies.active_currencies'));
+    }
+
+    #[Test]
+    public function step4_requires_buy_and_sell_rates_for_each_unseeded_custom_currency(): void
+    {
+        $this->withSession([
+            'setup.currencies' => [
+                'base_currency' => 'MYR',
+                'active_currencies' => ['MYR', 'THB', 'VND'],
+                'custom_currencies' => [
+                    ['code' => 'THB', 'name' => 'Thai Baht', 'symbol' => '฿'],
+                    ['code' => 'VND', 'name' => 'Vietnamese Đồng', 'symbol' => '₫'],
+                ],
+            ],
+        ]);
+
+        $response = $this->post(route('setup.step4'), [
+            'use_default_rates' => '1',
+        ]);
+
+        $response->assertSessionHasErrors([
+            'custom_rates.THB.buy',
+            'custom_rates.THB.sell',
+            'custom_rates.VND.buy',
+            'custom_rates.VND.sell',
+        ]);
+    }
+
+    #[Test]
+    public function step4_still_requires_rates_for_a_legacy_single_custom_currency(): void
     {
         $this->withSession([
             'setup.currencies' => [
@@ -203,9 +273,9 @@ class SetupQuickSetupParityTest extends TestCase
                 'currencies' => [
                     'base_currency' => 'MYR',
                     'active_currencies' => ['MYR', 'USD', 'THB'],
-                    'custom_currency_code' => 'THB',
-                    'custom_currency_name' => 'Thai Baht',
-                    'custom_currency_symbol' => '฿',
+                    'custom_currencies' => [
+                        ['code' => 'THB', 'name' => 'Thai Baht', 'symbol' => '฿'],
+                    ],
                 ],
                 'rates' => [
                     'use_default_rates' => '1',
@@ -237,6 +307,54 @@ class SetupQuickSetupParityTest extends TestCase
 
         $this->assertDatabaseHas('branch_pools', ['currency_code' => 'THB', 'available_balance' => '20000.0000']);
         $this->assertDatabaseHas('currency_positions', ['currency_code' => 'THB', 'quantity' => '20000.0000']);
+    }
+
+    #[Test]
+    public function wizard_completion_creates_multiple_custom_currencies(): void
+    {
+        $this->withSession([
+            'setup' => [
+                'business' => ['business_name' => 'Wizard Co'],
+                'admin' => [
+                    'admin_name' => 'admin',
+                    'admin_email' => 'wizard-admin@example.com',
+                    'admin_password' => 'Sup3rSecure!Pass',
+                ],
+                'currencies' => [
+                    'base_currency' => 'MYR',
+                    'active_currencies' => ['MYR', 'USD', 'THB', 'VND'],
+                    'custom_currencies' => [
+                        ['code' => 'THB', 'name' => 'Thai Baht', 'symbol' => '฿'],
+                        ['code' => 'VND', 'name' => 'Vietnamese Đồng', 'symbol' => '₫'],
+                    ],
+                ],
+                'rates' => [
+                    'use_default_rates' => '1',
+                    'custom_rates' => [
+                        'THB' => ['buy' => '0.1280', 'sell' => '0.1320'],
+                        'VND' => ['buy' => '0.00017', 'sell' => '0.00019'],
+                    ],
+                ],
+                'stock' => [
+                    'initial_myr_cash' => '1000',
+                    'initial_stock' => ['USD' => '500', 'THB' => '20000', 'VND' => '1000000'],
+                ],
+                'opening_balance' => [
+                    'opening_balance_myr' => '1000',
+                    'opening_balance_foreign' => ['USD' => '500', 'THB' => '20000', 'VND' => '1000000'],
+                ],
+            ],
+        ]);
+
+        $response = $this->postJson(route('setup.complete'));
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        $this->assertSame('Thai Baht', Currency::where('code', 'THB')->value('name'));
+        $this->assertSame('Vietnamese Đồng', Currency::where('code', 'VND')->value('name'));
+        $this->assertDatabaseHas('exchange_rates', ['currency_code' => 'THB', 'source' => 'setup_custom']);
+        $this->assertDatabaseHas('exchange_rates', ['currency_code' => 'VND', 'source' => 'setup_custom']);
+        $this->assertDatabaseHas('branch_pools', ['currency_code' => 'VND', 'available_balance' => '1000000.0000']);
     }
 
     #[Test]

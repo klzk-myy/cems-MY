@@ -116,14 +116,35 @@
                                     />
                                 @endforeach
                             </div>
-                            <div class="border-t border-border pt-4">
-                                <label class="block text-sm font-medium text-ink-muted mb-2">Other Currency (optional)</label>
-                                <p class="text-xs text-ink-muted mb-3">Add a currency that is not in the list above. Filling in a code selects and activates it.</p>
-                                <div class="grid grid-cols-3 gap-4">
-                                    <x-input name="custom_currency_code" label="Code" inline placeholder="e.g. THB" value="{{ old('custom_currency_code') }}" maxlength="3" />
-                                    <x-input name="custom_currency_name" label="Name" inline placeholder="e.g. Thai Baht" value="{{ old('custom_currency_name') }}" />
-                                    <x-input name="custom_currency_symbol" label="Symbol" inline placeholder="e.g. ฿" value="{{ old('custom_currency_symbol') }}" />
+                            <div class="border-t border-border pt-4" data-currency-rows>
+                                <label class="block text-sm font-medium text-ink-muted mb-2">Other Currencies (optional)</label>
+                                <p class="text-xs text-ink-muted mb-3">Add currencies that are not in the list above. Filling in a code selects and activates it; a recognised code auto-fills the name and symbol.</p>
+                                @php($customRows = old('custom_currencies') ?: [[]])
+                                <div class="space-y-3" data-currency-rows-list data-next-index="{{ count($customRows) }}">
+                                    @foreach($customRows as $i => $row)
+                                        <div class="flex items-end gap-3" data-currency-row>
+                                            <div class="grid flex-1 grid-cols-3 gap-4">
+                                                <x-input name="custom_currencies[{{ $i }}][code]" label="Code" inline placeholder="e.g. THB" value="{{ $row['code'] ?? '' }}" maxlength="3" data-currency-code />
+                                                <x-input name="custom_currencies[{{ $i }}][name]" label="Name" inline placeholder="e.g. Thai Baht" value="{{ $row['name'] ?? '' }}" data-currency-name />
+                                                <x-input name="custom_currencies[{{ $i }}][symbol]" label="Symbol" inline placeholder="e.g. ฿" value="{{ $row['symbol'] ?? '' }}" data-currency-symbol />
+                                            </div>
+                                            <button type="button" data-remove-currency-row title="Remove currency"
+                                                    class="mb-1 px-2 py-1 text-lg leading-none text-ink-muted hover:text-danger-text">&times;</button>
+                                        </div>
+                                    @endforeach
                                 </div>
+                                <template data-currency-row-template>
+                                    <div class="flex items-end gap-3" data-currency-row>
+                                        <div class="grid flex-1 grid-cols-3 gap-4">
+                                            <x-input name="custom_currencies[__INDEX__][code]" label="Code" inline placeholder="e.g. THB" maxlength="3" data-currency-code />
+                                            <x-input name="custom_currencies[__INDEX__][name]" label="Name" inline placeholder="e.g. Thai Baht" data-currency-name />
+                                            <x-input name="custom_currencies[__INDEX__][symbol]" label="Symbol" inline placeholder="e.g. ฿" data-currency-symbol />
+                                        </div>
+                                        <button type="button" data-remove-currency-row title="Remove currency"
+                                                class="mb-1 px-2 py-1 text-lg leading-none text-ink-muted hover:text-danger-text">&times;</button>
+                                    </div>
+                                </template>
+                                <x-button type="button" variant="secondary" class="mt-3" data-add-currency-row>Add Row</x-button>
                             </div>
                         </div>
                         <div class="mt-6 flex justify-between">
@@ -147,15 +168,18 @@
                                 :checked="true"
                             />
                         </div>
-                        @php($customCode = strtoupper((string) session('setup.currencies.custom_currency_code', '')))
-                        @if($customCode !== '')
+                        @if($unseededCustomCodes->isNotEmpty())
                             <div class="mt-4 border-t border-border pt-4">
                                 <p class="text-sm text-ink-muted mb-2">
-                                    {{ $customCode }} has no default rate. Enter its opening rates against MYR.
+                                    {{ $unseededCustomCodes->implode(', ') }} {{ $unseededCustomCodes->count() > 1 ? 'have' : 'has' }} no default rate. Enter opening rates against MYR.
                                 </p>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <x-input name="custom_rates[{{ $customCode }}][buy]" label="{{ $customCode }} Buy Rate" inline required placeholder="0.0000" inputmode="decimal" />
-                                    <x-input name="custom_rates[{{ $customCode }}][sell]" label="{{ $customCode }} Sell Rate" inline required placeholder="0.0000" inputmode="decimal" />
+                                <div class="space-y-3">
+                                    @foreach($unseededCustomCodes as $code)
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <x-input name="custom_rates[{{ $code }}][buy]" label="{{ $code }} Buy Rate" inline required placeholder="0.0000" inputmode="decimal" />
+                                            <x-input name="custom_rates[{{ $code }}][sell]" label="{{ $code }} Sell Rate" inline required placeholder="0.0000" inputmode="decimal" />
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
                         @endif

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Currency;
 use App\Rules\PasswordComplexityRule;
+use App\Services\System\SetupService;
 
 class SetupRequest extends AuthorizedFormRequest
 {
@@ -81,6 +83,12 @@ class SetupRequest extends AuthorizedFormRequest
             'base_currency' => 'required|string|size:3',
             'active_currencies' => 'required|array|min:1',
             'active_currencies.*' => 'string|size:3',
+            'custom_currencies' => 'nullable|array|max:25',
+            'custom_currencies.*.code' => 'nullable|string|alpha|size:3',
+            'custom_currencies.*.name' => 'nullable|string|max:100|required_with:custom_currencies.*.code',
+            'custom_currencies.*.symbol' => 'nullable|string|max:10',
+            // Legacy single-field keys: kept nullable so a stale cached form
+            // still validates and folds into custom_currencies.
             'custom_currency_code' => 'nullable|string|alpha|size:3',
             'custom_currency_name' => 'nullable|string|max:100|required_with:custom_currency_code',
             'custom_currency_symbol' => 'nullable|string|max:10',
@@ -96,12 +104,16 @@ class SetupRequest extends AuthorizedFormRequest
             'custom_rates.*.sell' => 'nullable|numeric|min:0.0001',
         ];
 
-        // A custom "other" currency has no seeded rate — without one it can
-        // never be traded, so its buy/sell rates are mandatory here.
-        $customCode = strtoupper(trim((string) session('setup.currencies.custom_currency_code', '')));
-        if ($customCode !== '') {
-            $rules["custom_rates.{$customCode}.buy"] = 'required|numeric|min:0.0001';
-            $rules["custom_rates.{$customCode}.sell"] = 'required|numeric|min:0.0001';
+        // Custom "other" currencies have no seeded rate — without one they can
+        // never be traded, so buy/sell rates are mandatory for each custom
+        // code that the seeded list does not already cover.
+        $unseeded = collect(app(SetupService::class)->customCurrencyRows(
+            (array) session('setup.currencies', [])
+        ))->pluck('code')->diff(Currency::pluck('code'));
+
+        foreach ($unseeded as $code) {
+            $rules["custom_rates.{$code}.buy"] = 'required|numeric|min:0.0001';
+            $rules["custom_rates.{$code}.sell"] = 'required|numeric|min:0.0001';
         }
 
         return $rules;
