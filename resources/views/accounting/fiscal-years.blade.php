@@ -80,7 +80,7 @@
                                 @if ($fiscalYear->status?->value === 'Open')
                                     <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}"
                                           class="flex items-center justify-center gap-2"
-                                          onsubmit="return confirm('Close {{ $fiscalYear->year_code }}? All periods must be closed and this cannot be undone.');">
+                                          data-confirm="Close {{ $fiscalYear->year_code }}? All periods must be closed and this cannot be undone.">
                                         @csrf
                                         <input type="text" name="confirm_code" placeholder="Type {{ $fiscalYear->year_code }}" required
                                                class="w-32 px-2 py-1 text-xs bg-canvas-subtle border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-ink">
@@ -129,7 +129,7 @@
                             <td class="px-4 py-3 text-center">
                                 @if ($period->status?->value === 'Open')
                                     <form method="POST" action="{{ route('accounting.period.close', $period) }}"
-                                          onsubmit="return confirm('Close period {{ $period->period_code }}?');">
+                                          data-confirm="Close period {{ $period->period_code }}?">
                                         @csrf
                                         <input type="hidden" name="period_id" value="{{ $period->id }}">
                                         <input type="hidden" name="closure_date" value="{{ $period->end_date?->toDateString() }}">

@@ -6,7 +6,16 @@ use App\Exceptions\Domain\EncryptionConfigurationException;
 
 class EncryptionService
 {
+    /**
+     * Payload prefix marking the authenticated format (iv + ciphertext + MAC).
+     * Payloads without it are legacy CBC-without-MAC values; decrypt() still
+     * reads them so existing rows keep working until re-encrypted.
+     */
+    protected const FORMAT_V2_PREFIX = 'v2:';
+
     protected string $key;
+
+    protected string $macKey;
 
     /**
      * Optional credential overrides allow instantiating the service with
@@ -33,6 +42,10 @@ class EncryptionService
 
         // Derive a proper 32-byte key using PBKDF2 (AES-256-CBC requires 32 bytes)
         $this->key = hash_pbkdf2('sha256', $rawKey, $salt, $iterations, 32, true);
+
+        // Separate MAC subkey via HKDF so the encryption key is never reused
+        // for authentication (key separation).
+        $this->macKey = hash_hkdf('sha256', $this->key, 32, 'encryption-mac');
     }
 
     public function encrypt(string $data): string
@@ -46,17 +59,64 @@ class EncryptionService
             $iv
         );
 
-        return base64_encode($iv.$ciphertext);
+        // Encrypt-then-MAC over iv + ciphertext prevents tampering with the
+        // otherwise malleable CBC payload.
+        $mac = hash_hmac('sha256', $iv.$ciphertext, $this->macKey, true);
+
+        return self::FORMAT_V2_PREFIX.base64_encode($iv.$ciphertext.$mac);
     }
 
     public function decrypt(string $encryptedData): ?string
     {
-        $data = base64_decode($encryptedData);
+        if (str_starts_with($encryptedData, self::FORMAT_V2_PREFIX)) {
+            return $this->decryptV2(substr($encryptedData, strlen(self::FORMAT_V2_PREFIX)));
+        }
+
+        return $this->decryptLegacy($encryptedData);
+    }
+
+    /**
+     * Whether the stored payload predates the MAC'd format and should be
+     * re-encrypted (customers:re-encrypt upgrades these in place).
+     */
+    public function isLegacyFormat(string $encryptedData): bool
+    {
+        return ! str_starts_with($encryptedData, self::FORMAT_V2_PREFIX);
+    }
+
+    protected function decryptV2(string $payload): ?string
+    {
+        $data = base64_decode($payload, true);
+        // iv (16) + at least one ciphertext block (16) + mac (32)
+        if ($data === false || strlen($data) < 64) {
+            return null;
+        }
+
+        $mac = substr($data, -32);
+        $ivCiphertext = substr($data, 0, -32);
+
+        if (! hash_equals(hash_hmac('sha256', $ivCiphertext, $this->macKey, true), $mac)) {
+            return null;
+        }
+
+        return $this->decryptRaw(substr($ivCiphertext, 16), substr($ivCiphertext, 0, 16));
+    }
+
+    /**
+     * Legacy format: base64(iv + ciphertext) with no integrity protection.
+     */
+    protected function decryptLegacy(string $encryptedData): ?string
+    {
+        $data = base64_decode($encryptedData, true);
         if ($data === false || strlen($data) < 17) {
             return null;
         }
-        $iv = substr($data, 0, 16);
-        $ciphertext = substr($data, 16);
+
+        return $this->decryptRaw(substr($data, 16), substr($data, 0, 16));
+    }
+
+    protected function decryptRaw(string $ciphertext, string $iv): ?string
+    {
         $result = openssl_decrypt(
             $ciphertext,
             'AES-256-CBC',

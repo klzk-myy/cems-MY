@@ -143,6 +143,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Sanctions API
         Route::post('/sanctions/search', [SanctionController::class, 'search'])
+            ->middleware('throttle:15,1')
             ->name('api.v1.sanctions.search');
 
         // Reports API

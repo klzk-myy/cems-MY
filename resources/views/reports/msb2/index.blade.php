@@ -86,7 +86,7 @@
             </x-stat-grid>
 
             <div class="flex justify-end gap-3">
-                <x-button variant="secondary" type="button" @click="window.print()">Print Report</x-button>
+                <x-button variant="secondary" type="button" data-print>Print Report</x-button>
                 <form method="POST" action="{{ route('reports.msb2.export', ['date' => $date]) }}">
                     @csrf
                     <x-button type="submit" variant="primary">Export Report</x-button>

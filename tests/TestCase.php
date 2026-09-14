@@ -259,6 +259,17 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
+     * Session payload marking the request as freshly password-confirmed,
+     * satisfying the password.confirm middleware on destructive routes.
+     *
+     * @return array<string, int>
+     */
+    protected function passwordConfirmedSession(): array
+    {
+        return ['auth.password_confirmed_at' => time()];
+    }
+
+    /**
      * Record an approved PEP sign-off for a customer so transaction
      * creation passes the head-office approval gate.
      */

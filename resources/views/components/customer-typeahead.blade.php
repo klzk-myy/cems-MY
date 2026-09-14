@@ -13,69 +13,10 @@ $initialName = ($initialId !== null && $initialId !== '') ? ($customers[$initial
 @endphp
 
 <div class="mb-4"
-     x-data="{
-        query: @js($initialName ?? ''),
-        selectedId: @js($initialId ?? ''),
-        results: [],
-        screening: null,
-        open: false,
-        loading: false,
-        active: -1,
-        controller: null,
-        search() {
-            if (this.controller) this.controller.abort();
-            const q = this.query.trim();
-            if (this.selectedId) this.selectedId = '';
-            if (q.length < 2) {
-                this.results = []; this.screening = null; this.open = false; this.loading = false;
-                return;
-            }
-            this.controller = new AbortController();
-            this.loading = true;
-            fetch(@js(route('customers.search')) + '?query=' + encodeURIComponent(q), {
-                signal: this.controller.signal,
-                credentials: 'same-origin',
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            }).then(r => r.json()).then(data => {
-                this.results = data.results || [];
-                this.screening = data.query_screening || null;
-                this.active = this.results.length ? 0 : -1;
-                this.open = true;
-                this.loading = false;
-            }).catch(e => { if (e.name !== 'AbortError') this.loading = false; });
-        },
-        move(step) {
-            if (! this.open || ! this.results.length) return;
-            this.active = (this.active + step + this.results.length) % this.results.length;
-        },
-        choose() {
-            if (this.open && this.active >= 0 && this.results[this.active]) {
-                this.select(this.results[this.active]);
-            }
-        },
-        select(c) {
-            this.selectedId = String(c.id);
-            this.query = c.full_name;
-            this.open = false;
-            this.screening = null;
-        },
-        get banner() {
-            if (this.selectedId) {
-                const c = this.results.find(r => String(r.id) === this.selectedId);
-                if (c && c.is_sanctioned) {
-                    return { text: 'Sanctions flag: this customer has a screening hit — the transaction will be blocked.', danger: true };
-                }
-                return null;
-            }
-            if (! this.screening || this.screening.action === 'clear') return null;
-            const m = (this.screening.matches || [])[0];
-            const name = m ? m.entity_name + (m.list ? ' — ' + m.list : '') : '';
-            if (this.screening.action === 'block') {
-                return { text: 'Possible sanctions BLOCK match' + (name ? ': ' + name : '') + ' (score ' + this.screening.score + ')', danger: true };
-            }
-            return { text: 'Possible sanctions match' + (name ? ': ' + name : '') + ' (score ' + this.screening.score + ')', danger: false };
-        },
-     }"
+     x-data="customerTypeahead"
+     data-initial-name="{{ $initialName ?? '' }}"
+     data-initial-id="{{ $initialId ?? '' }}"
+     data-search-url="{{ route('customers.search') }}"
      @click.outside="open = false">
     <label for="{{ $name }}_search" class="block text-sm font-medium text-ink">
         {{ $label }}
@@ -89,9 +30,9 @@ $initialName = ($initialId !== null && $initialId !== '') ? ($customers[$initial
                @input.debounce.400ms="search()"
                @keydown.arrow-down.prevent="move(1)"
                @keydown.arrow-up.prevent="move(-1)"
-               @keydown.enter="if (open) { $event.preventDefault(); choose(); }"
+               @keydown.enter="enter($event)"
                @keydown.escape="open = false"
-               @focus="if (results.length) open = true"
+               @focus="focus()"
                autocomplete="off"
                placeholder="Type customer name or IC number…"
                role="combobox"

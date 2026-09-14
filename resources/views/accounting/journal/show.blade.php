@@ -127,7 +127,7 @@
 
         @can('reverse', $entry)
             @if($entry->isPosted())
-                <div x-data="{ open: false }" @open-reverse-modal.window="open = true">
+                <div x-data="journalShow" @open-reverse-modal.window="open = true">
                     <div x-show="open" x-cloak
                          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
                          @keydown.escape.window="open = false">

@@ -64,7 +64,7 @@
                                             <x-button type="submit" variant="success">Resume</x-button>
                                         </form>
                                     @endif
-                                    <form action="{{ route('reports.schedules.destroy', $schedule) }}" method="POST" onsubmit="return confirm('Delete this schedule?')">
+                                    <form action="{{ route('reports.schedules.destroy', $schedule) }}" method="POST" data-confirm="Delete this schedule?">
                                         @csrf @method('DELETE')
                                         <x-button type="submit" variant="danger">Delete</x-button>
                                     </form>

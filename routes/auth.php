@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use Illuminate\Support\Facades\Route;
@@ -15,3 +16,10 @@ Route::middleware(['guest'])->group(function () {
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+
+Route::middleware(['auth', 'auth.session'])->group(function () {
+    Route::get('/confirm-password', [ConfirmablePasswordController::class, 'show'])->name('password.confirm');
+    Route::post('/confirm-password', [ConfirmablePasswordController::class, 'store'])
+        ->name('password.confirm.store')
+        ->middleware('throttle:5,1');
+});

@@ -10,25 +10,10 @@
      The badge counts poll the unread-count endpoint every 60s so they stay
      fresh across tabs without a websocket dependency. --}}
 <div class="relative flex items-center gap-2"
-     x-data="{
-         open: false,
-         count: {{ $unreadCount }},
-         dlq: {{ $dlqCount }},
-         poll() {
-             fetch('{{ route('notifications.unread-count') }}', {
-                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-             })
-             .then(r => r.json())
-             .then(d => { this.count = d.count; this.dlq = d.dlq_count; })
-             .catch(() => {});
-         },
-         init() {
-             // Server data is already fresh on page load (NotificationComposer);
-             // only the periodic refresh is needed to pick up changes made in
-             // other tabs. Polling is exempt from the session idle timer.
-             setInterval(() => this.poll(), 60000);
-         }
-     }"
+     x-data="notificationBell"
+     data-count="{{ $unreadCount }}"
+     data-dlq="{{ $dlqCount }}"
+     data-poll-url="{{ route('notifications.unread-count') }}"
      @click.outside="open = false"
     @keydown.escape.window="open = false">
 

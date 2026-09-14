@@ -36,7 +36,7 @@
                     <thead class="bg-canvas-subtle">
                         <tr>
                             <th class="px-4 py-3 text-left font-medium text-ink-muted">
-                                <input type="checkbox" onchange="document.querySelectorAll('[data-alert-check]').forEach(c => c.checked = this.checked)" aria-label="Select all alerts">
+                                <input type="checkbox" data-check-all="[data-alert-check]" aria-label="Select all alerts">
                             </th>
                             <th class="px-4 py-3 text-left font-medium text-ink-muted">Priority</th>
                             <th class="px-4 py-3 text-left font-medium text-ink-muted">Type</th>

@@ -247,7 +247,7 @@
                         <x-button href="{{ route('setup.index', ['step' => 6]) }}" variant="secondary">Previous</x-button>
                         <x-button id="complete-setup-btn" type="button" variant="primary">Complete Setup</x-button>
                     </div>
-                    <script>
+                    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
                         document.getElementById('complete-setup-btn').addEventListener('click', function () {
                             var btn = this;
                             var err = document.getElementById('setup-complete-error');

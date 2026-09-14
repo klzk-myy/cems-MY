@@ -12,7 +12,7 @@
         <x-card>
             <div class="flex flex-wrap gap-4 items-center justify-between">
                 <div class="flex gap-3">
-                    <x-button variant="secondary" @click="window.print()">Print</x-button>
+                    <x-button variant="secondary" data-print>Print</x-button>
                     <form method="POST" action="{{ route('reports.position-limit.export') }}">
                         @csrf
                         <x-button variant="primary" type="submit">Export</x-button>

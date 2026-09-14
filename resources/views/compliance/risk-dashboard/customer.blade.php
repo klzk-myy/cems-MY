@@ -1,6 +1,6 @@
 <x-app-layout title="Customer Risk Dashboard">
     <div class="space-y-6"
-         x-data="{ showRescreen: false }">
+         x-data="riskCustomer">
         <x-page-header
             title="Customer Risk Dashboard"
             :description="'Risk assessment for '.$customer->full_name"

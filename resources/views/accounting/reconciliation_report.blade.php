@@ -4,7 +4,7 @@
             Reconciliation summary for account {{ $report['account_code'] }} · {{ $report['period']['from'] }} to {{ $report['period']['to'] }}
 
             <x-slot:actions>
-                <x-button variant="secondary" onclick="window.print()">Print</x-button>
+                <x-button variant="secondary" data-print>Print</x-button>
                 <x-button variant="secondary" href="{{ route('accounting.reconciliation.export', ['account_code' => $report['account_code'], 'from' => $report['period']['from'], 'to' => $report['period']['to']]) }}">Export</x-button>
             </x-slot:actions>
         </x-page-header>

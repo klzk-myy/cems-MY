@@ -130,7 +130,71 @@ class EncryptionServiceTest extends TestCase
     public function encrypt_produces_base64_output(): void
     {
         $encrypted = $this->encryptionService->encrypt('test');
-        $this->assertTrue(base64_decode($encrypted) !== false);
+
+        // Payload is 'v2:' followed by base64(iv + ciphertext + mac). Strip
+        // the prefix before decoding so the assertion actually verifies the
+        // body is valid base64 rather than relying on base64_decode's
+        // lenient handling of the colon character.
+        $this->assertStringStartsWith('v2:', $encrypted);
+        $payload = substr($encrypted, 3);
+        $this->assertNotFalse(base64_decode($payload, true), 'payload after v2: prefix must be valid base64');
+    }
+
+    #[Test]
+    public function encrypt_produces_v2_prefixed_payload(): void
+    {
+        $encrypted = $this->encryptionService->encrypt('test');
+
+        $this->assertStringStartsWith('v2:', $encrypted);
+        $this->assertFalse($this->encryptionService->isLegacyFormat($encrypted));
+    }
+
+    #[Test]
+    public function tampered_v2_ciphertext_fails_integrity_check(): void
+    {
+        $encrypted = $this->encryptionService->encrypt('sensitive value');
+
+        $payload = base64_decode(substr($encrypted, 3));
+        $payload[20] = $payload[20] === "\x00" ? "\x01" : "\x00";
+
+        $this->assertNull($this->encryptionService->decrypt('v2:'.base64_encode($payload)));
+    }
+
+    #[Test]
+    public function tampered_v2_mac_fails_integrity_check(): void
+    {
+        $encrypted = $this->encryptionService->encrypt('sensitive value');
+
+        $payload = base64_decode(substr($encrypted, 3));
+        $payload[strlen($payload) - 1] = $payload[strlen($payload) - 1] === "\x00" ? "\x01" : "\x00";
+
+        $this->assertNull($this->encryptionService->decrypt('v2:'.base64_encode($payload)));
+    }
+
+    #[Test]
+    public function decrypts_legacy_payloads_without_mac(): void
+    {
+        // Pre-MAC format: base64(iv + AES-256-CBC ciphertext)
+        $reflection = new \ReflectionProperty($this->encryptionService, 'key');
+        $reflection->setAccessible(true);
+        $key = $reflection->getValue($this->encryptionService);
+
+        $iv = random_bytes(16);
+        $ciphertext = openssl_encrypt('legacy data', 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+        $legacy = base64_encode($iv.$ciphertext);
+
+        $this->assertTrue($this->encryptionService->isLegacyFormat($legacy));
+        $this->assertSame('legacy data', $this->encryptionService->decrypt($legacy));
+    }
+
+    #[Test]
+    public function v2_payload_rejects_truncated_input(): void
+    {
+        $encrypted = $this->encryptionService->encrypt('x');
+        $payload = base64_decode(substr($encrypted, 3));
+
+        $this->assertNull($this->encryptionService->decrypt('v2:'.base64_encode(substr($payload, 0, 40))));
+        $this->assertNull($this->encryptionService->decrypt('v2:not-base64!!!'));
     }
 
     #[Test]

@@ -131,7 +131,7 @@
 
                 @if($stockTransfer->canCancel())
                     @can('cancel', $stockTransfer)
-                    <div x-data="{ showCancelModal: false }" class="inline">
+                    <div x-data="transferModals" class="inline">
                         <x-button @click="showCancelModal = true" variant="danger">Cancel</x-button>
 
                         <div x-show="showCancelModal"
@@ -185,7 +185,7 @@
 
                 @if(in_array($stockTransfer->status->value, ['Requested', 'BranchManagerApproved', 'HqApproved', 'InTransit']))
                     @can('reject', $stockTransfer)
-                    <div x-data="{ showRejectModal: false }" class="inline">
+                    <div x-data="transferModals" class="inline">
                         <x-button @click="showRejectModal = true" variant="danger">Reject</x-button>
 
                         <div x-show="showRejectModal"

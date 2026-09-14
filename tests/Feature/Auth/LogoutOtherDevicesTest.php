@@ -51,6 +51,7 @@ class LogoutOtherDevicesTest extends TestCase
     public function correct_current_password_logs_out_other_devices(): void
     {
         $originalHash = $this->user->password_hash;
+        $originalChangedAt = $this->user->password_changed_at;
 
         $this->actingAs($this->user)
             ->from(route('password.change'))
@@ -67,12 +68,16 @@ class LogoutOtherDevicesTest extends TestCase
         $this->assertNotSame($originalHash, $this->user->password_hash);
         $this->assertTrue(Hash::check($this->currentPassword, $this->user->password_hash));
 
-        // The superseded hash is archived for reuse prevention and the
-        // rotation timestamp is refreshed.
-        $this->assertDatabaseHas('password_histories', [
+        // The password itself is not changing — only the stored hash is
+        // rotated to invalidate other sessions. The old hash must NOT be
+        // archived to PasswordHistory (otherwise reusing the same password
+        // later would be rejected by PasswordNotRecentlyUsed), and the
+        // password_changed_at timestamp must NOT be refreshed.
+        $this->assertDatabaseMissing('password_histories', [
             'user_id' => $this->user->id,
             'password' => $originalHash,
         ]);
+        $this->assertEquals($originalChangedAt, $this->user->password_changed_at);
     }
 
     #[Test]

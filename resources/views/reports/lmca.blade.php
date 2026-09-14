@@ -5,7 +5,7 @@
             description="Monthly Large Cash Transaction Report"
         >
             <x-slot:actions>
-                <x-button variant="secondary" @click="window.print()">Print</x-button>
+                <x-button variant="secondary" data-print>Print</x-button>
                 <form method="POST" action="{{ route('reports.lmca.export', ['month' => $month]) }}">
                     @csrf
                     <x-button variant="primary" type="submit">Export</x-button>

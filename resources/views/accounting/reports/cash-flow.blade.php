@@ -2,7 +2,7 @@
     <div class="space-y-6">
         <x-page-header title="Cash Flow Statement" description="Cash movement by operating, investing, and financing activities">
             <x-slot:actions>
-                <x-button variant="secondary" onclick="window.print()">Print</x-button>
+                <x-button variant="secondary" data-print>Print</x-button>
             </x-slot:actions>
         </x-page-header>
 

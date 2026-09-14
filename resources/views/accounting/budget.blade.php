@@ -21,7 +21,7 @@
                 <p class="text-sm text-ink-muted">All active expense accounts already have budgets for this period.</p>
             @else
                 <form method="POST" action="{{ route('accounting.budget.store') }}" class="space-y-4"
-                      x-data="{ rows: [{ account_code: '', amount: '' }] }">
+                      x-data="budgetRows">
                     @csrf
                     <input type="hidden" name="period_code" value="{{ $periodCode }}">
 
@@ -37,13 +37,13 @@
                                 </select>
                                 <input type="number" :name="'budgets['+index+'][amount]'" x-model="row.amount" step="0.01" min="0" required placeholder="Amount"
                                        class="w-40 px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg text-ink">
-                                <x-button type="button" variant="ghost" size="sm" @click="rows.splice(index, 1)" x-show="rows.length > 1">✕</x-button>
+                                <x-button type="button" variant="ghost" size="sm" @click="removeRow(index)" x-show="rows.length > 1">✕</x-button>
                             </div>
                         </template>
                     </div>
 
                     <div class="flex gap-3">
-                        <x-button type="button" variant="secondary" @click="rows.push({ account_code: '', amount: '' })">+ Add Row</x-button>
+                        <x-button type="button" variant="secondary" @click="addRow()">+ Add Row</x-button>
                         <x-button type="submit" variant="primary">Save Budgets</x-button>
                     </div>
                 </form>

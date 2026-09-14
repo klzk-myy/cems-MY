@@ -222,7 +222,11 @@ class TransactionControllerStoreTest extends TestCase
         $webPayload['idempotency_key'] = uniqid('web_', true);
         unset($webPayload['till_id']);
 
-        $this->actingAs($webTeller);
+        // The API call above ran under auth:sanctum, which leaves sanctum as
+        // the default guard. Pin the web guard explicitly so auth.session's
+        // AuthenticateSession middleware resolves a SessionGuard (RequestGuard
+        // has no viaRemember()).
+        $this->actingAs($webTeller, 'web');
         $this->setMfaVerification($webTeller);
         $webResponse = $this->post('/transactions', $webPayload);
         $webResponse->assertSessionHasNoErrors();

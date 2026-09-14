@@ -173,7 +173,7 @@
 
         @if ($result->isPending())
             <x-card title="Disposition">
-                <div x-data="{ openModal: null }" class="space-y-4">
+                <div x-data="screeningMatchModals" class="space-y-4">
                     <p class="text-sm text-ink-muted">
                         @if ($result->isAdverseMedia())
                             Confirming this adverse media match escalates an enhanced due diligence review alert. The customer is not frozen or blocked.

@@ -26,7 +26,7 @@ $icons = [
 ];
 @endphp
 
-<div x-data="{ shown: true }"
+<div x-data="alertBox"
      x-show="shown"
      {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => "mb-6 border rounded-lg p-4 $styles"]) }}
      x-transition>

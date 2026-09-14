@@ -17,8 +17,7 @@ class HighRiskCountryFactory extends Factory
      */
     public function definition(): array
     {
-        static $codeCounter = 0;
-        $countryCode = strtoupper($this->faker->countryCode);
+        $countryCode = strtoupper($this->faker->unique()->countryCode);
 
         return [
             'country_code' => $countryCode,

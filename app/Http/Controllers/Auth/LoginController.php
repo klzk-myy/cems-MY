@@ -140,6 +140,14 @@ class LoginController extends Controller
         $user->password = $validated['password']; // mutator hashes + stamps password_changed_at
         $user->save();
 
+        // Refresh this session's stored password hash so the current device
+        // stays valid under auth.session; every other session fails its next
+        // check against the new hash and is logged out.
+        $request->session()->put(
+            'password_hash_'.Auth::getDefaultDriver(),
+            $user->getAuthPassword()
+        );
+
         $this->auditService->logWithSeverity('password_changed_forced_rotation', [
             'user_id' => $user->id,
             'entity_type' => 'User',
@@ -166,14 +174,14 @@ class LoginController extends Controller
             return back()->withErrors(['current_password' => 'The current password is incorrect.']);
         }
 
-        // Equivalent to Auth::logoutOtherDevices(), routed through the
-        // password mutator on purpose: EloquentUserProvider pre-hashes the
-        // value before assigning it, so calling the framework method here
-        // would store bcrypt(bcrypt(plain)) and lock the user out (see the
-        // reset flow note in PasswordResetController). Re-hashing changes
-        // the stored hash, so every other session fails validation against
-        // it while this device keeps working.
-        $user->forceFill(['password' => $validated['current_password']])->save();
+        // Re-hash the same password directly on the column (bypassing the
+        // password mutator) so the stored hash changes — every other session
+        // fails validation against it under auth.session while this device
+        // keeps working. Going through the mutator would record the current
+        // hash to PasswordHistory and stamp password_changed_at, neither of
+        // which is correct since the password itself is not changing.
+        $user->password_hash = Hash::make($validated['current_password']);
+        $user->save();
 
         // Refresh this device's stored hash so the current session stays
         // valid under the auth.session middleware, then rotate the CSRF

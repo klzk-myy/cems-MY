@@ -46,6 +46,29 @@ class SecurityHeadersTest extends TestCase
     }
 
     #[Test]
+    public function script_src_drops_unsafe_inline_and_carries_nonce(): void
+    {
+        $middleware = new SecurityHeaders;
+        $request = Request::create('/test', 'GET');
+        $response = new Response('test content');
+
+        $result = $middleware->handle($request, function ($req) use ($response) {
+            return $response;
+        });
+
+        $csp = $result->headers->get('Content-Security-Policy')
+            ?? $result->headers->get('Content-Security-Policy-Report-Only');
+
+        preg_match('/script-src ([^;]+)/', $csp, $matches);
+
+        $this->assertNotEmpty($matches, 'script-src directive missing');
+        $scriptSrc = $matches[1] ?? '';
+        $this->assertStringNotContainsString('unsafe-inline', $scriptSrc);
+        $this->assertStringNotContainsString('unsafe-eval', $scriptSrc);
+        $this->assertStringContainsString("'nonce-", $scriptSrc);
+    }
+
+    #[Test]
     public function middleware_applies_csp_headers(): void
     {
         $middleware = new SecurityHeaders;

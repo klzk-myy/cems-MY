@@ -44,15 +44,16 @@ class SecurityHeaders
     /**
      * Content Security Policy directives.
      *
-     * Configured for Tailwind CSS + Alpine.js compatibility.
-     * Note: 'unsafe-inline' is required for Tailwind CSS to function properly.
-     * 'unsafe-eval' is disabled for security.
+     * Scripts run through the @alpinejs/csp build plus per-request nonces, so
+     * neither 'unsafe-inline' nor 'unsafe-eval' is needed in script-src.
+     * 'unsafe-inline' stays in style-src for Alpine's x-show/x-cloak toggles
+     * and Tailwind's generated attribute styles.
      *
      * @var array<string, string>
      */
     protected array $cspDirectives = [
         'default-src' => "'self'",
-        'script-src' => "'self' 'unsafe-inline'",
+        'script-src' => "'self'",
         'style-src' => "'self' 'unsafe-inline'",
         'img-src' => "'self' data: https:",
         'font-src' => "'self' data:",
@@ -130,7 +131,7 @@ class SecurityHeaders
         $directives = $this->cspDirectives;
 
         if ($nonce !== null) {
-            $directives['script-src'] = "'self' 'nonce-{$nonce}' 'unsafe-inline'";
+            $directives['script-src'] = "'self' 'nonce-{$nonce}'";
             $directives['style-src'] = "'self' 'nonce-{$nonce}' 'unsafe-inline'";
         }
 

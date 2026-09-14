@@ -30,6 +30,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $username
  * @property string $email
  * @property string $password_hash
+ * @property Carbon|null $password_changed_at
  * @property UserRole $role
  * @property bool $mfa_enabled
  * @property string|null $mfa_secret

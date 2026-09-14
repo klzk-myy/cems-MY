@@ -44,7 +44,7 @@
                                     <x-button href="{{ route('system.currencies.edit', $currency) }}" variant="ghost" size="sm">Edit</x-button>
                                     @if($currency->is_active)
                                         <form action="{{ route('system.currencies.disable', $currency) }}" method="POST"
-                                              onsubmit="return confirm('Disable {{ $currency->code }}? It will disappear from all form selects.')">
+                                              data-confirm="Disable {{ $currency->code }}? It will disappear from all form selects.">
                                             @csrf
                                             <x-button type="submit" variant="danger" size="sm">Disable</x-button>
                                         </form>

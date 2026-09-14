@@ -65,7 +65,7 @@
                         {{ $branch->tillBalances()->count() }} till balance(s).
                     </p>
                     <form action="{{ route('branches.deactivate', $branch) }}" method="POST"
-                          onsubmit="return confirm('Deactivate {{ $branch->code }}?')">
+                          data-confirm="Deactivate {{ $branch->code }}?">
                         @csrf
                         <x-button type="submit" variant="danger">Deactivate Branch</x-button>
                     </form>

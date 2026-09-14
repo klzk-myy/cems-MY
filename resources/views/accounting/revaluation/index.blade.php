@@ -19,7 +19,7 @@
                     </p>
                 </div>
                 <form method="POST" action="{{ route('accounting.revaluation.run') }}"
-                      onsubmit="return confirm('Run revaluation for {{ $status['month'] }}? This posts journal entries for unrealized gains/losses.');">
+                      data-confirm="Run revaluation for {{ $status['month'] }}? This posts journal entries for unrealized gains/losses.">
                     @csrf
                     <x-button variant="primary" type="submit">Run Revaluation</x-button>
                 </form>

@@ -25,7 +25,7 @@
 
         <x-card title="Import Bank Statement">
             <form method="POST" action="{{ route('accounting.reconciliation.import') }}" class="space-y-4"
-                  x-data="{ lines: [{ date: '', reference: '', description: '', debit: '', credit: '' }] }">
+                  x-data="reconciliationLines">
                 @csrf
                 <x-select name="account_code" label="Account" :options="$cashAccounts->pluck('account_name', 'account_code')->all()" required placeholder="Select account" />
 
@@ -43,14 +43,14 @@
                             <div class="flex gap-2">
                                 <input type="number" :name="'lines['+index+'][credit]'" x-model="line.credit" step="0.01" min="0" placeholder="Credit"
                                        class="w-full px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg text-ink">
-                                <x-button type="button" variant="ghost" size="sm" @click="lines.splice(index, 1)" x-show="lines.length > 1">✕</x-button>
+                                <x-button type="button" variant="ghost" size="sm" @click="removeLine(index)" x-show="lines.length > 1">✕</x-button>
                             </div>
                         </div>
                     </template>
                 </div>
 
                 <div class="flex gap-3">
-                    <x-button type="button" variant="secondary" @click="lines.push({ date: '', reference: '', description: '', debit: '', credit: '' })">+ Add Line</x-button>
+                    <x-button type="button" variant="secondary" @click="addLine()">+ Add Line</x-button>
                     <x-button type="submit" variant="primary">Import Statement</x-button>
                 </div>
             </form>
@@ -80,7 +80,7 @@
                                             <x-button variant="ghost" size="sm" type="submit">Match</x-button>
                                         </form>
                                         <form method="POST" action="{{ route('accounting.reconciliation.exception', $item['id']) }}"
-                                              onsubmit="return confirm('Mark as exception?');">
+                                              data-confirm="Mark as exception?">
                                             @csrf
                                             <input type="hidden" name="reason" value="Requires investigation">
                                             <x-button variant="ghost" size="sm" type="submit">Exception</x-button>
@@ -118,7 +118,7 @@
                                             <x-button variant="ghost" size="sm" type="submit">Match</x-button>
                                         </form>
                                         <form method="POST" action="{{ route('accounting.reconciliation.exception', $item['id']) }}"
-                                              onsubmit="return confirm('Mark as exception?');">
+                                              data-confirm="Mark as exception?">
                                             @csrf
                                             <input type="hidden" name="reason" value="Requires investigation">
                                             <x-button variant="ghost" size="sm" type="submit">Exception</x-button>

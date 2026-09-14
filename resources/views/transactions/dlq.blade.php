@@ -49,7 +49,7 @@
                                         <x-button type="submit" variant="primary" size="sm">Retry</x-button>
                                     </form>
                                     <form method="POST" action="{{ route('transactions.dlq.purge', $transaction) }}"
-                                          onsubmit="return confirm('Archive {{ $transaction->reference }} and remove it from the dead letter queue? The record is retained, not deleted.');">
+                                          data-confirm="Archive {{ $transaction->reference }} and remove it from the dead letter queue? The record is retained, not deleted.">
                                         @csrf
                                         <x-button type="submit" variant="danger" size="sm">Archive</x-button>
                                     </form>

@@ -40,7 +40,7 @@ class UserManagementRoleAssignmentTest extends TestCase
     #[Test]
     public function manager_cannot_create_an_admin_via_forged_post(): void
     {
-        $response = $this->actingAs($this->manager)->post(route('users.store'), [
+        $response = $this->actingAs($this->manager)->withSession($this->passwordConfirmedSession())->post(route('users.store'), [
             'username' => 'escalated',
             'email' => 'escalated@example.com',
             'password' => 'StrongPass123!',
@@ -56,7 +56,7 @@ class UserManagementRoleAssignmentTest extends TestCase
     #[Test]
     public function manager_cannot_create_a_manager_via_forged_post(): void
     {
-        $response = $this->actingAs($this->manager)->post(route('users.store'), [
+        $response = $this->actingAs($this->manager)->withSession($this->passwordConfirmedSession())->post(route('users.store'), [
             'username' => 'peer',
             'email' => 'peer@example.com',
             'password' => 'StrongPass123!',
@@ -72,7 +72,7 @@ class UserManagementRoleAssignmentTest extends TestCase
     #[Test]
     public function manager_can_create_a_teller_in_own_branch(): void
     {
-        $response = $this->actingAs($this->manager)->post(route('users.store'), [
+        $response = $this->actingAs($this->manager)->withSession($this->passwordConfirmedSession())->post(route('users.store'), [
             'username' => 'newteller',
             'email' => 'newteller@example.com',
             'password' => 'StrongPass123!',
@@ -93,7 +93,7 @@ class UserManagementRoleAssignmentTest extends TestCase
     {
         $otherBranch = Branch::factory()->create();
 
-        $this->actingAs($this->manager)->post(route('users.store'), [
+        $this->actingAs($this->manager)->withSession($this->passwordConfirmedSession())->post(route('users.store'), [
             'username' => 'forcedbranch',
             'email' => 'forcedbranch@example.com',
             'password' => 'StrongPass123!',
@@ -111,7 +111,7 @@ class UserManagementRoleAssignmentTest extends TestCase
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
-        $response = $this->actingAs($admin)->post(route('users.store'), [
+        $response = $this->actingAs($admin)->withSession($this->passwordConfirmedSession())->post(route('users.store'), [
             'username' => 'bean',
             'email' => 'bean@example.com',
             'password' => 'StrongPass123!',
@@ -134,7 +134,7 @@ class UserManagementRoleAssignmentTest extends TestCase
             'branch_id' => $this->branch->id,
         ]);
 
-        $response = $this->actingAs($this->manager)->put(route('users.update', $teller), [
+        $response = $this->actingAs($this->manager)->withSession($this->passwordConfirmedSession())->put(route('users.update', $teller), [
             'username' => $teller->username,
             'email' => $teller->email,
             'role' => UserRole::Admin->value,
@@ -154,7 +154,7 @@ class UserManagementRoleAssignmentTest extends TestCase
             'branch_id' => $this->branch->id,
         ]);
 
-        $response = $this->actingAs($this->manager)->put(route('users.update', $branchAdmin), [
+        $response = $this->actingAs($this->manager)->withSession($this->passwordConfirmedSession())->put(route('users.update', $branchAdmin), [
             'username' => $branchAdmin->username,
             'email' => $branchAdmin->email,
             'role' => UserRole::Teller->value,
@@ -187,7 +187,7 @@ class UserManagementRoleAssignmentTest extends TestCase
         ]);
         $originalHash = $branchAdmin->password_hash;
 
-        $response = $this->actingAs($this->manager)->post(
+        $response = $this->actingAs($this->manager)->withSession($this->passwordConfirmedSession())->post(
             route('users.reset-password', $branchAdmin),
             [
                 'password' => 'NewStrongPass123!',
@@ -208,7 +208,7 @@ class UserManagementRoleAssignmentTest extends TestCase
         ]);
         $originalHash = $teller->password_hash;
 
-        $response = $this->actingAs($this->manager)->post(
+        $response = $this->actingAs($this->manager)->withSession($this->passwordConfirmedSession())->post(
             route('users.reset-password', $teller),
             [
                 'password' => 'NewStrongPass123!',

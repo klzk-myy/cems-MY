@@ -7,31 +7,8 @@
         </x-page-header>
 
         <form action="{{ route('accounting.journal.store') }}" method="POST" class="space-y-6"
-              x-data="{
-                  accounts: @js($accounts->map(fn ($a) => ['code' => $a->account_code, 'label' => $a->account_code.' - '.$a->account_name])->values()),
-                  lines: [
-                      { account: '', description: '', debit: '', credit: '' },
-                      { account: '', description: '', debit: '', credit: '' },
-                  ],
-                  addLine() {
-                      this.lines.push({ account: '', description: '', debit: '', credit: '' });
-                  },
-                  removeLine(index) {
-                      if (this.lines.length > 2) this.lines.splice(index, 1);
-                  },
-                  get totalDebit() {
-                      return this.lines.reduce((sum, l) => sum + (parseFloat(l.debit) || 0), 0).toFixed(2);
-                  },
-                  get totalCredit() {
-                      return this.lines.reduce((sum, l) => sum + (parseFloat(l.credit) || 0), 0).toFixed(2);
-                  },
-                  get difference() {
-                      return (parseFloat(this.totalDebit) - parseFloat(this.totalCredit)).toFixed(2);
-                  },
-                  get balanced() {
-                      return parseFloat(this.difference) === 0 && parseFloat(this.totalDebit) > 0;
-                  }
-              }">
+              x-data="journalCreate"
+              data-accounts='@json($accounts->map(fn ($a) => ["code" => $a->account_code, "label" => $a->account_code." - ".$a->account_name])->values())'>
             @csrf
 
             @if ($errors->any())

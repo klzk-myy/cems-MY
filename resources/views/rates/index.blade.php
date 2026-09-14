@@ -1,16 +1,5 @@
 <x-app-layout title="Exchange Rates">
-    <div x-data="{
-            showOverride: false,
-            overrideCurrency: '',
-            overrideBuy: '',
-            overrideSell: '',
-            openOverride(detail) {
-                this.overrideCurrency = detail.currency || '';
-                this.overrideBuy = detail.buy || '';
-                this.overrideSell = detail.sell || '';
-                this.showOverride = true;
-            }
-         }"
+    <div x-data="ratesPage"
          @override-rate.window="openOverride($event.detail)"
          @keydown.escape.window="showOverride = false"
     >
@@ -25,7 +14,7 @@
                             <x-select name="branch_id"
                                 :options="['' => 'All branches'] + $branches->pluck('name', 'id')->toArray()"
                                 :selected="$currentBranch?->id"
-                                onchange="this.form.submit()"
+                                data-autosubmit
                                 inline />
                             <noscript><x-button type="submit" variant="secondary" size="sm">Go</x-button></noscript>
                         </form>
@@ -38,7 +27,7 @@
                             @endif
                             <x-select name="date"
                                 :options="$availableDates"
-                                onchange="this.form.submit()"
+                                data-autosubmit
                                 inline />
                         </form>
                     @endif

@@ -1,176 +1,13 @@
 <x-app-layout title="Transaction Wizard">
-    @php
-        $currencyOptions = json_encode($currencies ?? []);
-    @endphp
     <div class="space-y-6">
         <x-page-header title="New Transaction" description="Step-by-step transaction creation wizard" />
 
-        <div x-data="{
-            step: 1,
-            totalSteps: 3,
-            loading: false,
-            errorMessage: '',
-            counters: {},
-            formData: {
-                customer_id: '',
-                type: '',
-                currency_code: '',
-                amount_foreign: '',
-                rate: '',
-                till_id: '',
-                purpose: '',
-                source_of_funds: '',
-                idempotency_key: '{{ $idempotencyKey }}',
-                occupation: '',
-                employer_name: '',
-                employer_address: '',
-                annual_volume_estimate: '',
-                beneficial_owner: '',
-                source_of_wealth: '',
-                expected_frequency: '',
-            },
-            files: { proof_of_address: null, passport: null },
-            wizard: { session_id: '', cdd_level: '', cdd_description: '', hold_required: false, risk_flags: [], required_documents: [], blockedMessage: '' },
-            summary: {},
-            result: { id: '', number: '', status: '' },
-            currencies: {{ $currencyOptions }},
-            apiBase: '{{ url('api/v1') }}',
-            csrf: document.querySelector('meta[name=csrf-token]')?.content ?? '',
-            init() {
-                const branchId = {{ auth()->user()?->branch_id ?? 'null' }};
-                if (branchId) {
-                    this.fetch('{{ url('api/v1/branches') }}/' + branchId + '/counters')
-                        .then(r => r.json()).then(d => { this.counters = Object.fromEntries((d.data ?? []).map(c => [c.code, c.name])); })
-                        .catch(() => {});
-                }
-            },
-            get amountLocal() {
-                const f = parseFloat(this.formData.amount_foreign) || 0;
-                const r = parseFloat(this.formData.rate) || 0;
-                return (f * r).toFixed(2);
-            },
-            get foreignFormatted() {
-                const f = parseFloat(this.formData.amount_foreign);
-                return isNaN(f) ? '—' : (this.formData.currency_code + ' ' + f.toFixed(2));
-            },
-            get cddLevel() { return (this.wizard.cdd_level || '').toLowerCase(); },
-            get requireProofOfAddress() { return this.cddLevel === 'standard' || this.cddLevel === 'enhanced'; },
-            get requirePassport() { return this.cddLevel === 'enhanced'; },
-            get requireEnhanced() { return this.cddLevel === 'enhanced'; },
-            payload() {
-                return {
-                    customer_id: parseInt(this.formData.customer_id) || null,
-                    type: this.formData.type,
-                    currency_code: this.formData.currency_code,
-                    amount_foreign: parseFloat(this.formData.amount_foreign),
-                    rate: parseFloat(this.formData.rate),
-                    till_id: this.formData.till_id,
-                    purpose: this.formData.purpose,
-                    source_of_funds: this.formData.source_of_funds,
-                };
-            },
-            validStep1() {
-                const p = this.payload();
-                return p.customer_id && p.type && p.currency_code && p.amount_foreign > 0 && p.rate > 0 && p.till_id && p.purpose && p.source_of_funds;
-            },
-            validStep2() {
-                if (!this.formData.occupation) return false;
-                if (this.requireProofOfAddress && !this.files.proof_of_address) return false;
-                if (this.requirePassport && !this.files.passport) return false;
-                if (this.requireEnhanced) {
-                    if (!this.formData.beneficial_owner || !this.formData.source_of_wealth || !this.formData.expected_frequency) return false;
-                }
-                return true;
-            },
-            validStep3() { return true; },
-            submitStep() {
-                if (this.step === 1 && this.validStep1()) return this.callStep1();
-                if (this.step === 2 && this.validStep2()) return this.callStep2();
-                if (this.step === 3) return this.callStep3();
-            },
-            async fetch(url, opts = {}) {
-                return fetch(url, { credentials: 'same-origin', ...opts, headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json', ...(opts.headers ?? {}) } });
-            },
-            async callStep1() {
-                this.loading = true; this.errorMessage = ''; this.wizard.blockedMessage = '';
-                try {
-                    const res = await this.fetch(this.apiBase + '/wizard/transactions/step1', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.payload()),
-                    });
-                    const data = await res.json();
-                    if (res.status === 403 && data.status === 'blocked') {
-                        this.wizard.blockedMessage = data.message;
-                        return;
-                    }
-                    if (!res.ok) { this.errorMessage = data.message || 'Request failed'; return; }
-                    this.wizard.session_id = data.wizard_session_id;
-                    this.wizard.cdd_level = data.cdd_level;
-                    this.wizard.cdd_description = data.cdd_description;
-                    this.wizard.hold_required = data.hold_required;
-                    this.wizard.risk_flags = data.risk_flags ?? [];
-                    this.wizard.required_documents = data.required_documents ?? [];
-                    this.step = 2;
-                } catch (e) {
-                    this.errorMessage = 'Network error — please retry.';
-                } finally { this.loading = false; }
-            },
-            async callStep2() {
-                this.loading = true; this.errorMessage = '';
-                try {
-                    const fd = new FormData();
-                    fd.append('wizard_session_id', this.wizard.session_id);
-                    fd.append('cdd_level', this.wizard.cdd_level);
-                    fd.append('customer[occupation]', this.formData.occupation);
-                    fd.append('customer[employer_name]', this.formData.employer_name);
-                    fd.append('customer[employer_address]', this.formData.employer_address);
-                    fd.append('customer[annual_volume_estimate]', this.formData.annual_volume_estimate);
-                    if (this.requireEnhanced) {
-                        fd.append('customer[beneficial_owner]', this.formData.beneficial_owner);
-                        fd.append('customer[source_of_wealth]', this.formData.source_of_wealth);
-                        fd.append('transaction[expected_frequency]', this.formData.expected_frequency);
-                    }
-                    if (this.files.proof_of_address) fd.append('customer[proof_of_address]', this.files.proof_of_address);
-                    if (this.files.passport) fd.append('customer[passport]', this.files.passport);
-                    const res = await this.fetch(this.apiBase + '/wizard/transactions/step2', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (!res.ok) { this.errorMessage = data.message || 'Request failed'; return; }
-                    this.summary = data.transaction_summary;
-                    this.step = 3;
-                } catch (e) {
-                    this.errorMessage = 'Network error — please retry.';
-                } finally { this.loading = false; }
-            },
-            async callStep3() {
-                this.loading = true; this.errorMessage = '';
-                try {
-                    const res = await this.fetch(this.apiBase + '/wizard/transactions/step3', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            wizard_session_id: this.wizard.session_id,
-                            confirm_details: true,
-                            idempotency_key: this.formData.idempotency_key,
-                        }),
-                    });
-                    const data = await res.json();
-                    if (!res.ok) { this.errorMessage = data.message || 'Request failed'; return; }
-                    this.result = { id: data.transaction_id, number: data.transaction_number, status: data.transaction_status };
-                    this.step = 4;
-                } catch (e) {
-                    this.errorMessage = 'Network error — please retry.';
-                } finally { this.loading = false; }
-            },
-            reset() {
-                this.step = 1;
-                this.errorMessage = ''; this.wizard.blockedMessage = '';
-                this.wizard = { session_id: '', cdd_level: '', cdd_description: '', hold_required: false, risk_flags: [], required_documents: [], blockedMessage: '' };
-                this.summary = {}; this.result = { id: '', number: '', status: '' };
-                this.formData = { ...this.formData, customer_id: '', type: '', currency_code: '', amount_foreign: '', rate: '', till_id: '', purpose: '', source_of_funds: '', occupation: '', employer_name: '', employer_address: '', annual_volume_estimate: '', beneficial_owner: '', source_of_wealth: '', expected_frequency: '', idempotency_key: '{{ $idempotencyKey }}' };
-                this.files = { proof_of_address: null, passport: null };
-            },
-        }" class="max-w-4xl mx-auto">
+        <div x-data="transactionWizard"
+             data-api-base="{{ url('api/v1') }}"
+             data-branch-id="{{ auth()->user()?->branch_id ?? '' }}"
+             data-idempotency-key="{{ $idempotencyKey }}"
+             data-currencies='@json($currencies ?? [])'
+             class="max-w-4xl mx-auto">
 
         <form @submit.prevent="submitStep()">
 
@@ -263,7 +100,7 @@
             <div x-show="step === 2" class="bg-surface border border-border rounded-xl p-6">
                 <h2 class="text-lg font-semibold mb-1">Step 2: Customer Details</h2>
                 <p class="text-sm text-gray-500 mb-4">
-                    <span x-text="wizard.cddDescription || 'Customer due diligence information'"></span>
+                    <span x-text="wizard.cdd_description || 'Customer due diligence information'"></span>
                     <span x-show="wizard.hold_required" class="ml-2 inline-block px-2 py-0.5 bg-amber-100 text-warning rounded text-xs">Compliance hold will apply</span>
                 </p>
 

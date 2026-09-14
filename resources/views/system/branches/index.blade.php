@@ -49,7 +49,7 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3">
-                                <div class="flex items-center gap-2" x-data="{ deactivateModal: false }">
+                                <div class="flex items-center gap-2" x-data="branchModals">
                                     <x-button href="{{ route('branches.edit', $branch) }}" variant="ghost" size="sm">Edit</x-button>
                                     @if($branch->is_active && ! $branch->is_main)
                                         <x-button @click="deactivateModal = true" variant="danger" size="sm">Deactivate</x-button>

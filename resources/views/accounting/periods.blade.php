@@ -45,7 +45,7 @@
                                 @if (($period->status?->value ?? $period->status) === 'Open' || ($period->status?->value ?? $period->status) === 'open')
                                     <form method="POST" action="{{ route('accounting.period.close', $period) }}"
                                           class="flex items-center justify-center gap-2"
-                                          onsubmit="return confirm('Close period {{ $period->period_code }}? This cannot be undone.');">
+                                          data-confirm="Close period {{ $period->period_code }}? This cannot be undone.">
                                         @csrf
                                         <input type="hidden" name="period_id" value="{{ $period->id }}">
                                         <input type="hidden" name="closure_date" value="{{ $period->end_date?->toDateString() }}">

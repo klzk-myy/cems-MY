@@ -1,5 +1,5 @@
 <x-app-layout title="Customer Details">
-    <div class="space-y-6" x-data="{ showFreeze: false, showUnfreeze: false, showClose: false }">
+    <div class="space-y-6" x-data="customerModals">
         <x-page-header title="Customer Details">
             {{ $customer->full_name ?? 'Customer Name' }}
             @if ($customer->is_frozen)

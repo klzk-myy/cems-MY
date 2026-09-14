@@ -70,18 +70,19 @@ class NotificationBellTest extends TestCase
 
         // The chip lives inside an Alpine x-if template, so its markup is
         // always present in the HTML; the visibility is driven by the dlq
-        // count seeded into x-data. Admins get the live count, everyone else 0.
+        // count seeded into the component via data-dlq. Admins get the live
+        // count, everyone else 0.
         $admin = User::factory()->admin()->create();
         $this->actingAs($admin)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('dlq: 1,', false);
+            ->assertSee('data-dlq="1"', false);
 
         $teller = User::factory()->teller()->create();
         $this->actingAs($teller)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('dlq: 0,', false);
+            ->assertSee('data-dlq="0"', false);
     }
 
     #[Test]

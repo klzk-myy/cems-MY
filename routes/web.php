@@ -92,11 +92,11 @@ Route::prefix('setup')->name('setup.')->middleware(['setup.accessible'])->group(
     Route::post('/step/6', [SetupController::class, 'step6OpeningBalance'])->name('step6');
     Route::post('/complete', [SetupController::class, 'completeSetup'])->name('complete');
     Route::get('/status', [SetupController::class, 'checkStatus'])->name('status');
-    Route::post('/reset', [SetupController::class, 'resetSetup'])->middleware(['auth', 'role:admin'])->name('reset');
+    Route::post('/reset', [SetupController::class, 'resetSetup'])->middleware(['auth', 'role:admin', 'password.confirm'])->name('reset');
 
 });
 
-Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function () {
+Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -164,7 +164,8 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
             // Registered before /{transaction} so 'export' is not captured
             // as a transaction ID.
             Route::get('/export', [TransactionController::class, 'exportForm'])->name('export.form');
-            Route::post('/export', [TransactionController::class, 'export'])->name('export.export');
+            Route::post('/export', [TransactionController::class, 'export'])->name('export.export')
+                ->middleware('password.confirm');
         });
 
         // Dead letter queue - admin only. Registered before /{transaction} so
@@ -405,7 +406,8 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         // STR filings (pd-00 s22): list/detail/draft/submit/acknowledge/export
         Route::middleware('role:compliance')->prefix('str')->name('compliance.str.')->group(function () {
             Route::get('/', [StrReportController::class, 'index'])->name('index');
-            Route::get('/export', [StrReportController::class, 'exportCsv'])->name('export');
+            Route::get('/export', [StrReportController::class, 'exportCsv'])->name('export')
+                ->middleware('password.confirm');
             Route::get('/{strReport}', [StrReportController::class, 'show'])->name('show');
             Route::post('/from-case/{case}', [StrReportController::class, 'createFromCase'])->name('create-from-case');
             Route::patch('/{strReport}/submit', [StrReportController::class, 'submit'])->name('submit');
@@ -494,7 +496,8 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::post('/reconciliation/{reconciliation}/exception', [ReconciliationController::class, 'markAsException'])->name('reconciliation.exception');
         Route::post('/reconciliation/{reconciliation}/match', [ReconciliationController::class, 'manualMatch'])->name('reconciliation.match');
         Route::post('/reconciliation/{reconciliation}/unmatch', [ReconciliationController::class, 'unmatch'])->name('reconciliation.unmatch');
-        Route::get('/reconciliation/export', [ReconciliationController::class, 'exportReconciliation'])->name('reconciliation.export');
+        Route::get('/reconciliation/export', [ReconciliationController::class, 'exportReconciliation'])->name('reconciliation.export')
+            ->middleware('password.confirm');
 
         // Budget
         Route::get('/budget', [BudgetController::class, 'index'])->name('budget');
@@ -506,15 +509,19 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
         Route::get('/', [DashboardController::class, 'reports'])->name('index');
 
         Route::get('/msb2', [RegulatoryReportController::class, 'msb2'])->name('msb2');
-        Route::post('/msb2/export', [RegulatoryReportController::class, 'msb2Generate'])->name('msb2.export');
+        Route::post('/msb2/export', [RegulatoryReportController::class, 'msb2Generate'])->name('msb2.export')
+            ->middleware('password.confirm');
         Route::get('/lmca', [RegulatoryReportController::class, 'lmca'])->name('lmca');
-        Route::post('/lmca/export', [RegulatoryReportController::class, 'lmcaGenerate'])->name('lmca.export');
+        Route::post('/lmca/export', [RegulatoryReportController::class, 'lmcaGenerate'])->name('lmca.export')
+            ->middleware('password.confirm');
         Route::get('/quarterly-lvr', [RegulatoryReportController::class, 'quarterlyLvr'])->name('quarterly-lvr');
         Route::post('/quarterly-lvr/export', [RegulatoryReportController::class, 'quarterlyLvrGenerate'])
-            ->name('quarterly-lvr.export');
+            ->name('quarterly-lvr.export')
+            ->middleware('password.confirm');
         Route::get('/position-limit', [RegulatoryReportController::class, 'positionLimit'])->name('position-limit');
         Route::post('/position-limit/export', [RegulatoryReportController::class, 'positionLimitGenerate'])
-            ->name('position-limit.export');
+            ->name('position-limit.export')
+            ->middleware('password.confirm');
 
         Route::get('/monthly-trends', [AnalyticsController::class, 'monthlyTrends'])->name('monthly-trends');
         Route::get('/profitability', [AnalyticsController::class, 'profitability'])->name('profitability');
@@ -525,18 +532,18 @@ Route::middleware(['auth', 'session.timeout', 'mfa.enabled'])->group(function ()
     Route::middleware(['role:users', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::get('/create', [UserController::class, 'create'])->name('create');
-        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::post('/', [UserController::class, 'store'])->name('store')->middleware('password.confirm');
         Route::get('/{user}', [UserController::class, 'show'])->name('show');
         Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
-        Route::put('/{user}', [UserController::class, 'update'])->name('update');
-        Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
+        Route::put('/{user}', [UserController::class, 'update'])->name('update')->middleware('password.confirm');
+        Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password')->middleware('password.confirm');
     });
 
     // Role Permission Management — admin-only UI for the dynamic
     // role-permission matrix (tick/untick privileges per role).
     Route::middleware(['role:admin', 'mfa.verified'])->prefix('admin/role-permissions')->name('admin.role-permissions.')->group(function () {
         Route::get('/', [RolePermissionController::class, 'index'])->name('index');
-        Route::post('/', [RolePermissionController::class, 'update'])->name('update');
+        Route::post('/', [RolePermissionController::class, 'update'])->name('update')->middleware('password.confirm');
     });
 
     Route::middleware(['role:manager'])->prefix('branches')->name('branches.')->group(function () {

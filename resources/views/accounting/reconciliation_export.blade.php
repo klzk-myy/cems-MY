@@ -4,7 +4,7 @@
             Account {{ $report['account_code'] }} · {{ $report['period']['from'] }} to {{ $report['period']['to'] }}
 
             <x-slot:actions>
-                <x-button variant="secondary" onclick="window.print()">Print</x-button>
+                <x-button variant="secondary" data-print>Print</x-button>
                 <x-button variant="secondary" href="{{ route('accounting.reconciliation') }}">Back</x-button>
             </x-slot:actions>
         </x-page-header>

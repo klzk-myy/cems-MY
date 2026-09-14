@@ -5,7 +5,7 @@
             description="QLVR - Quarterly Large Value Transaction Report"
         >
             <x-slot:actions>
-                <x-button variant="secondary" @click="window.print()">Print</x-button>
+                <x-button variant="secondary" data-print>Print</x-button>
                 <form method="POST" action="{{ route('reports.quarterly-lvr.export', ['quarter' => $quarter]) }}">
                     @csrf
                     <x-button variant="primary" type="submit">Export</x-button>
