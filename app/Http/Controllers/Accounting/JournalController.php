@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Accounting;
 
-use App\Enums\UserRole;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\ReverseJournalEntryRequest;
@@ -30,7 +29,7 @@ class JournalController extends Controller
 
         $entries = JournalEntry::with(['lines', 'postedBy', 'creator', 'approver'])
             ->when(
-                ! $user->isAdmin() && $user->role !== UserRole::Accountant,
+                ! $user->role->canManageAllBranches(),
                 fn ($q) => $q->where(fn ($q2) => $q2->where('branch_id', $user->branch_id)->orWhereNull('branch_id'))
             )
             ->when(

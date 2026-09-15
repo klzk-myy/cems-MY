@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Routes;
 
+use App\Enums\Permission;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -51,17 +52,19 @@ class RouteMiddlewareAliasTest extends TestCase
     }
 
     /**
-     * Every `role:` middleware parameter must be one of the canonical names
-     * CheckRole matches on. A typo fails loudly at request time (CheckRole
+     * Every `role:` middleware parameter must resolve through
+     * CheckRole → UserRole::matchesRoleAlias(): a legacy alias or a
+     * Permission enum key. A typo fails loudly at request time (CheckRole
      * throws InvalidArgumentException); this test catches it earlier, at
      * route registration.
      */
     #[Test]
     public function role_middleware_uses_only_canonical_role_names(): void
     {
-        // Mirrors the match arms in CheckRole::handle(): identity roles plus
-        // the effective-permission module aliases (accounting, users).
+        // Mirrors UserRole::matchesRoleAlias(): identity aliases plus the
+        // effective-permission module aliases, or any Permission key.
         $canonical = ['admin', 'manager', 'compliance', 'accountant', 'accounting', 'users', 'teller'];
+        $permissionKeys = array_column(Permission::cases(), 'value');
         $violations = [];
 
         foreach (Route::getRoutes()->getRoutes() as $route) {
@@ -73,7 +76,7 @@ class RouteMiddlewareAliasTest extends TestCase
                 }
 
                 foreach (explode(',', substr($middleware, 5)) as $role) {
-                    if (! in_array($role, $canonical, true)) {
+                    if (! in_array($role, $canonical, true) && ! in_array($role, $permissionKeys, true)) {
                         $violations[] = "{$name}: role:{$role}";
                     }
                 }
@@ -82,7 +85,7 @@ class RouteMiddlewareAliasTest extends TestCase
 
         $this->assertEmpty(
             $violations,
-            'Routes must use canonical role names (admin, manager, compliance, accountant, accounting, users, teller). Violations: '.implode(', ', $violations)
+            'Routes must use canonical role aliases or Permission keys. Violations: '.implode(', ', $violations)
         );
     }
 

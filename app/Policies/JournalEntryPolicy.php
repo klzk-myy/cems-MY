@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\JournalEntry;
 use App\Models\User;
@@ -27,7 +28,7 @@ class JournalEntryPolicy
             return false;
         }
 
-        if ($user->role->isAdmin() || $user->role === UserRole::Accountant) {
+        if ($user->role->canManageAllBranches()) {
             return true;
         }
 
@@ -42,25 +43,27 @@ class JournalEntryPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role->canAccessAccounting();
+        return $user->role->canPerform(Permission::PostJournalEntries);
     }
 
     /**
      * Determine whether the user can update the journal entry.
-     * Only managers and admins can update journal entries.
+     * Requires the manage_accounting permission (managers by default;
+     * admins always).
      */
     public function update(User $user, JournalEntry $journalEntry): bool
     {
-        return in_array($user->role, [UserRole::Manager, UserRole::Admin]);
+        return $user->role->canPerform(Permission::ManageAccounting);
     }
 
     /**
      * Determine whether the user can reverse the journal entry.
-     * Only managers and admins can reverse journal entries.
+     * Requires the manage_accounting permission (managers by default;
+     * admins always).
      */
     public function reverse(User $user, JournalEntry $journalEntry): bool
     {
-        return in_array($user->role, [UserRole::Manager, UserRole::Admin]);
+        return $user->role->canPerform(Permission::ManageAccounting);
     }
 
     /**

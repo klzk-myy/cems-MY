@@ -92,7 +92,7 @@
                     <x-button variant="secondary" href="{{ route('compliance.screening.show', $customer->id) }}">
                         Screening Details
                     </x-button>
-                    @if (auth()->user()?->isAdmin())
+                    @if (auth()->user()?->role->canPerform(\App\Enums\Permission::ManageRiskScreening))
                         <x-button variant="primary" type="button" @click="showRescreen = true">
                             Trigger Re-screening
                         </x-button>
@@ -183,7 +183,7 @@
             @endforelse
         </x-card>
 
-        @if (auth()->user()?->isAdmin())
+        @if (auth()->user()?->role->canPerform(\App\Enums\Permission::ManageRiskScreening))
             <div x-show="showRescreen" x-cloak @keydown.escape.window="showRescreen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50" @click="showRescreen = false"></div>
                 <div x-show="showRescreen"

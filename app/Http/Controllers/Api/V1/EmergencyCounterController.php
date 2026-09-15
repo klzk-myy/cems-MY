@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
@@ -81,8 +82,8 @@ class EmergencyCounterController extends Controller
 
         $user = Auth::user();
 
-        if (! $user->isManager()) {
-            return $this->errorResponse('Only managers and admins can acknowledge emergency closures', [], 403);
+        if (! $user->role->canPerform(Permission::ManageCounters)) {
+            return $this->errorResponse('Only users with the Manage Counters permission can acknowledge emergency closures', [], 403);
         }
 
         $closure = $this->emergencyService->acknowledge($closure, $user);

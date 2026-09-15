@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
+use App\Enums\Permission;
 use App\Models\CustomerDocument;
 use App\Models\User;
 
@@ -39,11 +39,11 @@ class CustomerDocumentPolicy
      */
     protected function review(User $user, CustomerDocument $document): bool
     {
-        if (! in_array($user->role, [UserRole::ComplianceOfficer, UserRole::Admin], true)) {
+        if (! $user->role->canPerform(Permission::AccessCompliance)) {
             return false;
         }
 
-        if ($user->role === UserRole::Admin) {
+        if ($user->isAdmin()) {
             return true;
         }
 

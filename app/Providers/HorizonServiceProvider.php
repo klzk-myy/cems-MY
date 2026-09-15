@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Enums\UserRole;
+use App\Enums\Permission;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Horizon\Horizon;
 use Laravel\Horizon\HorizonApplicationServiceProvider;
@@ -31,8 +31,10 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
      */
     protected function gate(): void
     {
+        // Matrix-driven: admin holds ManageSystem by default and may grant
+        // Horizon access to another role via the role-permission UI.
         Gate::define('viewHorizon', function ($user = null) {
-            return optional($user)->role->value === UserRole::Admin->value;
+            return $user?->role->canPerform(Permission::ManageSystem) ?? false;
         });
     }
 }

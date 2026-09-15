@@ -1,6 +1,6 @@
 <x-app-layout title="Role Permissions">
     <div class="space-y-6">
-        <x-page-header title="Role Permissions" description="Revoke or restore each role's built-in capabilities. This matrix can only narrow what a role is allowed to do — it can never grant a capability the role does not have. Administrator always retains full access." />
+        <x-page-header title="Role Permissions" description="Grant or revoke any permission for any role. The current settings are shown checked; Default restores the built-in role capabilities. Administrator always retains full access." />
 
         <x-card>
             <form method="POST" action="{{ route('admin.role-permissions.update') }}">
@@ -30,30 +30,22 @@
                                                     @php
                                                         $granted = $matrix[$role->value][$permission->value] ?? false;
                                                         $checkboxName = "permissions.{$role->value}.{$permission->value}";
-                                                        $withinCeiling = $role->staticallyGrants($permission);
                                                         $isAdminLocked = $role === \App\Enums\UserRole::Admin;
                                                     @endphp
                                                     <td class="px-4 py-3 text-center">
-                                                        @if (! $withinCeiling)
-                                                            <span
-                                                                class="inline-flex items-center justify-center text-ink-muted"
-                                                                title="Outside {{ $role->label() }}'s built-in capabilities"
-                                                            >—</span>
-                                                        @else
-                                                            <label class="inline-flex items-center justify-center cursor-pointer">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    name="{{ $checkboxName }}"
-                                                                    value="1"
-                                                                    @if($granted) checked @endif
-                                                                    @if($isAdminLocked) disabled checked @endif
-                                                                    class="w-4 h-4 rounded bg-canvas-subtle border-border text-primary focus:ring-primary focus:ring-2 disabled:opacity-50"
-                                                                >
-                                                                @if($isAdminLocked)
-                                                                    <input type="hidden" name="{{ $checkboxName }}" value="1">
-                                                                @endif
-                                                            </label>
-                                                        @endif
+                                                        <label class="inline-flex items-center justify-center cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                name="{{ $checkboxName }}"
+                                                                value="1"
+                                                                @if($granted) checked @endif
+                                                                @if($isAdminLocked) disabled checked @endif
+                                                                class="w-4 h-4 rounded bg-canvas-subtle border-border text-primary focus:ring-primary focus:ring-2 disabled:opacity-50"
+                                                            >
+                                                            @if($isAdminLocked)
+                                                                <input type="hidden" name="{{ $checkboxName }}" value="1">
+                                                            @endif
+                                                        </label>
                                                     </td>
                                                 @endforeach
                                             </tr>
@@ -66,7 +58,8 @@
 
                     <div class="px-5 py-3 border-t border-border flex items-center justify-end gap-3">
                         <x-button href="{{ route('admin.role-permissions.index') }}" variant="secondary">Reset</x-button>
-                        <x-button type="submit" variant="primary">Save Permissions</x-button>
+                        <x-button type="submit" name="action" value="default" variant="secondary">Default</x-button>
+                        <x-button type="submit" name="action" value="save" variant="primary">Save Permissions</x-button>
                     </div>
                 </div>
             </form>

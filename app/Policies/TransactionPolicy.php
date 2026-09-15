@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Permission;
 use App\Enums\TransactionStatus;
 use App\Enums\UserRole;
 use App\Models\Transaction;
@@ -40,11 +41,12 @@ class TransactionPolicy
 
     /**
      * Determine whether the user can create transactions.
-     * Only tellers create transactions.
+     * Requires the create_transactions matrix permission (tellers by
+     * default; admins always).
      */
     public function create(User $user): bool
     {
-        return $user->role === UserRole::Teller;
+        return $user->role->canPerform(Permission::CreateTransactions);
     }
 
     /**
@@ -61,7 +63,7 @@ class TransactionPolicy
         }
 
         return $transaction->user_id === $user->id
-            && $user->role === UserRole::Teller
+            && $user->role->canPerform(Permission::CreateTransactions)
             && $transaction->status === TransactionStatus::PendingApproval;
     }
 
@@ -81,19 +83,21 @@ class TransactionPolicy
      */
     public function requestCancellation(User $user, Transaction $transaction): bool
     {
+        if (! $user->role->canPerform(Permission::RequestCancellation)) {
+            return false;
+        }
+
         if ($user->role === UserRole::Admin) {
             return true;
         }
 
-        if ($user->role === UserRole::Teller) {
+        // Tellers remain scoped to their own transactions; other granted
+        // roles act on their branch.
+        if ($user->isTeller()) {
             return $transaction->user_id === $user->id;
         }
 
-        if ($user->role === UserRole::Manager) {
-            return $transaction->branch_id === $user->branch_id;
-        }
-
-        return false;
+        return $transaction->branch_id === $user->branch_id;
     }
 
     /**
@@ -146,7 +150,7 @@ class TransactionPolicy
      */
     public function rejectCancellation(User $user, Transaction $transaction): bool
     {
-        if (! in_array($user->role, [UserRole::Manager, UserRole::ComplianceOfficer, UserRole::Admin])) {
+        if (! $user->role->canPerform(Permission::ApproveCancellations)) {
             return false;
         }
 

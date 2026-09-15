@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\User;
 
@@ -13,7 +14,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, [UserRole::Manager, UserRole::Admin]);
+        return $user->role->canPerform(Permission::ManageUsers);
     }
 
     /**
@@ -31,7 +32,7 @@ class UserPolicy
             return true;
         }
 
-        return $user->role === UserRole::Manager
+        return $user->role->canPerform(Permission::ManageUsers)
             && $user->branch_id !== null
             && $user->branch_id === $model->branch_id;
     }
@@ -46,8 +47,8 @@ class UserPolicy
     public function create(User $user): bool
     {
         return $user->role->assignableRoles() !== []
-            && ($user->role === UserRole::Admin
-                || ($user->role === UserRole::Manager && $user->branch_id !== null));
+            && $user->role->canPerform(Permission::ManageUsers)
+            && ($user->role === UserRole::Admin || $user->branch_id !== null);
     }
 
     /**

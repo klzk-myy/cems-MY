@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\InvalidRateException;
-use App\Http\Controllers\Concerns\EnsuresManagerOrAdmin;
 use App\Http\Requests\OverrideRateRequest;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRateHistory;
 use App\Models\User;
 use App\Services\Transaction\RateManagementService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,8 +17,6 @@ use Illuminate\View\View;
 
 class RateController extends Controller
 {
-    use EnsuresManagerOrAdmin;
-
     public function __construct(
         protected RateManagementService $rateService
     ) {}
@@ -66,8 +63,8 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->isManager()) {
-            abort(403, 'Only managers and admins can override rates');
+        if (! $user->role->canPerform(Permission::AccessRates)) {
+            abort(403, 'You do not have permission to override rates.');
         }
 
         $validated = $request->validated();
@@ -104,8 +101,8 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->isManager()) {
-            abort(403, 'Only managers and admins can copy rates');
+        if (! $user->role->canPerform(Permission::AccessRates)) {
+            abort(403, 'You do not have permission to copy rates.');
         }
 
         $validated = $request->validate([
@@ -131,23 +128,8 @@ class RateController extends Controller
             return (int) $request->get('branch_id');
         }
 
-        if ($user->role->isManager()) {
-            return $user->branch_id;
-        }
-
-        return null;
-    }
-
-    /**
-     * Required by EnsuresManagerOrAdmin::requireManagerOrAdminResponse().
-     * Mirrors the ApiResponse::errorResponse() shape used by API controllers.
-     */
-    private function errorResponse(string $message, array $errors = [], int $code = 400, array $meta = []): JsonResponse
-    {
-        return response()->json(array_merge([
-            'success' => false,
-            'message' => $message,
-            'errors' => $errors,
-        ], $meta), $code);
+        // Branch scope: non-admin roles always operate on their own branch's
+        // rates; an unassigned user falls back to company-wide (null).
+        return $user->branch_id;
     }
 }

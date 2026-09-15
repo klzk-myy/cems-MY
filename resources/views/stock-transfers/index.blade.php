@@ -1,7 +1,7 @@
 <x-app-layout title="Stock Transfers">
     <div class="space-y-6">
         <x-page-header title="Stock Transfers">
-            @if(auth()->user()?->isManager() ?? false)
+            @if(auth()->user()?->role->canPerform(\App\Enums\Permission::ManageStockTransfers) ?? false)
                 <x-slot:actions>
                     <x-button variant="primary" href="{{ route('stock-transfers.create') }}">
                         New Transfer

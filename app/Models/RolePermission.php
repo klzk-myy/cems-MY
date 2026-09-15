@@ -10,8 +10,9 @@ use Illuminate\Support\Carbon;
  * Role Permission Model
  *
  * One row per role+permission pair in the role_permissions matrix. The
- * matrix is a restrictive overlay on the static UserRole capabilities —
- * see UserRole::canPerform() for the effective check.
+ * matrix is the authoritative grant set for dynamic permissions, seeded
+ * from the built-in UserRole defaults — see UserRole::canPerform() for
+ * the effective check.
  *
  * @property int $id
  * @property string $role

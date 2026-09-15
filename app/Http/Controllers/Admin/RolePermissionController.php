@@ -29,7 +29,7 @@ class RolePermissionController extends Controller
      */
     public function index(): View
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageRolePermissions);
 
         $roles = UserRole::cases();
         $permissions = Permission::cases();
@@ -45,14 +45,23 @@ class RolePermissionController extends Controller
     }
 
     /**
-     * Update the role-permission matrix from the checkbox grid.
+     * Update the role-permission matrix from the checkbox grid, or restore
+     * the built-in defaults when the Default action is submitted.
      */
     public function update(Request $request): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageRolePermissions);
+
+        $updatedBy = (int) auth()->id();
+
+        if ($request->input('action') === 'default') {
+            $this->permissionService->resetToDefaults($updatedBy);
+
+            return redirect()->route('admin.role-permissions.index')
+                ->with('success', 'Role permissions restored to defaults.');
+        }
 
         $validated = $this->validateUpdateRequest($request);
-        $updatedBy = (int) auth()->id();
 
         foreach (UserRole::cases() as $role) {
             $permissions = $validated[$role->value] ?? [];

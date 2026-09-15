@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\InvalidRateException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
-use App\Http\Controllers\Concerns\EnsuresManagerOrAdmin;
+use App\Http\Controllers\Concerns\RequiresPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Rate\CheckRateSetRequest;
 use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
@@ -26,7 +27,7 @@ use Illuminate\Support\Facades\Auth;
 class RateController extends Controller
 {
     use ApiResponse;
-    use EnsuresManagerOrAdmin;
+    use RequiresPermission;
 
     public function __construct(
         protected RateManagementService $rateService
@@ -60,8 +61,9 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if ($response = $this->ensureManagerOrAdminResponse(
-            fn (): JsonResponse => $this->errorResponse('Only managers and admins can fetch rates from API', [], 403)
+        if ($response = $this->requirePermissionResponse(
+            Permission::AccessRates,
+            'Only users with the Manage Exchange Rates permission can fetch rates from API'
         )) {
             return $response;
         }
@@ -129,8 +131,9 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if ($response = $this->ensureManagerOrAdminResponse(
-            fn (): JsonResponse => $this->errorResponse('Only managers and admins can copy previous rates', [], 403)
+        if ($response = $this->requirePermissionResponse(
+            Permission::AccessRates,
+            'Only users with the Manage Exchange Rates permission can copy previous rates'
         )) {
             return $response;
         }

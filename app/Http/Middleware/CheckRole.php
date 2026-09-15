@@ -34,26 +34,17 @@ class CheckRole
         // closed. All names are evaluated (no early break) so a typo throws
         // even when another listed role would match.
         //
-        // Module aliases (compliance, accountant, accounting, users) are
-        // effective-permission checks — the role's static ceiling AND the
-        // role_permissions matrix — so an admin revocation closes the whole
-        // module rather than only the policy-level checks. The plain role
-        // aliases (admin, manager, teller) are identity checks.
+        // Route files gate modules by Permission key (role:manage_counters,
+        // role:access_compliance, ...) — every key is a matrix check, so an
+        // admin grant or revocation opens/closes the module for the role.
+        // Legacy aliases still resolve: admin/manager/teller are identity
+        // checks (admin inherits manager/accountant), and compliance,
+        // accountant, accounting, users map to their module permissions.
+        // Alias resolution lives in UserRole::matchesRoleAlias() so the
+        // sidebar filter stays in sync.
         $hasRole = false;
         foreach ($roles as $role) {
-            $matched = match ($role) {
-                'admin' => $user->isAdmin(),
-                'manager' => $user->isManager(),
-                'compliance' => $user->role->canAccessCompliance(),
-                'accountant' => $user->isAccountant() && $user->role->canAccessAccounting(),
-                'accounting' => $user->role->canAccessAccounting(),
-                'users' => $user->role->canManageUsers(),
-                'teller' => $user->isTeller(),
-                default => throw new \InvalidArgumentException(
-                    "Unknown role [{$role}] in role middleware for {$request->path()}"
-                ),
-            };
-            $hasRole = $hasRole || $matched;
+            $hasRole = $hasRole || $user->role->matchesRoleAlias($role);
         }
 
         if (! $hasRole) {

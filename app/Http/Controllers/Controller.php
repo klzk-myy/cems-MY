@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
@@ -11,15 +12,16 @@ class Controller extends BaseController
     use AuthorizesRequests, ValidatesRequests;
 
     /**
-     * Abort with 403 unless the authenticated user is a manager or admin.
-     * UserRole::isManager() returns true for Manager and Admin roles.
+     * Abort with 403 unless the authenticated user's role holds the given
+     * permission in the role_permissions matrix. Module access is
+     * matrix-driven: an admin grant unlocks the capability for any role.
      */
-    protected function requireManagerOrAdmin(): void
+    protected function requirePermission(Permission $permission): void
     {
         $user = auth()->user();
 
-        if (! $user || ! $user->isManager()) {
-            abort(403, 'Unauthorized. Manager or Admin access required.');
+        if (! $user || ! $user->role->canPerform($permission)) {
+            abort(403, "Unauthorized. {$permission->label()} required.");
         }
     }
 
@@ -34,31 +36,6 @@ class Controller extends BaseController
 
         if (! $user || ! $user->role->canAccessAccounting()) {
             abort(403, 'Unauthorized. Accounting access required.');
-        }
-    }
-
-    /**
-     * Abort with 403 unless the authenticated user is an admin.
-     */
-    protected function requireAdmin(): void
-    {
-        $user = auth()->user();
-
-        if (! $user || ! $user->isAdmin()) {
-            abort(403, 'Unauthorized. Admin access required.');
-        }
-    }
-
-    /**
-     * Abort with 403 unless the authenticated user is a manager, compliance
-     * officer, or admin.
-     */
-    protected function requireManagerComplianceOrAdmin(): void
-    {
-        $user = auth()->user();
-
-        if (! $user || (! $user->isManager() && ! $user->isComplianceOfficer())) {
-            abort(403, 'Unauthorized. Manager, Compliance, or Admin access required.');
         }
     }
 }

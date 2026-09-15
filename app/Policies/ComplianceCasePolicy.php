@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Customer;
@@ -11,20 +12,18 @@ class ComplianceCasePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->role === UserRole::Admin || $user->role === UserRole::ComplianceOfficer || $user->role === UserRole::Manager;
+        return $user->role->canPerform(Permission::AccessCompliance);
     }
 
     public function view(User $user, ComplianceCase $case): bool
     {
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->role === UserRole::ComplianceOfficer) {
             return true;
         }
 
-        if ($user->role === UserRole::ComplianceOfficer) {
-            return true;
-        }
-
-        return $user->role === UserRole::Manager
+        // Other roles granted access_compliance see cases for customers
+        // with transactions in their own branch (manager-scoped view).
+        return $user->role->canPerform(Permission::AccessCompliance)
             && $user->branch_id !== null
             && Customer::where('id', $case->customer_id)
                 ->whereHas('transactions', fn ($t) => $t->where('branch_id', $user->branch_id))
@@ -33,32 +32,16 @@ class ComplianceCasePolicy
 
     public function create(User $user): bool
     {
-        return $user->role === UserRole::Admin || $user->role === UserRole::ComplianceOfficer || $user->role === UserRole::Manager;
+        return $user->role->canPerform(Permission::AccessCompliance);
     }
 
     public function update(User $user, ComplianceCase $case): bool
     {
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        if ($user->role !== UserRole::ComplianceOfficer) {
-            return false;
-        }
-
-        return true;
+        return $user->role->canPerform(Permission::AccessCompliance);
     }
 
     public function addNote(User $user, ComplianceCase $case): bool
     {
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        if ($user->role !== UserRole::ComplianceOfficer) {
-            return false;
-        }
-
-        return true;
+        return $user->role->canPerform(Permission::AccessCompliance);
     }
 }

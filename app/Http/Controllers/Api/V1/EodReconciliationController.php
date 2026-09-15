@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Eod\CounterReconciliationRequest;
@@ -226,8 +227,12 @@ class EodReconciliationController extends Controller
         return null;
     }
 
+    /**
+     * Requires the view_eod_reconciliation permission (managers and
+     * compliance officers by default; admins always).
+     */
     private function canAccessEod($user): bool
     {
-        return $user->isManager() || $user->isComplianceOfficer() || $user->isAdmin();
+        return $user->role->canPerform(Permission::ViewEodReconciliation);
     }
 }

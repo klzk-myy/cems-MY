@@ -20,10 +20,11 @@ use Tests\TestCase;
 /**
  * Role-permission matrix enforcement coverage.
  *
- * The role_permissions table is a restrictive overlay on the static
- * UserRole capabilities: revoking a permission narrows a role, but the
- * matrix can never grant a capability the role does not statically hold.
- * Admin is exempt so the operator of the matrix cannot lock itself out.
+ * The role_permissions table is the authoritative grant set for dynamic
+ * permissions: seeded from the built-in UserRole defaults, an admin may
+ * widen it to grant any permission to any role or narrow it to revoke
+ * built-in capabilities. Admin is exempt so the operator of the matrix
+ * cannot lock itself out.
  */
 class RolePermissionMatrixTest extends TestCase
 {
@@ -128,12 +129,145 @@ class RolePermissionMatrixTest extends TestCase
     }
 
     #[Test]
-    public function matrix_cannot_grant_beyond_the_static_ceiling(): void
+    public function admin_page_renders_a_checkbox_for_every_role_permission_pair(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+
+        $response = $this->actingAs($admin)->get(route('admin.role-permissions.index'));
+
+        $response->assertOk();
+        // Outside the teller's built-in defaults — previously a dash, now an assignable checkbox.
+        $response->assertSee('name="permissions.teller.approve_transactions"', false);
+        $response->assertSee('name="permissions.manager.reverse_transactions"', false);
+        $response->assertSee('name="permissions.accountant.manage_users"', false);
+    }
+
+    #[Test]
+    public function update_endpoint_grants_any_permission_to_any_role(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+
+        $response = $this->actingAs($admin)
+            ->withSession($this->passwordConfirmedSession())
+            ->post(route('admin.role-permissions.update'), [
+                'permissions' => [
+                    UserRole::Teller->value => [
+                        Permission::CreateTransactions->value => '1',
+                        Permission::ApproveTransactions->value => '1',
+                        Permission::ViewReports->value => '1',
+                    ],
+                ],
+            ]);
+
+        $response->assertRedirect(route('admin.role-permissions.index'));
+
+        $this->assertTrue(UserRole::Teller->canApproveTransactions());
+        $this->assertTrue(UserRole::Teller->canViewReports());
+        $this->assertTrue(UserRole::Teller->canCreateTransaction());
+    }
+
+    #[Test]
+    public function default_action_restores_the_built_in_matrix(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+
+        // Widen the teller beyond its built-in defaults, then restore.
+        $this->permissionService->updateRolePermissions(
+            UserRole::Teller,
+            [Permission::ViewReports->value => true, Permission::ApproveTransactions->value => true],
+            $admin->id
+        );
+        $this->assertTrue(UserRole::Teller->canViewReports());
+
+        $response = $this->actingAs($admin)
+            ->withSession($this->passwordConfirmedSession())
+            ->post(route('admin.role-permissions.update'), ['action' => 'default']);
+
+        $response->assertRedirect(route('admin.role-permissions.index'));
+        $response->assertSessionHas('success', 'Role permissions restored to defaults.');
+
+        $this->assertFalse(UserRole::Teller->canViewReports());
+        $this->assertFalse(UserRole::Teller->canApproveTransactions());
+        $this->assertTrue(UserRole::Teller->canCreateTransaction());
+    }
+
+    #[Test]
+    public function matches_role_alias_mirrors_middleware_semantics(): void
+    {
+        // Identity aliases, including admin's manager/accountant inheritance.
+        $this->assertTrue(UserRole::Manager->matchesRoleAlias('manager'));
+        $this->assertTrue(UserRole::Admin->matchesRoleAlias('manager'));
+        $this->assertFalse(UserRole::Teller->matchesRoleAlias('manager'));
+        $this->assertTrue(UserRole::Admin->matchesRoleAlias('admin'));
+        $this->assertFalse(UserRole::Manager->matchesRoleAlias('admin'));
+
+        // Module aliases are effective-permission checks.
+        $this->assertTrue(UserRole::ComplianceOfficer->matchesRoleAlias('compliance'));
+        $this->assertTrue(UserRole::Admin->matchesRoleAlias('compliance'));
+        $this->assertFalse(UserRole::Teller->matchesRoleAlias('compliance'));
+        $this->assertTrue(UserRole::Manager->matchesRoleAlias('users'));
+        $this->assertTrue(UserRole::Accountant->matchesRoleAlias('accounting'));
+        $this->assertFalse(UserRole::Teller->matchesRoleAlias('accounting'));
+
+        $this->expectException(\InvalidArgumentException::class);
+        UserRole::Admin->matchesRoleAlias('not_a_real_alias');
+    }
+
+    #[Test]
+    public function granting_a_module_permission_satisfies_its_role_alias(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+
+        $this->assertFalse(UserRole::Teller->matchesRoleAlias('compliance'));
+
+        $this->permissionService->updateRolePermissions(
+            UserRole::Teller,
+            [Permission::AccessCompliance->value => true],
+            $admin->id
+        );
+
+        $this->assertTrue(UserRole::Teller->matchesRoleAlias('compliance'));
+    }
+
+    #[Test]
+    public function sidebar_shows_links_matching_effective_permissions(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+        $teller = $this->makeUser(UserRole::Teller);
+
+        // Admin inherits manager/accountant identity and holds every module
+        // permission — all module links must render, not just literal matches.
+        $adminNav = $this->actingAs($admin)->get(route('dashboard'));
+        $adminNav->assertSee(route('compliance'), false);
+        $adminNav->assertSee(route('accounting.index'), false);
+        $adminNav->assertSee(route('users.index'), false);
+
+        // The teller has no module grants — those links stay hidden.
+        $tellerNav = $this->actingAs($teller)->get(route('dashboard'));
+        $tellerNav->assertDontSee(route('compliance'), false);
+        $tellerNav->assertDontSee(route('accounting.index'), false);
+        $tellerNav->assertDontSee(route('users.index'), false);
+
+        // Granting access_compliance to the teller surfaces the link.
+        $this->permissionService->updateRolePermissions(
+            UserRole::Teller,
+            [Permission::AccessCompliance->value => true],
+            $admin->id
+        );
+
+        $this->actingAs($teller->fresh())
+            ->get(route('dashboard'))
+            ->assertSee(route('compliance'), false);
+    }
+
+    #[Test]
+    public function matrix_grants_beyond_the_built_in_defaults_take_effect(): void
     {
         $admin = $this->makeUser(UserRole::Admin);
 
         // Granting tellers view_reports and managers approve_transactions
-        // in the matrix must not widen their effective capabilities.
+        // in the matrix widens their effective capabilities — the matrix
+        // is the authoritative grant set, not a narrowing overlay.
         $this->permissionService->updateRolePermissions(
             UserRole::Teller,
             [Permission::ViewReports->value => true],
@@ -146,8 +280,8 @@ class RolePermissionMatrixTest extends TestCase
         );
 
         $this->assertTrue($this->permissionService->can(UserRole::Teller, Permission::ViewReports));
-        $this->assertFalse(UserRole::Teller->canViewReports());
-        $this->assertFalse(UserRole::Manager->canApproveTransactions());
+        $this->assertTrue(UserRole::Teller->canViewReports());
+        $this->assertTrue(UserRole::Manager->canApproveTransactions());
     }
 
     #[Test]
@@ -301,6 +435,114 @@ class RolePermissionMatrixTest extends TestCase
         );
 
         $this->assertTrue(UserRole::Manager->canViewReports());
+    }
+
+    #[Test]
+    public function permission_keys_resolve_as_role_middleware_arguments(): void
+    {
+        // Every Permission key is a valid role: argument, resolved through
+        // the matrix — the dominant form now used across the route files.
+        $this->assertTrue(UserRole::Manager->matchesRoleAlias('view_reports'));
+        $this->assertTrue(UserRole::Manager->matchesRoleAlias('manage_counters'));
+        $this->assertFalse(UserRole::Teller->matchesRoleAlias('manage_counters'));
+        $this->assertTrue(UserRole::Teller->matchesRoleAlias('create_transactions'));
+        $this->assertFalse(UserRole::Accountant->matchesRoleAlias('create_transactions'));
+        $this->assertTrue(UserRole::ComplianceOfficer->matchesRoleAlias('access_compliance'));
+
+        // Admin is exempt from the matrix — every permission key passes.
+        $this->assertTrue(UserRole::Admin->matchesRoleAlias('manage_dlq'));
+        $this->assertTrue(UserRole::Admin->matchesRoleAlias('manage_currencies'));
+    }
+
+    #[Test]
+    public function granting_view_reports_unlocks_the_reports_module(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+        $teller = $this->makeUser(UserRole::Teller);
+
+        $this->actingAs($teller)->get(route('reports.index'))->assertForbidden();
+
+        $this->permissionService->updatePermission(
+            UserRole::Teller,
+            Permission::ViewReports,
+            true,
+            $admin->id
+        );
+
+        $response = $this->actingAs($teller->fresh())->get(route('reports.index'));
+        $this->assertNotSame(403, $response->getStatusCode());
+    }
+
+    #[Test]
+    public function granting_manage_counters_unlocks_counter_administration(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+        $teller = $this->makeUser(UserRole::Teller);
+
+        $this->actingAs($teller)->get(route('counters.create'))->assertForbidden();
+
+        $this->permissionService->updatePermission(
+            UserRole::Teller,
+            Permission::ManageCounters,
+            true,
+            $admin->id
+        );
+
+        $response = $this->actingAs($teller->fresh())->get(route('counters.create'));
+        $this->assertNotSame(403, $response->getStatusCode());
+    }
+
+    #[Test]
+    public function revoking_create_transactions_closes_the_teller_wizard(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+        $teller = $this->makeUser(UserRole::Teller);
+
+        $response = $this->actingAs($teller)->get(route('transactions.wizard'));
+        $this->assertNotSame(403, $response->getStatusCode());
+
+        $this->permissionService->updatePermission(
+            UserRole::Teller,
+            Permission::CreateTransactions,
+            false,
+            $admin->id
+        );
+
+        $this->actingAs($teller->fresh())
+            ->get(route('transactions.wizard'))
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function admin_reaches_every_module_route(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+
+        foreach (['reports.index', 'rates.index', 'accounting.index', 'users.index', 'counters.create', 'system.currencies.index', 'admin.role-permissions.index'] as $routeName) {
+            $response = $this->actingAs($admin)->get(route($routeName));
+            $this->assertNotSame(403, $response->getStatusCode(), "Admin was forbidden from {$routeName}");
+        }
+    }
+
+    #[Test]
+    public function sidebar_tracks_matrix_grants_on_permission_gated_routes(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+        $teller = $this->makeUser(UserRole::Teller);
+
+        // Reports is gated by role:view_reports — a teller has no grant.
+        $this->actingAs($teller)->get(route('dashboard'))
+            ->assertDontSee(route('reports.index'), false);
+
+        $this->permissionService->updatePermission(
+            UserRole::Teller,
+            Permission::ViewReports,
+            true,
+            $admin->id
+        );
+
+        $this->actingAs($teller->fresh())->get(route('dashboard'))
+            ->assertSee(route('reports.index'), false);
     }
 
     #[Test]

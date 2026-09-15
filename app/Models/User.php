@@ -236,9 +236,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Effective permission check for this user's role: the role's static
-     * ceiling AND the admin-managed role_permissions matrix must both
-     * grant the permission. Unknown permission names fail closed.
+     * Effective permission check for this user's role: the admin-managed
+     * role_permissions matrix must grant the permission. Unknown
+     * permission names fail closed.
      */
     public function canPermission(Permission|string $permission): bool
     {

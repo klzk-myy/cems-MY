@@ -23,7 +23,7 @@
 
             <x-card title="Automation">
                 <ul class="space-y-2 mt-4">
-                    @if(auth()->user()->isAdmin())
+                    @if(auth()->user()->role->canPerform(\App\Enums\Permission::ManageReportSchedules))
                         <li><x-button variant="ghost" size="sm" href="{{ route('reports.schedules.index') }}">Report Schedules</x-button></li>
                     @endif
                     <li><x-button variant="ghost" size="sm" href="{{ route('transactions.export.form') }}">Transaction Export</x-button></li>

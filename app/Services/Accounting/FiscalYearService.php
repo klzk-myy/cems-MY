@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Enums\AccountCode;
 use App\Enums\AccountingPeriodType;
 use App\Enums\AccountType;
+use App\Enums\Permission;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\AccountNotFoundException;
 use App\Exceptions\Domain\FiscalYearClosedException;
@@ -259,7 +260,7 @@ class FiscalYearService
             return false;
         }
 
-        return $user->isAdmin() || $user->isManager();
+        return $user->role->canPerform(Permission::ManageAccounting);
     }
 
     /**

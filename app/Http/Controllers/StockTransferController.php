@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Requests\ApproveStockTransferRequest;
 use App\Http\Requests\CancelStockTransferRequest;
@@ -26,7 +27,7 @@ class StockTransferController extends Controller
 
     public function index(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
 
         $user = auth()->user();
         $query = StockTransfer::with(['items', 'requestedBy']);
@@ -66,7 +67,7 @@ class StockTransferController extends Controller
 
     public function create(): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
 
         // Transfers store branch names (schema contract), so options are
         // keyed by name. Maker rule: a non-admin manager may only source
@@ -84,7 +85,7 @@ class StockTransferController extends Controller
 
     public function store(StoreStockTransferRequest $request): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
 
         $validated = $request->validated();
 
@@ -105,7 +106,7 @@ class StockTransferController extends Controller
 
     public function show(StockTransfer $stockTransfer): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
         $this->authorize('view', $stockTransfer);
 
         $stockTransfer->load(['items', 'requestedBy', 'branchManagerApprovedBy', 'hqApprovedBy']);
@@ -115,7 +116,7 @@ class StockTransferController extends Controller
 
     public function showStep(StockTransfer $stockTransfer, string $step): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
         $this->authorize('view', $stockTransfer);
 
         $stockTransfer->load(['items', 'requestedBy', 'branchManagerApprovedBy', 'hqApprovedBy']);
@@ -125,7 +126,7 @@ class StockTransferController extends Controller
 
     public function approveBm(ApproveStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
         $this->authorize('approveBranchManager', $stockTransfer);
 
         try {
@@ -143,7 +144,7 @@ class StockTransferController extends Controller
 
     public function dispatch(StockTransfer $stockTransfer): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
         $this->authorize('dispatch', $stockTransfer);
 
         try {
@@ -159,7 +160,7 @@ class StockTransferController extends Controller
 
     public function receive(ReceiveStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
         $this->authorize('receive', $stockTransfer);
 
         try {
@@ -177,7 +178,7 @@ class StockTransferController extends Controller
 
     public function complete(StockTransfer $stockTransfer): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
         $this->authorize('complete', $stockTransfer);
 
         try {
@@ -193,7 +194,7 @@ class StockTransferController extends Controller
 
     public function cancel(CancelStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStockTransfers);
         $this->authorize('cancel', $stockTransfer);
 
         try {

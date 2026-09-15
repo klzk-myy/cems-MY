@@ -2,7 +2,7 @@
     <div class="space-y-6">
         <x-page-header title="Petty Cash Expenses" description="Branch petty-cash expense postings">
             <x-slot:actions>
-                @if (auth()->user()->role->isManager())
+                @if (auth()->user()->role->canPerform(\App\Enums\Permission::PostExpenses))
                     <x-button href="{{ route('accounting.expenses.create') }}" variant="primary">+ New Expense</x-button>
                 @endif
             </x-slot:actions>

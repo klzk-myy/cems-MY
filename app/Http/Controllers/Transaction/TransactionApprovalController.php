@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Actions\Transaction\ApproveTransactionAction;
+use App\Enums\Permission;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
@@ -152,7 +153,7 @@ class TransactionApprovalController extends Controller
      */
     public function confirm(ConfirmTransactionApprovalRequest $request, Transaction $transaction): RedirectResponse
     {
-        $this->requireManagerComplianceOrAdmin();
+        $this->requirePermission(Permission::ApproveTransactions);
 
         if (! $this->requiresConfirmation($transaction)) {
             return redirect()->route('transactions.show', $transaction)

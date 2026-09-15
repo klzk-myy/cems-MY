@@ -430,8 +430,8 @@ See `.gitnexus/` for index data. GitNexus enables:
 | Role | Scope | Can | Cannot |
 |------|-------|-----|--------|
 | **Teller** | Own counter | Create transactions, view own balancing/stock, request stock, request cancellation | Profit, reports, approvals |
-| **Manager** | Own branch | Approve transactions RM10k–50k, approve cancellations, set branch rates, post branch expenses/petty cash, approve/assign/return teller stock, create/accept stock transfers, manage in-transit stock, EOD sign-off | Other branches, create transactions, approve ≥RM50k, reversals |
-| **Compliance Officer** | Own branch | Clear high-risk holds, approve cancellations, approve ≥RM50k transactions, reverse completed transactions, PEP sign-off, STR filing, KYC verify/reject | Create transactions |
+| **Manager** | Own branch | Approve cancellations, set branch rates, post branch expenses/petty cash, approve/assign/return teller stock, create/accept stock transfers, manage in-transit stock, EOD sign-off | Other branches, create transactions, approve transactions, reversals |
+| **Compliance Officer** | Own branch | Approve/reject all pending transactions, clear high-risk holds, approve cancellations, reverse completed transactions, PEP sign-off, STR filing, KYC verify/reject | Create transactions |
 | **Accountant** | Company-wide | GL, journals, period/fiscal close, consolidation, bank reconciliation, budgets, all financial reports | Create transactions |
 | **Admin** | Company-wide | Everything except creating transactions: users, branches, company-wide journals, configuration, audit | Create transactions |
 
@@ -514,28 +514,26 @@ All rate changes are logged to audit trail. Spread and deviation thresholds conf
 
 | Level | Trigger | Action |
 |-------|---------|--------|
-| **Simplified** | < RM 3,000 | Auto-approve |
-| **Specific** | RM 3,000 - 9,999 | Auto-approve |
-| **Standard** | ≥ RM 10,000 | Auto-approve if no flags |
-| **Enhanced** | ≥ RM 50,000 OR PEP OR Sanction OR High risk | Compliance review |
+| **Simplified** | < RM 3,000 | Auto-complete (no approval) |
+| **Specific** | RM 3,000 - 9,999 | Auto-complete (no approval) |
+| **Standard** | ≥ RM 10,000 | `PendingApproval` — compliance/admin approval |
+| **Enhanced** | ≥ RM 50,000 OR PEP OR Sanction OR High risk | Compliance review (hold → clear → approve) |
 
 ### Transaction Status Workflow
 
 ```
 Created ──> Completed                                    (auto: < RM10k, no flag, not High risk)
-Created ──> PendingApproval ──(Manager approves)──> Completed      (RM10k–50k)
-Created ──> PendingApproval ──(Compliance approves)──> Completed   (≥ RM50k)
-Created ──> PendingApproval [hold] ──(Compliance clears)──> tiered approval   (PEP/sanction/High/flag)
+Created ──> PendingApproval ──(Compliance/Admin approves)──> Completed   (≥ RM10k)
+Created ──> PendingApproval [hold] ──(Compliance clears)──> Compliance/Admin approval   (PEP/sanction/High/flag)
 PendingApproval ──(request cancel)──> PendingCancellation ──(Manager|Compliance)──> Cancelled
 Completed ──(Compliance reverses)──> Reversed
 ```
 
 | Condition | Status | Approver |
 |-----------|--------|----------|
-| Amount < RM 10,000, no compliance flag | Auto-approve | — |
-| Amount RM 10,000–49,999, no flag | `PendingApproval` | Manager |
-| Amount ≥ RM 50,000, no flag | `PendingApproval` | Compliance Officer |
-| High-risk customer or compliance flag | `PendingApproval` + hold | Compliance must clear first, then tiered approval |
+| Amount < RM 10,000, no compliance flag | Auto-complete | — |
+| Amount ≥ RM 10,000, no flag | `PendingApproval` | Compliance Officer (or Admin) |
+| High-risk customer or compliance flag | `PendingApproval` + hold | Compliance clears hold, then compliance/admin approval |
 | Cancellation requested | `PendingCancellation` | Manager or Compliance (≠ requester) |
 | Completed transaction | `Reversed` | Compliance only |
 

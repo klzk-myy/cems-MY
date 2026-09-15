@@ -66,7 +66,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->middleware('throttle:60,1') // 60 requests per minute per user
             ->name('api.v1.transactions.index');
         Route::post('/transactions', [TransactionController::class, 'store'])
-            ->middleware(['role:teller', 'mfa.verified', 'throttle:10,1']) // 10 requests per minute per user
+            ->middleware(['role:create_transactions', 'mfa.verified', 'throttle:10,1']) // 10 requests per minute per user
             ->name('api.v1.transactions.store');
         Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])
             ->middleware('throttle:60,1')
@@ -75,25 +75,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->middleware('throttle:export') // PDF export shares the export limiter
             ->name('api.v1.transactions.receipt');
         Route::post('/transactions/{transaction}/approve', [TransactionApprovalController::class, 'approve'])
-            ->middleware(['role:compliance', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:approve_transactions', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.approve');
         Route::post('/transactions/{transaction}/reject', [TransactionApprovalController::class, 'reject'])
-            ->middleware(['role:compliance', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:approve_transactions', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.reject');
         Route::post('/transactions/{transaction}/clear-hold', [TransactionApprovalController::class, 'clearHold'])
-            ->middleware(['role:compliance', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:approve_transactions', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.clear-hold');
         Route::post('/transactions/{transaction}/confirm', [TransactionApprovalController::class, 'confirm'])
-            ->middleware(['role:compliance', 'mfa.verified', 'throttle:20,1'])
+            ->middleware(['role:approve_transactions', 'mfa.verified', 'throttle:20,1'])
             ->name('api.v1.transactions.confirm');
         Route::post('/transactions/{transaction}/request-cancellation', [TransactionCancellationController::class, 'requestCancellation'])
-            ->middleware(['role:teller,manager', 'mfa.verified', 'throttle:10,1'])
+            ->middleware(['role:request_cancellation', 'mfa.verified', 'throttle:10,1'])
             ->name('api.v1.transactions.request-cancellation');
         Route::post('/transactions/{transaction}/approve-cancellation', [TransactionCancellationController::class, 'approveCancellation'])
-            ->middleware(['role:manager,compliance', 'mfa.verified', 'throttle:5,1'])
+            ->middleware(['role:approve_cancellations', 'mfa.verified', 'throttle:5,1'])
             ->name('api.v1.transactions.approve-cancellation');
         Route::post('/transactions/{transaction}/reject-cancellation', [TransactionCancellationController::class, 'rejectCancellation'])
-            ->middleware(['role:manager,compliance', 'mfa.verified', 'throttle:10,1'])
+            ->middleware(['role:approve_cancellations', 'mfa.verified', 'throttle:10,1'])
             ->name('api.v1.transactions.reject-cancellation');
 
         // Transaction Wizard API
@@ -101,7 +101,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // collection, no records created). step3 performs the full transaction
         // creation and therefore requires the same mfa.verified gate as the
         // direct POST /transactions endpoint.
-        Route::prefix('wizard/transactions')->middleware(['role:teller', 'throttle:30,1'])->group(function () {
+        Route::prefix('wizard/transactions')->middleware(['role:create_transactions', 'throttle:30,1'])->group(function () {
             Route::post('/step1', [TransactionWizardController::class, 'step1'])
                 ->name('api.v1.wizard.transactions.step1');
             Route::post('/step2', [TransactionWizardController::class, 'step2'])
@@ -147,7 +147,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->name('api.v1.sanctions.search');
 
         // Reports API
-        Route::prefix('reports')->middleware('role:manager')->group(function () {
+        Route::prefix('reports')->middleware('role:view_reports')->group(function () {
             Route::post('/msb2', [RegulatoryReportController::class, 'generateMSB2'])
                 ->name('api.v1.reports.msb2');
             Route::post('/msb2/status', [RegulatoryReportController::class, 'updateMSB2Status'])
@@ -160,7 +160,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Compliance Findings API
         Route::prefix('compliance')->group(function () {
-            Route::middleware('role:compliance')->group(function () {
+            Route::middleware('role:access_compliance')->group(function () {
                 Route::get('/findings', [FindingController::class, 'index'])
                     ->name('api.v1.compliance.findings.index');
                 Route::get('/findings/stats', [FindingController::class, 'stats'])
@@ -187,76 +187,76 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
             // Alerts API
             Route::get('/alerts', [AlertController::class, 'index'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.alerts.index');
             Route::get('/alerts/summary', [AlertController::class, 'summary'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.alerts.summary');
             Route::get('/alerts/overdue', [AlertController::class, 'overdue'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.alerts.overdue');
             Route::post('/alerts/bulk-assign', [AlertController::class, 'bulkAssign'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.alerts.bulk-assign');
             Route::post('/alerts/bulk-resolve', [AlertController::class, 'bulkResolve'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.alerts.bulk-resolve');
             Route::post('/alerts/auto-assign', [AlertController::class, 'autoAssign'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.alerts.auto-assign');
             Route::get('/alerts/{id}', [AlertController::class, 'show'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.alerts.show');
 
             // Cases API
             Route::get('/cases', [CaseController::class, 'index'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.cases.index');
             Route::post('/cases', [CaseController::class, 'store'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.cases.store');
             Route::get('/cases/{id}', [CaseController::class, 'show'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.cases.show');
             Route::patch('/cases/{id}', [CaseController::class, 'update'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.cases.update');
             Route::post('/cases/{id}/notes', [CaseController::class, 'addNote'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.cases.notes');
             Route::post('/cases/{id}/close', [CaseController::class, 'close'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.cases.close');
             Route::post('/cases/{id}/escalate', [CaseController::class, 'escalate'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.cases.escalate');
             Route::get('/cases/{id}/timeline', [CaseController::class, 'timeline'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.cases.timeline');
 
             // EDD API - Compliance Officer for management
             Route::get('/edd', [EddController::class, 'index'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.edd.index');
             Route::get('/edd/templates', [EddController::class, 'templates'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.edd.templates');
             Route::get('/edd/{id}', [EddController::class, 'show'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.edd.show');
             Route::post('/edd/{id}/questionnaire', [EddController::class, 'submitQuestionnaire'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.edd.questionnaire');
             Route::post('/edd/{id}/approve', [EddController::class, 'approve'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.edd.approve');
             Route::post('/edd/{id}/reject', [EddController::class, 'reject'])
-                ->middleware('role:compliance')
+                ->middleware('role:access_compliance')
                 ->name('api.v1.compliance.edd.reject');
         });
 
         // Risk API
-        Route::prefix('risk')->middleware('role:compliance')->group(function () {
+        Route::prefix('risk')->middleware('role:access_compliance')->group(function () {
             Route::get('/portfolio', [RiskController::class, 'portfolio'])->name('api.v1.risk.portfolio');
             Route::get('/{customerId}', [RiskController::class, 'show'])->name('api.v1.risk.show');
             Route::get('/{customerId}/history', [RiskController::class, 'history'])->name('api.v1.risk.history');
@@ -268,19 +268,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // EOD Reconciliation API - Manager or Compliance Officer
         Route::prefix('eod')->group(function () {
             Route::get('/reconciliation/{date}', [EodReconciliationController::class, 'show'])
-                ->middleware('role:manager,compliance')
+                ->middleware('role:view_eod_reconciliation')
                 ->name('api.v1.eod.reconciliation.show');
             Route::get('/reconciliation/{date}/counters/{counterId}', [EodReconciliationController::class, 'counterReconciliation'])
-                ->middleware('role:manager,compliance')
+                ->middleware('role:view_eod_reconciliation')
                 ->name('api.v1.eod.reconciliation.counter');
             Route::get('/reconciliation/{date}/report', [EodReconciliationController::class, 'report'])
-                ->middleware('role:manager,compliance')
+                ->middleware('role:view_eod_reconciliation')
                 ->name('api.v1.eod.reconciliation.report');
         });
 
         // Branches API (Admin only for index, store, update, destroy)
         // show, counters, users accessible to admin OR user's own branch
-        Route::middleware(['role:admin'])->group(function () {
+        Route::middleware(['role:manage_branches'])->group(function () {
             Route::get('branches', [BranchController::class, 'index'])
                 ->name('api.v1.branches.index');
             Route::post('branches', [BranchController::class, 'store'])
@@ -300,7 +300,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->name('api.v1.branches.users');
 
         // Sanctions management endpoints (Admin)
-        Route::middleware(['role:admin'])->group(function () {
+        Route::middleware(['role:manage_sanctions'])->group(function () {
             Route::get('/sanctions/lists', [SanctionListController::class, 'lists'])
                 ->name('api.v1.sanctions.lists');
             Route::get('/sanctions/entries', [SanctionListController::class, 'entries'])
@@ -319,7 +319,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
 
         // Screening endpoints (ComplianceOfficer+)
-        Route::middleware(['role:compliance'])->group(function () {
+        Route::middleware(['role:access_compliance'])->group(function () {
             Route::post('/screening/customer/{customer}', [ScreeningController::class, 'screen'])
                 ->name('api.v1.screening.customer');
             Route::get('/screening/customer/{customer}/history', [ScreeningController::class, 'history'])
@@ -333,34 +333,34 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Exchange Rates API - Manager/Admin only for modifications
         Route::prefix('rates')->group(function () {
             Route::get('/', [RateController::class, 'index'])
-                ->middleware('role:manager')
+                ->middleware('role:access_rates')
                 ->name('api.v1.rates.index');
             Route::get('/summary', [RateController::class, 'summary'])
-                ->middleware('role:manager')
+                ->middleware('role:access_rates')
                 ->name('api.v1.rates.summary');
             Route::get('/dates', [RateController::class, 'availableDates'])
-                ->middleware('role:manager')
+                ->middleware('role:access_rates')
                 ->name('api.v1.rates.dates');
             Route::get('/history/{currencyCode}', [RateController::class, 'history'])
-                ->middleware('role:manager')
+                ->middleware('role:access_rates')
                 ->name('api.v1.rates.history');
             Route::get('/check', [RateController::class, 'checkSet'])
-                ->middleware('role:manager')
+                ->middleware('role:access_rates')
                 ->name('api.v1.rates.check');
             Route::get('/{currencyCode}', [RateController::class, 'show'])
-                ->middleware('role:manager')
+                ->middleware('role:access_rates')
                 ->name('api.v1.rates.show');
             Route::post('/fetch', [RateController::class, 'fetchFromApi'])
-                ->middleware('role:manager')
+                ->middleware('role:access_rates')
                 ->name('api.v1.rates.fetch');
             Route::post('/copy-previous', [RateController::class, 'copyPrevious'])
-                ->middleware('role:manager')
+                ->middleware('role:access_rates')
                 ->name('api.v1.rates.copy-previous');
             Route::put('/{currencyCode}', [RateController::class, 'apiOverride'])
-                ->middleware('role:manager')
+                ->middleware('role:access_rates')
                 ->name('api.v1.rates.override');
             Route::post('/validate', [RateController::class, 'validateRate'])
-                ->middleware('role:teller,manager')
+                ->middleware('role:validate_rates')
                 ->name('api.v1.rates.validate');
         });
 
@@ -371,86 +371,86 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ->name('api.v1.allocations.my-active');
             // Teller: Request stock from the branch pool (manager approves)
             Route::post('/request', [TellerAllocationController::class, 'requestStock'])
-                ->middleware('role:teller')
+                ->middleware('role:request_stock')
                 ->name('api.v1.allocations.request');
             // Teller: Accept an approved assignment (activates the allocation)
             Route::post('/{allocationId}/accept', [TellerAllocationController::class, 'accept'])
-                ->middleware('role:teller')
+                ->middleware('role:request_stock')
                 ->name('api.v1.allocations.accept');
             // Teller: Return own active allocation to the branch pool
             Route::post('/{allocationId}/return', [TellerAllocationController::class, 'requestReturn'])
-                ->middleware('role:teller')
+                ->middleware('role:request_stock')
                 ->name('api.v1.allocations.return');
             // Manager: Get pending allocations for their branch
             Route::get('/pending', [TellerAllocationController::class, 'pendingForBranch'])
-                ->middleware('role:manager')
+                ->middleware('role:manage_allocations')
                 ->name('api.v1.allocations.pending');
             // Manager: Get active allocations for their branch
             Route::get('/active', [TellerAllocationController::class, 'activeForBranch'])
-                ->middleware('role:manager')
+                ->middleware('role:manage_allocations')
                 ->name('api.v1.allocations.active');
             // Manager: Approve allocation
             Route::post('/{allocationId}/approve', [TellerAllocationController::class, 'approve'])
-                ->middleware('role:manager')
+                ->middleware('role:manage_allocations')
                 ->name('api.v1.allocations.approve');
             // Manager: Reject allocation
             Route::post('/{allocationId}/reject', [TellerAllocationController::class, 'reject'])
-                ->middleware('role:manager')
+                ->middleware('role:manage_allocations')
                 ->name('api.v1.allocations.reject');
             // Manager: Modify active allocation
             Route::post('/{allocationId}/modify', [TellerAllocationController::class, 'modify'])
-                ->middleware('role:manager')
+                ->middleware('role:manage_allocations')
                 ->name('api.v1.allocations.modify');
             // Manager: Return allocation to pool (EOD)
             Route::post('/{allocationId}/return-to-pool', [TellerAllocationController::class, 'returnToPool'])
-                ->middleware('role:manager')
+                ->middleware('role:manage_allocations')
                 ->name('api.v1.allocations.return-to-pool');
             // Get specific allocation details
             Route::get('/{allocationId}', [TellerAllocationController::class, 'show'])
-                ->middleware('role:manager')
+                ->middleware('role:manage_allocations')
                 ->name('api.v1.allocations.show');
         });
 
         // Counter Opening Workflow API - Daily branch opening
         Route::prefix('counters')->group(function () {
             Route::post('/', [CounterApiController::class, 'store'])
-                ->middleware('role:manager')
+                ->middleware('role:manage_counters')
                 ->name('api.v1.counters.store');
             Route::get('/pending-requests', [CounterOpeningController::class, 'pendingRequests'])
-                ->middleware('role:manager')
+                ->middleware('role:manage_counters')
                 ->name('api.v1.counters.pending-requests');
             Route::post('/{counterId}/opening-request', [CounterOpeningController::class, 'initiateOpeningRequest'])
                 ->name('api.v1.counters.opening-request');
             Route::post('/{counterId}/approve-and-open', [CounterOpeningController::class, 'approveAndOpen'])
-                ->middleware(['role:manager', 'mfa.verified'])
+                ->middleware(['role:manage_counters', 'mfa.verified'])
                 ->name('api.v1.counters.approve-and-open');
 
             // Emergency Counter Close
             Route::post('/{counterId}/emergency-close', [EmergencyCounterController::class, 'initiateClose'])
-                ->middleware(['role:teller,manager', 'mfa.verified'])
+                ->middleware(['role:operate_counters', 'mfa.verified'])
                 ->name('api.v1.counters.emergency-close');
             Route::get('/{counterId}/emergency/{closureId}/variance', [EmergencyCounterController::class, 'getVariance'])
-                ->middleware(['role:manager', 'mfa.verified'])
+                ->middleware(['role:manage_counters', 'mfa.verified'])
                 ->name('api.v1.counters.emergency.variance');
             Route::post('/{counterId}/emergency/{closureId}/acknowledge', [EmergencyCounterController::class, 'acknowledge'])
-                ->middleware(['role:manager', 'mfa.verified'])
+                ->middleware(['role:manage_counters', 'mfa.verified'])
                 ->name('api.v1.counters.emergency.acknowledge');
 
             // Handover Acknowledge
             // Recipient or supervisor may acknowledge — enforced inside
             // CounterHandoverService (to_user_id / supervisor_id check).
             Route::post('/{counterId}/handover/{handoverId}/acknowledge', [CounterHandoverController::class, 'acknowledge'])
-                ->middleware(['role:teller,manager', 'mfa.verified'])
+                ->middleware(['role:operate_counters', 'mfa.verified'])
                 ->name('api.v1.counters.handover.acknowledge');
 
             // Counter Close
             Route::post('/{counterId}/close', [CounterApiController::class, 'close'])
-                ->middleware(['role:teller,manager', 'mfa.verified'])
+                ->middleware(['role:operate_counters', 'mfa.verified'])
                 ->name('api.v1.counters.close');
         });
 
         // Branch Closing Workflow API
-        Route::prefix('branches/{branchId}/closing')->middleware('role:manager')->group(function () {
+        Route::prefix('branches/{branchId}/closing')->middleware('role:manage_branch_closing')->group(function () {
             Route::post('/initiate', [BranchClosingController::class, 'initiate'])
                 ->name('api.v1.branches.closing.initiate');
             Route::get('/checklist', [BranchClosingController::class, 'checklist'])
@@ -462,7 +462,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
 
         // Month-End Close API - Manager/Admin only
-        Route::prefix('accounting/month-end')->middleware('role:manager')->group(function () {
+        Route::prefix('accounting/month-end')->middleware('role:manage_accounting')->group(function () {
             Route::post('/close', [MonthEndCloseController::class, 'close'])
                 ->name('api.v1.accounting.month-end.close');
             Route::get('/status/{date}', [MonthEndCloseController::class, 'status'])

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Http\Requests\StoreBranchRequest;
 use App\Http\Requests\UpdateBranchRequest;
 use App\Models\Branch;
@@ -31,7 +32,7 @@ class BranchController extends Controller
      */
     public function index(): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::AccessBranches);
 
         $query = Branch::query()
             ->withCount(['users', 'counters', 'tillBalances'])
@@ -51,7 +52,7 @@ class BranchController extends Controller
      */
     public function create(): View
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageBranches);
 
         return view('system.branches.create', [
             'branchTypes' => $this->branchService->getBranchTypes(),
@@ -64,7 +65,7 @@ class BranchController extends Controller
      */
     public function store(StoreBranchRequest $request): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageBranches);
 
         $branch = $this->branchService->createBranch(
             $request->validated(),
@@ -82,7 +83,7 @@ class BranchController extends Controller
      */
     public function edit(Branch $branch): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::AccessBranches);
 
         return view('system.branches.edit', [
             'branch' => $branch,
@@ -97,7 +98,7 @@ class BranchController extends Controller
      */
     public function update(UpdateBranchRequest $request, Branch $branch): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::AccessBranches);
 
         $branch = $this->branchService->updateBranch(
             $branch,
@@ -115,7 +116,7 @@ class BranchController extends Controller
      */
     public function deactivate(Request $request, Branch $branch): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageBranches);
 
         try {
             $this->branchService->deactivateBranch(

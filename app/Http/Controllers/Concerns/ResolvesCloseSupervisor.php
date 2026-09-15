@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Models\User;
 
@@ -10,27 +11,28 @@ use App\Models\User;
  *
  * CounterService::closeSession() requires a manager supervisor when closing
  * variance exceeds the red threshold — but neither close endpoint could ever
- * supply one, deadlocking the session. An acting manager/admin satisfies the
- * requirement themselves; anyone else must name a manager/admin via
- * supervisor_id (isManager() also covers Admin).
+ * supply one, deadlocking the session. An acting user holding the
+ * manage_counters permission satisfies the requirement themselves; anyone
+ * else must name such a user via supervisor_id.
  */
 trait ResolvesCloseSupervisor
 {
     /**
-     * @throws InvalidStateException when supervisor_id does not reference a manager/admin
+     * @throws InvalidStateException when supervisor_id does not reference a
+     *                               user holding the manage_counters permission
      */
     protected function resolveCloseSupervisor(User $user, ?int $supervisorId): ?User
     {
         if ($supervisorId !== null) {
             $supervisor = User::find($supervisorId);
 
-            if (! $supervisor instanceof User || ! $supervisor->isManager()) {
-                throw new InvalidStateException('supervisor_id must reference a manager or admin user.');
+            if (! $supervisor instanceof User || ! $supervisor->role->canPerform(Permission::ManageCounters)) {
+                throw new InvalidStateException('supervisor_id must reference a user permitted to manage counters.');
             }
 
             return $supervisor;
         }
 
-        return $user->isManager() ? $user : null;
+        return $user->role->canPerform(Permission::ManageCounters) ? $user : null;
     }
 }

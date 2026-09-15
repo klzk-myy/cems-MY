@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
-use App\Http\Controllers\Concerns\EnsuresManagerOrAdmin;
+use App\Http\Controllers\Concerns\RequiresPermission;
 use App\Http\Controllers\Controller;
 use App\Services\AuditService;
 use App\Services\System\DocumentStorageService;
@@ -14,7 +15,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ReportController extends Controller
 {
     use ApiResponse;
-    use EnsuresManagerOrAdmin;
+    use RequiresPermission;
 
     /**
      * Maps normalized filename prefixes to ReportType values so downloads can
@@ -42,7 +43,7 @@ class ReportController extends Controller
      */
     public function download(string $filename): BinaryFileResponse|StreamedResponse|JsonResponse
     {
-        if ($response = $this->requireManagerOrAdminResponse()) {
+        if ($response = $this->requirePermissionResponse(Permission::ViewReports)) {
             return $response;
         }
 

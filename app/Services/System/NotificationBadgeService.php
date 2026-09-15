@@ -2,6 +2,7 @@
 
 namespace App\Services\System;
 
+use App\Enums\Permission;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Notifications\DatabaseNotification;
@@ -52,7 +53,7 @@ class NotificationBadgeService
      */
     public function dlqCount(?User $user): int
     {
-        if (! $user?->isAdmin()) {
+        if (! $user?->role->canPerform(Permission::ManageDlq)) {
             return 0;
         }
 

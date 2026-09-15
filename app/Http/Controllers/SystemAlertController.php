@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Models\SystemAlert;
 use App\Services\AuditService;
 use App\Services\System\CacheInvalidationService;
@@ -29,7 +30,7 @@ class SystemAlertController extends Controller
      */
     public function index(Request $request): View
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageSystemAlerts);
 
         $query = SystemAlert::with('acknowledgedBy')->latest();
 
@@ -56,7 +57,7 @@ class SystemAlertController extends Controller
      */
     public function showAcknowledge(SystemAlert $alert): View
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageSystemAlerts);
 
         return view('system.alerts.acknowledge-confirm', [
             'alert' => $alert,
@@ -71,7 +72,7 @@ class SystemAlertController extends Controller
      */
     public function acknowledge(SystemAlert $alert): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageSystemAlerts);
 
         if ($alert->isAcknowledged()) {
             return back(status: 302, fallback: route('system.alerts.index'))->with('info', 'Alert was already acknowledged.');

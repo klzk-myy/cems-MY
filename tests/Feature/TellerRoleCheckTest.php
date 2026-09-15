@@ -77,7 +77,7 @@ class TellerRoleCheckTest extends TestCase
     }
 
     #[Test]
-    public function admin_cannot_access_teller_only_routes(): void
+    public function admin_can_access_transaction_creation_routes(): void
     {
         // Create an admin user
         $admin = User::factory()->create([
@@ -89,15 +89,16 @@ class TellerRoleCheckTest extends TestCase
             'is_active' => true,
         ]);
 
-        // Admin should NOT be able to access teller-only routes
+        // Admin is exempt from the matrix and holds every permission, so
+        // the role:create_transactions gate passes — the request reaches
+        // validation (422), not a 403.
         $response = $this->actingAs($admin, 'sanctum')
             ->postJson('/api/v1/wizard/transactions/step1', [
                 'currency_code' => 'USD',
                 'transaction_type' => 'buy',
             ]);
 
-        // Admin should get 403 Forbidden when accessing teller-only route
-        $response->assertStatus(403);
+        $this->assertNotEquals(403, $response->status());
     }
 
     #[Test]

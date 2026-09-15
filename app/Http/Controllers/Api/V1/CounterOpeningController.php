@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
-use App\Http\Controllers\Concerns\EnsuresManagerOrAdmin;
+use App\Http\Controllers\Concerns\RequiresPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
 use App\Http\Requests\Api\V1\Counter\InitiateOpeningRequest;
@@ -26,7 +27,7 @@ class CounterOpeningController extends Controller
 {
     use ApiResponse;
     use AuthorizesCounter;
-    use EnsuresManagerOrAdmin;
+    use RequiresPermission;
 
     public function __construct(
         protected CounterOpeningWorkflowService $workflowService,
@@ -47,7 +48,7 @@ class CounterOpeningController extends Controller
             return $this->errorResponse('User has no assigned branch', [], 400);
         }
 
-        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can view pending opening requests')) {
+        if ($response = $this->requirePermissionResponse(Permission::ManageCounters, 'Only users with the Manage Counters permission can view pending opening requests')) {
             return $response;
         }
 
@@ -96,7 +97,7 @@ class CounterOpeningController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if ($response = $this->requireManagerOrAdminResponse('Only managers and admins can approve and open counters')) {
+        if ($response = $this->requirePermissionResponse(Permission::ManageCounters, 'Only users with the Manage Counters permission can approve and open counters')) {
             return $response;
         }
 

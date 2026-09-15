@@ -3,6 +3,7 @@
 namespace App\Services\Branch;
 
 use App\Enums\CounterSessionStatus;
+use App\Enums\Permission;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Exceptions\Domain\NoActiveCounterSessionException;
@@ -122,8 +123,8 @@ class EmergencyCounterService
 
     public function acknowledge(EmergencyClosure $closure, User $manager): EmergencyClosure
     {
-        if (! $manager->isManager() && ! $manager->isAdmin()) {
-            throw new UnauthorizedException('Only managers or admins can acknowledge emergency closures');
+        if (! $manager->role->canPerform(Permission::ManageCounters)) {
+            throw new UnauthorizedException('Only users permitted to manage counters can acknowledge emergency closures');
         }
 
         $closure->update([

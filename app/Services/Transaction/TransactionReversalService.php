@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Enums\Permission;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\TillBalanceMissingException;
@@ -110,8 +111,8 @@ class TransactionReversalService
 
     public function canUserReverse(User $user, Transaction $transaction): bool
     {
-        // Reversals of completed transactions are compliance-only.
-        return $user->role->isComplianceOfficer();
+        // Reversals of completed transactions are compliance-only by default.
+        return $user->role->canPerform(Permission::ReverseTransactions);
     }
 
     public function isWithinCancellationWindow(Transaction $transaction): bool

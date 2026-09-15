@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Report;
 
+use App\Enums\Permission;
 use App\Enums\ReportType;
 use App\Enums\TransactionStatus;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
@@ -37,7 +38,7 @@ class RegulatoryReportController extends Controller
 
     public function msb2(Msb2ReportRequest $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $date = $request->validated('date', now()->subDay()->toDateString());
 
@@ -108,7 +109,7 @@ class RegulatoryReportController extends Controller
 
     public function msb2Generate(Request $request): JsonResponse|StreamedResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $date = $request->input('date', now()->subDay()->toDateString());
         $filepath = $this->reportingService->generateMSB2($date);
@@ -131,7 +132,7 @@ class RegulatoryReportController extends Controller
 
     public function generateMSB2(StoreMsb2ReportRequest $request): JsonResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $filepath = $this->reportingService->generateMSB2($request->validated('date'));
 
@@ -151,7 +152,7 @@ class RegulatoryReportController extends Controller
      */
     public function lmca(LmcaReportRequest $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $month = $request->validated('month', now()->format('Y-m'));
 
@@ -169,7 +170,7 @@ class RegulatoryReportController extends Controller
      */
     public function lmcaGenerate(LmcaGenerateRequest $request): JsonResponse|StreamedResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $month = $request->validated('month');
         $filepath = $this->reportingService->generateFormLMCACsv($month);
@@ -200,7 +201,7 @@ class RegulatoryReportController extends Controller
 
     private function updateReportStatus(ReportType $reportType, UpdateReportStatusRequest $request): JsonResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $validated = $request->validated();
 
@@ -234,7 +235,7 @@ class RegulatoryReportController extends Controller
      */
     public function quarterlyLvr(QuarterlyLvrRequest $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $quarter = $request->validated('quarter', now()->format('Y').'-Q'.(int) ceil((int) now()->format('n') / 3));
         $quarterVo = Quarter::fromString($quarter);
@@ -253,7 +254,7 @@ class RegulatoryReportController extends Controller
      */
     public function quarterlyLvrGenerate(QuarterlyLvrGenerateRequest $request): JsonResponse|StreamedResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $quarter = $request->validated('quarter');
         $quarterVo = Quarter::fromString($quarter);
@@ -280,7 +281,7 @@ class RegulatoryReportController extends Controller
      */
     public function positionLimit(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $reportGenerated = ReportGenerated::where('report_type', ReportType::Plr)
             ->whereDate('period_start', now()->toDateString())
@@ -296,7 +297,7 @@ class RegulatoryReportController extends Controller
      */
     public function positionLimitGenerate(Request $request): JsonResponse|StreamedResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $filepath = $this->reportingService->generatePositionLimitCsv();
 

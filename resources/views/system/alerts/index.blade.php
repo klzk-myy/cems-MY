@@ -94,7 +94,7 @@
                             </td>
                             <td class="px-4 py-3">
                                 @if(! $alert->isAcknowledged())
-                                    @if(auth()->user()?->isAdmin())
+                                    @if(auth()->user()?->role->canPerform(\App\Enums\Permission::ManageSystemAlerts))
                                         <form method="POST" action="{{ route('system.alerts.acknowledge', $alert) }}">
                                             @csrf
                                             <x-button type="submit" variant="secondary" size="sm">Acknowledge</x-button>

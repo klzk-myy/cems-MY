@@ -5,6 +5,8 @@ namespace App\Enums;
 use App\Models\Branch;
 use App\Models\User;
 use App\Services\System\PermissionService;
+use App\Services\ThresholdService;
+use App\Support\ThresholdDefaults;
 
 /**
  * User Role Enum
@@ -12,12 +14,12 @@ use App\Services\System\PermissionService;
  * Represents the different roles a user can have in the system
  * with their associated permissions.
  *
- * Capability checks (can*() methods) have two layers: the static ceiling
- * declared here, and the admin-managed role_permissions matrix as a
- * restrictive overlay — it can revoke a built-in capability but can never
- * grant one the role does not statically hold. Admin is exempt from the
- * matrix: it operates it, and BNM requires an always-capable principal
- * officer.
+ * Capability checks (can*() methods) are driven by the admin-managed
+ * role_permissions matrix, seeded from the built-in defaults declared in
+ * Permission::defaultMatrix(). An administrator can grant any permission
+ * to any role, or revoke a built-in capability.
+ * Admin is exempt from the matrix: it operates it, and BNM requires an
+ * always-capable principal officer.
  */
 enum UserRole: string
 {
@@ -144,7 +146,7 @@ enum UserRole: string
      */
     public function canApproveHandover(): bool
     {
-        return $this->isManager();
+        return $this->canPerform(Permission::ManageCounters);
     }
 
     /**
@@ -178,7 +180,7 @@ enum UserRole: string
      */
     public function canPerformRevaluation(): bool
     {
-        return $this->isManager() || $this === self::Accountant;
+        return $this->canPerform(Permission::AccessAccounting);
     }
 
     /**
@@ -233,15 +235,18 @@ enum UserRole: string
 
         return match ($this) {
             self::Admin => [self::Teller, self::Manager, self::ComplianceOfficer, self::Accountant, self::Admin],
-            self::Manager => [self::Teller],
-            default => [],
+            // Managers — and any other role granted assign_roles in the
+            // matrix — may assign the floor-level teller role only.
+            default => [self::Teller],
         };
     }
 
     /**
      * Get the rate override limit percentage for this role.
      *
-     * Per BNM compliance requirements:
+     * Per BNM compliance requirements the limits live in the threshold
+     * system (thresholds.rates.override_limit_*), so an admin can tune or
+     * override them via the thresholds page with a full audit trail:
      * - Teller: ±0.5% from base rate
      * - Manager: ±2.0% from base rate
      * - Admin (Principal Officer): Unlimited
@@ -251,8 +256,10 @@ enum UserRole: string
     public function rateOverrideLimit(): ?float
     {
         return match ($this) {
-            self::Teller => 0.5,
-            self::Manager => 2.0,
+            self::Teller => (float) app(ThresholdService::class)
+                ->get('rates', 'override_limit_teller', ThresholdDefaults::FALLBACK_RATE_OVERRIDE_LIMIT_TELLER),
+            self::Manager => (float) app(ThresholdService::class)
+                ->get('rates', 'override_limit_manager', ThresholdDefaults::FALLBACK_RATE_OVERRIDE_LIMIT_MANAGER),
             self::ComplianceOfficer => null,
             self::Accountant => null,
             self::Admin => null, // Unlimited
@@ -297,29 +304,6 @@ enum UserRole: string
     }
 
     /**
-     * The role's built-in capability ceiling for a dynamic permission.
-     * The role_permissions matrix can only narrow this set — it can never
-     * grant a permission the role does not statically hold.
-     */
-    public function staticallyGrants(Permission $permission): bool
-    {
-        return match ($permission) {
-            Permission::CreateTransactions => $this === self::Teller,
-            Permission::ApproveTransactions => $this->isComplianceOfficer(),
-            Permission::ApproveCancellations => $this->isManager() || $this->isComplianceOfficer(),
-            Permission::ReverseTransactions => $this->isComplianceOfficer(),
-            Permission::AccessCompliance => $this->isComplianceOfficer(),
-            Permission::AccessAccounting => $this->isManager() || $this === self::Accountant,
-            Permission::ManageUsers => $this->isManager(),
-            Permission::ManageSettings => $this->isManager(),
-            Permission::ViewReports => in_array($this, [self::Manager, self::ComplianceOfficer, self::Accountant, self::Admin], true),
-            Permission::ManageAllBranches => in_array($this, [self::Admin, self::Accountant], true),
-            Permission::TransferTellerStock => $this->isManager(),
-            Permission::AssignRoles => in_array($this, [self::Manager, self::Admin], true),
-        };
-    }
-
-    /**
      * Whether the admin-managed role_permissions matrix grants this
      * permission to the role. Admin is exempt — it operates the matrix and
      * BNM requires an always-capable principal officer.
@@ -334,12 +318,53 @@ enum UserRole: string
     }
 
     /**
-     * Effective permission check: the static ceiling AND the dynamic
-     * role_permissions matrix must both grant the permission.
+     * Effective permission check: the admin-managed role_permissions
+     * matrix must grant the permission. The matrix is seeded from the
+     * role's built-in defaults but may be widened or narrowed by an admin.
      */
     public function canPerform(Permission $permission): bool
     {
-        return $this->staticallyGrants($permission) && $this->matrixAllows($permission);
+        return $this->matrixAllows($permission);
+    }
+
+    /**
+     * Whether this role satisfies a `role:` middleware argument. Identity
+     * aliases match the role itself (including admin's manager/accountant
+     * inheritance); the legacy module aliases and any Permission key are
+     * effective-permission checks against the role_permissions matrix —
+     * `role:manage_counters` is equivalent to `canPerform(ManageCounters)`.
+     * Unknown strings throw so typos in route files surface loudly instead
+     * of failing closed.
+     */
+    public function matchesRoleAlias(string $alias): bool
+    {
+        return match ($alias) {
+            'admin' => $this->isAdmin(),
+            'manager' => $this->isManager(),
+            'compliance' => $this->canAccessCompliance(),
+            'accountant' => $this->isAccountant() && $this->canAccessAccounting(),
+            'accounting' => $this->canAccessAccounting(),
+            'users' => $this->canManageUsers(),
+            'teller' => $this->isTeller(),
+            default => $this->matchesPermissionKey($alias),
+        };
+    }
+
+    /**
+     * Resolve a `role:` argument that is a Permission key through the
+     * role_permissions matrix.
+     */
+    private function matchesPermissionKey(string $key): bool
+    {
+        $permission = Permission::tryFrom($key);
+
+        if ($permission === null) {
+            throw new \InvalidArgumentException(
+                "Unknown role [{$key}] in role middleware"
+            );
+        }
+
+        return $this->canPerform($permission);
     }
 
     /**

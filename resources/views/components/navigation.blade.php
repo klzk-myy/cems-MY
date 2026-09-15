@@ -19,27 +19,48 @@ $navItems = [
     'reports' => ['route' => 'reports.index', 'label' => 'Reports', 'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
     'users' => ['route' => 'users.index', 'label' => 'Users', 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'],
     'role-permissions' => ['route' => 'admin.role-permissions.index', 'label' => 'Role Permissions', 'icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'],
+    'admin.thresholds' => ['route' => 'admin.thresholds.index', 'label' => 'Thresholds', 'icon' => 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'],
     'branches' => ['route' => 'branches.index', 'label' => 'Branches', 'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'],
     'system.currencies' => ['route' => 'system.currencies.index', 'label' => 'Currencies', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
 ];
 
 $currentRoute = request()->route()?->getName() ?? '';
 
-// Hide nav links the current user is not authorized to reach (route-driven,
-// so it always matches the real middleware protection on each route).
-$userRole = auth()->user()?->role?->value;
+// Hide nav links the current user is not authorized to reach. Each route's
+// role: middleware is evaluated through UserRole::matchesRoleAlias — the
+// same logic CheckRole enforces — so the sidebar always matches the real
+// protection on each route, including role-permission matrix grants.
+$role = auth()->user()?->role;
+$passesMiddleware = function (string $mw) use ($role): bool {
+    if (! preg_match('/^role:(.+)$/', $mw, $m)) {
+        return true;
+    }
+    if ($role === null) {
+        return false;
+    }
+    $aliases = explode(',', $m[1]);
+    try {
+        foreach ($aliases as $alias) {
+            if ($role->matchesRoleAlias($alias)) {
+                return true;
+            }
+        }
+        return false;
+    } catch (\InvalidArgumentException) {
+        // Unknown alias: fall back to a literal role-name comparison so a
+        // typo in a route file cannot blank the navigation on every page.
+        return in_array($role->value, $aliases, true);
+    }
+};
 $filteredNav = [];
 foreach ($navItems as $key => $item) {
     $route = \Illuminate\Support\Facades\Route::getRoutes()->getByName($item['route'] ?? null);
     $allowed = true;
     if ($route !== null) {
         foreach ($route->middleware() as $mw) {
-            if (preg_match('/^role:(.+)$/', $mw, $m)) {
-                $roles = explode(',', $m[1]);
-                if ($userRole === null || ! in_array($userRole, $roles, true)) {
-                    $allowed = false;
-                    break;
-                }
+            if (! $passesMiddleware($mw)) {
+                $allowed = false;
+                break;
             }
         }
     }

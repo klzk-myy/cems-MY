@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Enums\Permission;
 use App\Enums\StockTransferStatus;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\TransactionApprovalException;
@@ -176,8 +177,8 @@ class StockTransferService
     {
         $requester = $this->requester();
 
-        if (! $requester->isManager() && ! $requester->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can approve transfers');
+        if (! $requester->role->canPerform(Permission::ManageStockTransfers)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can approve transfers');
         }
 
         if (! $transfer->isPending()) {
@@ -210,8 +211,8 @@ class StockTransferService
     {
         $requester = $this->requester();
 
-        if (! $requester->isManager() && ! $requester->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can dispatch transfers');
+        if (! $requester->role->canPerform(Permission::ManageStockTransfers)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can dispatch transfers');
         }
 
         if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->source_branch_name)) {
@@ -264,8 +265,8 @@ class StockTransferService
     {
         $requester = $this->requester();
 
-        if (! $requester->isManager() && ! $requester->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can receive items');
+        if (! $requester->role->canPerform(Permission::ManageStockTransfers)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can receive items');
         }
 
         if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
@@ -394,8 +395,8 @@ class StockTransferService
     {
         $requester = $this->requester();
 
-        if (! $requester->isManager() && ! $requester->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can complete transfers');
+        if (! $requester->role->canPerform(Permission::ManageStockTransfers)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can complete transfers');
         }
 
         if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
@@ -444,8 +445,8 @@ class StockTransferService
 
     public function cancel(StockTransfer $transfer, string $reason): void
     {
-        if (! $this->requester()->isManager() && ! $this->requester()->isAdmin()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can cancel transfers');
+        if (! $this->requester()->role->canPerform(Permission::ManageStockTransfers)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can cancel transfers');
         }
 
         if ($transfer->isCompleted()) {
@@ -468,8 +469,8 @@ class StockTransferService
 
         // The taker (destination branch) rejects the maker's request; admin can
         // reject any transfer.
-        if (! $requester->isAdmin() && ! $requester->isManager()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Only managers can reject transfers');
+        if (! $requester->role->canPerform(Permission::ManageStockTransfers)) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can reject transfers');
         }
 
         if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {

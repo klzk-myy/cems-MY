@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Enums\Permission;
 use App\Enums\StockReservationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\UserRole;
@@ -165,7 +166,7 @@ class TransactionCancellationService
 
             // Reversal of a completed transaction is compliance-only. Cancelling
             // a still-open transaction (PendingApproval etc.) remains approver-level.
-            if ($previousStatus->isCompleted() && ! $approver->role->isComplianceOfficer()) {
+            if ($previousStatus->isCompleted() && ! $approver->role->canPerform(Permission::ReverseTransactions)) {
                 Log::warning('Non-compliance approver attempted reversal of completed transaction', [
                     'transaction_id' => $lockedTransaction->id,
                     'approver_id' => $approver->id,

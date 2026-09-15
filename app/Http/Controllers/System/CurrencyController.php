@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\System;
 
+use App\Enums\Permission;
 use App\Enums\TransactionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCurrencyRequest;
@@ -45,7 +46,7 @@ class CurrencyController extends Controller
      */
     public function index(): View
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageCurrencies);
 
         $currencies = Currency::orderBy('code')->get();
 
@@ -57,7 +58,7 @@ class CurrencyController extends Controller
      */
     public function create(): View
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageCurrencies);
 
         return view('system.currencies.create');
     }
@@ -67,7 +68,7 @@ class CurrencyController extends Controller
      */
     public function store(StoreCurrencyRequest $request): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageCurrencies);
 
         $validated = $request->validated();
 
@@ -126,7 +127,7 @@ class CurrencyController extends Controller
      */
     public function edit(Currency $currency): View
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageCurrencies);
 
         return view('system.currencies.edit', compact('currency'));
     }
@@ -136,7 +137,7 @@ class CurrencyController extends Controller
      */
     public function update(UpdateCurrencyRequest $request, Currency $currency): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageCurrencies);
 
         $validated = $request->validated();
 
@@ -176,7 +177,7 @@ class CurrencyController extends Controller
      */
     public function disable(Currency $currency): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageCurrencies);
 
         if (! $currency->is_active) {
             return redirect()->route('system.currencies.index')

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Transaction;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\AuditService;
@@ -34,7 +35,7 @@ class DlqController extends Controller
      */
     public function index(): View
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageDlq);
 
         $transactions = Transaction::with(['customer', 'user', 'transactionErrors'])
             ->where('is_dlq', true)
@@ -54,7 +55,7 @@ class DlqController extends Controller
      */
     public function retry(Request $request, Transaction $transaction): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageDlq);
 
         if (! $this->recoveryService->isInDeadLetterQueue($transaction)) {
             return back()->with('error', 'Transaction is not in the dead letter queue.');
@@ -96,7 +97,7 @@ class DlqController extends Controller
      */
     public function purge(Request $request, Transaction $transaction): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageDlq);
 
         if (! $this->recoveryService->isInDeadLetterQueue($transaction)) {
             return back()->with('error', 'Transaction is not in the dead letter queue.');

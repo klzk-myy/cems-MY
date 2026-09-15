@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
+use App\Enums\Permission;
 use App\Models\SystemLog;
 use App\Models\User;
 
@@ -14,8 +14,7 @@ class SystemLogPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->role === UserRole::Admin ||
-               $user->role === UserRole::ComplianceOfficer;
+        return $user->role->canPerform(Permission::AccessCompliance);
     }
 
     /**
@@ -24,8 +23,7 @@ class SystemLogPolicy
      */
     public function view(User $user, SystemLog $systemLog): bool
     {
-        return $user->role === UserRole::Admin ||
-               $user->role === UserRole::ComplianceOfficer;
+        return $user->role->canPerform(Permission::AccessCompliance);
     }
 
     /**

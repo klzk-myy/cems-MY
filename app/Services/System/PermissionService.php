@@ -12,12 +12,11 @@ use Illuminate\Support\Facades\Cache;
  * PermissionService
  *
  * Provides cached access to the dynamic role-permission matrix stored in the
- * role_permissions table. The matrix is a restrictive overlay on the static
- * role capabilities in UserRole: can() reports the matrix state (built-in
- * defaults merged with DB overrides), while the effective check lives in
- * UserRole::canPerform(), which additionally requires the role's static
- * ceiling. The admin UI toggles permissions via this service; checks read
- * from cache to avoid per-request DB queries.
+ * role_permissions table. The matrix is the authoritative grant set for
+ * dynamic permissions: can() reports the matrix state (built-in defaults
+ * merged with DB overrides) and UserRole::canPerform() checks it directly.
+ * The admin UI toggles permissions via this service; checks read from cache
+ * to avoid per-request DB queries.
  */
 class PermissionService
 {
@@ -30,9 +29,9 @@ class PermissionService
     ) {}
 
     /**
-     * Check whether the matrix grants a permission to a role. This is the
-     * matrix state only — the effective check is UserRole::canPerform(),
-     * which also requires the role's static ceiling.
+     * Check whether the matrix grants a permission to a role. The matrix
+     * is seeded from the role's built-in defaults; UserRole::canPerform()
+     * uses this state as the effective check.
      */
     public function can(UserRole $role, Permission|string $permission): bool
     {
@@ -182,6 +181,28 @@ class PermissionService
         }
 
         $this->clearCache();
+    }
+
+    /**
+     * Restore every role to the built-in default matrix, auditing each
+     * role's change set. Used by the admin UI's "Default" action.
+     */
+    public function resetToDefaults(int $updatedBy): void
+    {
+        $defaults = Permission::defaultMatrix();
+
+        foreach (UserRole::cases() as $role) {
+            $permissions = [];
+            foreach (Permission::cases() as $permission) {
+                $permissions[$permission->value] = in_array(
+                    $permission->value,
+                    $defaults[$role->value] ?? [],
+                    true
+                );
+            }
+
+            $this->updateRolePermissions($role, $permissions, $updatedBy);
+        }
     }
 
     /**

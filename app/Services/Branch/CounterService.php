@@ -4,6 +4,7 @@ namespace App\Services\Branch;
 
 use App\Enums\CounterSessionStatus;
 use App\Enums\CounterStatus;
+use App\Enums\Permission;
 use App\Enums\TellerAllocationStatus;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\SessionClosedException;
@@ -217,7 +218,7 @@ class CounterService
 
                 // Validate variance thresholds
                 if (BcmathHelper::gt(BcmathHelper::abs($variance), $this->thresholdService->getVarianceRedThreshold())) {
-                    if (! $supervisor || ! $supervisor->isManager()) {
+                    if (! $supervisor || ! $supervisor->role->canPerform(Permission::ManageCounters)) {
                         throw new VarianceThresholdException('red', true);
                     }
                 } elseif (BcmathHelper::gt(BcmathHelper::abs($variance), $this->thresholdService->getVarianceYellowThreshold())) {
@@ -348,7 +349,7 @@ class CounterService
         array $physicalCounts
     ): array {
         // Validate supervisor role
-        if (! $supervisor->isManager()) {
+        if (! $supervisor->role->canPerform(Permission::ManageCounters)) {
             throw new SupervisorRequiredException;
         }
 
@@ -466,7 +467,7 @@ class CounterService
             foreach ($perCurrencyVariances as $code => $variance) {
                 $absVar = BcmathHelper::abs($variance);
                 if (BcmathHelper::gt($absVar, $this->thresholdService->getVarianceRedThreshold())) {
-                    if (! $supervisor->isManager()) {
+                    if (! $supervisor->role->canPerform(Permission::ManageCounters)) {
                         throw new VarianceThresholdException('red', true);
                     }
                 } elseif (BcmathHelper::gt($absVar, $this->thresholdService->getVarianceYellowThreshold())) {

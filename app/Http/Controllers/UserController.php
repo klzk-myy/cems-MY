@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
@@ -32,7 +33,7 @@ class UserController extends Controller
      */
     public function index(): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageUsers);
 
         $query = User::with('branch');
 
@@ -52,7 +53,7 @@ class UserController extends Controller
      */
     public function create(): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageUsers);
 
         $roles = $this->assignableRolesForForm();
         $branches = $this->branchOptionsForForm();
@@ -65,7 +66,7 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageUsers);
 
         $validated = $request->validated();
 
@@ -85,7 +86,7 @@ class UserController extends Controller
      */
     public function show(User $user): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageUsers);
         $this->authorize('view', $user);
 
         return view('users.show', compact('user'));
@@ -96,7 +97,7 @@ class UserController extends Controller
      */
     public function edit(User $user): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageUsers);
         $this->authorize('update', $user);
 
         $roles = $this->assignableRolesForForm($user);
@@ -110,7 +111,7 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageUsers);
 
         $validated = $request->validated();
 
@@ -130,7 +131,7 @@ class UserController extends Controller
      */
     public function resetPassword(ResetPasswordRequest $request, User $user): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageUsers);
 
         $this->userService->resetPassword($user, $request->validated('password'), (int) auth()->id());
 

@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
+use App\Enums\Permission;
 use App\Models\Branch;
 use App\Models\User;
 
@@ -26,29 +26,30 @@ class BranchPolicy
 
     /**
      * Determine whether the user can create branches.
-     * Only admins can create branches.
+     * Requires the manage_branches matrix permission (admins by default).
      */
     public function create(User $user): bool
     {
-        return $user->role === UserRole::Admin;
+        return $user->role->canPerform(Permission::ManageBranches);
     }
 
     /**
      * Determine whether the user can update the branch.
-     * Admins can update any branch; managers can update their own branch.
+     * Requires the access_branches matrix permission (managers by
+     * default); non-admin holders may only update their own branch.
      */
     public function update(User $user, Branch $branch): bool
     {
-        return $user->role === UserRole::Admin
-            || ($user->role === UserRole::Manager && $user->branch_id === $branch->id);
+        return $user->role->canPerform(Permission::AccessBranches)
+            && ($user->isAdmin() || $user->branch_id === $branch->id);
     }
 
     /**
      * Determine whether the user can delete the branch.
-     * Only admins can delete branches.
+     * Requires the manage_branches matrix permission (admins by default).
      */
     public function delete(User $user): bool
     {
-        return $user->role === UserRole::Admin;
+        return $user->role->canPerform(Permission::ManageBranches);
     }
 }

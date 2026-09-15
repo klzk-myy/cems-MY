@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RescreenCustomerRequest;
 use App\Models\Alert;
@@ -24,7 +25,7 @@ class RiskDashboardController extends Controller
 
     public function index(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewRiskDashboard);
 
         $threshold = $request->get('threshold', 60);
 
@@ -43,7 +44,7 @@ class RiskDashboardController extends Controller
 
     public function customer(Customer $customer): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewRiskDashboard);
 
         $trends = $this->riskScoringService->getRiskTrend($customer->id, 6);
 
@@ -57,7 +58,7 @@ class RiskDashboardController extends Controller
 
     public function trends(): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewRiskDashboard);
 
         $needsRescreening = $this->riskScoringService->getCustomersNeedingRescreening();
         $highRiskTrend = $this->getHighRiskCustomerTrend();
@@ -72,7 +73,7 @@ class RiskDashboardController extends Controller
 
     public function rescreen(RescreenCustomerRequest $request): RedirectResponse
     {
-        $this->requireAdmin();
+        $this->requirePermission(Permission::ManageRiskScreening);
 
         $result = $this->riskScoringService->rescreenCustomer($request->customer_id);
 

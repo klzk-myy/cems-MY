@@ -41,7 +41,7 @@
                                         @if($openSession->session_date?->toDateString() !== now()->toDateString())
                                             <x-badge variant="warning">Since {{ $openSession->session_date->format('Y-m-d') }}</x-badge>
                                         @endif
-                                        @if(auth()->user()->isManager())
+                                        @if(auth()->user()->role->canPerform(\App\Enums\Permission::ManageCounters))
                                             <x-button variant="ghost" size="sm" href="{{ route('counters.close.show', $counter) }}">Close</x-button>
                                         @endif
                                         <x-button variant="ghost" size="sm" href="{{ route('counters.handover.show', $counter) }}">Handover</x-button>

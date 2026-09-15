@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Enums\AccountCode;
+use App\Enums\Permission;
 use App\Exceptions\Domain\InsufficientPettyCashException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\StoreExpenseRequest;
@@ -50,8 +51,8 @@ class ExpenseController extends Controller
     {
         $user = $request->user();
 
-        if (! $user->role->isManager()) {
-            abort(403, 'Only branch managers and admins can post expenses');
+        if (! $user->role->canPerform(Permission::PostExpenses)) {
+            abort(403, 'Only users with the Post Branch Expenses permission can post expenses');
         }
 
         return view('accounting.expenses.create', [
@@ -66,8 +67,8 @@ class ExpenseController extends Controller
     {
         $user = $request->user();
 
-        if (! $user->role->isManager()) {
-            abort(403, 'Only branch managers and admins can post expenses');
+        if (! $user->role->canPerform(Permission::PostExpenses)) {
+            abort(403, 'Only users with the Post Branch Expenses permission can post expenses');
         }
 
         $validated = $request->validated();

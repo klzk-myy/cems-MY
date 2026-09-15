@@ -15,7 +15,7 @@
                         Edit
                     </x-button>
                 @endcan
-                @if (auth()->user()?->isComplianceOfficer())
+                @if (auth()->user()?->role->canPerform(\App\Enums\Permission::AccessCompliance))
                     @if ($customer->is_frozen)
                         <x-button variant="secondary" type="button" @click="showUnfreeze = true">
                             Unfreeze
@@ -26,7 +26,7 @@
                         </x-button>
                     @endif
                 @endif
-                @if ((auth()->user()?->isManager() || auth()->user()?->isAdmin()) && ! $customer->closed_at)
+                @if (auth()->user()?->role->canPerform(\App\Enums\Permission::ManageCustomers) && ! $customer->closed_at)
                     <x-button variant="danger" type="button" @click="showClose = true">
                         Close Account
                     </x-button>
@@ -218,7 +218,7 @@
             </div>
         </div>
 
-        @if (auth()->user()?->isComplianceOfficer() && ! $customer->is_frozen)
+        @if (auth()->user()?->role->canPerform(\App\Enums\Permission::AccessCompliance) && ! $customer->is_frozen)
             <div x-show="showFreeze" x-cloak @keydown.escape.window="showFreeze = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50" @click="showFreeze = false"></div>
                 <div x-show="showFreeze"
@@ -259,7 +259,7 @@
             </div>
         @endif
 
-        @if ((auth()->user()?->isManager() || auth()->user()?->isAdmin()) && ! $customer->closed_at)
+        @if (auth()->user()?->role->canPerform(\App\Enums\Permission::ManageCustomers) && ! $customer->closed_at)
             <div x-show="showClose" x-cloak @keydown.escape.window="showClose = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50" @click="showClose = false"></div>
                 <div x-show="showClose"

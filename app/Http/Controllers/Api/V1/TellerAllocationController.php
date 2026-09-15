@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
@@ -226,8 +227,8 @@ class TellerAllocationController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->isTeller()) {
-            return $this->errorResponse('Only tellers can request stock allocations', [], 403);
+        if (! $user->role->canPerform(Permission::RequestStock)) {
+            return $this->errorResponse('Only users with the Request Stock Allocations permission can request stock allocations', [], 403);
         }
 
         $validated = $request->validated();

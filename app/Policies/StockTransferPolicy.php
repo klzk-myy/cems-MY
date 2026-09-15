@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Permission;
 use App\Models\Branch;
 use App\Models\StockTransfer;
 use App\Models\User;
@@ -69,7 +70,7 @@ class StockTransferPolicy
             return true;
         }
 
-        return $user->isManager()
+        return $user->role->canPerform(Permission::ManageStockTransfers)
             && $this->branchMatches($user, $stockTransfer->source_branch_name);
     }
 
@@ -93,7 +94,7 @@ class StockTransferPolicy
             return true;
         }
 
-        return $user->isManager()
+        return $user->role->canPerform(Permission::ManageStockTransfers)
             && $this->branchMatches($user, $stockTransfer->destination_branch_name);
     }
 

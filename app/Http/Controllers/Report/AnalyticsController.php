@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Report;
 
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
@@ -32,7 +33,7 @@ class AnalyticsController extends Controller
      */
     public function monthlyTrends(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $year = $request->input('year', now()->year);
         $currency = $request->input('currency', 'all');
@@ -104,7 +105,7 @@ class AnalyticsController extends Controller
      */
     public function profitability(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $startDate = $request->input('start_date', now()->subMonth()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->subMonth()->endOfMonth()->toDateString());
@@ -202,7 +203,7 @@ class AnalyticsController extends Controller
      */
     public function customerAnalysis(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $topCustomers = $this->cacheOptimizationService->remember(
             'analytics.top-customers', 300, ['analytics', 'customers'],
@@ -261,7 +262,7 @@ class AnalyticsController extends Controller
      */
     public function complianceSummary(Request $request): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ViewReports);
 
         $startDate = $request->input('start_date', today()->subMonth()->toDateString());
         $endDate = $request->input('end_date', today()->toDateString());

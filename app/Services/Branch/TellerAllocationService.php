@@ -2,6 +2,7 @@
 
 namespace App\Services\Branch;
 
+use App\Enums\Permission;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\AllocationValidationException;
@@ -347,7 +348,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
      */
     public function canManageAllocations(User $user): bool
     {
-        return $user->role->isManager() || $user->role->isAdmin();
+        return $user->role->canPerform(Permission::ManageAllocations);
     }
 
     public function applyTransactionAllocation(Transaction $transaction, ?TellerAllocation $allocation = null): void

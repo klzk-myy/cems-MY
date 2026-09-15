@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Enums\TransactionType;
 use App\Http\Concerns\BranchScopedQuery;
 use App\Http\Requests\CloseTillRequest;
@@ -39,7 +40,7 @@ class StockCashController extends Controller
      */
     public function index(): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStock);
 
         $user = auth()->user();
 
@@ -102,7 +103,7 @@ class StockCashController extends Controller
      */
     public function openTill(OpenTillRequest $request): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStock);
 
         $validated = $request->validated();
 
@@ -152,7 +153,7 @@ class StockCashController extends Controller
      */
     public function closeTill(CloseTillRequest $request): RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStock);
 
         $validated = $request->validated();
 
@@ -206,7 +207,7 @@ class StockCashController extends Controller
      */
     public function showPosition(CurrencyPosition $position): View
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStock);
 
         if (! $this->belongsToCurrentUserBranch($position)) {
             abort(403, 'You do not have access to this currency position.');
@@ -232,7 +233,7 @@ class StockCashController extends Controller
      */
     public function tillReport(TillReportRequest $request): View|RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStock);
         $validated = $request->validated();
 
         $date = $validated['date'] ?? today()->toDateString();
@@ -255,7 +256,7 @@ class StockCashController extends Controller
      */
     public function reconciliationReport(TillReconciliationRequest $request): View|RedirectResponse
     {
-        $this->requireManagerOrAdmin();
+        $this->requirePermission(Permission::ManageStock);
 
         $validated = $request->validated();
 
