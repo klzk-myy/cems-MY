@@ -360,4 +360,104 @@ class BankReconciliationServiceTest extends TestCase
         $this->assertEquals(BankReconciliationStatus::Unmatched, $second->status);
         $this->assertNull($second->matched_to_journal_entry_id);
     }
+
+    #[Test]
+    public function report_and_view_data_share_one_normalized_unmatched_item_shape(): void
+    {
+        $accountCode = '1007';
+        $fromDate = now()->startOfMonth()->toDateString();
+        $toDate = now()->endOfMonth()->toDateString();
+
+        ChartOfAccount::updateOrCreate(
+            ['account_code' => $accountCode],
+            [
+                'account_name' => 'Cash',
+                'account_type' => 'Asset',
+                'is_active' => true,
+            ]
+        );
+
+        $check = BankReconciliation::create([
+            'account_code' => $accountCode,
+            'statement_date' => $fromDate,
+            'reference' => 'CHK-1',
+            'description' => 'Outstanding check',
+            'debit' => '500.00',
+            'credit' => '0.00',
+            'status' => 'unmatched',
+            'created_by' => $this->user->id,
+        ]);
+
+        $deposit = BankReconciliation::create([
+            'account_code' => $accountCode,
+            'statement_date' => $fromDate,
+            'reference' => 'DEP-1',
+            'description' => 'Deposit in transit',
+            'debit' => '0.00',
+            'credit' => '250.00',
+            'status' => 'unmatched',
+            'created_by' => $this->user->id,
+        ]);
+
+        // Matched, exception, and out-of-range lines must not leak into the
+        // unmatched set any consumer renders.
+        BankReconciliation::create([
+            'account_code' => $accountCode,
+            'statement_date' => $fromDate,
+            'description' => 'Matched line',
+            'debit' => '10.00',
+            'credit' => '0.00',
+            'status' => 'matched',
+            'created_by' => $this->user->id,
+        ]);
+
+        $exception = BankReconciliation::create([
+            'account_code' => $accountCode,
+            'statement_date' => $fromDate,
+            'description' => 'Exception line',
+            'debit' => '75.00',
+            'credit' => '0.00',
+            'status' => 'exception',
+            'notes' => 'Needs review',
+            'created_by' => $this->user->id,
+        ]);
+
+        BankReconciliation::create([
+            'account_code' => $accountCode,
+            'statement_date' => now()->subMonths(2)->toDateString(),
+            'description' => 'Out of range',
+            'debit' => '99.00',
+            'credit' => '0.00',
+            'status' => 'unmatched',
+            'created_by' => $this->user->id,
+        ]);
+
+        $report = $this->bankReconciliationService->getReconciliationReport($accountCode, $fromDate, $toDate);
+        $viewData = $this->bankReconciliationService->getReconciliationViewData($accountCode, $fromDate, $toDate);
+
+        $expectedKeys = ['id', 'date', 'reference', 'description', 'debit', 'credit', 'amount', 'status', 'notes'];
+
+        $unmatchedItems = collect($report['unmatched_items']);
+        $exceptions = collect($report['exceptions']);
+
+        $this->assertCount(2, $unmatchedItems);
+        $this->assertSame($expectedKeys, array_keys($unmatchedItems->first()));
+        $this->assertCount(1, $exceptions);
+        $this->assertSame($expectedKeys, array_keys($exceptions->first()));
+        $this->assertEquals(BankReconciliationStatus::Unmatched, $unmatchedItems->first()['status']);
+        $this->assertEquals(BankReconciliationStatus::Exception, $exceptions->first()['status']);
+
+        // The index lists are a partition of the exact same normalized rows.
+        $this->assertEqualsCanonicalizing(
+            $unmatchedItems->pluck('id')->all(),
+            [
+                ...collect($viewData['outstanding_checks_list'])->pluck('id')->all(),
+                ...collect($viewData['outstanding_deposits_list'])->pluck('id')->all(),
+            ]
+        );
+
+        $this->assertSame([$check->id], collect($viewData['outstanding_checks_list'])->pluck('id')->all());
+        $this->assertSame([$deposit->id], collect($viewData['outstanding_deposits_list'])->pluck('id')->all());
+        $this->assertSame($exception->id, $exceptions->first()['id']);
+    }
 }

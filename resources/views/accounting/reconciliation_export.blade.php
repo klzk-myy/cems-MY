@@ -28,14 +28,14 @@
                     <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
                 </x-slot:thead>
                 <x-slot:tbody>
-                    @forelse ($report['unmatched_items']->merge($report['exceptions'])->sortBy('statement_date') as $item)
+                    @forelse ($report['unmatched_items']->merge($report['exceptions'])->sortBy('date') as $item)
                         <tr>
-                            <td class="px-4 py-3 text-sm">{{ $item->statement_date?->format('Y-m-d') }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->reference ?? '—' }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->description }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $item->debit > 0 ? number_format((float) $item->debit, 2) : '-' }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $item->credit > 0 ? number_format((float) $item->credit, 2) : '-' }}</td>
-                            <td class="px-4 py-3 text-center"><x-badge :variant="$item->status->color()">{{ $item->status->label() }}</x-badge></td>
+                            <td class="px-4 py-3 text-sm">{{ $item['date'] }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $item['reference'] ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $item['description'] }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $item['debit'] > 0 ? number_format((float) $item['debit'], 2) : '-' }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $item['credit'] > 0 ? number_format((float) $item['credit'], 2) : '-' }}</td>
+                            <td class="px-4 py-3 text-center"><x-badge :variant="$item['status']->color()">{{ $item['status']->label() }}</x-badge></td>
                         </tr>
                     @empty
                         <x-empty-state message="No lines in range." :colspan="6" />

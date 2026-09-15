@@ -490,21 +490,11 @@ class SetupController extends Controller
         }
 
         if (isset($setupData['stock'])) {
-            $this->createInitialStock($setupData['stock']);
+            $this->setupService->createInitialStock($setupData['stock']);
         }
 
         if (isset($setupData['opening_balance'])) {
-            $this->createOpeningBalance($setupData['opening_balance']);
+            $this->setupService->createOpeningBalance($setupData['opening_balance']);
         }
-    }
-
-    private function createOpeningBalance(array $balanceData): void
-    {
-        $this->setupService->createOpeningBalance($balanceData);
-    }
-
-    private function createInitialStock(array $stockData): void
-    {
-        $this->setupService->createInitialStock($stockData);
     }
 }

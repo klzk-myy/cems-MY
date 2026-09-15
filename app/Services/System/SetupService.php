@@ -12,6 +12,7 @@ use App\Models\BranchPool;
 use App\Models\CurrencyPosition;
 use App\Models\ExchangeRate;
 use App\Models\FiscalYear;
+use App\Models\JournalEntry;
 use App\Models\PasswordHistory;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
@@ -213,9 +214,10 @@ class SetupService
     /**
      * Post the opening balance journal entry (cash debits + owner equity credit).
      *
-     * Extracted from SetupController so the controller only coordinates setup.
-     * The financial behaviour (entry number, posted status, MYR/foreign cash
-     * debits, equity credit and the BCMath totals) is preserved exactly.
+     * The single canonical opening-balance writer: every caller (setup wizard,
+     * demo comprehensive setup) funnels through here so the entry always goes
+     * through AccountingService::createJournalEntry with journal lines AND
+     * account_ledger rows written atomically.
      *
      * @param  array<string, mixed>  $balanceData
      */
@@ -230,7 +232,7 @@ class SetupService
         }
 
         $openingDate = $fiscalYear->start_date;
-        $entryNumber = 'OB-'.$fiscalYear->year_code.'-0001';
+        $entryNumber = $this->nextOpeningBalanceEntryNumber($fiscalYear);
 
         // Calculate total opening balance using BCMath for precision
         $totalMyr = $balanceData['opening_balance_myr'] ?? '0';
@@ -313,6 +315,22 @@ class SetupService
 
         $entry->entry_number = $entryNumber;
         $entry->save();
+    }
+
+    /**
+     * Next opening-balance entry number for the fiscal year.
+     *
+     * Sequenced per fiscal year (OB-{year}-0001, -0002, ...) so repeated
+     * calls — e.g. the per-branch demo setup — can never collide on the
+     * fixed -0001 suffix the first call historically used.
+     */
+    protected function nextOpeningBalanceEntryNumber(FiscalYear $fiscalYear): string
+    {
+        $prefix = 'OB-'.$fiscalYear->year_code.'-';
+
+        $sequence = JournalEntry::where('entry_number', 'like', $prefix.'%')->count() + 1;
+
+        return $prefix.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
     }
 
     /**

@@ -17,12 +17,12 @@ use Illuminate\Support\Carbon;
  * @property string|null $reference
  * @property string|null $check_number
  * @property Carbon|null $check_date
- * @property string|null $check_status 'issued', 'presented', 'cleared', 'returned', 'stopped'
+ * @property CheckStatus|null $check_status 'issued', 'presented', 'cleared', 'returned', 'stopped'
  * @property string|null $check_payee
  * @property string $description
  * @property string $debit
  * @property string $credit
- * @property string $status 'unmatched', 'matched', 'exception'
+ * @property BankReconciliationStatus $status 'unmatched', 'matched', 'exception'
  * @property int|null $matched_to_journal_entry_id
  * @property int $created_by
  * @property Carbon|null $matched_at

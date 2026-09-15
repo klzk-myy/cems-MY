@@ -37,12 +37,12 @@
                 <x-slot:tbody>
                     @forelse ($report['unmatched_items'] as $item)
                         <tr class="hover:bg-canvas-subtle">
-                            <td class="px-4 py-3 text-sm">{{ $item->statement_date?->format('Y-m-d') }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->reference ?? '—' }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->description }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $item->debit > 0 ? number_format((float) $item->debit, 2) : '-' }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $item->credit > 0 ? number_format((float) $item->credit, 2) : '-' }}</td>
-                            <td class="px-4 py-3 text-center"><x-badge :variant="$item->status->color()">{{ $item->status->label() }}</x-badge></td>
+                            <td class="px-4 py-3 text-sm">{{ $item['date'] }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $item['reference'] ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $item['description'] }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $item['debit'] > 0 ? number_format((float) $item['debit'], 2) : '-' }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ (float) $item['credit'] > 0 ? number_format((float) $item['credit'], 2) : '-' }}</td>
+                            <td class="px-4 py-3 text-center"><x-badge :variant="$item['status']->color()">{{ $item['status']->label() }}</x-badge></td>
                         </tr>
                     @empty
                         <x-empty-state message="All statement lines are matched." :colspan="6" />
@@ -63,11 +63,11 @@
                 <x-slot:tbody>
                     @forelse ($report['exceptions'] as $item)
                         <tr class="hover:bg-canvas-subtle">
-                            <td class="px-4 py-3 text-sm">{{ $item->statement_date?->format('Y-m-d') }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->reference ?? '—' }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->description }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item->getAmount(), 2) }}</td>
-                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $item->notes ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $item['date'] }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $item['reference'] ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $item['description'] }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['amount'], 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $item['notes'] ?? '—' }}</td>
                         </tr>
                     @empty
                         <x-empty-state message="No exceptions." :colspan="5" />

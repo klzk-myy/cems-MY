@@ -9,7 +9,9 @@ use App\Models\ExchangeRate;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\System\MathService;
+use App\Services\System\SetupService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -27,6 +29,11 @@ class ComprehensiveSetup extends Command
     protected int $branchCount;
 
     protected int $transactionsPerBranch;
+
+    public function __construct(protected SetupService $setupService)
+    {
+        parent::__construct();
+    }
 
     public function handle()
     {
@@ -161,10 +168,30 @@ class ComprehensiveSetup extends Command
             }
         }
 
+        // Canonical posting preconditions: opening balances below are journaled
+        // via AccountingService::createJournalEntry, which requires the chart of
+        // accounts plus an open fiscal year and accounting period to exist.
+        Artisan::call('db:seed', [
+            '--class' => 'EnhancedChartOfAccountsSeeder',
+            '--force' => true,
+        ]);
+        $this->setupService->ensureFiscalYearAndPeriods();
+
         $this->logger->logWithSeverity('setup_base_data_created', [
             'entity_type' => 'System',
             'new_values' => [],
         ], 'INFO');
+    }
+
+    /**
+     * Demo opening stock per branch. Shared by the pool seeding and the
+     * opening-balance journal so the two can never drift apart.
+     *
+     * @return array<string, int>
+     */
+    protected function openingStockAmounts(): array
+    {
+        return ['USD' => 10000, 'EUR' => 7000, 'GBP' => 5000];
     }
 
     protected function createBranches(): array
@@ -198,9 +225,7 @@ class ComprehensiveSetup extends Command
     {
         $this->info("Initializing opening stock for {$branch->code}...");
 
-        $currencies = ['USD' => 10000, 'EUR' => 7000, 'GBP' => 5000];
-
-        foreach ($currencies as $currencyCode => $amount) {
+        foreach ($this->openingStockAmounts() as $currencyCode => $amount) {
             $pool = BranchPool::firstOrCreate(
                 ['branch_id' => $branch->id, 'currency_code' => $currencyCode],
                 ['available_balance' => '0', 'allocated_balance' => '0']
@@ -225,8 +250,13 @@ class ComprehensiveSetup extends Command
     {
         $this->info("Creating opening balance for {$branch->code}...");
 
-        // This would normally use AccountingService, but for simplicity we'll skip
-        // In real scenario, use: app(AccountingService::class)->createJournalEntry(...)
+        // Delegate to the single canonical writer: SetupService posts through
+        // AccountingService::createJournalEntry so journal lines AND
+        // account_ledger rows are always written atomically.
+        $this->setupService->createOpeningBalance([
+            'opening_balance_myr' => '0',
+            'opening_balance_foreign' => $this->openingStockAmounts(),
+        ]);
 
         $this->logger->log('OPENING_BALANCE', null, 'Branch', $branch->id, [], [
             'branch_code' => $branch->code,

@@ -2,14 +2,19 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\BankReconciliationStatus;
 use App\Enums\CheckStatus;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\BankReconciliation;
 use App\Models\JournalEntry;
 use App\Services\System\MathService;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @phpstan-type ReconciliationItem array{id: int, date: string|null, reference: string|null, description: string, debit: string, credit: string, amount: string, status: BankReconciliationStatus, notes: string|null}
+ */
 class BankReconciliationService
 {
     public function __construct(
@@ -128,7 +133,7 @@ class BankReconciliationService
         $record = BankReconciliation::findOrFail($reconciliationId);
 
         if (! in_array($record->check_status, [CheckStatus::Issued, CheckStatus::Presented])) {
-            throw new AccountingPeriodException("Check {$record->check_number} cannot be cleared from '{$record->check_status}' status.");
+            throw new AccountingPeriodException("Check {$record->check_number} cannot be cleared from '{$record->check_status?->value}' status.");
         }
 
         $record->update([
@@ -236,7 +241,64 @@ class BankReconciliationService
     }
 
     /**
+     * Unmatched statement lines for an account within a period.
+     *
+     * The single unmatched-items query behind the index view, the report,
+     * and the export — every consumer derives from this set so the three
+     * can never drift apart.
+     *
+     * @return Collection<int, BankReconciliation>
+     */
+    protected function unmatchedItems(string $accountCode, string $fromDate, string $toDate): Collection
+    {
+        return BankReconciliation::where('account_code', $accountCode)
+            ->unmatched()
+            ->whereBetween('statement_date', [$fromDate, $toDate])
+            ->get();
+    }
+
+    /**
+     * Exception-flagged statement lines for an account within a period.
+     *
+     * @return Collection<int, BankReconciliation>
+     */
+    protected function exceptionItems(string $accountCode, string $fromDate, string $toDate): Collection
+    {
+        return BankReconciliation::where('account_code', $accountCode)
+            ->exceptions()
+            ->whereBetween('statement_date', [$fromDate, $toDate])
+            ->get();
+    }
+
+    /**
+     * Normalize one statement line into the row shape every reconciliation
+     * consumer renders. Money and dates are flattened to scalars; the
+     * status enum is kept for badge display.
+     *
+     * @return ReconciliationItem
+     */
+    protected function normalizeItem(BankReconciliation $item): array
+    {
+        /** @var ReconciliationItem $row */
+        $row = [
+            'id' => $item->id,
+            'date' => $item->statement_date?->toDateString(),
+            'reference' => $item->reference,
+            'description' => $item->description,
+            'debit' => (string) $item->debit,
+            'credit' => (string) $item->credit,
+            'amount' => $item->getAmount(),
+            'status' => $item->status,
+            'notes' => $item->notes,
+        ];
+
+        return $row;
+    }
+
+    /**
      * Get reconciliation report
+     *
+     * @return array{account_code: string, period: array{from: string, to: string}, statement_balance: string, unmatched_count: int, unmatched_items: iterable<int, ReconciliationItem>, exception_count: int, exceptions: iterable<int, ReconciliationItem>}
      */
     public function getReconciliationReport(string $accountCode, string $fromDate, string $toDate): array
     {
@@ -246,15 +308,11 @@ class BankReconciliationService
 
         $statementBalance = $this->sumAmounts($statementRecords);
 
-        $unmatchedItems = BankReconciliation::where('account_code', $accountCode)
-            ->where('status', 'unmatched')
-            ->whereBetween('statement_date', [$fromDate, $toDate])
-            ->get();
+        $unmatchedItems = $this->unmatchedItems($accountCode, $fromDate, $toDate)
+            ->map(fn (BankReconciliation $item) => $this->normalizeItem($item));
 
-        $exceptions = BankReconciliation::where('account_code', $accountCode)
-            ->where('status', 'exception')
-            ->whereBetween('statement_date', [$fromDate, $toDate])
-            ->get();
+        $exceptions = $this->exceptionItems($accountCode, $fromDate, $toDate)
+            ->map(fn (BankReconciliation $item) => $this->normalizeItem($item));
 
         return [
             'account_code' => $accountCode,
@@ -271,26 +329,24 @@ class BankReconciliationService
      * Get reconciliation report transformed for view consumption.
      *
      * Transforms raw report data into format expected by the reconciliation view.
+     *
+     * @return array{book_balance: string, outstanding_checks: string, outstanding_deposits: string, adjusted_balance: string, outstanding_checks_list: array<int, ReconciliationItem>, outstanding_deposits_list: array<int, ReconciliationItem>}
      */
     public function getReconciliationViewData(string $accountCode, string $fromDate, string $toDate): array
     {
         $rawReport = $this->getReconciliationReport($accountCode, $fromDate, $toDate);
 
-        // Transform unmatched items to match view expectations
+        // Partition the normalized unmatched rows: unmatched debits are
+        // outstanding checks, unmatched credits are deposits in transit.
+        /** @var Collection<int, ReconciliationItem> $outstandingChecks */
         $outstandingChecks = collect();
+        /** @var Collection<int, ReconciliationItem> $outstandingDeposits */
         $outstandingDeposits = collect();
         foreach ($rawReport['unmatched_items'] as $item) {
-            $itemData = [
-                'id' => $item->id,
-                'date' => $item->statement_date?->toDateString(),
-                'reference' => $item->reference,
-                'description' => $item->description,
-                'amount' => $item->getAmount(),
-            ];
-            if ($this->mathService->compare((string) $item->debit, '0') > 0) {
-                $outstandingChecks->push($itemData);
+            if ($this->mathService->compare($item['debit'], '0') > 0) {
+                $outstandingChecks->push($item);
             } else {
-                $outstandingDeposits->push($itemData);
+                $outstandingDeposits->push($item);
             }
         }
 
@@ -312,7 +368,7 @@ class BankReconciliationService
         );
 
         return [
-            'book_balance' => $rawReport['statement_balance'] ?? 0,
+            'book_balance' => $rawReport['statement_balance'] ?? '0',
             'outstanding_checks' => $checks,
             'outstanding_deposits' => $deposits,
             'adjusted_balance' => $adjustedBalance,
