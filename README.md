@@ -3,9 +3,9 @@
 Currency Exchange Management System for Malaysian Money Services Businesses (MSB), compliant with Bank Negara Malaysia (BNM) AML/CFT requirements. Handles foreign currency trading, till management, compliance reporting, and double-entry accounting.
 
 ## Demo
-Url: https://cems.schnellnetz.com
-Username: admin
-Password: Password123!
+- Url: https://cems.schnellnetz.com
+- Username: admin
+- Password: Password123!
 
 ## Table of Contents
 
