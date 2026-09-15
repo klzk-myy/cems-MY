@@ -77,6 +77,10 @@ run_remote "DEPLOY_PATH=$(printf '%q' "$DEPLOY_PATH") DEPLOY_BRANCH=$(printf '%q
   php artisan view:cache
   php artisan optimize
 
+  # Warn when DB threshold overrides are active — they take precedence over
+  # .env values, so env changes made for this deploy will not affect them.
+  php artisan thresholds:check-overrides || echo "WARNING: active threshold DB overrides detected (see output above)"
+
   php artisan horizon:terminate || echo "WARNING: failed to terminate Horizon"
   sudo supervisorctl restart cems-worker:* || echo "WARNING: failed to restart queue workers"
 

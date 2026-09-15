@@ -338,8 +338,14 @@ class AlertTriageService
      */
     protected function getOverdueCount(): int
     {
-        // SLA hours per priority, sourced from config (thresholds.alert_sla_hours).
-        $sla = config('thresholds.alert_sla_hours', []);
+        // SLA hours per priority via ThresholdService so persisted DB
+        // overrides apply (thresholds.alert_sla_hours.* leaves).
+        $sla = [
+            'critical' => (int) $this->thresholdService->get('alert_sla_hours', 'critical', 4),
+            'high' => (int) $this->thresholdService->get('alert_sla_hours', 'high', 8),
+            'medium' => (int) $this->thresholdService->get('alert_sla_hours', 'medium', 24),
+            'low' => (int) $this->thresholdService->get('alert_sla_hours', 'low', 72),
+        ];
 
         // Compute overdue in database based on SLA hours per priority
         return Alert::query()
@@ -347,16 +353,16 @@ class AlertTriageService
             ->where(function ($query) use ($sla) {
                 $query->where(function ($q) use ($sla) {
                     $q->where('priority', AlertPriority::Critical->value)
-                        ->where('created_at', '<', now()->subHours((int) ($sla['critical'] ?? 4)));
+                        ->where('created_at', '<', now()->subHours($sla['critical']));
                 })->orWhere(function ($q) use ($sla) {
                     $q->where('priority', AlertPriority::High->value)
-                        ->where('created_at', '<', now()->subHours((int) ($sla['high'] ?? 8)));
+                        ->where('created_at', '<', now()->subHours($sla['high']));
                 })->orWhere(function ($q) use ($sla) {
                     $q->where('priority', AlertPriority::Medium->value)
-                        ->where('created_at', '<', now()->subHours((int) ($sla['medium'] ?? 24)));
+                        ->where('created_at', '<', now()->subHours($sla['medium']));
                 })->orWhere(function ($q) use ($sla) {
                     $q->where('priority', AlertPriority::Low->value)
-                        ->where('created_at', '<', now()->subHours((int) ($sla['low'] ?? 72)));
+                        ->where('created_at', '<', now()->subHours($sla['low']));
                 });
             })
             ->count();

@@ -456,7 +456,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
     /**
      * BNM position ceiling: a Buy that would take the branch position above
-     * config('cems.position_limits.<currency>') is rejected under the lock.
+     * thresholds.position_limits.<currency> is rejected under the lock.
      */
     private function assertPositionLimit(?CurrencyPosition $position, array $data): void
     {
@@ -468,7 +468,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             return; // Sells only reduce the position.
         }
 
-        $limit = config('cems.position_limits.'.$data['currency_code']);
+        $limit = $this->thresholdService->getPositionLimit((string) $data['currency_code']);
 
         if ($limit === null || ! is_numeric($limit)) {
             return;

@@ -5,79 +5,46 @@ namespace App\Services;
 use App\Exceptions\Domain\ThresholdNotFoundException;
 use App\Models\ThresholdAudit;
 use App\Services\Contracts\ThresholdServiceInterface;
+use App\Support\ThresholdDefaults;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 
 class ThresholdService implements ThresholdServiceInterface
 {
     /**
-     * In-memory cache of persisted threshold values for the current request.
-     * Prevents repeated database queries when the same threshold is read multiple times.
+     * In-memory snapshot of persisted threshold values for the current request.
+     * Populated once per instance by loadPersistedValues(); absent keys have
+     * no override.
      *
-     * @var array<string, string|null>
+     * @var array<string, string>
      */
     private array $persistedValueCache = [];
 
     /**
-     * Fallback constants for backward compatibility.
-     * These match the values in the original service constants.
+     * Whether the persisted-values snapshot has been loaded.
      */
-    public const FALLBACK_AUTO_APPROVE = '10000';
+    private bool $persistedValuesLoaded = false;
 
-    public const FALLBACK_MANAGER = '50000';
-
-    public const FALLBACK_CDD_SPECIFIC = '3000';
-
-    public const FALLBACK_CDD_STANDARD = '10000';
-
-    public const FALLBACK_CDD_LARGE = '50000';
-
-    public const FALLBACK_STR = '50000';
-
-    public const FALLBACK_EDD = '50000';
-
-    public const FALLBACK_RISK_HIGH = '50000';
-
-    public const FALLBACK_RISK_MEDIUM = '30000';
-
-    public const FALLBACK_RISK_LOW = '10000';
-
-    public const FALLBACK_ALERT_CRITICAL = '50000';
-
-    public const FALLBACK_ALERT_HIGH = '30000';
-
-    public const FALLBACK_ALERT_MEDIUM = '10000';
-
-    public const FALLBACK_VARIANCE_YELLOW = '100.00';
-
-    public const FALLBACK_VARIANCE_RED = '500.00';
-
-    public const FALLBACK_STRUCTURING_SUB = '3000';
-
-    public const FALLBACK_STRUCTURING_MIN_TXNS = 3;
-
-    public const FALLBACK_DURATION_WARNING = 24;
-
-    public const FALLBACK_DURATION_CRITICAL = 48;
-
-    public const FALLBACK_VELOCITY_ALERT = '50000';
-
-    public const FALLBACK_VELOCITY_WARNING = '45000';
-
-    public const FALLBACK_ROUND_TRIP = '5000';
-
-    public const FALLBACK_CURRENCY_FLOW_LOOKBACK_DAYS = 7;
-
-    public const FALLBACK_AML_AGGREGATE = '50000';
-
-    public const FALLBACK_AML_AMOUNT = '50000';
+    /**
+     * Raw config/thresholds.php contents, loaded once per instance.
+     * Used to determine file/env defaults without being affected by runtime
+     * config mutations from set().
+     *
+     * @var array<string, array<string, mixed>>|null
+     */
+    private ?array $configDefaults = null;
 
     /**
      * Set a threshold value in config, persist to database, and audit the change.
      *
-     * The value is both stored in config (for the duration of this request) and
-     * persisted in the threshold_audits table (for cross-request durability via
-     * the get() method).
+     * The value is both stored in config (for the duration of this request, so
+     * direct config('thresholds.*') readers stay consistent within the request)
+     * and persisted in the threshold_audits table (for cross-request durability
+     * via the get() method).
+     *
+     * This is a trusted internal API: authorization is enforced by callers
+     * (route middleware + controller permission checks), which keeps console
+     * commands and jobs usable without an authenticated user.
      *
      * @param  string  $category  The threshold category (e.g., 'approval', 'cdd')
      * @param  string  $key  The threshold key (e.g., 'auto_approve', 'manager')
@@ -87,12 +54,10 @@ class ThresholdService implements ThresholdServiceInterface
      */
     public function set(string $category, string $key, string|int|float $value, ?string $reason = null): bool
     {
-        // Derive the valid categories from the thresholds config itself, plus
-        // any code-only categories read by getters (e.g. geographic_risk).
-        $allowedCategories = array_merge(
-            array_keys(config('thresholds') ?? []),
-            ['geographic_risk']
-        );
+        $key = strtolower($key);
+
+        // Valid categories are derived from the thresholds config itself.
+        $allowedCategories = array_keys(config('thresholds') ?? []);
         if (! in_array($category, $allowedCategories, true)) {
             throw new \InvalidArgumentException("Invalid threshold category: {$category}");
         }
@@ -115,10 +80,44 @@ class ThresholdService implements ThresholdServiceInterface
         // Audit the change (persists to DB for cross-request durability)
         $this->auditChange($category, $key, (string) $oldValue, (string) $value, $reason);
 
-        // Clear the in-memory cache so the next get() reads the freshly persisted value.
-        unset($this->persistedValueCache["{$category}.{$key}"]);
+        // The just-written row is the latest persisted value — reflect it in
+        // the in-memory cache so later get() calls in this request see it.
+        $this->persistedValueCache["{$category}.{$key}"] = (string) $value;
 
         return true;
+    }
+
+    /**
+     * Reset a DB-overridden threshold back to its config default.
+     *
+     * Appends a reverting audit row via set() — history is never deleted.
+     * The default is read from the raw config file so a set() earlier in the
+     * same request cannot be mistaken for the file/env default.
+     *
+     * @return bool True if an override was reverted, false when there was
+     *              no override or the override already matched the default
+     */
+    public function reset(string $category, string $key, ?string $reason = null): bool
+    {
+        $key = strtolower($key);
+
+        $defaults = $this->configDefaults();
+        if (! isset($defaults[$category]) || ! array_key_exists($key, $defaults[$category])) {
+            throw new \InvalidArgumentException("Unknown threshold: {$category}.{$key}");
+        }
+
+        $default = $defaults[$category][$key];
+
+        if (! $this->isOverridden($category, $key)) {
+            return false;
+        }
+
+        return $this->set(
+            $category,
+            $key,
+            (string) $default,
+            $reason ?? 'Reset to config default'
+        );
     }
 
     /**
@@ -132,13 +131,18 @@ class ThresholdService implements ThresholdServiceInterface
      * before the database, the DB override would never be read — the env default
      * always wins. Checking the DB first ensures runtime threshold changes made
      * via set() actually take effect across requests.
+     *
+     * This method MUST NOT write to the config repository: get() runs inside
+     * long-lived Horizon workers, and a read-side write would leak DB overrides
+     * into later jobs' config('thresholds.*') reads and diverge from consumers
+     * that read the config directly.
      */
     public function get(string $category, string $key, string|int|float|null $fallback = null): string|int|float
     {
+        $key = strtolower($key);
+
         $persisted = $this->getPersistedValue($category, $key);
         if ($persisted !== null) {
-            config(["thresholds.{$category}.{$key}" => $persisted]);
-
             return $persisted;
         }
 
@@ -161,56 +165,156 @@ class ThresholdService implements ThresholdServiceInterface
     /**
      * Retrieve the most recently persisted value from the threshold_audits table.
      *
-     * Returns null if no override has ever been recorded for this key.
+     * Returns null if no override has ever been recorded for this key. The
+     * first call bulk-loads the latest row per key in a single query, so N
+     * threshold reads on one instance cost one query, not N.
      */
     protected function getPersistedValue(string $category, string $key): ?string
     {
-        $cacheKey = "{$category}.{$key}";
+        $this->loadPersistedValues();
 
-        if (array_key_exists($cacheKey, $this->persistedValueCache)) {
-            return $this->persistedValueCache[$cacheKey];
+        return $this->persistedValueCache["{$category}.{$key}"] ?? null;
+    }
+
+    /**
+     * Snapshot the latest persisted value per category.key into
+     * $persistedValueCache. Absent keys simply have no override — they are
+     * not stored. Rows written via set() in this request are newer than any
+     * snapshot row, so existing cache entries are never overwritten.
+     */
+    private function loadPersistedValues(): void
+    {
+        if ($this->persistedValuesLoaded) {
+            return;
         }
+        $this->persistedValuesLoaded = true;
 
         try {
-            $latest = ThresholdAudit::where('category', $category)
-                ->where('key', $key)
-                ->latest('changed_at')
-                ->first();
+            $latestIds = ThresholdAudit::query()
+                ->selectRaw('MAX(id) as id')
+                ->groupBy('category', 'key');
 
-            $value = $latest ? (string) $latest->new_value : null;
-            $this->persistedValueCache[$cacheKey] = $value;
-
-            return $value;
+            ThresholdAudit::query()
+                ->select('category', 'key', 'new_value')
+                ->whereIn('id', $latestIds)
+                ->get()
+                ->each(function (ThresholdAudit $audit) {
+                    $this->persistedValueCache["{$audit->category}.{$audit->key}"] ??= (string) $audit->new_value;
+                });
         } catch (QueryException $e) {
-            Log::critical('Failed to read persisted threshold from database', [
-                'category' => $category,
-                'key' => $key,
+            Log::critical('Failed to read persisted thresholds from database', [
                 'error' => $e->getMessage(),
             ]);
-
-            // Fall back to config defaults rather than failing the entire request.
-            // Operators should be alerted via the critical log entry.
-            $this->persistedValueCache[$cacheKey] = null;
-
-            return null;
+            // Fall back to config defaults rather than failing the entire
+            // request. Operators should be alerted via the critical log entry.
         }
     }
 
     /**
+     * File/env defaults straight from config/thresholds.php, bypassing the
+     * runtime config repository so values written by set() cannot leak in.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function configDefaults(): array
+    {
+        return $this->configDefaults ??= require base_path('config/thresholds.php');
+    }
+
+    /**
+     * Latest audit row per category.key, keyed "category.key". Because the
+     * audits table doubles as the override store, the latest row for a key
+     * is its live override. Fetches only the newest row per key rather than
+     * scanning the whole append-only table.
+     *
+     * @return array<string, ThresholdAudit>
+     */
+    public function latestOverrides(): array
+    {
+        $latestIds = ThresholdAudit::query()
+            ->selectRaw('MAX(id) as id')
+            ->groupBy('category', 'key');
+
+        $overrides = [];
+
+        ThresholdAudit::with('user')
+            ->whereIn('id', $latestIds)
+            ->get()
+            ->each(function (ThresholdAudit $audit) use (&$overrides) {
+                $overrides["{$audit->category}.{$audit->key}"] = $audit;
+            });
+
+        return $overrides;
+    }
+
+    /**
+     * Overrides that actually change the effective value — i.e. the latest
+     * audit row differs from the file/env config default (or the key has no
+     * config default at all). A reverting reset row is history, not an
+     * active override, and is excluded.
+     *
+     * @return array<string, ThresholdAudit>
+     */
+    public function activeOverrides(): array
+    {
+        $defaults = $this->configDefaults();
+        $active = [];
+
+        foreach ($this->latestOverrides() as $compound => $audit) {
+            [$category, $key] = explode('.', $compound, 2);
+            $configValue = $defaults[$category][$key] ?? null;
+
+            if ($configValue === null || (string) $audit->new_value !== (string) $configValue) {
+                $active[$compound] = $audit;
+            }
+        }
+
+        return $active;
+    }
+
+    /**
+     * Whether one key's effective value currently comes from a DB override
+     * rather than config.
+     */
+    public function isOverridden(string $category, string $key): bool
+    {
+        $key = strtolower($key);
+
+        $latest = ThresholdAudit::where('category', $category)
+            ->where('key', $key)
+            ->latest('changed_at')
+            ->latest('id')
+            ->first();
+
+        if ($latest === null) {
+            return false;
+        }
+
+        $configValue = $this->configDefaults()[$category][$key] ?? null;
+
+        return $configValue === null || (string) $latest->new_value !== (string) $configValue;
+    }
+
+    /**
      * Get fallback value from a constant name.
+     *
+     * Bare names (e.g. 'FALLBACK_AUTO_APPROVE') resolve on
+     * App\Support\ThresholdDefaults; 'Class::CONST' names resolve against
+     * App\Support and App\Services for backward compatibility.
      */
     protected function getFallbackValue(string $constantName): string|int
     {
-        if (defined("self::{$constantName}")) {
-            return constant("self::{$constantName}");
+        if (defined(ThresholdDefaults::class."::{$constantName}")) {
+            return constant(ThresholdDefaults::class."::{$constantName}");
         }
 
         $parts = explode('::', $constantName);
         if (count($parts) === 2) {
             [$class, $property] = $parts;
-            $fullClass = "App\\Services\\{$class}";
-            if (class_exists($fullClass) && defined("{$fullClass}::{$property}")) {
-                return constant("{$fullClass}::{$property}");
+            foreach (["App\\Support\\{$class}", "App\\Services\\{$class}"] as $fullClass) {
+                if (class_exists($fullClass) && defined("{$fullClass}::{$property}")) {
+                    return constant("{$fullClass}::{$property}");
+                }
             }
         }
 
@@ -340,12 +444,12 @@ class ThresholdService implements ThresholdServiceInterface
 
     public function getStructuringHourlyWindow(): int
     {
-        return (int) $this->get('structuring', 'hourly_window', 1);
+        return (int) $this->get('structuring', 'hourly_window', 'FALLBACK_STRUCTURING_HOURLY_WINDOW');
     }
 
     public function getStructuringLookupDays(): int
     {
-        return (int) $this->get('structuring', 'lookup_days', 7);
+        return (int) $this->get('structuring', 'lookup_days', 'FALLBACK_STRUCTURING_LOOKUP_DAYS');
     }
 
     // Duration thresholds
@@ -374,7 +478,7 @@ class ThresholdService implements ThresholdServiceInterface
 
     public function getVelocityWindowDays(): int
     {
-        return (int) $this->get('velocity', 'window_days', 90);
+        return (int) $this->get('velocity', 'window_days', 'FALLBACK_VELOCITY_WINDOW_DAYS');
     }
 
     // Lookback window (in hours) for the per-customer amount-threshold velocity
@@ -382,7 +486,7 @@ class ThresholdService implements ThresholdServiceInterface
     // lookback above.
     public function getVelocityAmountWindowHours(): int
     {
-        return (int) $this->get('velocity', 'amount_window_hours', 24);
+        return (int) $this->get('velocity', 'amount_window_hours', 'FALLBACK_VELOCITY_AMOUNT_WINDOW_HOURS');
     }
 
     // Currency Flow thresholds
@@ -392,12 +496,12 @@ class ThresholdService implements ThresholdServiceInterface
     // and the classification cutoffs derived from them.
     public function getGeographicHighCountryWeight(): int
     {
-        return (int) $this->get('geographic_risk', 'high_country_weight', 30);
+        return (int) $this->get('geographic_risk', 'high_country_weight', 'FALLBACK_GEO_HIGH_COUNTRY_WEIGHT');
     }
 
     public function getGeographicRecentTravelWeight(): int
     {
-        return (int) $this->get('geographic_risk', 'recent_travel_weight', 15);
+        return (int) $this->get('geographic_risk', 'recent_travel_weight', 'FALLBACK_GEO_RECENT_TRAVEL_WEIGHT');
     }
 
     public function getRoundTripThreshold(): string
@@ -426,33 +530,75 @@ class ThresholdService implements ThresholdServiceInterface
 
     public function getResponseTimeWarning(): string
     {
-        return (string) $this->get('performance', 'response_time_warning', '500');
+        return (string) $this->get('performance', 'response_time_warning', 'FALLBACK_RESPONSE_TIME_WARNING');
     }
 
     public function getCacheHitRateWarning(): string
     {
-        return (string) $this->get('performance', 'cache_hit_rate_warning', '70');
+        return (string) $this->get('performance', 'cache_hit_rate_warning', 'FALLBACK_CACHE_HIT_RATE_WARNING');
     }
 
     public function getQueryTimeWarning(): string
     {
-        return (string) $this->get('performance', 'query_time_warning', '100');
+        return (string) $this->get('performance', 'query_time_warning', 'FALLBACK_QUERY_TIME_WARNING');
     }
 
     public function getJobDurationWarning(): string
     {
-        return (string) $this->get('performance', 'job_duration_warning', '5000');
+        return (string) $this->get('performance', 'job_duration_warning', 'FALLBACK_JOB_DURATION_WARNING');
     }
 
     // KYC Document Expiry thresholds
 
     public function getKycGracePeriodDays(): int
     {
-        return (int) $this->get('kyc', 'grace_period_days', 5);
+        return (int) $this->get('kyc', 'grace_period_days', 'FALLBACK_KYC_GRACE_PERIOD_DAYS');
     }
 
     public function getRiskReviewBatchSize(): int
     {
-        return (int) $this->get('risk_review', 'batch_size', 50);
+        return (int) $this->get('risk_review', 'batch_size', 'FALLBACK_RISK_REVIEW_BATCH_SIZE');
+    }
+
+    // Position limits (foreign-currency units per currency code)
+
+    /**
+     * Get the position limit for a currency code, or null when the currency
+     * has no configured limit.
+     */
+    public function getPositionLimit(string $currencyCode): ?string
+    {
+        try {
+            return (string) $this->get('position_limits', strtolower($currencyCode));
+        } catch (ThresholdNotFoundException) {
+            return null;
+        }
+    }
+
+    /**
+     * Get all configured position limits keyed by upper-case currency code.
+     * Includes limits that exist only as persisted DB overrides.
+     *
+     * @return array<string, string>
+     */
+    public function getPositionLimits(): array
+    {
+        $keys = array_keys($this->configDefaults()['position_limits'] ?? []);
+
+        try {
+            $keys = array_merge(
+                $keys,
+                ThresholdAudit::where('category', 'position_limits')->distinct()->pluck('key')->all()
+            );
+        } catch (QueryException) {
+            // Config keys only; overrides can't be read without the table.
+        }
+
+        $limits = [];
+        foreach (array_unique($keys) as $key) {
+            $limits[strtoupper((string) $key)] = (string) $this->get('position_limits', $key);
+        }
+
+        return $limits;
     }
 }

@@ -66,8 +66,8 @@
         @php
             $variance = (string) ($report['totals']['variance'] ?? '0');
             $absVariance = ltrim($variance, '-');
-            $redThreshold = (string) config('thresholds.variance.red', '500.00');
-            $yellowThreshold = (string) config('thresholds.variance.yellow', '100.00');
+            $redThreshold = (string) ($varianceRed ?? '500.00');
+            $yellowThreshold = (string) ($varianceYellow ?? '100.00');
 
             if (bccomp($absVariance, $redThreshold, 2) === 1) {
                 $alertClass = 'bg-red-50 border-red-200 text-red-800';

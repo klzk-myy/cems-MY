@@ -114,7 +114,7 @@ return [
     'ip_blocking' => [
         'enabled' => filter_var(env('SECURITY_IP_BLOCKING_ENABLED', true), FILTER_VALIDATE_BOOL),
         // Block IP after 10 failed login attempts in 5 minutes
-        'failed_attempts_threshold' => 10,
+        'failed_attempts_threshold' => (int) env('SECURITY_FAILED_ATTEMPTS_THRESHOLD', 10),
         'time_window_minutes' => 5,
         // Block duration in minutes (default 1 hour)
         'block_duration_minutes' => env('SECURITY_IP_BLOCK_DURATION', 60),
@@ -140,7 +140,7 @@ return [
     'rate_limit_monitoring' => [
         'enabled' => env('SECURITY_RATE_LIMIT_MONITORING', true),
         // Alert threshold: same IP hits limit 3 times in 10 minutes
-        'alert_threshold' => 3,
+        'alert_threshold' => (int) env('SECURITY_RATE_ALERT_THRESHOLD', 3),
         'alert_window_minutes' => 10,
         // Log rate limit hits
         'log_hits' => true,

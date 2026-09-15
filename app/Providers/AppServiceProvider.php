@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\Contracts\MathServiceInterface;
 use App\Services\Contracts\RateManagementServiceInterface;
+use App\Services\Contracts\ThresholdServiceInterface;
 use App\Services\Contracts\TransactionApprovalServiceInterface;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionHoldServiceInterface;
@@ -14,6 +15,7 @@ use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Contracts\TransactionStatusServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionCreationService;
@@ -83,6 +85,15 @@ class AppServiceProvider extends ServiceProvider
             RateManagementServiceInterface::class,
             RateManagementService::class
         );
+
+        // Request/job-scoped: the persisted-override snapshot is loaded once
+        // per lifecycle, so all consumers share one threshold_audits query.
+        $this->app->scoped(
+            ThresholdServiceInterface::class,
+            ThresholdService::class
+        );
+
+        $this->app->scoped(ThresholdService::class);
     }
 
     /**

@@ -48,7 +48,10 @@ class RateManagementServiceCacheTest extends TestCase
             'fetched_at' => now(),
         ]);
 
-        // Expect cache forget for key 'rate:USD'
+        // Expect cache forget for key 'rate:USD'. The role-permission
+        // matrix lookup also goes through Cache::remember — pass it through.
+        Cache::shouldReceive('remember')
+            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
         Cache::shouldReceive('forget')
             ->once()
             ->with('rate:USD');

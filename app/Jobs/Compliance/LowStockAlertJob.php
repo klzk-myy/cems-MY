@@ -6,6 +6,7 @@ use App\Enums\SystemAlertLevel;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Services\System\SystemAlertService;
+use App\Services\ThresholdService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,9 +24,9 @@ class LowStockAlertJob implements ShouldQueue
 
     public array $backoff = [30, 60, 120];
 
-    public function handle(SystemAlertService $alertService): void
+    public function handle(SystemAlertService $alertService, ThresholdService $thresholdService): void
     {
-        $threshold = (string) config('thresholds.low_stock.threshold', '10000');
+        $threshold = (string) $thresholdService->get('low_stock', 'threshold', 10000);
 
         if (! is_numeric($threshold)) {
             throw new \InvalidArgumentException('Configured low stock threshold must be numeric.');

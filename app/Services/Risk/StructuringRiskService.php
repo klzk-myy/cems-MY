@@ -27,12 +27,11 @@ class StructuringRiskService
     {
         $score = 0;
 
-        $config = config('thresholds.structuring', []);
-        $highCount = (int) ($config['score_min_count_high'] ?? 3);
-        $highScore = (int) ($config['score_high'] ?? 25);
-        $lowCount = (int) ($config['score_min_count_low'] ?? 2);
-        $lowScore = (int) ($config['score_low'] ?? 10);
-        $cap = (int) ($config['score_cap'] ?? 30);
+        $highCount = (int) $this->thresholdService->get('structuring', 'score_min_count_high', 3);
+        $highScore = (int) $this->thresholdService->get('structuring', 'score_high', 25);
+        $lowCount = (int) $this->thresholdService->get('structuring', 'score_min_count_low', 2);
+        $lowScore = (int) $this->thresholdService->get('structuring', 'score_low', 10);
+        $cap = (int) $this->thresholdService->get('structuring', 'score_cap', 30);
 
         $subThreshold = $this->thresholdService->getStructuringSubThreshold();
         $window = now()->subHours($windowHours);

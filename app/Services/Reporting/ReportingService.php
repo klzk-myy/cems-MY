@@ -457,7 +457,7 @@ class ReportingService implements ReportingServiceInterface
     public function generatePositionLimitReport(): array
     {
         $positions = CurrencyPosition::with('currency')->get();
-        $limits = config('cems.position_limits', []);
+        $limits = $this->thresholdService->getPositionLimits();
 
         $data = [];
         $totalExposure = '0';

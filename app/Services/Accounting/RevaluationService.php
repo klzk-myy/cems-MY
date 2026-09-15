@@ -11,6 +11,7 @@ use App\Models\RevaluationEntry;
 use App\Services\AuditService;
 use App\Services\System\MathService;
 use App\Services\System\SystemAlertService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\RateApiService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
@@ -28,10 +29,12 @@ class RevaluationService
         protected AccountingService $accountingService,
         protected AuditService $auditService,
         protected ?SystemAlertService $alertService = null,
+        protected ?ThresholdService $thresholdService = null,
     ) {
         // Optional for backwards compatibility with callers constructing the
         // service manually (unit tests); resolved from the container lazily.
         $this->alertService ??= app(SystemAlertService::class);
+        $this->thresholdService ??= app(ThresholdService::class);
     }
 
     /**
@@ -552,14 +555,14 @@ class RevaluationService
             return;
         }
 
-        $limits = config('cems.position_limits', []);
+        $limit = $this->thresholdService->getPositionLimit((string) $currencyCode);
 
         // Check if this currency has a configured limit
-        if (! isset($limits[$currencyCode]) || $this->mathService->compare($gainLossAmount, (string) $limits[$currencyCode]) <= 0) {
+        if ($limit === null || $this->mathService->compare($gainLossAmount, $limit) <= 0) {
             return;
         }
 
-        $positionLimit = (string) $limits[$currencyCode];
+        $positionLimit = $limit;
         $breachAmount = $this->mathService->subtract($gainLossAmount, $positionLimit);
 
         $this->auditService->logPositionEvent('position_limit_breach', [

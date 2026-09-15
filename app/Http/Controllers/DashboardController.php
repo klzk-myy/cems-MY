@@ -10,6 +10,7 @@ use App\Services\Dashboard\DashboardService;
 use App\Services\EodReconciliationService;
 use App\Services\System\CacheOptimizationService;
 use App\Services\System\SystemAlertService;
+use App\Services\ThresholdService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class DashboardController extends Controller
         protected ComplianceFlagService $complianceFlagService,
         protected EodReconciliationService $eodService,
         protected DashboardService $dashboardService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     /**
@@ -183,6 +185,9 @@ class DashboardController extends Controller
 
         $report = $this->eodService->generateDailyReconciliationSummary($date, $branchId);
 
-        return view('reports.eod-dashboard', compact('report', 'date'));
+        $varianceYellow = $this->thresholdService->getVarianceYellowThreshold();
+        $varianceRed = $this->thresholdService->getVarianceRedThreshold();
+
+        return view('reports.eod-dashboard', compact('report', 'date', 'varianceYellow', 'varianceRed'));
     }
 }

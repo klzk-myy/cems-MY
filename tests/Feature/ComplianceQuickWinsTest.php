@@ -128,7 +128,7 @@ class ComplianceQuickWinsTest extends TestCase
     #[Test]
     public function position_limit_breach_over_ten_percent_raises_critical_alert(): void
     {
-        Config::set('cems.position_limits', ['USD' => '100']);
+        Config::set('thresholds.position_limits', ['usd' => '100']);
 
         $service = $this->revaluationService();
         $method = new \ReflectionMethod($service, 'checkPositionLimitBreach');
@@ -145,7 +145,7 @@ class ComplianceQuickWinsTest extends TestCase
     #[Test]
     public function small_position_limit_breach_raises_warning_alert(): void
     {
-        Config::set('cems.position_limits', ['EUR' => '1000']);
+        Config::set('thresholds.position_limits', ['eur' => '1000']);
 
         $service = $this->revaluationService();
         $method = new \ReflectionMethod($service, 'checkPositionLimitBreach');

@@ -90,7 +90,7 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
             // Unusual pattern detection
             if ($this->isUnusualPattern($lockedTransaction)) {
-                $deviationPct = (float) config('thresholds.monitoring.unusual_pattern_multiplier', 2.0) * 100;
+                $deviationPct = (float) $this->thresholdService->get('monitoring', 'unusual_pattern_multiplier', 2) * 100;
                 $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::ManualReview, "Transaction deviates {$deviationPct}% from customer average");
             }
 
@@ -180,8 +180,8 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
     protected function isUnusualPattern(Transaction $transaction): bool
     {
-        $lookbackDays = (int) config('thresholds.monitoring.unusual_pattern_lookback_days', 90);
-        $multiplier = (string) config('thresholds.monitoring.unusual_pattern_multiplier', 2.0);
+        $lookbackDays = (int) $this->thresholdService->get('monitoring', 'unusual_pattern_lookback_days', 90);
+        $multiplier = (string) $this->thresholdService->get('monitoring', 'unusual_pattern_multiplier', 2);
 
         $customerAvg = Transaction::where('customer_id', $transaction->customer_id)
             ->where('created_at', '>=', now()->subDays($lookbackDays))

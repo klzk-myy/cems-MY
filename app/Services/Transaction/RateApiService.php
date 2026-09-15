@@ -21,13 +21,13 @@ class RateApiService
 
     protected CacheInvalidationService $cacheInvalidationService;
 
-    protected string $spread;
-
-    protected string $maxDeviationPercent;
-
-    protected int $precision;
-
-    protected int $cacheDuration;
+    /**
+     * Rate thresholds resolved lazily via ThresholdService so constructing
+     * the service stays free of DB I/O (keeps callers' query counts stable).
+     *
+     * @var array{spread: string, max_deviation_percent: string, precision: int, cache_duration: int}|null
+     */
+    private ?array $rateThresholds = null;
 
     public function __construct(
         ?MathService $mathService = null,
@@ -39,10 +39,19 @@ class RateApiService
         $this->thresholdService ??= app(ThresholdService::class);
         $this->apiKey = config('services.exchange_rate_api.key') ?? '';
         $this->baseUrl = config('services.exchange_rate_api.base_url', 'https://api.exchangerate-api.com/v4');
-        $this->spread = config('thresholds.rates.spread', '0.02');
-        $this->maxDeviationPercent = config('thresholds.rates.max_deviation_percent', '0.05');
-        $this->precision = (int) config('thresholds.rates.precision', 4);
-        $this->cacheDuration = (int) config('thresholds.rates.cache_duration', 60);
+    }
+
+    /**
+     * @return array{spread: string, max_deviation_percent: string, precision: int, cache_duration: int}
+     */
+    private function rateThresholds(): array
+    {
+        return $this->rateThresholds ??= [
+            'spread' => (string) $this->thresholdService->get('rates', 'spread', 0.02),
+            'max_deviation_percent' => (string) $this->thresholdService->get('rates', 'max_deviation_percent', 0.05),
+            'precision' => (int) $this->thresholdService->get('rates', 'precision', 4),
+            'cache_duration' => (int) $this->thresholdService->get('rates', 'cache_duration', 60),
+        ];
     }
 
     public function fetchLatestRates(?int $branchId = null): array
@@ -53,7 +62,7 @@ class RateApiService
 
         $cacheKey = $branchId ? "exchange_rates_branch_{$branchId}" : 'exchange_rates';
 
-        return Cache::remember($cacheKey, $this->cacheDuration, function () use ($branchId) {
+        return Cache::remember($cacheKey, $this->rateThresholds()['cache_duration'], function () use ($branchId) {
             $response = Http::timeout(30)
                 ->connectTimeout(10)
                 ->retry(3, 100)
@@ -114,9 +123,11 @@ class RateApiService
      */
     public function applySpread(string $midRate): array
     {
+        $spread = $this->rateThresholds()['spread'];
+
         return [
-            'buy' => $this->roundRate($this->mathService->multiply($midRate, $this->mathService->subtract('1', $this->spread))),
-            'sell' => $this->roundRate($this->mathService->multiply($midRate, $this->mathService->add('1', $this->spread))),
+            'buy' => $this->roundRate($this->mathService->multiply($midRate, $this->mathService->subtract('1', $spread))),
+            'sell' => $this->roundRate($this->mathService->multiply($midRate, $this->mathService->add('1', $spread))),
             'mid' => $this->roundRate($midRate),
         ];
     }
@@ -127,7 +138,7 @@ class RateApiService
             throw new \InvalidArgumentException('Exchange rate must be a numeric string.');
         }
 
-        return bcadd($rate, '0', $this->precision);
+        return bcadd($rate, '0', $this->rateThresholds()['precision']);
     }
 
     protected function storeRatesToTable(array $rates, ?int $branchId = null): void
@@ -223,7 +234,7 @@ class RateApiService
                 'valid' => true,
                 'reason' => null,
                 'deviation_percent' => null,
-                'max_allowed' => $this->maxDeviationPercent,
+                'max_allowed' => $this->rateThresholds()['max_deviation_percent'],
             ];
         }
 
@@ -236,7 +247,7 @@ class RateApiService
             $marketRate
         );
 
-        $maxAllowed = $this->maxDeviationPercent;
+        $maxAllowed = $this->rateThresholds()['max_deviation_percent'];
 
         $isValid = $this->mathService->compare($deviationPercent, $maxAllowed) <= 0;
 
@@ -315,16 +326,16 @@ class RateApiService
 
     public function getSpread(): string
     {
-        return $this->spread;
+        return $this->rateThresholds()['spread'];
     }
 
     public function getMaxDeviationPercent(): string
     {
-        return $this->maxDeviationPercent;
+        return $this->rateThresholds()['max_deviation_percent'];
     }
 
     public function getPrecision(): int
     {
-        return $this->precision;
+        return $this->rateThresholds()['precision'];
     }
 }

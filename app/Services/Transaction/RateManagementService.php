@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\InvalidRateException;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
@@ -11,6 +12,7 @@ use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\DTOs\RateOverrideResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
@@ -25,7 +27,10 @@ class RateManagementService implements RateManagementServiceInterface
         protected MathService $mathService,
         protected AuditService $auditService,
         protected CacheInvalidationService $cacheInvalidationService,
-    ) {}
+        protected ?ThresholdService $thresholdService = null,
+    ) {
+        $this->thresholdService ??= app(ThresholdService::class);
+    }
 
     public function fetchAndStoreRates(?User $initiatedBy = null, ?int $branchId = null): array
     {
@@ -127,7 +132,7 @@ class RateManagementService implements RateManagementServiceInterface
         ?int $branchId = null,
         ?string $effectiveDate = null
     ): RateOverrideResult {
-        if (! $approvedBy->role->isManager() && ! $approvedBy->role->isAdmin()) {
+        if (! $approvedBy->role->canPerform(Permission::AccessRates)) {
             return new RateOverrideResult(
                 success: false,
                 message: 'Insufficient permissions to override rates',
@@ -351,8 +356,8 @@ class RateManagementService implements RateManagementServiceInterface
      */
     protected function assertSpreadWithinLimits(string $buyRate, string $sellRate): void
     {
-        $minSpread = (string) config('thresholds.rates.min_spread', '0.005');
-        $maxSpread = (string) config('thresholds.rates.max_spread', '0.05');
+        $minSpread = (string) $this->thresholdService->get('rates', 'min_spread', 0.005);
+        $maxSpread = (string) $this->thresholdService->get('rates', 'max_spread', 0.05);
 
         $denominator = $this->mathService->add($buyRate, $sellRate);
 

@@ -96,9 +96,9 @@ class CustomerRepository
     {
         // risk_score is on a 0-100 scale; the amount-based getRiskHighThreshold()
         // (MYR cash) is NOT comparable to a score, so this query uses the
-        // dedicated score threshold from config/thresholds.php.
-        $highRiskScore = (int) config('thresholds.risk_scoring.score_high', 75);
-        $rescreeningDays = config('thresholds.risk_scoring.rescreening_days', 30);
+        // dedicated score threshold.
+        $highRiskScore = (int) $this->thresholdService->get('risk_scoring', 'score_high', 75);
+        $rescreeningDays = (int) $this->thresholdService->get('risk_scoring', 'rescreening_days', 30);
 
         return Customer::where('risk_score', '>=', $highRiskScore)
             ->orWhere('risk_assessed_at', '<', now()->subDays($rescreeningDays))

@@ -128,6 +128,22 @@ trait Thresholdable
     }
 
     /**
+     * Get variance yellow threshold (variance.yellow).
+     */
+    protected static function getVarianceYellowThreshold(): string
+    {
+        return self::thresholdService()->getVarianceYellowThreshold();
+    }
+
+    /**
+     * Get variance red threshold (variance.red).
+     */
+    protected static function getVarianceRedThreshold(): string
+    {
+        return self::thresholdService()->getVarianceRedThreshold();
+    }
+
+    /**
      * Get structuring sub-threshold (structuring.sub_threshold).
      */
     protected static function getStructuringSubThreshold(): string
@@ -200,6 +216,30 @@ trait Thresholdable
     }
 
     /**
+     * Get velocity amount window hours (velocity.amount_window_hours).
+     */
+    protected static function getVelocityAmountWindowHours(): int
+    {
+        return self::thresholdService()->getVelocityAmountWindowHours();
+    }
+
+    /**
+     * Get geographic high-country weight (geographic_risk.high_country_weight).
+     */
+    protected static function getGeographicHighCountryWeight(): int
+    {
+        return self::thresholdService()->getGeographicHighCountryWeight();
+    }
+
+    /**
+     * Get geographic recent-travel weight (geographic_risk.recent_travel_weight).
+     */
+    protected static function getGeographicRecentTravelWeight(): int
+    {
+        return self::thresholdService()->getGeographicRecentTravelWeight();
+    }
+
+    /**
      * Get round trip threshold (currency_flow.round_trip_threshold).
      */
     protected static function getRoundTripThreshold(): string
@@ -229,5 +269,71 @@ trait Thresholdable
     protected static function getAmlAmountThreshold(): string
     {
         return self::thresholdService()->getAmlAmountThreshold();
+    }
+
+    /**
+     * Get response time warning (performance.response_time_warning).
+     */
+    protected static function getResponseTimeWarning(): string
+    {
+        return self::thresholdService()->getResponseTimeWarning();
+    }
+
+    /**
+     * Get cache hit rate warning (performance.cache_hit_rate_warning).
+     */
+    protected static function getCacheHitRateWarning(): string
+    {
+        return self::thresholdService()->getCacheHitRateWarning();
+    }
+
+    /**
+     * Get query time warning (performance.query_time_warning).
+     */
+    protected static function getQueryTimeWarning(): string
+    {
+        return self::thresholdService()->getQueryTimeWarning();
+    }
+
+    /**
+     * Get job duration warning (performance.job_duration_warning).
+     */
+    protected static function getJobDurationWarning(): string
+    {
+        return self::thresholdService()->getJobDurationWarning();
+    }
+
+    /**
+     * Get KYC grace period days (kyc.grace_period_days).
+     */
+    protected static function getKycGracePeriodDays(): int
+    {
+        return self::thresholdService()->getKycGracePeriodDays();
+    }
+
+    /**
+     * Get risk review batch size (risk_review.batch_size).
+     */
+    protected static function getRiskReviewBatchSize(): int
+    {
+        return self::thresholdService()->getRiskReviewBatchSize();
+    }
+
+    /**
+     * Get position limit for a currency code (position_limits.{code}).
+     */
+    protected static function getPositionLimit(string $currencyCode): ?string
+    {
+        return self::thresholdService()->getPositionLimit($currencyCode);
+    }
+
+    /**
+     * Get all position limits keyed by upper-case currency code.
+     *
+     * @return array<string, string>
+     */
+    protected static function getPositionLimits(): array
+    {
+        return self::thresholdService()->getPositionLimits();
     }
 }

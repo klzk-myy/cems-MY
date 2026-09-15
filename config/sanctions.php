@@ -151,8 +151,8 @@ return [
     ],
 
     'matching' => [
-        'threshold_flag' => 75.0,
-        'threshold_block' => 90.0,
+        'threshold_flag' => (float) env('SANCTIONS_THRESHOLD_FLAG', 75.0),
+        'threshold_block' => (float) env('SANCTIONS_THRESHOLD_BLOCK', 90.0),
         'algorithm' => 'levenshtein',
         'use_dob' => true,
         'use_nationality' => true,

@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
+use App\Enums\Permission;
 use App\Models\ThresholdAudit;
 use App\Models\User;
 
@@ -10,12 +10,12 @@ class ThresholdAuditPolicy
 {
     /**
      * Determine whether the user can view any models.
-     * Compliance officers, admins, and auditors can view threshold audits.
+     * Requires the manage_thresholds permission — same gate as the admin
+     * thresholds page, which is the only UI that lists audit history.
      */
     public function viewAny(User $user): bool
     {
-        return $user->role === UserRole::Admin ||
-               $user->role === UserRole::ComplianceOfficer;
+        return $user->role->canPerform(Permission::ManageThresholds);
     }
 
     /**
@@ -24,8 +24,7 @@ class ThresholdAuditPolicy
      */
     public function view(User $user, ThresholdAudit $thresholdAudit): bool
     {
-        return $user->role === UserRole::Admin ||
-               $user->role === UserRole::ComplianceOfficer;
+        return $user->role->canPerform(Permission::ManageThresholds);
     }
 
     /**

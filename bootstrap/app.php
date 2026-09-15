@@ -418,6 +418,16 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/reports-process-schedules.log'));
+
+        // Threshold override check - Hourly. Raises a deduplicated
+        // SystemAlert while DB overrides are active so deploys that rely on
+        // .env changes do not silently keep stale values. Warn-only (no
+        // --fail) so the scheduled run stays green while overrides persist.
+        $schedule->command('thresholds:check-overrides --alert')
+            ->hourly()
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/thresholds-check-overrides.log'));
     })
 
     // Disable framework event auto-discovery: Application::configure() co-registers

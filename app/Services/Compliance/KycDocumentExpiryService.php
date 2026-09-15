@@ -6,12 +6,22 @@ use App\Enums\CddLevel;
 use App\Enums\DocumentType;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
+use App\Services\AuditService;
+use App\Services\ThresholdService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 
 class KycDocumentExpiryService
 {
+    public function __construct(
+        protected ?ThresholdService $thresholdService = null,
+        protected ?AuditService $auditService = null,
+    ) {
+        $this->thresholdService ??= app(ThresholdService::class);
+        $this->auditService ??= app(AuditService::class);
+    }
+
     /**
      * Determine whether ALL verified identity documents are expired
      * (past grace period). Customers without any documents are NOT
@@ -56,9 +66,7 @@ class KycDocumentExpiryService
 
     protected function graceCutoffDate(): Carbon
     {
-        $gracePeriodDays = config('thresholds.kyc.grace_period_days', 5);
-
-        return Carbon::now()->subDays($gracePeriodDays);
+        return Carbon::now()->subDays($this->thresholdService->getKycGracePeriodDays());
     }
 
     public function mustBlockDueToExpiredDocuments(Customer $customer): bool
@@ -79,8 +87,7 @@ class KycDocumentExpiryService
 
     public function getExpiredDocuments(Customer $customer): Collection
     {
-        $gracePeriodDays = config('thresholds.kyc.grace_period_days', 5);
-        $cutoffDate = Carbon::now()->subDays($gracePeriodDays);
+        $cutoffDate = $this->graceCutoffDate();
 
         return $customer->documents()
             ->verified()

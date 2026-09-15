@@ -16,6 +16,7 @@ use App\Models\Bases\ComplianceModel;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\User;
+use App\Services\ThresholdService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Cache\LockTimeoutException;
@@ -241,14 +242,15 @@ class ComplianceCase extends ComplianceModel
      */
     public static function slaHoursFor(FindingSeverity $severity): int
     {
-        $config = config('thresholds.case_sla_hours', []);
-
-        return match ($severity) {
-            FindingSeverity::Critical => (int) ($config['critical'] ?? 24),
-            FindingSeverity::High => (int) ($config['high'] ?? 48),
-            FindingSeverity::Medium => (int) ($config['medium'] ?? 120),
-            FindingSeverity::Low => (int) ($config['low'] ?? 240),
+        $thresholds = app(ThresholdService::class);
+        $fallback = match ($severity) {
+            FindingSeverity::Critical => 24,
+            FindingSeverity::High => 48,
+            FindingSeverity::Medium => 120,
+            FindingSeverity::Low => 240,
         };
+
+        return (int) $thresholds->get('case_sla_hours', strtolower($severity->value), $fallback);
     }
 
     /**

@@ -3,8 +3,10 @@
 namespace Tests\Unit;
 
 use App\Enums\UserRole;
+use App\Helpers\Thresholdable;
 use App\Models\ThresholdAudit;
 use App\Models\User;
+use App\Services\Contracts\ThresholdServiceInterface;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -137,6 +139,68 @@ class ThresholdServiceTest extends TestCase
     }
 
     #[Test]
+    public function get_velocity_amount_window_hours(): void
+    {
+        $this->assertEquals(24, $this->service->getVelocityAmountWindowHours());
+    }
+
+    #[Test]
+    public function get_geographic_risk_weights(): void
+    {
+        $this->assertEquals(30, $this->service->getGeographicHighCountryWeight());
+        $this->assertEquals(15, $this->service->getGeographicRecentTravelWeight());
+    }
+
+    #[Test]
+    public function get_position_limit_returns_limit_for_known_currency(): void
+    {
+        $this->assertEquals('1000000', $this->service->getPositionLimit('USD'));
+        $this->assertEquals('1000000', $this->service->getPositionLimit('usd'));
+    }
+
+    #[Test]
+    public function get_position_limit_returns_null_for_unknown_currency(): void
+    {
+        $this->assertNull($this->service->getPositionLimit('XXX'));
+    }
+
+    #[Test]
+    public function get_position_limits_returns_uppercase_keyed_map(): void
+    {
+        $limits = $this->service->getPositionLimits();
+
+        $this->assertArrayHasKey('USD', $limits);
+        $this->assertArrayHasKey('JPY', $limits);
+        $this->assertEquals('1000000', $limits['USD']);
+        $this->assertEquals('100000000', $limits['JPY']);
+    }
+
+    #[Test]
+    public function set_persists_geographic_risk_and_position_limit_overrides(): void
+    {
+        $this->actingAs($this->adminUser());
+
+        $this->service->set('geographic_risk', 'high_country_weight', 40);
+        $this->service->set('position_limits', 'usd', '2000000', 'raise USD cap');
+
+        $fresh = new ThresholdService;
+        $this->assertEquals(40, $fresh->getGeographicHighCountryWeight());
+        $this->assertEquals('2000000', $fresh->getPositionLimit('USD'));
+
+        $audit = ThresholdAudit::where('category', 'position_limits')->where('key', 'usd')->first();
+        $this->assertNotNull($audit);
+        $this->assertEquals('raise USD cap', $audit->change_reason);
+    }
+
+    #[Test]
+    public function set_rejects_unknown_category(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->service->set('not_a_category', 'key', '1');
+    }
+
+    #[Test]
     public function all_amount_thresholds_return_string(): void
     {
         $amountMethods = [
@@ -229,6 +293,108 @@ class ThresholdServiceTest extends TestCase
         $this->service->set('approval', 'auto_approve', '20000');
 
         $this->assertEquals('20000', config('thresholds.approval.auto_approve'));
+    }
+
+    #[Test]
+    public function get_does_not_mutate_config_repository(): void
+    {
+        $this->actingAs($this->adminUser());
+        $this->service->set('approval', 'auto_approve', '15000');
+
+        // Simulate a fresh long-lived worker: config holds the file/env
+        // default while the DB override is active.
+        config(['thresholds.approval.auto_approve' => '10000']);
+
+        $fresh = new ThresholdService;
+
+        $this->assertEquals('15000', $fresh->get('approval', 'auto_approve'));
+        $this->assertEquals(
+            '10000',
+            config('thresholds.approval.auto_approve'),
+            'get() must not write persisted overrides into the config repository'
+        );
+    }
+
+    #[Test]
+    public function set_normalizes_uppercase_keys(): void
+    {
+        $this->actingAs($this->adminUser());
+
+        $this->service->set('position_limits', 'USD', '2000000', 'raise cap');
+
+        $audit = ThresholdAudit::where('category', 'position_limits')->where('key', 'usd')->first();
+        $this->assertNotNull($audit);
+        $this->assertEquals('2000000', $audit->new_value);
+    }
+
+    #[Test]
+    public function get_normalizes_uppercase_keys(): void
+    {
+        $this->assertEquals('1000000', $this->service->get('position_limits', 'USD'));
+    }
+
+    #[Test]
+    public function reset_appends_reverting_audit_row(): void
+    {
+        $admin = $this->adminUser();
+        $this->actingAs($admin);
+
+        $this->service->set('approval', 'auto_approve', '15000', 'temporary raise');
+
+        $result = $this->service->reset('approval', 'auto_approve', 'back to standard');
+
+        $this->assertTrue($result);
+        $this->assertEquals('10000', $this->service->get('approval', 'auto_approve'));
+
+        $latest = ThresholdAudit::where('category', 'approval')
+            ->where('key', 'auto_approve')
+            ->latest('id')
+            ->first();
+
+        $this->assertEquals('15000', $latest->old_value);
+        $this->assertEquals('10000', $latest->new_value);
+        $this->assertEquals('back to standard', $latest->change_reason);
+        $this->assertEquals(2, ThresholdAudit::where('category', 'approval')->where('key', 'auto_approve')->count());
+    }
+
+    #[Test]
+    public function reset_returns_false_when_no_override_or_already_default(): void
+    {
+        $this->actingAs($this->adminUser());
+
+        $this->assertFalse($this->service->reset('approval', 'auto_approve'));
+
+        $this->service->set('approval', 'auto_approve', '15000');
+        $this->service->reset('approval', 'auto_approve');
+
+        $this->assertFalse($this->service->reset('approval', 'auto_approve'));
+    }
+
+    #[Test]
+    public function reset_rejects_unknown_threshold(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->service->reset('approval', 'not_a_key');
+    }
+
+    #[Test]
+    public function thresholdable_trait_covers_every_service_getter(): void
+    {
+        $interface = new \ReflectionClass(ThresholdServiceInterface::class);
+        $trait = new \ReflectionClass(Thresholdable::class);
+
+        foreach ($interface->getMethods() as $method) {
+            // 'get' is the low-level accessor; domain getters all use getX names.
+            if (! str_starts_with($method->getName(), 'get') || $method->getName() === 'get') {
+                continue;
+            }
+
+            $this->assertTrue(
+                $trait->hasMethod($method->getName()),
+                "Thresholdable is missing a delegate for {$method->getName()}()"
+            );
+        }
     }
 
     private function adminUser()

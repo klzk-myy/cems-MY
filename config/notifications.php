@@ -205,19 +205,4 @@ return [
         'max_per_day' => 2000,
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | BNM Compliance Settings
-    |--------------------------------------------------------------------------
-    |
-    | Specific settings for BNM MSB compliance requirements.
-    |
-    */
-    'bnm_compliance' => [
-        // Large transaction threshold (RM)
-        'large_transaction_threshold' => 50000,
-        // Notification retention for audit purposes
-        'retention_days' => 2555, // 7 years
-    ],
-
 ];
