@@ -13,7 +13,6 @@ use App\Http\Resources\Api\V1\CustomerCollection;
 use App\Http\Resources\Api\V1\CustomerResource;
 use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Models\Customer;
-use App\Models\User;
 use App\Repositories\CustomerRepository;
 use App\Services\AuditService;
 use App\Services\Customer\CustomerService;
@@ -32,23 +31,11 @@ class CustomerController extends Controller
 
     public function index(CustomerIndexRequest $request): JsonResource
     {
-        $user = $request->user();
-        $isAdmin = $user && $user->isAdmin();
+        $this->authorize('viewAny', Customer::class);
 
+        // Customers are company-wide entities: no branch scoping. Any role
+        // may list them regardless of branch assignment.
         $query = Customer::query();
-
-        // Enforce branch scoping for non-admin users
-        if (! $isAdmin) {
-            $branchScope = $user?->branch_id;
-            if ($branchScope) {
-                // Branch scope: customers with at least one transaction at the
-                // caller's branch (matches CustomerPolicy::view semantics).
-                $query->whereHas('transactions', fn ($t) => $t->where('branch_id', $branchScope));
-            } else {
-                // User has no branch assignment - return empty result (prevents full data exposure)
-                $query->whereRaw('1 = 0');
-            }
-        }
 
         if ($request->has('search') && ! empty($request->search)) {
             $searchTerm = '%'.CustomerRepository::escapeLike($request->search).'%';
@@ -188,14 +175,9 @@ class CustomerController extends Controller
         $customer = Customer::findOrFail($id);
         $this->authorize('view', $customer);
 
-        $user = auth()->user();
-        $isAdmin = $user && $user->isAdmin();
-        $branchId = $user?->branch_id;
-
+        // Customers are company-wide: a viewable customer's history is not
+        // filtered by the caller's branch.
         $transactions = $customer->transactions()
-            ->when(! $isAdmin, function ($query) use ($branchId) {
-                $query->where('branch_id', $branchId);
-            })
             ->orderBy('created_at', 'desc')
             ->paginate(50);
 
@@ -228,24 +210,12 @@ class CustomerController extends Controller
      */
     public function searchForTransaction(SearchCustomerRequest $request): JsonResponse
     {
-        $user = $request->user();
-
-        // Enforce branch scoping for search - use same logic as CustomerPolicy::viewAny
-        $branchId = null;
-        if (! $user || ! $user->isAdmin()) {
-            if (! $user?->branch_id) {
-                return $this->successResponse([], 'Search completed.', 200, [
-                    'query' => $request->validated()['query'],
-                    'count' => 0,
-                ]);
-            }
-            $branchId = $user->branch_id;
-        }
+        $this->authorize('viewAny', Customer::class);
 
         $validated = $request->validated();
 
-        // Pass branchId to service for efficient filtering at query level
-        $results = $this->customerService->searchCustomers($validated['query'], $branchId);
+        // Customers are company-wide: search is not scoped to the caller's branch.
+        $results = $this->customerService->searchCustomers($validated['query'], null);
 
         return $this->successResponse($results, 'Search completed.', 200, [
             'query' => $validated['query'],

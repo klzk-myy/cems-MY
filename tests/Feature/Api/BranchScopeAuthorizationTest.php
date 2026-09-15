@@ -16,7 +16,7 @@ class BranchScopeAuthorizationTest extends TestCase
     use DatabaseTransactions;
 
     #[Test]
-    public function api_customer_index_is_scoped_to_user_branch(): void
+    public function api_customer_index_is_company_wide_regardless_of_branch(): void
     {
         $branchA = Branch::factory()->create(['code' => 'BR-A'.uniqid()]);
         $branchB = Branch::factory()->create(['code' => 'BR-B'.uniqid()]);
@@ -24,11 +24,11 @@ class BranchScopeAuthorizationTest extends TestCase
         $userA = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branchA->id]);
         $userB = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branchB->id]);
 
-        // Create customers with transactions in different branches
+        // Customers are not branch-owned: a transaction at branch B does not
+        // scope the customer away from branch A staff.
         $customerInA = Customer::factory()->create();
         $customerInB = Customer::factory()->create();
 
-        // Create transactions to link customers to branches
         Transaction::factory()->create([
             'customer_id' => $customerInA->id,
             'branch_id' => $branchA->id,
@@ -46,8 +46,8 @@ class BranchScopeAuthorizationTest extends TestCase
         $response->assertOk();
 
         $customerIds = collect($response->json('data'))->pluck('id')->toArray();
-        $this->assertNotContains($customerInB->id, $customerIds,
-            'User from Branch A should not see Branch B customers');
+        $this->assertContains($customerInB->id, $customerIds,
+            'Customers are company-wide: any role may view them regardless of branch');
     }
 
     #[Test]

@@ -88,26 +88,27 @@ class ApiSecurityFixesTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_teller_sees_no_rows_for_customer_with_only_other_branch_history(): void
+    public function test_teller_sees_customer_history_from_other_branches(): void
     {
         $branchA = Branch::factory()->create();
         $branchB = Branch::factory()->create();
         $tellerA = User::factory()->for($branchA)->create(['role' => UserRole::Teller]);
         $customerB = Customer::factory()->create();
 
-        Transaction::factory()->for($customerB)->for($branchB)->create([
+        $transaction = Transaction::factory()->for($customerB)->for($branchB)->create([
             'user_id' => $tellerA->id,
         ]);
 
-        // Customers are company-wide, so the endpoint is reachable — but the
-        // transaction rows stay branch-scoped, so none are returned.
+        // Customers are company-wide: a viewable customer's history is not
+        // filtered by the caller's branch, so the other-branch row is returned.
         $this->actingAs($tellerA, 'sanctum')
             ->getJson(route('api.v1.customers.history', $customerB))
             ->assertOk()
-            ->assertJsonCount(0, 'data');
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $transaction->id);
     }
 
-    public function test_teller_sees_only_own_branch_transactions_in_customer_history(): void
+    public function test_teller_sees_all_branches_in_customer_history(): void
     {
         $branchA = Branch::factory()->create();
         $branchB = Branch::factory()->create();
@@ -121,13 +122,12 @@ class ApiSecurityFixesTest extends TestCase
             'user_id' => $tellerA->id,
         ]);
 
-        $response = $this->actingAs($tellerA, 'sanctum')
-            ->getJson(route('api.v1.customers.history', $customer));
-
-        $response->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $branchATransaction->id)
-            ->assertJsonMissing(['id' => $branchBTransaction->id]);
+        $this->actingAs($tellerA, 'sanctum')
+            ->getJson(route('api.v1.customers.history', $customer))
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['id' => $branchATransaction->id])
+            ->assertJsonFragment(['id' => $branchBTransaction->id]);
     }
 
     public function test_admin_with_branch_id_can_view_all_customer_history(): void

@@ -79,13 +79,13 @@ class AuthorizationTest extends TestCase
     }
 
     #[Test]
-    public function transaction_policy_denies_admin_to_create(): void
+    public function transaction_policy_allows_admin_to_create(): void
     {
-        // Admin can do everything except create transactions.
+        // Admin is all-capable under the role-permission matrix.
         $policy = app(TransactionPolicy::class);
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
-        $this->assertFalse($policy->create($admin));
+        $this->assertTrue($policy->create($admin));
     }
 
     #[Test]
@@ -176,12 +176,13 @@ class AuthorizationTest extends TestCase
     }
 
     #[Test]
-    public function customer_policy_denies_user_without_branch_to_view_any(): void
+    public function customer_policy_allows_user_without_branch_to_view_any(): void
     {
         $policy = new CustomerPolicy;
         $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => null]);
 
-        $this->assertFalse($policy->viewAny($teller));
+        // Customers are company-wide: no branch assignment is required to view them.
+        $this->assertTrue($policy->viewAny($teller));
     }
 
     #[Test]

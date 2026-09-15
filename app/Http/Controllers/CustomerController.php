@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Customer\CustomerIndexAction;
+use App\Enums\Permission;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Requests\CloseCustomerRequest;
 use App\Http\Requests\FreezeCustomerRequest;
@@ -196,8 +197,8 @@ class CustomerController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || ! $user->role?->isComplianceOfficer()) {
-            abort(403, 'Unauthorized. Compliance Officer or Admin access required.');
+        if (! $user || ! $user->role?->canPerform(Permission::AccessCompliance)) {
+            abort(403, 'Unauthorized. Access Compliance permission required.');
         }
 
         if ($customer->is_frozen) {
@@ -237,8 +238,8 @@ class CustomerController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || ! $user->role?->isComplianceOfficer()) {
-            abort(403, 'Unauthorized. Compliance Officer or Admin access required.');
+        if (! $user || ! $user->role?->canPerform(Permission::AccessCompliance)) {
+            abort(403, 'Unauthorized. Access Compliance permission required.');
         }
 
         if (! $customer->is_frozen) {
@@ -281,8 +282,8 @@ class CustomerController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || (! $user->isManager() && ! $user->isAdmin())) {
-            abort(403, 'Unauthorized. Manager or Admin access required.');
+        if (! $user || ! $user->role->canPerform(Permission::ManageCustomers)) {
+            abort(403, 'Unauthorized. Manage Customers permission required.');
         }
 
         if ($customer->closed_at !== null) {
