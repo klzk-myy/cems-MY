@@ -89,6 +89,7 @@ Route::prefix('setup')->name('setup.')->middleware(['setup.accessible'])->group(
     Route::post('/step/2', [SetupController::class, 'step2AdminUser'])->name('step2');
     Route::post('/step/3', [SetupController::class, 'step3Currencies'])->name('step3');
     Route::post('/step/4', [SetupController::class, 'step4ExchangeRates'])->name('step4');
+    Route::post('/rates/fetch', [SetupController::class, 'fetchRates'])->name('rates.fetch');
     Route::post('/step/5', [SetupController::class, 'step5InitialStock'])->name('step5');
     Route::post('/step/6', [SetupController::class, 'step6OpeningBalance'])->name('step6');
     Route::post('/complete', [SetupController::class, 'completeSetup'])->name('complete');

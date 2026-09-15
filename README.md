@@ -492,7 +492,7 @@ All rate changes are logged to audit trail. Spread and deviation thresholds conf
 
 ### Password Policy
 
-- Minimum 12 characters
+- Minimum 8 characters
 - Mixed case, number, special character required
 - Maximum 5 failed attempts
 - 15-minute lockout on failure

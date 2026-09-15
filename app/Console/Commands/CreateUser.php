@@ -3,9 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Enums\UserRole;
+use App\Models\PasswordHistory;
 use App\Models\User;
+use App\Rules\PasswordRules;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class CreateUser extends Command
 {
@@ -55,17 +57,34 @@ class CreateUser extends Command
             return 1;
         }
 
-        // Create user
+        // Enforce the same password policy the web forms apply.
+        $validator = Validator::make(
+            ['password' => $password],
+            ['password' => PasswordRules::forNew(confirmed: false)],
+        );
+
+        if ($validator->fails()) {
+            $this->error($validator->errors()->first('password'));
+
+            return 1;
+        }
+
+        // Pass the plain password so the mutator hashes it once and stamps
+        // password_changed_at. Setting password_hash directly is not an
+        // option here: it is not fillable, and the model's creating hook
+        // rejects any user whose hash is still empty.
         $user = User::create([
             'username' => $name,
             'email' => $email,
-            'mfa_enabled' => false,
+            'password' => $password,
             'is_active' => true,
         ]);
 
         $user->role = $roleEnum;
-        $user->password_hash = Hash::make($password);
+        $user->mfa_enabled = false;
         $user->save();
+
+        PasswordHistory::record($user->id, $user->password_hash);
 
         $this->info('User created successfully!');
         $this->info(" ID: {$user->id}");

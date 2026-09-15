@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\CounterSession;
@@ -15,7 +16,6 @@ use App\Models\User;
 use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Hash;
 
 class TestTransactionScenarios extends Command
 {
@@ -87,17 +87,20 @@ class TestTransactionScenarios extends Command
             $username = 'teller_'.strtolower($branch->code);
             $email = $username.'@test-cdd.my';
 
-            $teller = User::updateOrCreate(
-                ['username' => $username],
-                [
-                    'email' => $email,
-                    'password_hash' => Hash::make('Test@1234'),
-                    'role' => 'teller',
-                    'branch_id' => $branch->id,
-                    'mfa_enabled' => false,
-                    'is_active' => true,
-                ]
-            );
+            // password_hash and role are not fillable — updateOrCreate would
+            // drop them (and the empty-hash creating hook would then reject
+            // the insert). Set them explicitly and let the password mutator
+            // hash once and stamp password_changed_at.
+            $teller = User::firstOrNew(['username' => $username]);
+            $teller->fill([
+                'email' => $email,
+                'branch_id' => $branch->id,
+                'is_active' => true,
+            ]);
+            $teller->password = 'Test@1234';
+            $teller->role = UserRole::Teller;
+            $teller->mfa_enabled = false;
+            $teller->save();
             $this->tellers[$branch->code] = $teller;
             $this->info("  Teller: {$email} (Branch: {$branch->code})");
 

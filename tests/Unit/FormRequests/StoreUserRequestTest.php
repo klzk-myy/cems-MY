@@ -34,7 +34,7 @@ class StoreUserRequestTest extends TestCase
         $this->assertContains('confirmed', (array) $rules['password']);
         $this->assertTrue(
             collect((array) $rules['password'])->contains(fn ($rule) => $rule instanceof PasswordComplexityRule),
-            'New-user passwords must be validated by PasswordComplexityRule (min 12 chars, mixed case, number, symbol).'
+            'New-user passwords must be validated by PasswordComplexityRule (min 8 chars, mixed case, number, symbol).'
         );
     }
 

@@ -279,14 +279,14 @@ class SecurityTest extends TestCase
     {
         $rule = new PasswordComplexityRule;
 
-        // Test too short (less than 12 characters)
+        // Test too short (less than 8 characters)
         $errors = [];
         $fail = function ($message) use (&$errors) {
             $errors[] = $message;
         };
         $rule->validate('password', 'Short1!', $fail);
         $this->assertNotEmpty($errors);
-        $this->assertStringContainsString('at least 12 characters', $errors[0]);
+        $this->assertStringContainsString('at least 8 characters', $errors[0]);
 
         // Test missing uppercase
         $errors = [];

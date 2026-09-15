@@ -137,15 +137,17 @@ class LargeTransactionTestSeeder extends Seeder
 
         // Ensure at least one user exists
         if (User::count() === 0) {
+            // 'password' routes through the mutator (hash + password_changed_at
+            // stamp); creating a User without it trips the empty-hash guard.
             $user = User::create([
                 'username' => 'Test Teller',
                 'email' => 'teller@test.com',
+                'password' => 'Password123!',
                 'branch_id' => 1,
                 'is_active' => true,
             ]);
 
             $user->role = UserRole::Teller;
-            $user->password_hash = bcrypt('password');
             $user->save();
         }
     }

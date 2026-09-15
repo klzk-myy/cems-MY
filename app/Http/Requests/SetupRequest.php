@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Currency;
-use App\Rules\PasswordComplexityRule;
+use App\Rules\PasswordRules;
 use App\Services\System\SetupService;
 
 class SetupRequest extends AuthorizedFormRequest
@@ -51,7 +51,7 @@ class SetupRequest extends AuthorizedFormRequest
         return [
             'business_name' => 'required|string|max:255',
             'admin_email' => 'required|email',
-            'admin_password' => ['required', new PasswordComplexityRule],
+            'admin_password' => PasswordRules::forNew(confirmed: false),
             'base_currency' => 'required|string|size:3',
             'setup_exchange_rates' => 'boolean',
             'setup_branch_pools' => 'boolean',
@@ -73,7 +73,7 @@ class SetupRequest extends AuthorizedFormRequest
         return [
             'admin_name' => 'required|string|max:255',
             'admin_email' => 'required|email|unique:users,email',
-            'admin_password' => ['required', 'confirmed', new PasswordComplexityRule],
+            'admin_password' => PasswordRules::forNew(),
         ];
     }
 

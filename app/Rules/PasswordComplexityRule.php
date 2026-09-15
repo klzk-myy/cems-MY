@@ -9,7 +9,8 @@ use Illuminate\Contracts\Validation\ValidationRule;
  * Password complexity rule enforcing BNM-compliant password policy.
  *
  * Validates passwords against config/security.php password policy:
- * - Minimum 12 characters
+ * - Minimum 8 characters (counted as characters, not bytes)
+ * - Maximum 72 bytes (bcrypt truncates longer input)
  * - At least one uppercase letter
  * - At least one lowercase letter
  * - At least one number
@@ -25,22 +26,33 @@ class PasswordComplexityRule implements ValidationRule
         $password = (string) $value;
 
         $policy = config('security.password', [
-            'min_length' => 12,
+            'min_length' => 8,
+            'max_bytes' => 72,
             'require_uppercase' => true,
             'require_lowercase' => true,
             'require_numbers' => true,
             'require_symbols' => true,
         ]);
 
-        $minLength = (int) ($policy['min_length'] ?? 12);
+        $minLength = (int) ($policy['min_length'] ?? 8);
+        $maxBytes = (int) ($policy['max_bytes'] ?? 72);
         $requireUppercase = (bool) ($policy['require_uppercase'] ?? true);
         $requireLowercase = (bool) ($policy['require_lowercase'] ?? true);
         $requireNumbers = (bool) ($policy['require_numbers'] ?? true);
         $requireSymbols = (bool) ($policy['require_symbols'] ?? true);
 
-        // Check minimum length
-        if (strlen($password) < $minLength) {
+        // Check minimum length in characters — strlen() counts bytes, so a
+        // handful of multibyte characters could otherwise satisfy the floor.
+        if (mb_strlen($password) < $minLength) {
             $fail("The {$attribute} must be at least {$minLength} characters.");
+
+            return;
+        }
+
+        // Check maximum length in bytes — bcrypt truncates input at 72 bytes,
+        // so anything longer would silently weaken the stored credential.
+        if (strlen($password) > $maxBytes) {
+            $fail("The {$attribute} must not exceed {$maxBytes} bytes.");
 
             return;
         }

@@ -211,13 +211,18 @@ class ResetTestDatabase extends Command
         $this->info('Demo session ready!');
         $this->line('');
         $this->warn('Temporary demo credentials (store securely):');
-        $tellerPass = Str::random(12);
-        $managerPass = Str::random(12);
-        $adminPass = Str::random(16);
+        // Str::password produces mixed-case + digit + symbol secrets that
+        // satisfy the complexity policy (Str::random is alphanumeric only).
+        $tellerPass = Str::password(12);
+        $managerPass = Str::password(12);
+        $adminPass = Str::password(16);
 
-        DB::table('users')->where('username', 'teller1')->update(['password' => Hash::make($tellerPass)]);
-        DB::table('users')->where('username', 'manager1')->update(['password' => Hash::make($managerPass)]);
-        DB::table('users')->where('username', 'admin')->update(['password' => Hash::make($adminPass)]);
+        // The credential column is password_hash (there is no password
+        // column); stamp changed_at so the demo credentials are not already
+        // expired under the rotation policy.
+        DB::table('users')->where('username', 'teller1')->update(['password_hash' => Hash::make($tellerPass), 'password_changed_at' => now()]);
+        DB::table('users')->where('username', 'manager1')->update(['password_hash' => Hash::make($managerPass), 'password_changed_at' => now()]);
+        DB::table('users')->where('username', 'admin')->update(['password_hash' => Hash::make($adminPass), 'password_changed_at' => now()]);
 
         $this->line("  Teller:  teller1 / {$tellerPass}");
         $this->line("  Manager: manager1 / {$managerPass}");

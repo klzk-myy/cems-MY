@@ -15,6 +15,7 @@ use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\PasswordHistory;
 use App\Models\User;
+use App\Rules\PasswordComplexityRule;
 use App\Services\Accounting\AccountingService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
@@ -190,25 +191,13 @@ class SetupService
 
     protected function validateAdminPassword(string $password): void
     {
-        if (strlen($password) < 12) {
-            throw new \InvalidArgumentException('Admin password must be at least 12 characters');
-        }
-
-        if (! preg_match('/[A-Z]/', $password)) {
-            throw new \InvalidArgumentException('Admin password must contain at least one uppercase letter');
-        }
-
-        if (! preg_match('/[a-z]/', $password)) {
-            throw new \InvalidArgumentException('Admin password must contain at least one lowercase letter');
-        }
-
-        if (! preg_match('/[0-9]/', $password)) {
-            throw new \InvalidArgumentException('Admin password must contain at least one digit');
-        }
-
-        if (! preg_match('/[^A-Za-z0-9]/', $password)) {
-            throw new \InvalidArgumentException('Admin password must contain at least one special character');
-        }
+        // Delegate to the shared rule so setup cannot drift from the policy
+        // enforced at every other password entry point.
+        (new PasswordComplexityRule)->validate(
+            'admin_password',
+            $password,
+            fn (string $message) => throw new \InvalidArgumentException($message)
+        );
     }
 
     /**

@@ -83,8 +83,8 @@
                         <div class="space-y-4">
                             <x-input name="admin_name" label="Admin Name" inline required />
                             <x-input type="email" name="admin_email" label="Email" inline required />
-                            <x-input type="password" name="admin_password" label="Password" inline required minlength="12" help="Minimum 12 characters with uppercase, lowercase, number and special character." />
-                            <x-input type="password" name="admin_password_confirmation" label="Confirm Password" inline required minlength="12" />
+                            <x-input type="password" name="admin_password" label="Password" inline required minlength="8" help="Minimum 8 characters with uppercase, lowercase, number and special character." />
+                            <x-input type="password" name="admin_password_confirmation" label="Confirm Password" inline required minlength="8" />
                         </div>
                         <div class="mt-6 flex justify-between">
                             <x-button href="{{ route('setup.index', ['step' => 1]) }}" variant="secondary">Previous</x-button>
@@ -181,6 +181,53 @@
                                         </div>
                                     @endforeach
                                 </div>
+                                <div class="mt-4 flex items-center gap-3">
+                                    <x-button type="button" variant="secondary" data-fetch-rates>Fetch Latest Rates</x-button>
+                                    <span class="text-sm text-ink-muted hidden" data-fetch-rates-status></span>
+                                </div>
+                                <script nonce="{{ request()->attributes->get('csp_nonce') }}">
+                                    (function () {
+                                        var btn = document.querySelector('[data-fetch-rates]');
+                                        var status = document.querySelector('[data-fetch-rates-status]');
+                                        var codes = @json($unseededCustomCodes->values());
+
+                                        btn.addEventListener('click', function () {
+                                            btn.disabled = true;
+                                            status.classList.add('hidden');
+                                            fetch('{{ route('setup.rates.fetch') }}', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                                    'Accept': 'application/json',
+                                                    'Content-Type': 'application/json',
+                                                },
+                                                body: JSON.stringify({codes: codes}),
+                                            }).then(function (res) { return res.json(); }).then(function (data) {
+                                                btn.disabled = false;
+                                                if (! data.success) {
+                                                    status.textContent = data.message || 'Rates could not be fetched. Enter them manually.';
+                                                    status.classList.remove('hidden');
+                                                    return;
+                                                }
+                                                var missing = data.missing || [];
+                                                Object.keys(data.rates || {}).forEach(function (code) {
+                                                    var buy = document.querySelector('input[name="custom_rates[' + code + '][buy]"]');
+                                                    var sell = document.querySelector('input[name="custom_rates[' + code + '][sell]"]');
+                                                    if (buy) buy.value = data.rates[code].buy;
+                                                    if (sell) sell.value = data.rates[code].sell;
+                                                });
+                                                status.textContent = missing.length
+                                                    ? 'Rates filled. No market rate found for: ' + missing.join(', ') + ' — enter manually.'
+                                                    : 'Rates filled from the market feed. Review before continuing.';
+                                                status.classList.remove('hidden');
+                                            }).catch(function () {
+                                                btn.disabled = false;
+                                                status.textContent = 'Rates could not be fetched. Enter them manually.';
+                                                status.classList.remove('hidden');
+                                            });
+                                        });
+                                    })();
+                                </script>
                             </div>
                         @endif
                         <div class="mt-6 flex justify-between">

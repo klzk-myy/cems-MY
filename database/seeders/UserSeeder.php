@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -48,7 +47,10 @@ class UserSeeder extends Seeder
                     'is_active' => true,
                 ]);
                 $user->role = UserRole::from($userData['role']);
-                $user->password_hash = Hash::make($userData['password']); // Directly set hashed password
+                // Route through the mutator so the hash is stored once and
+                // password_changed_at is stamped — otherwise every seeded
+                // user is immediately expired under the rotation policy.
+                $user->password = $userData['password'];
                 $user->save();
             }
         }

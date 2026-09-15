@@ -12,6 +12,7 @@ use App\Models\ExchangeRate;
 use App\Models\User;
 use App\Services\System\MathService;
 use App\Services\System\SetupService;
+use App\Services\Transaction\RateApiService;
 use Database\Seeders\SchemaSeeder;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +29,7 @@ class SetupController extends Controller
     public function __construct(
         protected SetupService $setupService,
         protected MathService $mathService,
+        protected RateApiService $rateApiService,
     ) {}
 
     public function index(Request $request): View
@@ -303,6 +305,41 @@ class SetupController extends Controller
                 'message' => 'Setup could not be reset. Please check the server logs or try again.',
             ], 500);
         }
+    }
+
+    /**
+     * Fetch live market rates for the step-4 "other currency" fields.
+     * Read-only: the wizard only prefills the form — the submitted values
+     * are written by executeSetup like any manually entered rate.
+     */
+    public function fetchRates(Request $request): JsonResponse
+    {
+        $codes = array_values(array_unique(array_filter(array_map(
+            fn ($code) => strtoupper(trim((string) $code)),
+            (array) $request->input('codes', []),
+        ))));
+
+        if ($codes === []) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No currency codes supplied.',
+            ], 422);
+        }
+
+        try {
+            $rates = $this->rateApiService->previewRates($codes);
+        } catch (\Throwable) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rates could not be fetched. Enter them manually.',
+            ], 502);
+        }
+
+        return response()->json([
+            'success' => true,
+            'rates' => $rates,
+            'missing' => array_values(array_diff($codes, array_keys($rates))),
+        ]);
     }
 
     private function getSetupChecks(): array

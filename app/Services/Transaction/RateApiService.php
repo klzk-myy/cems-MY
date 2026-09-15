@@ -89,6 +89,61 @@ class RateApiService
     }
 
     /**
+     * Read-only rate lookup for callers that need rates outside the
+     * configured api_rates.currencies set (e.g. the setup wizard's custom
+     * "other" currencies). Nothing is stored, logged, or cached.
+     *
+     * The upstream API quotes CCY-per-MYR (rates[CCY] = units of CCY per 1
+     * MYR); the stored convention is MYR per 1 CCY, so each mid is inverted
+     * before the configured spread is applied. Values are returned at 6
+     * decimals — the exchange_rates column precision — since low-value
+     * currencies (IDR, VND) are meaningless at the default 4.
+     *
+     * @param  list<string>  $codes
+     * @return array<string, array{buy: string, sell: string, mid: string}>
+     */
+    public function previewRates(array $codes): array
+    {
+        // With no API key configured, fall back to the provider's open
+        // endpoint so the lookup still works in keyless environments.
+        $url = $this->apiKey !== ''
+            ? "{$this->baseUrl}/latest/MYR"
+            : 'https://open.er-api.com/v6/latest/MYR';
+
+        $response = Http::timeout(15)->connectTimeout(5)->get($url);
+
+        $data = $response->json();
+
+        if (! $response->successful() || ! isset($data['rates']) || ! is_array($data['rates'])) {
+            throw new InvalidRateException('Failed to fetch exchange rates.');
+        }
+
+        $market = $data['rates'];
+        $spread = $this->rateThresholds()['spread'];
+
+        $rates = [];
+        foreach ($codes as $code) {
+            $code = strtoupper(trim((string) $code));
+            if ($code === '' || ! isset($market[$code]) || ! is_numeric($market[$code])) {
+                continue;
+            }
+
+            // Keep 8 decimals through the spread multiplication — the default
+            // service scale truncates low-value currencies (IDR, VND) to zero
+            // before the final 6-decimal column rounding.
+            $mid = $this->mathService->divide('1', (string) $market[$code], 8);
+
+            $rates[$code] = [
+                'buy' => bcadd($this->mathService->multiply($mid, $this->mathService->subtract('1', $spread), 8), '0', 6),
+                'sell' => bcadd($this->mathService->multiply($mid, $this->mathService->add('1', $spread), 8), '0', 6),
+                'mid' => bcadd($mid, '0', 6),
+            ];
+        }
+
+        return $rates;
+    }
+
+    /**
      * Forget the per-currency rate cache entries (used by RateManagementService::getRateForCurrency)
      * so newly fetched rates are served immediately instead of the stale 5-minute cache.
      */

@@ -2,18 +2,21 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
+use App\Models\PasswordHistory;
 use App\Models\User;
+use App\Rules\PasswordRules;
 use App\Services\AuditService;
 use App\Services\System\MathService;
 use App\Services\System\SetupService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class ComprehensiveSetup extends Command
@@ -153,14 +156,25 @@ class ComprehensiveSetup extends Command
 
             $password = $this->option('admin-password') ?: Str::password(16);
 
-            User::create([
+            Validator::make(
+                ['password' => $password],
+                ['password' => PasswordRules::forNew(confirmed: false)],
+            )->validate();
+
+            // 'password' routes through the mutator (hash + password_changed_at
+            // stamp); password_hash is not fillable and would be dropped.
+            $admin = User::create([
                 'email' => 'admin@example.com',
                 'username' => 'admin',
-                'name' => 'Administrator',
-                'password_hash' => Hash::make($password),
-                'role' => 'admin',
+                'password' => $password,
                 'is_active' => true,
             ]);
+
+            $admin->role = UserRole::Admin;
+            $admin->mfa_enabled = false;
+            $admin->save();
+
+            PasswordHistory::record($admin->id, $admin->password_hash);
 
             if (! $this->option('admin-password')) {
                 $this->warn('Generated admin password (shown once): '.$password);

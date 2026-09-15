@@ -6,7 +6,9 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\UserManagementException;
 use App\Models\PasswordHistory;
 use App\Models\User;
+use App\Rules\PasswordRules;
 use App\Services\AuditService;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * User Service
@@ -41,6 +43,13 @@ class UserService
     {
         $actor = User::findOrFail($createdBy);
         $role = $this->resolveAssignableRole($actor, $data['role'] ?? null);
+
+        // Enforce the password policy here as well as in the form request —
+        // this service is also reachable from commands and other callers
+        // that never pass through HTTP validation.
+        Validator::make($data, [
+            'password' => PasswordRules::forNew(confirmed: false),
+        ])->validate();
 
         $user = User::create([
             'username' => $data['username'],
@@ -209,6 +218,13 @@ class UserService
         if ($user->id !== $resetBy) {
             $this->assertCanManageUser(User::findOrFail($resetBy), $user);
         }
+
+        // Same policy as ResetPasswordRequest, enforced at the service layer
+        // for non-HTTP callers.
+        Validator::make(
+            ['password' => $newPassword],
+            ['password' => PasswordRules::forChange($user, confirmed: false)],
+        )->validate();
 
         // Assign through the mutator so the superseded hash is archived,
         // password_changed_at is stamped, and the BNM forced-rotation clock

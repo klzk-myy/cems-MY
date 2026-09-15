@@ -4,11 +4,15 @@ namespace Tests\Feature\Auth;
 
 use App\Models\PasswordHistory;
 use App\Models\User;
+use App\Rules\PasswordComplexityRule;
+use App\Services\Customer\UserService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -53,7 +57,7 @@ class PasswordPolicyTest extends TestCase
     }
 
     #[Test]
-    public function reset_flow_rejects_eight_character_password(): void
+    public function reset_flow_rejects_password_under_minimum_length(): void
     {
         $user = User::factory()->create([
             'email' => 'policy-short@example.com',
@@ -63,11 +67,12 @@ class PasswordPolicyTest extends TestCase
         $originalHash = $user->password_hash;
         $token = $this->issueResetToken($user);
 
+        // 7 characters — otherwise satisfies every complexity requirement.
         $this->post('/reset-password', [
             'token' => $token,
             'email' => $user->email,
-            'password' => 'Short8x!',
-            'password_confirmation' => 'Short8x!',
+            'password' => 'Short7!',
+            'password_confirmation' => 'Short7!',
         ])->assertInvalid(['password']);
 
         $user->refresh();
@@ -76,7 +81,7 @@ class PasswordPolicyTest extends TestCase
     }
 
     #[Test]
-    public function reset_flow_accepts_twelve_character_complex_password(): void
+    public function reset_flow_accepts_complex_password(): void
     {
         $user = User::factory()->create([
             'email' => 'policy-strong@example.com',
@@ -187,6 +192,61 @@ class PasswordPolicyTest extends TestCase
             ->assertRedirect(route('setup.wizard', ['step' => 3]));
 
         $this->assertSame('StrongSetup@2026', session('setup.admin.admin_password'));
+    }
+
+    #[Test]
+    public function reset_flow_rejects_password_beyond_bcrypt_byte_limit(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'policy-long@example.com',
+            'password' => 'CurrentPass@123',
+        ]);
+
+        $token = $this->issueResetToken($user);
+
+        // 73 bytes that otherwise satisfy every complexity requirement.
+        $long = str_repeat('Aa1!', 18).'A';
+
+        $this->post('/reset-password', [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => $long,
+            'password_confirmation' => $long,
+        ])->assertInvalid(['password']);
+    }
+
+    #[Test]
+    public function minimum_length_counts_characters_not_bytes(): void
+    {
+        // 7 characters but 10 bytes — ä, ß and ö are multibyte. A byte
+        // count would have let this through the 8-character floor.
+        $validator = Validator::make(
+            ['password' => 'Päßwö1!'],
+            ['password' => [new PasswordComplexityRule]],
+        );
+
+        $this->assertTrue($validator->fails());
+        $this->assertStringContainsString(
+            'at least 8 characters',
+            $validator->errors()->first('password')
+        );
+    }
+
+    #[Test]
+    public function user_service_rejects_weak_password_without_http_layer(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'password' => 'AdminPass@123',
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(UserService::class)->createUser([
+            'username' => 'weak-user',
+            'email' => 'weak-user@example.com',
+            'password' => 'weak',
+            'role' => 'teller',
+        ], $admin->id);
     }
 
     #[Test]

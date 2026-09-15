@@ -3,8 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
-use App\Rules\PasswordComplexityRule;
-use App\Rules\PasswordNotRecentlyUsed;
+use App\Rules\PasswordRules;
 
 class ResetPasswordRequest extends AuthorizedFormRequest
 {
@@ -19,13 +18,7 @@ class ResetPasswordRequest extends AuthorizedFormRequest
         $user = $this->route('user');
 
         return [
-            'password' => [
-                'required',
-                'string',
-                'confirmed',
-                new PasswordComplexityRule,
-                new PasswordNotRecentlyUsed($user),
-            ],
+            'password' => PasswordRules::forChange($user),
         ];
     }
 }

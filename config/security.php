@@ -170,12 +170,16 @@ return [
     | Password Policy
     |--------------------------------------------------------------------------
     |
-    | BNM requires minimum 12 characters with mixed case, numbers, and symbols.
+    | Minimum length defaults to 8 characters (override via env); mixed case,
+    | numbers, and symbols are required.
     |
     */
 
     'password' => [
-        'min_length' => 12,
+        'min_length' => (int) env('SECURITY_PASSWORD_MIN_LENGTH', 8),
+        // bcrypt silently truncates input at 72 bytes, so anything longer is
+        // rejected: the effective secret must always be the whole password.
+        'max_bytes' => (int) env('SECURITY_PASSWORD_MAX_BYTES', 72),
         'require_uppercase' => true,
         'require_lowercase' => true,
         'require_numbers' => true,
@@ -191,12 +195,12 @@ return [
     | Password Expiry
     |--------------------------------------------------------------------------
     |
-    | Forced rotation interval in days (BNM policy), read by
-    | User::passwordExpired(). 0 disables forced rotation.
+    | Forced rotation interval in days, read by User::passwordExpired().
+    | Defaults to 0 — forced rotation is disabled unless configured.
     |
     */
 
-    'password_expiry_days' => env('SECURITY_PASSWORD_EXPIRY_DAYS', 90),
+    'password_expiry_days' => env('SECURITY_PASSWORD_EXPIRY_DAYS', 0),
 
     /*
     |--------------------------------------------------------------------------

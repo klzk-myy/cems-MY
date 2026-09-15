@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\HasUserValidationRules;
 use App\Models\User;
-use App\Rules\PasswordComplexityRule;
+use App\Rules\PasswordRules;
 
 class StoreUserRequest extends AuthorizedFormRequest
 {
@@ -18,12 +18,7 @@ class StoreUserRequest extends AuthorizedFormRequest
     public function rules(): array
     {
         return array_merge($this->userValidationRules(), [
-            'password' => [
-                'required',
-                'string',
-                'confirmed',
-                new PasswordComplexityRule,
-            ],
+            'password' => PasswordRules::forNew(),
             'password_confirmation' => 'required',
         ]);
     }

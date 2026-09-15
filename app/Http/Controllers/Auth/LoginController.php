@@ -5,8 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
-use App\Rules\PasswordComplexityRule;
-use App\Rules\PasswordNotRecentlyUsed;
+use App\Rules\PasswordRules;
 use App\Services\AuditService;
 use App\Services\System\RateLimitService;
 use Illuminate\Http\RedirectResponse;
@@ -122,13 +121,10 @@ class LoginController extends Controller
 
         $validated = $request->validate([
             'current_password' => ['required'],
-            'password' => [
-                'required',
-                'confirmed',
-                'different:current_password',
-                new PasswordComplexityRule,
-                new PasswordNotRecentlyUsed($user),
-            ],
+            'password' => array_merge(
+                ['different:current_password'],
+                PasswordRules::forChange($user)
+            ),
         ], [
             'password.different' => 'The new password must be different from the current password.',
         ]);

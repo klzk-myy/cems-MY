@@ -17,7 +17,6 @@ use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * SimulationSeeder — populates the test database with a small, stable
@@ -118,10 +117,22 @@ class SimulationSeeder extends Seeder
     private function createUsers(Branch $hq, Counter $counter): array
     {
         $make = function (string $username, string $email, UserRole $role, Branch $branch) {
-            return User::updateOrCreate(
-                ['username' => $username],
-                ['email' => $email, 'password' => Hash::make('Test@1234'), 'password_hash' => Hash::make('Test@1234'), 'role' => $role, 'branch_id' => $branch->id, 'is_active' => true, 'mfa_enabled' => false, 'password_changed_at' => now()]
-            );
+            // password_hash, role and mfa_enabled are not fillable — an
+            // updateOrCreate attributes array would silently drop them (and
+            // 'password' must be plain: the mutator hashes it, so a pre-hashed
+            // value ends up double-hashed and unusable for login).
+            $user = User::firstOrNew(['username' => $username]);
+            $user->fill([
+                'email' => $email,
+                'branch_id' => $branch->id,
+                'is_active' => true,
+            ]);
+            $user->password = 'Test@1234';
+            $user->role = $role;
+            $user->mfa_enabled = false;
+            $user->save();
+
+            return $user;
         };
 
         $teller = $make('sim_teller', 'sim_teller@cems.my', UserRole::Teller, $hq);
