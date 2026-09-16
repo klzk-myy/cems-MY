@@ -10479,7 +10479,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$message\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: tests/Feature/RateStalenessCommandTest.php
 
 		-

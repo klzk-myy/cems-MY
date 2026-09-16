@@ -107,11 +107,9 @@ class ExchangeRateCardPersistenceTest extends TestCase
 
         $this->service()->fetchLatestRates();
 
-        $expected = bcadd(bcmul(
-            app(ThresholdService::class)->get('rates', 'spread', 0.02),
-            '100',
-            4
-        ), '0', 4);
+        $spread = (string) app(ThresholdService::class)->get('rates', 'spread', 0.02);
+        $this->assertTrue(is_numeric($spread));
+        $expected = bcadd(bcmul($spread, '100', 4), '0', 4);
 
         $card = ExchangeRate::where('currency_code', 'USD')->whereNull('branch_id')->firstOrFail();
         $this->assertSame($expected, (string) $card->spread_applied);

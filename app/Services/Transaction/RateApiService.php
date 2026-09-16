@@ -461,7 +461,7 @@ class RateApiService
      * Role-specific BNM limits are layered on top by
      * RateManagementService::validateTransactionRate().
      *
-     * @return array{valid: bool, reason: ?string, deviation_percent: ?numeric-string, max_allowed: numeric-string, market_rate: ?numeric-string, submitted_rate: string, submitted_rate_per_unit: numeric-string, submitted_rate_unit?: numeric-string, submitted_rate_inverse?: bool, role_limit_percent: ?string}
+     * @return array{valid: bool, reason: ?string, deviation_percent: ?numeric-string, max_allowed: numeric-string, market_rate: ?numeric-string, submitted_rate: string, submitted_rate_per_unit: numeric-string, submitted_rate_unit: numeric-string, submitted_rate_inverse: bool, role_limit_percent: ?string}
      */
     public function validateRateDeviation(
         string $submittedRate,
@@ -498,6 +498,8 @@ class RateApiService
                 'market_rate' => null,
                 'submitted_rate' => $submittedRate,
                 'submitted_rate_per_unit' => $submittedPerUnit,
+                'submitted_rate_unit' => (string) $convention->unit,
+                'submitted_rate_inverse' => $convention->inverse,
                 'role_limit_percent' => null,
             ];
         }

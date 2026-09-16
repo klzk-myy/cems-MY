@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property string $currency_code
  * @property numeric-string $rate_buy
  * @property numeric-string $rate_sell
+ * @property string|null $spread_applied
  * @property int $rate_unit
  * @property bool $rate_inverse
  * @property string $source

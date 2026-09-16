@@ -547,6 +547,9 @@ class RateManagementService implements RateManagementServiceInterface
         }
     }
 
+    /**
+     * @return array{success: bool, message: string, copied_from_date?: string, rates: list<array{currency: string, old_buy: numeric-string, old_sell: numeric-string, new_buy: numeric-string, new_sell: numeric-string, rate_unit: string, mid: string}>}
+     */
     public function copyPreviousRates(string $targetDate, ?int $branchId = null): array
     {
         // whereDate keeps the lookup correct regardless of whether the column
