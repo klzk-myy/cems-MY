@@ -146,7 +146,7 @@ class AlertTriageService
         /** @var Collection<int, Alert> $alerts */
         $alerts = Alert::with(['customer', 'flaggedTransaction'])
             ->whereNull('case_id')
-            ->orderByRaw("FIELD(priority, 'critical', 'high', 'medium', 'low')")
+            ->orderByRaw("CASE priority WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END")
             ->orderByDesc('risk_score')
             ->get();
 
@@ -194,7 +194,9 @@ class AlertTriageService
             return $assigned;
         }
 
-        $workloads = $officers->mapWithKeys(fn ($o) => [$o->id => 0]);
+        // Plain array, not a Collection: workloads are incremented in place
+        // below, and indirect modification ($collection[$id]++) is a no-op.
+        $workloads = array_fill_keys($officers->pluck('id')->all(), 0);
 
         // Min-heap keyed by workload so selecting the least-loaded officer is
         // O(1) per alert instead of sorting the full map on every iteration.
@@ -405,9 +407,9 @@ class AlertTriageService
     /**
      * Bulk assign alerts to a compliance officer.
      *
-     * @param  array  $alertIds  Array of alert IDs
+     * @param  array<int, int>  $alertIds  Array of alert IDs
      * @param  int  $userId  User ID to assign to
-     * @return array Results with success and failure counts
+     * @return array{success: int, failed: int, errors: array<int, string>}
      */
     public function bulkAssign(array $alertIds, int $userId): array
     {
@@ -447,10 +449,10 @@ class AlertTriageService
     /**
      * Bulk resolve multiple alerts.
      *
-     * @param  array  $alertIds  Array of alert IDs
+     * @param  array<int, int>  $alertIds  Array of alert IDs
      * @param  int  $resolvedBy  User ID who is resolving
      * @param  string|null  $notes  Optional notes for all resolved alerts
-     * @return array Results with success and failure counts
+     * @return array{success: int, failed: int, errors: array<int, string>}
      */
     public function bulkResolve(array $alertIds, int $resolvedBy, ?string $notes = null): array
     {
@@ -491,9 +493,9 @@ class AlertTriageService
     /**
      * Bulk link alerts to a case.
      *
-     * @param  array  $alertIds  Array of alert IDs
+     * @param  array<int, int>  $alertIds  Array of alert IDs
      * @param  ComplianceCase  $case  The case to link alerts to
-     * @return array Results with success and failure counts
+     * @return array{success: int, failed: int, errors: array<int, string>}
      */
     public function bulkLinkToCase(array $alertIds, ComplianceCase $case): array
     {

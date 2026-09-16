@@ -191,10 +191,12 @@ class CaseManagementService
         return $this->transitionTo(
             $case,
             ComplianceCaseStatus::Closed,
-            fn (ComplianceCase $case) => $case->update([
-                'resolution' => $resolution,
-                'resolution_notes' => $notes,
-            ]),
+            function (ComplianceCase $case) use ($resolution, $notes) {
+                // resolution is deliberately non-fillable; assign directly.
+                $case->resolution = $resolution;
+                $case->resolution_notes = $notes;
+                $case->save();
+            },
             [
                 'action' => 'compliance_case_closed',
                 'data' => [
@@ -215,7 +217,11 @@ class CaseManagementService
         return $this->transitionTo(
             $case,
             ComplianceCaseStatus::Escalated,
-            fn (ComplianceCase $case) => $case->update(['escalated_at' => now()]),
+            function (ComplianceCase $case) {
+                // escalated_at is deliberately non-fillable; assign directly.
+                $case->escalated_at = now();
+                $case->save();
+            },
             [
                 'action' => 'compliance_case_escalated',
                 'data' => [

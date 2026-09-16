@@ -1,5 +1,12 @@
 <x-app-layout title="Compliance Alerts Index">
-    <x-page-header title="Compliance Alerts Index" description="Alert triage queue" />
+    <x-page-header title="Compliance Alerts Index" description="Alert triage queue">
+        <x-slot:actions>
+            <form method="POST" action="{{ route('compliance.alerts.auto-assign') }}" data-confirm="Auto-assign all unassigned alerts to available officers?">
+                @csrf
+                <x-button variant="secondary" type="submit">Auto-assign Unassigned</x-button>
+            </form>
+        </x-slot:actions>
+    </x-page-header>
 
     @php
         $priorityVariants = [
@@ -85,7 +92,12 @@
                     </tbody>
                 </table>
                 </div>
-                <div class="flex justify-end border-t border-border px-4 py-3">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <x-select name="user_id" :options="$officers" placeholder="Assign to officer..." inline class="!mt-0 w-52" />
+                        <x-button variant="secondary" type="submit" formaction="{{ route('compliance.alerts.bulk-assign') }}">Assign Selected</x-button>
+                        <x-button variant="secondary" type="submit" formaction="{{ route('compliance.alerts.bulk-resolve') }}">Resolve Selected</x-button>
+                    </div>
                     <x-button variant="primary" type="submit">Create Case from Selected</x-button>
                 </div>
             </form>

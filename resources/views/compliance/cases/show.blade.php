@@ -100,13 +100,73 @@
             @endforelse
         </x-card>
 
+        <x-card title="Case Notes">
+            @can('addNote', $case)
+                <form method="POST" action="{{ route('compliance.cases.notes.store', $case) }}" class="mb-4">
+                    @csrf
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+                        <x-select name="note_type" :options="$noteTypes" label="Type" required inline />
+                        <div class="md:col-span-2">
+                            <x-textarea name="content" label="Note" placeholder="Add a note..." required :rows="1" inline />
+                        </div>
+                        <div class="flex items-end gap-4 pb-1">
+                            <input type="hidden" name="is_internal" value="0">
+                            <x-checkbox name="is_internal" label="Internal" :checked="true" inline />
+                            <x-button variant="primary" type="submit">Add Note</x-button>
+                        </div>
+                    </div>
+                </form>
+            @endcan
+
+            <div class="space-y-3">
+                @forelse ($case->notes->sortByDesc('created_at') as $note)
+                    <div class="flex gap-3">
+                        <x-badge variant="gray">{{ $note->note_type?->label() }}</x-badge>
+                        <div>
+                            <p class="text-sm text-ink">{{ $note->content }}</p>
+                            <p class="text-xs text-ink-muted">
+                                {{ $note->author?->username ?? 'System' }} &middot; {{ $note->created_at?->format('Y-m-d H:i:s') }}
+                                @unless ($note->is_internal)
+                                    &middot; External
+                                @endunless
+                            </p>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-ink-muted">No notes on this case yet.</p>
+                @endforelse
+            </div>
+        </x-card>
+
         <x-card title="Actions">
-            <div class="flex flex-wrap gap-3">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
                 @can('update', $case)
-                    <x-button variant="primary">Update Status</x-button>
-                @endcan
-                @can('addNote', $case)
-                    <x-button variant="secondary">Add Note</x-button>
+                    @if ($statusOptions->isNotEmpty())
+                        <form method="POST" action="{{ route('compliance.cases.update', $case) }}">
+                            @csrf
+                            @method('PATCH')
+                            <x-select name="status" label="Status" :options="$statusOptions" required />
+                            <x-select name="resolution" label="Resolution" :options="$resolutionOptions" placeholder="Required when closing" help="Required when moving the case to Closed." />
+                            <x-input name="notes" label="Notes" placeholder="Optional notes" />
+                            <x-button variant="primary" type="submit">Update Status</x-button>
+                        </form>
+                    @endif
+
+                    <form method="POST" action="{{ route('compliance.cases.update', $case) }}">
+                        @csrf
+                        @method('PATCH')
+                        <x-select name="assigned_to" label="Assigned Officer" :options="$officers" :value="$case->assigned_to" required />
+                        <x-button variant="secondary" type="submit">Reassign</x-button>
+                    </form>
+
+                    @if ($case->status?->canMoveTo(\App\Enums\ComplianceCaseStatus::Escalated))
+                        <form method="POST" action="{{ route('compliance.cases.escalate', $case) }}" data-confirm="Escalate this case?">
+                            @csrf
+                            <div class="flex h-full items-end">
+                                <x-button variant="danger" type="submit">Escalate Case</x-button>
+                            </div>
+                        </form>
+                    @endif
                 @endcan
             </div>
         </x-card>

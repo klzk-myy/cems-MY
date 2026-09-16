@@ -351,6 +351,9 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
 
         Route::prefix('compliance/alerts')->name('compliance.alerts.')->group(function () {
             Route::get('/', [AlertTriageController::class, 'index'])->name('index');
+            Route::post('/bulk-assign', [AlertTriageController::class, 'bulkAssign'])->name('bulk-assign');
+            Route::post('/bulk-resolve', [AlertTriageController::class, 'bulkResolve'])->name('bulk-resolve');
+            Route::post('/auto-assign', [AlertTriageController::class, 'autoAssign'])->name('auto-assign');
             Route::get('/{alert}', [AlertTriageController::class, 'show'])->name('show');
             Route::post('/{alert}/assign', [AlertTriageController::class, 'assign'])->name('assign');
             Route::post('/{alert}/resolve', [AlertTriageController::class, 'resolve'])->name('resolve');
@@ -368,6 +371,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
             Route::post('/{case}/merge', [CaseManagementController::class, 'merge'])->name('merge');
             Route::post('/{case}/link-alert', [CaseManagementController::class, 'linkAlert'])->name('link-alert');
             Route::post('/{case}/escalate', [CaseManagementController::class, 'escalate'])->name('escalate');
+            Route::post('/{case}/notes', [CaseManagementController::class, 'addNote'])->name('notes.store');
             Route::post('/{case}/documents', [CaseManagementController::class, 'uploadDocument'])->name('documents.upload');
             Route::post('/{case}/documents/{document}/verify', [CaseManagementController::class, 'verifyDocument'])->name('documents.verify');
             Route::post('/{case}/links', [CaseManagementController::class, 'addLink'])->name('links.add');
