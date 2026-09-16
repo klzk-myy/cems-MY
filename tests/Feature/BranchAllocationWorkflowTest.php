@@ -13,8 +13,10 @@ use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
+use App\Services\Branch\CounterHandoverService;
 use App\Services\Branch\CounterOpeningWorkflowService;
 use App\Services\Branch\CounterService;
+use App\Services\Branch\HandoverVarianceCalculator;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -47,6 +49,8 @@ class BranchAllocationWorkflowTest extends TestCase
     protected CounterOpeningWorkflowService $workflowService;
 
     protected CounterService $counterService;
+
+    protected CounterHandoverService $counterHandoverService;
 
     protected function setUp(): void
     {
@@ -103,6 +107,11 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->tellerAllocationService = $tellerAllocationService;
         $counterService = new CounterService($tellerAllocationService, new ThresholdService, app(AuditService::class));
         $this->counterService = $counterService;
+        $this->counterHandoverService = new CounterHandoverService(
+            $tellerAllocationService,
+            new ThresholdService,
+            new HandoverVarianceCalculator,
+        );
         $auditService = resolve(AuditService::class);
         $this->workflowService = new CounterOpeningWorkflowService(
             $branchPoolService,
@@ -217,7 +226,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocation->status);
         $this->assertEquals($this->tellerA->id, $allocation->user_id);
 
-        $result = $this->counterService->initiateHandover(
+        $result = $this->counterHandoverService->initiateHandover(
             $session,
             $this->tellerA,
             $this->tellerB,

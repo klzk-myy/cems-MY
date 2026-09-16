@@ -79,7 +79,7 @@ class RateOverrideSpreadLimitTest extends TestCase
         $this->assertTrue($result->success);
 
         $rate = ExchangeRate::where('currency_code', 'USD')->first();
-        $this->assertEquals('4.600000', $rate->rate_buy);
-        $this->assertEquals('4.700000', $rate->rate_sell);
+        $this->assertEquals('4.60000000', $rate->rate_buy);
+        $this->assertEquals('4.70000000', $rate->rate_sell);
     }
 }

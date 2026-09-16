@@ -20,6 +20,7 @@ use App\Services\Branch\TellerAllocationService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
@@ -73,12 +74,7 @@ class TransactionCancellationService
             return false;
         }
 
-        $result = DB::transaction(function () use ($transaction, $requester, $reason) {
-            $lockedTransaction = Transaction::where('id', $transaction->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-            $stateMachine = new TransactionStateMachine($lockedTransaction);
-
+        $result = $this->withLockedTransaction($transaction, function (Transaction $lockedTransaction, TransactionStateMachine $stateMachine) use ($transaction, $requester, $reason) {
             $previousStatus = $lockedTransaction->status;
 
             $result = $stateMachine->transitionTo(TransactionStatus::PendingCancellation, [
@@ -114,8 +110,6 @@ class TransactionCancellationService
 
             return $result;
         });
-
-        $transaction->refresh();
 
         return $result;
     }
@@ -153,12 +147,7 @@ class TransactionCancellationService
             return false;
         }
 
-        $result = DB::transaction(function () use ($transaction, $approver, $reason) {
-            $lockedTransaction = Transaction::where('id', $transaction->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-            $stateMachine = new TransactionStateMachine($lockedTransaction);
-
+        $result = $this->withLockedTransaction($transaction, function (Transaction $lockedTransaction, TransactionStateMachine $stateMachine) use ($approver, $reason) {
             // The status at approval time is always PendingCancellation — resolve
             // the status the transaction held before cancellation was requested.
             $previousStatus = $this->determinePreviousStatus($lockedTransaction)
@@ -248,8 +237,6 @@ class TransactionCancellationService
             return $result;
         });
 
-        $transaction->refresh();
-
         return $result;
     }
 
@@ -275,10 +262,7 @@ class TransactionCancellationService
             return false;
         }
 
-        $updated = DB::transaction(function () use ($transaction, $rejector, $reason) {
-            $lockedTransaction = Transaction::where('id', $transaction->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+        $updated = $this->withLockedTransaction($transaction, function (Transaction $lockedTransaction, TransactionStateMachine $stateMachine) use ($rejector, $reason) {
             $previousStatus = $lockedTransaction->status;
 
             $targetStatus = $this->determinePreviousStatus($lockedTransaction);
@@ -297,38 +281,16 @@ class TransactionCancellationService
                     'current_status' => $lockedTransaction->status->value,
                 ]);
 
-                $history = $lockedTransaction->transition_history ?? [];
-                $foundPendingCancellation = false;
-                $fallbackStatus = null;
-                foreach ($history as $entry) {
-                    if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
-                        $foundPendingCancellation = true;
+                $targetStatus = $this->findFallbackPreCancellationStatus($lockedTransaction);
 
-                        continue;
-                    }
-                    if ($foundPendingCancellation) {
-                        try {
-                            $candidate = TransactionStatus::from($entry['from']);
-                            if ($candidate !== $lockedTransaction->status) {
-                                $fallbackStatus = $candidate;
-                                break;
-                            }
-                        } catch (\ValueError $e) {
-                            continue;
-                        }
-                    }
-                }
-                if (! $fallbackStatus) {
+                if (! $targetStatus) {
                     Log::warning('Cannot determine fallback status for cancellation rejection', [
                         'transaction_id' => $lockedTransaction->id,
                     ]);
 
                     return false;
                 }
-                $targetStatus = $fallbackStatus;
             }
-
-            $stateMachine = new TransactionStateMachine($lockedTransaction, $this->auditService);
 
             $updated = $stateMachine->transitionTo($targetStatus, [
                 'reason' => "Cancellation rejected: {$reason}",
@@ -361,8 +323,6 @@ class TransactionCancellationService
 
             return $updated;
         });
-
-        $transaction->refresh();
 
         return $updated;
     }
@@ -467,6 +427,70 @@ class TransactionCancellationService
     public function canUserReverse(User $user, Transaction $transaction): bool
     {
         return $this->reversalService->canUserReverse($user, $transaction);
+    }
+
+    /**
+     * Run $callback inside a DB transaction with the transaction row locked
+     * for update and a state machine bound to the locked row. The passed
+     * model is refreshed afterwards.
+     *
+     * @template TResult
+     *
+     * @param  Closure(Transaction, TransactionStateMachine): TResult  $callback
+     * @return TResult
+     */
+    protected function withLockedTransaction(Transaction $transaction, Closure $callback): mixed
+    {
+        $result = DB::transaction(function () use ($transaction, $callback) {
+            $lockedTransaction = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            return $callback(
+                $lockedTransaction,
+                new TransactionStateMachine($lockedTransaction, $this->auditService)
+            );
+        });
+
+        $transaction->refresh();
+
+        return $result;
+    }
+
+    /**
+     * Walk the transition history for the status held before the LAST
+     * PendingCancellation transition — used when the stored previous_status
+     * already equals the current status (e.g. a repeated cancellation
+     * request). Returns null when no usable fallback exists.
+     */
+    protected function findFallbackPreCancellationStatus(Transaction $transaction): ?TransactionStatus
+    {
+        $history = $transaction->transition_history ?? [];
+        $foundPendingCancellation = false;
+
+        foreach ($history as $entry) {
+            if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
+                $foundPendingCancellation = true;
+
+                continue;
+            }
+
+            if (! $foundPendingCancellation) {
+                continue;
+            }
+
+            try {
+                $candidate = TransactionStatus::from($entry['from']);
+            } catch (\ValueError $e) {
+                continue;
+            }
+
+            if ($candidate !== $transaction->status) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     protected function notifyPendingCancellation(Transaction $transaction, User $requester, string $reason): void

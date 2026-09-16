@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Compliance\Monitors\VelocityMonitor;
 use App\Services\Risk\VelocityRiskService;
 use App\Services\System\MathService;
@@ -18,7 +19,7 @@ class VelocityMonitorTest extends TestCase
         $thresholdService = new ThresholdService;
         $velocityRiskService = new VelocityRiskService($mathService, $thresholdService);
 
-        $monitor = new VelocityMonitor($mathService, $velocityRiskService, $thresholdService);
+        $monitor = new VelocityMonitor($mathService, $velocityRiskService, $thresholdService, app(AlertTriageService::class));
 
         // ThresholdService::getVelocityWindowDays() defaults to 90 days
         $this->assertEquals(90, $thresholdService->getVelocityWindowDays());
@@ -39,7 +40,7 @@ class VelocityMonitorTest extends TestCase
         $thresholdService = new ThresholdService;
         $velocityRiskService = new VelocityRiskService($mathService, $thresholdService);
 
-        $monitor = new VelocityMonitor($mathService, $velocityRiskService, $thresholdService);
+        $monitor = new VelocityMonitor($mathService, $velocityRiskService, $thresholdService, app(AlertTriageService::class));
 
         // When config is set to 30, the monitor should use 30
         $this->assertEquals(30, $thresholdService->getVelocityWindowDays());

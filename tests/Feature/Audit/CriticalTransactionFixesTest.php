@@ -23,8 +23,8 @@ use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\MonthEndCloseService;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Customer\CustomerService;
-use App\Services\CustomerScreeningService;
 use App\Services\Reporting\ReportingService;
+use App\Services\Screening\RelatedPartyDiligenceService;
 use App\Services\System\MathService;
 use App\Services\Transaction\StockTransferService;
 use App\Services\Transaction\TransactionCancellationService;
@@ -244,7 +244,7 @@ class CriticalTransactionFixesTest extends TestCase
             'created_at' => now()->subMonth(),
         ]);
 
-        $service = app(CustomerScreeningService::class);
+        $service = app(RelatedPartyDiligenceService::class);
         $reflection = new \ReflectionMethod($service, 'analyzeRelatedPartyTransactions');
         $reflection->setAccessible(true);
         $analysis = $reflection->invoke($service, $related);

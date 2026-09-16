@@ -13,6 +13,7 @@ use App\Services\AuditService;
 use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Support\ActorContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -21,7 +22,8 @@ class TransactionConfirmationService
     public function __construct(
         protected AuditService $auditService,
         protected ThresholdService $thresholdService,
-        protected MathService $mathService
+        protected MathService $mathService,
+        protected AlertTriageService $alertTriageService
     ) {}
 
     /**
@@ -354,23 +356,10 @@ class TransactionConfirmationService
     protected function notifyComplianceOfLargeTransaction(TransactionConfirmation $confirmation, Transaction $transaction): void
     {
         try {
-            $officers = app(AlertTriageService::class)->getAvailableOfficers();
-
-            foreach ($officers as $officer) {
-                if ($officer->id === auth()->id()) {
-                    continue;
-                }
-
-                try {
-                    $officer->notify(new LargeTransactionNotification($transaction, $confirmation));
-                } catch (\Throwable $e) {
-                    Log::warning('Failed to notify compliance of large transaction', [
-                        'officer_id' => $officer->id,
-                        'transaction_id' => $transaction->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
+            $this->alertTriageService->notifyAvailableOfficers(
+                new LargeTransactionNotification($transaction, $confirmation),
+                ActorContext::capture()->userId
+            );
         } catch (\Throwable $e) {
             Log::warning('Failed to resolve compliance officers for large transaction', [
                 'transaction_id' => $transaction->id,

@@ -513,6 +513,8 @@ class SchemaSeeder extends Seeder
             $table->string('name');
             $table->string('symbol')->nullable();
             $table->integer('decimal_places')->default(2);
+            $table->unsignedBigInteger('rate_unit')->default(1);
+            $table->boolean('rate_inverse')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -530,7 +532,7 @@ class SchemaSeeder extends Seeder
             $table->string('currency_code');
             $table->decimal('amount_local', 18, 4);
             $table->decimal('amount_foreign', 18, 4);
-            $table->decimal('rate', 18, 6);
+            $table->decimal('rate', 18, 8);
             $table->text('purpose')->nullable();
             $table->string('source_of_funds')->nullable();
             $table->string('status')->default('Draft');
@@ -549,7 +551,7 @@ class SchemaSeeder extends Seeder
             $table->boolean('is_refund')->default(false);
             $table->string('idempotency_key')->nullable();
             $table->integer('version')->default(0);
-            $table->decimal('base_rate', 18, 6)->nullable();
+            $table->decimal('base_rate', 18, 8)->nullable();
             $table->boolean('rate_override')->default(false);
             $table->integer('rate_override_approved_by')->nullable();
             $table->timestamp('rate_override_approved_at')->nullable();
@@ -573,7 +575,7 @@ class SchemaSeeder extends Seeder
             // Position-state snapshot captured when the position mutation is applied,
             // so reversals can restore the exact prior cost basis (plan §1.3).
             $table->decimal('prev_quantity', 18, 4)->nullable();
-            $table->decimal('prev_average_cost', 18, 6)->nullable();
+            $table->decimal('prev_average_cost', 18, 8)->nullable();
             // The teller allocation validated at creation time — pinned so
             // apply/reverse act on the same allocation that passed validation.
             $table->unsignedBigInteger('teller_allocation_id')->nullable();
@@ -1073,9 +1075,9 @@ class SchemaSeeder extends Seeder
             $table->string('currency_code');
             $table->string('branch_id')->default('HQ');
             $table->decimal('quantity', 18, 4)->default(0);
-            $table->decimal('average_cost', 18, 6)->default(0);
+            $table->decimal('average_cost', 18, 8)->default(0);
             $table->decimal('total_cost', 18, 4)->default(0);
-            $table->decimal('current_rate', 18, 6)->default(0);
+            $table->decimal('current_rate', 18, 8)->default(0);
             $table->decimal('current_value', 18, 4)->default(0);
             $table->decimal('unrealized_gain_loss', 18, 4)->default(0);
             $table->timestamp('last_revalued_at')->nullable();
@@ -1353,7 +1355,9 @@ class SchemaSeeder extends Seeder
         Schema::create('exchange_rate_histories', function (Blueprint $table) {
             $table->id();
             $table->string('currency_code');
-            $table->decimal('rate', 18, 6);
+            $table->decimal('rate', 18, 8);
+            $table->unsignedBigInteger('rate_unit')->default(1);
+            $table->boolean('rate_inverse')->default(false);
             $table->date('effective_date');
             $table->unsignedBigInteger('created_by')->nullable();
             $table->text('notes')->nullable();
@@ -1374,8 +1378,10 @@ class SchemaSeeder extends Seeder
         Schema::create('exchange_rates', function (Blueprint $table) {
             $table->id();
             $table->string('currency_code');
-            $table->decimal('rate_buy', 18, 6);
-            $table->decimal('rate_sell', 18, 6);
+            $table->decimal('rate_buy', 18, 8);
+            $table->decimal('rate_sell', 18, 8);
+            $table->unsignedBigInteger('rate_unit')->default(1);
+            $table->boolean('rate_inverse')->default(false);
             $table->string('source');
             $table->timestamp('fetched_at');
             $table->timestamp('created_at')->nullable();
@@ -1596,8 +1602,8 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->string('currency_code');
             $table->string('till_id')->default('MAIN');
-            $table->decimal('old_rate', 18, 6);
-            $table->decimal('new_rate', 18, 6);
+            $table->decimal('old_rate', 18, 8);
+            $table->decimal('new_rate', 18, 8);
             $table->decimal('position_amount', 18, 4);
             $table->decimal('gain_loss_amount', 18, 4);
             $table->date('revaluation_date');
@@ -1819,7 +1825,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('stock_transfer_id');
             $table->string('currency_code');
             $table->decimal('quantity', 18, 4);
-            $table->decimal('rate', 18, 6);
+            $table->decimal('rate', 18, 8);
             $table->decimal('value_myr', 18, 4);
             $table->decimal('quantity_received', 18, 4)->default(0);
             $table->decimal('quantity_in_transit', 18, 4)->default(0);
@@ -1991,6 +1997,7 @@ class SchemaSeeder extends Seeder
             $table->index('closed_at', 'till_balances_closed_at_index');
             $table->index(['currency_code', 'date'], 'till_balances_currency_date_idx');
             $table->index('date', 'till_balances_date_index');
+            $table->index(['till_id', 'date', 'currency_code'], 'till_balances_till_date_currency_idx');
             $table->index(['closed_by', 'opened_by', 'teller_allocation_id'], 'idx_8d2f3d6ddc8f');
             $table->foreign('teller_allocation_id')->references('id')->on('teller_allocations')->nullOnDelete();
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();

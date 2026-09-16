@@ -19,6 +19,7 @@ use App\Services\AuditService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -308,6 +309,39 @@ class AlertTriageService
         return User::whereIn('role', [UserRole::ComplianceOfficer->value, UserRole::Manager->value])
             ->where('is_active', true)
             ->get();
+    }
+
+    /**
+     * Notify all available compliance officers, optionally excluding one user
+     * (typically the actor who triggered the escalation).
+     *
+     * Per-officer failures are logged and swallowed so a single broken
+     * notification channel can never block the remaining officers.
+     *
+     * @return int Number of officers the notification was dispatched to
+     */
+    public function notifyAvailableOfficers(Notification $notification, ?int $excludeUserId = null): int
+    {
+        $officers = $this->getAvailableOfficers()
+            ->when(
+                $excludeUserId !== null,
+                fn (Collection $c) => $c->reject(fn (User $officer) => $officer->id === $excludeUserId)
+            )
+            ->values();
+
+        foreach ($officers as $officer) {
+            try {
+                $officer->notify($notification);
+            } catch (\Throwable $e) {
+                Log::warning('Failed to notify compliance officer', [
+                    'officer_id' => $officer->id,
+                    'notification' => $notification::class,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $officers->count();
     }
 
     /**

@@ -8,12 +8,7 @@ use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\Compliance\AlertTriageService;
-use App\Services\Compliance\ComplianceService;
-use App\Services\Risk\StructuringRiskService;
-use App\Services\Risk\VelocityRiskService;
-use App\Services\System\EncryptionService;
-use App\Services\System\MathService;
-use App\Services\ThresholdService;
+use App\Services\Transaction\Checks\TransactionCheckRegistry;
 use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,31 +24,10 @@ class TransactionMonitoringServiceTest extends TestCase
     {
         parent::setUp();
 
-        $mathService = new MathService;
-        $thresholdService = new ThresholdService;
-        $encryptionService = new EncryptionService;
-        $velocityRiskService = new VelocityRiskService($mathService, $thresholdService);
-        $structuringRiskService = new StructuringRiskService($mathService, $thresholdService);
-
-        $complianceService = new ComplianceService(
-            $encryptionService,
-            $mathService,
-            null,
-            $thresholdService,
-            $velocityRiskService,
-            $structuringRiskService
-        );
-
-        $auditService = new AuditService;
-
-        $alertTriageService = app(AlertTriageService::class);
-
         $this->service = new TransactionMonitoringService(
-            $complianceService,
-            $mathService,
-            $auditService,
-            $thresholdService,
-            $alertTriageService
+            app(TransactionCheckRegistry::class),
+            new AuditService,
+            app(AlertTriageService::class)
         );
     }
 

@@ -11,6 +11,7 @@ use App\Services\AuditService;
 use App\Services\Compliance\CustomerRiskScoringService;
 use App\Services\Compliance\PepAssessmentService;
 use App\Services\Compliance\RiskCalculationService;
+use App\Services\Compliance\RiskScoreWriteBackService;
 use App\Services\Compliance\RiskScoringEngine;
 use App\Services\Compliance\RoundTripDetector;
 use App\Services\CustomerScreeningService;
@@ -42,7 +43,8 @@ class RiskScoreWriteBackTest extends TestCase
 
         $this->engine = new RiskScoringEngine(
             new MathService,
-            app(RiskCalculationService::class)
+            app(RiskCalculationService::class),
+            new RiskScoreWriteBackService,
         );
 
         $mathService = new MathService;
@@ -72,6 +74,8 @@ class RiskScoreWriteBackTest extends TestCase
             $riskCalculationService,
             new PepAssessmentService,
             new GeographicRiskService($thresholdService),
+            new AmountRiskService($mathService, $thresholdService),
+            new RiskScoreWriteBackService,
         );
     }
 

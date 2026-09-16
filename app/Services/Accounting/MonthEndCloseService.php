@@ -15,6 +15,7 @@ use App\Models\RevaluationEntry;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Reporting\ReportingService;
+use App\Support\ActorContext;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -155,7 +156,7 @@ class MonthEndCloseService
             }
 
             if ($closedBy === null) {
-                $authId = auth()->id();
+                $authId = ActorContext::capture()->userId;
                 $closedBy = $authId === null ? null : (int) $authId;
             }
 

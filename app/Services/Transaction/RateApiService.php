@@ -3,11 +3,14 @@
 namespace App\Services\Transaction;
 
 use App\Exceptions\Domain\InvalidRateException;
+use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Support\ActorContext;
+use App\ValueObjects\QuoteConvention;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
@@ -25,30 +28,34 @@ class RateApiService
      * Rate thresholds resolved lazily via ThresholdService so constructing
      * the service stays free of DB I/O (keeps callers' query counts stable).
      *
-     * @var array{spread: string, max_deviation_percent: string, precision: int, cache_duration: int}|null
+     * @var array{spread: numeric-string, max_deviation_percent: numeric-string, precision: int, cache_duration: int}|null
      */
     private ?array $rateThresholds = null;
 
     public function __construct(
-        ?MathService $mathService = null,
-        ?CacheInvalidationService $cacheInvalidationService = null,
-        protected ?ThresholdService $thresholdService = null,
+        MathService $mathService,
+        CacheInvalidationService $cacheInvalidationService,
+        protected ThresholdService $thresholdService,
     ) {
-        $this->mathService = $mathService ?? new MathService;
-        $this->cacheInvalidationService = $cacheInvalidationService ?? new CacheInvalidationService;
-        $this->thresholdService ??= app(ThresholdService::class);
+        $this->mathService = $mathService;
+        $this->cacheInvalidationService = $cacheInvalidationService;
         $this->apiKey = config('services.exchange_rate_api.key') ?? '';
         $this->baseUrl = config('services.exchange_rate_api.base_url', 'https://api.exchangerate-api.com/v4');
     }
 
     /**
-     * @return array{spread: string, max_deviation_percent: string, precision: int, cache_duration: int}
+     * @return array{spread: numeric-string, max_deviation_percent: numeric-string, precision: int, cache_duration: int}
      */
     private function rateThresholds(): array
     {
+        /** @var numeric-string $spread */
+        $spread = (string) $this->thresholdService->get('rates', 'spread', 0.02);
+        /** @var numeric-string $maxDeviation */
+        $maxDeviation = (string) $this->thresholdService->get('rates', 'max_deviation_percent', 0.05);
+
         return $this->rateThresholds ??= [
-            'spread' => (string) $this->thresholdService->get('rates', 'spread', 0.02),
-            'max_deviation_percent' => (string) $this->thresholdService->get('rates', 'max_deviation_percent', 0.05),
+            'spread' => $spread,
+            'max_deviation_percent' => $maxDeviation,
             'precision' => (int) $this->thresholdService->get('rates', 'precision', 4),
             'cache_duration' => (int) $this->thresholdService->get('rates', 'cache_duration', 60),
         ];
@@ -95,7 +102,7 @@ class RateApiService
      *
      * The upstream API quotes CCY-per-MYR (rates[CCY] = units of CCY per 1
      * MYR); the stored convention is MYR per 1 CCY, so each mid is inverted
-     * before the configured spread is applied. Values are returned at 6
+     * before the configured spread is applied. Values are returned at 8
      * decimals — the exchange_rates column precision — since low-value
      * currencies (IDR, VND) are meaningless at the default 4.
      *
@@ -130,13 +137,13 @@ class RateApiService
 
             // Keep 8 decimals through the spread multiplication — the default
             // service scale truncates low-value currencies (IDR, VND) to zero
-            // before the final 6-decimal column rounding.
+            // before the final 8-decimal column rounding.
             $mid = $this->mathService->divide('1', (string) $market[$code], 8);
 
             $rates[$code] = [
-                'buy' => bcadd($this->mathService->multiply($mid, $this->mathService->subtract('1', $spread), 8), '0', 6),
-                'sell' => bcadd($this->mathService->multiply($mid, $this->mathService->add('1', $spread), 8), '0', 6),
-                'mid' => bcadd($mid, '0', 6),
+                'buy' => bcadd($this->mathService->multiply($mid, $this->mathService->subtract('1', $spread), 8), '0', 8),
+                'sell' => bcadd($this->mathService->multiply($mid, $this->mathService->add('1', $spread), 8), '0', 8),
+                'mid' => bcadd($mid, '0', 8),
             ];
         }
 
@@ -152,6 +159,12 @@ class RateApiService
         $this->cacheInvalidationService->forgetAllRates(array_keys($processed), $branchId);
     }
 
+    /**
+     * The upstream API quotes CCY-per-MYR (rates[CCY] = units of CCY per 1
+     * MYR); everything downstream works in per-unit MYR, so each mid is
+     * inverted at scale 8 before the configured spread is applied —
+     * low-value currencies (IDR, VND) would collapse at the default scale.
+     */
     protected function processRates(array $rates, $timestamp): array
     {
         $processed = [];
@@ -159,8 +172,9 @@ class RateApiService
 
         foreach ($currencies as $currency) {
             if (isset($rates[$currency])) {
+                $mid = $this->mathService->divide('1', (string) $rates[$currency], 8);
                 $processed[$currency] = [
-                    ...$this->applySpread((string) $rates[$currency]),
+                    ...$this->applySpread($mid, 8),
                     'timestamp' => $timestamp,
                 ];
             }
@@ -176,17 +190,27 @@ class RateApiService
      *
      * @return array{buy: string, sell: string, mid: string}
      */
-    public function applySpread(string $midRate): array
+    public function applySpread(string $midRate, ?int $precision = null): array
     {
         $spread = $this->rateThresholds()['spread'];
+        $round = function (string $value) use ($precision): string {
+            /** @var numeric-string $value */
+            return $precision === null
+                ? $this->roundRate($value)
+                : bcadd($value, '0', $precision);
+        };
 
         return [
-            'buy' => $this->roundRate($this->mathService->multiply($midRate, $this->mathService->subtract('1', $spread))),
-            'sell' => $this->roundRate($this->mathService->multiply($midRate, $this->mathService->add('1', $spread))),
-            'mid' => $this->roundRate($midRate),
+            'buy' => $round($this->mathService->multiply($midRate, $this->mathService->subtract('1', $spread))),
+            'sell' => $round($this->mathService->multiply($midRate, $this->mathService->add('1', $spread))),
+            'mid' => $round($midRate),
         ];
     }
 
+    /**
+     * @param  numeric-string  $rate
+     * @return numeric-string
+     */
     protected function roundRate(string $rate): string
     {
         if (! is_numeric($rate)) {
@@ -200,24 +224,36 @@ class RateApiService
     {
         $now = now();
 
+        // Processed rates are per-unit; exchange_rates stores the unit-quoted
+        // convention (rate per currencies.rate_unit foreign units — or foreign
+        // units per rate_unit MYR for inverse currencies), so each value is
+        // re-quoted by the currency's configured convention.
+        $conventions = Currency::quoteConventions(array_keys($rates));
+
         ExchangeRate::upsert(
-            collect($rates)->map(fn ($rateData, $currencyCode) => [
-                'currency_code' => $currencyCode,
-                'branch_id' => $branchId,
-                'rate_buy' => $rateData['buy'],
-                'rate_sell' => $rateData['sell'],
-                'source' => 'api',
-                'fetched_at' => $now,
-            ])->values()->all(),
+            collect($rates)->map(function ($rateData, $currencyCode) use ($conventions, $branchId, $now) {
+                $convention = $conventions[$currencyCode] ?? new QuoteConvention;
+
+                return [
+                    'currency_code' => $currencyCode,
+                    'branch_id' => $branchId,
+                    'rate_buy' => $convention->fromPerUnit($rateData['buy']),
+                    'rate_sell' => $convention->fromPerUnit($rateData['sell']),
+                    'rate_unit' => $convention->unit,
+                    'rate_inverse' => $convention->inverse,
+                    'source' => 'api',
+                    'fetched_at' => $now,
+                ];
+            })->values()->all(),
             ['currency_code', 'branch_id'],
-            ['rate_buy', 'rate_sell', 'source', 'fetched_at']
+            ['rate_buy', 'rate_sell', 'rate_unit', 'rate_inverse', 'source', 'fetched_at']
         );
     }
 
     protected function logRatesToHistory(array $rates, ?int $branchId = null): void
     {
         $today = now()->toDateString();
-        $userId = auth()->id() ?? config('cems.system_user_id', 1);
+        $userId = ActorContext::capture()->userId ?? config('cems.system_user_id', 1);
 
         $existing = ExchangeRateHistory::where('branch_id', $branchId)
             ->whereIn('currency_code', array_keys($rates))
@@ -225,16 +261,27 @@ class RateApiService
             ->pluck('currency_code')
             ->flip();
 
+        $conventions = Currency::quoteConventions(array_keys($rates));
+
         $rows = collect($rates)
             ->reject(fn ($_, $currencyCode) => $existing->has($currencyCode))
-            ->map(fn ($rateData, $currencyCode) => [
-                'currency_code' => $currencyCode,
-                'branch_id' => $branchId,
-                'rate' => $rateData['mid'],
-                'effective_date' => $today,
-                'created_by' => $userId,
-                'notes' => "API fetch - Buy: {$rateData['buy']}, Sell: {$rateData['sell']}".($branchId ? " (Branch: {$branchId})" : ''),
-            ])->values()->all();
+            ->map(function ($rateData, $currencyCode) use ($conventions, $branchId, $today, $userId) {
+                $convention = $conventions[$currencyCode] ?? new QuoteConvention;
+                $buy = $convention->fromPerUnit($rateData['buy']);
+                $sell = $convention->fromPerUnit($rateData['sell']);
+                $side = $convention->inverse ? Currency::baseCurrency() : 'units';
+
+                return [
+                    'currency_code' => $currencyCode,
+                    'branch_id' => $branchId,
+                    'rate' => $convention->fromPerUnit($rateData['mid']),
+                    'rate_unit' => $convention->unit,
+                    'rate_inverse' => $convention->inverse,
+                    'effective_date' => $today,
+                    'created_by' => $userId,
+                    'notes' => "API fetch - Buy: {$buy}, Sell: {$sell} per {$convention->unit} {$side}".($branchId ? " (Branch: {$branchId})" : ''),
+                ];
+            })->values()->all();
 
         if (! empty($rows)) {
             ExchangeRateHistory::insert($rows);
@@ -248,6 +295,9 @@ class RateApiService
         return $rates[$currency] ?? null;
     }
 
+    /**
+     * @return numeric-string|null
+     */
     public function getCurrentRate(string $currencyCode, string $type = 'mid', ?int $branchId = null): ?string
     {
         $query = ExchangeRate::where('currency_code', $currencyCode);
@@ -263,16 +313,32 @@ class RateApiService
             return null;
         }
 
+        // exchange_rates stores unit-quoted values (MYR per rate_unit foreign
+        // units — or foreign units per rate_unit MYR for inverse rows);
+        // callers compare and convert in per-unit terms, so normalize by the
+        // row's own quote convention here.
+        $toPerUnit = fn (string $quoted) => $exchangeRate->perUnitRate($quoted);
+
         return match ($type) {
-            'buy' => $exchangeRate->rate_buy,
-            'sell' => $exchangeRate->rate_sell,
-            'mid' => $this->roundRate(
+            'buy' => $toPerUnit($exchangeRate->rate_buy),
+            'sell' => $toPerUnit($exchangeRate->rate_sell),
+            // Keep the per-unit 8-decimal convention: rounding the mid to
+            // the display precision would collapse low-value currencies
+            // (e.g. IDR 0.000235 → 0.0002).
+            'mid' => bcadd(
                 $this->mathService->divide(
-                    $this->mathService->add($exchangeRate->rate_buy, $exchangeRate->rate_sell),
-                    '2'
-                )
+                    bcadd(
+                        $toPerUnit($exchangeRate->rate_buy),
+                        $toPerUnit($exchangeRate->rate_sell),
+                        8
+                    ),
+                    '2',
+                    8
+                ),
+                '0',
+                8
             ),
-            default => $exchangeRate->rate_buy,
+            default => $toPerUnit($exchangeRate->rate_buy),
         };
     }
 
@@ -282,6 +348,13 @@ class RateApiService
         string $type = 'buy',
         ?int $branchId = null
     ): array {
+        // The submitted rate arrives in the currency's configured quote
+        // convention (what the teller/UI displays): direct = MYR per rate_unit
+        // foreign units, inverse = foreign units per rate_unit MYR. Normalize
+        // to per-unit MYR so it compares against the market rate on equal terms.
+        $convention = QuoteConvention::forCode($currencyCode);
+        $submittedPerUnit = $convention->toPerUnit($submittedRate);
+
         $marketRate = $this->getCurrentRate($currencyCode, $type, $branchId);
 
         if ($marketRate === null) {
@@ -293,26 +366,32 @@ class RateApiService
             ];
         }
 
-        $deviation = $this->mathService->abs(
-            $this->mathService->subtract($submittedRate, $marketRate)
-        );
+        // Scale-8 arithmetic: per-unit market rates are tiny (IDR 0.000235),
+        // so the default scale-4 subtract/divide would collapse the deviation
+        // to zero and silently pass out-of-band rates.
+        $deviation = $this->mathService->abs(bcsub($submittedPerUnit, $marketRate, 8));
 
-        $deviationPercent = $this->mathService->divide(
-            $this->mathService->multiply($deviation, '100'),
-            $marketRate
-        );
+        // max_deviation_percent is stored as a fraction (0.05 = 5%) per
+        // thresholds.rates metadata — compare the deviation fraction directly.
+        $deviationFraction = bcdiv($deviation, $marketRate, 8);
+        $deviationPercent = bcmul($deviationFraction, '100', 4);
 
         $maxAllowed = $this->rateThresholds()['max_deviation_percent'];
 
-        $isValid = $this->mathService->compare($deviationPercent, $maxAllowed) <= 0;
+        $isValid = bccomp($deviationFraction, (string) $maxAllowed, 8) <= 0;
+
+        $maxAllowedPercent = bcmul((string) $maxAllowed, '100', 4);
 
         return [
             'valid' => $isValid,
-            'reason' => $isValid ? null : "Rate deviation {$deviationPercent}% exceeds maximum allowed {$maxAllowed}%",
+            'reason' => $isValid ? null : "Rate deviation {$deviationPercent}% exceeds maximum allowed {$maxAllowedPercent}%",
             'deviation_percent' => $this->roundRate($deviationPercent),
             'max_allowed' => $maxAllowed,
             'market_rate' => $marketRate,
             'submitted_rate' => $submittedRate,
+            'submitted_rate_per_unit' => $submittedPerUnit,
+            'submitted_rate_unit' => (string) $convention->unit,
+            'submitted_rate_inverse' => $convention->inverse,
         ];
     }
 
@@ -348,6 +427,8 @@ class RateApiService
             return [
                 'date' => $history->effective_date->format('Y-m-d'),
                 'rate' => $history->rate,
+                'rate_unit' => (string) $history->rate_unit,
+                'rate_inverse' => (bool) $history->rate_inverse,
             ];
         })->toArray();
 

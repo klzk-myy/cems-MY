@@ -78,7 +78,7 @@ class StockCashController extends Controller
 
         // Calculate MYR cash in hand from today's till balances
         // For open tills: use opening_balance. For closed tills: use closing_balance
-        $myrQuery = $this->scopeByBranch(TillBalance::whereDate('date', today())->where('currency_code', 'MYR'));
+        $myrQuery = $this->scopeByBranch(TillBalance::whereDate('date', today())->where('currency_code', Currency::baseCurrency()));
 
         $myrBalances = $myrQuery->get();
         $myrCashInHand = $myrBalances->reduce(

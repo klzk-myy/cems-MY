@@ -87,7 +87,7 @@
                         <x-slot:tbody>
                             @forelse ($equity as $eq)
                                 <tr class="hover:bg-canvas-subtle">
-                                    <td class="px-4 py-3 text-sm text-ink">{{ $eq['account_code'] }} - {{ $eq['account_name'] }}</td>
+                                    <td class="px-4 py-3 text-sm text-ink">{{ $eq['account_code'] !== '' ? $eq['account_code'].' - ' : '' }}{{ $eq['account_name'] }}</td>
                                     <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $eq['amount'], 2) }}</td>
                                 </tr>
                             @empty

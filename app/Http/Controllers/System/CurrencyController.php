@@ -145,9 +145,14 @@ class CurrencyController extends Controller
             'name' => $currency->name,
             'symbol' => $currency->symbol,
             'decimal_places' => $currency->decimal_places,
+            'rate_unit' => (string) $currency->rate_unit,
+            'rate_inverse' => (bool) $currency->rate_inverse,
         ];
 
-        $currency->update($validated);
+        $currency->update([
+            ...$validated,
+            'rate_inverse' => (bool) $validated['rate_inverse'],
+        ]);
 
         $this->auditService->log(
             'currency_updated',
@@ -160,8 +165,33 @@ class CurrencyController extends Controller
                 'name' => $currency->name,
                 'symbol' => $currency->symbol,
                 'decimal_places' => $currency->decimal_places,
+                'rate_unit' => (string) $currency->rate_unit,
+                'rate_inverse' => (bool) $currency->rate_inverse,
             ]
         );
+
+        // Quote-convention changes get the dedicated audit action used by the
+        // other two entry points (index column, /rates/units) so all unit and
+        // direction changes are traceable under one action name.
+        if ($oldValues['rate_unit'] !== (string) $currency->rate_unit
+            || $oldValues['rate_inverse'] !== (bool) $currency->rate_inverse) {
+            $this->auditService->log(
+                'rate_unit_changed',
+                (int) auth()->id(),
+                'Currency',
+                null,
+                [
+                    'code' => $currency->code,
+                    'rate_unit' => $oldValues['rate_unit'],
+                    'rate_inverse' => $oldValues['rate_inverse'],
+                ],
+                [
+                    'code' => $currency->code,
+                    'rate_unit' => (string) $currency->rate_unit,
+                    'rate_inverse' => (bool) $currency->rate_inverse,
+                ]
+            );
+        }
 
         return redirect()->route('system.currencies.index')
             ->with('success', "Currency {$currency->code} updated successfully.");

@@ -15,12 +15,9 @@ use Illuminate\Support\Carbon;
 class KycDocumentExpiryService
 {
     public function __construct(
-        protected ?ThresholdService $thresholdService = null,
-        protected ?AuditService $auditService = null,
-    ) {
-        $this->thresholdService ??= app(ThresholdService::class);
-        $this->auditService ??= app(AuditService::class);
-    }
+        protected ThresholdService $thresholdService,
+        protected AuditService $auditService,
+    ) {}
 
     /**
      * Determine whether ALL verified identity documents are expired

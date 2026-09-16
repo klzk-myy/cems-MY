@@ -94,7 +94,7 @@ class TransactionWizardTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'status' => 'success',
+                'success' => true,
                 'cdd_level' => CddLevel::Simplified->value,
                 'hold_required' => false,
             ])
@@ -122,7 +122,7 @@ class TransactionWizardTest extends TestCase
 
         $response->assertStatus(403)
             ->assertJson([
-                'status' => 'blocked',
+                'blocked' => true,
                 'reason' => 'sanctions',
             ]);
     }
@@ -265,7 +265,7 @@ class TransactionWizardTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'status' => 'success',
+                'success' => true,
                 'next_step' => 'review_confirm',
             ])
             ->assertJsonPath('transaction_summary.customer_name', $customer->full_name)
@@ -324,7 +324,7 @@ class TransactionWizardTest extends TestCase
             ]);
 
         $response->assertStatus(200)
-            ->assertJson(['status' => 'success']);
+            ->assertJson(['success' => true]);
     }
 
     #[Test]
@@ -373,7 +373,7 @@ class TransactionWizardTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'status' => 'success',
+                'success' => true,
             ])
             ->assertJsonStructure([
                 'transaction_id',

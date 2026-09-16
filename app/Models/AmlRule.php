@@ -106,6 +106,7 @@ class AmlRule extends BaseModel
             $customer = $transaction->customer;
         }
 
+        // Models cannot be constructor-injected; the evaluator is resolved here intentionally.
         return app(AmlRuleEvaluator::class)->evaluate($transaction, $this, $customer);
     }
 

@@ -11,6 +11,7 @@ use App\Models\FlaggedTransaction;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
 use App\Services\AuditService;
+use App\Support\ActorContext;
 use App\ValueObjects\Quarter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -344,7 +345,7 @@ class ReportSchedulingService
             'parameters' => $data['parameters'] ?? [],
             'is_active' => $data['is_active'] ?? true,
             'notification_recipients' => $data['notification_recipients'] ?? [],
-            'created_by' => $data['created_by'] ?? auth()->id(),
+            'created_by' => $data['created_by'] ?? ActorContext::capture()->userId,
             'next_run_at' => null,
         ]);
 

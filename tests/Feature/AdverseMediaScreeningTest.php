@@ -12,7 +12,6 @@ use App\Models\ScreeningResult;
 use App\Models\SystemAlert;
 use App\Services\AdverseMediaImportService;
 use App\Services\CustomerScreeningService;
-use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\Test;
@@ -27,7 +26,7 @@ class AdverseMediaScreeningTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new CustomerScreeningService(new MathService);
+        $this->service = app(CustomerScreeningService::class);
     }
 
     #[Test]

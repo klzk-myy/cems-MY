@@ -16,8 +16,8 @@ use App\Services\Contracts\MathServiceInterface;
  * DECISION: Default scale is set to 4 to match database decimal(18,4) storage
  * precision for monetary amounts (amount_local, amount_foreign, balance,
  * unrealized_pnl). This prevents silent rounding mismatches between internal
- * calculations and database storage. Exchange rates use explicit scale=6
- * where needed (decimal(18,6) in DB).
+ * calculations and database storage. Exchange rates use explicit scale=8
+ * where needed (decimal(18,8) in DB).
  */
 class MathService implements MathServiceInterface
 {
@@ -161,12 +161,15 @@ class MathService implements MathServiceInterface
         string $transactionAmount,
         string $transactionRate
     ): string {
-        $oldValue = $this->multiply($oldBalance, $oldAvgCost);
-        $newValue = $this->multiply($transactionAmount, $transactionRate);
-        $totalValue = $this->add($oldValue, $newValue);
-        $newBalance = $this->add($oldBalance, $transactionAmount);
+        // Scale-8 internally: the inputs and result are rates, and the
+        // decimal(18,8) rate columns keep sub-1e-4 values (e.g. IDR
+        // 0.00023501) that the default scale-4 ops would collapse.
+        $oldValue = bcmul($this->assertNumeric($oldBalance), $this->assertNumeric($oldAvgCost), 8);
+        $newValue = bcmul($this->assertNumeric($transactionAmount), $this->assertNumeric($transactionRate), 8);
+        $totalValue = bcadd($oldValue, $newValue, 8);
+        $newBalance = bcadd($this->assertNumeric($oldBalance), $this->assertNumeric($transactionAmount), 8);
 
-        return $this->divide($totalValue, $newBalance);
+        return bcdiv($totalValue, $newBalance, 8);
     }
 
     /**

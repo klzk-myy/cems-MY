@@ -32,16 +32,14 @@ class ComplianceScreeningJob implements ShouldQueue
 
     public function __construct(public int $customerId) {}
 
-    public function handle(CustomerScreeningService $service, ThresholdService $thresholdService, ?AuditService $auditService = null): void
+    public function handle(CustomerScreeningService $service, ThresholdService $thresholdService, AuditService $auditService): void
     {
         $start = microtime(true);
 
         $customer = Customer::find($this->customerId);
         if ($customer) {
             try {
-                // Resolve lazily so direct handle() callers that only pass the
-                // screening/threshold services keep working.
-                $this->screenAndEnforce($service, $auditService ?? app(AuditService::class), $customer);
+                $this->screenAndEnforce($service, $auditService, $customer);
             } catch (\Throwable $e) {
                 // A screening failure must be logged and swallowed: this job
                 // runs on the shared compliance queue and a thrown exception

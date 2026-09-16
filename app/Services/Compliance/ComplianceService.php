@@ -87,24 +87,25 @@ class ComplianceService implements ComplianceServiceInterface
      *
      * @param  EncryptionService  $encryptionService  Service for data encryption
      * @param  MathService  $mathService  Service for high-precision calculations
-     * @param  CustomerScreeningService|null  $screeningService  Service for sanctions screening
-     * @param  ThresholdService|null  $thresholdService  Service for dynamic thresholds
+     * @param  ThresholdService  $thresholdService  Service for dynamic thresholds
+     * @param  VelocityRiskService  $velocityRiskService  Velocity pattern detection
+     * @param  StructuringRiskService  $structuringRiskService  Aggregation detection
+     * @param  CustomerScreeningService|null  $screeningService  Service for sanctions screening; null disables screening (circular-dependency seam)
      */
     public function __construct(
         EncryptionService $encryptionService,
         MathService $mathService,
+        ThresholdService $thresholdService,
+        VelocityRiskService $velocityRiskService,
+        StructuringRiskService $structuringRiskService,
         ?CustomerScreeningService $screeningService = null,
-        ?ThresholdService $thresholdService = null,
-        ?VelocityRiskService $velocityRiskService = null,
-        ?StructuringRiskService $structuringRiskService = null,
-        ?CddLevelDeterminationService $cddLevelService = null
     ) {
         $this->encryptionService = $encryptionService;
         $this->mathService = $mathService;
         $this->screeningService = $screeningService;
-        $this->thresholdService = $thresholdService ?? new ThresholdService;
-        $this->velocityRiskService = $velocityRiskService ?? app(VelocityRiskService::class);
-        $this->structuringRiskService = $structuringRiskService ?? app(StructuringRiskService::class);
+        $this->thresholdService = $thresholdService;
+        $this->velocityRiskService = $velocityRiskService;
+        $this->structuringRiskService = $structuringRiskService;
 
         // Create CddLevelDeterminationService with closure - container may auto-resolve
         // an instance without the closure, so we always create one with our closure
@@ -117,10 +118,13 @@ class ComplianceService implements ComplianceServiceInterface
 
     /**
      * Internal check for sanction match (used by CDD level determination).
+     * Delegates to recentSanctionMatch so CDD determination reuses the
+     * ScreeningResult persisted moments earlier by pre-transaction
+     * validation instead of running a second live screen per request.
      */
     private function checkSanctionMatchInternal(Customer $customer): bool
     {
-        return (bool) $customer->sanction_hit || $this->checkSanctionMatch($customer);
+        return $this->recentSanctionMatch($customer);
     }
 
     /**

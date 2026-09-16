@@ -6469,18 +6469,6 @@ parameters:
 			path: app/Services/Branch/CounterService.php
 
 		-
-			message: '#^Method App\\Services\\Branch\\CounterService\:\:initiateHandover\(\) has parameter \$physicalCounts with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/Branch/CounterService.php
-
-		-
-			message: '#^Method App\\Services\\Branch\\CounterService\:\:initiateHandover\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/Branch/CounterService.php
-
-		-
 			message: '#^Method App\\Services\\Branch\\CounterService\:\:openSession\(\) has parameter \$openingFloats with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1

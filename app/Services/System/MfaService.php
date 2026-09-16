@@ -8,6 +8,7 @@ use App\Models\DeviceComputations;
 use App\Models\MfaRecoveryCode;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Support\ActorContext;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -74,7 +75,7 @@ class MfaService
     public function buildOtpauthUrl(string $secret, ?string $accountName = null): string
     {
         // Use provided account name or get from auth
-        $label = $accountName ?? auth()->user()->email ?? 'user@example.com';
+        $label = $accountName ?? ActorContext::capture()->user->email ?? 'user@example.com';
         $label = rawurlencode($label);
 
         $params = http_build_query([
@@ -323,7 +324,7 @@ class MfaService
             ],
             [
                 'device_name' => $deviceName,
-                'ip_address' => request()->ip(),
+                'ip_address' => ActorContext::capture()->ipAddress,
                 'expires_at' => now()->addDays($days),
                 'last_used_at' => now(),
             ]
@@ -467,8 +468,8 @@ class MfaService
      */
     public function generateDeviceFingerprint(): string
     {
-        $userAgent = request()->userAgent() ?? 'unknown';
-        $ip = request()->ip() ?? '0.0.0.0';
+        $userAgent = ActorContext::capture()->userAgent ?? 'unknown';
+        $ip = ActorContext::capture()->ipAddress ?? '0.0.0.0';
 
         $data = implode('|', [
             hash('sha256', $userAgent),

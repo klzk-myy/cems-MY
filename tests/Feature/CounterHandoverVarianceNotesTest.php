@@ -10,7 +10,7 @@ use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\TillBalance;
 use App\Models\User;
-use App\Services\Branch\CounterService;
+use App\Services\Branch\CounterHandoverService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -142,7 +142,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
             'opened_by' => $this->teller1->id,
         ]);
 
-        $counterService = app(CounterService::class);
+        $handoverService = app(CounterHandoverService::class);
 
         // Hand over with a variance (closing != opening)
         // USD: 10000 -> 10500 (variance +500)
@@ -152,7 +152,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
             ['currency_id' => 'EUR', 'amount' => '5000.00'],
         ];
 
-        $result = $counterService->initiateHandover(
+        $result = $handoverService->initiateHandover(
             $session,
             $this->teller1,
             $this->teller2,
@@ -238,7 +238,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
             'opened_by' => $this->teller1->id,
         ]);
 
-        $counterService = app(CounterService::class);
+        $handoverService = app(CounterHandoverService::class);
 
         // Hand over with variances on multiple currencies
         $physicalCounts = [
@@ -246,7 +246,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
             ['currency_id' => 'EUR', 'amount' => '4800.00'], // -200 variance
         ];
 
-        $result = $counterService->initiateHandover(
+        $result = $handoverService->initiateHandover(
             $session,
             $this->teller1,
             $this->teller2,
@@ -294,14 +294,14 @@ class CounterHandoverVarianceNotesTest extends TestCase
             'opened_by' => $this->teller1->id,
         ]);
 
-        $counterService = app(CounterService::class);
+        $handoverService = app(CounterHandoverService::class);
 
         // Hand over with NO variance (closing == opening)
         $physicalCounts = [
             ['currency_id' => 'USD', 'amount' => '10000.00'],
         ];
 
-        $result = $counterService->initiateHandover(
+        $result = $handoverService->initiateHandover(
             $session,
             $this->teller1,
             $this->teller2,
@@ -321,5 +321,66 @@ class CounterHandoverVarianceNotesTest extends TestCase
             $this->assertEquals('Handover', $closedUsd->notes);
             $this->assertEquals('0.0000', $closedUsd->variance);
         }
+    }
+
+    /**
+     * When a till balance for the same till/date was already closed (e.g. the
+     * currency position was shut mid-session), the handover reopens that row
+     * in place instead of creating a second row for the currency.
+     */
+    #[Test]
+    public function previously_closed_balance_is_reopened_in_place(): void
+    {
+        $today = now()->toDateString();
+
+        $session = CounterSession::factory()->create([
+            'counter_id' => $this->counter->id,
+            'user_id' => $this->teller1->id,
+            'session_date' => $today,
+            'opened_at' => now()->subMinutes(30),
+            'opened_by' => $this->teller1->id,
+            'status' => CounterSessionStatus::Open,
+        ]);
+
+        $preClosed = TillBalance::create([
+            'till_id' => (string) $this->counter->code,
+            'currency_code' => 'USD',
+            'opening_balance' => '10000.00',
+            'closing_balance' => '9800.00',
+            'variance' => '-200.0000',
+            'notes' => 'Closed mid-session',
+            'date' => $today,
+            'opened_by' => $this->teller1->id,
+            'closed_by' => $this->teller1->id,
+            'closed_at' => now(),
+        ]);
+
+        $handoverService = app(CounterHandoverService::class);
+
+        $result = $handoverService->initiateHandover(
+            $session,
+            $this->teller1,
+            $this->teller2,
+            $this->manager,
+            [['currency_id' => 'USD', 'amount' => '9800.00']]
+        );
+
+        $usdBalances = TillBalance::where('till_id', (string) $this->counter->code)
+            ->where('currency_code', 'USD')
+            ->get();
+
+        $this->assertCount(1, $usdBalances, 'Reopen must reuse the closed row, not create a second one');
+        $this->assertSame($preClosed->id, $usdBalances->first()->id);
+
+        $reopened = $usdBalances->first();
+        $this->assertNull($reopened->closed_at);
+        $this->assertNull($reopened->closed_by);
+        $this->assertNull($reopened->closing_balance);
+        $this->assertEquals('9800.00', number_format((float) $reopened->opening_balance, 2, '.', ''));
+        $this->assertEquals('0.0000', $reopened->variance);
+        $this->assertNull($reopened->notes);
+        $this->assertSame($this->teller2->id, $reopened->opened_by);
+
+        $this->assertNotNull($result['handover']->id);
     }
 }

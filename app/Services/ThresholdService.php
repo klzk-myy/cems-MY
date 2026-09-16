@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\Domain\ThresholdNotFoundException;
 use App\Models\ThresholdAudit;
 use App\Services\Contracts\ThresholdServiceInterface;
+use App\Support\ActorContext;
 use App\Support\ThresholdDefaults;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
@@ -332,7 +333,7 @@ class ThresholdService implements ThresholdServiceInterface
                 'key' => $key,
                 'old_value' => $oldValue,
                 'new_value' => $newValue,
-                'changed_by' => auth()->id(),
+                'changed_by' => ActorContext::capture()->userId,
                 'change_reason' => $reason,
                 'changed_at' => now(),
             ]);

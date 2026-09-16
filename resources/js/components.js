@@ -27,10 +27,14 @@ export function registerComponents(Alpine) {
         overrideCurrency: '',
         overrideBuy: '',
         overrideSell: '',
+        overrideUnit: '1',
+        overrideInverse: false,
         openOverride(detail) {
             this.overrideCurrency = detail.currency || '';
             this.overrideBuy = detail.buy || '';
             this.overrideSell = detail.sell || '';
+            this.overrideUnit = detail.unit || '1';
+            this.overrideInverse = !!detail.inverse;
             this.showOverride = true;
         },
     }));
@@ -258,6 +262,8 @@ export function registerComponents(Alpine) {
         summary: {},
         result: { id: '', number: '', status: '' },
         currencies: {},
+        currencyUnits: {},
+        currencyInverses: {},
         apiBase: '',
         csrf: '',
         idempotencyKey: '',
@@ -271,6 +277,16 @@ export function registerComponents(Alpine) {
             } catch (e) {
                 this.currencies = {};
             }
+            try {
+                this.currencyUnits = JSON.parse(this.$el.dataset.currencyUnits || '{}');
+            } catch (e) {
+                this.currencyUnits = {};
+            }
+            try {
+                this.currencyInverses = JSON.parse(this.$el.dataset.currencyInverses || '{}');
+            } catch (e) {
+                this.currencyInverses = {};
+            }
             const branchId = this.$el.dataset.branchId;
             if (branchId) {
                 this.fetch(this.apiBase + '/branches/' + branchId + '/counters')
@@ -279,10 +295,25 @@ export function registerComponents(Alpine) {
                     .catch(() => {});
             }
         },
+        currencyUnit() {
+            const u = parseInt(this.currencyUnits[this.formData.currency_code]);
+            return Number.isFinite(u) && u > 0 ? u : 1;
+        },
+        currencyInverse() {
+            return !!this.currencyInverses[this.formData.currency_code];
+        },
         get amountLocal() {
             const f = parseFloat(this.formData.amount_foreign) || 0;
             const r = parseFloat(this.formData.rate) || 0;
-            return (f * r).toFixed(2);
+            if (r === 0) {
+                return '0.00';
+            }
+            // Direct: local = foreign / unit * rate (rate = MYR per unit
+            // foreign). Inverse: rate = foreign per unit MYR, so
+            // local = foreign / rate * unit.
+            return this.currencyInverse()
+                ? (f / r * this.currencyUnit()).toFixed(2)
+                : (f / this.currencyUnit() * r).toFixed(2);
         },
         get foreignFormatted() {
             const f = parseFloat(this.formData.amount_foreign);
@@ -337,7 +368,7 @@ export function registerComponents(Alpine) {
                     body: JSON.stringify(this.payload()),
                 });
                 const data = await res.json();
-                if (res.status === 403 && data.status === 'blocked') {
+                if (res.status === 403 && data.blocked === true) {
                     this.wizard.blockedMessage = data.message;
                     return;
                 }

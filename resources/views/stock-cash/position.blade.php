@@ -40,7 +40,7 @@
                 <div>
                     <dt class="text-sm font-medium text-ink-muted">Current Rate</dt>
                     <dd class="mt-1 text-sm text-ink">
-                        {{ number_format((float) $position->current_rate, 6) }}
+                        {{ number_format((float) $position->current_rate, 8) }}
                     </dd>
                 </div>
                 <div>
@@ -97,7 +97,7 @@
                                 {{ number_format((float) $transaction->amount_foreign, 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
-                                {{ number_format((float) $transaction->rate, 4) }}
+                                {{ number_format((float) $transaction->rate, 8) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
                                 {{ number_format((float) $transaction->amount_local, 2) }}

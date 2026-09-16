@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\ValueObjects\QuoteConvention;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,8 @@ use Illuminate\Support\Carbon;
  * @property string $currency_code
  * @property int|null $branch_id
  * @property string $rate
+ * @property int $rate_unit
+ * @property bool $rate_inverse
  * @property string|null $spread_applied
  * @property Carbon $effective_date
  * @property int|null $created_by
@@ -27,15 +30,35 @@ class ExchangeRateHistory extends BaseModel
         'branch_id',
         'currency_code',
         'rate',
+        'rate_unit',
+        'rate_inverse',
         'effective_date',
         'created_by',
         'notes',
     ];
 
     protected $casts = [
-        'rate' => 'decimal:6',
+        'rate' => 'decimal:8',
+        'rate_unit' => 'integer',
+        'rate_inverse' => 'boolean',
         'effective_date' => 'date',
     ];
+
+    /**
+     * The quote convention this row snapshots (rate_unit + rate_inverse).
+     */
+    public function quoteConvention(): QuoteConvention
+    {
+        return QuoteConvention::for($this);
+    }
+
+    /**
+     * Normalize this row's quoted rate to per-unit MYR (8 decimals).
+     */
+    public function perUnitRate(string $quoted): string
+    {
+        return $this->quoteConvention()->toPerUnit($quoted);
+    }
 
     /**
      * @return BelongsTo<Currency, $this>

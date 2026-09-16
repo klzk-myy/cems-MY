@@ -7,6 +7,7 @@ use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\AuditTrail;
 use App\Models\SystemLog;
 use App\Services\Contracts\AuditServiceInterface;
+use App\Support\ActorContext;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -309,14 +310,19 @@ class AuditService implements AuditServiceInterface
     }
 
     /**
-     * Log with severity level (tamper-evident with hash chaining).
+     * Single audit writer shared by the sealed and unsealed entry points.
+     * Resolves user/IP context, normalizes severity, creates the
+     * system_logs row, and mirrors the event into audit_trails so every
+     * audited entity is queryable there regardless of sealing mode (D2).
+     * system_logs remains the canonical, tamper-evident store; the mirror
+     * is best-effort so a mirror write failure can never compromise the
+     * canonical chain.
+     *
+     * @param  array<string, mixed>  $data
      */
-    public function logWithSeverity(
-        string $action,
-        array $data = [],
-        string $severity = 'INFO'
-    ): SystemLog {
-        $userId = array_key_exists('user_id', $data) ? $data['user_id'] : auth()->id();
+    private function createLogEntry(string $action, array $data, string $severity): SystemLog
+    {
+        $userId = array_key_exists('user_id', $data) ? $data['user_id'] : ActorContext::capture()->userId;
         $ipAddress = array_key_exists('ip_address', $data) ? $data['ip_address'] : Request::ip();
 
         // system_logs.severity is an uppercase enum (INFO/WARNING/ERROR/CRITICAL);
@@ -339,10 +345,6 @@ class AuditService implements AuditServiceInterface
             'entry_hash' => null,
         ]);
 
-        // Mirror the event into the audit_trails table so it is a complete,
-        // queryable record of every audited entity. system_logs remains the
-        // canonical, tamper-evident store; this mirror is best-effort so a
-        // mirror write failure can never compromise the canonical chain.
         try {
             if (($data['entity_type'] ?? null) !== null && ($data['entity_id'] ?? null) !== null) {
                 AuditTrail::create([
@@ -364,6 +366,19 @@ class AuditService implements AuditServiceInterface
             ]);
         }
 
+        return $log;
+    }
+
+    /**
+     * Log with severity level (tamper-evident with hash chaining).
+     */
+    public function logWithSeverity(
+        string $action,
+        array $data = [],
+        string $severity = 'INFO'
+    ): SystemLog {
+        $log = $this->createLogEntry($action, $data, $severity);
+
         SealAuditHashJob::dispatch($log->id);
 
         return $log;
@@ -377,28 +392,9 @@ class AuditService implements AuditServiceInterface
         array $data = [],
         string $severity = 'INFO'
     ): SystemLog {
-        $userId = array_key_exists('user_id', $data) ? $data['user_id'] : auth()->id();
-        $ipAddress = array_key_exists('ip_address', $data) ? $data['ip_address'] : Request::ip();
+        $log = $this->createLogEntry($action, $data, $severity);
 
-        $severity = strtoupper($severity);
-
-        $log = SystemLog::create([
-            'user_id' => $userId,
-            'action' => $action,
-            'description' => $data['description'] ?? null,
-            'severity' => $severity,
-            'entity_type' => $data['entity_type'] ?? null,
-            'entity_id' => $data['entity_id'] ?? null,
-            'old_values' => ! empty($data['old_values'] ?? []) ? $data['old_values'] : null,
-            'new_values' => ! empty($data['new_values'] ?? []) ? $data['new_values'] : null,
-            'ip_address' => $ipAddress,
-            'user_agent' => Request::userAgent(),
-            'session_id' => session()->getId(),
-            'previous_hash' => null,
-            'entry_hash' => null,
-        ]);
-
-        if (in_array($severity, ['CRITICAL'], true)) {
+        if (in_array($log->severity, ['CRITICAL'], true)) {
             $sealed = false;
             $maxAttempts = 3;
 
@@ -611,7 +607,7 @@ class AuditService implements AuditServiceInterface
     public function logMfaEvent(string $action, ?int $userId = null, array $data = []): SystemLog
     {
         return $this->logAction($action, 'MfaEvent', $data['entity_id'] ?? null, [
-            'user_id' => $userId ?? auth()->id(),
+            'user_id' => $userId ?? ActorContext::capture()->userId,
             'old_values' => $data['old'] ?? [],
             'new_values' => $data['new'] ?? [],
         ]);
@@ -625,7 +621,7 @@ class AuditService implements AuditServiceInterface
     public function logPermissionDenied(string $resource, string $action, string $reason, array $data = []): SystemLog
     {
         return $this->logWithSeverity('permission_denied', [
-            'user_id' => auth()->id(),
+            'user_id' => ActorContext::capture()->userId,
             'entity_type' => $resource,
             'entity_id' => $data['entity_id'] ?? null,
             'new_values' => [
@@ -655,7 +651,7 @@ class AuditService implements AuditServiceInterface
     public function logApiAccessEvent(string $action, array $data = []): SystemLog
     {
         return $this->logWithSeverity($action, [
-            'user_id' => $data['user_id'] ?? auth()->id(),
+            'user_id' => $data['user_id'] ?? ActorContext::capture()->userId,
             'entity_type' => 'ApiAccess',
             'entity_id' => $data['entity_id'] ?? null,
             'new_values' => $data['new'] ?? [],
@@ -665,13 +661,13 @@ class AuditService implements AuditServiceInterface
     public function logBranchAccessEvent(int $accessedBranchId, string $resource, int $resourceId, array $data = []): SystemLog
     {
         return $this->logWithSeverity('cross_branch_access', [
-            'user_id' => auth()->id(),
+            'user_id' => ActorContext::capture()->userId,
             'entity_type' => $resource,
             'entity_id' => $resourceId,
             'new_values' => [
                 'accessed_branch_id' => $accessedBranchId,
                 'accessed_branch_name' => $data['branch_name'] ?? null,
-                'user_branch_id' => auth()->user()->branch_id ?? null,
+                'user_branch_id' => ActorContext::capture()->user?->branch_id,
             ],
         ], 'WARNING');
     }
@@ -687,7 +683,7 @@ class AuditService implements AuditServiceInterface
     public function logBatchOperationEvent(string $action, array $data = []): SystemLog
     {
         return $this->logWithSeverity($action, [
-            'user_id' => auth()->id(),
+            'user_id' => ActorContext::capture()->userId,
             'entity_type' => 'BatchOperation',
             'entity_id' => $data['batch_id'] ?? null,
             'new_values' => [
@@ -852,7 +848,7 @@ class AuditService implements AuditServiceInterface
 
         $batchData = array_map(function ($log) use ($now, $ipAddress, $userAgent, $sessionId) {
             return [
-                'user_id' => $log['user_id'] ?? auth()->id(),
+                'user_id' => $log['user_id'] ?? ActorContext::capture()->userId,
                 'action' => $log['action'],
                 'severity' => $log['severity'] ?? 'INFO',
                 'entity_type' => $log['entity_type'] ?? null,

@@ -44,8 +44,8 @@
                             <td class="px-4 py-3 text-sm font-medium text-ink">{{ $position->currency_code }}</td>
                             <td class="px-4 py-3 text-sm">{{ $position->branch_id }}</td>
                             <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->quantity, 2) }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->average_cost, 6) }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->current_rate, 6) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->average_cost, 8) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->current_rate, 8) }}</td>
                             <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $position->current_value, 2) }}</td>
                             <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $position->unrealized_gain_loss < 0 ? 'text-danger' : ((float) $position->unrealized_gain_loss > 0 ? 'text-success' : '') }}">
                                 {{ number_format((float) $position->unrealized_gain_loss, 2) }}

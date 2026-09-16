@@ -21,6 +21,7 @@ use App\Services\Compliance\MonitoringEngine;
 use App\Services\Compliance\SanctionsImportService;
 use App\Services\System\MathService;
 use App\Services\System\SystemAlertService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\RateApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
@@ -231,6 +232,25 @@ class ComplianceQuickWinsTest extends TestCase
         $this->assertTrue($recentPep->fresh()->pep_status, 'Recent PEP (< 2 years) must not cessate');
     }
 
+    #[Test]
+    public function pep_cessation_command_dry_run_reports_without_applying(): void
+    {
+        $eligible = Customer::factory()->create([
+            'is_active' => true,
+            'pep_status' => true,
+            'pep_role_ended_at' => now()->subYears(6),
+            'current_role_domain' => 'finance',
+            'former_pep_domain' => 'defence',
+        ]);
+
+        $this->artisanCommand('customers:pep-cessation-review', ['--dry-run' => true])
+            ->expectsOutputToContain('(DRY RUN)')
+            ->expectsOutputToContain('Cessated: 1')
+            ->assertSuccessful();
+
+        $this->assertTrue($eligible->fresh()->pep_status, 'Dry run must not clear the PEP flag');
+    }
+
     private function revaluationService(): object
     {
         return new RevaluationService(
@@ -239,6 +259,7 @@ class ComplianceQuickWinsTest extends TestCase
             app(AccountingService::class),
             app(AuditService::class),
             app(SystemAlertService::class),
+            app(ThresholdService::class),
         );
     }
 

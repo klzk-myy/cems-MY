@@ -4,15 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
-use App\Services\AuditService;
 use App\Services\Compliance\CustomerRiskScoringService;
 use App\Services\Compliance\PepAssessmentService;
-use App\Services\Compliance\RiskCalculationService;
 use App\Services\Compliance\RiskScoreWriteBackService;
-use App\Services\CustomerScreeningService;
-use App\Services\Risk\AmountRiskService;
-use App\Services\Risk\GeographicRiskService;
-use App\Services\System\MathService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,8 +18,11 @@ class PepCessationReviewCommand extends Command
 
     protected $description = 'Sweep active former PEPs (pep flag set with pep_role_ended_at filled), assess PEP cessation, and downgrade risk via the shared risk write-back path';
 
-    public function handle(PepAssessmentService $pepAssessmentService, RiskScoreWriteBackService $writeBack): int
-    {
+    public function handle(
+        PepAssessmentService $pepAssessmentService,
+        RiskScoreWriteBackService $writeBack,
+        CustomerRiskScoringService $scoring,
+    ): int {
         $dryRun = (bool) $this->option('dry-run');
 
         $customers = Customer::where('is_active', true)
@@ -69,23 +66,12 @@ class PepCessationReviewCommand extends Command
                     continue;
                 }
 
-                $changed = DB::transaction(function () use ($customer, $writeBack, $pepAssessmentService) {
+                $changed = DB::transaction(function () use ($customer, $writeBack, $scoring) {
                     // Clear the PEP flag first so the recomputed snapshot no
                     // longer carries PEP-driven holds, then write back the
                     // recalculated score through the shared hook so a
                     // CustomerRiskHistory row is recorded when it changes.
                     $customer->forceFill(['pep_status' => false])->saveQuietly();
-
-                    $scoring = new CustomerRiskScoringService(
-                        app(CustomerScreeningService::class),
-                        app(AuditService::class),
-                        app(MathService::class),
-                        app(RiskCalculationService::class),
-                        $pepAssessmentService,
-                        app(GeographicRiskService::class),
-                        app(AmountRiskService::class),
-                        $writeBack,
-                    );
 
                     $scores = $scoring->calculateRiskScores($customer);
 

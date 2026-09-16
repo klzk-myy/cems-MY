@@ -2,15 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\UserRole;
 use App\Http\Requests\SetupRequest;
-use App\Models\Branch;
-use App\Models\ChartOfAccount;
-use App\Models\Counter;
 use App\Models\Currency;
-use App\Models\ExchangeRate;
-use App\Models\User;
-use App\Services\System\MathService;
 use App\Services\System\SetupService;
 use App\Services\Transaction\RateApiService;
 use Database\Seeders\SchemaSeeder;
@@ -21,20 +14,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class SetupController extends Controller
 {
     public function __construct(
         protected SetupService $setupService,
-        protected MathService $mathService,
         protected RateApiService $rateApiService,
     ) {}
 
     public function index(Request $request): View
     {
-        $isSetupComplete = $this->isSetupComplete();
+        $isSetupComplete = $this->setupService->isDataComplete();
 
         if ($isSetupComplete) {
             return view('setup.index', [
@@ -44,7 +35,7 @@ class SetupController extends Controller
             ]);
         }
 
-        $step = $request->get('step', $this->getCurrentStep());
+        $step = $request->get('step', $this->setupService->currentStep());
 
         $currencies = Currency::select('code', 'name', 'symbol')->where('is_active', true)->get();
 
@@ -78,7 +69,7 @@ class SetupController extends Controller
         return view('setup.index', [
             'isSetupComplete' => false,
             'currentStep' => (int) $step,
-            'progress' => $this->calculateProgress(),
+            'progress' => $this->setupService->progress(),
             'currencies' => $currencies,
             'setupCurrencies' => $setupCurrencies,
             'unseededCustomCodes' => $unseededCustomCodes,
@@ -87,7 +78,7 @@ class SetupController extends Controller
 
     public function wizard(Request $request): RedirectResponse
     {
-        $step = $request->get('step', $this->getCurrentStep());
+        $step = $request->get('step', $this->setupService->currentStep());
 
         return redirect()->route('setup.index', ['step' => $step]);
     }
@@ -99,9 +90,9 @@ class SetupController extends Controller
         try {
             DB::beginTransaction();
 
-            $this->runMigrations();
-            $this->seedCoreData($validated);
-            $this->seedOptionalData($validated);
+            $this->setupService->ensureSchemaExists();
+            $this->setupService->seedCoreData($validated);
+            $this->setupService->seedOptionalData($validated);
 
             // Persist the immutable completion marker inside the same
             // transaction so an aborted setup cannot leave the wizard open.
@@ -195,7 +186,7 @@ class SetupController extends Controller
         }
 
         // Add MYR cash as part of initial stock
-        $stock['MYR'] = $validated['initial_myr_cash'];
+        $stock[Currency::baseCurrency()] = $validated['initial_myr_cash'];
 
         session(['setup.stock' => ['initial_stock' => $stock, 'initial_myr_cash' => $validated['initial_myr_cash']]]);
 
@@ -234,7 +225,7 @@ class SetupController extends Controller
         try {
             DB::beginTransaction();
 
-            $this->executeSetup($setupData);
+            $this->setupService->executeSetup($setupData);
 
             // Persist the immutable completion marker inside the same
             // transaction so an aborted setup cannot leave the wizard open.
@@ -267,10 +258,10 @@ class SetupController extends Controller
     public function checkStatus(): JsonResponse
     {
         return response()->json([
-            'is_complete' => $this->isSetupComplete(),
-            'current_step' => $this->getCurrentStep(),
-            'progress' => $this->calculateProgress(),
-            'missing_components' => $this->getMissingComponents(),
+            'is_complete' => $this->setupService->isDataComplete(),
+            'current_step' => $this->setupService->currentStep(),
+            'progress' => $this->setupService->progress(),
+            'missing_components' => $this->setupService->missingComponents(),
         ]);
     }
 
@@ -342,83 +333,6 @@ class SetupController extends Controller
         ]);
     }
 
-    private function getSetupChecks(): array
-    {
-        return [
-            'admin_user' => User::exists(),
-            'currencies' => Currency::exists(),
-            'exchange_rates' => ExchangeRate::exists(),
-            'branches' => Branch::exists(),
-            'chart_of_accounts' => ChartOfAccount::exists(),
-        ];
-    }
-
-    private function isSetupComplete(): bool
-    {
-        return collect($this->getSetupChecks())
-            ->only(['admin_user', 'currencies', 'exchange_rates', 'branches'])
-            ->every(fn ($check) => $check);
-    }
-
-    private function getCurrentStep(): int
-    {
-        $checks = $this->getSetupChecks();
-
-        if (! $checks['admin_user']) {
-            return 1;
-        }
-        if (! $checks['currencies']) {
-            return 2;
-        }
-        if (! $checks['exchange_rates']) {
-            return 3;
-        }
-        if (! $checks['branches']) {
-            return 4;
-        }
-
-        return 5;
-    }
-
-    private function calculateProgress(): int
-    {
-        $checks = $this->getSetupChecks();
-        $completed = count(array_filter($checks));
-
-        return (int) (($completed / count($checks)) * 100);
-    }
-
-    private function getMissingComponents(): array
-    {
-        return array_keys(array_filter(
-            $this->getSetupChecks(),
-            fn ($check) => ! $check
-        ));
-    }
-
-    private function runMigrations(): void
-    {
-        // Build the schema only when it is missing. SchemaSeeder is
-        // destructive (drops every table), so on an already-populated
-        // database it must never re-run here; an existing schema is treated
-        // as current.
-        if (Schema::hasTable('users')) {
-            return;
-        }
-
-        Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
-    }
-
-    private function seedCoreData(array $config): void
-    {
-        $this->setupService->seedCoreData($config);
-    }
-
-    private function seedOptionalData(array $config): void
-    {
-        $this->setupService->seedOptionalData($config);
-    }
-
     /**
      * Fresh installs have empty sanctions lists until the first scheduled
      * import (daily 01:00). Tell operators to load them immediately so the
@@ -430,108 +344,5 @@ class SetupController extends Controller
             'Sanctions lists are not loaded yet. Run "php artisan sanctions:update" now - '
             .'sanctions screening is ineffective until the lists are imported.'
         );
-    }
-
-    private function executeSetup(array $setupData): void
-    {
-        $this->runMigrations();
-
-        $hqBranch = null;
-        if (isset($setupData['business'])) {
-            $hqBranch = Branch::create([
-                'code' => 'HQ',
-                'name' => $setupData['business']['business_name'],
-                'address' => $setupData['business']['business_address'] ?? null,
-                'phone' => $setupData['business']['business_phone'] ?? null,
-                'email' => $setupData['business']['business_email'] ?? null,
-                'type' => 'head_office',
-                'is_active' => true,
-                'is_main' => true,
-            ]);
-
-            // A usable business needs at least one till; there is no counter
-            // CRUD UI, so create a default counter bound to HQ.
-            Counter::firstOrCreate(
-                ['code' => 'C01'],
-                ['name' => 'Counter 1', 'status' => 'active', 'branch_id' => $hqBranch->id],
-            );
-        }
-
-        if (isset($setupData['admin'])) {
-            // Pass the plain password - the mutator hashes it once. Hashing
-            // here as well would double-hash and lock the admin out.
-            $user = User::create([
-                'username' => $setupData['admin']['admin_name'],
-                'email' => $setupData['admin']['admin_email'],
-                'password' => $setupData['admin']['admin_password'],
-                'branch_id' => $hqBranch?->id,
-                'mfa_enabled' => false,
-                'is_active' => true,
-            ]);
-
-            $user->role = UserRole::Admin;
-            $user->save();
-        }
-
-        Artisan::call('db:seed', ['--class' => 'CurrencySeeder', '--force' => true]);
-        Artisan::call('db:seed', ['--class' => 'EnhancedChartOfAccountsSeeder', '--force' => true]);
-
-        // Custom "other" currencies entered in step 3 may not exist in the
-        // seeded list — create them before applying the active set.
-        foreach ($this->setupService->customCurrencyRows($setupData['currencies'] ?? []) as $row) {
-            Currency::firstOrCreate(
-                ['code' => $row['code']],
-                [
-                    'name' => $row['name'] !== '' ? $row['name'] : $row['code'],
-                    'symbol' => $row['symbol'] !== '' ? $row['symbol'] : $row['code'],
-                    'decimal_places' => 2,
-                    'is_active' => true,
-                ],
-            );
-        }
-
-        // Honor the step-3 selection: deactivate currencies the business did
-        // not enable. MYR is the system base and must always stay active.
-        if (isset($setupData['currencies']['active_currencies'])) {
-            $active = $setupData['currencies']['active_currencies'];
-            $active[] = 'MYR';
-            Currency::whereNotIn('code', $active)->update(['is_active' => false]);
-            Currency::whereIn('code', $active)->update(['is_active' => true]);
-        }
-
-        // Shared with quickSetup so both install paths guarantee the same
-        // fiscal-year / accounting-period preconditions.
-        $this->setupService->ensureFiscalYearAndPeriods();
-
-        if (isset($setupData['rates']) && ($setupData['rates']['use_default_rates'] ?? false)) {
-            Artisan::call('db:seed', ['--class' => 'ExchangeRateSeeder', '--force' => true]);
-        }
-
-        // Step-4 custom rates (e.g. for a step-3 "other" currency the seeder
-        // does not cover) become real exchange_rates rows.
-        foreach ($setupData['rates']['custom_rates'] ?? [] as $code => $rate) {
-            $code = strtoupper(trim((string) $code));
-            if ($code === '' || ! isset($rate['buy'], $rate['sell'])) {
-                continue;
-            }
-
-            ExchangeRate::updateOrCreate(
-                ['currency_code' => $code],
-                [
-                    'rate_buy' => $rate['buy'],
-                    'rate_sell' => $rate['sell'],
-                    'source' => 'setup_custom',
-                    'fetched_at' => now(),
-                ],
-            );
-        }
-
-        if (isset($setupData['stock'])) {
-            $this->setupService->createInitialStock($setupData['stock']);
-        }
-
-        if (isset($setupData['opening_balance'])) {
-            $this->setupService->createOpeningBalance($setupData['opening_balance']);
-        }
     }
 }

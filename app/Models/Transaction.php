@@ -125,8 +125,8 @@ class Transaction extends TransactionModel
     protected $casts = [
         'amount_local' => MoneyCast::class,
         'amount_foreign' => MoneyCast::class,
-        'rate' => MoneyCast::class.':6',
-        'base_rate' => MoneyCast::class.':6',
+        'rate' => MoneyCast::class.':8',
+        'base_rate' => MoneyCast::class.':8',
         'rate_override' => 'boolean',
         'is_refund' => 'boolean',
         'type' => TransactionType::class,
@@ -153,7 +153,7 @@ class Transaction extends TransactionModel
         'cancellation_reason' => 'string',
         'is_dlq' => 'boolean',
         'prev_quantity' => MoneyCast::class,
-        'prev_average_cost' => MoneyCast::class.':6',
+        'prev_average_cost' => MoneyCast::class.':8',
     ];
 
     /**

@@ -12,6 +12,7 @@ use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -210,7 +211,7 @@ class CurrencyPositionServiceTest extends TestCase
             'created_by' => $teller->id,
         ]);
 
-        $positionService = new CurrencyPositionService(new MathService, new CurrencyPositionLockService(new MathService), new CacheInvalidationService);
+        $positionService = new CurrencyPositionService(new MathService, new CurrencyPositionLockService(new MathService), new CacheInvalidationService, new ThresholdService);
         $result = $positionService->consumeStockReservation($transaction->id);
 
         $this->assertNull($result);
@@ -257,7 +258,7 @@ class CurrencyPositionServiceTest extends TestCase
             'created_by' => $teller->id,
         ]);
 
-        $positionService = new CurrencyPositionService(new MathService, new CurrencyPositionLockService(new MathService), new CacheInvalidationService);
+        $positionService = new CurrencyPositionService(new MathService, new CurrencyPositionLockService(new MathService), new CacheInvalidationService, new ThresholdService);
         $result = $positionService->consumeStockReservation($transaction->id);
 
         $this->assertNotNull($result);
@@ -293,7 +294,7 @@ class CurrencyPositionServiceTest extends TestCase
             'created_by' => $teller->id,
         ]);
 
-        $positionService = new CurrencyPositionService(new MathService, new CurrencyPositionLockService(new MathService), new CacheInvalidationService);
+        $positionService = new CurrencyPositionService(new MathService, new CurrencyPositionLockService(new MathService), new CacheInvalidationService, new ThresholdService);
         $result = $positionService->releaseStockReservation($transaction->id);
 
         // Expired reservations can be released (used by the expire command)
@@ -347,8 +348,8 @@ class CurrencyPositionServiceTest extends TestCase
         $this->assertTrue($consolidated->is_consolidated);
         $this->assertSame('USD', $consolidated->currency_code);
         $this->assertSame('200.0000', $consolidated->quantity); // 100 + 100
-        $this->assertSame('4.100000', $consolidated->average_cost); // (100*4.00 + 100*4.20) / 200
-        $this->assertSame('4.400000', $consolidated->current_rate); // latest-revalued branch
+        $this->assertSame('4.10000000', $consolidated->average_cost); // (100*4.00 + 100*4.20) / 200
+        $this->assertSame('4.40000000', $consolidated->current_rate); // latest-revalued branch
         $this->assertSame('30.0000', $consolidated->unrealized_gain_loss); // 20 + 10
         $this->assertNotNull($consolidated->currency);
         $this->assertSame('USD', $consolidated->currency->code);

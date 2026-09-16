@@ -9,12 +9,15 @@ use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\CounterHandover;
 use App\Models\CounterSession;
+use App\Models\Currency;
 use App\Models\FlaggedTransaction;
 use App\Models\TillBalance;
 use App\Models\Transaction;
+use App\Support\ActorContext;
 use App\Support\BcmathHelper;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 /**
  * EOD Reconciliation Service
@@ -177,68 +180,11 @@ class EodReconciliationService
             ];
         }
 
-        // Get till balances for the day
-        $tillBalances = TillBalance::where('till_id', $counter->code)
-            ->where('date', $date->toDateString())
-            ->get();
-
-        // The MYR float is tracked on the MYR till row only — summing every
-        // currency row would mix USD/EUR/etc. units into an MYR figure.
-        $myrTillBalances = $tillBalances->where('currency_code', 'MYR');
-        $openingFloat = $this->sumDecimalColumn($myrTillBalances, 'opening_balance');
+        $cashTotals = $this->cashTotals($counterId, $date);
 
         // Get transactions for this counter on this date
         $transactions = $this->reconcilableTransactionsQuery($counterId, $date)
             ->with(['customer', 'user', 'flags'])
-            ->get();
-
-        $sumQuery = $this->reconcilableTransactionsQuery($counterId, $date);
-
-        // Sell transactions = MYR received (customer buys foreign currency, pays MYR)
-        $buyTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Buy->value);
-        $totalCashReceived = (string) ((clone $sumQuery)->sell()->sum('amount_local'));
-
-        // Buy transactions = MYR paid out (we buy foreign currency, pay MYR)
-        $sellTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Sell->value);
-        $totalCashPaidOut = (string) ((clone $sumQuery)->buy()->sum('amount_local'));
-
-        // Expected closing = opening + received - paid out
-        $closingFloatExpected = BcmathHelper::subtract(
-            BcmathHelper::add($openingFloat, $totalCashReceived),
-            $totalCashPaidOut
-        );
-
-        // Actual MYR closing from session close
-        $closingFloatActual = $this->sumDecimalColumn(
-            $myrTillBalances->whereNotNull('closing_balance'),
-            'closing_balance'
-        );
-        $variance = $this->calculateVariance($counterId, $date);
-
-        // Get handovers for the day
-        $handovers = CounterHandover::with(['fromUser', 'toUser', 'supervisor'])
-            ->whereHas('counterSession', function ($query) use ($counterId, $date) {
-                $query->where('counter_id', $counterId)
-                    ->where('session_date', $date->toDateString());
-            })
-            ->orderBy('handover_time', 'asc')
-            ->get();
-
-        // Currency breakdown
-        $currencyBreakdown = $this->getCurrencyBreakdown($counterId, $date);
-
-        // Large transactions (> RM 10k)
-        $largeTransactions = $transactions->filter(function ($tx) {
-            return BcmathHelper::gte((string) $tx->amount_local, $this->thresholdService->getLargeTransactionThreshold());
-        });
-
-        // Flagged transactions
-        $flaggedTransactions = FlaggedTransaction::with(['transaction', 'transaction.customer'])
-            ->whereHas('transaction', function ($query) use ($counter, $date) {
-                $query->where('till_id', $counter->code)
-                    ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()]);
-            })
-            ->where('status', '!=', 'Resolved')
             ->get();
 
         return [
@@ -248,57 +194,179 @@ class EodReconciliationService
             'branch_name' => $counter->branch->name,
             'date' => $date->toDateString(),
             'has_session' => true,
-            'session' => [
-                'id' => $session->id,
-                'status' => $session->status->value,
-                'opened_at' => $session->opened_at?->toIso8601String(),
-                'closed_at' => $session->closed_at?->toIso8601String(),
-                'opened_by' => $session->openedByUser ? [
-                    'id' => $session->openedByUser->id,
-                    'name' => $session->openedByUser->username,
-                ] : null,
-                'closed_by' => $session->closedByUser ? [
-                    'id' => $session->closedByUser->id,
-                    'name' => $session->closedByUser->username,
-                ] : null,
-                'current_user' => $session->user ? [
-                    'id' => $session->user->id,
-                    'name' => $session->user->username,
-                ] : null,
-            ],
+            'session' => $this->sessionSection($session),
+            ...$this->floatSection($counter, $date, $cashTotals),
+            'variance' => $this->calculateVariance($counterId, $date),
+            'currency_breakdown' => $this->getCurrencyBreakdown($counterId, $date),
+            'transactions' => $this->transactionSection($transactions, $cashTotals),
+            'large_transactions' => $this->largeTransactionsSection($transactions),
+            'flagged_transactions' => $this->flaggedSection($counter, $date),
+            'handover_history' => $this->handoverSection($counterId, $date),
+        ];
+    }
+
+    /**
+     * MYR cash received and paid out for a counter-day. Sell-type = bureau
+     * sells foreign currency, customer pays MYR (received). Buy-type = bureau
+     * buys foreign currency, pays MYR (paid out).
+     *
+     * @return array{received: string, paid_out: string}
+     */
+    private function cashTotals(int $counterId, Carbon $date): array
+    {
+        $sumQuery = $this->reconcilableTransactionsQuery($counterId, $date);
+
+        return [
+            'received' => (string) ((clone $sumQuery)->sell()->sum('amount_local')),
+            'paid_out' => (string) ((clone $sumQuery)->buy()->sum('amount_local')),
+        ];
+    }
+
+    /**
+     * @return array{id: int, status: string, opened_at: ?string, closed_at: ?string, opened_by: ?array{id: int, name: string}, closed_by: ?array{id: int, name: string}, current_user: ?array{id: int, name: string}}
+     */
+    private function sessionSection(CounterSession $session): array
+    {
+        return [
+            'id' => $session->id,
+            'status' => $session->status->value,
+            'opened_at' => $session->opened_at?->toIso8601String(),
+            'closed_at' => $session->closed_at?->toIso8601String(),
+            'opened_by' => $session->openedByUser ? [
+                'id' => $session->openedByUser->id,
+                'name' => $session->openedByUser->username,
+            ] : null,
+            'closed_by' => $session->closedByUser ? [
+                'id' => $session->closedByUser->id,
+                'name' => $session->closedByUser->username,
+            ] : null,
+            'current_user' => $session->user ? [
+                'id' => $session->user->id,
+                'name' => $session->user->username,
+            ] : null,
+        ];
+    }
+
+    /**
+     * @param  array{received: string, paid_out: string}  $cashTotals
+     * @return array{opening_float: string, total_cash_received: string, total_cash_paid_out: string, closing_float_expected: string, closing_float_actual: ?string}
+     */
+    private function floatSection(Counter $counter, Carbon $date, array $cashTotals): array
+    {
+        // Get till balances for the day
+        $tillBalances = TillBalance::where('till_id', $counter->code)
+            ->where('date', $date->toDateString())
+            ->get();
+
+        // The MYR float is tracked on the MYR till row only — summing every
+        // currency row would mix USD/EUR/etc. units into an MYR figure.
+        $myrTillBalances = $tillBalances->where('currency_code', Currency::baseCurrency());
+        $openingFloat = $this->sumDecimalColumn($myrTillBalances, 'opening_balance');
+
+        // Expected closing = opening + received - paid out
+        $closingFloatExpected = BcmathHelper::subtract(
+            BcmathHelper::add($openingFloat, $cashTotals['received']),
+            $cashTotals['paid_out']
+        );
+
+        // Actual MYR closing from session close
+        $closingFloatActual = $this->sumDecimalColumn(
+            $myrTillBalances->whereNotNull('closing_balance'),
+            'closing_balance'
+        );
+
+        return [
             'opening_float' => $openingFloat,
-            'total_cash_received' => $totalCashReceived,
-            'total_cash_paid_out' => $totalCashPaidOut,
+            'total_cash_received' => $cashTotals['received'],
+            'total_cash_paid_out' => $cashTotals['paid_out'],
             'closing_float_expected' => $closingFloatExpected,
             'closing_float_actual' => BcmathHelper::eq($closingFloatActual, '0') ? null : $closingFloatActual,
-            'variance' => $variance,
-            'currency_breakdown' => $currencyBreakdown,
-            'transactions' => [
-                'total_count' => $transactions->count(),
-                'buy_count' => $buyTransactions->count(),
-                'sell_count' => $sellTransactions->count(),
-                'buy_total' => $totalCashReceived,
-                'sell_total' => $totalCashPaidOut,
-            ],
-            'large_transactions' => [
-                'count' => $largeTransactions->count(),
-                'total_amount' => $this->sumDecimalColumn($largeTransactions, 'amount_local'),
-                'transactions' => $largeTransactions->take(50)->values(),
-            ],
-            'flagged_transactions' => [
-                'count' => $flaggedTransactions->count(),
-                'transactions' => $flaggedTransactions->take(50)->values(),
-            ],
-            'handover_history' => $handovers->map(fn ($h) => [
-                'id' => $h->id,
-                'from_user' => $h->fromUser ? ['id' => $h->fromUser->id, 'name' => $h->fromUser->username] : null,
-                'to_user' => $h->toUser ? ['id' => $h->toUser->id, 'name' => $h->toUser->username] : null,
-                'supervisor' => $h->supervisor ? ['id' => $h->supervisor->id, 'name' => $h->supervisor->username] : null,
-                'handover_time' => $h->handover_time?->toIso8601String(),
-                'variance_myr' => $h->variance_myr,
-                'physical_count_verified' => $h->physical_count_verified,
-            ]),
         ];
+    }
+
+    /**
+     * Buy count covers Buy-type transactions (paid out), sell count Sell-type
+     * (received). buy_total/sell_total carry the cash-flow totals — the
+     * pairing is a preserved legacy quirk of the response shape.
+     *
+     * @param  Collection<int, Transaction>  $transactions
+     * @param  array{received: string, paid_out: string}  $cashTotals
+     * @return array{total_count: int, buy_count: int, sell_count: int, buy_total: string, sell_total: string}
+     */
+    private function transactionSection(Collection $transactions, array $cashTotals): array
+    {
+        $buyTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Buy->value);
+        $sellTransactions = $transactions->filter(fn ($tx) => $tx->type->value === TransactionType::Sell->value);
+
+        return [
+            'total_count' => $transactions->count(),
+            'buy_count' => $buyTransactions->count(),
+            'sell_count' => $sellTransactions->count(),
+            'buy_total' => $cashTotals['received'],
+            'sell_total' => $cashTotals['paid_out'],
+        ];
+    }
+
+    /**
+     * @param  Collection<int, Transaction>  $transactions
+     * @return array{count: int, total_amount: string, transactions: Collection<int, Transaction>}
+     */
+    private function largeTransactionsSection(Collection $transactions): array
+    {
+        // Large transactions (> RM 10k)
+        $largeTransactions = $transactions->filter(function ($tx) {
+            return BcmathHelper::gte((string) $tx->amount_local, $this->thresholdService->getLargeTransactionThreshold());
+        });
+
+        return [
+            'count' => $largeTransactions->count(),
+            'total_amount' => $this->sumDecimalColumn($largeTransactions, 'amount_local'),
+            'transactions' => $largeTransactions->take(50)->values(),
+        ];
+    }
+
+    /**
+     * @return array{count: int, transactions: Collection<int, FlaggedTransaction>}
+     */
+    private function flaggedSection(Counter $counter, Carbon $date): array
+    {
+        $flaggedTransactions = FlaggedTransaction::with(['transaction', 'transaction.customer'])
+            ->whereHas('transaction', function ($query) use ($counter, $date) {
+                $query->where('till_id', $counter->code)
+                    ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()]);
+            })
+            ->where('status', '!=', 'Resolved')
+            ->get();
+
+        return [
+            'count' => $flaggedTransactions->count(),
+            'transactions' => $flaggedTransactions->take(50)->values(),
+        ];
+    }
+
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function handoverSection(int $counterId, Carbon $date): Collection
+    {
+        $handovers = CounterHandover::with(['fromUser', 'toUser', 'supervisor'])
+            ->whereHas('counterSession', function ($query) use ($counterId, $date) {
+                $query->where('counter_id', $counterId)
+                    ->where('session_date', $date->toDateString());
+            })
+            ->orderBy('handover_time', 'asc')
+            ->get();
+
+        /** @var Collection<int, array<string, mixed>> */
+        return $handovers->map(fn ($h) => [
+            'id' => $h->id,
+            'from_user' => $h->fromUser ? ['id' => $h->fromUser->id, 'name' => $h->fromUser->username] : null,
+            'to_user' => $h->toUser ? ['id' => $h->toUser->id, 'name' => $h->toUser->username] : null,
+            'supervisor' => $h->supervisor ? ['id' => $h->supervisor->id, 'name' => $h->supervisor->username] : null,
+            'handover_time' => $h->handover_time?->toIso8601String(),
+            'variance_myr' => $h->variance_myr,
+            'physical_count_verified' => $h->physical_count_verified,
+        ]);
     }
 
     /**
@@ -318,7 +386,7 @@ class EodReconciliationService
 
         // MYR float only — see generateCounterReconciliation for why the
         // per-currency rows must not be summed into an MYR figure.
-        $myrTillBalances = $tillBalances->where('currency_code', 'MYR');
+        $myrTillBalances = $tillBalances->where('currency_code', Currency::baseCurrency());
         $openingFloat = $this->sumDecimalColumn($myrTillBalances, 'opening_balance');
 
         // Get transactions
@@ -369,7 +437,7 @@ class EodReconciliationService
         $report['report_metadata'] = [
             'generated_at' => now()->toIso8601String(),
             'report_date' => $date->toDateString(),
-            'generated_by' => auth()->user()?->username ?? 'System',
+            'generated_by' => ActorContext::capture()->user?->username ?? 'System',
             'branch_filter' => $branchId,
             'counter_filter' => $counterId,
             'version' => '1.0',

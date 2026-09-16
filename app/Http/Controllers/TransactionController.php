@@ -96,7 +96,10 @@ class TransactionController extends Controller
     {
         $this->authorize('create', Transaction::class);
 
-        $currencies = Currency::select('code', 'name')->where('is_active', true)->get()->pluck('name', 'code');
+        $activeCurrencies = Currency::where('is_active', true)->get(['code', 'name', 'rate_unit', 'rate_inverse']);
+        $currencies = $activeCurrencies->pluck('name', 'code');
+        $currencyUnits = $activeCurrencies->pluck('rate_unit', 'code');
+        $currencyInverses = $activeCurrencies->pluck('rate_inverse', 'code');
         $customers = Customer::orderBy('full_name')->pluck('full_name', 'id');
         $branches = Branch::select('id', 'name')->orderBy('name')->get();
         $counters = Counter::where('status', 'active')->orderBy('name')->pluck('name', 'id');
@@ -115,7 +118,7 @@ class TransactionController extends Controller
         }
         $tillBalances = $tillQuery->get();
 
-        return view('transactions.create', compact('currencies', 'customers', 'tillBalances', 'branches', 'counters', 'suggested_rate', 'idempotencyKey'));
+        return view('transactions.create', compact('currencies', 'currencyUnits', 'currencyInverses', 'customers', 'tillBalances', 'branches', 'counters', 'suggested_rate', 'idempotencyKey'));
     }
 
     /**

@@ -3,10 +3,12 @@
 namespace Tests\Unit\Services\Compliance;
 
 use App\Enums\AlertPriority;
+use App\Enums\CaseResolution;
 use App\Enums\ComplianceCasePriority;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
+use App\Enums\FlagStatus;
 use App\Events\CaseOpened;
 use App\Exceptions\Domain\CaseManagementException;
 use App\Models\Alert;
@@ -14,6 +16,8 @@ use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceCaseDocument;
 use App\Models\Compliance\ComplianceCaseLink;
 use App\Models\Customer;
+use App\Models\FlaggedTransaction;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\ComplianceCaseAssignedNotification;
 use App\Services\Compliance\CaseManagementService;
@@ -170,6 +174,77 @@ class CaseManagementServiceTest extends TestCase
         $updated = $this->service->updateStatus($case, ComplianceCaseStatus::Open);
 
         $this->assertSame(ComplianceCaseStatus::Open, $updated->status);
+    }
+
+    #[Test]
+    public function close_case_auto_drafts_str_when_aggregate_meets_threshold(): void
+    {
+        $customer = Customer::factory()->create();
+        $officer = User::factory()->create();
+
+        $flag = FlaggedTransaction::factory()->create([
+            'customer_id' => $customer->id,
+            'transaction_id' => Transaction::factory()->create([
+                'customer_id' => $customer->id,
+                'amount_local' => 60000,
+            ])->id,
+            'status' => 'Open',
+        ]);
+
+        $case = ComplianceCase::factory()->create([
+            'customer_id' => $customer->id,
+            'assigned_to' => $officer->id,
+            'status' => ComplianceCaseStatus::UnderReview,
+        ]);
+
+        Alert::factory()->create([
+            'case_id' => $case->id,
+            'customer_id' => $customer->id,
+            'flagged_transaction_id' => $flag->id,
+            'status' => FlagStatus::Resolved,
+        ]);
+
+        $closed = $this->service->closeCase($case, CaseResolution::NoConcern, 'cleared');
+
+        $this->assertSame(ComplianceCaseStatus::Closed, $closed->status);
+        $this->assertNotNull($closed->resolved_at);
+        $this->assertDatabaseHas('str_reports', ['case_id' => $case->id]);
+    }
+
+    #[Test]
+    public function close_case_refuses_unresolved_alerts(): void
+    {
+        $customer = Customer::factory()->create();
+        $case = ComplianceCase::factory()->create([
+            'customer_id' => $customer->id,
+            'status' => ComplianceCaseStatus::UnderReview,
+        ]);
+
+        Alert::factory()->create([
+            'case_id' => $case->id,
+            'customer_id' => $customer->id,
+            'status' => FlagStatus::Open,
+        ]);
+
+        $this->expectException(CaseManagementException::class);
+
+        $this->service->closeCase($case, CaseResolution::NoConcern);
+    }
+
+    #[Test]
+    public function close_case_refuses_reclose_and_escalate_refuses_closed_source(): void
+    {
+        $closed = ComplianceCase::factory()->create(['status' => ComplianceCaseStatus::Closed]);
+
+        try {
+            $this->service->closeCase($closed, CaseResolution::NoConcern);
+            $this->fail('closeCase on a Closed case must throw');
+        } catch (CaseManagementException) {
+        }
+
+        $this->expectException(CaseManagementException::class);
+
+        $this->service->escalateCase($closed);
     }
 
     #[Test]

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Models\Bases\AccountingModel;
-use App\Services\System\MathService;
+use App\Support\BcmathHelper;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -71,13 +71,13 @@ class AccountLedger extends AccountingModel
      * Calculate the net amount for this ledger entry.
      *
      * Computes the difference between debit and credit amounts
-     * using high-precision arithmetic via MathService.
+     * using high-precision arithmetic via BcmathHelper.
      *
      * @return string The net amount (debit - credit) as a string for precision
      */
     public function getNetAmount(): string
     {
-        return app(MathService::class)->subtract((string) $this->debit, (string) $this->credit);
+        return BcmathHelper::subtract((string) $this->debit, (string) $this->credit);
     }
 
     /**

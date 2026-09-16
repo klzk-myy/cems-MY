@@ -63,8 +63,8 @@
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm font-medium text-ink">{{ $position['currency'] }}</td>
                             <td class="px-4 py-3 text-sm text-ink text-right">{{ number_format($position['position'], 2) }}</td>
-                            <td class="px-4 py-3 text-sm text-ink text-right">{{ number_format($position['avg_buy_rate'], 4) }}</td>
-                            <td class="px-4 py-3 text-sm text-ink text-right">{{ number_format($position['avg_sell_rate'], 4) }}</td>
+                            <td class="px-4 py-3 text-sm text-ink text-right">{{ number_format($position['avg_buy_rate'], 8) }}</td>
+                            <td class="px-4 py-3 text-sm text-ink text-right">{{ number_format($position['avg_sell_rate'], 8) }}</td>
                             <td class="px-4 py-3 text-sm text-right {{ $position['realized_pnl'] >= 0 ? 'text-success-text' : 'text-danger-text' }}">
                                 {{ $position['realized_pnl'] >= 0 ? '+' : '' }}{{ number_format($position['realized_pnl'], 2) }}
                             </td>

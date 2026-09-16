@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\ConfirmationRequiredNotification;
 use App\Notifications\LargeTransactionNotification;
 use App\Services\AuditService;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionConfirmationService;
@@ -39,7 +40,8 @@ class TransactionConfirmationServiceTest extends TestCase
         $this->service = new TransactionConfirmationService(
             $this->auditService,
             $this->thresholdService,
-            $this->mathService
+            $this->mathService,
+            app(AlertTriageService::class)
         );
     }
 

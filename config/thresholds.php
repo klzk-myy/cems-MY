@@ -246,7 +246,7 @@ return [
         'min_spread' => env('RATE_MIN_SPREAD', '0.005'),
         'max_spread' => env('RATE_MAX_SPREAD', '0.05'),
         'max_deviation_percent' => env('RATE_MAX_DEVIATION', '0.05'),
-        'precision' => env('RATE_PRECISION', 4),
+        'precision' => env('RATE_PRECISION', 8),
         'cache_duration' => env('RATE_CACHE_DURATION', 60),
         // Per-role rate-override limits in percentage points (BNM):
         // tellers ±0.5%, managers ±2.0%. Roles without a key are unlimited.

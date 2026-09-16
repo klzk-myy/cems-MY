@@ -7,6 +7,7 @@ use App\Enums\FindingType;
 use App\Models\Customer;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\CustomerScreeningService;
 use App\Services\System\MathService;
 use Illuminate\Support\Facades\Log;
@@ -19,9 +20,9 @@ class SanctionsRescreeningMonitor extends BaseMonitor
 {
     protected CustomerScreeningService $screeningService;
 
-    public function __construct(MathService $math, CustomerScreeningService $screeningService)
+    public function __construct(MathService $math, CustomerScreeningService $screeningService, AlertTriageService $alertTriage)
     {
-        parent::__construct($math);
+        parent::__construct($math, $alertTriage);
         $this->screeningService = $screeningService;
     }
 

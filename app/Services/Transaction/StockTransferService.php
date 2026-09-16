@@ -17,6 +17,7 @@ use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\System\MathService;
+use App\Support\ActorContext;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -24,20 +25,14 @@ class StockTransferService
 {
     protected ?User $requester = null;
 
-    protected ?CurrencyPositionLockService $positionLockService;
-
-    protected ?BranchPoolService $branchPoolService;
-
     public function __construct(
         protected MathService $mathService,
         protected AuditService $auditService,
+        protected CurrencyPositionLockService $positionLockService,
+        protected BranchPoolService $branchPoolService,
         ?User $requester = null,
-        ?CurrencyPositionLockService $positionLockService = null,
-        ?BranchPoolService $branchPoolService = null,
     ) {
-        $this->requester = $requester ?? auth()->user();
-        $this->positionLockService = $positionLockService;
-        $this->branchPoolService = $branchPoolService;
+        $this->requester = $requester ?? $this->resolveRequester();
     }
 
     /**
@@ -47,13 +42,18 @@ class StockTransferService
      */
     protected function requester(): User
     {
-        $this->requester ??= auth()->user();
+        $this->requester ??= $this->resolveRequester();
 
         if (! $this->requester instanceof User) {
             throw new UnauthorizedException('An authenticated user is required for stock transfer operations');
         }
 
         return $this->requester;
+    }
+
+    private function resolveRequester(): ?User
+    {
+        return ActorContext::capture()->user;
     }
 
     /**
@@ -292,93 +292,14 @@ class StockTransferService
             $destinationBranch = $this->branchFromIdentifier($transfer->destination_branch_name);
 
             foreach ($items as $itemData) {
-                if (! isset($itemData['id']) || ! is_numeric($itemData['id'])) {
-                    throw new TransactionValidationException(message: 'Each item must have a valid numeric id');
-                }
-
-                if (! isset($itemData['quantity_received']) || ! is_numeric($itemData['quantity_received'])) {
-                    throw new TransactionValidationException(message: 'Each item must have a numeric quantity_received');
-                }
-
-                $item = $existingItems->get($itemData['id']);
-                if ($item) {
-                    // Negative receipts would inflate in-transit stock.
-                    if ($this->mathService->compare((string) $itemData['quantity_received'], '0') < 0) {
-                        throw new TransactionValidationException(
-                            message: "Quantity received for item {$item->id} cannot be negative"
-                        );
-                    }
-
-                    // Guard against over-receipt: receiving more than the
-                    // transferred quantity would drive in-transit negative.
-                    if ($this->mathService->compare((string) $itemData['quantity_received'], (string) $item->quantity) > 0) {
-                        throw new TransactionValidationException(
-                            message: "Quantity received for item {$item->id} exceeds the transferred quantity ({$item->quantity})"
-                        );
-                    }
-
-                    // Receipts are cumulative: the submitted quantity_received is
-                    // the item's new total, so only the delta since the last
-                    // receipt is credited. Re-submitting an earlier receipt can
-                    // therefore never double-credit the position or the pool.
-                    $previousReceived = (string) ($item->quantity_received ?? '0');
-                    $newReceived = (string) $itemData['quantity_received'];
-
-                    if ($this->mathService->compare($newReceived, $previousReceived) < 0) {
-                        throw new TransactionValidationException(
-                            message: "Quantity received for item {$item->id} cannot be less than the previously received {$previousReceived}"
-                        );
-                    }
-
-                    $receivedDelta = $this->mathService->subtract($newReceived, $previousReceived);
-
-                    $item->update([
-                        'quantity_received' => $newReceived,
-                        'quantity_in_transit' => $this->mathService->subtract((string) $item->quantity, $newReceived),
-                    ]);
-
-                    // Destination branch position grows by what actually arrived.
-                    $this->incrementDestinationPosition(
-                        $destinationBranchKey,
-                        (string) $item->currency_code,
-                        $receivedDelta
-                    );
-
-                    // The arrived stock joins the branch's teller-allocatable pool.
-                    if ($destinationBranch && $this->mathService->compare($receivedDelta, '0') > 0) {
-                        $this->poolService()->replenish(
-                            $destinationBranch,
-                            (string) $item->currency_code,
-                            $receivedDelta,
-                            $requester->id
-                        );
-                    }
-
-                    if ($item->hasVariance()) {
-                        $item->update(['variance_notes' => "Variance: {$item->variance}"]);
-
-                        if ($this->mathService->compare($item->quantity, '0') > 0) {
-                            $variancePercent = $this->mathService->multiply(
-                                $this->mathService->divide(
-                                    $this->mathService->abs((string) $item->variance),
-                                    (string) $item->quantity
-                                ),
-                                '100'
-                            );
-                            if ($this->mathService->compare($variancePercent, '5') > 0) {
-                                $this->auditService->logStockTransferEvent(
-                                    'stock_transfer_variance_exceeded',
-                                    (int) $transfer->id,
-                                    ['new_values' => [
-                                        'item_id' => $item->id,
-                                        'currency' => $item->currency_code,
-                                        'variance_percent' => $variancePercent,
-                                    ]],
-                                );
-                            }
-                        }
-                    }
-                }
+                $this->receiveItem(
+                    $transfer,
+                    $itemData,
+                    $existingItems,
+                    $destinationBranchKey,
+                    $destinationBranch,
+                    $requester
+                );
             }
 
             $transfer->load('items');
@@ -389,6 +310,123 @@ class StockTransferService
                     : StockTransferStatus::PartiallyReceived->value,
             ]);
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $itemData
+     * @param  Collection<(int|string), StockTransferItem>  $existingItems
+     */
+    private function receiveItem(
+        StockTransfer $transfer,
+        array $itemData,
+        Collection $existingItems,
+        string $destinationBranchKey,
+        ?Branch $destinationBranch,
+        User $requester
+    ): void {
+        if (! isset($itemData['id']) || ! is_numeric($itemData['id'])) {
+            throw new TransactionValidationException(message: 'Each item must have a valid numeric id');
+        }
+
+        if (! isset($itemData['quantity_received']) || ! is_numeric($itemData['quantity_received'])) {
+            throw new TransactionValidationException(message: 'Each item must have a numeric quantity_received');
+        }
+
+        $item = $existingItems->get($itemData['id']);
+
+        if (! $item) {
+            return;
+        }
+
+        $newReceived = (string) $itemData['quantity_received'];
+
+        // Negative receipts would inflate in-transit stock.
+        if ($this->mathService->compare($newReceived, '0') < 0) {
+            throw new TransactionValidationException(
+                message: "Quantity received for item {$item->id} cannot be negative"
+            );
+        }
+
+        // Guard against over-receipt: receiving more than the
+        // transferred quantity would drive in-transit negative.
+        if ($this->mathService->compare($newReceived, (string) $item->quantity) > 0) {
+            throw new TransactionValidationException(
+                message: "Quantity received for item {$item->id} exceeds the transferred quantity ({$item->quantity})"
+            );
+        }
+
+        // Receipts are cumulative: the submitted quantity_received is
+        // the item's new total, so only the delta since the last
+        // receipt is credited. Re-submitting an earlier receipt can
+        // therefore never double-credit the position or the pool.
+        $previousReceived = (string) ($item->quantity_received ?? '0');
+
+        if ($this->mathService->compare($newReceived, $previousReceived) < 0) {
+            throw new TransactionValidationException(
+                message: "Quantity received for item {$item->id} cannot be less than the previously received {$previousReceived}"
+            );
+        }
+
+        $receivedDelta = $this->mathService->subtract($newReceived, $previousReceived);
+
+        $item->update([
+            'quantity_received' => $newReceived,
+            'quantity_in_transit' => $this->mathService->subtract((string) $item->quantity, $newReceived),
+        ]);
+
+        // Destination branch position grows by what actually arrived.
+        $this->incrementDestinationPosition(
+            $destinationBranchKey,
+            (string) $item->currency_code,
+            $receivedDelta
+        );
+
+        // The arrived stock joins the branch's teller-allocatable pool.
+        if ($destinationBranch && $this->mathService->compare($receivedDelta, '0') > 0) {
+            $this->poolService()->replenish(
+                $destinationBranch,
+                (string) $item->currency_code,
+                $receivedDelta,
+                $requester->id
+            );
+        }
+
+        $this->auditVarianceIfExceeded($item, (int) $transfer->id);
+    }
+
+    private function auditVarianceIfExceeded(StockTransferItem $item, int $transferId): void
+    {
+        if (! $item->hasVariance()) {
+            return;
+        }
+
+        $item->update(['variance_notes' => "Variance: {$item->variance}"]);
+
+        if ($this->mathService->compare($item->quantity, '0') <= 0) {
+            return;
+        }
+
+        $variancePercent = $this->mathService->multiply(
+            $this->mathService->divide(
+                $this->mathService->abs((string) $item->variance),
+                (string) $item->quantity
+            ),
+            '100'
+        );
+
+        if ($this->mathService->compare($variancePercent, '5') <= 0) {
+            return;
+        }
+
+        $this->auditService->logStockTransferEvent(
+            'stock_transfer_variance_exceeded',
+            $transferId,
+            ['new_values' => [
+                'item_id' => $item->id,
+                'currency' => $item->currency_code,
+                'variance_percent' => $variancePercent,
+            ]],
+        );
     }
 
     public function complete(StockTransfer $transfer): void
@@ -637,12 +675,12 @@ class StockTransferService
 
     private function positionLocks(): CurrencyPositionLockService
     {
-        return $this->positionLockService ??= app(CurrencyPositionLockService::class);
+        return $this->positionLockService;
     }
 
     private function poolService(): BranchPoolService
     {
-        return $this->branchPoolService ??= app(BranchPoolService::class);
+        return $this->branchPoolService;
     }
 
     /**

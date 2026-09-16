@@ -7,6 +7,8 @@
              data-branch-id="{{ auth()->user()?->branch_id ?? '' }}"
              data-idempotency-key="{{ $idempotencyKey }}"
              data-currencies='@json($currencies ?? [])'
+             data-currency-units='@json($currencyUnits ?? [])'
+             data-currency-inverses='@json($currencyInverses ?? [])'
              class="max-w-4xl mx-auto">
 
         <form @submit.prevent="submitStep()">
@@ -61,6 +63,12 @@
                     <div>
                         <label class="block text-sm font-medium mb-1">Exchange Rate</label>
                         <input type="number" step="0.0001" x-model="formData.rate" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
+                        <p x-show="currencyInverse()" x-cloak class="mt-1 text-xs text-ink-muted">
+                            <span x-text="formData.currency_code"></span> per RM <span x-text="currencyUnit()"></span>
+                        </p>
+                        <p x-show="!currencyInverse() && currencyUnit() > 1" x-cloak class="mt-1 text-xs text-ink-muted">
+                            in MYR per <span x-text="currencyUnit()"></span> <span x-text="formData.currency_code"></span>
+                        </p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Local Amount (MYR)</label>

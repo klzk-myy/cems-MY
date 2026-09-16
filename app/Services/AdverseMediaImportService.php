@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AdverseMediaEntry;
 use App\Models\AdverseMediaImportLog;
+use App\Support\ActorContext;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -108,7 +109,7 @@ class AdverseMediaImportService
             'records_skipped' => $skipped,
             'status' => $status,
             'triggered_by' => 'manual',
-            'user_id' => auth()->id(),
+            'user_id' => ActorContext::capture()->userId,
         ]);
 
         return [

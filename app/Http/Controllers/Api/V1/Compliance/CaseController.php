@@ -115,7 +115,7 @@ class CaseController extends Controller
         $this->authorize('update', $case);
 
         if (! empty($validated['assigned_to'])) {
-            $this->caseService->assignCase($case, $validated['assigned_to']);
+            $this->caseService->assignToOfficer($case, $validated['assigned_to']);
         }
 
         if (! empty($validated['case_summary'])) {

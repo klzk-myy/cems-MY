@@ -5,6 +5,7 @@ namespace App\Services\Compliance;
 use App\Enums\AmlRuleType;
 use App\Enums\TransactionStatus;
 use App\Models\AmlRule;
+use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\System\MathService;
@@ -15,10 +16,8 @@ class AmlRuleEvaluator
 {
     public function __construct(
         protected MathService $mathService,
-        protected ?ThresholdService $thresholdService = null,
-    ) {
-        $this->thresholdService ??= app(ThresholdService::class);
-    }
+        protected ThresholdService $thresholdService,
+    ) {}
 
     /**
      * Evaluate a rule against a transaction.
@@ -211,7 +210,7 @@ class AmlRuleEvaluator
     protected function evaluateAmountThreshold(Transaction $transaction, array $conditions): bool
     {
         $minAmount = $conditions['min_amount'] ?? $this->thresholdService->getAmlAmountThreshold();
-        $currency = $conditions['currency'] ?? 'MYR';
+        $currency = $conditions['currency'] ?? Currency::baseCurrency();
 
         // Only apply to the specified currency (default MYR)
         if ($currency !== $transaction->currency_code) {

@@ -8,7 +8,6 @@ use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Services\Compliance\SanctionsDownloadService;
 use App\Services\Compliance\SanctionsImportService;
-use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,7 +22,7 @@ class SanctionsImportServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new SanctionsImportService(new MathService(2), new SanctionsDownloadService);
+        $this->service = app(SanctionsImportService::class);
     }
 
     #[Test]
@@ -294,7 +293,7 @@ class SanctionsImportServiceTest extends TestCase
 
         // SanctionsDownloadService resolves temp_directory at construction —
         // build a fresh service so it picks up the overridden config.
-        $service = new SanctionsImportService(new MathService(2), new SanctionsDownloadService);
+        $service = app(SanctionsImportService::class);
 
         Http::fake([
             'https://api.opensanctions.org/*' => Http::response([

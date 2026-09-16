@@ -8,6 +8,7 @@ use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Support\ActorContext;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -146,7 +147,7 @@ class TransactionStateMachine
             'from' => $from->value,
             'to' => $to->value,
             'reason' => $context['reason'] ?? null,
-            'user_id' => $context['user_id'] ?? auth()->id() ?? config('cems.system_user_id'),
+            'user_id' => $context['user_id'] ?? ActorContext::capture()->userIdOrSystem(),
             'timestamp' => $now->toIso8601String(),
         ];
 
@@ -174,14 +175,14 @@ class TransactionStateMachine
     ): void {
         // Track approval
         if ($to === TransactionStatus::Approved) {
-            $this->transaction->approved_by = $context['user_id'] ?? auth()->id() ?? config('cems.system_user_id');
+            $this->transaction->approved_by = $context['user_id'] ?? ActorContext::capture()->userIdOrSystem();
             $this->transaction->approved_at = now();
         }
 
         // Track cancellation
         if ($to === TransactionStatus::Cancelled) {
             $this->transaction->cancelled_at = now();
-            $this->transaction->cancelled_by = $context['user_id'] ?? auth()->id() ?? config('cems.system_user_id');
+            $this->transaction->cancelled_by = $context['user_id'] ?? ActorContext::capture()->userIdOrSystem();
             $this->transaction->cancellation_reason = $context['reason'] ?? null;
         }
 
@@ -510,7 +511,7 @@ class TransactionStateMachine
             'from' => $this->transaction->status->value,
             'to' => $this->transaction->status->value,
             'reason' => $reason,
-            'user_id' => auth()->id() ?? config('cems.system_user_id'),
+            'user_id' => ActorContext::capture()->userIdOrSystem(),
             'timestamp' => now()->toIso8601String(),
             'dlq_marker' => true,
         ];
@@ -524,7 +525,7 @@ class TransactionStateMachine
             $this->auditService->logTransaction('dlq_marker_added', $this->transaction->id, [
                 'new' => [
                     'reason' => $reason,
-                    'user_id' => auth()->id() ?? config('cems.system_user_id'),
+                    'user_id' => ActorContext::capture()->userIdOrSystem(),
                     'dlq' => true,
                 ],
             ]);

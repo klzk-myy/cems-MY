@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Compliance;
 use App\Models\Customer;
 use App\Models\HighRiskCountry;
 use App\Services\Compliance\RiskCalculationService;
+use App\Services\Compliance\RiskScoreWriteBackService;
 use App\Services\Compliance\RiskScoringEngine;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +24,8 @@ class RiskScoringEngineTest extends TestCase
 
         $this->engine = new RiskScoringEngine(
             new MathService,
-            app(RiskCalculationService::class)
+            app(RiskCalculationService::class),
+            new RiskScoreWriteBackService,
         );
     }
 

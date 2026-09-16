@@ -24,6 +24,8 @@ class ExchangeRateHistoryFactory extends Factory
             'branch_id' => Branch::factory(),
             'currency_code' => Currency::factory(),
             'rate' => $this->faker->randomFloat(6, 0.1, 10),
+            'rate_unit' => 1,
+            'rate_inverse' => false,
             'effective_date' => $this->faker->date(),
             'created_by' => User::factory(),
             'notes' => $this->faker->optional()->sentence(),

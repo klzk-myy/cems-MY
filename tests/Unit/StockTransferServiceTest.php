@@ -10,7 +10,9 @@ use App\Models\BranchPool;
 use App\Models\CurrencyPosition;
 use App\Models\StockTransfer;
 use App\Models\User;
+use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
+use App\Services\Branch\BranchPoolService;
 use App\Services\System\MathService;
 use App\Services\Transaction\StockTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,7 +43,7 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Manager,
             'branch_id' => $this->branchA->id,
         ]);
-        $this->stockTransferService = new StockTransferService(new MathService, new AuditService, $this->user);
+        $this->stockTransferService = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $this->user);
     }
 
     #[Test]
@@ -63,7 +65,7 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $this->branchA->id,
         ]);
-        $service = new StockTransferService(new MathService, new AuditService, $teller);
+        $service = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $teller);
 
         $this->assertValidationError(
             'within-branch stock transfers',
@@ -234,8 +236,8 @@ class StockTransferServiceTest extends TestCase
             'quantity' => '1000',
         ]);
 
-        $maker = new StockTransferService(new MathService, new AuditService, $managerA);
-        $taker = new StockTransferService(new MathService, new AuditService, $managerB);
+        $maker = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $managerA);
+        $taker = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $managerB);
 
         $transfer = $maker->createRequest([
             'source_branch_name' => 'Branch A',
@@ -272,7 +274,7 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Manager,
             'branch_id' => $this->branchA->id,
         ]);
-        $otherMaker = new StockTransferService(new MathService, new AuditService, $managerA2);
+        $otherMaker = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $managerA2);
 
         try {
             $otherMaker->approveByBranchManager($transfer);
@@ -470,6 +472,74 @@ class StockTransferServiceTest extends TestCase
             ->where('currency_code', 'USD')
             ->first();
         $this->assertEquals('600.0000', (string) $position->quantity);
+    }
+
+    #[Test]
+    public function receive_items_rejects_negative_quantity(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        $this->expectException(TransactionValidationException::class);
+
+        $taker->receiveItems($transfer->fresh(), [
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '-10'],
+        ]);
+    }
+
+    #[Test]
+    public function receive_items_rejects_over_receipt(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        $this->expectException(TransactionValidationException::class);
+
+        $taker->receiveItems($transfer->fresh(), [
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '1001'],
+        ]);
+    }
+
+    #[Test]
+    public function variance_above_five_percent_writes_audit_event(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        // Receiving 900 of 1000 leaves a 10% variance (> 5% threshold).
+        $taker->receiveItems($transfer->fresh(), [
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '900'],
+        ]);
+
+        $this->assertDatabaseHas('system_logs', [
+            'action' => 'stock_transfer_variance_exceeded',
+            'entity_type' => 'StockTransfer',
+            'entity_id' => $transfer->id,
+        ]);
+    }
+
+    #[Test]
+    public function variance_within_five_percent_writes_no_audit_event(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        // 960 of 1000 = 4% variance — under the audit threshold.
+        $taker->receiveItems($transfer->fresh(), [
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '960'],
+        ]);
+
+        $this->assertDatabaseMissing('system_logs', [
+            'action' => 'stock_transfer_variance_exceeded',
+        ]);
     }
 
     #[Test]

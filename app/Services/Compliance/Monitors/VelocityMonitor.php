@@ -7,6 +7,7 @@ use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Risk\VelocityRiskService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -21,9 +22,9 @@ class VelocityMonitor extends BaseMonitor
 
     protected int $velocityWindowDays;
 
-    public function __construct(MathService $math, VelocityRiskService $velocityRiskService, ThresholdService $thresholdService)
+    public function __construct(MathService $math, VelocityRiskService $velocityRiskService, ThresholdService $thresholdService, AlertTriageService $alertTriage)
     {
-        parent::__construct($math);
+        parent::__construct($math, $alertTriage);
         $this->threshold = $thresholdService->getVelocityAlertThreshold();
         $this->warningThreshold = $thresholdService->getVelocityWarningThreshold();
         $this->velocityRiskService = $velocityRiskService;

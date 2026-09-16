@@ -1,0 +1,2 @@
+{"id": "os-001", "caption": "John Doe", "schema": "Person", "properties": {"name": ["John Doe", "Johnny Doe"], "birthDate": ["1980-01-15"], "nationality": ["MY"], "alias": ["J. Doe"]}}
+{"id": "os-002", "caption": "Acme Corp", "schema": "Organization", "properties": {"name": ["Acme Corp"], "country": ["RU"]}}

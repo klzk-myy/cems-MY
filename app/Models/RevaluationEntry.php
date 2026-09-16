@@ -38,8 +38,8 @@ class RevaluationEntry extends BaseModel
     ];
 
     protected $casts = [
-        'old_rate' => MoneyCast::class.':6',
-        'new_rate' => MoneyCast::class.':6',
+        'old_rate' => MoneyCast::class.':8',
+        'new_rate' => MoneyCast::class.':8',
         'position_amount' => MoneyCast::class,
         'gain_loss_amount' => MoneyCast::class,
         'revaluation_date' => 'date',

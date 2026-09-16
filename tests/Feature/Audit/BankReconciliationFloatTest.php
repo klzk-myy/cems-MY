@@ -12,7 +12,7 @@ class BankReconciliationFloatTest extends TestCase
         $this->assertFileExists($file);
 
         $content = file_get_contents($file);
-        $this->assertStringContainsString('app(MathService::class)', $content);
+        $this->assertStringContainsString('BcmathHelper::', $content);
         $this->assertStringNotContainsString('(float) $this->debit', $content);
         $this->assertStringNotContainsString('(float) $this->credit', $content);
     }

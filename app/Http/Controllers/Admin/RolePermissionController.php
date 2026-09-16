@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Services\System\PermissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -63,14 +64,17 @@ class RolePermissionController extends Controller
 
         $validated = $this->validateUpdateRequest($request);
 
-        foreach (UserRole::cases() as $role) {
-            $permissions = $validated[$role->value] ?? [];
-            $this->permissionService->updateRolePermissions(
-                $role,
-                $permissions,
-                $updatedBy
-            );
-        }
+        // All-or-nothing: a failure mid-matrix must not leave a half-written
+        // grant set (e.g. a stale enum rejecting one row after earlier writes).
+        DB::transaction(function () use ($validated, $updatedBy) {
+            foreach ($validated as $roleValue => $permissions) {
+                $this->permissionService->updateRolePermissions(
+                    UserRole::from($roleValue),
+                    $permissions,
+                    $updatedBy
+                );
+            }
+        });
 
         return redirect()->route('admin.role-permissions.index')
             ->with('success', 'Role permissions updated successfully.');
@@ -86,9 +90,16 @@ class RolePermissionController extends Controller
     {
         $validPermissionKeys = array_column(Permission::cases(), 'value');
         $validRoleValues = array_column(UserRole::cases(), 'value');
+        $submitted = $request->input('permissions', []);
+        $submitted = is_array($submitted) ? $submitted : [];
 
         $result = [];
         foreach ($validRoleValues as $roleValue) {
+            // Only roles present in the submission are rewritten — a partial
+            // payload must not silently revoke grants it never mentioned.
+            if (! array_key_exists($roleValue, $submitted)) {
+                continue;
+            }
             $result[$roleValue] = [];
             foreach ($validPermissionKeys as $permKey) {
                 $checkboxName = "permissions.{$roleValue}.{$permKey}";

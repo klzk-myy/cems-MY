@@ -4,12 +4,23 @@ namespace App\Services\Transaction;
 
 use App\Enums\TransactionType;
 use App\Services\System\MathService;
+use App\ValueObjects\QuoteConvention;
 
 /**
  * ExchangeCalculator
  *
  * Single source of truth for converting a foreign-currency transaction amount
- * into its local-currency equivalent (amount_local = amount_foreign × rate).
+ * into its local-currency equivalent:
+ *
+ *     amount_local = amount_foreign / rate_unit × rate
+ *
+ * where `rate` is the unit-quoted rate (MYR per `rate_unit` foreign units,
+ * e.g. RM 235 per 1,000,000 IDR) and `rate_unit` defaults to 1, which
+ * preserves the historic per-unit convention exactly.
+ *
+ * Currencies flagged `rate_inverse` quote the other way: `rate` is foreign
+ * units per `rate_unit` MYR (e.g. RM 1 = 4,255 IDR), and the per-unit
+ * normalization inverts to rate_unit / rate.
  *
  * This centralizes the conversion that was previously inlined in three places
  * (TransactionCreationService, TransactionWizardController step 1, and
@@ -30,21 +41,28 @@ class ExchangeCalculator
      * @param  TransactionType  $type  Buy or Sell (kept for API completeness; the rate is caller-supplied).
      * @param  string  $currencyCode  ISO currency code of the foreign amount (kept for API completeness).
      * @param  string  $amountForeign  Foreign amount as a numeric string.
-     * @param  string  $rate  Caller-supplied exchange rate as a numeric string.
+     * @param  string  $rate  Caller-supplied exchange rate as a numeric string, quoted in $convention terms.
      * @param  int|null  $branchId  Optional branch scope (kept for API completeness).
-     * @return array{amount_local: string, amount_foreign: string, rate: string}
+     * @param  QuoteConvention|null  $convention  Quote convention of $rate; defaults to unit-1 direct (per-unit rate).
+     * @return array{amount_local: string, amount_foreign: string, rate: string} The returned rate is normalized per-unit.
      */
     public function calculate(
         TransactionType $type,
         string $currencyCode,
         string $amountForeign,
         string $rate,
-        ?int $branchId = null
+        ?int $branchId = null,
+        ?QuoteConvention $convention = null
     ): array {
+        // Normalize the quoted rate to per-unit (8 decimals, matching
+        // the transactions.rate column precision) before multiplying, so the
+        // returned rate is the exact value applied to amount_local.
+        $perUnitRate = ($convention ?? new QuoteConvention)->toPerUnit($rate);
+
         // Foreign → local conversion delegated to MathService (BCMath). The
         // multiply uses MathService's default scale (4), matching the prior
         // inline `multiply(amount_foreign, rate)`.
-        $amountLocal = $this->mathService->multiply($amountForeign, $rate);
+        $amountLocal = $this->mathService->multiply($amountForeign, $perUnitRate);
 
         // Round half-up to 4 decimals to align with decimal(18,4) storage.
         // Because multiply already returns a value truncated to its default
@@ -55,7 +73,7 @@ class ExchangeCalculator
         return [
             'amount_local' => $amountLocal,
             'amount_foreign' => $amountForeign,
-            'rate' => $rate,
+            'rate' => $perUnitRate,
         ];
     }
 }

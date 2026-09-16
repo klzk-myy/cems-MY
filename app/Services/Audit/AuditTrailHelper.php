@@ -5,6 +5,7 @@ namespace App\Services\Audit;
 use App\Models\AuditTrail;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Support\ActorContext;
 
 /**
  * Helper that records auditable events through AuditService, the canonical,
@@ -39,7 +40,7 @@ class AuditTrailHelper
             'action' => $action,
             'user_id' => $user?->id,
             'metadata' => $metadata,
-            'ip_address' => $ipAddress ?? request()?->ip(),
+            'ip_address' => $ipAddress ?? ActorContext::capture()->ipAddress,
         ]);
     }
 

@@ -4,6 +4,7 @@ namespace App\Services\System;
 
 use App\Enums\TestResultStatus;
 use App\Models\TestResult;
+use App\Support\ActorContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
@@ -23,7 +24,7 @@ class TestRunnerService
             'test_suite' => $suite,
             'status' => 'running',
             'started_at' => now(),
-            'executed_by' => auth()->user()->username ?? 'system',
+            'executed_by' => ActorContext::capture()->user->username ?? 'system',
             'git_branch' => $this->getGitBranch(),
             'git_commit' => $this->getGitCommit(),
         ]);

@@ -5,6 +5,7 @@ namespace Tests\Unit\Repositories;
 use App\Models\Customer;
 use App\Repositories\CustomerRepository;
 use App\Services\Customer\CustomerService;
+use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -18,7 +19,7 @@ class CustomerRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new CustomerRepository;
+        $this->repository = new CustomerRepository(new ThresholdService);
     }
 
     #[Test]

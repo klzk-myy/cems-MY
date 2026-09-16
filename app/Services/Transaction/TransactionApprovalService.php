@@ -37,6 +37,7 @@ use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Traits\AccountingEntriesTrait;
 use App\Services\Traits\TillBalanceTrait;
+use App\Support\ActorContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
@@ -57,6 +58,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         protected MathService $mathService,
         protected TransactionConfirmationService $confirmationService,
         protected ThresholdService $thresholdService,
+        protected AmlRuleEvaluator $amlRuleEvaluator,
     ) {}
 
     public function validateApprovalEligibility(Transaction $transaction, int $approverId): void
@@ -174,7 +176,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
 
     public function approve(Transaction $transaction, int $approverId, ?string $ipAddress = null): ApprovalResult
     {
-        $ipAddress ??= optional(request())->ip();
+        $ipAddress ??= ActorContext::capture()->ipAddress;
 
         // Self-guard so direct service callers (not just ApproveTransactionAction)
         // cannot approve non-pending, self-created, or compliance-held transactions.
@@ -196,7 +198,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         }
 
         try {
-            app(AmlRuleEvaluator::class)
+            $this->amlRuleEvaluator
                 ->evaluateActiveRules($transaction, $transaction->customer);
         } catch (\Throwable $e) {
             Log::error('AML rule engine skipped', [
@@ -545,7 +547,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             );
         }
 
-        $ipAddress ??= optional(request())->ip();
+        $ipAddress ??= ActorContext::capture()->ipAddress;
 
         try {
             return DB::transaction(function () use ($transaction, $ipAddress) {
@@ -614,7 +616,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
      */
     public function completeRefund(Transaction $transaction, int $approverId, ?string $ipAddress = null): ApprovalResult
     {
-        $ipAddress ??= optional(request())->ip();
+        $ipAddress ??= ActorContext::capture()->ipAddress;
 
         if (! $transaction->is_refund) {
             return new ApprovalResult(

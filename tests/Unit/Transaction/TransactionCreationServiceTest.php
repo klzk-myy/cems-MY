@@ -26,6 +26,7 @@ use App\Services\Accounting\TransactionAccountingService;
 use App\Services\Audit\AuditTrailHelper;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Compliance\KycDocumentExpiryService;
 use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
@@ -35,6 +36,8 @@ use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
+use App\Services\Transaction\ExchangeCalculator;
+use App\Services\Transaction\InitialStatusResolver;
 use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionErrorHandler;
 use App\Services\Transaction\TransactionRecoveryService;
@@ -81,6 +84,9 @@ class TransactionCreationServiceTest extends TestCase
             }),
             $mocks['kycDocumentExpiry'] ?? app(KycDocumentExpiryService::class),
             $mocks['rateManagement'] ?? app(RateManagementServiceInterface::class),
+            $mocks['statusResolver'] ?? app(InitialStatusResolver::class),
+            $mocks['exchangeCalculator'] ?? app(ExchangeCalculator::class),
+            $mocks['alertTriage'] ?? app(AlertTriageService::class),
         );
     }
 
@@ -176,6 +182,87 @@ class TransactionCreationServiceTest extends TestCase
         $this->assertEquals(TransactionType::Buy->value, $transaction->type->value);
         $this->assertEquals('100.0000', $transaction->amount_foreign);
         $this->assertEquals('450.0000', $transaction->amount_local);
+    }
+
+    #[Test]
+    public function create_normalizes_unit_quoted_rate_to_per_unit_for_storage(): void
+    {
+        Currency::factory()->create(['code' => 'IDR', 'rate_unit' => 1000000]);
+
+        $customer = Customer::factory()->create();
+        $counter = Counter::factory()->create(['status' => 'active']);
+        $tillBalance = TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'IDR',
+            'branch_id' => $counter->branch_id,
+        ]);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'MYR',
+            'branch_id' => $counter->branch_id,
+        ]);
+
+        // 1,000,000 IDR at RM 235 per 1,000,000 → RM 235.00, stored rate
+        // normalized to per-unit 0.00023500 so amount_foreign × rate = amount_local.
+        $data = [
+            'customer_id' => $customer->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'IDR',
+            'amount_foreign' => '1000000',
+            'rate' => '235',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'till_id' => (string) $counter->code,
+        ];
+
+        $user = User::factory()->create(['branch_id' => $counter->branch_id]);
+        $this->tellerAllocation($user, $counter, 'IDR');
+
+        $transaction = $this->completedBuyService()->prepareAndCreate($data, $user->id);
+
+        $this->assertSame('0.00023500', (string) $transaction->rate);
+        $this->assertSame('235.0000', (string) $transaction->amount_local);
+    }
+
+    #[Test]
+    public function create_normalizes_inverse_quoted_rate_to_per_unit_for_storage(): void
+    {
+        Currency::factory()->create(['code' => 'IDR', 'rate_unit' => 1, 'rate_inverse' => true]);
+
+        $customer = Customer::factory()->create();
+        $counter = Counter::factory()->create(['status' => 'active']);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'IDR',
+            'branch_id' => $counter->branch_id,
+        ]);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'MYR',
+            'branch_id' => $counter->branch_id,
+        ]);
+
+        // RM 1 = 4,255 IDR (inverse). Stored rate normalizes to per-unit
+        // 1/4255 truncated at 8dp = 0.00023501, and amount_local is computed
+        // from that same stored rate: 4,255,000 × 0.00023501 = 999.9675.
+        $data = [
+            'customer_id' => $customer->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'IDR',
+            'amount_foreign' => '4255000',
+            'rate' => '4255',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'till_id' => (string) $counter->code,
+        ];
+
+        $user = User::factory()->create(['branch_id' => $counter->branch_id]);
+        $this->tellerAllocation($user, $counter, 'IDR');
+
+        $transaction = $this->completedBuyService()->prepareAndCreate($data, $user->id);
+
+        $this->assertSame('0.00023501', (string) $transaction->rate);
+        $this->assertSame('999.9675', (string) $transaction->amount_local);
     }
 
     /**
@@ -925,6 +1012,9 @@ class TransactionCreationServiceTest extends TestCase
             $recoveryService,
             app(KycDocumentExpiryService::class),
             app(RateManagementServiceInterface::class),
+            app(InitialStatusResolver::class),
+            app(ExchangeCalculator::class),
+            app(AlertTriageService::class),
         );
 
         $user = User::factory()->create();

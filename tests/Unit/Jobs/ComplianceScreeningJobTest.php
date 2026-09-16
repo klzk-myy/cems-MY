@@ -4,6 +4,7 @@ namespace Tests\Unit\Jobs;
 
 use App\Jobs\ComplianceScreeningJob;
 use App\Models\Customer;
+use App\Services\AuditService;
 use App\Services\CustomerScreeningService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,7 +42,7 @@ class ComplianceScreeningJobTest extends TestCase
             ->andReturn(1000);
 
         $job = new ComplianceScreeningJob($customer->id);
-        $job->handle($screeningService, $thresholdService);
+        $job->handle($screeningService, $thresholdService, app(AuditService::class));
     }
 
     #[Test]
@@ -55,7 +56,7 @@ class ComplianceScreeningJobTest extends TestCase
             ->andReturn(1000);
 
         $job = new ComplianceScreeningJob(999999);
-        $job->handle($screeningService, $thresholdService);
+        $job->handle($screeningService, $thresholdService, app(AuditService::class));
     }
 
     #[Test]

@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Enums\CounterSessionStatus;
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\Branch\CounterHandoverService;
 use App\Services\Branch\CounterService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -209,7 +210,7 @@ class CounterServiceTest extends TestCase
             ['currency_id' => 'EUR', 'denomination' => '50', 'quantity' => 5],
         ];
 
-        $service = app(CounterService::class);
+        $service = app(CounterHandoverService::class);
         $method = new \ReflectionMethod($service, 'resolveCurrenciesForCounts');
         $method->setAccessible(true);
 

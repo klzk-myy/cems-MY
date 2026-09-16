@@ -34,6 +34,7 @@ class RegulatoryReportController extends Controller
     public function __construct(
         protected ReportingService $reportingService,
         protected MathService $mathService,
+        protected TransactionReportQuery $transactionReportQuery,
     ) {}
 
     public function msb2(Msb2ReportRequest $request): View
@@ -47,7 +48,7 @@ class RegulatoryReportController extends Controller
             ->whereDate('period_start', $date)
             ->first();
 
-        $rows = app(TransactionReportQuery::class)
+        $rows = $this->transactionReportQuery
             ->buySellSummary(
                 Transaction::completed()->forDateRange($date, $date)->select('currency_code'),
                 'currency_code',

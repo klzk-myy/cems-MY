@@ -8,7 +8,6 @@ use App\Exceptions\Domain\UserManagementException;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceCaseDocument;
 use App\Models\Compliance\ComplianceCaseNote;
-use App\Services\System\MfaService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -273,16 +272,6 @@ class User extends Authenticatable
     public function trustedDevices(): HasMany
     {
         return $this->hasMany(DeviceComputations::class);
-    }
-
-    /**
-     * Check if user needs to set up MFA (role requires it and the enrollment
-     * grace period from account creation has lapsed). Delegates to the
-     * canonical check shared with EnsureMfaVerified / EnsureMfaEnabled.
-     */
-    public function needsMfaSetup(): bool
-    {
-        return app(MfaService::class)->isEnrollmentOverdue($this);
     }
 
     /**

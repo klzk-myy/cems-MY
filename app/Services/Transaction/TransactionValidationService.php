@@ -24,6 +24,7 @@ use App\Services\DTOs\PreValidationResult;
 use App\Services\DTOs\SanctionCheckResult;
 use App\Services\Security\IpValidationService;
 use App\Services\ThresholdService;
+use App\Support\ActorContext;
 
 class TransactionValidationService implements TransactionValidationInterface
 {
@@ -63,7 +64,7 @@ class TransactionValidationService implements TransactionValidationInterface
         // against tills of their own branch. Report a foreign-branch till as
         // missing instead of leaking its existence. Without an authenticated
         // user (CLI/queue context) there is nothing to scope by.
-        $user = auth()->user();
+        $user = ActorContext::capture()->user;
 
         if ($user !== null && $user->branch_id !== null
             && (int) $counter->branch_id !== (int) $user->branch_id) {

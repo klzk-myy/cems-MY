@@ -52,11 +52,11 @@ class RiskScoringEngine
      */
     protected const GEO_REGIONAL = 10;
 
-    public function __construct(MathService $math, RiskCalculationService $riskCalculation, ?RiskScoreWriteBackService $writeBack = null)
+    public function __construct(MathService $math, RiskCalculationService $riskCalculation, RiskScoreWriteBackService $writeBack)
     {
         $this->math = $math;
         $this->riskCalculation = $riskCalculation;
-        $this->writeBack = $writeBack ?? app(RiskScoreWriteBackService::class);
+        $this->writeBack = $writeBack;
     }
 
     /**

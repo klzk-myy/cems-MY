@@ -11,6 +11,7 @@ use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\TillBalance;
 use App\Services\System\MathService;
+use App\Support\ActorContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -28,7 +29,7 @@ class TillBalanceManager
 
     private function resolveOpenedBy(?int $openedBy, string $currencyCode, string $tillId): int
     {
-        $openedBy = $openedBy ?? auth()->id();
+        $openedBy = $openedBy ?? ActorContext::capture()->userId;
 
         if ($openedBy === null) {
             throw new TillBalanceMissingException($currencyCode, $tillId);
@@ -95,7 +96,7 @@ class TillBalanceManager
             throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
         }
 
-        $closedBy = $closedBy ?? auth()->id();
+        $closedBy = $closedBy ?? ActorContext::capture()->userId;
 
         if ($closedBy === null) {
             throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
@@ -246,9 +247,9 @@ class TillBalanceManager
                 throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
             }
 
-            $myrBalance = $this->currentBalance($counter, 'MYR', $lock);
+            $myrBalance = $this->currentBalance($counter, Currency::baseCurrency(), $lock);
             if (! $myrBalance) {
-                throw new TillBalanceMissingException('MYR', $tillBalance->till_id);
+                throw new TillBalanceMissingException(Currency::baseCurrency(), $tillBalance->till_id);
             }
 
             if ($type === TransactionType::Buy) {
@@ -297,14 +298,14 @@ class TillBalanceManager
                 throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
             }
 
-            $myrBalance = $this->currentBalance($counter, 'MYR', $lock);
+            $myrBalance = $this->currentBalance($counter, Currency::baseCurrency(), $lock);
 
             if (! $myrBalance) {
                 Log::warning('No open MYR till balance found for reversal', [
                     'till_id' => $tillBalance->till_id,
                 ]);
 
-                throw new TillBalanceMissingException('MYR', $tillBalance->till_id);
+                throw new TillBalanceMissingException(Currency::baseCurrency(), $tillBalance->till_id);
             }
 
             if ($type === TransactionType::Buy) {

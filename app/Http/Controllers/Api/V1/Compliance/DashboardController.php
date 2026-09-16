@@ -20,7 +20,8 @@ class DashboardController extends Controller
     use ApiResponse;
 
     public function __construct(
-        protected ComplianceReportingService $reportingService
+        protected ComplianceReportingService $reportingService,
+        protected CsvReportWriter $csvReportWriter,
     ) {}
 
     /**
@@ -84,7 +85,7 @@ class DashboardController extends Controller
         $export = $this->reportingService->exportAuditTrailToCsv($filters);
 
         $filename = 'compliance_audit_trail_'.now()->format('Y-m-d_His').'.csv';
-        $filepath = app(CsvReportWriter::class)->write($filename, $export['headers'], $export['rows']);
+        $filepath = $this->csvReportWriter->write($filename, $export['headers'], $export['rows']);
 
         return response()->download(Storage::path($filepath), $filename, [
             'Content-Type' => 'text/csv',

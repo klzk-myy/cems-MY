@@ -7,7 +7,6 @@ use App\Models\SanctionList;
 use App\Services\Compliance\SanctionsDownloadService;
 use App\Services\Compliance\SanctionsImportService;
 use App\Services\Compliance\SanctionsOrchestrationService;
-use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Group;
@@ -26,7 +25,7 @@ class SanctionsOrchestrationServiceTest extends TestCase
         parent::setUp();
         $this->service = new SanctionsOrchestrationService(
             new SanctionsDownloadService,
-            new SanctionsImportService(new MathService(2), new SanctionsDownloadService)
+            app(SanctionsImportService::class)
         );
     }
 

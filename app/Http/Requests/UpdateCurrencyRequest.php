@@ -22,6 +22,8 @@ class UpdateCurrencyRequest extends AuthorizedFormRequest
             'name' => ['required', 'string', 'max:255'],
             'symbol' => ['nullable', 'string', 'max:10'],
             'decimal_places' => ['required', 'integer', 'min:0', 'max:4'],
+            'rate_unit' => ['required', 'integer', 'min:1', 'max:1000000000'],
+            'rate_inverse' => ['required', 'boolean'],
         ];
     }
 }

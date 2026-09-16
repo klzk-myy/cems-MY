@@ -42,6 +42,10 @@ class LoginControllerTest extends TestCase
     #[Test]
     public function login_redirects_to_forced_password_change_when_rotation_is_due(): void
     {
+        // Expiry is disabled in the local env (SECURITY_PASSWORD_EXPIRY_DAYS=0);
+        // pin the policy so this test is env-independent.
+        config(['security.password_expiry_days' => 90]);
+
         $user = User::factory()->create([
             'username' => 'stale-password-user',
             'password_hash' => Hash::make('correct-password'),

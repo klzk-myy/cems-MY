@@ -7,8 +7,8 @@ use App\Models\Branch;
 use App\Models\Currency;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
+use App\Support\ActorContext;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class BranchService
@@ -41,7 +41,7 @@ class BranchService
 
     public function createBranch(array $data, ?int $userId = null, string $ip = ''): Branch
     {
-        $userId = $userId ?? (Auth::id() !== null ? (int) Auth::id() : null);
+        $userId = $userId ?? ActorContext::capture()->userId;
 
         if (! empty($data['is_main'])) {
             $this->ensureSingleMainBranch();
@@ -93,7 +93,7 @@ class BranchService
 
     public function updateBranch(Branch $branch, array $data, ?int $userId = null, string $ip = ''): Branch
     {
-        $userId = $userId ?? (Auth::id() !== null ? (int) Auth::id() : null);
+        $userId = $userId ?? ActorContext::capture()->userId;
 
         $oldValues = [
             'code' => $branch->code,
@@ -143,7 +143,7 @@ class BranchService
 
     public function deactivateBranch(Branch $branch, ?int $userId = null, string $ip = ''): void
     {
-        $userId = $userId ?? (Auth::id() !== null ? (int) Auth::id() : null);
+        $userId = $userId ?? ActorContext::capture()->userId;
 
         if ($branch->is_main) {
             throw new BranchDeactivationException('Cannot deactivate the main branch');

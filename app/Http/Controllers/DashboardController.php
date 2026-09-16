@@ -174,6 +174,17 @@ class DashboardController extends Controller
     }
 
     /**
+     * Display the accounting hub linking the module's sub-pages.
+     *
+     * Only roles with the access_accounting matrix grant can reach this page
+     * (enforced by route middleware).
+     */
+    public function accounting(): View
+    {
+        return view('accounting.index');
+    }
+
+    /**
      * EOD Reconciliation dashboard for managers.
      */
     public function eod(Request $request): View

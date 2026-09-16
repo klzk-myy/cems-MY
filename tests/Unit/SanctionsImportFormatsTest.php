@@ -5,9 +5,7 @@ namespace Tests\Unit;
 use App\Enums\SanctionStatus;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
-use App\Services\Compliance\SanctionsDownloadService;
 use App\Services\Compliance\SanctionsImportService;
-use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -21,7 +19,7 @@ class SanctionsImportFormatsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new SanctionsImportService(new MathService(2), new SanctionsDownloadService);
+        $this->service = app(SanctionsImportService::class);
     }
 
     #[Test]

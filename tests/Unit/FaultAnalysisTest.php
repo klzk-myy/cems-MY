@@ -14,8 +14,11 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\EddService;
+use App\Services\Risk\StructuringRiskService;
+use App\Services\Risk\VelocityRiskService;
 use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -36,7 +39,7 @@ class FaultAnalysisTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->eddService = new EddService(new MathService, new ComplianceService(new EncryptionService, new MathService));
+        $this->eddService = new EddService(new MathService, new ComplianceService(new EncryptionService, new MathService, new ThresholdService, new VelocityRiskService(new MathService, new ThresholdService), new StructuringRiskService(new MathService, new ThresholdService)));
     }
 
     /**
@@ -137,7 +140,7 @@ class FaultAnalysisTest extends TestCase
             'details' => [],
         ]);
 
-        $service = new ComplianceService(new EncryptionService, new MathService);
+        $service = new ComplianceService(new EncryptionService, new MathService, new ThresholdService, new VelocityRiskService(new MathService, new ThresholdService), new StructuringRiskService(new MathService, new ThresholdService));
         $this->assertFalse($service->checkSanctionMatch($customer));
 
         // Exact-like match should still work
@@ -159,7 +162,7 @@ class FaultAnalysisTest extends TestCase
     #[Test]
     public function working_days_calculation_inclusive_range(): void
     {
-        $service = new ComplianceService(new EncryptionService, new MathService);
+        $service = new ComplianceService(new EncryptionService, new MathService, new ThresholdService, new VelocityRiskService(new MathService, new ThresholdService), new StructuringRiskService(new MathService, new ThresholdService));
 
         $from = new Carbon('2026-04-13'); // Monday
         $to = new Carbon('2026-04-14');   // Tuesday

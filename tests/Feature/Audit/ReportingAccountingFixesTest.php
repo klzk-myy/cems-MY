@@ -18,8 +18,11 @@ use App\Models\StockTransferItem;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\Accounting\LedgerService;
 use App\Services\AuditService;
+use App\Services\Branch\BranchPoolService;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Compliance\MonitoringEngine;
 use App\Services\Compliance\Monitors\BaseMonitor;
 use App\Services\Compliance\Monitors\CounterfeitAlertMonitor;
@@ -293,7 +296,7 @@ class ReportingAccountingFixesTest extends TestCase
             'quantity_in_transit' => '100.0000',
         ]);
 
-        $service = new StockTransferService(new MathService, new AuditService, $admin);
+        $service = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $admin);
 
         $this->expectException(TransactionValidationException::class);
         $this->expectExceptionMessage('exceeds the transferred quantity');
@@ -318,7 +321,7 @@ class ReportingAccountingFixesTest extends TestCase
             'quantity_in_transit' => '100.0000',
         ]);
 
-        $service = new StockTransferService(new MathService, new AuditService, $admin);
+        $service = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $admin);
 
         $this->expectException(TransactionValidationException::class);
         $this->expectExceptionMessage('cannot be negative');
@@ -343,7 +346,7 @@ class ReportingAccountingFixesTest extends TestCase
             'quantity_in_transit' => '100.0000',
         ]);
 
-        $service = new StockTransferService(new MathService, new AuditService, $admin);
+        $service = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $admin);
 
         $service->receiveItems($transfer, [
             ['id' => $item->id, 'quantity_received' => '60.00'],
@@ -405,7 +408,7 @@ class ReportingAccountingFixesTest extends TestCase
             ]);
         }
 
-        $monitor = new CustomerLocationAnomalyMonitor(new ThresholdService);
+        $monitor = new CustomerLocationAnomalyMonitor(new ThresholdService, app(AlertTriageService::class));
         $findings = $monitor->run();
 
         $this->assertCount(1, $findings);

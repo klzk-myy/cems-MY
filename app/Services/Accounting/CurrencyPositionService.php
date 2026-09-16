@@ -16,6 +16,7 @@ use App\Services\Contracts\CurrencyPositionServiceInterface;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\ValueObjects\QuoteConvention;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -37,10 +38,10 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     protected ThresholdService $thresholdService;
 
     /**
-     * Precision for position calculations (4 decimals for rates/balances),
-     * resolved lazily via ThresholdService so construction stays free of DB I/O.
+     * Money-column precision — total_cost, current_value, and
+     * unrealized_gain_loss are decimal(18,4).
      */
-    private ?int $positionPrecision = null;
+    private const POSITION_SCALE = 4;
 
     /**
      * Create a new CurrencyPositionService instance.
@@ -52,17 +53,26 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         MathService $mathService,
         CurrencyPositionLockService $lockService,
         CacheInvalidationService $cacheInvalidationService,
-        ?ThresholdService $thresholdService = null
+        ThresholdService $thresholdService
     ) {
         $this->mathService = $mathService;
         $this->lockService = $lockService;
         $this->cacheInvalidationService = $cacheInvalidationService;
-        $this->thresholdService = $thresholdService ?? app(ThresholdService::class);
+        $this->thresholdService = $thresholdService;
     }
 
     private function positionPrecision(): int
     {
-        return $this->positionPrecision ??= (int) $this->thresholdService->get('rates', 'precision', 4);
+        return self::POSITION_SCALE;
+    }
+
+    /**
+     * Precision for the rate columns — average_cost and current_rate are
+     * decimal(18,8), matching the per-unit rate convention.
+     */
+    private function ratePrecision(): int
+    {
+        return QuoteConvention::PER_UNIT_SCALE;
     }
 
     /**
@@ -143,8 +153,8 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
 
             $newBalance = $position->quantity;
 
-            $roundedAvgCost = $this->mathService->round($newAvgCost, $this->positionPrecision());
-            $roundedRate = $this->mathService->round($rate, $this->positionPrecision());
+            $roundedAvgCost = $this->mathService->round($newAvgCost, $this->ratePrecision());
+            $roundedRate = $this->mathService->round($rate, $this->ratePrecision());
 
             $position->update([
                 'average_cost' => $roundedAvgCost,
@@ -250,8 +260,8 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 }
             }
 
-            $roundedAvgCost = $this->mathService->round($restoredAvgCost, $this->positionPrecision());
-            $roundedRate = $this->mathService->round($position->current_rate ?? $restoredAvgCost, $this->positionPrecision());
+            $roundedAvgCost = $this->mathService->round($restoredAvgCost, $this->ratePrecision());
+            $roundedRate = $this->mathService->round($position->current_rate ?? $restoredAvgCost, $this->ratePrecision());
 
             // Maintain the same derived columns updatePosition() maintains —
             // leaving them stale made total_cost/current_value describe the

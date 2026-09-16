@@ -8,18 +8,24 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Branch-level authorization. Admins may access any branch; other roles
- * are restricted to their own branch. Resources without a branch_id
- * (null) are denied for non-admins - only admins may act on them.
+ * Branch-level authorization. Roles with the ManageAllBranches capability
+ * may access any branch; other roles are restricted to their own branch.
+ * Resources without a branch_id (null) are denied for those roles — only
+ * all-branch roles may act on them.
  *
- * Two accessors:
+ * Accessors:
  *   - `authorizeBranchAccess(int $branchId)` — when only the ID is available.
  *   - `authorizeBranchResource(Model $resource, ...)` — when you have the
  *     full model (looks up `branch_id` via `getAttribute`, or the primary key
  *     if the resource is a `Branch` itself).
+ *   - `authorizeBranchResourceOrAbort(Model $resource, ...)` — web-controller
+ *     variant that aborts instead of returning a JSON denial.
+ *   - `authorizeAssignedBranch()` — gates on the user's own branch
+ *     assignment rather than a resource's branch, for company-wide
+ *     resources (e.g. customers).
  *
- * Both return a 403 `JsonResponse` when unauthorized, or a truthy value
- * (`true` / the `$resource`) when authorized.
+ * The first two return a 403 `JsonResponse` when unauthorized, or a truthy
+ * value (`true` / `null`) when authorized.
  */
 trait AuthorizesBranchResource
 {
@@ -31,7 +37,7 @@ trait AuthorizesBranchResource
             return $this->denyResponse('Unauthenticated.', 401);
         }
 
-        if ($user->isAdmin()) {
+        if ($user->role->canManageAllBranches()) {
             return null;
         }
 
@@ -56,7 +62,7 @@ trait AuthorizesBranchResource
             return $this->denyResponse('Unauthenticated.', 401);
         }
 
-        if ($user->isAdmin()) {
+        if ($user->role->canManageAllBranches()) {
             return true;
         }
 
@@ -83,6 +89,49 @@ trait AuthorizesBranchResource
         }
 
         return true;
+    }
+
+    /**
+     * Web-controller variant of authorizeBranchResource(): aborts with the
+     * denial status/message instead of returning a JSON response.
+     */
+    protected function authorizeBranchResourceOrAbort(
+        Model $resource,
+        string $action = 'access',
+        ?string $message = null
+    ): true {
+        $result = $this->authorizeBranchResource($resource, $action, $message);
+
+        if ($result instanceof JsonResponse) {
+            abort($result->getStatusCode(), $result->getData(true)['message'] ?? 'Forbidden');
+        }
+
+        return true;
+    }
+
+    /**
+     * Gate on the user's own branch assignment rather than a resource's
+     * branch — for company-wide resources (e.g. customers). Users with no
+     * branch assignment fail closed; all-branch roles pass.
+     */
+    protected function authorizeAssignedBranch(
+        string $message = 'You are not authorized for this action.'
+    ): ?JsonResponse {
+        $user = Auth::user();
+
+        if ($user === null) {
+            return $this->denyResponse('Unauthenticated.', 401);
+        }
+
+        if ($user->role->canManageAllBranches()) {
+            return null;
+        }
+
+        if ($user->branch_id === null) {
+            return $this->denyResponse($message, 403);
+        }
+
+        return null;
     }
 
     private function denyResponse(string $message, int $status): JsonResponse

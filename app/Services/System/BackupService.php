@@ -7,6 +7,7 @@ namespace App\Services\System;
 use App\Exceptions\Domain\BackupException;
 use App\Models\BackupLog;
 use App\Models\User;
+use App\Support\ActorContext;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
@@ -42,7 +43,7 @@ class BackupService
             'started_at' => now(),
             'metadata' => [
                 'triggered_by' => $user->email ?? 'system',
-                'ip_address' => request()?->ip(),
+                'ip_address' => ActorContext::capture()->ipAddress,
             ],
         ]);
 

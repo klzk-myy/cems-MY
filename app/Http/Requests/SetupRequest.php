@@ -8,6 +8,12 @@ use App\Services\System\SetupService;
 
 class SetupRequest extends AuthorizedFormRequest
 {
+    public function __construct(
+        private readonly SetupService $setupService
+    ) {
+        parent::__construct();
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -107,7 +113,7 @@ class SetupRequest extends AuthorizedFormRequest
         // Custom "other" currencies have no seeded rate — without one they can
         // never be traded, so buy/sell rates are mandatory for each custom
         // code that the seeded list does not already cover.
-        $unseeded = collect(app(SetupService::class)->customCurrencyRows(
+        $unseeded = collect($this->setupService->customCurrencyRows(
             (array) session('setup.currencies', [])
         ))->pluck('code')->diff(Currency::pluck('code'));
 

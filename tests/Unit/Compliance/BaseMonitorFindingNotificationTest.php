@@ -10,6 +10,7 @@ use App\Models\Compliance\ComplianceFinding;
 use App\Models\Customer;
 use App\Models\User;
 use App\Notifications\Compliance\ComplianceFindingNotification;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Compliance\Monitors\BaseMonitor;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +27,7 @@ class BaseMonitorFindingNotificationTest extends TestCase
      */
     private function monitor(): FindingStoringTestMonitor
     {
-        return new FindingStoringTestMonitor(app(MathService::class));
+        return new FindingStoringTestMonitor(app(MathService::class), app(AlertTriageService::class));
     }
 
     /**

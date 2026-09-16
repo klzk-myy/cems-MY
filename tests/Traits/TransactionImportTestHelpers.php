@@ -15,6 +15,8 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Services\Transaction\ExchangeCalculator;
+use App\Services\Transaction\InitialStatusResolver;
 use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionImportService;
@@ -70,7 +72,8 @@ trait TransactionImportTestHelpers
 
     private function createImportService(
         string $threshold,
-        ?ComplianceService $complianceService = null
+        ?ComplianceService $complianceService = null,
+        ?RateManagementService $rateManagementService = null
     ): TransactionImportService {
         $thresholdService = $this->createMock(ThresholdService::class);
         $thresholdService->method('getAutoApproveThreshold')->willReturn($threshold);
@@ -83,8 +86,10 @@ trait TransactionImportTestHelpers
             $thresholdService,
             app(TillBalanceManager::class),
             app(TransactionCreationService::class),
-            app(RateManagementService::class),
+            $rateManagementService ?? app(RateManagementService::class),
             app(CurrencyPositionLockService::class),
+            new InitialStatusResolver(app(MathService::class), $thresholdService),
+            app(ExchangeCalculator::class),
         );
     }
 

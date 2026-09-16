@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Models\Traits\BelongsToBranch;
-use App\Services\System\MathService;
+use App\Support\BcmathHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -136,15 +136,14 @@ class TillBalance extends BaseModel
      */
     public function getExpectedBalance(): string
     {
-        $mathService = app(MathService::class);
         $opening = (string) $this->opening_balance;
         $buyTotal = $this->buy_total_foreign !== null ? (string) $this->buy_total_foreign : '0';
         $sellTotal = $this->sell_total_foreign !== null ? (string) $this->sell_total_foreign : '0';
 
         // net foreign = buys - sells (buys increase position, sells decrease position)
-        $netForeign = $mathService->subtract($buyTotal, $sellTotal);
+        $netForeign = BcmathHelper::subtract($buyTotal, $sellTotal);
 
-        return $mathService->add($opening, $netForeign);
+        return BcmathHelper::add($opening, $netForeign);
     }
 
     /**
@@ -156,12 +155,10 @@ class TillBalance extends BaseModel
         if ($this->closing_balance === null) {
             return '0';
         }
-
-        $mathService = app(MathService::class);
         $closing = (string) $this->closing_balance;
         $expected = $this->getExpectedBalance();
 
-        return $mathService->subtract($closing, $expected);
+        return BcmathHelper::subtract($closing, $expected);
     }
 
     /**
@@ -169,11 +166,10 @@ class TillBalance extends BaseModel
      */
     public function hasSignificantVariance(string $threshold = '100.00'): bool
     {
-        $mathService = app(MathService::class);
         $variance = $this->calculateVariance();
-        $absVariance = $mathService->abs($variance);
+        $absVariance = BcmathHelper::abs($variance);
 
-        return $mathService->compare($absVariance, $threshold) > 0;
+        return BcmathHelper::compare($absVariance, $threshold) > 0;
     }
 
     /**

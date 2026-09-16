@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\CddLevel;
 use App\Enums\TransactionType;
-use App\Enums\UserRole;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\TransactionBlockedException;
-use App\Http\Concerns\DeterminesTransactionStatus;
 use App\Http\Concerns\MapsTransactionExceptionsToFields;
 use App\Http\Requests\TransactionWizardStep1Request;
 use App\Http\Requests\TransactionWizardStep2Request;
@@ -23,7 +21,9 @@ use App\Services\System\WizardSessionService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\ExchangeCalculator;
+use App\Services\Transaction\InitialStatusResolver;
 use App\Services\Transaction\TransactionApprovalService;
+use App\ValueObjects\QuoteConvention;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -33,7 +33,8 @@ use Psr\Log\LoggerInterface;
 
 class TransactionWizardController extends Controller
 {
-    use DeterminesTransactionStatus, MapsTransactionExceptionsToFields;
+    use Concerns\AuthorizesBranchResource;
+    use MapsTransactionExceptionsToFields;
 
     public function __construct(
         protected TransactionValidationInterface $validationService,
@@ -44,6 +45,7 @@ class TransactionWizardController extends Controller
         protected ExchangeCalculator $exchangeCalculator,
         protected TellerAllocationService $tellerAllocationService,
         protected ThresholdService $thresholdService,
+        protected InitialStatusResolver $statusResolver,
         protected LoggerInterface $logger,
     ) {}
 
@@ -52,9 +54,12 @@ class TransactionWizardController extends Controller
      */
     public function index(): Response
     {
-        $currencies = Currency::select('code', 'name')->where('is_active', true)->get()->pluck('name', 'code');
+        $activeCurrencies = Currency::where('is_active', true)->get(['code', 'name', 'rate_unit', 'rate_inverse']);
+        $currencies = $activeCurrencies->pluck('name', 'code');
+        $currencyUnits = $activeCurrencies->pluck('rate_unit', 'code');
+        $currencyInverses = $activeCurrencies->pluck('rate_inverse', 'code');
 
-        return response()->view('transaction-wizard.index', compact('currencies') + ['idempotencyKey' => Str::uuid()]);
+        return response()->view('transaction-wizard.index', compact('currencies', 'currencyUnits', 'currencyInverses') + ['idempotencyKey' => Str::uuid()]);
     }
 
     /**
@@ -68,23 +73,27 @@ class TransactionWizardController extends Controller
 
         if (! $customer instanceof Customer) {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'message' => 'Customer not found.',
             ], 404);
         }
 
         // Branch isolation: refuse to leak existence/risk flags of customers
         // that belong to another branch.
-        if ($denied = $this->denyCrossBranchCustomer($customer)) {
+        if ($denied = $this->authorizeAssignedBranch('You are not authorized to create transactions for this customer.')) {
             return $denied;
         }
 
-        // Calculate local amount (single source of truth for the conversion)
+        // Calculate local amount (single source of truth for the conversion).
+        // The entered rate is quoted per the currency's convention
+        // (currencies.rate_unit + rate_inverse).
         $amountLocal = $this->exchangeCalculator->calculate(
             TransactionType::from((string) $validated['type']),
             (string) $validated['currency_code'],
             (string) $validated['amount_foreign'],
             (string) $validated['rate'],
+            null,
+            QuoteConvention::forCode((string) $validated['currency_code'])
         )['amount_local'];
 
         // Run pre-validation (sanctions, CDD, risk)
@@ -97,7 +106,8 @@ class TransactionWizardController extends Controller
         // Check if blocked
         if ($validationResult->isBlocked()) {
             return response()->json([
-                'status' => 'blocked',
+                'success' => false,
+                'blocked' => true,
                 'message' => $validationResult->getBlocks()[0]['message'],
                 'reason' => $validationResult->getBlocks()[0]['type'],
             ], 403);
@@ -129,7 +139,7 @@ class TransactionWizardController extends Controller
         $requiredDocuments = $this->getRequiredDocuments($cddLevel);
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'wizard_session_id' => $sessionId,
             'cdd_level' => $cddLevel->value,
             'cdd_description' => $this->getCDDDescription($cddLevel),
@@ -171,7 +181,7 @@ class TransactionWizardController extends Controller
         $summary = $this->prepareTransactionSummary($sessionData);
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'wizard_session_id' => $sessionId,
             'transaction_summary' => $summary,
             'next_step' => 'review_confirm',
@@ -202,6 +212,12 @@ class TransactionWizardController extends Controller
             ]
         );
 
+        // The session rate is quoted per the currency's convention
+        // (currencies.rate_unit + rate_inverse); the stored transaction
+        // keeps the normalized per-unit rate.
+        $transactionData['rate'] = QuoteConvention::forCode((string) $transactionData['currency_code'])
+            ->toPerUnit((string) $transactionData['rate']);
+
         try {
             $this->validationService->validateCurrency($transactionData['currency_code']);
             $this->validationService->validateIpAddress(request()->ip());
@@ -215,7 +231,7 @@ class TransactionWizardController extends Controller
             $customer = Customer::findOrFail($transactionData['customer_id']);
 
             // Re-check branch isolation at creation time (fail closed).
-            if ($denied = $this->denyCrossBranchCustomer($customer)) {
+            if ($denied = $this->authorizeAssignedBranch('You are not authorized to create transactions for this customer.')) {
                 return $denied;
             }
 
@@ -224,7 +240,7 @@ class TransactionWizardController extends Controller
             $this->validationService->validatePepRequirements($customer, $transactionData);
 
             $user = User::findOrFail(auth()->id());
-            $allocation = $this->determineTellerAllocation(
+            $allocation = $this->tellerAllocationService->resolveForTransaction(
                 $user,
                 [
                     'type' => (string) $transactionData['type'],
@@ -234,7 +250,7 @@ class TransactionWizardController extends Controller
             );
 
             $holdRequired = (bool) $sessionData['hold_required'];
-            $status = $this->determineInitialStatus($amountLocal, $holdRequired, $customer->risk_rating);
+            $initialStatus = $this->statusResolver->resolve($amountLocal, $holdRequired, $customer->risk_rating);
 
             $context = new TransactionCreationContext(
                 data: $transactionData,
@@ -242,11 +258,13 @@ class TransactionWizardController extends Controller
                 tillBalance: $tillBalance,
                 cddLevel: CddLevel::from($sessionData['cdd_level']),
                 holdRequired: $holdRequired,
-                status: $status,
+                status: $initialStatus->status,
                 amountLocal: $amountLocal,
                 user: $user,
                 allocation: $allocation,
-                holdReason: $holdRequired ? 'Compliance hold' : null,
+                // hold_reason doubles as the compliance-clear gate — only a
+                // genuine hold may populate it, not threshold/risk reasons.
+                holdReason: $holdRequired ? $initialStatus->holdReason : null,
             );
 
             $transaction = $this->creationService->create($context, $user->id, request()->ip());
@@ -255,7 +273,7 @@ class TransactionWizardController extends Controller
             $this->wizardSessionService->forget($sessionId);
 
             return response()->json([
-                'status' => 'success',
+                'success' => true,
                 'transaction_id' => $transaction->id,
                 'transaction_number' => $transaction->reference,
                 'transaction_status' => $transaction->status->value,
@@ -266,13 +284,13 @@ class TransactionWizardController extends Controller
 
         } catch (TransactionBlockedException $e) {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'field' => 'customer_id',
                 'message' => 'Transaction blocked due to compliance restrictions. Please contact support.',
             ], 422);
         } catch (DomainException $e) {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'field' => $this->transactionExceptionField($e),
                 'message' => $e->getMessage(),
             ], $e->getStatusCode());
@@ -283,7 +301,7 @@ class TransactionWizardController extends Controller
             ]);
 
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'message' => 'Transaction creation failed. Please try again later.',
             ], 500);
         }
@@ -301,6 +319,7 @@ class TransactionWizardController extends Controller
         }
 
         return response()->json([
+            'success' => true,
             'status' => 'active',
             'current_step' => $sessionData['step'],
             'expires_at' => now()->addHour()->toIso8601String(),
@@ -318,6 +337,7 @@ class TransactionWizardController extends Controller
 
         if (! $sessionData) {
             return response()->json([
+                'success' => false,
                 'status' => 'expired',
                 'message' => 'Wizard session expired or invalid',
             ], 404);
@@ -329,6 +349,7 @@ class TransactionWizardController extends Controller
         // unbound session in an AML workflow.
         if ((int) ($sessionData['user_id'] ?? 0) !== (int) auth()->id()) {
             return response()->json([
+                'success' => false,
                 'status' => 'forbidden',
                 'message' => 'You do not own this wizard session',
             ], 403);
@@ -351,44 +372,13 @@ class TransactionWizardController extends Controller
         $this->wizardSessionService->forget($sessionId);
 
         return response()->json([
+            'success' => true,
             'status' => 'cancelled',
             'message' => 'Wizard session cancelled',
         ]);
     }
 
     // Helper methods
-
-    /**
-     * Gate transaction creation on branch assignment.
-     *
-     * Customers are company-wide, so the only requirement is that the user
-     * belongs to a branch (or is admin). Users without a branch assignment
-     * fail closed.
-     */
-    private function denyCrossBranchCustomer(Customer $customer): ?JsonResponse
-    {
-        $user = auth()->user();
-
-        if ($user === null) {
-            return response()->json([
-                'status' => 'forbidden',
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
-
-        if ($user->role === UserRole::Admin) {
-            return null;
-        }
-
-        if ($user->branch_id === null) {
-            return response()->json([
-                'status' => 'forbidden',
-                'message' => 'You are not authorized to create transactions for this customer.',
-            ], 403);
-        }
-
-        return null;
-    }
 
     private function upgradeCDDLevel(CddLevel $current): CddLevel
     {

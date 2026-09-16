@@ -6,7 +6,7 @@ use App\Enums\JournalEntryStatus;
 use App\Enums\ReferenceType;
 use App\Models\Bases\AccountingModel;
 use App\Models\Traits\HasCreator;
-use App\Services\System\MathService;
+use App\Support\BcmathHelper;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -217,12 +217,11 @@ class JournalEntry extends AccountingModel
      */
     public function getTotalDebits(): string
     {
-        $mathService = app(MathService::class);
         $total = '0';
 
         // Use $this->lines which respects eager loading - no new query if already loaded
         foreach ($this->lines as $line) {
-            $total = $mathService->add($total, (string) $line->debit);
+            $total = BcmathHelper::add($total, (string) $line->debit);
         }
 
         return $total;
@@ -233,12 +232,11 @@ class JournalEntry extends AccountingModel
      */
     public function getTotalCredits(): string
     {
-        $mathService = app(MathService::class);
         $total = '0';
 
         // Use $this->lines which respects eager loading - no new query if already loaded
         foreach ($this->lines as $line) {
-            $total = $mathService->add($total, (string) $line->credit);
+            $total = BcmathHelper::add($total, (string) $line->credit);
         }
 
         return $total;
@@ -249,9 +247,8 @@ class JournalEntry extends AccountingModel
      */
     public function isBalanced(): bool
     {
-        $mathService = app(MathService::class);
 
-        return $mathService->compare($this->getTotalDebits(), $this->getTotalCredits()) === 0;
+        return BcmathHelper::compare($this->getTotalDebits(), $this->getTotalCredits()) === 0;
     }
 
     /**

@@ -11,10 +11,8 @@ use Illuminate\Database\Eloquent\Collection;
 class CustomerRepository
 {
     public function __construct(
-        protected ?ThresholdService $thresholdService = null,
-    ) {
-        $this->thresholdService ??= app(ThresholdService::class);
-    }
+        protected ThresholdService $thresholdService,
+    ) {}
 
     public function findById(int $customerId): ?Customer
     {

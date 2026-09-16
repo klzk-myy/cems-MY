@@ -10,6 +10,10 @@ use Illuminate\Http\Request;
 
 class AuditLogController extends Controller
 {
+    public function __construct(
+        protected AuditService $auditService,
+    ) {}
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', SystemLog::class);
@@ -25,7 +29,7 @@ class AuditLogController extends Controller
 
         return view('admin.audit-logs.index', [
             'logs' => $logs,
-            'unsealedCount' => app(AuditService::class)->getUnsealedCount(),
+            'unsealedCount' => $this->auditService->getUnsealedCount(),
         ]);
     }
 

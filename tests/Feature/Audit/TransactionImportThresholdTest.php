@@ -3,6 +3,7 @@
 namespace Tests\Feature\Audit;
 
 use App\Enums\CddLevel;
+use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Services\Compliance\ComplianceService;
 use App\Services\DTOs\ComplianceCheckResult;
@@ -47,6 +48,28 @@ class TransactionImportThresholdTest extends TestCase
                 'customer_id' => $customer->id,
                 'status' => TransactionStatus::PendingApproval->value,
                 'hold_reason' => 'Transaction amount exceeds auto-approve threshold',
+            ]);
+        } finally {
+            unlink($csv);
+        }
+    }
+
+    public function test_import_auto_completes_medium_risk_rows_below_threshold(): void
+    {
+        // D1: Medium risk alone does not force approval — documented policy.
+        ['customer' => $customer, 'import' => $import] = $this->createFixtures();
+        $customer->update(['risk_rating' => RiskRating::Medium->value]);
+
+        $service = $this->createImportService('5000');
+        $csv = $this->createCsv("{$customer->id},Buy,USD,500,4.0,Business,Salary,MAIN");
+
+        try {
+            $service->process($import, $csv);
+
+            $this->assertDatabaseHas('transactions', [
+                'customer_id' => $customer->id,
+                'status' => TransactionStatus::Completed->value,
+                'hold_reason' => null,
             ]);
         } finally {
             unlink($csv);

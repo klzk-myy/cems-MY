@@ -6,6 +6,7 @@ use App\Enums\FindingSeverity;
 use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 
@@ -19,9 +20,9 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
 
     public const LOOKBACK_DAYS = 7;
 
-    public function __construct(ThresholdService $thresholdService)
+    public function __construct(ThresholdService $thresholdService, AlertTriageService $alertTriage)
     {
-        parent::__construct(new MathService);
+        parent::__construct(new MathService, $alertTriage);
         $this->highValueThreshold = $thresholdService->getLargeTransactionThreshold();
     }
 

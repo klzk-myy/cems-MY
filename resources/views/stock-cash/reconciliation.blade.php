@@ -179,7 +179,7 @@
                                 {{ number_format((float) $transaction->amount_foreign, 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
-                                {{ number_format((float) $transaction->rate, 4) }}
+                                {{ number_format((float) $transaction->rate, 8) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
                                 {{ number_format((float) $transaction->amount_local, 2) }}

@@ -126,7 +126,7 @@ class ExchangeRateHistoryTest extends TestCase
             ->orderBy('effective_date', 'desc')
             ->first();
 
-        $this->assertEquals('4.550000', $latest->rate);
+        $this->assertEquals('4.55000000', $latest->rate);
     }
 
     #[Test]
@@ -144,13 +144,13 @@ class ExchangeRateHistoryTest extends TestCase
     {
         $history = ExchangeRateHistory::create([
             'currency_code' => 'USD',
-            'rate' => '4.723456',
-            'base_rate' => '4.700000',
+            'rate' => '4.72345600',
+            'base_rate' => '4.70000000',
             'spread' => '0.023456',
             'source' => 'High Precision Test',
             'effective_date' => now(),
         ]);
 
-        $this->assertEquals('4.723456', $history->rate);
+        $this->assertEquals('4.72345600', $history->rate);
     }
 }

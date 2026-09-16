@@ -162,7 +162,8 @@ class ProcessTransactionRetry implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        // Move to DLQ on permanent failure
+        // Move to DLQ on permanent failure. failed() is invoked by the queue
+        // worker without DI, so the service is resolved here intentionally.
         app(TransactionRecoveryService::class)->moveToDeadLetterQueue($this->transaction);
     }
 

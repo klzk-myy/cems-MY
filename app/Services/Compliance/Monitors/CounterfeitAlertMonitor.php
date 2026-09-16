@@ -7,6 +7,7 @@ use App\Enums\FindingSeverity;
 use App\Enums\FindingType;
 use App\Enums\FlagStatus;
 use App\Models\FlaggedTransaction;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
 use App\Services\System\SystemAlertService;
 use Illuminate\Support\Facades\Log;
@@ -21,9 +22,9 @@ class CounterfeitAlertMonitor extends BaseMonitor
 
     protected SystemAlertService $alertService;
 
-    public function __construct(MathService $math, SystemAlertService $alertService)
+    public function __construct(MathService $math, SystemAlertService $alertService, AlertTriageService $alertTriage)
     {
-        parent::__construct($math);
+        parent::__construct($math, $alertTriage);
         $this->alertService = $alertService;
     }
 

@@ -376,4 +376,65 @@ class TransactionCancellationServiceTest extends TestCase
         $this->assertNull(Cache::get(CacheKeys::exchangeRates()));
         $this->assertNull(Cache::get(CacheKeys::ExchangeRates->value));
     }
+
+    #[Test]
+    public function fallback_pre_cancellation_status_returns_null_for_empty_history(): void
+    {
+        $transaction = $this->transactionWithHistory([]);
+
+        $this->assertNull($this->invokeFallback($transaction));
+    }
+
+    #[Test]
+    public function fallback_pre_cancellation_status_returns_null_without_pending_marker(): void
+    {
+        $transaction = $this->transactionWithHistory([
+            ['from' => 'Approved', 'to' => 'Completed'],
+        ]);
+
+        $this->assertNull($this->invokeFallback($transaction));
+    }
+
+    #[Test]
+    public function fallback_pre_cancellation_status_finds_status_after_pending_marker(): void
+    {
+        $transaction = $this->transactionWithHistory([
+            ['from' => 'Completed', 'to' => 'PendingCancellation'],
+            ['from' => 'Completed', 'to' => 'Completed'],
+        ]);
+
+        $this->assertSame(TransactionStatus::Completed, $this->invokeFallback($transaction));
+    }
+
+    #[Test]
+    public function fallback_pre_cancellation_status_skips_invalid_and_current_statuses(): void
+    {
+        $transaction = $this->transactionWithHistory([
+            ['from' => 'PendingApproval', 'to' => 'PendingCancellation'],
+            ['from' => 'bogus', 'to' => 'Other'],
+            ['from' => 'PendingCancellation', 'to' => 'Other'],
+        ]);
+
+        $this->assertNull($this->invokeFallback($transaction));
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $history
+     */
+    private function transactionWithHistory(array $history): Transaction
+    {
+        $transaction = new Transaction;
+        $transaction->status = TransactionStatus::PendingCancellation;
+        $transaction->transition_history = $history;
+
+        return $transaction;
+    }
+
+    private function invokeFallback(Transaction $transaction): ?TransactionStatus
+    {
+        $method = new \ReflectionMethod($this->cancellationService, 'findFallbackPreCancellationStatus');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->cancellationService, $transaction);
+    }
 }

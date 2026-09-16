@@ -2,10 +2,12 @@
 
 namespace Tests\Unit\Http\Concerns;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\User;
+use App\Services\System\PermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Mockery;
@@ -14,6 +16,19 @@ use Tests\TestCase;
 class AuthorizesBranchResourceTest extends TestCase
 {
     use AuthorizesBranchResource;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The matrix table is absent in unit tests; stub the capability
+        // lookup so the trait's role check resolves without the DB.
+        $permissions = Mockery::mock(PermissionService::class);
+        $permissions->shouldReceive('can')->andReturnUsing(
+            fn (UserRole $role) => $role === UserRole::Admin
+        );
+        $this->app->instance(PermissionService::class, $permissions);
+    }
 
     protected function tearDown(): void
     {
@@ -26,7 +41,7 @@ class AuthorizesBranchResourceTest extends TestCase
     {
         $user = Mockery::mock(User::class)->makePartial();
         $user->branch_id = 5;
-        $user->shouldReceive('isAdmin')->andReturn(false);
+        $user->role = UserRole::Teller;
         Auth::shouldReceive('user')->once()->andReturn($user);
 
         $resource = Counter::factory()->make(['branch_id' => 5]);
@@ -38,7 +53,7 @@ class AuthorizesBranchResourceTest extends TestCase
     {
         $user = Mockery::mock(User::class)->makePartial();
         $user->branch_id = 5;
-        $user->shouldReceive('isAdmin')->andReturn(false);
+        $user->role = UserRole::Teller;
         Auth::shouldReceive('user')->once()->andReturn($user);
 
         $resource = Counter::factory()->make(['branch_id' => '5']);
@@ -50,7 +65,7 @@ class AuthorizesBranchResourceTest extends TestCase
     {
         $user = Mockery::mock(User::class)->makePartial();
         $user->branch_id = 5;
-        $user->shouldReceive('isAdmin')->andReturn(false);
+        $user->role = UserRole::Teller;
         Auth::shouldReceive('user')->once()->andReturn($user);
 
         $resource = Counter::factory()->make(['branch_id' => 6]);
@@ -65,7 +80,7 @@ class AuthorizesBranchResourceTest extends TestCase
     {
         $user = Mockery::mock(User::class)->makePartial();
         $user->branch_id = 5;
-        $user->shouldReceive('isAdmin')->once()->andReturn(true);
+        $user->role = UserRole::Admin;
         Auth::shouldReceive('user')->once()->andReturn($user);
 
         $resource = Counter::factory()->make(['branch_id' => 99]);
@@ -89,7 +104,7 @@ class AuthorizesBranchResourceTest extends TestCase
     {
         $user = Mockery::mock(User::class)->makePartial();
         $user->branch_id = 5;
-        $user->shouldReceive('isAdmin')->andReturn(false);
+        $user->role = UserRole::Teller;
         Auth::shouldReceive('user')->once()->andReturn($user);
 
         $branch = Branch::factory()->make(['id' => 5]);

@@ -37,13 +37,19 @@ class ExchangeRateSeeder extends Seeder
                 continue;
             }
 
+            // Seed values are per-unit reference rates; exchange_rates stores
+            // them quoted per the currency's convention (unit + direction).
+            $convention = $currency->quoteConvention();
+
             ExchangeRate::updateOrCreate(
                 [
                     'currency_code' => $currencyCode,
                 ],
                 [
-                    'rate_buy' => $rate['buy'],
-                    'rate_sell' => $rate['sell'],
+                    'rate_buy' => $convention->fromPerUnit((string) $rate['buy']),
+                    'rate_sell' => $convention->fromPerUnit((string) $rate['sell']),
+                    'rate_unit' => $convention->unit,
+                    'rate_inverse' => $convention->inverse,
                     'source' => 'initial_seed',
                     'fetched_at' => $now,
                 ]

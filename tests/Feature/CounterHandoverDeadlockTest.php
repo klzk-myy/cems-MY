@@ -10,7 +10,7 @@ use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\TillBalance;
 use App\Models\User;
-use App\Services\Branch\CounterService;
+use App\Services\Branch\CounterHandoverService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -171,7 +171,7 @@ class CounterHandoverDeadlockTest extends TestCase
             'opened_by' => $this->teller1->id,
         ]);
 
-        $counterService = app(CounterService::class);
+        $handoverService = app(CounterHandoverService::class);
 
         // Hand over with currencies in non-alphabetical order
         // The service should sort them before locking
@@ -181,7 +181,7 @@ class CounterHandoverDeadlockTest extends TestCase
             ['currency_id' => 'EUR', 'amount' => '5100.00'],
         ];
 
-        $result = $counterService->initiateHandover(
+        $result = $handoverService->initiateHandover(
             $session,
             $this->teller1,
             $this->teller2,
@@ -212,7 +212,7 @@ class CounterHandoverDeadlockTest extends TestCase
     public function concurrent_handovers_different_currencies_do_not_conflict(): void
     {
         $today = now()->toDateString();
-        $counterService = app(CounterService::class);
+        $handoverService = app(CounterHandoverService::class);
 
         // Create first session (Teller1)
         $session1 = CounterSession::factory()->create([
@@ -255,7 +255,7 @@ class CounterHandoverDeadlockTest extends TestCase
             ['currency_id' => 'EUR', 'amount' => '5100.00'],
         ];
 
-        $result1 = $counterService->initiateHandover(
+        $result1 = $handoverService->initiateHandover(
             $session1,
             $this->teller1,
             $this->teller2,
@@ -282,7 +282,7 @@ class CounterHandoverDeadlockTest extends TestCase
             ['currency_id' => 'GBP', 'amount' => '3100.00'],
         ];
 
-        $result2 = $counterService->initiateHandover(
+        $result2 = $handoverService->initiateHandover(
             $session2,
             $this->teller2,
             $this->teller3,
@@ -307,7 +307,7 @@ class CounterHandoverDeadlockTest extends TestCase
     public function handover_with_many_currencies_maintains_lock_order(): void
     {
         $today = now()->toDateString();
-        $counterService = app(CounterService::class);
+        $handoverService = app(CounterHandoverService::class);
 
         // Create session with all 3 currencies
         $session = CounterSession::factory()->create([
@@ -338,7 +338,7 @@ class CounterHandoverDeadlockTest extends TestCase
             ['currency_id' => 'USD', 'amount' => '5100.00'],
         ];
 
-        $result = $counterService->initiateHandover(
+        $result = $handoverService->initiateHandover(
             $session,
             $this->teller1,
             $this->teller2,

@@ -39,7 +39,7 @@ class StockTransferItem extends BaseModel
 
     protected $casts = [
         'quantity' => MoneyCast::class,
-        'rate' => MoneyCast::class.':6',
+        'rate' => MoneyCast::class.':8',
         'value_myr' => MoneyCast::class,
         'quantity_received' => MoneyCast::class,
         'quantity_in_transit' => MoneyCast::class,

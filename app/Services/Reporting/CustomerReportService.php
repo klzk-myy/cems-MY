@@ -19,6 +19,7 @@ class CustomerReportService
 {
     public function __construct(
         protected MathService $mathService,
+        protected TransactionReportQuery $transactionReportQuery,
     ) {}
 
     /**
@@ -56,7 +57,7 @@ class CustomerReportService
 
         $transactions = $baseQuery->get(['created_at', 'amount_local', 'type']);
 
-        $volumes = app(TransactionReportQuery::class)->buySellVolumes($transactions);
+        $volumes = $this->transactionReportQuery->buySellVolumes($transactions);
         $totalCount = $transactions->count();
         $totalVolume = $this->mathService->add($volumes['buy_volume'], $volumes['sell_volume']);
 

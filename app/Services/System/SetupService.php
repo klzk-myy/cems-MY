@@ -9,6 +9,9 @@ use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
 use App\Models\BranchPool;
+use App\Models\ChartOfAccount;
+use App\Models\Counter;
+use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\ExchangeRate;
 use App\Models\FiscalYear;
@@ -17,10 +20,12 @@ use App\Models\PasswordHistory;
 use App\Models\User;
 use App\Rules\PasswordComplexityRule;
 use App\Services\Accounting\AccountingService;
+use App\ValueObjects\QuoteConvention;
+use Database\Seeders\SchemaSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class SetupService
 {
@@ -189,6 +194,199 @@ class SetupService
         }
     }
 
+    /**
+     * Data-derived setup checks used by the wizard's progress UI. Distinct
+     * from isCompleted(): these inspect real rows (the pre-marker fallback)
+     * rather than the immutable setup_state flag.
+     *
+     * @return array{admin_user: bool, currencies: bool, exchange_rates: bool, branches: bool, chart_of_accounts: bool}
+     */
+    public function dataChecks(): array
+    {
+        return [
+            'admin_user' => User::exists(),
+            'currencies' => Currency::exists(),
+            'exchange_rates' => ExchangeRate::exists(),
+            'branches' => Branch::exists(),
+            'chart_of_accounts' => ChartOfAccount::exists(),
+        ];
+    }
+
+    public function isDataComplete(): bool
+    {
+        return collect($this->dataChecks())
+            ->only(['admin_user', 'currencies', 'exchange_rates', 'branches'])
+            ->every(fn ($check) => $check);
+    }
+
+    public function currentStep(): int
+    {
+        $checks = $this->dataChecks();
+
+        if (! $checks['admin_user']) {
+            return 1;
+        }
+        if (! $checks['currencies']) {
+            return 2;
+        }
+        if (! $checks['exchange_rates']) {
+            return 3;
+        }
+        if (! $checks['branches']) {
+            return 4;
+        }
+
+        return 5;
+    }
+
+    public function progress(): int
+    {
+        $checks = $this->dataChecks();
+        $completed = count(array_filter($checks));
+
+        return (int) (($completed / count($checks)) * 100);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function missingComponents(): array
+    {
+        return array_keys(array_filter(
+            $this->dataChecks(),
+            fn ($check) => ! $check
+        ));
+    }
+
+    /**
+     * Execute the step-wizard setup from the accumulated session payload.
+     * Callers wrap this in a DB transaction and persist the completion
+     * marker via markSetupComplete().
+     *
+     * @param  array<string, mixed>  $setupData
+     */
+    public function executeSetup(array $setupData): void
+    {
+        $this->ensureSchemaExists();
+
+        $hqBranch = null;
+        if (isset($setupData['business'])) {
+            $hqBranch = Branch::create([
+                'code' => 'HQ',
+                'name' => $setupData['business']['business_name'],
+                'address' => $setupData['business']['business_address'] ?? null,
+                'phone' => $setupData['business']['business_phone'] ?? null,
+                'email' => $setupData['business']['business_email'] ?? null,
+                'type' => 'head_office',
+                'is_active' => true,
+                'is_main' => true,
+            ]);
+
+            // A usable business needs at least one till; there is no counter
+            // CRUD UI, so create a default counter bound to HQ.
+            Counter::firstOrCreate(
+                ['code' => 'C01'],
+                ['name' => 'Counter 1', 'status' => 'active', 'branch_id' => $hqBranch->id],
+            );
+        }
+
+        if (isset($setupData['admin'])) {
+            // Pass the plain password - the mutator hashes it once. Hashing
+            // here as well would double-hash and lock the admin out.
+            $user = User::create([
+                'username' => $setupData['admin']['admin_name'],
+                'email' => $setupData['admin']['admin_email'],
+                'password' => $setupData['admin']['admin_password'],
+                'branch_id' => $hqBranch?->id,
+                'mfa_enabled' => false,
+                'is_active' => true,
+            ]);
+
+            $user->role = UserRole::Admin;
+            $user->save();
+        }
+
+        Artisan::call('db:seed', ['--class' => 'CurrencySeeder', '--force' => true]);
+        Artisan::call('db:seed', ['--class' => 'EnhancedChartOfAccountsSeeder', '--force' => true]);
+
+        // Custom "other" currencies entered in step 3 may not exist in the
+        // seeded list — create them before applying the active set.
+        foreach ($this->customCurrencyRows($setupData['currencies'] ?? []) as $row) {
+            Currency::firstOrCreate(
+                ['code' => $row['code']],
+                [
+                    'name' => $row['name'] !== '' ? $row['name'] : $row['code'],
+                    'symbol' => $row['symbol'] !== '' ? $row['symbol'] : $row['code'],
+                    'decimal_places' => 2,
+                    'is_active' => true,
+                ],
+            );
+        }
+
+        // Honor the step-3 selection: deactivate currencies the business did
+        // not enable. MYR is the system base and must always stay active.
+        if (isset($setupData['currencies']['active_currencies'])) {
+            $active = $setupData['currencies']['active_currencies'];
+            $active[] = Currency::baseCurrency();
+            Currency::whereNotIn('code', $active)->update(['is_active' => false]);
+            Currency::whereIn('code', $active)->update(['is_active' => true]);
+        }
+
+        // Shared with quickSetup so both install paths guarantee the same
+        // fiscal-year / accounting-period preconditions.
+        $this->ensureFiscalYearAndPeriods();
+
+        if (isset($setupData['rates']) && ($setupData['rates']['use_default_rates'] ?? false)) {
+            Artisan::call('db:seed', ['--class' => 'ExchangeRateSeeder', '--force' => true]);
+        }
+
+        // Step-4 custom rates (e.g. for a step-3 "other" currency the seeder
+        // does not cover) become real exchange_rates rows. Entered values are
+        // unit-quoted in the currency's configured quote unit (1 at setup).
+        foreach ($setupData['rates']['custom_rates'] ?? [] as $code => $rate) {
+            $code = strtoupper(trim((string) $code));
+            if ($code === '' || ! isset($rate['buy'], $rate['sell'])) {
+                continue;
+            }
+
+            $convention = QuoteConvention::for(Currency::find($code));
+            ExchangeRate::updateOrCreate(
+                ['currency_code' => $code],
+                [
+                    'rate_buy' => $rate['buy'],
+                    'rate_sell' => $rate['sell'],
+                    'rate_unit' => $convention->unit,
+                    'rate_inverse' => $convention->inverse,
+                    'source' => 'setup_custom',
+                    'fetched_at' => now(),
+                ],
+            );
+        }
+
+        if (isset($setupData['stock'])) {
+            $this->createInitialStock($setupData['stock']);
+        }
+
+        if (isset($setupData['opening_balance'])) {
+            $this->createOpeningBalance($setupData['opening_balance']);
+        }
+    }
+
+    /**
+     * Build the schema only when it is missing. SchemaSeeder is
+     * destructive (drops every table), so on an already-populated
+     * database it must never re-run here; an existing schema is treated
+     * as current.
+     */
+    public function ensureSchemaExists(): void
+    {
+        if (Schema::hasTable('users')) {
+            return;
+        }
+
+        Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+    }
+
     protected function validateAdminPassword(string $password): void
     {
         // Delegate to the shared rule so setup cannot drift from the policy
@@ -339,8 +537,12 @@ class SetupService
             return;
         }
 
+        // exchange_rates rows are unit-quoted (per rate_unit foreign units,
+        // or foreign per rate_unit MYR when inverse); positions store
+        // per-unit cost, so normalize by the row's own quote convention.
         $rates = ExchangeRate::query()
-            ->pluck('rate_buy', 'currency_code');
+            ->get(['currency_code', 'rate_buy', 'rate_unit', 'rate_inverse'])
+            ->keyBy('currency_code');
 
         foreach ($stockData['initial_stock'] as $currencyCode => $amount) {
             // Zero-amount entries still create pool/position rows so every
@@ -356,9 +558,12 @@ class SetupService
             // Transaction stock validation reads currency_positions, not
             // branch_pools — seed both so a fresh install can actually sell
             // the stock it was set up with.
-            $cost = $currencyCode === 'MYR'
+            $rateRow = $rates->get($currencyCode);
+            $cost = $currencyCode === Currency::baseCurrency()
                 ? '1'
-                : (string) ($rates[$currencyCode] ?? '0');
+                : ($rateRow === null
+                    ? '0'
+                    : $rateRow->perUnitRate((string) $rateRow->rate_buy));
             $totalCost = $this->mathService->multiply((string) $amount, $cost);
 
             CurrencyPosition::create([

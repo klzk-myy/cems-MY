@@ -6,7 +6,7 @@ use App\Casts\MoneyCast;
 use App\Enums\TellerAllocationStatus;
 use App\Exceptions\Domain\InsufficientAllocationBalanceException;
 use App\Models\Traits\BelongsToBranch;
-use App\Services\System\MathService;
+use App\Support\BcmathHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -37,14 +37,6 @@ use Illuminate\Support\Carbon;
 class TellerAllocation extends BaseModel
 {
     use BelongsToBranch, HasFactory;
-
-    protected MathService $mathService;
-
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->mathService = app(MathService::class);
-    }
 
     protected $with = ['user', 'branch', 'counter', 'approver'];
 
@@ -137,7 +129,7 @@ class TellerAllocation extends BaseModel
 
     public function hasAvailable(float|string $amount): bool
     {
-        return $this->mathService->compare($this->current_balance, (string) $amount) >= 0;
+        return BcmathHelper::compare($this->current_balance, (string) $amount) >= 0;
     }
 
     /**
@@ -214,9 +206,9 @@ class TellerAllocation extends BaseModel
         if ($this->daily_limit_myr === null) {
             return true;
         }
-        $remaining = $this->mathService->subtract((string) $this->daily_limit_myr, (string) $this->daily_used_myr);
+        $remaining = BcmathHelper::subtract((string) $this->daily_limit_myr, (string) $this->daily_used_myr);
 
-        return $this->mathService->compare($remaining, (string) $amountMyr) >= 0;
+        return BcmathHelper::compare($remaining, (string) $amountMyr) >= 0;
     }
 
     public function approve(User $approver, float|string $allocatedAmount, float|string|null $dailyLimitMyr = null): void

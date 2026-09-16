@@ -72,8 +72,8 @@ class ReportingServiceTest extends TestCase
         $this->assertSame(1, $row['Buy_Count']);
         $this->assertSame('500', $row['Sell_Volume_MYR']);
         $this->assertSame(1, $row['Sell_Count']);
-        $this->assertSame('4.000000', $row['Avg_Buy_Rate']);
-        $this->assertSame('4.200000', $row['Avg_Sell_Rate']);
+        $this->assertSame('4.00000000', $row['Avg_Buy_Rate']);
+        $this->assertSame('4.20000000', $row['Avg_Sell_Rate']);
         $this->assertSame('5000.0000', $row['Opening_Position']);
         $this->assertSame('5000.0000', $row['Closing_Position']);
 

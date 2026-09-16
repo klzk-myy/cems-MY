@@ -136,10 +136,11 @@ class RolePermissionMatrixTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.role-permissions.index'));
 
         $response->assertOk();
-        // Outside the teller's built-in defaults — previously a dash, now an assignable checkbox.
-        $response->assertSee('name="permissions.teller.approve_transactions"', false);
-        $response->assertSee('name="permissions.manager.reverse_transactions"', false);
-        $response->assertSee('name="permissions.accountant.manage_users"', false);
+        // Nested array syntax — the browser must submit the same
+        // permissions[role][permission] shape validateUpdateRequest() reads.
+        $response->assertSee('name="permissions[teller][approve_transactions]"', false);
+        $response->assertSee('name="permissions[manager][reverse_transactions]"', false);
+        $response->assertSee('name="permissions[accountant][manage_users]"', false);
     }
 
     #[Test]
@@ -163,6 +164,33 @@ class RolePermissionMatrixTest extends TestCase
 
         $this->assertTrue(UserRole::Teller->canApproveTransactions());
         $this->assertTrue(UserRole::Teller->canViewReports());
+        $this->assertTrue(UserRole::Teller->canCreateTransaction());
+    }
+
+    #[Test]
+    public function unchecked_browser_checkboxes_revoke_the_grant(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+
+        // The browser only submits checked boxes: an absent key means the
+        // admin unticked the permission, which must revoke the grant.
+        $response = $this->actingAs($admin)
+            ->withSession($this->passwordConfirmedSession())
+            ->post(route('admin.role-permissions.update'), [
+                'permissions' => [
+                    UserRole::Teller->value => [
+                        Permission::CreateTransactions->value => '1',
+                        Permission::RequestCancellation->value => '1',
+                        Permission::OperateCounters->value => '1',
+                        Permission::ValidateRates->value => '1',
+                        // request_stock deliberately absent — unticked.
+                    ],
+                ],
+            ]);
+
+        $response->assertRedirect(route('admin.role-permissions.index'));
+
+        $this->assertFalse(UserRole::Teller->canPerform(Permission::RequestStock));
         $this->assertTrue(UserRole::Teller->canCreateTransaction());
     }
 

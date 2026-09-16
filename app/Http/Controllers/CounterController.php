@@ -33,6 +33,7 @@ use Illuminate\View\View;
 
 class CounterController extends Controller
 {
+    use Concerns\AuthorizesBranchResource;
     use Concerns\ResolvesCloseSupervisor;
 
     public function __construct(
@@ -102,7 +103,7 @@ class CounterController extends Controller
      */
     public function showOpen(Counter $counter): View
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         $availableCounters = $this->counterService->getAvailableCounters();
         $currencies = $this->getActiveCurrencies();
@@ -115,7 +116,7 @@ class CounterController extends Controller
      */
     public function open(OpenCounterRequest $request, Counter $counter): RedirectResponse
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         // Head-office branches are non-trading and may not open counters.
         $counterBranch = $counter->branch;
@@ -150,7 +151,7 @@ class CounterController extends Controller
 
     public function showClose(Counter $counter): View
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         $today = now()->toDateString();
         $session = $this->findOpenSession($counter, $today);
@@ -173,7 +174,7 @@ class CounterController extends Controller
      */
     public function close(CloseCounterRequest $request, Counter $counter): RedirectResponse
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         /** @var User $user */
         $user = auth()->user();
@@ -223,7 +224,7 @@ class CounterController extends Controller
 
     public function status(Counter $counter): JsonResponse
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         $status = $this->counterService->getCounterStatus($counter);
 
@@ -235,7 +236,7 @@ class CounterController extends Controller
 
     public function history(Request $request, Counter $counter): View
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         $query = CounterSession::where('counter_id', $counter->id)
             ->with(['user', 'openedByUser', 'closedByUser']);
@@ -263,7 +264,7 @@ class CounterController extends Controller
 
     public function showHandover(Counter $counter): View
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         $today = now()->toDateString();
         $session = CounterSession::where('counter_id', $counter->id)
@@ -294,7 +295,7 @@ class CounterController extends Controller
 
     public function handover(HandoverCounterRequest $request, Counter $counter): RedirectResponse
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         /** @var User|null $fromUser */
         $fromUser = User::find($request->input('from_user_id'));
@@ -330,7 +331,7 @@ class CounterController extends Controller
 
         return $this->handleCounterAction(
             action: 'counter_handed_over',
-            operation: fn () => $this->counterService->initiateHandover(
+            operation: fn () => $this->counterHandoverService->initiateHandover(
                 $session,
                 $fromUser,
                 $toUser,
@@ -363,7 +364,7 @@ class CounterController extends Controller
 
     public function showEmergency(Counter $counter): View
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         $today = now()->toDateString();
         $session = $this->findOpenSession($counter, $today);
@@ -377,7 +378,7 @@ class CounterController extends Controller
 
     public function emergency(EmergencyCloseRequest $request, Counter $counter): RedirectResponse
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         /** @var User $user */
         $user = auth()->user();
@@ -400,7 +401,7 @@ class CounterController extends Controller
 
     public function showEmergencyClosure(Counter $counter, EmergencyClosure $closure): View
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         if ($closure->counter_id !== $counter->id) {
             abort(404);
@@ -413,7 +414,7 @@ class CounterController extends Controller
 
     public function showAcknowledgeHandover(Counter $counter): View|RedirectResponse
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         /** @var User $user */
         $user = auth()->user();
@@ -435,7 +436,7 @@ class CounterController extends Controller
 
     public function acknowledgeHandover(AcknowledgeHandoverWebRequest $request, Counter $counter): RedirectResponse
     {
-        $this->ensureCounterBranchAccess($counter);
+        $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
         /** @var User $user */
         $user = auth()->user();
@@ -515,25 +516,6 @@ class CounterController extends Controller
             ]);
 
             return back()->with('error', "Failed to {$verb} counter. Please try again.");
-        }
-    }
-
-    /**
-     * Enforce branch isolation for counter operations: non-admins may only
-     * interact with counters belonging to their own branch. Route middleware
-     * already enforces roles; this closes the cross-branch hole.
-     */
-    private function ensureCounterBranchAccess(Counter $counter): void
-    {
-        /** @var User $user */
-        $user = auth()->user();
-
-        if ($user->role->canManageAllBranches()) {
-            return;
-        }
-
-        if ($counter->branch_id !== $user->branch_id) {
-            abort(403, 'You do not have access to counters in this branch.');
         }
     }
 

@@ -23,7 +23,9 @@ use App\Notifications\ComplianceCaseAssignedNotification;
 use App\Notifications\ComplianceCaseSlaBreachedNotification;
 use App\Services\AuditService;
 use App\Services\System\SystemAlertService;
+use App\Support\ActorContext;
 use Carbon\Carbon;
+use Closure;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +47,7 @@ class CaseManagementService
     public function __construct(
         protected SystemAlertService $alertService,
         protected AuditService $auditService,
+        protected StrReportService $strReportService,
     ) {}
 
     /**
@@ -132,26 +135,7 @@ class CaseManagementService
     }
 
     /**
-     * Assign a case to an officer.
-     */
-    public function assignCase(ComplianceCase $case, int $officerId): ComplianceCase
-    {
-        $previousAssignee = $case->assigned_to;
-
-        $case->assignTo($officerId);
-
-        if ($previousAssignee !== $officerId) {
-            $this->notifyAssignee($case, $officerId);
-        }
-
-        $this->auditCaseAssigned($case, $previousAssignee, $officerId);
-
-        return $case->fresh();
-    }
-
-    /**
-     * Emit the canonical `compliance_case_assigned` audit record. Kept as a
-     * single source so assignCase() and assignToOfficer() cannot diverge.
+     * Emit the canonical `compliance_case_assigned` audit record.
      */
     protected function auditCaseAssigned(ComplianceCase $case, ?int $previousAssignee, int $assigneeId): void
     {
@@ -179,7 +163,10 @@ class CaseManagementService
                 return;
             }
 
-            $assignee->notify(new ComplianceCaseAssignedNotification($case, auth()->user()));
+            $assignee->notify(new ComplianceCaseAssignedNotification(
+                $case,
+                ActorContext::capture()->user
+            ));
         } catch (\Throwable $e) {
             Log::warning('Failed to notify case assignee', [
                 'case_id' => $case->id,
@@ -190,27 +177,34 @@ class CaseManagementService
     }
 
     /**
-     * Close a case.
+     * Close a case with a resolution.
      */
     public function closeCase(
         ComplianceCase $case,
         CaseResolution $resolution,
         ?string $notes = null
     ): ComplianceCase {
-        $case->close($resolution, $notes);
+        if ($case->status === ComplianceCaseStatus::Closed) {
+            throw new CaseManagementException("Cannot close case {$case->id}: already closed");
+        }
 
-        $this->auditService->logWithSeverity(
-            'compliance_case_closed',
+        return $this->transitionTo(
+            $case,
+            ComplianceCaseStatus::Closed,
+            fn (ComplianceCase $case) => $case->update([
+                'resolution' => $resolution,
+                'resolution_notes' => $notes,
+            ]),
             [
-                'description' => "Compliance case {$case->case_number} closed ({$resolution->value})",
-                'case_id' => $case->id,
-                'resolution' => $resolution->value,
-                'notes' => $notes,
+                'action' => 'compliance_case_closed',
+                'data' => [
+                    'description' => "Compliance case {$case->case_number} closed ({$resolution->value})",
+                    'case_id' => $case->id,
+                    'resolution' => $resolution->value,
+                    'notes' => $notes,
+                ],
             ],
-            'INFO'
         );
-
-        return $case->fresh();
     }
 
     /**
@@ -218,18 +212,19 @@ class CaseManagementService
      */
     public function escalateCase(ComplianceCase $case): ComplianceCase
     {
-        $case->escalate();
-
-        $this->auditService->logWithSeverity(
-            'compliance_case_escalated',
+        return $this->transitionTo(
+            $case,
+            ComplianceCaseStatus::Escalated,
+            fn (ComplianceCase $case) => $case->update(['escalated_at' => now()]),
             [
-                'description' => "Compliance case {$case->case_number} escalated",
-                'case_id' => $case->id,
+                'action' => 'compliance_case_escalated',
+                'data' => [
+                    'description' => "Compliance case {$case->case_number} escalated",
+                    'case_id' => $case->id,
+                ],
+                'severity' => 'WARNING',
             ],
-            'WARNING'
         );
-
-        return $case->fresh();
     }
 
     /**
@@ -389,23 +384,18 @@ class CaseManagementService
             ComplianceCaseLink::where('case_id', $sourceCase->id)
                 ->update(['case_id' => $targetCase->id]);
 
-            $sourceCase->update([
-                'status' => ComplianceCaseStatus::Closed,
-                'resolved_at' => now(),
-            ]);
-
-            $this->recalculateCasePriority($targetCase);
-            $this->recalculateCaseSla($targetCase);
-
-            $this->auditService->logWithSeverity(
-                'compliance_case_merged',
-                [
+            // The merge audit record doubles as the source case's close audit.
+            $this->transitionTo($sourceCase, ComplianceCaseStatus::Closed, fn () => null, [
+                'action' => 'compliance_case_merged',
+                'data' => [
                     'description' => "Compliance case {$sourceCase->case_number} merged into {$targetCase->case_number}",
                     'source_case_id' => $sourceCase->id,
                     'target_case_id' => $targetCase->id,
                 ],
-                'INFO'
-            );
+            ]);
+
+            $this->recalculateCasePriority($targetCase);
+            $this->recalculateCaseSla($targetCase);
 
             return $targetCase->fresh()->load(['alerts', 'documents', 'links']);
         });
@@ -418,49 +408,22 @@ class CaseManagementService
      */
     public function updateStatus(ComplianceCase $case, ComplianceCaseStatus $status): ComplianceCase
     {
-        $current = $case->status;
+        $closing = $status === ComplianceCaseStatus::Closed;
 
-        // Submitting the current status is a no-op, not an error.
-        if ($status === $current) {
-            return $case;
-        }
-
-        if (! $current->canMoveTo($status)) {
-            throw new CaseManagementException(
-                "Cannot move case from {$current->value} to {$status->value}"
-            );
-        }
-
-        // Closing must satisfy the same requirements as resolveCase(): every
-        // linked alert must be resolved/rejected first. The previous direct
-        // Open -> Closed transition bypassed that gate and left the resolution
-        // workflow (closeCase()/resolveCase()) unenforced.
-        if ($status === ComplianceCaseStatus::Closed) {
-            $unresolvedAlertIds = $case->alerts()
-                ->whereNotIn('status', [FlagStatus::Resolved->value, FlagStatus::Rejected->value])
-                ->pluck('id')
-                ->all();
-
-            if ($unresolvedAlertIds !== []) {
-                throw new CaseManagementException(
-                    'Cannot close case '.$case->id.': unresolved alerts ('.implode(', ', $unresolvedAlertIds).')'
-                );
-            }
-        }
-
-        DB::transaction(function () use ($case, $status) {
-            $case->update(['status' => $status]);
-
-            if ($status === ComplianceCaseStatus::Closed) {
-                $case->update(['resolved_at' => now()]);
-            }
-        });
-
-        if ($status === ComplianceCaseStatus::Closed) {
-            $this->autoDraftStrForClosedCase($case);
-        }
-
-        return $case->fresh();
+        return $this->transitionTo($case, $status, fn () => null, [
+            'action' => $closing ? 'compliance_case_closed' : 'compliance_case_status_changed',
+            'data' => $closing
+                ? [
+                    'description' => "Compliance case {$case->case_number} closed via status update",
+                    'case_id' => $case->id,
+                ]
+                : [
+                    'description' => "Compliance case {$case->case_number} moved from {$case->status->value} to {$status->value}",
+                    'case_id' => $case->id,
+                    'from_status' => $case->status->value,
+                    'to_status' => $status->value,
+                ],
+        ]);
     }
 
     /**
@@ -496,26 +459,91 @@ class CaseManagementService
             throw new CaseManagementException('Cannot resolve case: not all alerts are linked');
         }
 
-        $case->update([
-            'status' => ComplianceCaseStatus::Closed,
-            'resolved_at' => now(),
-        ]);
-
-        $this->auditService->logWithSeverity(
-            'compliance_case_closed',
-            [
+        return $this->transitionTo($case, ComplianceCaseStatus::Closed, fn () => null, [
+            'action' => 'compliance_case_closed',
+            'data' => [
                 'description' => "Compliance case {$case->case_number} resolved by user #{$resolvedBy}",
                 'case_id' => $case->id,
                 'resolved_by' => $resolvedBy,
                 'notes' => $notes,
             ],
-            'INFO'
-        );
+        ]);
+    }
 
-        // pd-00 s22: qualifying closed cases auto-draft an STR filing.
-        $this->autoDraftStrForClosedCase($case);
+    /**
+     * Single transition pipeline for case status changes. Enforces the
+     * enum's allowed transitions, applies caller-specific mutations inside
+     * one transaction, stamps resolved_at on closure, writes the audit
+     * record, and fires the STR auto-draft for every close path.
+     *
+     * @param  array{action: string, data: array<string, mixed>, severity?: string}  $audit
+     *
+     * @throws CaseManagementException when the transition is not allowed or
+     *                                 a close is attempted with unresolved alerts
+     */
+    protected function transitionTo(
+        ComplianceCase $case,
+        ComplianceCaseStatus $status,
+        Closure $mutate,
+        array $audit,
+    ): ComplianceCase {
+        $current = $case->status;
+
+        // Submitting the current status is a no-op, not an error.
+        if ($status === $current) {
+            return $case;
+        }
+
+        if (! $current->canMoveTo($status)) {
+            throw new CaseManagementException(
+                "Cannot move case from {$current->value} to {$status->value}"
+            );
+        }
+
+        if ($status === ComplianceCaseStatus::Closed) {
+            $this->assertAllAlertsResolved($case);
+        }
+
+        DB::transaction(function () use ($case, $status, $mutate, $audit) {
+            $case->update(['status' => $status]);
+            $mutate($case);
+
+            if ($status === ComplianceCaseStatus::Closed && $case->resolved_at === null) {
+                $case->update(['resolved_at' => now()]);
+            }
+
+            $this->auditService->logWithSeverity(
+                $audit['action'],
+                $audit['data'],
+                $audit['severity'] ?? 'INFO'
+            );
+        });
+
+        if ($status === ComplianceCaseStatus::Closed) {
+            $this->autoDraftStrForClosedCase($case);
+        }
 
         return $case->fresh();
+    }
+
+    /**
+     * Closing must satisfy the same requirements as resolveCase(): every
+     * linked alert must be resolved/rejected first.
+     *
+     * @throws CaseManagementException
+     */
+    protected function assertAllAlertsResolved(ComplianceCase $case): void
+    {
+        $unresolvedAlertIds = $case->alerts()
+            ->whereNotIn('status', [FlagStatus::Resolved->value, FlagStatus::Rejected->value])
+            ->pluck('id')
+            ->all();
+
+        if ($unresolvedAlertIds !== []) {
+            throw new CaseManagementException(
+                'Cannot close case '.$case->id.': unresolved alerts ('.implode(', ', $unresolvedAlertIds).')'
+            );
+        }
     }
 
     /**
@@ -525,7 +553,7 @@ class CaseManagementService
     protected function autoDraftStrForClosedCase(ComplianceCase $case): void
     {
         try {
-            app(StrReportService::class)->autoDraftForClosedCase($case);
+            $this->strReportService->autoDraftForClosedCase($case);
         } catch (\Throwable $e) {
             Log::error('STR auto-draft failed', [
                 'case_id' => $case->id,

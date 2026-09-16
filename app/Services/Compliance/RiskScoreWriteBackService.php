@@ -5,6 +5,7 @@ namespace App\Services\Compliance;
 use App\Enums\RiskRating;
 use App\Models\Customer;
 use App\Models\CustomerRiskHistory;
+use App\Support\ActorContext;
 
 /**
  * Risk Score Write-Back Service
@@ -58,7 +59,7 @@ class RiskScoreWriteBackService
             'old_rating' => $previousRating->value,
             'new_rating' => $newRating->value,
             'change_reason' => $trigger,
-            'assessed_by' => $assessedBy ?? auth()->id(),
+            'assessed_by' => $assessedBy ?? ActorContext::capture()->userId,
         ]);
 
         return true;

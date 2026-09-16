@@ -10,6 +10,10 @@ return [
 
     'import' => [
         'max_amount_foreign' => env('TRANSACTION_IMPORT_MAX_AMOUNT_FOREIGN', '1000000'),
-        'max_rate' => env('TRANSACTION_IMPORT_MAX_RATE', '100'),
+        'max_rate' => env('TRANSACTION_IMPORT_MAX_RATE', '1000000'),
     ],
+
+    // Minutes a large-transaction confirmation request stays pending before it
+    // expires and the compliance escalation must be re-issued.
+    'confirmation_ttl_minutes' => (int) env('TRANSACTION_CONFIRMATION_TTL_MINUTES', 30),
 ];

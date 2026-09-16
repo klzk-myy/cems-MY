@@ -3,18 +3,377 @@
 namespace App\Services\Branch;
 
 use App\Enums\CounterSessionStatus;
+use App\Enums\Permission;
 use App\Enums\TellerAllocationStatus;
 use App\Exceptions\Domain\InvalidStateException;
+use App\Exceptions\Domain\SessionClosedException;
+use App\Exceptions\Domain\SessionOwnershipException;
+use App\Exceptions\Domain\SupervisorRequiredException;
 use App\Exceptions\Domain\UnauthorizedException;
+use App\Exceptions\Domain\UserAlreadyAtCounterException;
+use App\Exceptions\Domain\VarianceThresholdException;
 use App\Models\CounterHandover;
 use App\Models\CounterSession;
+use App\Models\Currency;
+use App\Models\ExchangeRate;
 use App\Models\TellerAllocation;
+use App\Models\TillBalance;
 use App\Models\User;
+use App\Services\Branch\DTOs\HandoverVarianceResult;
+use App\Services\ThresholdService;
+use App\Support\BcmathHelper;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CounterHandoverService
 {
-    public function __construct(protected TellerAllocationService $tellerAllocationService) {}
+    public function __construct(
+        protected TellerAllocationService $tellerAllocationService,
+        protected ThresholdService $thresholdService,
+        protected HandoverVarianceCalculator $varianceCalculator,
+    ) {}
+
+    /**
+     * Hand a counter session over to another teller.
+     *
+     * Closes the current session, rotates the till balances, records the
+     * handover, and opens a new session for the receiving user — all
+     * atomically within a transaction.
+     *
+     * @param  array<int, array{currency_id: mixed, amount: string}>  $physicalCounts
+     * @return array{handover: CounterHandover, new_session: CounterSession}
+     */
+    public function initiateHandover(
+        CounterSession $session,
+        User $fromUser,
+        User $toUser,
+        User $supervisor,
+        array $physicalCounts
+    ): array {
+        $this->assertCanHandover($session, $fromUser, $supervisor);
+
+        $now = now();
+        $today = $now->toDateString();
+
+        return DB::transaction(function () use ($session, $fromUser, $toUser, $supervisor, $physicalCounts, $now, $today) {
+            $this->assertRecipientIsFree($session, $toUser);
+
+            $currencies = $this->resolveCurrenciesForCounts($physicalCounts);
+            $currencyCodes = array_values(array_filter($currencies));
+            // Sort upfront so the lock order below is stable across
+            // concurrent handovers with different currency sets.
+            sort($currencyCodes);
+
+            $tillCode = $session->tillCode();
+            $balances = $this->lockTillBalances($tillCode, $session->session_date, $currencyCodes);
+            $openBalances = $balances->filter(fn ($b) => is_null($b->closed_at));
+            $closedBalances = $balances->filter(fn ($b) => ! is_null($b->closed_at));
+
+            $variances = $this->varianceCalculator->compute(
+                $physicalCounts,
+                $currencies,
+                $openBalances,
+                $closedBalances,
+                $this->latestSellRates($currencyCodes)
+            );
+            $hasYellowVariance = $this->assertVarianceThresholds($variances->perCurrency, $supervisor);
+
+            $this->rotateTillBalances(
+                $physicalCounts,
+                $currencies,
+                $variances,
+                $openBalances,
+                $closedBalances,
+                $tillCode,
+                $session,
+                $fromUser,
+                $toUser,
+                $now,
+                $today
+            );
+
+            $session->update([
+                'status' => CounterSessionStatus::PendingHandover,
+                'closed_at' => $now,
+                'closed_by' => $fromUser->id,
+            ]);
+
+            $handover = $this->recordHandover(
+                $session, $fromUser, $toUser, $supervisor, $now, $variances, $hasYellowVariance
+            );
+            $newSession = $this->openSuccessorSession($session, $toUser, $supervisor, $now, $today);
+            $this->transferAllocations($fromUser, $toUser, $today);
+
+            return ['handover' => $handover, 'new_session' => $newSession];
+        });
+    }
+
+    /**
+     * Preconditions evaluated before the transaction opens: supervisor
+     * capability, open session, and session ownership.
+     */
+    private function assertCanHandover(CounterSession $session, User $fromUser, User $supervisor): void
+    {
+        if (! $supervisor->role->canPerform(Permission::ManageCounters)) {
+            throw new SupervisorRequiredException;
+        }
+
+        if (! $session->isOpen()) {
+            throw new SessionClosedException;
+        }
+
+        if ($session->user_id !== $fromUser->id) {
+            throw new SessionOwnershipException;
+        }
+    }
+
+    /**
+     * The recipient must not hold an open session at another counter. The
+     * row is locked inside the transaction so concurrent handovers cannot
+     * assign the same teller twice.
+     */
+    private function assertRecipientIsFree(CounterSession $session, User $toUser): void
+    {
+        $existingSession = CounterSession::where('user_id', $toUser->id)
+            ->where('status', CounterSessionStatus::Open->value)
+            ->lockForUpdate()
+            ->first();
+
+        if ($existingSession && $existingSession->id !== $session->id) {
+            throw new UserAlreadyAtCounterException($toUser->id);
+        }
+    }
+
+    /**
+     * Lock all relevant till balances for the session's till/date in
+     * deterministic (alphabetical) order to prevent deadlocks.
+     *
+     * @param  array<int, string>  $currencyCodes
+     * @return Collection<string, TillBalance> keyed by currency_code
+     */
+    private function lockTillBalances(string $tillCode, string $sessionDate, array $currencyCodes): Collection
+    {
+        return TillBalance::where('till_id', $tillCode)
+            ->where('date', $sessionDate)
+            ->whereIn('currency_code', $currencyCodes)
+            ->orderBy('currency_code')
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('currency_code');
+    }
+
+    /**
+     * Latest per-unit sell rate for each non-MYR currency code.
+     *
+     * @param  array<int, string>  $currencyCodes
+     * @return array<string, string> currency_code => per-unit rate
+     */
+    private function latestSellRates(array $currencyCodes): array
+    {
+        $nonMyrCodes = array_filter($currencyCodes, fn ($c) => $c !== Currency::baseCurrency());
+
+        if (empty($nonMyrCodes)) {
+            return [];
+        }
+
+        return ExchangeRate::whereIn('currency_code', $nonMyrCodes)
+            ->orderBy('fetched_at', 'desc')
+            ->get()
+            ->groupBy('currency_code')
+            ->map(fn ($group) => $group->first())
+            // exchange_rates rows are unit-quoted (per rate_unit foreign
+            // units, or foreign per rate_unit MYR when inverse); normalize
+            // to per-unit for conversion.
+            ->map(fn ($rate) => $rate->perUnitRate((string) $rate->rate_sell))
+            ->all();
+    }
+
+    /**
+     * Red-threshold variance aborts unless the supervisor can manage
+     * counters (they already can — assertCanHandover ran first); yellow
+     * does not block but is flagged for acknowledgment.
+     *
+     * @param  array<string, string>  $perCurrencyVariances
+     */
+    private function assertVarianceThresholds(array $perCurrencyVariances, User $supervisor): bool
+    {
+        $hasYellowVariance = false;
+
+        foreach ($perCurrencyVariances as $variance) {
+            $absVar = BcmathHelper::abs($variance);
+            if (BcmathHelper::gt($absVar, $this->thresholdService->getVarianceRedThreshold())) {
+                if (! $supervisor->role->canPerform(Permission::ManageCounters)) {
+                    throw new VarianceThresholdException('red', true);
+                }
+            } elseif (BcmathHelper::gt($absVar, $this->thresholdService->getVarianceYellowThreshold())) {
+                $hasYellowVariance = true;
+            }
+        }
+
+        return $hasYellowVariance;
+    }
+
+    /**
+     * Apply the physical counts: close open balances and open successor
+     * balances for the incoming teller, or reopen previously closed ones.
+     *
+     * @param  array<int, array{currency_id: mixed, amount: string}>  $physicalCounts
+     * @param  array<mixed, string>  $currencies  input currency_id => currency_code
+     * @param  Collection<string, TillBalance>  $openBalances
+     * @param  Collection<string, TillBalance>  $closedBalances
+     */
+    private function rotateTillBalances(
+        array $physicalCounts,
+        array $currencies,
+        HandoverVarianceResult $variances,
+        Collection $openBalances,
+        Collection $closedBalances,
+        string $tillCode,
+        CounterSession $session,
+        User $fromUser,
+        User $toUser,
+        Carbon $now,
+        string $today
+    ): void {
+        foreach ($physicalCounts as $count) {
+            $currencyCode = $currencies[$count['currency_id']] ?? null;
+            if (! $currencyCode) {
+                continue;
+            }
+
+            $closingBalance = $count['amount'];
+            $variance = $variances->perCurrency[$currencyCode];
+            $open = $openBalances->get($currencyCode);
+            $closed = $closedBalances->get($currencyCode);
+
+            if ($open) {
+                // Carry variance details on the closed row only for the
+                // currency that actually varied.
+                $open->update([
+                    'closing_balance' => $closingBalance,
+                    'variance' => $variance,
+                    'closed_at' => $now,
+                    'closed_by' => $fromUser->id,
+                    'notes' => BcmathHelper::isNotZero($variance) ? $variances->notes : 'Handover',
+                ]);
+
+                TillBalance::openFor(
+                    $tillCode,
+                    $currencyCode,
+                    $session->counter?->branch_id,
+                    $closingBalance,
+                    $today,
+                    $toUser->id
+                );
+            } elseif ($closed) {
+                $closed->update([
+                    'opening_balance' => $closingBalance,
+                    'closing_balance' => null,
+                    'variance' => '0.0000',
+                    'closed_at' => null,
+                    'closed_by' => null,
+                    'notes' => null,
+                    'opened_by' => $toUser->id,
+                ]);
+            } else {
+                TillBalance::openFor(
+                    $tillCode,
+                    $currencyCode,
+                    $session->counter?->branch_id,
+                    $closingBalance,
+                    $today,
+                    $toUser->id
+                );
+            }
+        }
+    }
+
+    private function recordHandover(
+        CounterSession $session,
+        User $fromUser,
+        User $toUser,
+        User $supervisor,
+        Carbon $now,
+        HandoverVarianceResult $variances,
+        bool $hasYellowVariance
+    ): CounterHandover {
+        return $session->handovers()->create([
+            'from_user_id' => $fromUser->id,
+            'to_user_id' => $toUser->id,
+            'supervisor_id' => $supervisor->id,
+            'handover_time' => $now,
+            'physical_count_verified' => true,
+            'variance_myr' => $variances->totalMyr,
+            'variance_notes' => $variances->hasVariance() ? $variances->notes : null,
+            'yellow_variance' => $hasYellowVariance,
+        ]);
+    }
+
+    private function openSuccessorSession(
+        CounterSession $session,
+        User $toUser,
+        User $supervisor,
+        Carbon $now,
+        string $today
+    ): CounterSession {
+        return CounterSession::create([
+            'counter_id' => $session->counter_id,
+            'user_id' => $toUser->id,
+            'session_date' => $today,
+            'opened_at' => $now,
+            'opened_by' => $supervisor->id,
+            'status' => CounterSessionStatus::Open,
+        ]);
+    }
+
+    /**
+     * Move the outgoing teller's active allocations for today to the
+     * incoming teller.
+     */
+    private function transferAllocations(User $fromUser, User $toUser, string $today): void
+    {
+        TellerAllocation::query()
+            ->with(['counter', 'user', 'branch'])
+            ->where('user_id', $fromUser->id)
+            ->where('status', TellerAllocationStatus::ACTIVE->value)
+            ->whereDate('session_date', $today)
+            ->get()
+            ->each(fn (TellerAllocation $allocation) => $this->tellerAllocationService->transferToTeller($allocation, $toUser));
+    }
+
+    /**
+     * Resolve currency codes from physical counts array.
+     * Returns a map of [input_id => currency_code].
+     * Handles both numeric IDs and string codes for consistency.
+     *
+     * @param  array<int, array{currency_id: mixed, amount: string}>  $counts
+     * @return array<mixed, string>
+     */
+    private function resolveCurrenciesForCounts(array $counts): array
+    {
+        $ids = collect($counts)->pluck('currency_id')->unique()->toArray();
+
+        $numericIds = array_filter($ids, 'is_numeric');
+        $stringCodes = array_filter($ids, fn ($id) => ! is_numeric($id));
+
+        $resolved = [];
+
+        foreach ($stringCodes as $code) {
+            $resolved[$code] = $code;
+        }
+
+        if (! empty($numericIds)) {
+            $currencies = Currency::whereIn('id', $numericIds)->pluck('code', 'id');
+            foreach ($currencies as $id => $code) {
+                $resolved[$id] = $code;
+                $resolved[(string) $id] = $code;
+                $resolved[$code] = $code;
+            }
+        }
+
+        return $resolved;
+    }
 
     public function findPendingHandover(int $userId, int $counterId, string $date): ?CounterHandover
     {

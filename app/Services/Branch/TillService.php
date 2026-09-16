@@ -4,6 +4,7 @@ namespace App\Services\Branch;
 
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Models\Currency;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Services\System\MathService;
@@ -119,8 +120,8 @@ class TillService
             ];
         })->values()->all();
 
-        $myrBalance = $tillBalances->firstWhere('currency_code', 'MYR');
-        $fcyBalances = $tillBalances->reject(fn (TillBalance $balance) => $balance->currency_code === 'MYR');
+        $myrBalance = $tillBalances->firstWhere('currency_code', Currency::baseCurrency());
+        $fcyBalances = $tillBalances->reject(fn (TillBalance $balance) => $balance->currency_code === Currency::baseCurrency());
 
         $openingMyr = $myrBalance ? (string) $myrBalance->opening_balance : '0';
         $openingFcy = $fcyBalances->reduce(
@@ -131,7 +132,7 @@ class TillService
         $totalMyrVariance = '0';
         $totalFcyVariance = '0';
         foreach ($currencyReconciliation as $row) {
-            if ($row['currency_code'] === 'MYR') {
+            if ($row['currency_code'] === Currency::baseCurrency()) {
                 $totalMyrVariance = $this->mathService->add($totalMyrVariance, $row['variance']);
             } else {
                 $totalFcyVariance = $this->mathService->add($totalFcyVariance, $row['variance']);
@@ -159,7 +160,7 @@ class TillService
      */
     public function expectedClosingForBalance(TillBalance $balance): string
     {
-        if ($balance->currency_code === 'MYR') {
+        if ($balance->currency_code === Currency::baseCurrency()) {
             return $this->mathService->add(
                 (string) $balance->opening_balance,
                 (string) ($balance->transaction_total ?? '0')
@@ -177,7 +178,7 @@ class TillService
     public function getMyrCashInHand(?int $branchId = null): string
     {
         $query = TillBalance::whereDate('date', now()->toDateString())
-            ->where('currency_code', 'MYR');
+            ->where('currency_code', Currency::baseCurrency());
 
         if ($branchId !== null) {
             $query->where('branch_id', $branchId);

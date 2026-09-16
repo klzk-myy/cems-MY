@@ -6,129 +6,40 @@ use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Models\Alert;
 use App\Models\FlaggedTransaction;
-use App\Models\HighRiskCountry;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\Compliance\AlertTriageService;
-use App\Services\Compliance\ComplianceService;
 use App\Services\Contracts\TransactionMonitoringServiceInterface;
-use App\Services\System\MathService;
-use App\Services\ThresholdService;
+use App\Services\Transaction\Checks\TransactionCheckRegistry;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TransactionMonitoringService implements TransactionMonitoringServiceInterface
 {
-    protected ComplianceService $complianceService;
-
-    protected MathService $mathService;
-
     public function __construct(
-        ComplianceService $complianceService,
-        MathService $mathService,
+        protected TransactionCheckRegistry $checkRegistry,
         protected AuditService $auditService,
-        protected ThresholdService $thresholdService,
         protected AlertTriageService $alertTriageService
-    ) {
-        $this->complianceService = $complianceService;
-        $this->mathService = $mathService;
-    }
+    ) {}
 
     public function monitorTransaction(Transaction $transaction): array
     {
-        $result = DB::transaction(function () use ($transaction) {
+        return DB::transaction(function () use ($transaction) {
             $lockedTransaction = Transaction::where('id', $transaction->id)
                 ->lockForUpdate()
                 ->firstOrFail();
             $flags = [];
 
-            // Velocity check - 24h cumulative threshold
-            $velocityCheck = $this->complianceService->checkVelocity(
-                $lockedTransaction->customer_id,
-                $lockedTransaction->amount_local
-            );
-            if ($velocityCheck['threshold_exceeded']) {
-                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::Velocity, "24h velocity exceeded: RM {$velocityCheck['with_new_transaction']}");
-                // Calculate count before logging (avoid N+1)
-                $transactionCount = Transaction::where('customer_id', $lockedTransaction->customer_id)
-                    ->where('created_at', '>=', now()->subHours(24))
-                    ->count();
-                $this->auditService->logAmlMonitorEvent('aml_velocity_alert_triggered', $lockedTransaction->id, [
-                    'entity_type' => 'Transaction',
-                    'new' => [
-                        'customer_id' => $lockedTransaction->customer_id,
-                        'velocity_amount' => $velocityCheck['with_new_transaction'],
-                        'transaction_count' => $transactionCount,
-                    ],
-                ]);
-            }
+            foreach ($this->checkRegistry->checks() as $check) {
+                foreach ($check->check($lockedTransaction) as $descriptor) {
+                    $flags[] = $this->createFlag($lockedTransaction, $descriptor->type, $descriptor->reason);
 
-            // Structuring detection - multiple small transactions
-            if ($this->complianceService->checkStructuring($lockedTransaction->customer_id)) {
-                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::Structuring, 'Potential structuring: 3+ transactions under RM '.number_format((float) $this->thresholdService->getStandardCddThreshold()).' within 1 hour');
-                $this->auditService->logAmlMonitorEvent('aml_structuring_detected', $lockedTransaction->id, [
-                    'entity_type' => 'Transaction',
-                    'new' => [
-                        'customer_id' => $lockedTransaction->customer_id,
-                        'pattern' => 'aggregate_transactions',
-                    ],
-                ]);
-            }
-
-            // Aggregate transaction check - related transactions exceeding threshold
-            $aggregateCheck = $this->complianceService->checkAggregateTransactions(
-                $lockedTransaction->customer_id,
-                $lockedTransaction->amount_local
-            );
-            if ($aggregateCheck['has_aggregate_concern']) {
-                $flags[] = $this->createFlag(
-                    $lockedTransaction,
-                    ComplianceFlagType::LargeAmount,
-                    "Aggregate concern: RM {$aggregateCheck['total_aggregate']} across {$aggregateCheck['transaction_count']} transactions in 24h"
-                );
-            }
-
-            // Unusual pattern detection
-            if ($this->isUnusualPattern($lockedTransaction)) {
-                $deviationPct = (float) $this->thresholdService->get('monitoring', 'unusual_pattern_multiplier', 2) * 100;
-                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::ManualReview, "Transaction deviates {$deviationPct}% from customer average");
-            }
-
-            // High-risk country transaction
-            if ($this->isHighRiskCountry($lockedTransaction)) {
-                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::HighRiskCountry, 'High-risk country transaction: '.$lockedTransaction->customer->nationality);
-            }
-
-            // Profile deviation check
-            if ($this->isProfileDeviation($lockedTransaction)) {
-                $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::ProfileDeviation, 'Transaction volume exceeds customer profile');
-            }
-
-            // Duration threshold check for large transactions on hold
-            $durationCheck = $this->complianceService->checkTransactionDuration($lockedTransaction);
-            if ($durationCheck['has_duration_concern']) {
-                $flags[] = $this->createFlag(
-                    $lockedTransaction,
-                    ComplianceFlagType::EddRequired,
-                    "Duration threshold exceeded: {$durationCheck['hours_on_hold']} hours on hold (threshold: {$durationCheck['threshold_hours']} hours) - {$durationCheck['severity']}"
-                );
-            }
-
-            // Hold decision. A Completed transaction has already booked its
-            // journal, position and till movements — reverting status to
-            // PendingApproval without unwinding them corrupts the books and a
-            // later approval would double-apply every effect. Keep the record
-            // Completed and flag it for compliance review instead; voiding is a
-            // separate reversal workflow.
-            $holdCheck = $this->complianceService->requiresHold(
-                $lockedTransaction->amount_local,
-                $lockedTransaction->customer
-            );
-            if ($holdCheck->requiresHold
-                && $lockedTransaction->status->isCompleted()
-                && $lockedTransaction->approved_by === null) {
-                foreach ($holdCheck->reasons as $reason) {
-                    $flags[] = $this->createFlag($lockedTransaction, ComplianceFlagType::EddRequired, $reason);
+                    if ($descriptor->auditEvent !== null) {
+                        $this->auditService->logAmlMonitorEvent($descriptor->auditEvent, $lockedTransaction->id, [
+                            'entity_type' => 'Transaction',
+                            'new' => $descriptor->auditPayload,
+                        ]);
+                    }
                 }
             }
 
@@ -141,8 +52,6 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
                 'status' => $lockedTransaction->status,
             ];
         });
-
-        return $result;
     }
 
     /**
@@ -176,64 +85,6 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
                 ]);
             }
         }
-    }
-
-    protected function isUnusualPattern(Transaction $transaction): bool
-    {
-        $lookbackDays = (int) $this->thresholdService->get('monitoring', 'unusual_pattern_lookback_days', 90);
-        $multiplier = (string) $this->thresholdService->get('monitoring', 'unusual_pattern_multiplier', 2);
-
-        $customerAvg = Transaction::where('customer_id', $transaction->customer_id)
-            ->where('created_at', '>=', now()->subDays($lookbackDays))
-            ->avg('amount_local');
-
-        if (! $customerAvg || $this->mathService->compare((string) $customerAvg, '0') === 0) {
-            return false;
-        }
-
-        $deviation = $this->mathService->divide(
-            (string) $transaction->amount_local,
-            (string) $customerAvg
-        );
-
-        return $this->mathService->compare($deviation, $multiplier) > 0;
-    }
-
-    protected function isHighRiskCountry(Transaction $transaction): bool
-    {
-        if (! $transaction->customer || ! $transaction->customer->nationality) {
-            return false;
-        }
-
-        if ($this->mathService->compare($transaction->amount_local, $this->thresholdService->getStandardCddThreshold()) < 0) {
-            return false;
-        }
-
-        return in_array($transaction->customer->nationality, HighRiskCountry::countryCodes(), true);
-    }
-
-    protected function isProfileDeviation(Transaction $transaction): bool
-    {
-        if (! $transaction->customer || ! $transaction->customer->annual_volume_estimate) {
-            return false;
-        }
-
-        $annualEstimate = (string) $transaction->customer->annual_volume_estimate;
-
-        if ($this->mathService->compare($annualEstimate, '0') <= 0) {
-            return false;
-        }
-
-        $monthlyThreshold = $this->mathService->divide($annualEstimate, '12');
-        $monthlyThreshold = $this->mathService->multiply($monthlyThreshold, '2');
-
-        $startOfMonth = now()->startOfMonth();
-        $currentMonthVolume = Transaction::where('customer_id', $transaction->customer_id)
-            ->where('created_at', '>=', $startOfMonth)
-            ->selectRaw('CAST(SUM(amount_local) AS CHAR) as total')
-            ->value('total') ?? '0';
-
-        return $this->mathService->compare((string) $currentMonthVolume, $monthlyThreshold) > 0;
     }
 
     /**

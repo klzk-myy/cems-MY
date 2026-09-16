@@ -12,8 +12,8 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\SanctionsMatchNotification;
 use App\Services\CustomerScreeningService;
-use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -27,7 +27,7 @@ class CustomerScreeningServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new CustomerScreeningService(new MathService);
+        $this->service = app(CustomerScreeningService::class);
     }
 
     #[Test]
@@ -195,7 +195,7 @@ class CustomerScreeningServiceTest extends TestCase
     #[Test]
     public function levenshtein_similarity_calculation(): void
     {
-        $service = new CustomerScreeningService(new MathService);
+        $service = app(CustomerScreeningService::class);
 
         $this->assertEquals(1.0, $service->levenshteinSimilarity('john', 'john'));
         $this->assertLessThan(1.0, $service->levenshteinSimilarity('john', 'jon'));
@@ -229,6 +229,29 @@ class CustomerScreeningServiceTest extends TestCase
         $results = $this->service->batchScreen([$customer1->id, $customer2->id]);
 
         $this->assertCount(2, $results);
+    }
+
+    #[Test]
+    public function batch_screen_fetches_candidate_pools_once_not_per_customer(): void
+    {
+        $customers = Customer::factory()->count(3)->create();
+
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+
+        $this->service->batchScreen($customers->pluck('id')->all());
+
+        $queries = DB::getQueryLog();
+        $poolQueries = collect($queries)->filter(
+            fn ($q) => str_contains($q['query'], 'sanction_entries')
+                || str_contains($q['query'], 'adverse_media_entries')
+        );
+
+        $this->assertLessThanOrEqual(
+            2,
+            $poolQueries->count(),
+            'Sanction/adverse pools must be fetched once per batch, not once per customer'
+        );
     }
 
     #[Test]
@@ -351,7 +374,7 @@ class CustomerScreeningServiceTest extends TestCase
             'related_name' => $relatedParty->full_name,
         ]);
 
-        $service = new CustomerScreeningService(new MathService);
+        $service = app(CustomerScreeningService::class);
         $service->conductRelatedPartiesDueDiligence($customer);
 
         // Verify transaction analysis was recorded - check via customer_relations analysis

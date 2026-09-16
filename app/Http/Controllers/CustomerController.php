@@ -44,6 +44,8 @@ class CustomerController extends Controller
             ->mapWithKeys(fn ($r) => [$r->currency_code => [
                 'buy' => (float) $r->rate_buy,
                 'sell' => (float) $r->rate_sell,
+                'rate_unit' => (int) $r->rate_unit,
+                'rate_inverse' => (bool) $r->rate_inverse,
             ]]);
 
         return response()->json([

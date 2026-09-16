@@ -11,7 +11,6 @@ use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 
 /**
  * Abstract base class for compliance monitors.
@@ -22,9 +21,12 @@ abstract class BaseMonitor
 {
     protected MathService $math;
 
-    public function __construct(MathService $math)
+    protected AlertTriageService $alertTriage;
+
+    public function __construct(MathService $math, AlertTriageService $alertTriage)
     {
         $this->math = $math;
+        $this->alertTriage = $alertTriage;
     }
 
     /**
@@ -114,17 +116,13 @@ abstract class BaseMonitor
     private function notifyComplianceOfficers(ComplianceFinding $finding): void
     {
         try {
-            $officers = app(AlertTriageService::class)->getAvailableOfficers();
+            $notified = $this->alertTriage->notifyAvailableOfficers(new ComplianceFindingNotification($finding));
 
-            if ($officers->isEmpty()) {
+            if ($notified === 0) {
                 Log::warning('No active compliance officers to notify of finding', [
                     'finding_id' => $finding->id,
                 ]);
-
-                return;
             }
-
-            Notification::send($officers, new ComplianceFindingNotification($finding));
         } catch (\Throwable $e) {
             Log::warning('Failed to dispatch compliance finding notification', [
                 'finding_id' => $finding->id,

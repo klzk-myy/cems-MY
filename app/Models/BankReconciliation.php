@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use App\Enums\BankReconciliationStatus;
 use App\Enums\CheckStatus;
-use App\Services\System\MathService;
+use App\Support\BcmathHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -99,9 +99,8 @@ class BankReconciliation extends BaseModel
 
     public function getAmount(): string
     {
-        $math = app(MathService::class);
 
-        return $math->subtract((string) $this->debit, (string) $this->credit);
+        return BcmathHelper::subtract((string) $this->debit, (string) $this->credit);
     }
 
     /**

@@ -3,14 +3,12 @@
 namespace App\Services\Transaction;
 
 use App\Enums\CddLevel;
-use App\Enums\RiskRating;
 use App\Enums\StockReservationStatus;
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionCreated;
-use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\CustomerBlockedException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
@@ -20,10 +18,10 @@ use App\Exceptions\Domain\PositionLimitExceededException;
 use App\Exceptions\Domain\TransactionBlockedException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
+use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\StockReservation;
-use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
@@ -47,6 +45,8 @@ use App\Services\Traits\AccountingEntriesTrait;
 use App\Services\Traits\ExchangeCalculatorTrait;
 use App\Services\Traits\TillBalanceTrait;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
+use App\Support\ActorContext;
+use App\ValueObjects\QuoteConvention;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
@@ -71,14 +71,16 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         protected TransactionRecoveryService $recoveryService,
         protected KycDocumentExpiryService $kycDocumentExpiryService,
         protected RateManagementServiceInterface $rateManagementService,
-        protected ?ExchangeCalculator $exchangeCalculator = null,
+        protected InitialStatusResolver $statusResolver,
+        protected ExchangeCalculator $exchangeCalculator,
+        protected AlertTriageService $alertTriageService,
     ) {}
 
     public function prepareAndCreate(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction
     {
-        $userId ??= auth()->id();
+        $userId ??= ActorContext::capture()->userId;
         $user = User::findOrFail($userId);
-        $ipAddress ??= request()?->ip();
+        $ipAddress ??= ActorContext::capture()->ipAddress;
 
         $this->validationService->validateCurrency($data['currency_code']);
         $this->validationService->validateIpAddress($ipAddress);
@@ -135,12 +137,20 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             );
         }
 
-        $amountLocal = $this->resolveExchangeCalculator()->calculate(
+        $exchangeResult = $this->resolveExchangeCalculator()->calculate(
             TransactionType::from((string) $data['type']),
             (string) $data['currency_code'],
             (string) $data['amount_foreign'],
             (string) $data['rate'],
-        )['amount_local'];
+            $user->branch_id,
+            QuoteConvention::forCode((string) $data['currency_code'])
+        );
+        $amountLocal = $exchangeResult['amount_local'];
+
+        // Submitted rates are unit-quoted (per currencies.rate_unit foreign
+        // units); transactions store the normalized per-unit rate so the
+        // amount_foreign × rate = amount_local ledger invariant stays exact.
+        $data['rate'] = $exchangeResult['rate'];
 
         $this->validationService->validatePepRequirements($customer, $data);
 
@@ -150,7 +160,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             throw new TransactionBlockedException($validationResult->getBlocks()[0]['message']);
         }
 
-        $allocation = $this->determineTellerAllocation(
+        $allocation = $this->tellerAllocationService->resolveForTransaction(
             $user,
             [
                 'type' => (string) $data['type'],
@@ -158,7 +168,11 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             ],
             $amountLocal
         );
-        $status = $this->determineInitialStatus($amountLocal, $validationResult->isHoldRequired(), $customer->risk_rating);
+        $initialStatus = $this->statusResolver->resolve(
+            $amountLocal,
+            $validationResult->isHoldRequired(),
+            $customer->risk_rating
+        );
 
         $context = new TransactionCreationContext(
             data: $data,
@@ -166,11 +180,14 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             tillBalance: $tillBalance,
             cddLevel: $validationResult->getCDDLevel(),
             holdRequired: $validationResult->isHoldRequired(),
-            status: $status,
+            status: $initialStatus->status,
             amountLocal: $amountLocal,
             user: $user,
             allocation: $allocation,
-            holdReason: $validationResult->isHoldRequired() ? 'Compliance hold' : null,
+            // hold_reason doubles as the compliance-clear gate in
+            // TransactionApprovalService — only genuine compliance holds may
+            // populate it; threshold/risk-driven approvals stay approvable.
+            holdReason: $validationResult->isHoldRequired() ? $initialStatus->holdReason : null,
         );
 
         return $this->create($context, $user->id, $ipAddress);
@@ -181,7 +198,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $data = $context->data;
         $user = $context->user;
         $userId ??= $user->id;
-        $ipAddress ??= request()?->ip();
+        $ipAddress ??= ActorContext::capture()->ipAddress;
 
         // Phase 1: validate, persist the transaction record and commit it. The
         // record must survive booking failures so the transaction can be marked
@@ -286,18 +303,15 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
             $confirmation = TransactionConfirmation::create([
                 'transaction_id' => $transaction->id,
-                'user_id' => auth()->id(),
+                'user_id' => ActorContext::capture()->userId,
                 'status' => TransactionConfirmationStatus::Pending->value,
-                'expires_at' => now()->addMinutes(30),
+                'expires_at' => now()->addMinutes((int) config('transactions.confirmation_ttl_minutes', 30)),
             ]);
 
-            foreach (app(AlertTriageService::class)->getAvailableOfficers() as $officer) {
-                if ($officer->id === auth()->id()) {
-                    continue;
-                }
-
-                $officer->notify(new LargeTransactionNotification($transaction, $confirmation));
-            }
+            $this->alertTriageService->notifyAvailableOfficers(
+                new LargeTransactionNotification($transaction, $confirmation),
+                ActorContext::capture()->userId
+            );
         } catch (Throwable $e) {
             Log::warning('Failed to escalate large transaction to compliance', [
                 'transaction_id' => $transaction->id,
@@ -589,59 +603,5 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $this->tellerAllocationService->applyTransactionAllocation($transaction, $context->allocation);
 
         $this->createAccountingEntries($transaction, $ipAddress, $context->user);
-    }
-
-    /**
-     * Determine the teller allocation to attach to a new transaction.
-     *
-     * @param  User  $user  The authenticated user creating the transaction.
-     * @param  array{type: string, currency_code: string}  $data  Validated transaction data.
-     * @param  string  $amountLocal  Local currency amount as a numeric string.
-     * @return TellerAllocation|null The active teller allocation, or null for non-tellers.
-     *
-     * @throws AllocationValidationException When the active allocation cannot cover the transaction.
-     */
-    private function determineTellerAllocation(User $user, array $data, string $amountLocal): ?TellerAllocation
-    {
-        if (! $user->isTeller()) {
-            return null;
-        }
-
-        if ($data['type'] === TransactionType::Buy->value) {
-            $result = $this->tellerAllocationService->validateTransaction($user, $data['currency_code'], $amountLocal, true);
-
-            if (! $result->valid) {
-                throw new AllocationValidationException($result->reason);
-            }
-
-            /** @var TellerAllocation|null $allocation */
-            $allocation = $result->allocation;
-
-            return $allocation;
-        }
-
-        return $this->tellerAllocationService->getActiveAllocation($user, $data['currency_code']);
-    }
-
-    /**
-     * Decide whether a transaction should start as Completed or PendingApproval.
-     * A small transaction auto-completes unless the customer is High risk or a
-     * compliance hold is required; anything at/above the auto-approve
-     * threshold needs approval. Null risk fails closed to approval.
-     *
-     * @param  string  $amountLocal  Local currency amount as a numeric string.
-     * @param  bool  $holdRequired  Whether a compliance hold is required.
-     * @param  RiskRating|null  $riskRating  Customer risk rating; null fails closed to approval.
-     */
-    private function determineInitialStatus(string $amountLocal, bool $holdRequired, ?RiskRating $riskRating): TransactionStatus
-    {
-        if ($holdRequired
-            || $riskRating === null
-            || $riskRating === RiskRating::High
-            || $this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
-            return TransactionStatus::PendingApproval;
-        }
-
-        return TransactionStatus::Completed;
     }
 }

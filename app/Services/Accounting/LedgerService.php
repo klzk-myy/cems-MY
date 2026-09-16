@@ -417,46 +417,29 @@ class LedgerService
 
         $allBalances = $this->getAggregatedAccountBalances(null, $asOfDate, $branchId);
 
-        $assetData = [];
-        $totalAssets = '0';
-        foreach ($assets as $asset) {
-            $balance = $allBalances->get($asset->account_code, '0');
-            $assetData[] = [
-                'account_code' => $asset->account_code,
-                'account_name' => $asset->account_name,
-                'balance' => $balance,
-                'amount' => $balance,
-            ];
-            $totalAssets = $this->mathService->add($totalAssets, $balance);
-        }
+        // Debit-normal sections report the raw net; credit-normal sections
+        // flip the sign so credit balances show as positive.
+        [$assetData, $totalAssets] = $this->sectionTotals($assets, $allBalances, '1');
+        [$liabilityData, $totalLiabilities] = $this->sectionTotals($liabilities, $allBalances, '-1');
+        [$equityData, $totalEquity] = $this->sectionTotals($equities, $allBalances, '-1');
 
-        $liabilityData = [];
-        $totalLiabilities = '0';
-        foreach ($liabilities as $liability) {
-            $net = $allBalances->get($liability->account_code, '0');
-            $balance = $this->mathService->multiply($net, '-1'); // Credit balances shown as positive
-            $liabilityData[] = [
-                'account_code' => $liability->account_code,
-                'account_name' => $liability->account_name,
-                'balance' => $balance,
-                'amount' => $balance,
-            ];
-            $totalLiabilities = $this->mathService->add($totalLiabilities, $balance);
+        // Unclosed revenue/expense balances are the period's net income and
+        // belong in equity — without them the sheet is off by exactly that
+        // amount between period closes. The line reads zero once
+        // PeriodCloseService has posted the closing entries.
+        $netIncome = '0';
+        foreach (ChartOfAccount::whereIn('account_type', ['Revenue', 'Expense'])->get(['account_code']) as $plAccount) {
+            $netIncome = $this->mathService->add($netIncome, $allBalances->get($plAccount->account_code, '0'));
         }
+        $netIncome = $this->mathService->multiply($netIncome, '-1');
 
-        $equityData = [];
-        $totalEquity = '0';
-        foreach ($equities as $equity) {
-            $net = $allBalances->get($equity->account_code, '0');
-            $balance = $this->mathService->multiply($net, '-1'); // Credit balances shown as positive
-            $equityData[] = [
-                'account_code' => $equity->account_code,
-                'account_name' => $equity->account_name,
-                'balance' => $balance,
-                'amount' => $balance,
-            ];
-            $totalEquity = $this->mathService->add($totalEquity, $balance);
-        }
+        $equityData[] = [
+            'account_code' => '',
+            'account_name' => 'Net Income (Current Period)',
+            'balance' => $netIncome,
+            'amount' => $netIncome,
+        ];
+        $totalEquity = $this->mathService->add($totalEquity, $netIncome);
 
         $liabilitiesPlusEquity = $this->mathService->add($totalLiabilities, $totalEquity);
 
@@ -468,9 +451,44 @@ class LedgerService
             'equity' => $equityData,
             'total_equity' => $totalEquity,
             'liabilities_plus_equity' => $liabilitiesPlusEquity,
+            'total_liabilities_equity' => $liabilitiesPlusEquity,
             'is_balanced' => $this->mathService->compare($totalAssets, $liabilitiesPlusEquity) === 0,
             'as_of_date' => $asOfDate,
         ];
+    }
+
+    /**
+     * Build one balance-sheet section: a row per account plus the running
+     * total. `$sign === '-1'` flips the net so credit-normal balances display
+     * as positive; debit-normal sections keep the raw net (including the '0'
+     * default for absent accounts, which would otherwise render as '0.0000').
+     *
+     * @param  \Illuminate\Support\Collection<int, ChartOfAccount>  $accounts
+     * @param  \Illuminate\Support\Collection<string, string>  $balances
+     * @return array{0: array<int, array{account_code: string, account_name: string, balance: string, amount: string}>, 1: string}
+     */
+    private function sectionTotals(\Illuminate\Support\Collection $accounts, \Illuminate\Support\Collection $balances, string $sign): array
+    {
+        $rows = [];
+        $total = '0';
+
+        foreach ($accounts as $account) {
+            $balance = $balances->get($account->account_code, '0');
+
+            if ($sign === '-1') {
+                $balance = $this->mathService->multiply($balance, '-1');
+            }
+
+            $rows[] = [
+                'account_code' => $account->account_code,
+                'account_name' => $account->account_name,
+                'balance' => $balance,
+                'amount' => $balance,
+            ];
+            $total = $this->mathService->add($total, $balance);
+        }
+
+        return [$rows, $total];
     }
 
     /**

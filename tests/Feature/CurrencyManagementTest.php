@@ -195,6 +195,116 @@ class CurrencyManagementTest extends TestCase
     }
 
     #[Test]
+    public function index_page_does_not_expose_inline_quote_unit_editing(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Currency::factory()->create(['code' => 'IDR', 'rate_unit' => 1000000]);
+
+        $this->actingAs($admin)
+            ->get(route('system.currencies.index'))
+            ->assertOk()
+            ->assertDontSee('Quote Unit')
+            ->assertDontSee('rate-unit', false);
+    }
+
+    #[Test]
+    public function admin_can_set_quote_direction_to_inverse(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $currency = Currency::factory()->create(['code' => 'IDR']);
+
+        $response = $this->actingAs($admin)
+            ->put(route('system.currencies.update', $currency), [
+                'name' => 'Indonesian Rupiah',
+                'decimal_places' => '0',
+                'rate_unit' => '1',
+                'rate_inverse' => '1',
+            ]);
+
+        $response->assertRedirect(route('system.currencies.index'));
+
+        $currency->refresh();
+        $this->assertSame(1, (int) $currency->rate_unit);
+        $this->assertTrue((bool) $currency->rate_inverse);
+
+        $this->assertDatabaseHas('system_logs', [
+            'action' => 'rate_unit_changed',
+            'entity_type' => 'Currency',
+        ]);
+    }
+
+    #[Test]
+    public function edit_form_sets_quote_unit_and_direction(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $currency = Currency::factory()->create(['code' => 'IDR']);
+
+        $this->actingAs($admin)
+            ->get(route('system.currencies.edit', $currency))
+            ->assertOk()
+            ->assertSee('name="rate_unit"', false)
+            ->assertSee('name="rate_inverse"', false);
+
+        $response = $this->actingAs($admin)
+            ->put(route('system.currencies.update', $currency), [
+                'name' => 'Indonesian Rupiah',
+                'symbol' => 'Rp',
+                'decimal_places' => '0',
+                'rate_unit' => '1000000',
+                'rate_inverse' => '1',
+            ]);
+
+        $response->assertRedirect(route('system.currencies.index'));
+        $response->assertSessionHas('success');
+
+        $currency->refresh();
+        $this->assertSame(1000000, (int) $currency->rate_unit);
+        $this->assertTrue((bool) $currency->rate_inverse);
+        $this->assertSame('Indonesian Rupiah', $currency->name);
+
+        $this->assertDatabaseHas('system_logs', [
+            'action' => 'rate_unit_changed',
+            'entity_type' => 'Currency',
+        ]);
+    }
+
+    #[Test]
+    public function edit_form_requires_valid_quote_unit(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $currency = Currency::factory()->create(['code' => 'IDR']);
+
+        $this->actingAs($admin)
+            ->put(route('system.currencies.update', $currency), [
+                'name' => 'Indonesian Rupiah',
+                'decimal_places' => '0',
+                'rate_unit' => '0',
+                'rate_inverse' => '0',
+            ])
+            ->assertSessionHasErrors('rate_unit');
+
+        $this->assertSame(1, (int) $currency->refresh()->rate_unit);
+    }
+
+    #[Test]
+    public function quote_unit_must_be_a_positive_integer(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $currency = Currency::factory()->create(['code' => 'IDR']);
+
+        $this->actingAs($admin)
+            ->put(route('system.currencies.update', $currency), [
+                'name' => 'Indonesian Rupiah',
+                'decimal_places' => '0',
+                'rate_unit' => '0',
+                'rate_inverse' => '0',
+            ])
+            ->assertSessionHasErrors('rate_unit');
+
+        $this->assertSame(1, (int) $currency->refresh()->rate_unit);
+    }
+
+    #[Test]
     public function non_admin_cannot_manage_currencies(): void
     {
         $manager = User::factory()->manager()->create();
@@ -212,6 +322,16 @@ class CurrencyManagementTest extends TestCase
             ->post(route('system.currencies.disable', $currency))
             ->assertForbidden();
 
+        $this->actingAs($manager)
+            ->put(route('system.currencies.update', $currency), [
+                'name' => 'US Dollar',
+                'decimal_places' => '2',
+                'rate_unit' => '1000',
+                'rate_inverse' => '0',
+            ])
+            ->assertForbidden();
+
         $this->assertTrue($currency->refresh()->is_active);
+        $this->assertSame(1, (int) $currency->rate_unit);
     }
 }

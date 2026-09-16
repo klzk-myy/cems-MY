@@ -29,7 +29,10 @@
                                                 @foreach ($roles as $role)
                                                     @php
                                                         $granted = $matrix[$role->value][$permission->value] ?? false;
-                                                        $checkboxName = "permissions.{$role->value}.{$permission->value}";
+                                                        // Nested array syntax so PHP parses the submission
+                                                        // into permissions[role][permission], matching the
+                                                        // dotted lookups in validateUpdateRequest().
+                                                        $checkboxName = "permissions[{$role->value}][{$permission->value}]";
                                                         $isAdminLocked = $role === \App\Enums\UserRole::Admin;
                                                     @endphp
                                                     <td class="px-4 py-3 text-center">

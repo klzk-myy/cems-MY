@@ -32,6 +32,7 @@ class TransactionBatchController extends Controller
         protected TransactionMonitoringService $monitoringService,
         protected DocumentStorageService $documentStorageService,
         protected TransactionImportService $importService,
+        protected CsvReportWriter $csvReportWriter,
         protected LoggerInterface $logger
     ) {}
 
@@ -176,7 +177,7 @@ class TransactionBatchController extends Controller
         }
 
         $filename = "import_errors_{$import->id}.csv";
-        $filepath = app(CsvReportWriter::class)->write($filename, $headers, $rows);
+        $filepath = $this->csvReportWriter->write($filename, $headers, $rows);
 
         return response()->download(Storage::path($filepath), $filename, [
             'Content-Type' => 'text/csv',

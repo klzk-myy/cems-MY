@@ -206,6 +206,26 @@ class LedgerServiceTest extends TestCase
     }
 
     #[Test]
+    public function balance_sheet_includes_unclosed_net_income_in_equity(): void
+    {
+        $today = now()->toDateString();
+        $this->createLedgerEntry('1000', $today, '10000.00', '0.00', '10000.00');
+        $this->createLedgerEntry('3000', $today, '0.00', '7000.00', '7000.00');
+        // Unclosed P&L: revenue 4000 credit, expense 1000 debit → net income 3000.
+        $this->createLedgerEntry('4000', $today, '0.00', '4000.00', '4000.00');
+        $this->createLedgerEntry('5000', $today, '1000.00', '0.00', '1000.00');
+
+        $result = $this->service->getBalanceSheet($today);
+
+        $netIncome = collect($result['equity'])->firstWhere('account_name', 'Net Income (Current Period)');
+
+        $this->assertNotNull($netIncome);
+        $this->assertEquals('3000.0000', $netIncome['balance']);
+        $this->assertTrue($result['is_balanced']);
+        $this->assertEquals($result['total_assets'], $result['liabilities_plus_equity']);
+    }
+
+    #[Test]
     public function get_account_balance_respects_branch_filter(): void
     {
         $today = now()->toDateString();

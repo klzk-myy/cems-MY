@@ -265,4 +265,141 @@ class EodReconciliationServiceTest extends TestCase
         // Variance = 15000 - 15000 = 0 (Pending transaction excluded)
         $this->assertEquals('0.0000', $variance);
     }
+
+    #[Test]
+    public function counter_reconciliation_response_shape_is_stable(): void
+    {
+        $date = Carbon::today();
+
+        // Direct insert: the model's `date` cast serializes session_date as
+        // 'Y-m-d 00:00:00' on sqlite, which the service's string-equality
+        // lookup would miss (MySQL DATE columns truncate server-side).
+        DB::table('counter_sessions')->insert([
+            'counter_id' => $this->counter->id,
+            'user_id' => $this->user->id,
+            'session_date' => $date->toDateString(),
+            'opened_at' => now()->subHours(8),
+            'opened_by' => $this->user->id,
+            'closed_at' => now(),
+            'closed_by' => $this->user->id,
+            'status' => CounterSessionStatus::Closed->value,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('till_balances')->insert([
+            'till_id' => (string) $this->counter->code,
+            'currency_code' => 'MYR',
+            'branch_id' => $this->branch->id,
+            'opening_balance' => '10000.00',
+            'closing_balance' => '14000.00',
+            'date' => $date->toDateString(),
+            'opened_by' => $this->user->id,
+            'closed_by' => $this->user->id,
+        ]);
+
+        // One Sell (MYR in) and one Buy (MYR out) so the transaction section
+        // has non-zero counts on both sides.
+        DB::table('transactions')->insert([
+            'type' => TransactionType::Sell->value,
+            'status' => TransactionStatus::Completed->value,
+            'currency_code' => 'USD',
+            'amount_local' => '5000.00',
+            'amount_foreign' => '1100.00',
+            'rate' => '4.5455',
+            'till_id' => (string) $this->counter->code,
+            'branch_id' => $this->branch->id,
+            'user_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'approved_by' => $this->user->id,
+            'approved_at' => now(),
+            'cdd_level' => 'Simplified',
+            'created_at' => now(),
+        ]);
+        DB::table('transactions')->insert([
+            'type' => TransactionType::Buy->value,
+            'status' => TransactionStatus::Completed->value,
+            'currency_code' => 'USD',
+            'amount_local' => '1000.00',
+            'amount_foreign' => '220.00',
+            'rate' => '4.5455',
+            'till_id' => (string) $this->counter->code,
+            'branch_id' => $this->branch->id,
+            'user_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'approved_by' => $this->user->id,
+            'approved_at' => now(),
+            'cdd_level' => 'Simplified',
+            'created_at' => now(),
+        ]);
+
+        $report = $this->service->generateCounterReconciliation($this->counter->id, $date);
+
+        // Snapshot the key set + order — the API response shape is contractual.
+        $this->assertSame([
+            'counter_id',
+            'counter_code',
+            'counter_name',
+            'branch_name',
+            'date',
+            'has_session',
+            'session',
+            'opening_float',
+            'total_cash_received',
+            'total_cash_paid_out',
+            'closing_float_expected',
+            'closing_float_actual',
+            'variance',
+            'currency_breakdown',
+            'transactions',
+            'large_transactions',
+            'flagged_transactions',
+            'handover_history',
+        ], array_keys($report));
+
+        $this->assertSame([
+            'total_count',
+            'buy_count',
+            'sell_count',
+            'buy_total',
+            'sell_total',
+        ], array_keys($report['transactions']));
+
+        $this->assertSame([
+            'id',
+            'status',
+            'opened_at',
+            'closed_at',
+            'opened_by',
+            'closed_by',
+            'current_user',
+        ], array_keys($report['session']));
+
+        // Counts pair with transaction type; totals carry the cash-flow sums
+        // (legacy pairing — buy_total is cash received).
+        $this->assertSame(1, $report['transactions']['buy_count']);
+        $this->assertSame(1, $report['transactions']['sell_count']);
+        $this->assertSame('5000', $report['transactions']['buy_total']);
+        $this->assertSame('1000', $report['transactions']['sell_total']);
+        $this->assertSame('10000.0000', $report['opening_float']);
+        $this->assertSame('14000.0000', $report['closing_float_expected']);
+        $this->assertSame('14000.0000', $report['closing_float_actual']);
+    }
+
+    #[Test]
+    public function counter_reconciliation_reports_no_session_for_missing_session(): void
+    {
+        $report = $this->service->generateCounterReconciliation($this->counter->id, Carbon::today());
+
+        $this->assertSame([
+            'counter_id',
+            'counter_code',
+            'counter_name',
+            'branch_name',
+            'date',
+            'has_session',
+            'message',
+        ], array_keys($report));
+        $this->assertFalse($report['has_session']);
+    }
 }

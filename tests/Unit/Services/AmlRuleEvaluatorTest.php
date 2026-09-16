@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\Compliance\AmlRuleEvaluator;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -21,7 +22,7 @@ class AmlRuleEvaluatorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->evaluator = new AmlRuleEvaluator(new MathService);
+        $this->evaluator = new AmlRuleEvaluator(new MathService, new ThresholdService);
     }
 
     #[Test]

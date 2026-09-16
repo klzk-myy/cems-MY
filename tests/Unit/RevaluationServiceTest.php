@@ -11,6 +11,8 @@ use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\RevaluationService;
 use App\Services\AuditService;
 use App\Services\System\MathService;
+use App\Services\System\SystemAlertService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\RateApiService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -105,7 +107,9 @@ class RevaluationServiceTest extends TestCase
             $this->mathService,
             $mockRateApi,
             $mockAccounting,
-            $mockAudit
+            $mockAudit,
+            app(SystemAlertService::class),
+            new ThresholdService
         );
         try {
             $service->runRevaluationWithJournal($testDate, $this->testUser->id);
@@ -174,7 +178,9 @@ class RevaluationServiceTest extends TestCase
             $this->mathService,
             $mockRateApi,
             $mockAccounting,
-            $mockAudit
+            $mockAudit,
+            app(SystemAlertService::class),
+            new ThresholdService
         );
 
         // Act & Assert: Verify error message includes both successful and failed currencies
@@ -228,7 +234,9 @@ class RevaluationServiceTest extends TestCase
             $this->mathService,
             $mockRateApi,
             $mockAccounting,
-            $mockAudit
+            $mockAudit,
+            app(SystemAlertService::class),
+            new ThresholdService
         );
 
         // Act
@@ -276,7 +284,9 @@ class RevaluationServiceTest extends TestCase
             $this->mathService,
             $mockRateApi,
             $mockAccounting,
-            $mockAudit
+            $mockAudit,
+            app(SystemAlertService::class),
+            new ThresholdService
         );
 
         // Act
@@ -344,7 +354,9 @@ class RevaluationServiceTest extends TestCase
             $this->mathService,
             $mockRateApi,
             $mockAccounting,
-            $mockAudit
+            $mockAudit,
+            app(SystemAlertService::class),
+            new ThresholdService
         );
 
         // Act
@@ -354,12 +366,121 @@ class RevaluationServiceTest extends TestCase
         // absolute value 100 * (4.4 - 4.0) = 40, not the accumulated 99 + 20 = 119.
         $position->refresh();
         $this->assertSame('40.0000', $position->unrealized_gain_loss);
-        $this->assertSame('4.400000', $position->current_rate);
+        $this->assertSame('4.40000000', $position->current_rate);
         $this->assertDatabaseHas('revaluation_entries', [
             'currency_code' => 'USD',
             'gain_loss_amount' => '20',
             'revaluation_date' => $testDate.' 00:00:00',
         ]);
+    }
+
+    #[Test]
+    public function run_revaluation_with_journal_skips_position_already_revalued_at_same_rate(): void
+    {
+        // Arrange: open period + position whose current_rate already equals
+        // the incoming mid rate — the dedup guard must skip it entirely.
+        $testDate = now()->toDateString();
+        $this->createTestAccountingPeriod($testDate);
+
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => 'TEST-BRANCH',
+            'quantity' => '1000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.60',
+        ]);
+
+        $mockRateApi = Mockery::mock(RateApiService::class);
+        $mockRateApi->shouldReceive('getRateForCurrency')
+            ->with('USD')
+            ->andReturn(['mid' => 4.60]);
+
+        $mockAccounting = Mockery::mock(AccountingService::class);
+        $mockAccounting->shouldReceive('createJournalEntry')->never();
+
+        $service = new RevaluationService(
+            $this->mathService,
+            $mockRateApi,
+            $mockAccounting,
+            Mockery::mock(AuditService::class),
+            app(SystemAlertService::class),
+            new ThresholdService
+        );
+
+        $result = $service->runRevaluationWithJournal($testDate, $this->testUser->id);
+
+        $this->assertEquals(0, $result['positions_updated']);
+        $this->assertEmpty($result['results']);
+        $this->assertDatabaseCount('revaluation_entries', 0);
+    }
+
+    #[Test]
+    public function run_revaluation_with_journal_posts_gain_and_loss_lines_in_correct_direction(): void
+    {
+        $testDate = now()->toDateString();
+        $this->createTestAccountingPeriod($testDate);
+
+        // USD gains: rate moves 4.50 → 4.60 on 1000 units => +100.
+        // EUR loses: rate moves 5.00 → 4.90 on 500 units => -50.
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => 'TEST-BRANCH',
+            'quantity' => '1000.00',
+            'average_cost' => '4.50',
+            'current_rate' => '4.50',
+        ]);
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'EUR',
+            'branch_id' => 'TEST-BRANCH',
+            'quantity' => '500.00',
+            'average_cost' => '5.00',
+            'current_rate' => '5.00',
+        ]);
+
+        $mockRateApi = Mockery::mock(RateApiService::class);
+        $mockRateApi->shouldReceive('getRateForCurrency')->with('USD')->andReturn(['mid' => 4.60]);
+        $mockRateApi->shouldReceive('getRateForCurrency')->with('EUR')->andReturn(['mid' => 4.90]);
+
+        $capturedLines = [];
+        $mockAccounting = Mockery::mock(AccountingService::class);
+        $mockAccounting->shouldReceive('createJournalEntry')
+            ->twice()
+            ->andReturnUsing(function (array $lines) use (&$capturedLines) {
+                $capturedLines[] = $lines;
+
+                return Mockery::mock(JournalEntry::class)->shouldIgnoreMissing();
+            });
+
+        $service = new RevaluationService(
+            $this->mathService,
+            $mockRateApi,
+            $mockAccounting,
+            Mockery::mock(AuditService::class),
+            app(SystemAlertService::class),
+            new ThresholdService
+        );
+
+        $service->runRevaluationWithJournal($testDate, $this->testUser->id);
+
+        $this->assertCount(2, $capturedLines);
+
+        // Gain (USD): debit forex position account, credit gain account.
+        [$gainPosition, $gainPnl] = $capturedLines[0];
+        $this->assertSame('4102', $gainPosition['account_code']);
+        $this->assertSame('100.0000', $gainPosition['debit']);
+        $this->assertSame('0', $gainPosition['credit']);
+        $this->assertSame('5110', $gainPnl['account_code']);
+        $this->assertSame('0', $gainPnl['debit']);
+        $this->assertSame('100.0000', $gainPnl['credit']);
+
+        // Loss (EUR): credit forex position account, debit loss account.
+        [$lossPosition, $lossPnl] = $capturedLines[1];
+        $this->assertSame('4102', $lossPosition['account_code']);
+        $this->assertSame('0', $lossPosition['debit']);
+        $this->assertSame('50.0000', $lossPosition['credit']);
+        $this->assertSame('6100', $lossPnl['account_code']);
+        $this->assertSame('50.0000', $lossPnl['debit']);
+        $this->assertSame('0', $lossPnl['credit']);
     }
 
     protected function tearDown(): void

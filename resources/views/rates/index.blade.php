@@ -42,9 +42,15 @@
             @endif
 
             <x-card title="Current Rates">
+                <x-slot:actions>
+                    <a href="{{ route('rates.units') }}">
+                        <x-button type="button" variant="secondary" size="sm">Quote Units</x-button>
+                    </a>
+                </x-slot:actions>
                 <x-table>
                     <x-slot:thead>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Quote Unit</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Buy Rate</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Sell Rate</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Spread</th>
@@ -65,8 +71,15 @@
                                         <span class="text-ink-muted">· {{ $currencies->get($rate['currency_code']) }}</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-sm">{{ number_format((float) $rate['rate_buy'], 4) }}</td>
-                                <td class="px-4 py-3 text-sm">{{ number_format((float) $rate['rate_sell'], 4) }}</td>
+                                <td class="px-4 py-3 text-sm text-ink-muted">
+                                    @if($rate['display_inverse'])
+                                        per RM {{ number_format((float) $rate['display_unit']) }}
+                                    @else
+                                        per {{ number_format((float) $rate['display_unit']) }}
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-sm">{{ number_format((float) $rate['display_buy'], 8) }}</td>
+                                <td class="px-4 py-3 text-sm">{{ number_format((float) $rate['display_sell'], 8) }}</td>
                                 <td class="px-4 py-3 text-sm">{{ number_format((float) $rate['spread'], 2) }}%</td>
                                 <td class="px-4 py-3 text-sm">
                                     <span class="{{ $isStale ? 'text-warning-text' : 'text-ink-muted' }}">
@@ -82,18 +95,22 @@
                                         variant="secondary"
                                         size="sm"
                                         :data-currency="$rate['currency_code']"
-                                        :data-buy="$rate['rate_buy']"
-                                        :data-sell="$rate['rate_sell']"
+                                        :data-buy="$rate['display_buy']"
+                                        :data-sell="$rate['display_sell']"
+                                        :data-unit="$rate['display_unit']"
+                                        :data-inverse="$rate['display_inverse'] ? '1' : ''"
                                         @click="$dispatch('override-rate', {
                                             currency: $el.dataset.currency,
                                             buy: $el.dataset.buy,
-                                            sell: $el.dataset.sell
+                                            sell: $el.dataset.sell,
+                                            unit: $el.dataset.unit,
+                                            inverse: $el.dataset.inverse
                                         })"
                                     >Override</x-button>
                                 </td>
                             </tr>
                         @empty
-                            <x-empty-state message="No exchange rates configured yet." :colspan="6" />
+                            <x-empty-state message="No exchange rates configured yet." :colspan="7" />
                         @endforelse
                     </x-slot:tbody>
                 </x-table>
@@ -132,18 +149,33 @@
                                 <label class="block text-sm font-medium text-ink-muted mb-1">Currency</label>
                                 <x-input type="text" name="currency_code" x-model="overrideCurrency" readonly />
                             </div>
+                            <p class="text-sm text-ink-muted">
+                                <template x-if="!overrideInverse">
+                                    <span>Rates are quoted in MYR per <span x-text="overrideUnit"></span>
+                                    <span x-text="overrideCurrency"></span> — the currency's configured quote unit.</span>
+                                </template>
+                                <template x-if="overrideInverse">
+                                    <span>Rates are quoted in <span x-text="overrideCurrency"></span> per RM
+                                    <span x-text="overrideUnit"></span> — inverse quote, so buy is the larger number.</span>
+                                </template>
+                            </p>
                             <div>
-                                <label class="block text-sm font-medium text-ink-muted mb-1">Rate Buy</label>
-                                <x-input type="number" step="0.0001" min="0.0001" name="rate_buy" required x-model="overrideBuy" />
+                                <label class="block text-sm font-medium text-ink-muted mb-1">Rate Buy (per <span x-text="overrideUnit"></span>)</label>
+                                <x-input type="number" step="any" min="0.0001" name="rate_buy" required x-model="overrideBuy" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-ink-muted mb-1">Rate Sell</label>
-                                <x-input type="number" step="0.0001" min="0.0001" name="rate_sell" required x-model="overrideSell" />
+                                <label class="block text-sm font-medium text-ink-muted mb-1">Rate Sell (per <span x-text="overrideUnit"></span>)</label>
+                                <x-input type="number" step="any" min="0.0001" name="rate_sell" required x-model="overrideSell" />
                             </div>
-                            <p x-show="overrideBuy !== '' && overrideSell !== '' && parseFloat(overrideSell) <= parseFloat(overrideBuy)"
+                            <p x-show="overrideBuy !== '' && overrideSell !== '' && !overrideInverse && parseFloat(overrideSell) <= parseFloat(overrideBuy)"
                                x-cloak
                                class="text-sm text-danger-text">
                                 Sell rate should be higher than the buy rate.
+                            </p>
+                            <p x-show="overrideBuy !== '' && overrideSell !== '' && overrideInverse && parseFloat(overrideBuy) <= parseFloat(overrideSell)"
+                               x-cloak
+                               class="text-sm text-danger-text">
+                                Buy rate should be higher than the sell rate (inverse quote).
                             </p>
                             <div>
                                 <label class="block text-sm font-medium text-ink-muted mb-1">Effective Date</label>

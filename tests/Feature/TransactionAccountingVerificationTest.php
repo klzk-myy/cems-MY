@@ -80,7 +80,7 @@ class TransactionAccountingVerificationTest extends TestCase
 
         $this->accountingService = new AccountingService($this->mathService, $auditService, new CacheInvalidationService);
         $this->ledgerService = new LedgerService($this->mathService, $this->accountingService);
-        $this->positionService = new CurrencyPositionService($this->mathService, new CurrencyPositionLockService($this->mathService), new CacheInvalidationService);
+        $this->positionService = new CurrencyPositionService($this->mathService, new CurrencyPositionLockService($this->mathService), new CacheInvalidationService, new ThresholdService);
 
         $this->transactionService = resolve(TransactionService::class);
 

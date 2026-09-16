@@ -18,16 +18,26 @@
         <input type="hidden" name="branch_id" value="{{ auth()->user()?->branch_id }}">
         <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4"
+             x-data="{ currencyUnits: @js($currencyUnits ?? []), currencyInverses: @js($currencyInverses ?? []), currency_code: @js(old('currency_code', '')) }">
             <x-select name="type" label="Transaction Type" :options="['Buy' => 'Buy', 'Sell' => 'Sell']" :selected="old('type')" required />
 
             <x-customer-typeahead name="customer_id" label="Customer" :customers="$customers ?? []" required />
 
-            <x-select name="currency_code" label="Currency" :options="$currencies ?? []" :selected="old('currency_code')" required />
+            <x-select name="currency_code" label="Currency" :options="$currencies ?? []" :selected="old('currency_code')" required
+                x-model="currency_code" />
 
             <x-input type="number" name="amount_foreign" label="Foreign Amount" step="0.01" value="{{ old('amount_foreign') }}" required />
 
-            <x-input type="number" name="rate" label="Exchange Rate" step="0.0001" value="{{ old('rate') }}" required />
+            <div>
+                <x-input type="number" name="rate" label="Exchange Rate" step="0.0001" value="{{ old('rate') }}" required />
+                <p x-show="currencyInverses[currency_code]" x-cloak class="mt-1 text-xs text-ink-muted">
+                    <span x-text="currency_code"></span> per RM <span x-text="currencyUnits[currency_code]"></span>
+                </p>
+                <p x-show="!currencyInverses[currency_code] && (currencyUnits[currency_code] ?? 1) > 1" x-cloak class="mt-1 text-xs text-ink-muted">
+                    in MYR per <span x-text="currencyUnits[currency_code]"></span> <span x-text="currency_code"></span>
+                </p>
+            </div>
 
             <x-select name="counter_id" label="Counter" :options="$counters ?? []" :selected="old('counter_id')" required />
 

@@ -15,12 +15,6 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureMfaVerified
 {
-    // NOTE (O10): TrustedDeviceService does not exist. Trusted device bypass
-    // approach: inject TrustedDeviceService and add cookie check before MFA
-    // verification. When implemented, check cookie `trusted_device_{user->id}`
-    // via $this->trustedDeviceService->isValid() and return $next($request)
-    // if valid, else proceed with session/cookie verification as today.
-
     public function __construct(
         protected MfaService $mfaService
     ) {}
@@ -71,18 +65,12 @@ class EnsureMfaVerified
         }
 
         // Check session lifetime first — even MFA cannot extend an expired session
-        if ($this->sessionExists($request)) {
-            $sessionLifetime = config('security.session.lifetime', 480) * 60;
-            $sessionCreatedAt = $this->sessionGet($request, '_session_created_at', now()->timestamp);
-            $sessionElapsed = now()->timestamp - $sessionCreatedAt;
-
-            if ($sessionElapsed >= $sessionLifetime) {
-                if (! $request->expectsJson()) {
-                    return redirect()->route('login');
-                }
-
-                return $this->jsonResponse('Session expired, please re-authenticate', 401);
+        if ($this->sessionLifetimeExceeded($request)) {
+            if (! $request->expectsJson()) {
+                return redirect()->route('login');
             }
+
+            return $this->jsonResponse('Session expired, please re-authenticate', 401);
         }
 
         // Check session MFA verification
@@ -115,6 +103,22 @@ class EnsureMfaVerified
         }
 
         return $this->jsonResponse('MFA verification required', 401);
+    }
+
+    /**
+     * Whether the session has exceeded the absolute lifetime cap. Sessionless
+     * requests (pure API tokens) have nothing to expire.
+     */
+    protected function sessionLifetimeExceeded(Request $request): bool
+    {
+        if (! $this->sessionExists($request)) {
+            return false;
+        }
+
+        $sessionLifetime = config('security.session.lifetime', 480) * 60;
+        $sessionCreatedAt = $this->sessionGet($request, '_session_created_at', now()->timestamp);
+
+        return (now()->timestamp - $sessionCreatedAt) >= $sessionLifetime;
     }
 
     /**

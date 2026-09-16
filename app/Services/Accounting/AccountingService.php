@@ -15,6 +15,7 @@ use App\Services\AuditService;
 use App\Services\Contracts\AccountingServiceInterface;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use App\Support\ActorContext;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -83,7 +84,7 @@ class AccountingService implements AccountingServiceInterface
         ?int $createdBy = null,
         ?int $branchId = null
     ): JournalEntry {
-        $createdBy = $createdBy ?? auth()->user()?->id;
+        $createdBy = $createdBy ?? ActorContext::capture()->userId;
         $entryDate = $entryDate ?? now()->toDateString();
 
         return DB::transaction(function () use ($lines, $referenceType, $referenceId, $description, $entryDate, $createdBy, $branchId) {
@@ -191,7 +192,7 @@ class AccountingService implements AccountingServiceInterface
         ?int $rejectedBy = null,
         ?string $rejectionNotes = null
     ): JournalEntry {
-        $rejectedBy = $rejectedBy ?? auth()->user()?->id;
+        $rejectedBy = $rejectedBy ?? ActorContext::capture()->userId;
 
         return DB::transaction(function () use ($entry, $rejectionNotes) {
             // Re-fetch with a row lock to serialize concurrent reject attempts
@@ -262,7 +263,7 @@ class AccountingService implements AccountingServiceInterface
         string $reason = '',
         ?int $reversedBy = null
     ): JournalEntry {
-        $reversedBy = $reversedBy ?? auth()->user()?->id;
+        $reversedBy = $reversedBy ?? ActorContext::capture()->userId;
 
         return DB::transaction(function () use ($originalEntry, $reason, $reversedBy) {
             // Re-fetch with a row lock to serialize concurrent reverse attempts

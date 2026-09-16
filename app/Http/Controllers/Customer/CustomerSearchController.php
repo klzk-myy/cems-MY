@@ -71,6 +71,8 @@ class CustomerSearchController extends Controller
             ->mapWithKeys(fn ($r) => [$r->currency_code => [
                 'buy' => $r->rate_buy,
                 'sell' => $r->rate_sell,
+                'rate_unit' => (int) $r->rate_unit,
+                'rate_inverse' => (bool) $r->rate_inverse,
             ]])
             ->toArray()
         );

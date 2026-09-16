@@ -10,6 +10,7 @@ use App\Models\EddTemplate;
 use App\Models\EnhancedDiligenceRecord;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Support\ActorContext;
 use Illuminate\Support\Collection;
 
 class EddTemplateService
@@ -244,7 +245,7 @@ class EddTemplateService
             'questions' => $data['questions'] ?? ['sections' => []],
             'version' => 1,
             'is_active' => $data['is_active'] ?? true,
-            'created_by' => auth()->id(),
+            'created_by' => ActorContext::capture()->userId,
         ]);
     }
 

@@ -110,6 +110,15 @@ class CounterSession extends BaseModel
         return $this->status === CounterSessionStatus::Open;
     }
 
+    /**
+     * Till key for this session's till balances: the counter code when the
+     * counter exists, else the counter id.
+     */
+    public function tillCode(): string
+    {
+        return $this->counter->code ?? (string) $this->counter_id;
+    }
+
     public function scopeOpen($query)
     {
         return $query->where('status', CounterSessionStatus::Open->value);

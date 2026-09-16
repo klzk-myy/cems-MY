@@ -20,6 +20,7 @@ use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
+use App\Support\ActorContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -35,10 +36,8 @@ class TransactionReversalService
         protected TellerAllocationService $tellerAllocationService,
         protected CurrencyPositionLockService $positionLockService,
         protected TillBalanceManager $tillBalanceManager,
-        protected ?ExchangeCalculator $exchangeCalculator = null,
-    ) {
-        $this->exchangeCalculator ??= app(ExchangeCalculator::class);
-    }
+        protected ExchangeCalculator $exchangeCalculator,
+    ) {}
 
     public function reverse(Transaction $transaction, User $requester, string $reason): bool
     {
@@ -279,7 +278,7 @@ class TransactionReversalService
 
     public function createReversingJournalEntries(Transaction $transaction, ?int $reversedBy = null): void
     {
-        $reversedBy = $reversedBy ?? auth()->user()?->id;
+        $reversedBy = $reversedBy ?? ActorContext::capture()->userId;
 
         $originalEntries = JournalEntry::where('reference_type', 'Transaction')
             ->where('reference_id', $transaction->id)

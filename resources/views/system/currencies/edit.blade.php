@@ -23,6 +23,24 @@
                             :selected="(string) old('decimal_places', (string) $currency->decimal_places)"
                             required
                         />
+                        <x-input
+                            type="number"
+                            name="rate_unit"
+                            label="Quote Unit"
+                            help="Foreign units per quote — e.g. 1000000 for IDR"
+                            min="1"
+                            step="1"
+                            value="{{ old('rate_unit', $currency->rate_unit) }}"
+                            required
+                        />
+                        <x-select
+                            name="rate_inverse"
+                            label="Quote Direction"
+                            help="Direct: MYR per unit foreign. Inverse: foreign per unit MYR."
+                            :options="['0' => 'Direct (MYR per unit)', '1' => 'Inverse (foreign per MYR unit)']"
+                            :selected="(string) old('rate_inverse', $currency->rate_inverse ? '1' : '0')"
+                            required
+                        />
                     </div>
                 </div>
 

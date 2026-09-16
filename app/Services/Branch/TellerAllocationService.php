@@ -344,6 +344,37 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     }
 
     /**
+     * Determine the teller allocation to attach to a new transaction.
+     *
+     * Single source of truth shared by the wizard and the creation service.
+     * Non-tellers get no allocation. Buys must validate against the daily
+     * limit; sells attach the teller's active allocation for the currency.
+     *
+     * @param  array{type: string, currency_code: string}  $data  Validated transaction data.
+     * @param  string  $amountLocal  Local currency amount as a numeric string.
+     *
+     * @throws AllocationValidationException When the active allocation cannot cover the transaction.
+     */
+    public function resolveForTransaction(User $user, array $data, string $amountLocal): ?TellerAllocation
+    {
+        if (! $user->isTeller()) {
+            return null;
+        }
+
+        if ($data['type'] === TransactionType::Buy->value) {
+            $result = $this->validateTransaction($user, $data['currency_code'], $amountLocal, true);
+
+            if (! $result->valid) {
+                throw new AllocationValidationException($result->reason);
+            }
+
+            return $result->allocation;
+        }
+
+        return $this->getActiveAllocation($user, $data['currency_code']);
+    }
+
+    /**
      * Check if user has permission to approve/reject allocations.
      */
     public function canManageAllocations(User $user): bool

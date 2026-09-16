@@ -13,6 +13,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Base (Local) Currency
+    |--------------------------------------------------------------------------
+    |
+    | ISO code of the settlement currency all amounts are booked in. Kept as a
+    | constant on the Currency model; this config allows env override.
+    |
+    */
+    'base_currency' => env('CEMS_BASE_CURRENCY', 'MYR'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Compliance Lookback Period
     |--------------------------------------------------------------------------
     |

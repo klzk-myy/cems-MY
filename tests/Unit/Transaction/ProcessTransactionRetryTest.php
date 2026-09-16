@@ -16,6 +16,7 @@ use App\Services\Audit\AuditTrailHelper;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
+use App\Services\Compliance\AmlRuleEvaluator;
 use App\Services\DTOs\ApprovalResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
@@ -59,7 +60,8 @@ class ProcessTransactionRetryTest extends TestCase
             $tellerAllocation,
             new MathService,
             app(TransactionConfirmationService::class),
-            app(ThresholdService::class)
+            app(ThresholdService::class),
+            $mocks['amlRuleEvaluator'] ?? app(AmlRuleEvaluator::class),
         );
     }
 

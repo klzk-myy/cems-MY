@@ -242,6 +242,7 @@ class ComplianceCase extends ComplianceModel
      */
     public static function slaHoursFor(FindingSeverity $severity): int
     {
+        // Static model method: no DI possible, resolved intentionally.
         $thresholds = app(ThresholdService::class);
         $fallback = match ($severity) {
             FindingSeverity::Critical => 24,

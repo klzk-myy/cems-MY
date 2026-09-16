@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\StockReservationStatus;
-use App\Services\System\MathService;
+use App\Support\BcmathHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -13,12 +13,12 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $currency_code
  * @property string $branch_id Branch code string (legacy numeric ids were converted to codes)
- * @property string $quantity
- * @property string $average_cost
- * @property string $total_cost
- * @property string $current_rate
- * @property string $current_value
- * @property string $unrealized_gain_loss
+ * @property numeric-string $quantity
+ * @property numeric-string $average_cost
+ * @property numeric-string $total_cost
+ * @property numeric-string $current_rate
+ * @property numeric-string $current_value
+ * @property numeric-string $unrealized_gain_loss
  * @property Carbon|null $last_revalued_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -40,14 +40,6 @@ class CurrencyPosition extends BaseModel
 {
     use HasFactory;
 
-    protected MathService $mathService;
-
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->mathService = app(MathService::class);
-    }
-
     protected $fillable = [
         'currency_code',
         'branch_id',
@@ -62,9 +54,9 @@ class CurrencyPosition extends BaseModel
 
     protected $casts = [
         'quantity' => MoneyCast::class,
-        'average_cost' => MoneyCast::class.':6',
+        'average_cost' => MoneyCast::class.':8',
         'total_cost' => MoneyCast::class,
-        'current_rate' => MoneyCast::class.':6',
+        'current_rate' => MoneyCast::class.':8',
         'current_value' => MoneyCast::class,
         'unrealized_gain_loss' => MoneyCast::class,
         'last_revalued_at' => 'datetime',
@@ -144,15 +136,15 @@ class CurrencyPosition extends BaseModel
     {
         $rate = $this->current_rate;
 
-        if (! $rate || $this->mathService->compare($rate, '0') === 0) {
+        if (! $rate || BcmathHelper::compare($rate, '0') === 0) {
             $rate = $this->average_cost;
         }
 
-        if (! $rate || $this->mathService->compare($rate, '0') === 0) {
+        if (! $rate || BcmathHelper::compare($rate, '0') === 0) {
             return '0';
         }
 
-        return $this->mathService->multiply($this->quantity, $rate);
+        return BcmathHelper::multiply($this->quantity, $rate);
     }
 
     /**
@@ -198,9 +190,9 @@ class CurrencyPosition extends BaseModel
      */
     public function getAvailableAttribute(): string
     {
-        $available = $this->mathService->subtract((string) $this->quantity, $this->held);
+        $available = BcmathHelper::subtract((string) $this->quantity, $this->held);
 
-        return $this->mathService->compare($available, '0') < 0 ? '0' : $available;
+        return BcmathHelper::compare($available, '0') < 0 ? '0' : $available;
     }
 
     /**

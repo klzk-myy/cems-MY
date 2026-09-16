@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
-use App\Services\System\MathService;
+use App\Support\BcmathHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -33,14 +33,6 @@ class BranchPool extends BaseModel
         'total_balance' => 'decimal:2',
     ];
 
-    protected MathService $mathService;
-
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->mathService = app(MathService::class);
-    }
-
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
@@ -48,7 +40,7 @@ class BranchPool extends BaseModel
 
     public function hasAvailable(string $amount): bool
     {
-        return $this->mathService->compare($this->available_balance, $amount) >= 0;
+        return BcmathHelper::compare($this->available_balance, $amount) >= 0;
     }
 
     public function allocate(string $amount): bool
@@ -57,8 +49,8 @@ class BranchPool extends BaseModel
             return false;
         }
 
-        $this->available_balance = $this->mathService->subtract($this->available_balance, $amount);
-        $this->allocated_balance = $this->mathService->add($this->allocated_balance, $amount);
+        $this->available_balance = BcmathHelper::subtract($this->available_balance, $amount);
+        $this->allocated_balance = BcmathHelper::add($this->allocated_balance, $amount);
         $this->save();
 
         return true;
@@ -66,12 +58,12 @@ class BranchPool extends BaseModel
 
     public function deallocate(string $amount): bool
     {
-        if ($this->mathService->compare($this->allocated_balance, $amount) < 0) {
+        if (BcmathHelper::compare($this->allocated_balance, $amount) < 0) {
             return false;
         }
 
-        $this->available_balance = $this->mathService->add($this->available_balance, $amount);
-        $this->allocated_balance = $this->mathService->subtract($this->allocated_balance, $amount);
+        $this->available_balance = BcmathHelper::add($this->available_balance, $amount);
+        $this->allocated_balance = BcmathHelper::subtract($this->allocated_balance, $amount);
         $this->save();
 
         return true;
@@ -79,12 +71,12 @@ class BranchPool extends BaseModel
 
     public function releaseFunds(string $amount): bool
     {
-        if ($this->mathService->compare($this->allocated_balance, $amount) < 0) {
+        if (BcmathHelper::compare($this->allocated_balance, $amount) < 0) {
             return false;
         }
 
-        $this->available_balance = $this->mathService->add($this->available_balance, $amount);
-        $this->allocated_balance = $this->mathService->subtract($this->allocated_balance, $amount);
+        $this->available_balance = BcmathHelper::add($this->available_balance, $amount);
+        $this->allocated_balance = BcmathHelper::subtract($this->allocated_balance, $amount);
         $this->save();
 
         return true;

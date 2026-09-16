@@ -26,6 +26,7 @@ class AnalyticsController extends Controller
     public function __construct(
         protected MathService $mathService,
         protected CacheOptimizationService $cacheOptimizationService,
+        protected TransactionReportQuery $transactionReportQuery,
     ) {}
 
     /**
@@ -48,7 +49,7 @@ class AnalyticsController extends Controller
 
         $monthColumn = DbDate::monthColumn('created_at');
 
-        $monthlyData = app(TransactionReportQuery::class)
+        $monthlyData = $this->transactionReportQuery
             ->buySellSummary(
                 $query->select(DB::raw("{$monthColumn} as month")),
                 DB::raw($monthColumn),
@@ -115,12 +116,12 @@ class AnalyticsController extends Controller
         // (0 - 1.0) * balance.
         $positionModels = $this->cacheOptimizationService->remember(
             'analytics.positions.all', 300, ['analytics', 'positions'],
-            fn () => CurrencyPosition::with('currency')->where('currency_code', '!=', 'MYR')->get()
+            fn () => CurrencyPosition::with('currency')->where('currency_code', '!=', Currency::baseCurrency())->get()
         );
         $currencyCodes = $positionModels->pluck('currency_code')->unique()->values()->toArray();
         $rates = $this->getCurrentRates($currencyCodes);
 
-        $allSells = app(TransactionReportQuery::class)
+        $allSells = $this->transactionReportQuery
             ->completed()
             ->forDateRange($startDate, $endDate)
             ->sell()
@@ -194,7 +195,11 @@ class AnalyticsController extends Controller
             ->orderBy('id', 'desc')
             ->get()
             ->keyBy('currency_code')
-            ->map(fn ($rate) => (string) $rate->rate_sell)
+            ->map(function ($rate) {
+                // exchange_rates rows are unit-quoted; positions and P&L
+                // math work in per-unit terms.
+                return $rate->perUnitRate((string) $rate->rate_sell);
+            })
             ->toArray();
     }
 

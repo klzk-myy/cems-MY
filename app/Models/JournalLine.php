@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Models\Bases\AccountingModel;
-use App\Services\System\MathService;
+use App\Support\BcmathHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -68,25 +68,25 @@ class JournalLine extends AccountingModel
     /**
      * Determine if this journal line represents a debit transaction.
      *
-     * Uses MathService to compare the debit amount with zero.
+     * Uses BcmathHelper to compare the debit amount with zero.
      *
      * @return bool True if debit amount is greater than zero
      */
     public function isDebit(): bool
     {
-        return app(MathService::class)->compare((string) $this->debit, '0') > 0;
+        return BcmathHelper::compare((string) $this->debit, '0') > 0;
     }
 
     /**
      * Determine if this journal line represents a credit transaction.
      *
-     * Uses MathService to compare the credit amount with zero.
+     * Uses BcmathHelper to compare the credit amount with zero.
      *
      * @return bool True if credit amount is greater than zero
      */
     public function isCredit(): bool
     {
-        return app(MathService::class)->compare((string) $this->credit, '0') > 0;
+        return BcmathHelper::compare((string) $this->credit, '0') > 0;
     }
 
     /**
@@ -99,8 +99,7 @@ class JournalLine extends AccountingModel
      */
     public function getAmount(): string
     {
-        $mathService = app(MathService::class);
-        if ($mathService->compare((string) $this->debit, '0') > 0) {
+        if (BcmathHelper::compare((string) $this->debit, '0') > 0) {
             return (string) $this->debit;
         }
 

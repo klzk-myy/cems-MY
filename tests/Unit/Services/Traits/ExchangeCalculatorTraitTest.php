@@ -16,9 +16,8 @@ use Tests\TestCase;
  *
  * TransactionCreationService and TransactionImportService previously each
  * carried a private resolveExchangeCalculator() copy. Both now compose
- * ExchangeCalculatorTrait, which honours an injected instance first and falls
- * back to the container for the manual `new ...Service(...)` constructions
- * used in tests.
+ * ExchangeCalculatorTrait, whose calculator is always constructor-injected —
+ * there is no container fallback.
  */
 class ExchangeCalculatorTraitTest extends TestCase
 {
@@ -35,16 +34,7 @@ class ExchangeCalculatorTraitTest extends TestCase
     }
 
     #[Test]
-    public function resolver_falls_back_to_the_container_when_nothing_is_injected(): void
-    {
-        $this->assertInstanceOf(
-            ExchangeCalculator::class,
-            (new ExchangeCalculatorResolverStub)->resolve()
-        );
-    }
-
-    #[Test]
-    public function an_injected_calculator_wins_over_the_container_fallback(): void
+    public function resolver_returns_the_injected_calculator(): void
     {
         $injected = new ExchangeCalculator(new MathService);
 
@@ -52,9 +42,9 @@ class ExchangeCalculatorTraitTest extends TestCase
     }
 
     #[Test]
-    public function the_container_resolved_calculator_produces_the_expected_conversion(): void
+    public function the_injected_calculator_produces_the_expected_conversion(): void
     {
-        $result = (new ExchangeCalculatorResolverStub)->resolve()->calculate(
+        $result = (new ExchangeCalculatorResolverStub(app(ExchangeCalculator::class)))->resolve()->calculate(
             TransactionType::Buy,
             'USD',
             '100.00',
@@ -109,7 +99,7 @@ final class ExchangeCalculatorResolverStub
 {
     use ExchangeCalculatorTrait;
 
-    public function __construct(protected ?ExchangeCalculator $exchangeCalculator = null) {}
+    public function __construct(protected ExchangeCalculator $exchangeCalculator) {}
 
     public function resolve(): ExchangeCalculator
     {

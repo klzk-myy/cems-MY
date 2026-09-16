@@ -400,6 +400,7 @@ class Customer extends BaseModel
         }
 
         try {
+            // Accessors cannot receive DI; resolved intentionally.
             $decrypted = app(EncryptionService::class)->decrypt($this->id_number_encrypted);
             if (strlen($decrypted) >= 8) {
                 return substr($decrypted, 0, 4).'****'.substr($decrypted, -4);
@@ -424,6 +425,7 @@ class Customer extends BaseModel
         }
 
         try {
+            // Accessors cannot receive DI; resolved intentionally.
             $decrypted = app(EncryptionService::class)->decrypt($this->id_number_encrypted);
             if (! $decrypted || strlen($decrypted) < 8) {
                 return '****';

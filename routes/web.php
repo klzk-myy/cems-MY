@@ -139,12 +139,15 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
 
     Route::middleware(['role:access_rates'])->prefix('rates')->name('rates.')->group(function () {
         Route::get('/', [RateController::class, 'index'])->name('index');
+        Route::get('/units', [RateController::class, 'units'])->name('units');
+        Route::post('/units', [RateController::class, 'updateUnits'])->name('units.update');
         Route::post('/override', [RateController::class, 'override'])->name('override');
         Route::post('/copy-previous', [RateController::class, 'copyPrevious'])->name('copy-previous');
     });
 
     Route::prefix('transactions')->name('transactions.')->group(function () {
-        Route::get('/', [TransactionController::class, 'index'])->name('index');
+        Route::get('/', [TransactionController::class, 'index'])->name('index')
+            ->middleware('role:create_transactions,manage_transactions,approve_transactions');
 
         Route::get('/wizard', [TransactionWizardController::class, 'index'])->name('wizard')
             ->middleware('role:create_transactions');
@@ -211,7 +214,8 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     Route::prefix('customers')->name('customers.')->group(function () {
-        Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::get('/', [CustomerController::class, 'index'])->name('index')
+            ->middleware('role:create_transactions,manage_customers,access_compliance');
         Route::get('/create', [CustomerController::class, 'create'])->name('create');
         Route::post('/', [CustomerController::class, 'store'])->name('store');
         Route::get('/search', [CustomerSearchController::class, 'search'])->name('search');
@@ -231,7 +235,8 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     Route::prefix('counters')->name('counters.')->group(function () {
-        Route::get('/', [CounterController::class, 'index'])->name('index');
+        Route::get('/', [CounterController::class, 'index'])->name('index')
+            ->middleware('role:operate_counters,manage_counters');
 
         Route::middleware('role:manage_counters')->group(function () {
             Route::get('/create', [CounterController::class, 'create'])->name('create');
@@ -261,7 +266,8 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     Route::prefix('stock-cash')->name('stock-cash.')->group(function () {
-        Route::get('/', [StockCashController::class, 'index'])->name('index');
+        Route::get('/', [StockCashController::class, 'index'])->name('index')
+            ->middleware('role:manage_stock');
         Route::get('/position/{position}', [StockCashController::class, 'showPosition'])->name('position')
             ->middleware('role:manage_stock');
         Route::get('/till-report', [StockCashController::class, 'tillReport'])->name('till-report')
@@ -305,7 +311,8 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
-        Route::get('/', [StockTransferController::class, 'index'])->name('index');
+        Route::get('/', [StockTransferController::class, 'index'])->name('index')
+            ->middleware('role:manage_stock_transfers');
         Route::get('/create', [StockTransferController::class, 'create'])->name('create')
             ->middleware('role:manage_stock_transfers');
         Route::post('/', [StockTransferController::class, 'store'])->name('store');
@@ -450,7 +457,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     Route::middleware('role:access_accounting')->prefix('accounting')->name('accounting.')->group(function () {
-        Route::get('/', [JournalController::class, 'index'])->name('index');
+        Route::get('/', [DashboardController::class, 'accounting'])->name('index');
 
         // Journal Entry Management
         Route::get('/journal', [JournalController::class, 'index'])->name('journal');
@@ -588,13 +595,15 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::post('/', [CurrencyController::class, 'store'])->name('store');
         Route::get('/{currency}/edit', [CurrencyController::class, 'edit'])->name('edit');
         Route::put('/{currency}', [CurrencyController::class, 'update'])->name('update');
+
         Route::post('/{currency}/disable', [CurrencyController::class, 'disable'])->name('disable');
     });
 
     // Read-only chart of accounts viewer (plan WS-C3). Registered outside the
-    // manager-gated accounting group so Compliance Officers can inspect the
-    // COA; balances come from LedgerService::getTrialBalance as of today.
-    Route::middleware('role:access_compliance')->get('accounting/chart-of-accounts', [ChartOfAccountsController::class, 'index'])
+    // accounting group so Compliance Officers can inspect the COA; accountants
+    // and managers reach it via access_accounting. Balances come from
+    // LedgerService::getTrialBalance as of today.
+    Route::middleware('role:access_compliance,access_accounting')->get('accounting/chart-of-accounts', [ChartOfAccountsController::class, 'index'])
         ->name('accounting.chart-of-accounts.index');
 
     Route::middleware(['role:view_test_results', 'test.dashboard'])->prefix('test-results')->name('test-results.')->group(function () {

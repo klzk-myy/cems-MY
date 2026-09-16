@@ -6,12 +6,13 @@ use App\Enums\Permission;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
+use App\Support\ActorContext;
 
 class DashboardService
 {
     public function buildStats(?int $branchId = null): array
     {
-        $user = auth()->user();
+        $user = ActorContext::capture()->user;
 
         return [
             'total_transactions' => Transaction::whereDate('created_at', today())

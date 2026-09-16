@@ -11,6 +11,7 @@ use App\Models\Branch;
 use App\Models\BranchClosureWorkflow;
 use App\Models\BranchPool;
 use App\Models\CounterSession;
+use App\Models\Currency;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
@@ -173,7 +174,7 @@ class BranchClosingService
             if ($pool->available_balance > 0) {
                 $lines = [
                     [
-                        'account_code' => $pool->currency_code === 'MYR' ? '1000' : '1100',
+                        'account_code' => $pool->currency_code === Currency::baseCurrency() ? '1000' : '1100',
                         'debit' => '0.00',
                         'credit' => $pool->available_balance,
                         'description' => "Branch {$branch->code} pool balance",

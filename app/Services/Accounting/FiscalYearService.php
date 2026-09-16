@@ -23,6 +23,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
+use App\Support\ActorContext;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -106,7 +107,7 @@ class FiscalYearService
      */
     public function closeFiscalYear(FiscalYear $year, ?int $userId = null): array
     {
-        $userId = $userId ?? auth()->user()?->id;
+        $userId = $userId ?? ActorContext::capture()->userId;
         // Validate user permissions
         if ($userId === null || ! $this->canCloseYear(User::find($userId))) {
             throw new PermissionDeniedException('close fiscal years');
@@ -236,7 +237,7 @@ class FiscalYearService
         // the CLOSED year's start — an unbalanced entry that double-counted
         // equity in the books.
         return DB::transaction(function () use ($year, $userId) {
-            $userId = $userId ?? auth()->user()?->id;
+            $userId = $userId ?? ActorContext::capture()->userId;
 
             $this->auditService->log(
                 'fiscal_year_opened',

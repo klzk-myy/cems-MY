@@ -10,6 +10,7 @@ use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\CustomerRiskScoringService;
 use App\Services\Compliance\PepAssessmentService;
 use App\Services\Compliance\RiskCalculationService;
+use App\Services\Compliance\RiskScoreWriteBackService;
 use App\Services\Compliance\RoundTripDetector;
 use App\Services\CustomerScreeningService;
 use App\Services\Risk\AmountRiskService;
@@ -43,7 +44,13 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->mathService = new MathService;
         $this->thresholdService = new ThresholdService;
         $encryptionService = new EncryptionService;
-        $complianceService = new ComplianceService($encryptionService, $this->mathService);
+        $complianceService = new ComplianceService(
+            $encryptionService,
+            $this->mathService,
+            $this->thresholdService,
+            new VelocityRiskService($this->mathService, $this->thresholdService),
+            new StructuringRiskService($this->mathService, $this->thresholdService),
+        );
         $auditService = new AuditService;
         $riskCalculationService = new RiskCalculationService(
             $this->mathService,
@@ -63,6 +70,9 @@ class CustomerRiskScoringServiceTest extends TestCase
             $this->mathService,
             $riskCalculationService,
             new PepAssessmentService,
+            new GeographicRiskService($this->thresholdService),
+            new AmountRiskService($this->mathService, $this->thresholdService),
+            new RiskScoreWriteBackService,
         );
     }
 

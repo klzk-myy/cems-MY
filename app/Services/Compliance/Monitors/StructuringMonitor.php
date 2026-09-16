@@ -7,6 +7,7 @@ use App\Enums\FindingType;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -21,9 +22,9 @@ class StructuringMonitor extends BaseMonitor
 
     public const LOOKBACK_MINUTES = 90;
 
-    public function __construct(MathService $math, StructuringRiskService $structuringRiskService, ThresholdService $thresholdService)
+    public function __construct(MathService $math, StructuringRiskService $structuringRiskService, ThresholdService $thresholdService, AlertTriageService $alertTriage)
     {
-        parent::__construct($math);
+        parent::__construct($math, $alertTriage);
         $this->subThreshold = $thresholdService->getStructuringSubThreshold();
         $this->minTransactions = $thresholdService->getStructuringMinTransactions();
         $this->structuringRiskService = $structuringRiskService;

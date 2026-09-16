@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property int $customer_id
+ * @property int|null $related_customer_id
+ * @property RelationType $relation_type
+ * @property string $related_name
+ * @property bool $is_pep
+ */
 class CustomerRelation extends BaseModel
 {
     use HasFactory, SoftDeletes;

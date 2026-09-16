@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Services\System\RateLimitService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -39,122 +40,128 @@ class RouteServiceProvider extends ServiceProvider
      */
     private function configureRateLimiting(): void
     {
-        // API general rate limit: 30 per minute per IP (reduced from 60)
-        RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(
-                config('security.rate_limits.api.attempts', 30)
-            )->by($request->ip())->response(function () use ($request) {
-                // Log rate limit hit
-                app(RateLimitService::class)->logRateLimitHit($request, 'api');
-
-                return response()->json([
-                    'error' => 'Too many requests',
-                    'message' => 'API rate limit exceeded. Please try again later.',
-                    'code' => 'RATE_LIMIT_EXCEEDED',
-                ], 429);
+        foreach ($this->rateLimitDefinitions() as $name => $definition) {
+            RateLimiter::for($name, function (Request $request) use ($name, $definition) {
+                // Attempts/per_minutes resolve lazily per request — config may
+                // be overridden after provider boot (tests, per-tenant tuning).
+                return Limit::perMinutes(value($definition['per_minutes']), value($definition['attempts']))
+                    ->by(($definition['key'])($request))
+                    ->response(fn () => $this->rateLimitedResponse($request, $name, $definition));
             });
-        });
+        }
+    }
 
-        // Login rate limit: 5 per minute keyed by IP AND submitted username so
-        // both shared-NAT clients and credential-stuffing via rotating proxies
-        // are constrained.
-        RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(
-                config('security.rate_limits.login.attempts', 5)
-            )->by($request->ip().'|'.strtolower((string) $request->input('username')))->response(function () use ($request) {
-                app(RateLimitService::class)->recordFailedAttempt($request->ip());
-                app(RateLimitService::class)->logRateLimitHit($request, 'login');
+    /**
+     * Limiter definitions: bucket key, attempts/window (resolved from
+     * config('security.rate_limits.<name>') where configured), and the
+     * 429 payload. `onLimited` hooks run extra bookkeeping — e.g. login
+     * records a failed attempt — before the hit is logged.
+     *
+     * @return array<string, array{
+     *     key: callable(Request): string,
+     *     attempts: int|callable(): int,
+     *     per_minutes: int|callable(): int,
+     *     error: string,
+     *     message: string,
+     *     code: string,
+     *     onLimited?: callable(Request): void
+     * }>
+     */
+    private function rateLimitDefinitions(): array
+    {
+        $userOrIp = fn (Request $request) => (string) ($request->user()->id ?? $request->ip());
 
-                return response()->json([
-                    'error' => 'Too many login attempts',
-                    'message' => 'Too many login attempts. Please try again later.',
-                    'code' => 'LOGIN_RATE_LIMIT_EXCEEDED',
-                ], 429);
-            });
-        });
+        return [
+            // API general: 30 per minute per IP.
+            'api' => [
+                'key' => fn (Request $request) => (string) $request->ip(),
+                'attempts' => fn () => (int) config('security.rate_limits.api.attempts', 30),
+                'per_minutes' => 1,
+                'error' => 'Too many requests',
+                'message' => 'API rate limit exceeded. Please try again later.',
+                'code' => 'RATE_LIMIT_EXCEEDED',
+            ],
+            // Login keys on IP AND submitted username so both shared-NAT
+            // clients and credential-stuffing via rotating proxies are
+            // constrained; each hit also counts as a failed attempt.
+            'login' => [
+                'key' => fn (Request $request) => $request->ip().'|'.strtolower((string) $request->input('username')),
+                'attempts' => fn () => (int) config('security.rate_limits.login.attempts', 5),
+                'per_minutes' => 1,
+                'error' => 'Too many login attempts',
+                'message' => 'Too many login attempts. Please try again later.',
+                'code' => 'LOGIN_RATE_LIMIT_EXCEEDED',
+                'onLimited' => fn (Request $request) => app(RateLimitService::class)->recordFailedAttempt($request->ip()),
+            ],
+            // Password reset: 5 per minute per IP (prevents mail bombing).
+            'password-reset' => [
+                'key' => fn (Request $request) => (string) $request->ip(),
+                'attempts' => 5,
+                'per_minutes' => 1,
+                'error' => 'Too many password reset requests',
+                'message' => 'Too many password reset attempts. Please try again later.',
+                'code' => 'PASSWORD_RESET_RATE_LIMIT_EXCEEDED',
+            ],
+            // Transactions: 10 per minute per user.
+            'transactions' => [
+                'key' => $userOrIp,
+                'attempts' => fn () => (int) config('security.rate_limits.transactions.attempts', 10),
+                'per_minutes' => 1,
+                'error' => 'Transaction rate limit exceeded',
+                'message' => 'Too many transaction attempts. Please try again later.',
+                'code' => 'TRANSACTION_RATE_LIMIT_EXCEEDED',
+            ],
+            // Bulk operations: 1 per 5 minutes per user.
+            'bulk' => [
+                'key' => $userOrIp,
+                'attempts' => fn () => (int) (config('security.rate_limits.bulk.attempts') ?? 1),
+                'per_minutes' => fn () => (int) (config('security.rate_limits.bulk.per_minutes') ?? 5),
+                'error' => 'Bulk operation rate limit exceeded',
+                'message' => 'Bulk operations are limited. Please try again later.',
+                'code' => 'BULK_RATE_LIMIT_EXCEEDED',
+            ],
+            // Export operations: 5 per minute per user.
+            'export' => [
+                'key' => $userOrIp,
+                'attempts' => fn () => (int) config('security.rate_limits.export.attempts', 5),
+                'per_minutes' => 1,
+                'error' => 'Export rate limit exceeded',
+                'message' => 'Too many export attempts. Please try again later.',
+                'code' => 'EXPORT_RATE_LIMIT_EXCEEDED',
+            ],
+            // Sensitive operations (MFA, password change): 3 per minute per user.
+            'sensitive' => [
+                'key' => $userOrIp,
+                'attempts' => fn () => (int) config('security.rate_limits.sensitive.attempts', 3),
+                'per_minutes' => 1,
+                'error' => 'Sensitive operation rate limit exceeded',
+                'message' => 'Too many sensitive operation attempts. Please try again later.',
+                'code' => 'SENSITIVE_RATE_LIMIT_EXCEEDED',
+            ],
+        ];
+    }
 
-        // Password reset rate limit: 5 per minute per IP (prevents mail bombing)
-        RateLimiter::for('password-reset', function (Request $request) {
-            return Limit::perMinute(5)->by($request->ip())->response(function () use ($request) {
-                app(RateLimitService::class)->logRateLimitHit($request, 'password-reset');
+    /**
+     * Shared 429 response for every limiter: optional bookkeeping hook,
+     * hit logging, then the JSON payload.
+     *
+     * @param  array{error: string, message: string, code: string, onLimited?: callable(Request): void}  $definition
+     */
+    private function rateLimitedResponse(Request $request, string $limiter, array $definition): JsonResponse
+    {
+        $rateLimits = app(RateLimitService::class);
 
-                return response()->json([
-                    'error' => 'Too many password reset requests',
-                    'message' => 'Too many password reset attempts. Please try again later.',
-                    'code' => 'PASSWORD_RESET_RATE_LIMIT_EXCEEDED',
-                ], 429);
-            });
-        });
+        if (isset($definition['onLimited'])) {
+            ($definition['onLimited'])($request);
+        }
 
-        // Transaction rate limit: 10 per minute per user (reduced from 30)
-        RateLimiter::for('transactions', function (Request $request) {
-            $key = $request->user()->id ?? $request->ip();
+        $rateLimits->logRateLimitHit($request, $limiter);
 
-            return Limit::perMinute(
-                config('security.rate_limits.transactions.attempts', 10)
-            )->by($key)->response(function () use ($request) {
-                app(RateLimitService::class)->logRateLimitHit($request, 'transactions');
-
-                return response()->json([
-                    'error' => 'Transaction rate limit exceeded',
-                    'message' => 'Too many transaction attempts. Please try again later.',
-                    'code' => 'TRANSACTION_RATE_LIMIT_EXCEEDED',
-                ], 429);
-            });
-        });
-
-        // Bulk operations rate limit: 1 per 5 minutes per user
-        RateLimiter::for('bulk', function (Request $request) {
-            $key = $request->user()->id ?? $request->ip();
-            $config = config('security.rate_limits.bulk');
-
-            return Limit::perMinutes(
-                $config['per_minutes'] ?? 5,
-                $config['attempts'] ?? 1
-            )->by($key)->response(function () use ($request) {
-                app(RateLimitService::class)->logRateLimitHit($request, 'bulk');
-
-                return response()->json([
-                    'error' => 'Bulk operation rate limit exceeded',
-                    'message' => 'Bulk operations are limited. Please try again later.',
-                    'code' => 'BULK_RATE_LIMIT_EXCEEDED',
-                ], 429);
-            });
-        });
-
-        // Export operations rate limit: 5 per minute per user
-        RateLimiter::for('export', function (Request $request) {
-            $key = $request->user()->id ?? $request->ip();
-
-            return Limit::perMinute(
-                config('security.rate_limits.export.attempts', 5)
-            )->by($key)->response(function () use ($request) {
-                app(RateLimitService::class)->logRateLimitHit($request, 'export');
-
-                return response()->json([
-                    'error' => 'Export rate limit exceeded',
-                    'message' => 'Too many export attempts. Please try again later.',
-                    'code' => 'EXPORT_RATE_LIMIT_EXCEEDED',
-                ], 429);
-            });
-        });
-
-        // Sensitive operations rate limit: 3 per minute per user
-        RateLimiter::for('sensitive', function (Request $request) {
-            $key = $request->user()->id ?? $request->ip();
-
-            return Limit::perMinute(
-                config('security.rate_limits.sensitive.attempts', 3)
-            )->by($key)->response(function () use ($request) {
-                app(RateLimitService::class)->logRateLimitHit($request, 'sensitive');
-
-                return response()->json([
-                    'error' => 'Sensitive operation rate limit exceeded',
-                    'message' => 'Too many sensitive operation attempts. Please try again later.',
-                    'code' => 'SENSITIVE_RATE_LIMIT_EXCEEDED',
-                ], 429);
-            });
-        });
+        return response()->json([
+            'error' => $definition['error'],
+            'message' => $definition['message'],
+            'code' => $definition['code'],
+        ], 429);
     }
 
     /**

@@ -15,6 +15,8 @@ class ExchangeRateFactory extends Factory
             'currency_code' => 'USD',
             'rate_buy' => '4.5000',
             'rate_sell' => '4.6000',
+            'rate_unit' => 1,
+            'rate_inverse' => false,
             'source' => 'api',
             'fetched_at' => now(),
         ];

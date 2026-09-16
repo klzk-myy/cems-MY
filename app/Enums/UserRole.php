@@ -255,6 +255,7 @@ enum UserRole: string
      */
     public function rateOverrideLimit(): ?float
     {
+        // Enums cannot use constructor DI; resolved intentionally.
         return match ($this) {
             self::Teller => (float) app(ThresholdService::class)
                 ->get('rates', 'override_limit_teller', ThresholdDefaults::FALLBACK_RATE_OVERRIDE_LIMIT_TELLER),
@@ -314,6 +315,7 @@ enum UserRole: string
             return true;
         }
 
+        // Enums cannot use constructor DI; resolved intentionally.
         return app(PermissionService::class)->can($this, $permission);
     }
 

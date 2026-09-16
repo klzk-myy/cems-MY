@@ -5,6 +5,7 @@ namespace App\Services\Compliance\Monitors;
 use App\Enums\FindingSeverity;
 use App\Enums\FindingType;
 use App\Models\Transaction;
+use App\Services\Compliance\AlertTriageService;
 use App\Services\Compliance\RoundTripDetector;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -21,9 +22,9 @@ class CurrencyFlowMonitor extends BaseMonitor
 
     public const TIME_WINDOW_HOURS = 72;
 
-    public function __construct(MathService $math, ThresholdService $thresholdService, RoundTripDetector $roundTripDetector)
+    public function __construct(MathService $math, ThresholdService $thresholdService, RoundTripDetector $roundTripDetector, AlertTriageService $alertTriage)
     {
-        parent::__construct($math);
+        parent::__construct($math, $alertTriage);
         $this->thresholdService = $thresholdService;
         $this->roundTripDetector = $roundTripDetector;
     }

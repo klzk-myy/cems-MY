@@ -28,14 +28,10 @@ class CustomerRiskScoringService
         protected MathService $mathService,
         protected RiskCalculationService $riskCalculationService,
         protected PepAssessmentService $pepAssessmentService,
-        protected ?GeographicRiskService $geographicRiskService = null,
-        protected ?AmountRiskService $amountRiskService = null,
-        protected ?RiskScoreWriteBackService $writeBack = null,
-    ) {
-        $this->writeBack ??= app(RiskScoreWriteBackService::class);
-        $this->amountRiskService ??= app(AmountRiskService::class);
-        $this->geographicRiskService ??= app(GeographicRiskService::class);
-    }
+        protected GeographicRiskService $geographicRiskService,
+        protected AmountRiskService $amountRiskService,
+        protected RiskScoreWriteBackService $writeBack,
+    ) {}
 
     /**
      * Calculate and store risk score snapshot for a customer.
