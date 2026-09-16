@@ -14,8 +14,10 @@ use App\Http\Requests\Api\V1\RateHistoryRequest;
 use App\Http\Requests\FetchRateRequest;
 use App\Http\Requests\OverrideRateRequest;
 use App\Models\ExchangeRateHistory;
+use App\Models\User;
 use App\Services\Transaction\RateManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -142,7 +144,7 @@ class RateController extends Controller
 
         $targetDate = $validated['date'] ?? now()->subDay()->toDateString();
 
-        $result = $this->rateService->copyPreviousRates($targetDate, $user->isAdmin() ? null : $user->branch_id);
+        $result = $this->rateService->copyPreviousRates($targetDate, $this->resolveBranchId($request));
 
         if (! $result['success']) {
             return $this->errorResponse($result['message'], [], 404);
@@ -153,10 +155,17 @@ class RateController extends Controller
 
     /**
      * Get available dates for rate history (for copy previous feature).
+     *
+     * Scoped like copyPrevious so the dates offered are the ones the caller
+     * may actually copy (a company-wide scope sees company-wide history only).
      */
-    public function availableDates(): JsonResponse
+    public function availableDates(Request $request): JsonResponse
     {
+        $branchId = $this->resolveBranchId($request);
+
         $dates = ExchangeRateHistory::select('effective_date')
+            ->when($branchId !== null, fn ($q) => $q->where('branch_id', $branchId))
+            ->when($branchId === null, fn ($q) => $q->whereNull('branch_id'))
             ->distinct()
             ->orderBy('effective_date', 'desc')
             ->limit(30)
@@ -174,7 +183,7 @@ class RateController extends Controller
     {
         $days = $request->get('days', 30);
 
-        $histories = $this->rateService->getRateHistory($currencyCode, $days);
+        $histories = $this->rateService->getRateHistory($currencyCode, $days, $this->resolveBranchId($request));
 
         return $this->successResponse($histories);
     }
@@ -186,7 +195,7 @@ class RateController extends Controller
     {
         $validated = $request->validated();
 
-        $result = $this->rateService->areAllRatesSet($validated['currencies']);
+        $result = $this->rateService->areAllRatesSet($validated['currencies'], $this->resolveBranchId($request));
 
         return $this->successResponse(null, 'Rate check completed.', 200, [
             'all_set' => $result['all_set'],
@@ -204,7 +213,9 @@ class RateController extends Controller
         $result = $this->rateService->validateTransactionRate(
             $validated['rate'],
             $validated['currency_code'],
-            $validated['type']
+            $validated['type'],
+            $this->resolveBranchId($request),
+            Auth::user()?->role
         );
 
         return $this->successResponse(null, 'Rate validation completed.', 200, [
@@ -214,6 +225,25 @@ class RateController extends Controller
             'max_allowed' => $result['max_allowed'],
             'market_rate' => $result['market_rate'] ?? null,
             'submitted_rate' => $result['submitted_rate'] ?? null,
+            'role_limit_percent' => $result['role_limit_percent'] ?? null,
         ]);
+    }
+
+    /**
+     * Branch scope for rate reads and writes: admins may target any branch
+     * (or the company-wide card when no branch_id is given); every other role
+     * is limited to its own branch. Without this the endpoints resolved to an
+     * unscoped set that mixed every branch's overrides.
+     */
+    protected function resolveBranchId(Request $request): ?int
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        if ($user?->isAdmin()) {
+            return $request->filled('branch_id') ? (int) $request->input('branch_id') : null;
+        }
+
+        return $user?->branch_id;
     }
 }

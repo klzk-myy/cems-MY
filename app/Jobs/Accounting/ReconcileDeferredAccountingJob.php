@@ -5,6 +5,7 @@ namespace App\Jobs\Accounting;
 use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
 use App\Enums\UserRole;
+use App\Exceptions\Domain\DomainException;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\DeferredAccountingReconciliationFailedNotification;
@@ -208,8 +209,12 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
                     'reason' => '',
                 ];
             });
-        } catch (\InvalidArgumentException $e) {
-            // Expected when transaction doesn't support deferred entries or not in correct state
+        } catch (DomainException $e) {
+            // Expected when transaction doesn't support deferred entries, is not
+            // in the correct state, or the posting period is missing/closed.
+            // Domain exceptions are RuntimeException subclasses — catching
+            // InvalidArgumentException here let them fall through to the
+            // "unexpected error" branch and raise false CRITICAL alerts.
             return [
                 'success' => false,
                 'can_reconcile' => false,

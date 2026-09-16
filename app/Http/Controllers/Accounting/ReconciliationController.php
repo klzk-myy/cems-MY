@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\ExportReconciliationRequest;
 use App\Http\Requests\Accounting\ImportBankStatementRequest;
@@ -24,13 +25,23 @@ class ReconciliationController extends Controller
 
     public function index(Request $request): View
     {
+        // Reconcilable accounts are the Cash-class assets: till cash, banks
+        // and nostro accounts. A name LIKE '%Cash%' filter used to miss the
+        // "Bank (...)" and "Nostro (...)" accounts entirely.
         $cashAccounts = ChartOfAccount::where('account_type', 'Asset')
-            ->where('account_name', 'like', '%Cash%')
+            ->where('account_class', 'Cash')
             ->where('is_active', true)
             ->get();
-        $accountCode = $request->get('account_code', $request->get('account', $cashAccounts->first()?->account_code));
-        $fromDate = $request->get('from', now()->startOfMonth()->toDateString());
-        $toDate = $request->get('to', now()->endOfMonth()->toDateString());
+        $filters = $request->validate([
+            'account_code' => 'nullable|string|exists:chart_of_accounts,account_code',
+            'account' => 'nullable|string|exists:chart_of_accounts,account_code',
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+        ]);
+
+        $accountCode = $filters['account_code'] ?? $filters['account'] ?? $cashAccounts->first()?->account_code;
+        $fromDate = $filters['from'] ?? now()->startOfMonth()->toDateString();
+        $toDate = $filters['to'] ?? now()->endOfMonth()->toDateString();
         $report = $this->bankReconciliationService->getReconciliationViewData(
             $accountCode,
             $fromDate,
@@ -104,6 +115,12 @@ class ReconciliationController extends Controller
      */
     public function unmatch(BankReconciliation $reconciliation): RedirectResponse
     {
+        $user = auth()->user();
+
+        if (! $user || ! $user->role->canPerform(Permission::ManageAccounting)) {
+            abort(403, 'Manage accounting permission required.');
+        }
+
         $this->bankReconciliationService->unmatch($reconciliation->id);
 
         return redirect()->route('accounting.reconciliation')->with('success', 'Item unmatched.');

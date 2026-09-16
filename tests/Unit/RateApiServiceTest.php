@@ -90,11 +90,13 @@ class RateApiServiceTest extends TestCase
             'fetched_at' => now(),
         ]);
 
-        // The mid rate is 4.5500
-        // A submitted rate of 4.5520 has a deviation of 0.0020 from mid
-        // Deviation percent = (0.0020 / 4.5500) * 100 = 0.044% < 0.05% threshold (valid)
+        // The mid rate is 4.5500.
+        // A submitted rate of 4.5520 deviates by 0.0020 from mid, i.e.
+        // 0.0020 / 4.5500 = 0.00044 (0.044%).
+        // thresholds.rates.max_deviation_percent is a FRACTION (0.05 = 5%),
+        // not a percentage, so 0.00044 sits well inside the band.
 
-        // Act: Validate a rate that is within the 5% threshold
+        // Act: Validate a rate well inside the band
         $result = $this->service->validateRateDeviation('4.5520', 'USD', 'mid');
 
         // Assert
@@ -293,5 +295,51 @@ class RateApiServiceTest extends TestCase
                 "Spread mismatch for mid={$case['mid']}"
             );
         }
+    }
+
+    #[Test]
+    public function get_current_rate_ignores_a_future_dated_card(): void
+    {
+        ExchangeRate::factory()->create([
+            'currency_code' => 'USD',
+            'rate_buy' => '4.5000',
+            'rate_sell' => '4.6000',
+            'source' => 'api',
+            'fetched_at' => now()->subDay(),
+            'effective_date' => null,
+        ]);
+        // A scheduled override that has not taken effect yet must not price
+        // today's market, even though it was fetched more recently.
+        ExchangeRate::factory()->create([
+            'currency_code' => 'USD',
+            'rate_buy' => '9.0000',
+            'rate_sell' => '9.1000',
+            'source' => 'manual_override',
+            'fetched_at' => now(),
+            'effective_date' => now()->addDay(),
+        ]);
+
+        $this->assertSame('4.50000000', $this->service->getCurrentRate('USD', 'buy'));
+    }
+
+    #[Test]
+    public function get_current_rate_prefers_the_most_recently_fetched_card(): void
+    {
+        ExchangeRate::factory()->create([
+            'currency_code' => 'EUR',
+            'rate_buy' => '4.3000',
+            'rate_sell' => '4.4000',
+            'source' => 'api',
+            'fetched_at' => now()->subDays(2),
+        ]);
+        ExchangeRate::factory()->create([
+            'currency_code' => 'EUR',
+            'rate_buy' => '5.1000',
+            'rate_sell' => '5.2000',
+            'source' => 'api',
+            'fetched_at' => now(),
+        ]);
+
+        $this->assertSame('5.10000000', $this->service->getCurrentRate('EUR', 'buy'));
     }
 }

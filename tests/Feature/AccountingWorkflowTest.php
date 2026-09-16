@@ -196,6 +196,84 @@ class AccountingWorkflowTest extends TestCase
     }
 
     #[Test]
+    public function journal_line_carrying_both_debit_and_credit_is_rejected(): void
+    {
+        $entryCount = JournalEntry::count();
+
+        $response = $this->actingAs($this->manager)->post('/accounting/journal', [
+            'entry_date' => now()->format('Y-m-d'),
+            'description' => 'Double-sided line',
+            'lines' => [
+                [
+                    'account_code' => $this->cashAccount->account_code,
+                    'debit' => '100.00',
+                    'credit' => '100.00',
+                ],
+                [
+                    'account_code' => $this->revenueAccount->account_code,
+                    'debit' => '0.00',
+                    'credit' => '0.00',
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('lines.0.debit');
+        $response->assertSessionHasErrors('lines.1.debit');
+        $this->assertSame($entryCount, JournalEntry::count());
+    }
+
+    #[Test]
+    public function branch_scoped_manager_cannot_reverse_another_branchs_entry(): void
+    {
+        $otherBranch = Branch::factory()->create();
+        $otherManager = User::factory()->create([
+            'username' => 'mgr'.substr(uniqid(), -6),
+            'email' => 'mgr-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Manager,
+            'branch_id' => $otherBranch->id,
+            'is_active' => true,
+        ]);
+
+        // An entry belonging to the manager's own branch, posted via service.
+        $ownEntry = $this->accountingService->createJournalEntry(
+            [
+                ['account_code' => $this->cashAccount->account_code, 'debit' => '10.00', 'credit' => '0.00'],
+                ['account_code' => $this->revenueAccount->account_code, 'debit' => '0.00', 'credit' => '10.00'],
+            ],
+            'Manual',
+            null,
+            'Own branch entry',
+            now()->toDateString(),
+            $this->manager->id,
+            $this->branch->id
+        );
+
+        $otherEntry = $this->accountingService->createJournalEntry(
+            [
+                ['account_code' => $this->cashAccount->account_code, 'debit' => '10.00', 'credit' => '0.00'],
+                ['account_code' => $this->revenueAccount->account_code, 'debit' => '0.00', 'credit' => '10.00'],
+            ],
+            'Manual',
+            null,
+            'Other branch entry',
+            now()->toDateString(),
+            $otherManager->id,
+            $otherBranch->id
+        );
+
+        // Own branch: allowed.
+        $this->actingAs($this->manager)
+            ->post("/accounting/journal/{$ownEntry->id}/reverse", ['reason' => 'Correction'])
+            ->assertRedirect();
+
+        // Another branch's entry: denied by the policy's branch scoping.
+        $this->actingAs($this->manager)
+            ->post("/accounting/journal/{$otherEntry->id}/reverse", ['reason' => 'Correction'])
+            ->assertForbidden();
+    }
+
+    #[Test]
     public function accountant_can_post_an_expense_for_another_branch(): void
     {
         $accountant = User::factory()->create([
@@ -739,6 +817,24 @@ class AccountingWorkflowTest extends TestCase
             'debit' => '0.00',
             'credit' => $largeNetLoss,
             'description' => 'Income Summary (Loss)',
+        ]);
+
+        // postClosingToLedger now enforces the balance invariant — complete
+        // the entry with the debit legs a real loss close carries.
+        JournalLine::create([
+            'journal_entry_id' => $closingEntry->id,
+            'account_code' => '4998',
+            'debit' => $largeNetLoss,
+            'credit' => '0.00',
+            'description' => 'Income Summary — expenses closed in',
+        ]);
+
+        JournalLine::create([
+            'journal_entry_id' => $closingEntry->id,
+            'account_code' => $retainedEarningsAccount->account_code,
+            'debit' => $largeNetLoss,
+            'credit' => '0.00',
+            'description' => 'Transfer to Retained Earnings (Loss)',
         ]);
 
         // Call the service method to create closing ledger entries

@@ -33,6 +33,7 @@ class ExchangeRate extends BaseModel
         'rate_unit',
         'rate_inverse',
         'source',
+        'spread_applied',
         'fetched_at',
         'effective_date',
     ];

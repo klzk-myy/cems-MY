@@ -23,10 +23,25 @@ class CacheInvalidationService
         Cache::forget(CacheKeys::rate($currencyCode, $branchId));
     }
 
-    public function forgetAllRates(array $currencies, ?int $branchId = null): void
+    /**
+     * Forget every rate cache entry that can resolve to the given currencies:
+     * the company-wide key plus each branch-scoped key.
+     *
+     * Used by writers whose change alters what a branch reader resolves to
+     * (a company-wide card is the fallback for branches without their own),
+     * so no reader serves a stale rate until the TTL expires.
+     *
+     * @param  list<string>  $currencies
+     * @param  list<int>  $branchIds
+     */
+    public function forgetRateScopes(array $currencies, array $branchIds = []): void
     {
         foreach ($currencies as $currency) {
-            $this->forgetRate($currency, $branchId);
+            $this->forgetRate($currency);
+
+            foreach ($branchIds as $branchId) {
+                $this->forgetRate($currency, $branchId);
+            }
         }
     }
 

@@ -16,10 +16,8 @@ class ClosePeriodRequest extends AuthorizedFormRequest
 
     public function rules(): array
     {
-        return [
-            'period_id' => ['required', 'integer', 'exists:accounting_periods,id'],
-            'closure_date' => ['required', 'date', 'before_or_equal:today'],
-            'reason' => ['required', 'string', 'max:500'],
-        ];
+        // The period comes from the route model binding; the service
+        // closes it at now() and persists no reason field.
+        return [];
     }
 }

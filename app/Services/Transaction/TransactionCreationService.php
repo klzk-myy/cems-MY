@@ -127,7 +127,8 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             (string) $data['rate'],
             (string) $data['currency_code'],
             strtolower((string) $data['type']),
-            $user->branch_id
+            $user->branch_id,
+            $user->role
         );
 
         if (! ($rateCheck['valid'] ?? true)) {

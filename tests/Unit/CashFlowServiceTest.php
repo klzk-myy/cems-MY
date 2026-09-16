@@ -139,4 +139,47 @@ class CashFlowServiceTest extends TestCase
         $this->assertEquals('0.0000', $result['operating_activities']['net_income']);
         $this->assertEquals('0.0000', $result['net_change_in_cash']);
     }
+
+    #[Test]
+    public function reversed_entry_and_its_reversal_net_to_zero(): void
+    {
+        Cache::tags(['reports', 'cash-flow'])->flush();
+
+        $from = now()->subDays(10)->toDateString();
+        $to = now()->toDateString();
+
+        $period = AccountingPeriod::firstOrCreate(
+            ['period_code' => substr($to, 0, 7)],
+            [
+                'start_date' => $to,
+                'end_date' => $to,
+                'status' => 'Open',
+            ]
+        );
+
+        // Original capital injection, later reversed.
+        $original = JournalEntry::factory()->create([
+            'entry_date' => $to,
+            'period_id' => $period->id,
+            'status' => JournalEntryStatus::Reversed,
+        ]);
+        JournalLine::create(['journal_entry_id' => $original->id, 'account_code' => '1000', 'debit' => '5000.00', 'credit' => '0.00']);
+        JournalLine::create(['journal_entry_id' => $original->id, 'account_code' => '4000', 'debit' => '0.00', 'credit' => '5000.00']);
+
+        // The posted reversal entry mirrors it.
+        $reversal = JournalEntry::factory()->create([
+            'entry_date' => $to,
+            'period_id' => $period->id,
+            'status' => JournalEntryStatus::Posted,
+        ]);
+        JournalLine::create(['journal_entry_id' => $reversal->id, 'account_code' => '1000', 'debit' => '0.00', 'credit' => '5000.00']);
+        JournalLine::create(['journal_entry_id' => $reversal->id, 'account_code' => '4000', 'debit' => '5000.00', 'credit' => '0.00']);
+
+        $result = $this->service->getCashFlow($from, $to);
+
+        // Both sides of the pair must count so they cancel — a Posted-only
+        // filter would report the reversal as a phantom -5000 cash movement.
+        $this->assertEquals('0.0000', $result['net_change_in_cash']);
+        $this->assertEquals('0.0000', $result['financing_activities']['equity_issued']);
+    }
 }

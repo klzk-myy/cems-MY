@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Enums\SystemAlertLevel;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\AccountingPeriod;
+use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Models\CurrencyPosition;
 use App\Models\RevaluationEntry;
@@ -34,209 +35,54 @@ class RevaluationService
     ) {}
 
     /**
-     * Run revaluation for all currency positions in a branch.
-     *
-     * Calculates gain/loss for each currency position by comparing current
-     * market rate with the current rate, then updates position records.
-     *
-     * @param  int  $postedBy  User ID performing the revaluation
-     * @param  string|null  $branchId  Branch identifier (defaults to 'HQ')
-     * @return array Array containing:
-     *               - date: string Revaluation date (Y-m-d format)
-     *               - branch_id: string Branch identifier
-     *               - positions_revalued: int Number of positions processed
-     *               - entries: array List of revaluation entry details
-     */
-    public function runRevaluation(int $postedBy, ?string $branchId = null): array
-    {
-        $branchId = $branchId ?? 'HQ';
-        $revaluationDate = now()->toDateString();
-        $results = [];
-
-        // Pre-fetch all exchange rates in a single API call to avoid N+1 per position
-        $this->rateApiService->fetchLatestRates();
-
-        $positions = CurrencyPosition::where('branch_id', $branchId)
-            ->where('quantity', '!=', '0')
-            ->get();
-
-        foreach ($positions as $position) {
-            $result = $this->revaluePosition($position, $revaluationDate, $postedBy);
-            if ($result) {
-                $results[] = $result;
-            }
-        }
-
-        // Log revaluation run event
-        $this->auditService->logPositionEvent('position_revaluation_run', [
-            'new' => [
-                'date' => $revaluationDate,
-                'branch_id' => $branchId,
-                'positions_revalued' => count($results),
-            ],
-        ]);
-
-        // Check for position limit breaches
-        foreach ($results as $result) {
-            $this->checkPositionLimitBreach($result, $branchId);
-        }
-
-        return [
-            'date' => $revaluationDate,
-            'branch_id' => $branchId,
-            'positions_revalued' => count($results),
-            'entries' => $results,
-        ];
-    }
-
-    /**
-     * Revalue a single currency position.
-     *
-     * Calculates gain/loss by comparing current market rate with last valuation rate,
-     * creates a revaluation entry, and updates the position record.
-     *
-     * @param  CurrencyPosition  $position  The currency position to revalue
-     * @param  string  $date  Revaluation date (Y-m-d format)
-     * @param  int  $postedBy  User ID performing the revaluation
-     * @return array|null Revaluation result array or null if no rate available
-     */
-    protected function revaluePosition(CurrencyPosition $position, string $date, int $postedBy): ?array
-    {
-        $newRate = $this->getCurrentRate($position->currency_code);
-        if (! $newRate) {
-            return null;
-        }
-
-        return DB::transaction(function () use ($position, $newRate, $date, $postedBy) {
-            // Lock the position row and recompute under the lock so concurrent
-            // revaluations of the same position cannot double-book entries at
-            // the same rate (read-modify-write race on current_rate).
-            $lockedPosition = CurrencyPosition::where('branch_id', $position->branch_id)
-                ->where('currency_code', $position->currency_code)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $lockedPosition) {
-                return null;
-            }
-
-            $oldRate = $lockedPosition->current_rate ?? $lockedPosition->average_cost;
-
-            // Prevent double-counting: check if position was already revalued at this rate
-            // (scale 8 — per-unit rates can differ only beyond 4 decimals).
-            if ($lockedPosition->current_rate !== null && bccomp((string) $lockedPosition->current_rate, (string) $newRate, 8) === 0) {
-                return null;
-            }
-
-            $gainLoss = $this->mathService->calculateRevaluationPnl(
-                $lockedPosition->quantity,
-                $oldRate,
-                $newRate
-            );
-
-            // Unrealized P&L is the absolute mark-to-market value at the current rate:
-            // quantity x (current_rate - average_cost). Recompute from the cost basis so
-            // repeated revaluations never double-count, matching CurrencyPositionService.
-            $unrealizedGainLoss = $this->mathService->calculateRevaluationPnl(
-                $lockedPosition->quantity,
-                $lockedPosition->average_cost,
-                $newRate
-            );
-
-            // Create revaluation entry
-            $entry = RevaluationEntry::create([
-                'currency_code' => $lockedPosition->currency_code,
-                'branch_id' => $lockedPosition->branch_id,
-                'old_rate' => $oldRate,
-                'new_rate' => $newRate,
-                'position_amount' => $lockedPosition->quantity,
-                'gain_loss_amount' => $gainLoss,
-                'revaluation_date' => $date,
-                'posted_by' => $postedBy,
-            ]);
-
-            // Update position — keep current_value consistent with the new
-            // rate, as CurrencyPositionService::updatePosition maintains it.
-            $lockedPosition->update([
-                'current_rate' => $newRate,
-                'current_value' => $this->mathService->round(
-                    $this->mathService->multiply((string) $lockedPosition->quantity, (string) $newRate)
-                ),
-                'unrealized_gain_loss' => $unrealizedGainLoss,
-                'last_revalued_at' => now(),
-            ]);
-
-            return [
-                'entry_id' => $entry->id,
-                'currency' => $lockedPosition->currency_code,
-                'old_rate' => $oldRate,
-                'new_rate' => $newRate,
-                'gain_loss' => $gainLoss,
-            ];
-        });
-    }
-
-    /**
      * Get the current market rate for a currency.
      *
-     * Retrieves the mid rate from the rate API service for revaluation purposes.
+     * The live provider mid is preferred (mark-to-market). When the provider is
+     * unavailable — EXCHANGE_RATE_API_KEY unset, a provider outage, or a
+     * currency the provider does not quote — the branch's published card is
+     * used instead, so one provider problem cannot fail every position in a
+     * revaluation run (previously the provider was the sole source).
      *
      * @param  string  $currencyCode  The ISO currency code
+     * @param  int|null  $branchId  Branch whose card should price the position
      * @return numeric-string|null The mid rate as a string, or null if rate unavailable
      */
-    protected function getCurrentRate(string $currencyCode): ?string
+    protected function getCurrentRate(string $currencyCode, ?int $branchId = null): ?string
     {
-        $rate = $this->rateApiService->getRateForCurrency($currencyCode);
-        if (! $rate) {
-            return null;
+        try {
+            $rate = $this->rateApiService->getRateForCurrency($currencyCode);
+
+            if ($rate && isset($rate['mid'])) {
+                /** @var numeric-string $mid */
+                $mid = (string) $rate['mid'];
+
+                return $mid;
+            }
+        } catch (\Exception $e) {
+            Log::warning('Live exchange rate unavailable for revaluation; falling back to the stored rate card', [
+                'currency_code' => $currencyCode,
+                'branch_id' => $branchId,
+                'error' => $e->getMessage(),
+            ]);
         }
 
-        // Use mid rate for revaluation
-        /** @var numeric-string|null $mid */
-        $mid = isset($rate['mid']) ? (string) $rate['mid'] : null;
-
-        return $mid;
+        // Provider-less fallback: the branch card (company card when the branch
+        // publishes none), already normalized to a per-unit mid at scale 8.
+        return $this->rateApiService->getCurrentRate($currencyCode, 'mid', $branchId);
     }
 
     /**
-     * Generate a revaluation report for a specific date.
+     * Branch rate card that prices a position.
      *
-     * Retrieves all revaluation entries for the given date and calculates
-     * total gains, total losses, and net P&L.
-     *
-     * @param  string  $date  Date to generate report for (Y-m-d format)
-     * @return array Array containing:
-     *               - date: string Report date
-     *               - entries: \Illuminate\Database\Eloquent\Collection Revaluation entries
-     *               - total_gain: string Total gains (as string for precision)
-     *               - total_loss: string Total losses (as string for precision)
-     *               - net_pnl: string Net profit/loss (as string for precision)
+     * currency_positions.branch_id is a string key ('HQ' or the branch id)
+     * while exchange_rates.branch_id is an integer, so only a numeric key maps
+     * to a branch card; 'HQ' resolves to the company-wide card.
      */
-    public function getRevaluationReport(string $date): array
+    protected function rateBranchId(CurrencyPosition $position): ?int
     {
-        $entries = RevaluationEntry::where('revaluation_date', $date)
-            ->with(['currency', 'postedBy'])
-            ->get();
+        $branchId = $position->branch_id;
 
-        $totalGain = '0';
-        $totalLoss = '0';
-
-        foreach ($entries as $entry) {
-            $amount = $entry->gain_loss_amount;
-            if ($this->mathService->compare($amount, '0') >= 0) {
-                $totalGain = $this->mathService->add($totalGain, $amount);
-            } else {
-                $totalLoss = $this->mathService->add($totalLoss, $amount);
-            }
-        }
-
-        return [
-            'date' => $date,
-            'entries' => $entries,
-            'total_gain' => $totalGain,
-            'total_loss' => $totalLoss,
-            'net_pnl' => $this->mathService->add($totalGain, $totalLoss),
-        ];
+        return is_numeric($branchId) ? (int) $branchId : null;
     }
 
     /**
@@ -297,6 +143,15 @@ class RevaluationService
             $results[] = $attempt['result'];
         }
 
+        // Position-limit breach alerts (previously only reachable via the
+        // removed non-journal runRevaluation path).
+        foreach ($results as $result) {
+            $this->checkPositionLimitBreach([
+                'currency' => $result['currency_code'],
+                'gain_loss' => $result['gain_loss'],
+            ], $result['branch_id'] ?? null);
+        }
+
         $this->assertNoRevaluationFailures($results, $errors);
 
         return [
@@ -342,7 +197,7 @@ class RevaluationService
      * thrown failure into an error descriptor so the caller can accumulate
      * and summarize failures after the loop.
      *
-     * @return array{result: ?array{currency_code: string, gain_loss: string, is_gain: bool}, error: ?array{currency_code: string, error: string}}
+     * @return array{result: ?array{currency_code: string, branch_id: string, gain_loss: string, is_gain: bool}, error: ?array{currency_code: string, error: string}}
      */
     protected function revaluePositionForJournal(CurrencyPosition $position, string $date, int $postedBy): array
     {
@@ -350,7 +205,7 @@ class RevaluationService
             return ['result' => null, 'error' => null];
         }
 
-        $newRate = $this->getCurrentRate($position->currency_code)
+        $newRate = $this->getCurrentRate($position->currency_code, $this->rateBranchId($position))
             ?? ($position->current_rate ?? $position->average_cost);
 
         if (! $newRate) {
@@ -383,7 +238,7 @@ class RevaluationService
      * cannot double-book the same revaluation.
      *
      * @param  numeric-string  $newRate
-     * @return array{currency_code: string, gain_loss: string, is_gain: bool}|null
+     * @return array{currency_code: string, branch_id: string, gain_loss: string, is_gain: bool}|null
      */
     protected function revaluePositionUnderLock(CurrencyPosition $position, string $newRate, string $date, int $postedBy): ?array
     {
@@ -429,6 +284,7 @@ class RevaluationService
 
             return [
                 'currency_code' => $lockedPosition->currency_code,
+                'branch_id' => $lockedPosition->branch_id,
                 'gain_loss' => $gainLoss,
                 'is_gain' => $isGain,
             ];
@@ -483,13 +339,20 @@ class RevaluationService
             ],
         ];
 
+        // Positions key branch_id by branch CODE ('HQ', 'BR001'), while
+        // journal_entries.branch_id is the branches.id FK — resolve the code
+        // so revaluation P&L lands on the branch's own ledger chain instead
+        // of the company-wide (null) chain.
+        $branchId = Branch::where('code', $position->branch_id)->value('id');
+
         $this->accountingService->createJournalEntry(
             $lines,
             'Revaluation',
             $revaluationEntry->id,
             "Month-end revaluation: {$position->currency_code}",
             $date,
-            $postedBy
+            $postedBy,
+            $branchId
         );
     }
 
@@ -534,17 +397,6 @@ class RevaluationService
                 "Cannot post to closed period {$period->period_code}. Please use an open period or contact administrator."
             );
         }
-    }
-
-    /**
-     * Schedule revaluation for month-end processing.
-     *
-     * Logs a notification that revaluation has been scheduled.
-     * This method is typically called by scheduled tasks/cron jobs.
-     */
-    public function scheduleRevaluation(): void
-    {
-        Log::info('Revaluation scheduled for month-end');
     }
 
     /**

@@ -91,10 +91,11 @@ trait EdgeSteps
         );
         $this->assertSame(0, (int) $count, 'B7: deviating rate wrote a transaction row');
 
-        // Boundary: the configured band is ±0.05% (thresholds.rates
-        // .max_deviation_percent = 0.05), so 4.5010 against the 4.5000 market
-        // rate deviates ~0.022% and must book — proving the guard rejects on
-        // deviation, not on any rate variation.
+        // Boundary: the configured band is thresholds.rates
+        // .max_deviation_percent = 0.05, which is a FRACTION (5%, not 0.05%),
+        // so 4.5010 against the 4.5000 market rate deviates ~0.022% and must
+        // book — proving the guard rejects on deviation, not on any rate
+        // variation. The tighter teller limit (±0.5%) is also satisfied.
         $txId = $this->bookOverWeb('wave-b-rate-', ['rate' => '4.5010']);
         $this->assertGreaterThan(0, $txId, 'B7: in-band rate should book normally');
     }

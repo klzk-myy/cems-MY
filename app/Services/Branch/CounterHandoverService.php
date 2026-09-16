@@ -75,7 +75,7 @@ class CounterHandoverService
                 $currencies,
                 $openBalances,
                 $closedBalances,
-                $this->latestSellRates($currencyCodes)
+                $this->latestSellRates($currencyCodes, $this->handoverBranchId($openBalances, $session))
             );
             $hasYellowVariance = $this->assertVarianceThresholds($variances->perCurrency, $supervisor);
 
@@ -164,12 +164,15 @@ class CounterHandoverService
     }
 
     /**
-     * Latest per-unit sell rate for each non-MYR currency code.
+     * Latest per-unit sell rate for each non-MYR currency code, resolved
+     * against the branch's own card (falling back to the company-wide card).
+     * An unscoped lookup valued a handover on whichever branch's rate happened
+     * to be newest.
      *
      * @param  array<int, string>  $currencyCodes
      * @return array<string, string> currency_code => per-unit rate
      */
-    private function latestSellRates(array $currencyCodes): array
+    private function latestSellRates(array $currencyCodes, ?int $branchId = null): array
     {
         $nonMyrCodes = array_filter($currencyCodes, fn ($c) => $c !== Currency::baseCurrency());
 
@@ -177,8 +180,16 @@ class CounterHandoverService
             return [];
         }
 
-        return ExchangeRate::whereIn('currency_code', $nonMyrCodes)
-            ->orderBy('fetched_at', 'desc')
+        $query = ExchangeRate::whereIn('currency_code', $nonMyrCodes)->active();
+
+        if ($branchId !== null) {
+            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'));
+        }
+
+        return $query
+            ->orderByRaw('branch_id IS NULL')
+            ->orderByDesc('fetched_at')
+            ->orderByDesc('id')
             ->get()
             ->groupBy('currency_code')
             ->map(fn ($group) => $group->first())
@@ -187,6 +198,20 @@ class CounterHandoverService
             // to per-unit for conversion.
             ->map(fn ($rate) => $rate->perUnitRate((string) $rate->rate_sell))
             ->all();
+    }
+
+    /**
+     * The branch whose card prices this handover: the till's branch, falling
+     * back to the counter's branch.
+     *
+     * @param  Collection<string, TillBalance>  $openBalances
+     */
+    private function handoverBranchId(Collection $openBalances, CounterSession $session): ?int
+    {
+        $firstOpen = $openBalances->first();
+        $branchId = ($firstOpen ? $firstOpen->branch_id : null) ?? $session->counter?->branch_id;
+
+        return $branchId === null ? null : (int) $branchId;
     }
 
     /**

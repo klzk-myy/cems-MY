@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Exceptions\Domain\AccountingPeriodException;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\ReverseJournalEntryRequest;
 use App\Http\Requests\Accounting\StoreJournalEntryRequest;
@@ -133,7 +134,11 @@ class JournalController extends Controller
             return redirect()->route('accounting.journal.show', $reversal)
                 ->with('success', 'Entry reversed successfully.');
 
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
         } catch (\Exception $e) {
+            Log::error('Journal reversal failed', ['exception' => $e, 'entry_id' => $entry->id]);
+
             return back()->with('error', 'Reversal failed. Please try again.');
         }
     }

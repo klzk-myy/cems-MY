@@ -16,6 +16,7 @@
             <x-stat-card label="Over Budget" :value="$report['over_budget_count']" :color="$report['over_budget_count'] > 0 ? 'red' : 'green'" />
         </x-stat-grid>
 
+        @if (auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
         <x-card title="Set Budget — {{ $periodCode }}">
             @if ($unbudgeted->isEmpty())
                 <p class="text-sm text-ink-muted">All active expense accounts already have budgets for this period.</p>
@@ -49,6 +50,7 @@
                 </form>
             @endif
         </x-card>
+        @endif
 
         <x-card title="Budget vs Actual — {{ $periodCode }}">
             <x-table>
@@ -76,6 +78,7 @@
                                 <x-badge :variant="$item['over_budget'] ? 'danger' : 'success'">{{ $item['over_budget'] ? 'Over' : 'Within' }}</x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
+                                @if (auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
                                 <form method="POST" action="{{ route('accounting.budget.update', $item['id']) }}" class="flex items-center justify-center gap-1">
                                     @csrf
                                     @method('PATCH')
@@ -83,6 +86,9 @@
                                            class="w-28 px-2 py-1 text-xs bg-canvas-subtle border border-border rounded-lg text-ink">
                                     <x-button variant="ghost" size="sm" type="submit">Save</x-button>
                                 </form>
+                                @else
+                                <span class="text-xs text-ink-muted">—</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

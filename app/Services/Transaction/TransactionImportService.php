@@ -5,6 +5,7 @@ namespace App\Services\Transaction;
 use App\Enums\TransactionImportStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Enums\UserRole;
 use App\Exceptions\Domain\CurrencyNotFoundException;
 use App\Exceptions\Domain\CustomerNotFoundException;
 use App\Exceptions\Domain\FileOperationException;
@@ -164,7 +165,7 @@ class TransactionImportService
                     throw new ImportValidationException("Till {$data['till_id']} is not open for {$data['currency_code']}");
                 }
 
-                $this->assertMarketRate($data, $counter);
+                $this->assertMarketRate($data, $counter, $context->importUser->role);
 
                 [$data, $amountLocal] = $this->convertRowAmount($data, $convention);
 
@@ -332,13 +333,14 @@ class TransactionImportService
      *
      * @param  array<string, mixed>  $data
      */
-    private function assertMarketRate(array $data, Counter $counter): void
+    private function assertMarketRate(array $data, Counter $counter, UserRole $role): void
     {
         $rateCheck = $this->rateManagementService->validateTransactionRate(
             (string) $data['rate'],
             $data['currency_code'],
             strtolower($data['type']),
-            $counter->branch_id
+            $counter->branch_id,
+            $role
         );
 
         if (! $rateCheck['valid']) {

@@ -23,6 +23,9 @@
             <x-stat-card label="Adjusted Balance" :value="'RM '.number_format((float) $report['adjusted_balance'], 2)" color="green" />
         </x-stat-grid>
 
+        @php($canManageAccounting = auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
+
+        @if ($canManageAccounting)
         <x-card title="Import Bank Statement">
             <form method="POST" action="{{ route('accounting.reconciliation.import') }}" class="space-y-4"
                   x-data="reconciliationLines">
@@ -55,6 +58,7 @@
                 </div>
             </form>
         </x-card>
+        @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <x-card title="Outstanding Checks (unmatched debits)">
@@ -72,6 +76,7 @@
                                 <td class="px-4 py-3 text-sm">{{ $item['reference'] ?? $item['description'] }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['amount'], 2) }}</td>
                                 <td class="px-4 py-3 text-center">
+                                    @if ($canManageAccounting)
                                     <div class="flex items-center justify-center gap-1">
                                         <form method="POST" action="{{ route('accounting.reconciliation.match', $item['id']) }}" class="flex gap-1">
                                             @csrf
@@ -86,6 +91,9 @@
                                             <x-button variant="ghost" size="sm" type="submit">Exception</x-button>
                                         </form>
                                     </div>
+                                    @else
+                                    <span class="text-xs text-ink-muted">—</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -110,6 +118,7 @@
                                 <td class="px-4 py-3 text-sm">{{ $item['reference'] ?? $item['description'] }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['amount'], 2) }}</td>
                                 <td class="px-4 py-3 text-center">
+                                    @if ($canManageAccounting)
                                     <div class="flex items-center justify-center gap-1">
                                         <form method="POST" action="{{ route('accounting.reconciliation.match', $item['id']) }}" class="flex gap-1">
                                             @csrf
@@ -124,6 +133,9 @@
                                             <x-button variant="ghost" size="sm" type="submit">Exception</x-button>
                                         </form>
                                     </div>
+                                    @else
+                                    <span class="text-xs text-ink-muted">—</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

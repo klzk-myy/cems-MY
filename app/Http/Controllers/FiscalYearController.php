@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Requests\FiscalYearCloseRequest;
 use App\Http\Requests\StoreFiscalYearRequest;
 use App\Models\FiscalYear;
@@ -85,10 +86,10 @@ class FiscalYearController extends Controller
             $result = $this->fiscalYearService->closeFiscalYear($year);
 
             return redirect()->back()->with('success', "Fiscal year {$year->year_code} closed successfully. Net income: {$result['net_income']}");
-        } catch (\InvalidArgumentException $e) {
-            Log::error('FiscalYear close failed', ['exception' => $e, 'year_code' => $year->year_code]);
-
-            return redirect()->back()->with('error', 'Invalid fiscal year operation. Please check your input.');
+        } catch (DomainException $e) {
+            // Domain failures carry actionable messages (already closed,
+            // open periods remaining, permission denied) — surface them.
+            return redirect()->back()->with('error', $e->getMessage());
         } catch (\Exception $e) {
             Log::error('FiscalYear close failed', ['exception' => $e, 'year_code' => $year->year_code]);
 

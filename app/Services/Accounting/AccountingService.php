@@ -333,9 +333,9 @@ class AccountingService implements AccountingServiceInterface
             // row so a concurrent posting to the same account cannot read the
             // same running_balance and corrupt the balance chain. The lock is
             // held until the enclosing transaction commits (no-op on SQLite).
-            // isDebitAccount() already resolves the account; this lock must
-            // happen BEFORE the balance read below.
-            ChartOfAccount::where('account_code', $line->account_code)
+            // The locked row doubles as the account lookup — isDebitNormal on
+            // it avoids a second ChartOfAccount query per line.
+            $account = ChartOfAccount::where('account_code', $line->account_code)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -343,7 +343,9 @@ class AccountingService implements AccountingServiceInterface
             // ledger activity can never contaminate another branch's balance.
             $currentBalance = $this->latestChainBalance($line->account_code, $entry->branch_id);
 
-            if ($this->isDebitAccount($line->account_code)) {
+            if ($account->account_type instanceof AccountType
+                ? $account->account_type->isDebitNormal()
+                : in_array($account->account_type, ['Asset', 'Expense'])) {
                 $newBalance = $this->mathService->add(
                     $this->mathService->add($currentBalance, (string) $line->debit),
                     $this->mathService->multiply((string) $line->credit, '-1')

@@ -189,8 +189,11 @@ class AnalyticsController extends Controller
 
         // Fetch only the latest rate row per currency via a correlated subquery
         // instead of loading the full history and deduplicating in PHP. Backed by
-        // the (currency_code, fetched_at) index.
+        // the (currency_code, fetched_at) index. active() keeps a future-dated
+        // (scheduled) card out of a report; id DESC breaks ties so the newest
+        // row wins even when two rows share fetched_at.
         return ExchangeRate::whereIn('currency_code', $currencyCodes)
+            ->active()
             ->whereRaw('fetched_at = (SELECT MAX(fetched_at) FROM exchange_rates er2 WHERE er2.currency_code = exchange_rates.currency_code)')
             ->orderBy('id', 'desc')
             ->get()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Accounting;
 
+use App\Enums\Permission;
 use App\Http\Requests\AuthorizedFormRequest;
 
 /**
@@ -10,12 +11,14 @@ use App\Http\Requests\AuthorizedFormRequest;
 class UpdateBudgetRequest extends AuthorizedFormRequest
 {
     /**
-     * All users may generate these read-only reports; authorization is
-     * enforced by the reporting controllers.
+     * Budget mutation requires manage_accounting — the module's write-level
+     * permission. access_accounting only opens read surfaces.
      */
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && $user->role->canPerform(Permission::ManageAccounting);
     }
 
     /**

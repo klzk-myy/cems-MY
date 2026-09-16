@@ -5,6 +5,7 @@ namespace App\Services\Transaction;
 use App\Enums\Permission;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Exceptions\Domain\TransactionAlreadyProcessedException;
 use App\Models\Counter;
@@ -297,7 +298,7 @@ class TransactionReversalService
                     'original_entry_id' => $originalEntry->id,
                     'transaction_id' => $transaction->id,
                 ]);
-            } catch (\InvalidArgumentException $e) {
+            } catch (DomainException $e) {
                 Log::error('Failed to reverse journal entry', [
                     'original_entry_id' => $originalEntry->id,
                     'transaction_id' => $transaction->id,
@@ -308,8 +309,6 @@ class TransactionReversalService
                 // entries would leave positions/till already reversed while the
                 // transaction is marked Reversed, breaking the books. Rethrow so
                 // the surrounding DB transaction rolls back the whole reversal.
-                // Rethrow the original exception so the surrounding DB transaction
-                // rolls back the whole reversal. The cause is preserved for logs.
                 throw $e;
             }
         }

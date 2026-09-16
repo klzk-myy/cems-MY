@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Enums\UserRole;
+use App\Models\Branch;
 use App\Models\ExchangeRate;
 use App\Models\User;
 use App\Services\Transaction\RateManagementService;
@@ -98,5 +99,39 @@ class RateManagementServiceCacheTest extends TestCase
         $rate = ExchangeRate::where('currency_code', 'USD')->first();
         $this->assertEquals('4.70000000', $rate->rate_buy);
         $this->assertEquals('4.80000000', $rate->rate_sell);
+    }
+
+    #[Test]
+    public function company_wide_override_also_invalidates_branch_scoped_rate_cache(): void
+    {
+        $branch = Branch::factory()->create();
+
+        ExchangeRate::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'rate_buy' => '4.7000',
+            'rate_sell' => '4.8000',
+            'fetched_at' => now(),
+        ]);
+        ExchangeRate::factory()->create([
+            'currency_code' => 'USD',
+            'rate_buy' => '4.5000',
+            'rate_sell' => '4.6000',
+            'fetched_at' => now(),
+        ]);
+
+        $manager = User::factory()->create([
+            'role' => UserRole::Manager,
+        ]);
+
+        // A branch reader resolves to the company card when its branch has no
+        // override, so a company-wide write must forget the branch key too —
+        // otherwise the branch serves the pre-write rate until the TTL.
+        Cache::shouldReceive('remember')
+            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
+        Cache::shouldReceive('forget')->with('rate:USD')->once();
+        Cache::shouldReceive('forget')->with("rate:USD:branch:{$branch->id}")->once();
+
+        app(RateManagementService::class)->overrideRate('USD', '4.6000', '4.7000', $manager);
     }
 }

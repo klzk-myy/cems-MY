@@ -126,6 +126,96 @@ class ManualBookingRateValidationTest extends TestCase
     }
 
     #[Test]
+    public function teller_rate_outside_the_bnm_role_limit_is_blocked_inside_the_global_band(): void
+    {
+        ExchangeRate::factory()->create([
+            'currency_code' => 'USD',
+            'rate_buy' => '4.5000',
+            'rate_sell' => '4.6000',
+            'fetched_at' => now(),
+        ]);
+
+        $service = app(RateManagementService::class);
+
+        // 4.5300 is ~0.67% above the 4.5000 market rate: inside the global
+        // 5% band but outside the teller's 0.5% BNM limit.
+        $teller = $service->validateTransactionRate('4.5300', 'USD', 'buy', null, UserRole::Teller);
+
+        $this->assertFalse($teller['valid']);
+        $this->assertSame('0.50', $teller['role_limit_percent']);
+        $this->assertStringContainsStringIgnoringCase('your role', (string) $teller['reason']);
+
+        // The same rate is inside the manager's 2% limit, so it passes.
+        $manager = $service->validateTransactionRate('4.5300', 'USD', 'buy', null, UserRole::Manager);
+        $this->assertTrue($manager['valid']);
+
+        // Roles without a limit are still bound by the global 5% band.
+        $admin = $service->validateTransactionRate('4.5300', 'USD', 'buy', null, UserRole::Admin);
+        $this->assertTrue($admin['valid']);
+    }
+
+    #[Test]
+    public function teller_rate_inside_the_role_limit_passes(): void
+    {
+        ExchangeRate::factory()->create([
+            'currency_code' => 'USD',
+            'rate_buy' => '4.5000',
+            'rate_sell' => '4.6000',
+            'fetched_at' => now(),
+        ]);
+
+        $result = app(RateManagementService::class)
+            ->validateTransactionRate('4.5020', 'USD', 'buy', null, UserRole::Teller);
+
+        $this->assertTrue($result['valid']);
+        $this->assertNull($result['role_limit_percent']);
+    }
+
+    #[Test]
+    public function bookings_are_blocked_when_the_teller_rate_exceeds_the_role_limit(): void
+    {
+        ExchangeRate::factory()->create([
+            'currency_code' => 'USD',
+            'rate_buy' => '4.5000',
+            'rate_sell' => '4.6000',
+            'branch_id' => $this->branch->id,
+            'fetched_at' => now(),
+        ]);
+
+        $this->actingAs($this->teller);
+
+        $service = app(TransactionCreationServiceInterface::class);
+
+        try {
+            $service->prepareAndCreate($this->bookingData('4.53'), $this->teller->id);
+
+            $this->fail('Expected TransactionValidationException for a rate beyond the teller role limit');
+        } catch (TransactionValidationException $e) {
+            $this->assertStringContainsStringIgnoringCase('your role', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function a_role_without_a_limit_is_still_bounded_by_the_global_band(): void
+    {
+        ExchangeRate::factory()->create([
+            'currency_code' => 'USD',
+            'rate_buy' => '4.5000',
+            'rate_sell' => '4.6000',
+            'fetched_at' => now(),
+        ]);
+
+        $service = app(RateManagementService::class);
+
+        // 4.9000 is ~8.9% above market: outside the global 5% band, so even a
+        // role with no role-specific limit is rejected.
+        $result = $service->validateTransactionRate('4.9000', 'USD', 'buy', null, UserRole::Admin);
+
+        $this->assertFalse($result['valid']);
+        $this->assertNull($result['role_limit_percent']);
+    }
+
+    #[Test]
     public function bookings_pass_through_when_no_market_rate_is_configured(): void
     {
         // No ExchangeRate rows exist: the guard must skip, not block.

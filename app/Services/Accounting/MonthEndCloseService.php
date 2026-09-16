@@ -37,7 +37,10 @@ class MonthEndCloseService
             throw new MonthEndPreCheckFailedException($checkResult['failures']);
         }
 
-        return DB::transaction(function () use ($date, $initiator) {
+        // Ledger writes (revaluation journals + period close) run in one
+        // transaction. CSV report generation stays OUTSIDE it — files can't
+        // be rolled back, so a late failure would orphan them on disk.
+        $results = DB::transaction(function () use ($date, $initiator) {
             $results = [];
 
             $results['revaluation'] = $this->revaluationService->runRevaluationWithJournal(
@@ -45,26 +48,28 @@ class MonthEndCloseService
                 $initiator->id
             );
 
-            $results['reports'] = $this->generateReports($date);
-
             $results['period'] = $this->closePeriod($date, $initiator->id);
-
-            $this->auditService->log(
-                'month_end_close',
-                $initiator->id,
-                'AccountingPeriod',
-                $results['period']['period_id'] ?? null,
-                [],
-                [
-                    'date' => $date->toDateString(),
-                    'revaluation' => $results['revaluation'],
-                    'reports' => $results['reports'],
-                    'period_closed' => $results['period'],
-                ]
-            );
 
             return $results;
         });
+
+        $results['reports'] = $this->generateReports($date);
+
+        $this->auditService->log(
+            'month_end_close',
+            $initiator->id,
+            'AccountingPeriod',
+            $results['period']['period_id'] ?? null,
+            [],
+            [
+                'date' => $date->toDateString(),
+                'revaluation' => $results['revaluation'],
+                'reports' => $results['reports'],
+                'period_closed' => $results['period'],
+            ]
+        );
+
+        return $results;
     }
 
     public function preFlightChecks(Carbon $date): array

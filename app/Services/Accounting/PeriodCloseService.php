@@ -12,6 +12,7 @@ use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Services\AuditService;
 use App\Services\System\MathService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -157,26 +158,34 @@ class PeriodCloseService
         $revenues = ChartOfAccount::where('account_type', 'Revenue')->get();
         $expenses = ChartOfAccount::where('account_type', 'Expense')->get();
 
-        $revenueBalances = $this->getBatchBalances($revenues->pluck('account_code')->toArray(), $asOfDate);
-        $expenseBalances = $this->getBatchBalances($expenses->pluck('account_code')->toArray(), $asOfDate);
+        $revenueBalances = $this->getNetBalances($revenues->pluck('account_code')->toArray(), $asOfDate);
+        $expenseBalances = $this->getNetBalances($expenses->pluck('account_code')->toArray(), $asOfDate);
 
         $closingLines = [];
         $totalRevenue = '0';
         $totalExpenses = '0';
 
         foreach ($revenues as $account) {
-            $balance = $revenueBalances[$account->account_code] ?? '0';
+            // Natural balance for a revenue account is credits minus debits.
+            $balance = $this->mathService->multiply($revenueBalances[$account->account_code] ?? '0', '-1');
             if ($this->mathService->compare($balance, '0') === 0) {
                 continue;
             }
 
             $totalRevenue = $this->mathService->add($totalRevenue, $balance);
-            // Debit revenue account to zero it, credit revenue summary
-            $closingLines[] = ['account_code' => $account->account_code, 'debit' => $balance, 'credit' => 0];
+            if ($this->mathService->compare($balance, '0') > 0) {
+                // Debit revenue account to zero it
+                $closingLines[] = ['account_code' => $account->account_code, 'debit' => $balance, 'credit' => 0];
+            } else {
+                // Contra-revenue (net debit balance): close with a credit
+                $closingLines[] = ['account_code' => $account->account_code, 'debit' => 0, 'credit' => $this->mathService->multiply($balance, '-1')];
+            }
         }
 
-        if ($this->mathService->compare($totalRevenue, '0') !== 0) {
+        if ($this->mathService->compare($totalRevenue, '0') > 0) {
             $closingLines[] = ['account_code' => $revenueSummaryAccount, 'debit' => 0, 'credit' => $totalRevenue];
+        } elseif ($this->mathService->compare($totalRevenue, '0') < 0) {
+            $closingLines[] = ['account_code' => $revenueSummaryAccount, 'debit' => $this->mathService->multiply($totalRevenue, '-1'), 'credit' => 0];
         }
 
         foreach ($expenses as $account) {
@@ -186,12 +195,19 @@ class PeriodCloseService
             }
 
             $totalExpenses = $this->mathService->add($totalExpenses, $balance);
-            // Credit expense account to zero it, debit expense summary
-            $closingLines[] = ['account_code' => $account->account_code, 'debit' => 0, 'credit' => $balance];
+            if ($this->mathService->compare($balance, '0') > 0) {
+                // Credit expense account to zero it
+                $closingLines[] = ['account_code' => $account->account_code, 'debit' => 0, 'credit' => $balance];
+            } else {
+                // Contra-expense (net credit balance): close with a debit
+                $closingLines[] = ['account_code' => $account->account_code, 'debit' => $this->mathService->multiply($balance, '-1'), 'credit' => 0];
+            }
         }
 
-        if ($this->mathService->compare($totalExpenses, '0') !== 0) {
+        if ($this->mathService->compare($totalExpenses, '0') > 0) {
             $closingLines[] = ['account_code' => $expenseSummaryAccount, 'debit' => $totalExpenses, 'credit' => 0];
+        } elseif ($this->mathService->compare($totalExpenses, '0') < 0) {
+            $closingLines[] = ['account_code' => $expenseSummaryAccount, 'debit' => 0, 'credit' => $this->mathService->multiply($totalExpenses, '-1')];
         }
 
         $netIncome = $this->mathService->subtract($totalRevenue, $totalExpenses);
@@ -262,40 +278,38 @@ class PeriodCloseService
     }
 
     /**
-     * Get balances for multiple accounts in a single batch query.
+     * Get net ledger balances (debits minus credits) for multiple accounts.
      *
-     * Retrieves the running balance from the latest ledger entry for each account
-     * using a subquery to find the most recent entry per account code.
+     * Aggregates all ledger rows up to the date — across every branch —
+     * because running_balance chains are per-branch and the period close is
+     * a company-wide operation. Picking a chain tail (e.g. MAX(id)) would
+     * return one branch's balance mislabeled as consolidated, and can land
+     * on a mid-chain row after backdated-posting repair.
      *
-     * @param  array  $accountCodes  Array of account codes to query
+     * @param  array<int, string>  $accountCodes  Array of account codes to query
      * @param  string  $asOfDate  Date for balance calculation (YYYY-MM-DD format)
-     * @return array<string, string> Account code => balance string
+     * @return array<string, string> Account code => net (debit - credit) balance string
      */
-    protected function getBatchBalances(array $accountCodes, string $asOfDate): array
+    protected function getNetBalances(array $accountCodes, string $asOfDate): array
     {
         if (empty($accountCodes)) {
             return [];
         }
 
-        $subQuery = AccountLedger::selectRaw('account_code, MAX(id) as max_id')
-            ->whereIn('account_code', $accountCodes)
-            ->whereRaw('DATE(entry_date) <= ?', [$asOfDate])
-            ->groupBy('account_code');
-
-        $maxIds = $subQuery->pluck('max_id', 'account_code');
-
-        if ($maxIds->isEmpty()) {
-            return [];
-        }
-
-        $entries = AccountLedger::whereIn('id', $maxIds->values())
+        /** @var Collection<string, object{account_code:string, td:?string, tc:?string}> $totals */
+        $totals = AccountLedger::whereIn('account_code', $accountCodes)
+            ->whereDate('entry_date', '<=', $asOfDate)
+            ->selectRaw('account_code, COALESCE(SUM(debit),0) as td, COALESCE(SUM(credit),0) as tc')
+            ->groupBy('account_code')
             ->get()
             ->keyBy('account_code');
 
         $balances = [];
         foreach ($accountCodes as $code) {
-            $entry = $entries->get($code);
-            $balances[$code] = $entry ? (string) $entry->running_balance : '0';
+            $row = $totals->get($code);
+            $balances[$code] = $row
+                ? $this->mathService->subtract((string) $row->td, (string) $row->tc)
+                : '0';
         }
 
         return $balances;

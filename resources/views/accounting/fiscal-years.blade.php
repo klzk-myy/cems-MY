@@ -35,6 +35,7 @@
             </div>
         </x-card>
 
+        @if (auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
         <x-card title="Create Fiscal Year">
             <form method="POST" action="{{ route('accounting.fiscal-years.store') }}" class="flex flex-wrap items-end gap-3">
                 @csrf
@@ -46,6 +47,7 @@
             </form>
             <p class="mt-2 text-xs text-ink-muted">When only a year is given, dates are derived from the configured fiscal year-end. Monthly periods are created automatically.</p>
         </x-card>
+        @endif
 
         <x-card>
             <x-table>
@@ -77,7 +79,7 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                @if ($fiscalYear->status?->value === 'Open')
+                                @if ($fiscalYear->status?->value === 'Open' && auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
                                     <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}"
                                           class="flex items-center justify-center gap-2"
                                           data-confirm="Close {{ $fiscalYear->year_code }}? All periods must be closed and this cannot be undone.">
@@ -131,9 +133,6 @@
                                     <form method="POST" action="{{ route('accounting.period.close', $period) }}"
                                           data-confirm="Close period {{ $period->period_code }}?">
                                         @csrf
-                                        <input type="hidden" name="period_id" value="{{ $period->id }}">
-                                        <input type="hidden" name="closure_date" value="{{ $period->end_date?->toDateString() }}">
-                                        <input type="hidden" name="reason" value="Monthly period close">
                                         <x-button variant="ghost" size="sm" type="submit">Close</x-button>
                                     </form>
                                 @elseif ($period->status?->value === 'Open')

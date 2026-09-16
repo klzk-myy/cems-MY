@@ -32,6 +32,7 @@ class ExchangeRateHistory extends BaseModel
         'rate',
         'rate_unit',
         'rate_inverse',
+        'spread_applied',
         'effective_date',
         'created_by',
         'notes',

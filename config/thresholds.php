@@ -245,6 +245,11 @@ return [
         'spread' => env('RATE_SPREAD', '0.02'),
         'min_spread' => env('RATE_MIN_SPREAD', '0.005'),
         'max_spread' => env('RATE_MAX_SPREAD', '0.05'),
+        // Outer sanity band for a teller-submitted rate, expressed as a
+        // FRACTION of the market rate — 0.05 = 5%, not 0.05%. Enforced for
+        // every booking role; the tighter per-role BNM limits below
+        // (override_limit_teller / _manager, in percentage points) are
+        // enforced on top of it by RateManagementService.
         'max_deviation_percent' => env('RATE_MAX_DEVIATION', '0.05'),
         'precision' => env('RATE_PRECISION', 8),
         'cache_duration' => env('RATE_CACHE_DURATION', 60),

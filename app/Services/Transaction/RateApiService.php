@@ -11,8 +11,11 @@ use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Support\ActorContext;
 use App\ValueObjects\QuoteConvention;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class RateApiService
 {
@@ -151,12 +154,32 @@ class RateApiService
     }
 
     /**
-     * Forget the per-currency rate cache entries (used by RateManagementService::getRateForCurrency)
-     * so newly fetched rates are served immediately instead of the stale 5-minute cache.
+     * Forget every cached rate lookup that can resolve to the fetched
+     * currencies, so newly fetched rates are served immediately instead of
+     * the stale 5-minute cache.
+     *
+     * A company-wide fetch changes what a branch reader resolves to (its
+     * branch key falls back to the company card), so every branch-scoped key
+     * must be forgotten too — forgetting only the writer's own scope left
+     * branches serving a stale rate until the TTL expired.
      */
     protected function invalidatePerCurrencyCache(array $processed, ?int $branchId = null): void
     {
-        $this->cacheInvalidationService->forgetAllRates(array_keys($processed), $branchId);
+        $currencies = array_keys($processed);
+
+        $branchScopes = ExchangeRate::query()
+            ->whereIn('currency_code', $currencies)
+            ->whereNotNull('branch_id')
+            ->distinct()
+            ->pluck('branch_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($branchId !== null) {
+            $branchScopes[] = $branchId;
+        }
+
+        $this->cacheInvalidationService->forgetRateScopes($currencies, array_values($branchScopes));
     }
 
     /**
@@ -230,24 +253,99 @@ class RateApiService
         // re-quoted by the currency's configured convention.
         $conventions = Currency::quoteConventions(array_keys($rates));
 
-        ExchangeRate::upsert(
-            collect($rates)->map(function ($rateData, $currencyCode) use ($conventions, $branchId, $now) {
+        $spread = $this->spreadPercent();
+
+        DB::transaction(function () use ($rates, $conventions, $branchId, $now, $spread) {
+            foreach ($rates as $currencyCode => $rateData) {
                 $convention = $conventions[$currencyCode] ?? new QuoteConvention;
 
-                return [
-                    'currency_code' => $currencyCode,
-                    'branch_id' => $branchId,
+                $attributes = [
                     'rate_buy' => $convention->fromPerUnit($rateData['buy']),
                     'rate_sell' => $convention->fromPerUnit($rateData['sell']),
                     'rate_unit' => $convention->unit,
                     'rate_inverse' => $convention->inverse,
                     'source' => 'api',
+                    'spread_applied' => $spread,
                     'fetched_at' => $now,
                 ];
-            })->values()->all(),
-            ['currency_code', 'branch_id'],
-            ['rate_buy', 'rate_sell', 'rate_unit', 'rate_inverse', 'source', 'fetched_at']
-        );
+
+                $existing = $this->findRateRow($currencyCode, $branchId);
+
+                if ($existing !== null && $this->hasPendingSchedule($existing)) {
+                    // A future-dated card is a deliberate scheduled override
+                    // (e.g. tomorrow's devaluation); an automated refresh must
+                    // not silently discard it.
+                    Log::info('Skipped API rate update: pending scheduled override', [
+                        'currency_code' => $currencyCode,
+                        'branch_id' => $branchId,
+                        'effective_date' => $existing->effective_date?->toIso8601String(),
+                    ]);
+
+                    continue;
+                }
+
+                if ($existing !== null) {
+                    // Deliberately not upsert(): the unique index covers
+                    // (branch_id, currency_code) and databases treat NULLs as
+                    // distinct, so a company-wide card (branch_id NULL) never
+                    // conflicts — an upsert inserts a duplicate card on every
+                    // fetch instead of updating the existing one. Clearing
+                    // effective_date makes a fetched market rate immediately
+                    // effective.
+                    $existing->update($attributes + ['effective_date' => null]);
+
+                    continue;
+                }
+
+                try {
+                    ExchangeRate::create($attributes + [
+                        'currency_code' => $currencyCode,
+                        'branch_id' => $branchId,
+                        'effective_date' => null,
+                    ]);
+                } catch (UniqueConstraintViolationException) {
+                    // A concurrent fetch created the card between our read and
+                    // our write; fall back to updating the winning row.
+                    $this->findRateRow($currencyCode, $branchId)?->update($attributes + ['effective_date' => null]);
+                }
+            }
+        });
+    }
+
+    /**
+     * The existing rate card for a currency within a branch scope, locked for
+     * update. A null branch scope means the company-wide card, which must be
+     * matched with whereNull — a unique index does not constrain NULLs.
+     */
+    private function findRateRow(string $currencyCode, ?int $branchId): ?ExchangeRate
+    {
+        $query = ExchangeRate::where('currency_code', $currencyCode);
+
+        return ($branchId === null
+            ? $query->whereNull('branch_id')
+            : $query->where('branch_id', $branchId))
+            ->lockForUpdate()
+            ->first();
+    }
+
+    /**
+     * Whether a card is scheduled to take effect in the future.
+     */
+    private function hasPendingSchedule(ExchangeRate $rate): bool
+    {
+        return $rate->effective_date !== null && $rate->effective_date->isFuture();
+    }
+
+    /**
+     * The configured buy/sell spread as a percentage string (e.g. '2.0000'),
+     * recorded on every card this service writes so the spread actually
+     * applied is auditable rather than implied.
+     *
+     * @return numeric-string
+     */
+    private function spreadPercent(): string
+    {
+        return bcadd(bcmul($this->rateThresholds()['spread'], '100', 4), '0', 4);
     }
 
     protected function logRatesToHistory(array $rates, ?int $branchId = null): void
@@ -263,13 +361,18 @@ class RateApiService
 
         $conventions = Currency::quoteConventions(array_keys($rates));
 
+        $spread = $this->spreadPercent();
+
         $rows = collect($rates)
             ->reject(fn ($_, $currencyCode) => $existing->has($currencyCode))
-            ->map(function ($rateData, $currencyCode) use ($conventions, $branchId, $today, $userId) {
+            ->map(function ($rateData, $currencyCode) use ($conventions, $branchId, $today, $userId, $spread) {
                 $convention = $conventions[$currencyCode] ?? new QuoteConvention;
                 $buy = $convention->fromPerUnit($rateData['buy']);
                 $sell = $convention->fromPerUnit($rateData['sell']);
-                $side = $convention->inverse ? Currency::baseCurrency() : 'units';
+                // Direct rows quote MYR per `unit` foreign units, inverse rows
+                // quote foreign units per `unit` MYR — name the currency the
+                // unit refers to so the audit note is unambiguous.
+                $side = $convention->inverse ? Currency::baseCurrency() : $currencyCode;
 
                 return [
                     'currency_code' => $currencyCode,
@@ -277,6 +380,7 @@ class RateApiService
                     'rate' => $convention->fromPerUnit($rateData['mid']),
                     'rate_unit' => $convention->unit,
                     'rate_inverse' => $convention->inverse,
+                    'spread_applied' => $spread,
                     'effective_date' => $today,
                     'created_by' => $userId,
                     'notes' => "API fetch - Buy: {$buy}, Sell: {$sell} per {$convention->unit} {$side}".($branchId ? " (Branch: {$branchId})" : ''),
@@ -300,14 +404,21 @@ class RateApiService
      */
     public function getCurrentRate(string $currencyCode, string $type = 'mid', ?int $branchId = null): ?string
     {
-        $query = ExchangeRate::where('currency_code', $currencyCode);
+        $query = ExchangeRate::where('currency_code', $currencyCode)->active();
         if ($branchId !== null) {
             // Branch override wins; fall back to the company-wide rate so the
             // deviation guard still applies at branches without their own card.
-            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'))
-                ->orderByRaw('branch_id IS NULL');
+            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'));
         }
-        $exchangeRate = $query->first();
+        // Only cards whose scheduled effective_date has arrived may be served
+        // (scopeActive), and the company-wide card is preferred over a branch
+        // override when no branch scope is given. Without this ordering a
+        // future-dated card could be served as today's market rate.
+        $exchangeRate = $query
+            ->orderByRaw('branch_id IS NULL')
+            ->orderByDesc('fetched_at')
+            ->orderByDesc('id')
+            ->first();
 
         if (! $exchangeRate) {
             return null;
@@ -342,6 +453,16 @@ class RateApiService
         };
     }
 
+    /**
+     * Validate a submitted rate against the market rate for the currency.
+     *
+     * Compares in normalized per-unit MYR on the deviation fraction against
+     * thresholds.rates.max_deviation_percent (a fraction: 0.05 = 5%).
+     * Role-specific BNM limits are layered on top by
+     * RateManagementService::validateTransactionRate().
+     *
+     * @return array{valid: bool, reason: ?string, deviation_percent: ?numeric-string, max_allowed: numeric-string, market_rate: ?numeric-string, submitted_rate: string, submitted_rate_per_unit: numeric-string, submitted_rate_unit?: numeric-string, submitted_rate_inverse?: bool, role_limit_percent: ?string}
+     */
     public function validateRateDeviation(
         string $submittedRate,
         string $currencyCode,
@@ -358,11 +479,26 @@ class RateApiService
         $marketRate = $this->getCurrentRate($currencyCode, $type, $branchId);
 
         if ($marketRate === null) {
+            // No card for this currency: the guard cannot run, so the booking
+            // is allowed (a currency without a published rate is a setup gap,
+            // not a trading aberration). The skip is logged, and
+            // rates:staleness-check raises a system alert naming active
+            // currencies with no card, because they trade unguarded.
+            Log::warning('Rate deviation check skipped: no exchange-rate card for currency', [
+                'currency_code' => $currencyCode,
+                'type' => $type,
+                'branch_id' => $branchId,
+            ]);
+
             return [
                 'valid' => true,
                 'reason' => null,
                 'deviation_percent' => null,
                 'max_allowed' => $this->rateThresholds()['max_deviation_percent'],
+                'market_rate' => null,
+                'submitted_rate' => $submittedRate,
+                'submitted_rate_per_unit' => $submittedPerUnit,
+                'role_limit_percent' => null,
             ];
         }
 
@@ -371,8 +507,12 @@ class RateApiService
         // to zero and silently pass out-of-band rates.
         $deviation = $this->mathService->abs(bcsub($submittedPerUnit, $marketRate, 8));
 
-        // max_deviation_percent is stored as a fraction (0.05 = 5%) per
-        // thresholds.rates metadata — compare the deviation fraction directly.
+        // max_deviation_percent is stored as a FRACTION, not a percentage
+        // (thresholds.rates metadata: 0.05 = 5%), so the deviation fraction is
+        // compared directly against it. The tighter, role-specific BNM limits
+        // (thresholds.rates.override_limit_teller / _manager, in percentage
+        // points) are enforced on top of this outer sanity band by
+        // RateManagementService::validateTransactionRate().
         $deviationFraction = bcdiv($deviation, $marketRate, 8);
         $deviationPercent = bcmul($deviationFraction, '100', 4);
 
@@ -392,6 +532,7 @@ class RateApiService
             'submitted_rate_per_unit' => $submittedPerUnit,
             'submitted_rate_unit' => (string) $convention->unit,
             'submitted_rate_inverse' => $convention->inverse,
+            'role_limit_percent' => null,
         ];
     }
 

@@ -53,8 +53,13 @@ class ReportController extends Controller
             abort(404, 'Account not found.');
         }
 
-        $from = $request->input('from', now()->startOfMonth()->toDateString());
-        $to = $request->input('to', now()->toDateString());
+        $dates = $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+        ]);
+
+        $from = $dates['from'] ?? now()->startOfMonth()->toDateString();
+        $to = $dates['to'] ?? now()->toDateString();
 
         $ledger = $this->ledgerService->getAccountLedger($accountCode, $from, $to);
 
@@ -97,8 +102,13 @@ class ReportController extends Controller
     {
         $this->requireAccountingAccess();
 
-        $from = $request->input('from', now()->startOfMonth()->toDateString());
-        $to = $request->input('to', now()->toDateString());
+        $dates = $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+        ]);
+
+        $from = $dates['from'] ?? now()->startOfMonth()->toDateString();
+        $to = $dates['to'] ?? now()->toDateString();
 
         $data = $this->cashFlowService->getCashFlow($from, $to);
 
@@ -109,10 +119,13 @@ class ReportController extends Controller
     {
         $this->requireAccountingAccess();
 
-        $asOfDate = $request->input('as_of_date', now()->toDateString());
+        $asOfDate = $request->validate([
+            'as_of_date' => 'nullable|date',
+        ])['as_of_date'] ?? now()->toDateString();
         $trialBalance = $this->ledgerService->getTrialBalance($asOfDate);
 
         $accounts = collect($trialBalance['accounts'] ?? []);
+        $accountClasses = ChartOfAccount::pluck('account_class', 'account_code');
 
         $totalAssets = '0';
         $totalLiabilities = '0';
@@ -120,19 +133,27 @@ class ReportController extends Controller
         $currentLiabilities = '0';
 
         foreach ($accounts as $account) {
-            $balance = (string) ($account['balance'] ?? '0');
-            $type = $account['type'] ?? '';
-            $category = $account['category'] ?? $account['account_type'] ?? '';
+            // Trial-balance 'balance' is net (debits - credits): positive for
+            // debit-normal accounts, negative for credit-normal ones.
+            $netBalance = (string) ($account['balance'] ?? '0');
+            $type = $account['account_type'] ?? '';
+            $class = $accountClasses[$account['account_code'] ?? ''] ?? null;
 
-            if ($type === 'Asset' || str_starts_with($category, 'Asset')) {
-                $totalAssets = $this->mathService->add($totalAssets, $balance);
-                if (str_contains(strtolower($account['account_code'] ?? ''), '1')) {
-                    $currentAssets = $this->mathService->add($currentAssets, $balance);
+            if ($type === 'Asset') {
+                $totalAssets = $this->mathService->add($totalAssets, $netBalance);
+                // Everything but fixed assets is current in this chart
+                // (cash, bank, nostro, forex inventory, receivables).
+                if ($class !== 'Fixed Asset') {
+                    $currentAssets = $this->mathService->add($currentAssets, $netBalance);
                 }
-            }
-            if ($type === 'Liability' || str_starts_with($category, 'Liability')) {
+            } elseif ($type === 'Liability') {
+                $balance = $this->mathService->multiply($netBalance, '-1');
                 $totalLiabilities = $this->mathService->add($totalLiabilities, $balance);
-                $currentLiabilities = $this->mathService->add($currentLiabilities, $balance);
+                // Payable-class liabilities are current; other classes
+                // (e.g. long-term Debt) are excluded.
+                if ($class === 'Payable') {
+                    $currentLiabilities = $this->mathService->add($currentLiabilities, $balance);
+                }
             }
         }
 

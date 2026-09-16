@@ -2,13 +2,16 @@
 
 namespace App\Http\Requests\Accounting;
 
+use App\Enums\Permission;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ManualMatchReconciliationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && $user->role->canPerform(Permission::ManageAccounting);
     }
 
     public function rules(): array

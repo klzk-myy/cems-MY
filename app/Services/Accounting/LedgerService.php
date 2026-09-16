@@ -7,6 +7,7 @@ use App\Models\AccountLedger;
 use App\Models\ChartOfAccount;
 use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -507,18 +508,12 @@ class LedgerService
         // Opening balance must be the balance BEFORE the from date: the entry
         // list already includes rows dated on the from date, so including them
         // here double-counts them in opening + movement != closing.
-        $query = AccountLedger::where('account_code', $accountCode)
-            ->whereDate('entry_date', '<', $fromDate);
+        // Delegates to getAccountBalance so consolidated views (branchId null)
+        // aggregate across branches instead of picking a single branch's
+        // chain tail — which made opening + movement diverge from closing.
+        $before = Carbon::parse($fromDate)->subDay()->toDateString();
 
-        if ($branchId !== null) {
-            $query->where('branch_id', $branchId);
-        }
-
-        $entry = $query->orderBy('entry_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->first();
-
-        return $entry ? (string) $entry->running_balance : '0';
+        return $this->getAccountBalance($accountCode, $before, $branchId);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\SystemAlert;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -68,5 +69,34 @@ class RateStalenessCommandTest extends TestCase
         $this->artisanCommand('rates:staleness-check')->assertSuccessful();
 
         $this->assertSame(0, SystemAlert::query()->where('source', 'rate_staleness')->count());
+    }
+
+    #[Test]
+    public function alerts_when_an_active_currency_has_no_rate_card(): void
+    {
+        Currency::factory()->create(['code' => 'USD']);
+        Currency::factory()->create(['code' => 'JPY']);
+        $this->createRateWithUpdatedAt(now()->subHour());
+
+        $this->artisanCommand('rates:staleness-check')->assertSuccessful();
+
+        $alert = SystemAlert::query()->where('source', 'rate_missing')->first();
+
+        $this->assertNotNull($alert);
+        $this->assertStringContainsString('JPY', $alert->message);
+        $this->assertContains('JPY', $alert->metadata['currencies'] ?? []);
+        $this->assertNotContains('USD', $alert->metadata['currencies'] ?? []);
+    }
+
+    #[Test]
+    public function does_not_duplicate_an_open_missing_card_alert(): void
+    {
+        Currency::factory()->create(['code' => 'JPY']);
+        $this->createRateWithUpdatedAt(now()->subHour());
+
+        $this->artisanCommand('rates:staleness-check')->assertSuccessful();
+        $this->artisanCommand('rates:staleness-check')->assertSuccessful();
+
+        $this->assertSame(1, SystemAlert::query()->where('source', 'rate_missing')->count());
     }
 }

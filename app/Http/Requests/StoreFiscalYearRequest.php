@@ -2,11 +2,17 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Permission;
+
 class StoreFiscalYearRequest extends AuthorizedFormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        // Creating a fiscal year generates its periods — a structural write
+        // that needs manage_accounting, not just module access.
+        $user = $this->user();
+
+        return $user !== null && $user->role->canPerform(Permission::ManageAccounting);
     }
 
     public function rules(): array

@@ -59,11 +59,22 @@ class JournalEntryPolicy
     /**
      * Determine whether the user can reverse the journal entry.
      * Requires the manage_accounting permission (managers and
-     * accountants by default; admins always).
+     * accountants by default; admins always). Branch-scoped users may
+     * only reverse entries stamped with their own branch — mirroring
+     * the own-branch restriction on create().
      */
     public function reverse(User $user, JournalEntry $journalEntry): bool
     {
-        return $user->role->canPerform(Permission::ManageAccounting);
+        if (! $user->role->canPerform(Permission::ManageAccounting)) {
+            return false;
+        }
+
+        if ($user->role->canManageAllBranches()) {
+            return true;
+        }
+
+        return $journalEntry->branch_id !== null
+            && $journalEntry->branch_id === $user->branch_id;
     }
 
     /**

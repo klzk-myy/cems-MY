@@ -2,6 +2,7 @@
 
 namespace App\Services\Contracts;
 
+use App\Enums\UserRole;
 use App\Models\ExchangeRate;
 use App\Models\User;
 use App\Services\DTOs\RateOverrideResult;
@@ -29,7 +30,8 @@ interface RateManagementServiceInterface
         string $submittedRate,
         string $currencyCode,
         string $transactionType = 'buy',
-        ?int $branchId = null
+        ?int $branchId = null,
+        ?UserRole $role = null
     ): array;
 
     public function hasRateForCurrency(string $currencyCode, ?int $branchId = null): bool;

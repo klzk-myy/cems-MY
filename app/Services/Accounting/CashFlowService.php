@@ -48,8 +48,12 @@ class CashFlowService
     }
 
     /**
-     * Posted journal entries with lines+accounts for a period. Draft/Reversed/
-     * Rejected entries are excluded so reversed pairs don't distort the flow.
+     * Ledger-effective journal entries with lines+accounts for a period.
+     * Posted AND Reversed entries are included: a reversed original and its
+     * Posted reversal must both count so the pair nets to zero — matching
+     * account_ledger semantics where both rows persist. Filtering on Posted
+     * alone drops the original and reports the reversal as a phantom flow.
+     * Draft/Pending/Rejected entries never reach the ledger and stay excluded.
      *
      * @return Collection<int, JournalEntry>
      */
@@ -60,7 +64,7 @@ class CashFlowService
         // lexically excludes same-day entries.
         return JournalEntry::whereDate('entry_date', '>=', $fromDate)
             ->whereDate('entry_date', '<=', $toDate)
-            ->where('status', JournalEntryStatus::Posted->value)
+            ->whereIn('status', [JournalEntryStatus::Posted->value, JournalEntryStatus::Reversed->value])
             ->with(['lines.account'])
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->get();
@@ -231,7 +235,7 @@ class CashFlowService
             ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accounts', 'journal_lines.account_code', '=', 'chart_of_accounts.account_code')
             ->where('chart_of_accounts.account_class', $class)
-            ->where('journal_entries.status', JournalEntryStatus::Posted->value)
+            ->whereIn('journal_entries.status', [JournalEntryStatus::Posted->value, JournalEntryStatus::Reversed->value])
             ->when(
                 $fromDate === null,
                 fn ($q) => $q->whereDate('journal_entries.entry_date', '<', $toDate),

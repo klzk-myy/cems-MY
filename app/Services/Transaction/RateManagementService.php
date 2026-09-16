@@ -3,6 +3,7 @@
 namespace App\Services\Transaction;
 
 use App\Enums\Permission;
+use App\Enums\UserRole;
 use App\Exceptions\Domain\InvalidRateException;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
@@ -68,7 +69,10 @@ class RateManagementService implements RateManagementServiceInterface
                 ->values();
         }
 
-        return $query->get();
+        // No branch scope = the company rate card. Branch overrides belong to
+        // their branch and must never appear here: returning every row leaked
+        // other branches' cards and duplicated currency codes.
+        return $query->whereNull('branch_id')->get();
     }
 
     public function getRateForCurrency(string $currencyCode, ?int $branchId = null): ?ExchangeRate
@@ -82,10 +86,19 @@ class RateManagementService implements RateManagementServiceInterface
                 return $query
                     ->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'))
                     ->orderByRaw('branch_id IS NULL')
+                    ->orderByDesc('fetched_at')
+                    ->orderByDesc('id')
                     ->first();
             }
 
-            return $query->first();
+            // Company-wide scope: prefer the company card, then the most
+            // recently fetched row. An unordered first() could serve a stale
+            // duplicate (or another branch's override) as today's rate.
+            return $query
+                ->orderByRaw('branch_id IS NULL')
+                ->orderByDesc('fetched_at')
+                ->orderByDesc('id')
+                ->first();
         });
     }
 
@@ -105,7 +118,29 @@ class RateManagementService implements RateManagementServiceInterface
      */
     private function forgetRateCache(string $currencyCode, ?int $branchId = null): void
     {
-        $this->cacheInvalidationService->forgetRate($currencyCode, $branchId);
+        // A company-wide write also changes what branch readers resolve to
+        // (a branch key falls back to the company card), so every branch scope
+        // holding this currency is forgotten too — otherwise branches keep
+        // serving the pre-write rate until the TTL expires.
+        $branchScopes = $branchId !== null ? [$branchId] : $this->branchScopesFor($currencyCode);
+
+        $this->cacheInvalidationService->forgetRateScopes([$currencyCode], $branchScopes);
+    }
+
+    /**
+     * Branch ids holding their own card for a currency.
+     *
+     * @return list<int>
+     */
+    private function branchScopesFor(string $currencyCode): array
+    {
+        return array_values(ExchangeRate::query()
+            ->where('currency_code', $currencyCode)
+            ->whereNotNull('branch_id')
+            ->distinct()
+            ->pluck('branch_id')
+            ->map(fn ($id) => (int) $id)
+            ->all());
     }
 
     public function getRateHistory(string $currencyCode, int $days, ?int $branchId = null): EloquentCollection
@@ -177,12 +212,14 @@ class RateManagementService implements RateManagementServiceInterface
 
         $this->assertSpreadWithinLimits($perUnitBuy, $perUnitSell);
 
+        $spreadPercent = $this->calculateSpread($perUnitBuy, $perUnitSell);
+
         $effectiveAt = $effectiveDate !== null
             ? Carbon::parse($effectiveDate)
             : now();
 
-        return DB::transaction(function () use ($currencyCode, $newBuyRate, $newSellRate, $approvedBy, $reason, $branchId, $effectiveAt, $convention) {
-            $outcome = $this->persistOverride($currencyCode, $newBuyRate, $newSellRate, $branchId, $effectiveAt, $convention);
+        return DB::transaction(function () use ($currencyCode, $newBuyRate, $newSellRate, $approvedBy, $reason, $branchId, $effectiveAt, $convention, $spreadPercent) {
+            $outcome = $this->persistOverride($currencyCode, $newBuyRate, $newSellRate, $branchId, $effectiveAt, $convention, $spreadPercent);
 
             // Invalidate cache
             $this->forgetRateCache($currencyCode, $branchId);
@@ -215,11 +252,16 @@ class RateManagementService implements RateManagementServiceInterface
         string $newSellRate,
         ?int $branchId,
         Carbon $effectiveAt,
-        QuoteConvention $convention
+        QuoteConvention $convention,
+        string $spreadPercent
     ): array {
         $query = ExchangeRate::where('currency_code', $currencyCode);
         if ($branchId !== null) {
             $query->forBranch($branchId);
+        } else {
+            // Match the company-wide card explicitly: without it, an
+            // unordered first() could select (and overwrite) a branch row.
+            $query->whereNull('branch_id');
         }
         $exchangeRate = $query->lockForUpdate()->first();
 
@@ -229,6 +271,7 @@ class RateManagementService implements RateManagementServiceInterface
             'rate_unit' => $convention->unit,
             'rate_inverse' => $convention->inverse,
             'source' => 'manual_override',
+            'spread_applied' => $spreadPercent,
             'fetched_at' => now(),
             'effective_date' => $effectiveAt,
         ];
@@ -302,14 +345,57 @@ class RateManagementService implements RateManagementServiceInterface
         string $submittedRate,
         string $currencyCode,
         string $transactionType = 'buy',
-        ?int $branchId = null
+        ?int $branchId = null,
+        ?UserRole $role = null,
     ): array {
-        return $this->rateApiService->validateRateDeviation(
+        $result = $this->rateApiService->validateRateDeviation(
             $submittedRate,
             $currencyCode,
             $transactionType,
             $branchId
         );
+
+        if ($role === null || ! ($result['valid'] ?? true)) {
+            return $result;
+        }
+
+        $deviationPercent = $result['deviation_percent'] ?? null;
+
+        // No deviation measured (no market card for the currency): nothing for
+        // a role limit to act on.
+        if ($deviationPercent === null) {
+            return $result;
+        }
+
+        // BNM per-role override limits (thresholds.rates.override_limit_*,
+        // in percentage points): a role may not book a rate further from
+        // market than its own limit. Roles without a limit (admin, accountant,
+        // compliance officer) are unlimited. Previously these limits existed
+        // but were never consulted, leaving every booker on the loose global
+        // band only.
+        $limit = $role->rateOverrideLimit();
+
+        if ($limit === null) {
+            return $result;
+        }
+
+        $deviation = abs((float) $deviationPercent);
+
+        if ($deviation <= $limit) {
+            return $result;
+        }
+
+        return [
+            ...$result,
+            'valid' => false,
+            'reason' => sprintf(
+                'Rate deviation %.2f%% exceeds the maximum %.2f%% allowed for your role (%s). Ask a manager to book this rate.',
+                $deviation,
+                $limit,
+                $role->label()
+            ),
+            'role_limit_percent' => bcadd((string) $limit, '0', 2),
+        ];
     }
 
     public function hasRateForCurrency(string $currencyCode, ?int $branchId = null): bool
@@ -403,6 +489,21 @@ class RateManagementService implements RateManagementServiceInterface
     }
 
     /**
+     * The configured buy/sell spread as a percentage string (e.g. '2.0000'),
+     * matching the scale/units of the spread_applied column written on cards
+     * derived from the configured spread.
+     *
+     * @return numeric-string
+     */
+    private function configuredSpreadPercent(): string
+    {
+        /** @var numeric-string $spread */
+        $spread = $this->rateApiService->getSpread();
+
+        return bcadd(bcmul($spread, '100', 4), '0', 4);
+    }
+
+    /**
      * Reject overrides whose buy/sell spread falls outside the configured
      * [min_spread, max_spread] band (thresholds.rates, expressed as a
      * fraction of mid — e.g. 0.005 = 0.5%).
@@ -451,7 +552,12 @@ class RateManagementService implements RateManagementServiceInterface
         // whereDate keeps the lookup correct regardless of whether the column
         // stores a pure date or a datetime (and across DB drivers).
         $historyQuery = ExchangeRateHistory::whereDate('effective_date', $targetDate);
-        if ($branchId !== null) {
+        if ($branchId === null) {
+            // A company-wide copy must read company-wide history only:
+            // another branch's rows are that branch's card, not the company's,
+            // and copying them contaminated the company rate card.
+            $historyQuery->whereNull('branch_id');
+        } else {
             $historyQuery->where('branch_id', $branchId);
         }
         $historicalRates = $historyQuery->get();
@@ -467,11 +573,23 @@ class RateManagementService implements RateManagementServiceInterface
         $currencyCodes = $historicalRates->pluck('currency_code')->unique();
 
         $exchangeRates = ExchangeRate::whereIn('currency_code', $currencyCodes)
-            ->when($branchId !== null, fn ($q) => $q->forBranch($branchId))
+            ->when(
+                $branchId !== null,
+                fn ($q) => $q->forBranch($branchId),
+                // Branch-scoped copies must never overwrite the company card,
+                // and company-wide copies must never overwrite a branch card.
+                // keyBy() over an unscoped result silently picked the last row,
+                // which could be another branch's override.
+                fn ($q) => $q->whereNull('branch_id')
+            )
             ->get()
             ->keyBy('currency_code');
 
         $conventions = Currency::quoteConventions($currencyCodes->all());
+
+        // The copy re-derives both sides with the configured spread, so that
+        // spread is what the new card actually carries.
+        $spread = $this->configuredSpreadPercent();
 
         $copied = [];
         foreach ($historicalRates as $histRate) {
@@ -502,6 +620,7 @@ class RateManagementService implements RateManagementServiceInterface
                     'rate_unit' => $targetConvention->unit,
                     'rate_inverse' => $targetConvention->inverse,
                     'source' => "copied_from_{$targetDate}",
+                    'spread_applied' => $spread,
                     'fetched_at' => now(),
                 ]);
 

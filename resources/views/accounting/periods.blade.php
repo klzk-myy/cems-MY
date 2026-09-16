@@ -47,9 +47,6 @@
                                           class="flex items-center justify-center gap-2"
                                           data-confirm="Close period {{ $period->period_code }}? This cannot be undone.">
                                         @csrf
-                                        <input type="hidden" name="period_id" value="{{ $period->id }}">
-                                        <input type="hidden" name="closure_date" value="{{ $period->end_date?->toDateString() }}">
-                                        <input type="hidden" name="reason" value="Monthly period close">
                                         <x-button variant="ghost" size="sm" type="submit">Close</x-button>
                                     </form>
                                 @else
