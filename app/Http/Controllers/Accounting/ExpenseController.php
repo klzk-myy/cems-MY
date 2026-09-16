@@ -18,9 +18,9 @@ use Illuminate\View\View;
 /**
  * Branch petty-cash expenses.
  *
- * Branch managers post expenses against their own branch float; admins may
- * post for any branch (HQ holds an MYR expense float only). No approval
- * step — posting is direct, same as journals.
+ * Holders of post_expenses post against their own branch float;
+ * cross-branch roles (accountant, admin) may post for any branch. No
+ * approval step — posting is direct, same as journals.
  */
 class ExpenseController extends Controller
 {
@@ -33,12 +33,12 @@ class ExpenseController extends Controller
         $user = $request->user();
 
         $expenses = Expense::with(['branch', 'creator'])
-            ->when(! $user->isAdmin(), fn ($q) => $q->where('branch_id', $user->branch_id))
+            ->when(! $user->role->canManageAllBranches(), fn ($q) => $q->where('branch_id', $user->branch_id))
             ->orderBy('expense_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(25);
 
-        $branch = $user->isAdmin() ? null : $user->branch;
+        $branch = $user->role->canManageAllBranches() ? null : $user->branch;
 
         return view('accounting.expenses.index', [
             'expenses' => $expenses,
@@ -57,7 +57,7 @@ class ExpenseController extends Controller
 
         return view('accounting.expenses.create', [
             'expenseAccounts' => $this->expenseAccounts(),
-            'branches' => $user->isAdmin()
+            'branches' => $user->role->canManageAllBranches()
                 ? Branch::where('is_active', true)->orderBy('name')->get()
                 : collect([$user->branch]),
         ]);
@@ -73,8 +73,8 @@ class ExpenseController extends Controller
 
         $validated = $request->validated();
 
-        // Non-admins may only post against their own branch float.
-        $branch = $user->isAdmin()
+        // Branch-scoped users may only post against their own branch float.
+        $branch = $user->role->canManageAllBranches()
             ? Branch::findOrFail($validated['branch_id'])
             : $user->branch;
 

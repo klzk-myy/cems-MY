@@ -42,7 +42,7 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                @if (($period->status?->value ?? $period->status) === 'Open' || ($period->status?->value ?? $period->status) === 'open')
+                                @if ((($period->status?->value ?? $period->status) === 'Open' || ($period->status?->value ?? $period->status) === 'open') && auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
                                     <form method="POST" action="{{ route('accounting.period.close', $period) }}"
                                           class="flex items-center justify-center gap-2"
                                           data-confirm="Close period {{ $period->period_code }}? This cannot be undone.">

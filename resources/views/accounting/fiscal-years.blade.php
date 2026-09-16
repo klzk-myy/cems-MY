@@ -127,7 +127,7 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                @if ($period->status?->value === 'Open')
+                                @if ($period->status?->value === 'Open' && auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
                                     <form method="POST" action="{{ route('accounting.period.close', $period) }}"
                                           data-confirm="Close period {{ $period->period_code }}?">
                                         @csrf
@@ -136,6 +136,8 @@
                                         <input type="hidden" name="reason" value="Monthly period close">
                                         <x-button variant="ghost" size="sm" type="submit">Close</x-button>
                                     </form>
+                                @elseif ($period->status?->value === 'Open')
+                                    <span class="text-xs text-ink-muted">—</span>
                                 @else
                                     <span class="text-xs text-ink-muted">Closed</span>
                                 @endif

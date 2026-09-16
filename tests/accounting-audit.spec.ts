@@ -113,7 +113,7 @@ test('accounting pages render live data, not hardcoded stubs', async ({ browser 
   await page.close();
 });
 
-test('journal lifecycle: create, unbalanced rejection, segregation, reversal', async ({ browser }) => {
+test('journal lifecycle: create, unbalanced rejection, reversal, re-reversal guard', async ({ browser }) => {
   const acct = await browser.newPage();
   await login(acct, 'accountant1');
 
@@ -153,23 +153,17 @@ test('journal lifecycle: create, unbalanced rejection, segregation, reversal', a
   expect(unbalanced.status).not.toBe(500);
   expect(unbalanced.status).toBe(302);
 
-  // Segregation: accountant may NOT reverse (policy = manager/admin only).
+  // Accountant holds manage_accounting — reversal succeeds.
   const acctReverse = await post(acct, `/accounting/journal/${entryId}/reverse`, {
-    reason: 'audit test',
-  });
-  expect(acctReverse.status).toBe(403);
-
-  // Admin reverses → entry reversed, reversal entry created.
-  const admin = await browser.newPage();
-  await login(admin, 'admin');
-  const rev = await post(admin, `/accounting/journal/${entryId}/reverse`, {
     reason: 'Audit test reversal',
   });
-  expect(rev.status).toBe(302);
-  const showAfter = await get(admin, `/accounting/journal/${entryId}`);
+  expect(acctReverse.status).toBe(302);
+  const showAfter = await get(acct, `/accounting/journal/${entryId}`);
   expect(showAfter.body).toContain('Reversed');
 
   // Re-reversal must flash an error, not crash or double-reverse.
+  const admin = await browser.newPage();
+  await login(admin, 'admin');
   const rev2 = await post(admin, `/accounting/journal/${entryId}/reverse`, {
     reason: 'second attempt',
   });
@@ -181,12 +175,12 @@ test('journal lifecycle: create, unbalanced rejection, segregation, reversal', a
   await admin.close();
 });
 
-test('expense workflow: manager posts, float enforced, admin funds, accountant denied', async ({ browser }) => {
-  // Accountant cannot post expenses (manager/admin only).
+test('expense workflow: manager posts, float enforced, admin funds', async ({ browser }) => {
+  // Accountant holds post_expenses — the expense form is accessible.
   const acct = await browser.newPage();
   await login(acct, 'accountant1');
   const acctCreate = await get(acct, '/accounting/expenses/create');
-  expect(acctCreate.status).toBe(403);
+  expect(acctCreate.status).toBe(200);
   await acct.close();
 
   // Manager2 (PNG01): an expense exceeding the petty-cash float must be

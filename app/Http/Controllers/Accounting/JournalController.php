@@ -63,7 +63,7 @@ class JournalController extends Controller
             ->orderBy('account_code')
             ->get();
 
-        $branches = auth()->user()->isAdmin()
+        $branches = auth()->user()->role->canManageAllBranches()
             ? Branch::where('is_active', true)->orderBy('code')->pluck('name', 'id')
             : collect();
 
@@ -76,10 +76,11 @@ class JournalController extends Controller
 
         $validated = $request->validated();
 
-        // Branch journals are stamped with the poster's own branch; admins may
-        // post a company-wide (null) or branch-scoped entry.
+        // Branch journals are stamped with the poster's own branch;
+        // cross-branch roles may post a company-wide (null) or
+        // branch-scoped entry.
         $user = $request->user();
-        $branchId = $user->isAdmin()
+        $branchId = $user->role->canManageAllBranches()
             ? ($validated['branch_id'] ?? null)
             : $user->branch_id;
 

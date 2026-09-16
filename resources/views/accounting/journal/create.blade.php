@@ -24,7 +24,7 @@
             <x-card class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <x-input type="date" name="entry_date" label="Entry Date" value="{{ old('entry_date', date('Y-m-d')) }}" required />
-                    @if (auth()->user()->isAdmin())
+                    @if (auth()->user()->role->canManageAllBranches())
                         <x-select
                             name="branch_id"
                             label="Branch"

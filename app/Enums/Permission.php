@@ -235,8 +235,8 @@ enum Permission: string
      * Used by the seeder to populate the role_permissions table and by the
      * admin UI's "Default" action to restore the built-in access model.
      *
-     * Defaults mirror the access the route map granted before the matrix
-     * became authoritative, so applying defaults changes nothing.
+     * Defaults encode the documented role model (see AGENTS.md / CLAUDE.md);
+     * they are the effective grant set whenever the table holds no rows.
      *
      * @return array<string, list<string>> role => [permission keys]
      */
@@ -289,9 +289,11 @@ enum Permission: string
             ],
             UserRole::Accountant->value => [
                 self::AccessAccounting->value,
+                self::ManageAccounting->value,
+                self::PostExpenses->value,
+                self::PostJournalEntries->value,
                 self::ViewReports->value,
                 self::ManageAllBranches->value,
-                self::PostJournalEntries->value,
             ],
             UserRole::Admin->value => array_column(self::cases(), 'value'),
         ];

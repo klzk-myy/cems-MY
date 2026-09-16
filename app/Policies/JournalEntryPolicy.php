@@ -48,8 +48,8 @@ class JournalEntryPolicy
 
     /**
      * Determine whether the user can update the journal entry.
-     * Requires the manage_accounting permission (managers by default;
-     * admins always).
+     * Requires the manage_accounting permission (managers and
+     * accountants by default; admins always).
      */
     public function update(User $user, JournalEntry $journalEntry): bool
     {
@@ -58,8 +58,8 @@ class JournalEntryPolicy
 
     /**
      * Determine whether the user can reverse the journal entry.
-     * Requires the manage_accounting permission (managers by default;
-     * admins always).
+     * Requires the manage_accounting permission (managers and
+     * accountants by default; admins always).
      */
     public function reverse(User $user, JournalEntry $journalEntry): bool
     {

@@ -19,8 +19,9 @@ use Illuminate\Support\Facades\DB;
  * Branch petty-cash expense posting. Every expense debits the chosen
  * expense account and credits the petty cash account (1050), stamped with
  * the branch so branch P&L stays correct. Posting is direct — no approval
- * step — per the org model: branch managers post own-branch expenses,
- * admins post company-wide/HQ expenses.
+ * step — per the org model: holders of post_expenses post against their
+ * own branch; cross-branch roles (accountant, admin) may post for any
+ * branch. Funding floats is admin-only.
  */
 class ExpenseService
 {
@@ -121,7 +122,7 @@ class ExpenseService
 
     /**
      * Top up a branch petty-cash float (Dr petty cash, Cr cash on hand).
-     * Used by admin/accountant to fund branch floats from company cash.
+     * Admin-only — funding moves company money into branch floats.
      */
     public function fundPettyCash(Branch $branch, User $poster, string $amount, ?string $description = null): JournalEntry
     {

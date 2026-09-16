@@ -18,11 +18,13 @@
                         @endif
                     </p>
                 </div>
-                <form method="POST" action="{{ route('accounting.revaluation.run') }}"
-                      data-confirm="Run revaluation for {{ $status['month'] }}? This posts journal entries for unrealized gains/losses.">
-                    @csrf
-                    <x-button variant="primary" type="submit">Run Revaluation</x-button>
-                </form>
+                @if (auth()->user()->role->canPerformRevaluation())
+                    <form method="POST" action="{{ route('accounting.revaluation.run') }}"
+                          data-confirm="Run revaluation for {{ $status['month'] }}? This posts journal entries for unrealized gains/losses.">
+                        @csrf
+                        <x-button variant="primary" type="submit">Run Revaluation</x-button>
+                    </form>
+                @endif
             </div>
         </x-card>
 

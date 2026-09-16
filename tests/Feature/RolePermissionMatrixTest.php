@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Enums\TransactionStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\UserManagementException;
+use App\Models\AccountingPeriod;
 use App\Models\Branch;
 use App\Models\RolePermission;
 use App\Models\Transaction;
@@ -50,11 +51,18 @@ class RolePermissionMatrixTest extends TestCase
         ]);
     }
 
+    /**
+     * With no role_permissions rows the built-in defaults apply unchanged.
+     */
+    private function assertBuiltinDefaultsApply(): void
+    {
+        $this->assertSame(0, RolePermission::count());
+    }
+
     #[Test]
     public function unseeded_matrix_preserves_the_static_role_model(): void
     {
-        // No role_permissions rows — the built-in defaults apply unchanged.
-        $this->assertSame(0, RolePermission::count());
+        $this->assertBuiltinDefaultsApply();
 
         $this->assertTrue(UserRole::Teller->canCreateTransaction());
         $this->assertFalse(UserRole::Teller->canApproveTransactions());
@@ -68,8 +76,7 @@ class RolePermissionMatrixTest extends TestCase
     #[Test]
     public function accountant_is_granted_cross_branch_access_by_default(): void
     {
-        // No role_permissions rows — the built-in defaults apply unchanged.
-        $this->assertSame(0, RolePermission::count());
+        $this->assertBuiltinDefaultsApply();
 
         // Accountants have company-wide cross-branch access by default
         // (CLAUDE.md: "Accountants have company-wide accounting and reports
@@ -88,6 +95,28 @@ class RolePermissionMatrixTest extends TestCase
         );
 
         $this->assertFalse(UserRole::Accountant->canManageAllBranches());
+    }
+
+    #[Test]
+    public function accountant_is_granted_the_accounting_permissions_by_default(): void
+    {
+        $this->assertBuiltinDefaultsApply();
+
+        // Enumerated rather than groupedByCategory()['Accounting'] so a new
+        // permission added to the category is a deliberate grant decision,
+        // not an automatic one.
+        foreach ([
+            Permission::AccessAccounting,
+            Permission::ManageAccounting,
+            Permission::PostExpenses,
+            Permission::PostJournalEntries,
+        ] as $permission) {
+            $this->assertTrue(
+                UserRole::Accountant->canPerform($permission),
+                "Accountant should be granted {$permission->value} by default"
+            );
+            $this->assertTrue($this->permissionService->can(UserRole::Accountant, $permission));
+        }
     }
 
     #[Test]
@@ -436,6 +465,45 @@ class RolePermissionMatrixTest extends TestCase
 
         $this->actingAs($manager->fresh())
             ->get(route('users.index'))
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function revoking_manage_accounting_blocks_period_close_and_revaluation(): void
+    {
+        $manager = $this->makeUser(UserRole::Manager);
+        $admin = $this->makeUser(UserRole::Admin);
+        $period = AccountingPeriod::factory()->create();
+
+        // The default grant passes the authorize gate — a redirect (even a
+        // business-logic error flash) means the request was authorized.
+        $response = $this->actingAs($manager)->post(route('accounting.period.close', $period), [
+            'period_id' => $period->id,
+            'closure_date' => now()->toDateString(),
+            'reason' => 'Monthly period close',
+        ]);
+        $this->assertNotSame(403, $response->getStatusCode());
+
+        $response = $this->actingAs($manager)->post(route('accounting.revaluation.run'));
+        $this->assertNotSame(403, $response->getStatusCode());
+
+        $this->permissionService->updatePermission(
+            UserRole::Manager,
+            Permission::ManageAccounting,
+            false,
+            $admin->id
+        );
+
+        $this->actingAs($manager->fresh())
+            ->post(route('accounting.period.close', $period), [
+                'period_id' => $period->id,
+                'closure_date' => now()->toDateString(),
+                'reason' => 'Monthly period close',
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($manager->fresh())
+            ->post(route('accounting.revaluation.run'))
             ->assertForbidden();
     }
 

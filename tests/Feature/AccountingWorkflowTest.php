@@ -111,6 +111,147 @@ class AccountingWorkflowTest extends TestCase
     }
 
     #[Test]
+    public function accountant_can_post_company_wide_and_branch_scoped_journal_entries(): void
+    {
+        $accountant = User::factory()->create([
+            'username' => 'acct'.substr(uniqid(), -6),
+            'email' => 'acct-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Accountant,
+            'branch_id' => $this->branch->id,
+            'is_active' => true,
+        ]);
+
+        // No branch_id — a cross-branch role posts a company-wide entry.
+        $response = $this->actingAs($accountant)->post('/accounting/journal', [
+            'entry_date' => now()->format('Y-m-d'),
+            'description' => 'Accountant company-wide entry',
+            'lines' => [
+                [
+                    'account_code' => $this->cashAccount->account_code,
+                    'debit' => '50.00',
+                    'credit' => '0.00',
+                ],
+                [
+                    'account_code' => $this->revenueAccount->account_code,
+                    'debit' => '0.00',
+                    'credit' => '50.00',
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertNull(JournalEntry::latest('id')->first()->branch_id);
+
+        // An explicit branch_id is honoured for cross-branch roles.
+        $otherBranch = Branch::factory()->create();
+        $response = $this->actingAs($accountant)->post('/accounting/journal', [
+            'entry_date' => now()->format('Y-m-d'),
+            'description' => 'Accountant branch entry',
+            'branch_id' => $otherBranch->id,
+            'lines' => [
+                [
+                    'account_code' => $this->cashAccount->account_code,
+                    'debit' => '25.00',
+                    'credit' => '0.00',
+                ],
+                [
+                    'account_code' => $this->revenueAccount->account_code,
+                    'debit' => '0.00',
+                    'credit' => '25.00',
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertSame($otherBranch->id, JournalEntry::latest('id')->first()->branch_id);
+    }
+
+    #[Test]
+    public function branch_scoped_user_journal_is_stamped_with_own_branch(): void
+    {
+        // A branch-scoped poster cannot smuggle in another branch_id.
+        $otherBranch = Branch::factory()->create();
+
+        $response = $this->actingAs($this->manager)->post('/accounting/journal', [
+            'entry_date' => now()->format('Y-m-d'),
+            'description' => 'Manager branch entry',
+            'branch_id' => $otherBranch->id,
+            'lines' => [
+                [
+                    'account_code' => $this->cashAccount->account_code,
+                    'debit' => '10.00',
+                    'credit' => '0.00',
+                ],
+                [
+                    'account_code' => $this->revenueAccount->account_code,
+                    'debit' => '0.00',
+                    'credit' => '10.00',
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertSame($this->branch->id, JournalEntry::latest('id')->first()->branch_id);
+    }
+
+    #[Test]
+    public function accountant_can_post_an_expense_for_another_branch(): void
+    {
+        $accountant = User::factory()->create([
+            'username' => 'acct'.substr(uniqid(), -6),
+            'email' => 'acct-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Accountant,
+            'branch_id' => $this->branch->id,
+            'is_active' => true,
+        ]);
+        $otherBranch = Branch::factory()->create(['petty_cash_float' => 5000]);
+
+        // Cross-branch role: the submitted branch is honoured.
+        $response = $this->actingAs($accountant)->post('/accounting/expenses', [
+            'branch_id' => $otherBranch->id,
+            'account_code' => '6299',
+            'category' => 'Operations',
+            'description' => 'Cross-branch expense',
+            'amount' => '250.00',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('expenses', [
+            'branch_id' => $otherBranch->id,
+            'description' => 'Cross-branch expense',
+        ]);
+    }
+
+    #[Test]
+    public function branch_scoped_expense_post_ignores_submitted_branch(): void
+    {
+        // A branch-scoped poster cannot smuggle in another branch_id.
+        $otherBranch = Branch::factory()->create(['petty_cash_float' => 5000]);
+        $this->branch->petty_cash_float = '5000';
+        $this->branch->save();
+
+        $response = $this->actingAs($this->manager)->post('/accounting/expenses', [
+            'branch_id' => $otherBranch->id,
+            'account_code' => '6299',
+            'category' => 'Operations',
+            'description' => 'Own-branch expense',
+            'amount' => '100.00',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('expenses', [
+            'branch_id' => $this->branch->id,
+            'description' => 'Own-branch expense',
+        ]);
+        $this->assertDatabaseMissing('expenses', [
+            'branch_id' => $otherBranch->id,
+            'description' => 'Own-branch expense',
+        ]);
+    }
+
+    #[Test]
     public function it_validates_debits_equal_credits(): void
     {
         $response = $this->actingAs($this->manager)

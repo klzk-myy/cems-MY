@@ -2,13 +2,16 @@
 
 namespace App\Http\Requests\Accounting;
 
+use App\Enums\Permission;
 use App\Http\Requests\AuthorizedFormRequest;
 
 class ClosePeriodRequest extends AuthorizedFormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && $user->role->canPerform(Permission::ManageAccounting);
     }
 
     public function rules(): array

@@ -59,7 +59,8 @@ class AccountingService implements AccountingServiceInterface
      *
      * Validates that the entry is balanced (debits equal credits) and posts it
      * to the ledger immediately. Journal entries carry no approval step:
-     * branch managers post branch journals, admins post company-wide.
+     * holders of post_journal_entries post own-branch journals; cross-branch
+     * roles (accountant, admin) may post company-wide.
      *
      * @param  array  $lines  Array of journal line items with keys:
      *                        - account_code: string Account code

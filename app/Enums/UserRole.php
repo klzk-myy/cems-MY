@@ -177,10 +177,11 @@ enum UserRole: string
 
     /**
      * Check if the user can perform revaluation.
+     * Running revaluation is gated behind manage_accounting (DESIGN.md).
      */
     public function canPerformRevaluation(): bool
     {
-        return $this->canPerform(Permission::AccessAccounting);
+        return $this->canPerform(Permission::ManageAccounting);
     }
 
     /**
